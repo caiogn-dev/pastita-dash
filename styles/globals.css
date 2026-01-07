@@ -1,0 +1,332 @@
+:root {
+  color-scheme: light;
+  --bg: #0f1115;
+  --panel: #161921;
+  --card: #1e2230;
+  --muted: #9da3b0;
+  --text: #f7f8fc;
+  --accent: #f2c14f;
+  --accent-2: #f08c42;
+  --border: #2b3040;
+  --success: #3ac18f;
+  --danger: #ef476f;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  min-height: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.unstyled {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #1c1f27;
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.btn.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: #232837;
+  color: var(--text);
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+}
+
+.chip.active {
+  background: rgba(242, 193, 79, 0.18);
+  border-color: rgba(242, 193, 79, 0.6);
+  color: var(--accent);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 20%, rgba(242, 193, 79, 0.08), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(240, 140, 66, 0.07), transparent 35%),
+    var(--bg);
+}
+
+.sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.brand-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: grid;
+  place-items: center;
+  color: #1c1f27;
+  font-weight: 800;
+}
+
+.brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #9c0606;
+  object-fit: cover;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nav a,
+.nav .unstyled {
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  color: var(--muted);
+  transition: background 0.2s ease, color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nav a.active,
+.nav .unstyled.active {
+  background: rgba(242, 193, 79, 0.12);
+  color: var(--text);
+  border: 1px solid rgba(242, 193, 79, 0.3);
+}
+
+.main {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.card h3 {
+  margin: 0 0 0.35rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.status.pending {
+  background: rgba(242, 193, 79, 0.15);
+  border-color: rgba(242, 193, 79, 0.4);
+  color: var(--accent);
+}
+
+.status.confirmed {
+  background: rgba(58, 193, 143, 0.15);
+  border-color: rgba(58, 193, 143, 0.4);
+  color: var(--success);
+}
+
+.status.canceled {
+  background: rgba(239, 71, 111, 0.15);
+  border-color: rgba(239, 71, 111, 0.4);
+  color: var(--danger);
+}
+
+.status.cancelled {
+  background: rgba(239, 71, 111, 0.15);
+  border-color: rgba(239, 71, 111, 0.4);
+  color: var(--danger);
+}
+
+.status.processing {
+  background: rgba(242, 193, 79, 0.15);
+  border-color: rgba(242, 193, 79, 0.4);
+  color: var(--accent);
+}
+
+.status.shipped,
+.status.delivered {
+  background: rgba(58, 193, 143, 0.15);
+  border-color: rgba(58, 193, 143, 0.4);
+  color: var(--success);
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field label {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field input,
+.field select,
+.field textarea {
+  background: #0f121a;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+}
+
+.inline {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mobile-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 0.45rem 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: fixed;
+    inset: 0;
+    width: 280px;
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+    z-index: 20;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .main {
+    padding: 1rem;
+  }
+  .mobile-toggle {
+    display: inline-flex;
+  }
+}

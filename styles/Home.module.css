@@ -1,0 +1,47 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-height: 100vh;
+  background: transparent;
+}
+
+.hero {
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(242, 193, 79, 0.16), rgba(240, 140, 66, 0.14));
+  border: 1px solid rgba(242, 193, 79, 0.25);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.kicker {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+.lead {
+  color: var(--muted);
+  max-width: 720px;
+  margin: 0.35rem 0 0;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.card {
+  padding: 1rem 1.1rem;
+  background: var(--card);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.card h3 {
+  margin: 0 0 0.35rem;
+}
