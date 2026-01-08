@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RouteGuard } from "@/components/RouteGuard";
 import { Layout } from "@/components/Layout";
-import { RealtimeBridge } from "@/components/RealtimeBridge";
+import { EventsBridge } from "@/components/EventsBridge";
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function App({ Component, pageProps }: AppProps) {
           <Component {...pageProps} />
         ) : (
           <Layout title={meta.title} subtitle={meta.subtitle}>
-            <RealtimeBridge />
+            <EventsBridge />
             <Component {...pageProps} />
           </Layout>
         )}
