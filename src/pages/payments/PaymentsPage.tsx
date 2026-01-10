@@ -1,23 +1,69 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Header } from '../../components/layout';
-import { Card, Button, Table, StatusBadge, Modal, Input, PageLoading } from '../../components/common';
+import {
+  Card,
+  Button,
+  Table,
+  StatusBadge,
+  Modal,
+  Input,
+  PageLoading,
+  StatusFilter,
+  Select,
+  Textarea,
+} from '../../components/common';
 import { paymentsService, getErrorMessage } from '../../services';
 import { Payment, PaymentGateway } from '../../types';
+
+const PAYMENT_STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pendente', color: 'warning' },
+  { value: 'processing', label: 'Processando', color: 'purple' },
+  { value: 'completed', label: 'Concluído', color: 'success' },
+  { value: 'failed', label: 'Falhou', color: 'danger' },
+  { value: 'cancelled', label: 'Cancelado', color: 'gray' },
+  { value: 'refunded', label: 'Reembolsado', color: 'gray' },
+  { value: 'partially_refunded', label: 'Reembolso parcial', color: 'orange' },
+];
+
+const GATEWAY_TYPE_OPTIONS = [
+  { value: 'mercadopago', label: 'Mercado Pago' },
+  { value: 'stripe', label: 'Stripe' },
+  { value: 'pagseguro', label: 'PagSeguro' },
+  { value: 'pix', label: 'PIX' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const DEFAULT_GATEWAY_FORM = {
+  name: '',
+  gateway_type: 'mercadopago',
+  is_enabled: true,
+  is_sandbox: true,
+  endpoint_url: '',
+  webhook_url: '',
+  configuration: '{}',
+};
 
 export const PaymentsPage: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [gateways, setGateways] = useState<PaymentGateway[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'payments' | 'gateways'>('payments');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [refundModal, setRefundModal] = useState<{ isOpen: boolean; payment: Payment | null }>({
     isOpen: false,
     payment: null,
   });
   const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [refundError, setRefundError] = useState('');
   const [isRefunding, setIsRefunding] = useState(false);
+  const [gatewayModalOpen, setGatewayModalOpen] = useState(false);
+  const [gatewayForm, setGatewayForm] = useState(DEFAULT_GATEWAY_FORM);
+  const [gatewayErrors, setGatewayErrors] = useState<Record<string, string>>({});
+  const [isCreatingGateway, setIsCreatingGateway] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -61,20 +107,122 @@ export const PaymentsPage: React.FC = () => {
 
   const handleRefund = async () => {
     if (!refundModal.payment) return;
+    setRefundError('');
+    let amount: number | undefined;
+    if (refundAmount) {
+      amount = Number.parseFloat(refundAmount);
+      if (Number.isNaN(amount) || amount <= 0) {
+        setRefundError('Informe um valor válido para reembolso.');
+        return;
+      }
+      if (amount > refundModal.payment.amount) {
+        setRefundError('O valor não pode ser maior que o pagamento original.');
+        return;
+      }
+    }
     setIsRefunding(true);
     try {
-      const amount = refundAmount ? parseFloat(refundAmount) : undefined;
-      const updated = await paymentsService.refundPayment(refundModal.payment.id, amount);
+      const reason = refundReason.trim() || undefined;
+      const updated = await paymentsService.refundPayment(refundModal.payment.id, amount, reason);
       setPayments(payments.map((p) => (p.id === updated.id ? updated : p)));
       toast.success('Reembolso processado!');
       setRefundModal({ isOpen: false, payment: null });
       setRefundAmount('');
+      setRefundReason('');
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsRefunding(false);
     }
   };
+
+  const handleOpenRefund = (payment: Payment) => {
+    setRefundModal({ isOpen: true, payment });
+    setRefundAmount('');
+    setRefundReason('');
+    setRefundError('');
+  };
+
+  const handleCloseRefund = () => {
+    setRefundModal({ isOpen: false, payment: null });
+    setRefundAmount('');
+    setRefundReason('');
+    setRefundError('');
+  };
+
+  const handleOpenGatewayModal = () => {
+    setGatewayForm({ ...DEFAULT_GATEWAY_FORM });
+    setGatewayErrors({});
+    setGatewayModalOpen(true);
+  };
+
+  const handleCloseGatewayModal = () => {
+    setGatewayModalOpen(false);
+    setGatewayErrors({});
+  };
+
+  const handleCreateGateway = async () => {
+    const errors: Record<string, string> = {};
+    const name = gatewayForm.name.trim();
+    if (!name) {
+      errors.name = 'Informe um nome para o gateway.';
+    }
+
+    let configuration: Record<string, unknown> = {};
+    const configRaw = gatewayForm.configuration.trim();
+    if (configRaw) {
+      try {
+        configuration = JSON.parse(configRaw) as Record<string, unknown>;
+      } catch {
+        errors.configuration = 'Configuração precisa ser um JSON válido.';
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setGatewayErrors(errors);
+      return;
+    }
+
+    setIsCreatingGateway(true);
+    try {
+      const created = await paymentsService.createGateway({
+        name,
+        gateway_type: gatewayForm.gateway_type,
+        is_enabled: gatewayForm.is_enabled,
+        is_sandbox: gatewayForm.is_sandbox,
+        endpoint_url: gatewayForm.endpoint_url.trim() || undefined,
+        webhook_url: gatewayForm.webhook_url.trim() || undefined,
+        configuration,
+      });
+      setGateways((prev) => [created, ...prev]);
+      toast.success('Gateway criado com sucesso!');
+      handleCloseGatewayModal();
+      setGatewayForm({ ...DEFAULT_GATEWAY_FORM });
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsCreatingGateway(false);
+    }
+  };
+
+  const paymentStatusCounts = useMemo(() => {
+    return payments.reduce<Record<string, number>>((acc, payment) => {
+      acc[payment.status] = (acc[payment.status] || 0) + 1;
+      return acc;
+    }, {});
+  }, [payments]);
+
+  const filteredPayments = useMemo(() => {
+    if (!statusFilter) return payments;
+    return payments.filter((payment) => payment.status === statusFilter);
+  }, [payments, statusFilter]);
+
+  const paymentFilterOptions = useMemo(() => {
+    return PAYMENT_STATUS_OPTIONS.map((option) => ({
+      ...option,
+      count: paymentStatusCounts[option.value] || 0,
+    }));
+  }, [paymentStatusCounts]);
 
   const paymentColumns = [
     {
@@ -157,7 +305,7 @@ export const PaymentsPage: React.FC = () => {
               variant="danger"
               onClick={(e) => {
                 e.stopPropagation();
-                setRefundModal({ isOpen: true, payment });
+                handleOpenRefund(payment);
               }}
             >
               Reembolsar
@@ -249,30 +397,47 @@ export const PaymentsPage: React.FC = () => {
         </div>
 
         {activeTab === 'payments' ? (
-          <Card noPadding>
-            <Table
-              columns={paymentColumns}
-              data={payments}
-              keyExtractor={(payment) => payment.id}
-              emptyMessage="Nenhum pagamento encontrado"
+          <div className="space-y-4">
+            <StatusFilter
+              options={paymentFilterOptions}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              className="flex-wrap"
             />
-          </Card>
+            <Card noPadding>
+              <Table
+                columns={paymentColumns}
+                data={filteredPayments}
+                keyExtractor={(payment) => payment.id}
+                emptyMessage="Nenhum pagamento encontrado"
+              />
+            </Card>
+          </div>
         ) : (
-          <Card noPadding>
-            <Table
-              columns={gatewayColumns}
-              data={gateways}
-              keyExtractor={(gateway) => gateway.id}
-              emptyMessage="Nenhum gateway configurado"
-            />
-          </Card>
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Gateways</h3>
+                <p className="text-sm text-gray-500">Gerencie os provedores de pagamento ativos.</p>
+              </div>
+              <Button onClick={handleOpenGatewayModal}>Novo gateway</Button>
+            </div>
+            <Card noPadding>
+              <Table
+                columns={gatewayColumns}
+                data={gateways}
+                keyExtractor={(gateway) => gateway.id}
+                emptyMessage="Nenhum gateway configurado"
+              />
+            </Card>
+          </div>
         )}
       </div>
 
       {/* Refund Modal */}
       <Modal
         isOpen={refundModal.isOpen}
-        onClose={() => setRefundModal({ isOpen: false, payment: null })}
+        onClose={handleCloseRefund}
         title="Reembolsar Pagamento"
         size="sm"
       >
@@ -289,13 +454,92 @@ export const PaymentsPage: React.FC = () => {
             value={refundAmount}
             onChange={(e) => setRefundAmount(e.target.value)}
             placeholder="Valor"
+            error={refundError || undefined}
+          />
+          <Textarea
+            label="Motivo do reembolso (opcional)"
+            rows={3}
+            value={refundReason}
+            onChange={(e) => setRefundReason(e.target.value)}
+            placeholder="Detalhes para controle interno"
           />
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setRefundModal({ isOpen: false, payment: null })}>
+            <Button variant="secondary" onClick={handleCloseRefund}>
               Cancelar
             </Button>
             <Button variant="danger" onClick={handleRefund} isLoading={isRefunding}>
               Reembolsar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={gatewayModalOpen}
+        onClose={handleCloseGatewayModal}
+        title="Novo Gateway"
+        size="md"
+      >
+        <div className="space-y-4">
+          <Input
+            label="Nome do gateway"
+            value={gatewayForm.name}
+            onChange={(e) => setGatewayForm((prev) => ({ ...prev, name: e.target.value }))}
+            placeholder="Ex: Mercado Pago Principal"
+            error={gatewayErrors.name}
+          />
+          <Select
+            label="Tipo de gateway"
+            value={gatewayForm.gateway_type}
+            onChange={(e) => setGatewayForm((prev) => ({ ...prev, gateway_type: e.target.value }))}
+            options={GATEWAY_TYPE_OPTIONS}
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                checked={gatewayForm.is_enabled}
+                onChange={(e) => setGatewayForm((prev) => ({ ...prev, is_enabled: e.target.checked }))}
+              />
+              Gateway habilitado
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                checked={gatewayForm.is_sandbox}
+                onChange={(e) => setGatewayForm((prev) => ({ ...prev, is_sandbox: e.target.checked }))}
+              />
+              Ambiente sandbox
+            </label>
+          </div>
+          <Input
+            label="Endpoint (opcional)"
+            value={gatewayForm.endpoint_url}
+            onChange={(e) => setGatewayForm((prev) => ({ ...prev, endpoint_url: e.target.value }))}
+            placeholder="https://api.exemplo.com"
+          />
+          <Input
+            label="Webhook (opcional)"
+            value={gatewayForm.webhook_url}
+            onChange={(e) => setGatewayForm((prev) => ({ ...prev, webhook_url: e.target.value }))}
+            placeholder="https://sua-api.com/webhooks/pagamentos"
+          />
+          <Textarea
+            label="Configura??o (JSON)"
+            rows={4}
+            value={gatewayForm.configuration}
+            onChange={(e) => setGatewayForm((prev) => ({ ...prev, configuration: e.target.value }))}
+            placeholder='{"client_id": "...", "client_secret": "..."}'
+            error={gatewayErrors.configuration}
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={handleCloseGatewayModal}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateGateway} isLoading={isCreatingGateway}>
+              Criar gateway
             </Button>
           </div>
         </div>
