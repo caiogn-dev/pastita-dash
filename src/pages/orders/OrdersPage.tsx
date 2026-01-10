@@ -17,7 +17,7 @@ import {
   OrderStatusTabs,
   ORDER_STATUS_CONFIG,
 } from '../../components/common';
-import { ordersService, getErrorMessage } from '../../services';
+import { ordersService, exportService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { Order } from '../../types';
 
@@ -53,6 +53,7 @@ export const OrdersPage: React.FC = () => {
   const [cancelForm, setCancelForm] = useState({
     reason: '',
   });
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -224,6 +225,24 @@ export const OrdersPage: React.FC = () => {
     }
   };
 
+  const handleExport = async (format: 'csv' | 'xlsx') => {
+    setIsExporting(true);
+    try {
+      const blob = await exportService.exportOrders({
+        format,
+        status: statusFilter || undefined,
+        account_id: selectedAccount?.id,
+      });
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      exportService.downloadBlob(blob, `pedidos-${dateStamp}.${format}`);
+      toast.success('Exporta??o conclu?da!');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const getNextActions = (order: Order): Array<{ action: string; label: string; variant?: 'primary' | 'secondary' | 'danger'; icon?: React.ReactNode }> => {
     const actions: Array<{ action: string; label: string; variant?: 'primary' | 'secondary' | 'danger'; icon?: React.ReactNode }> = [];
     
@@ -359,12 +378,28 @@ export const OrdersPage: React.FC = () => {
         title="Pedidos"
         subtitle={`${filteredOrders.length} de ${orders.length} pedido(s)`}
         actions={
-          <Button
-            leftIcon={<PlusIcon className="w-5 h-5" />}
-            onClick={() => setCreateModal(true)}
-          >
-            Novo Pedido
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => handleExport('csv')}
+              isLoading={isExporting}
+            >
+              Exportar CSV
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleExport('xlsx')}
+              isLoading={isExporting}
+            >
+              Exportar XLSX
+            </Button>
+            <Button
+              leftIcon={<PlusIcon className="w-5 h-5" />}
+              onClick={() => setCreateModal(true)}
+            >
+              Novo Pedido
+            </Button>
+          </div>
         }
       />
 

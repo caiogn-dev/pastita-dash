@@ -162,6 +162,9 @@ export const ProductsPage: React.FC = () => {
   };
 
   const handleCloseModal = () => {
+    if (imagePreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
     setIsModalOpen(false);
     setEditingProduct(null);
     setImagePreview(null);
@@ -171,6 +174,9 @@ export const ProductsPage: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     setFormData((prev) => ({ ...prev, image: file }));
+    if (imagePreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
     setImagePreview(URL.createObjectURL(file));
   };
 

@@ -20,6 +20,7 @@ import {
   DocumentChartBarIcon,
   TagIcon,
   TruckIcon,
+  Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -37,6 +38,7 @@ const navigation: NavItem[] = [
   { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
   { name: 'Pedidos', href: '/orders', icon: ShoppingCartIcon },
   { name: 'Pagamentos', href: '/payments', icon: CreditCardIcon },
+  { name: 'Produtos', href: '/products', icon: Squares2X2Icon },
   { name: 'Cupons', href: '/coupons', icon: TagIcon },
   { name: 'Zonas de Entrega', href: '/delivery-zones', icon: TruckIcon },
   { 

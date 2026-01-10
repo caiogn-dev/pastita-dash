@@ -29,7 +29,7 @@ import {
   CONVERSATION_STATUS_CONFIG,
   CONVERSATION_MODE_CONFIG,
 } from '../../components/common';
-import { conversationsService, ordersService, getErrorMessage } from '../../services';
+import { conversationsService, ordersService, exportService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { Conversation, ConversationNote, Order } from '../../types';
 
@@ -45,6 +45,7 @@ export const ConversationsPage: React.FC = () => {
   const [newTag, setNewTag] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isAddingTag, setIsAddingTag] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [modeFilter, setModeFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -233,6 +234,25 @@ export const ConversationsPage: React.FC = () => {
     }
   };
 
+  const handleExport = async (format: 'csv' | 'xlsx') => {
+    setIsExporting(true);
+    try {
+      const blob = await exportService.exportConversations({
+        format,
+        status: statusFilter || undefined,
+        mode: modeFilter || undefined,
+        account_id: selectedAccount?.id,
+      });
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      exportService.downloadBlob(blob, `conversas-${dateStamp}.${format}`);
+      toast.success('Exporta??o conclu?da!');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const statusTabs = [
     { value: null, label: 'Todas', count: conversations.length },
     ...Object.entries(CONVERSATION_STATUS_CONFIG).map(([key, config]) => ({
@@ -416,6 +436,24 @@ export const ConversationsPage: React.FC = () => {
       <Header
         title="Conversas"
         subtitle={`${filteredConversations.length} de ${conversations.length} conversa(s)`}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => handleExport('csv')}
+              isLoading={isExporting}
+            >
+              Exportar CSV
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleExport('xlsx')}
+              isLoading={isExporting}
+            >
+              Exportar XLSX
+            </Button>
+          </div>
+        }
       />
 
       <div className="p-6 space-y-6">
