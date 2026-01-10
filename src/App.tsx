@@ -20,6 +20,10 @@ import { PaymentsPage } from './pages/payments/PaymentsPage';
 import { LangflowPage } from './pages/langflow/LangflowPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 
+// E-commerce Pages
+import { CouponsPage } from './pages/coupons';
+import { DeliveryZonesPage } from './pages/delivery';
+
 // Automation Pages
 import {
   CompanyProfilesPage,
@@ -100,6 +104,11 @@ const App: React.FC = () => {
         <Route path="orders" element={<OrdersPage />} />
         <Route path="orders/:id" element={<OrderDetailPage />} />
         <Route path="payments" element={<PaymentsPage />} />
+        
+        {/* E-commerce Routes */}
+        <Route path="coupons" element={<CouponsPage />} />
+        <Route path="delivery-zones" element={<DeliveryZonesPage />} />
+        
         <Route path="langflow" element={<LangflowPage />} />
         <Route path="settings" element={<SettingsPage />} />
         

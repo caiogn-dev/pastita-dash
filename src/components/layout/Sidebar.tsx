@@ -18,6 +18,8 @@ import {
   ChevronRightIcon,
   ClockIcon,
   DocumentChartBarIcon,
+  TagIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -35,6 +37,8 @@ const navigation: NavItem[] = [
   { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
   { name: 'Pedidos', href: '/orders', icon: ShoppingCartIcon },
   { name: 'Pagamentos', href: '/payments', icon: CreditCardIcon },
+  { name: 'Cupons', href: '/coupons', icon: TagIcon },
+  { name: 'Zonas de Entrega', href: '/delivery-zones', icon: TruckIcon },
   { 
     name: 'Automação', 
     href: '/automation', 

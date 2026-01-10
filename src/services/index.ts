@@ -9,6 +9,8 @@ export { langflowService } from './langflow';
 export { notificationsService } from './notifications';
 export { auditService } from './audit';
 export { campaignsService } from './campaigns';
+export { couponsService } from './coupons';
+export { deliveryService } from './delivery';
 export {
   companyProfileApi,
   autoMessageApi,

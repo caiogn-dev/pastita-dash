@@ -843,3 +843,73 @@ export interface AutomationWebSocketEvent extends WebSocketEvent {
   type: 'session_created' | 'session_updated' | 'message_sent' | 'webhook_received' | 
         'automation_error' | 'stats_update' | 'scheduled_message_sent' | 'report_generated';
 }
+
+// Coupon types
+export interface Coupon {
+  id: string;
+  code: string;
+  description: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_purchase: number;
+  max_discount: number | null;
+  usage_limit: number | null;
+  used_count: number;
+  is_active: boolean;
+  is_valid_now: boolean;
+  valid_from: string;
+  valid_until: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCoupon {
+  code: string;
+  description?: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_purchase?: number;
+  max_discount?: number | null;
+  usage_limit?: number | null;
+  is_active?: boolean;
+  valid_from: string;
+  valid_until: string;
+}
+
+export interface CouponStats {
+  total: number;
+  active: number;
+  inactive: number;
+  expired: number;
+  total_usage: number;
+}
+
+// Delivery Zone types
+export interface DeliveryZone {
+  id: string;
+  name: string;
+  zip_code_start: string;
+  zip_code_end: string;
+  delivery_fee: number;
+  estimated_days: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateDeliveryZone {
+  name: string;
+  zip_code_start: string;
+  zip_code_end: string;
+  delivery_fee: number;
+  estimated_days?: number;
+  is_active?: boolean;
+}
+
+export interface DeliveryZoneStats {
+  total: number;
+  active: number;
+  inactive: number;
+  avg_fee: number;
+  avg_days: number;
+}
