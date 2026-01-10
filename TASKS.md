@@ -85,22 +85,22 @@ DELETE /api/v1/ecommerce/admin/coupons/{id}/
 ```
 
 ### Delivery Zones Management
-**Backend pronto:** Model existe, falta CRUD admin
-- [ ] **Criar página:** `src/pages/delivery/DeliveryZonesPage.tsx`
-- [ ] **Criar service:** `src/services/delivery.ts`
-- [ ] **Funcionalidades:**
-  - [ ] List zones
-  - [ ] Create zone form (name, zip range, fee, days)
-  - [ ] Edit zone
-  - [ ] Delete zone
-  - [ ] Map visualization (opcional)
+**Backend pronto + fluxo por quilometragem**
+- [x] **P?gina:** `src/pages/delivery/DeliveryZonesPage.tsx`
+- [x] **Service:** `src/services/delivery.ts`
+- [x] **Configura??o da loja por CEP com mapa**
+- [x] **Faixas por KM** (km inicial/final, pre?o por km, taxa m?nima, prazo)
+- [x] **CRUD completo + toggle ativo/inativo**
 
-**Endpoints necessários no backend:**
+**Endpoints usados:**
 ```
 GET    /api/v1/ecommerce/admin/delivery-zones/
 POST   /api/v1/ecommerce/admin/delivery-zones/
 PATCH  /api/v1/ecommerce/admin/delivery-zones/{id}/
 DELETE /api/v1/ecommerce/admin/delivery-zones/{id}/
+GET    /api/v1/ecommerce/admin/delivery-zones/stats/
+GET    /api/v1/ecommerce/admin/store-location/
+POST   /api/v1/ecommerce/admin/store-location/
 ```
 
 ### Products Management

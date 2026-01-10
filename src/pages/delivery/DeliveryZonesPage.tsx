@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   PlusIcon,
   PencilIcon,
@@ -7,47 +7,96 @@ import {
   TruckIcon,
   MapPinIcon,
   CheckCircleIcon,
-  XCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import { deliveryService, DeliveryZone, CreateDeliveryZone, UpdateDeliveryZone, DeliveryZoneStats } from '../../services/delivery';
+import {
+  deliveryService,
+  DeliveryZone,
+  CreateDeliveryZone,
+  UpdateDeliveryZone,
+  DeliveryZoneStats,
+  StoreLocation,
+  UpdateStoreLocation,
+} from '../../services/delivery';
+
+const formatKm = (value?: number | null) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return '0.00';
+  return value.toFixed(2);
+};
+
+const buildMapUrls = (lat: number, lng: number) => {
+  const delta = 0.01;
+  const left = lng - delta;
+  const right = lng + delta;
+  const top = lat + delta;
+  const bottom = lat - delta;
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lng}`;
+  const externalUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
+  return { mapUrl, externalUrl };
+};
 
 export const DeliveryZonesPage: React.FC = () => {
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
+  const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
+  const [storeForm, setStoreForm] = useState<UpdateStoreLocation>({
+    name: '',
+    zip_code: '',
+    address: '',
+    city: '',
+    state: '',
+  });
+  const [storeError, setStoreError] = useState('');
+  const [savingStore, setSavingStore] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
-  
-  // Modal states
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
   const [deletingZone, setDeletingZone] = useState<DeliveryZone | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Form state
   const [formData, setFormData] = useState<CreateDeliveryZone>({
     name: '',
-    zip_code_start: '',
-    zip_code_end: '',
+    min_km: 0,
+    max_km: 0,
     delivery_fee: 0,
+    min_fee: 0,
     estimated_days: 1,
     is_active: true,
   });
 
-  const loadZones = useCallback(async () => {
+  const mapInfo = useMemo(() => {
+    if (storeLocation?.latitude == null || storeLocation?.longitude == null) return null;
+    return buildMapUrls(storeLocation.latitude, storeLocation.longitude);
+  }, [storeLocation]);
+
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [zonesData, statsData] = await Promise.all([
+      const [zonesData, statsData, storeData] = await Promise.all([
         deliveryService.getZones({
           search: search || undefined,
           is_active: filterActive,
         }),
         deliveryService.getStats(),
+        deliveryService.getStoreLocation(),
       ]);
       setZones(zonesData.results);
       setStats(statsData);
+      if (storeData) {
+        setStoreLocation(storeData);
+        setStoreForm({
+          name: storeData.name || '',
+          zip_code: storeData.zip_code || '',
+          address: storeData.address || '',
+          city: storeData.city || '',
+          state: storeData.state || '',
+        });
+      }
     } catch (error) {
       console.error('Error loading delivery zones:', error);
     } finally {
@@ -56,17 +105,18 @@ export const DeliveryZonesPage: React.FC = () => {
   }, [search, filterActive]);
 
   useEffect(() => {
-    loadZones();
-  }, [loadZones]);
+    loadData();
+  }, [loadData]);
 
   const handleOpenModal = (zone?: DeliveryZone) => {
     if (zone) {
       setEditingZone(zone);
       setFormData({
         name: zone.name,
-        zip_code_start: zone.zip_code_start,
-        zip_code_end: zone.zip_code_end,
+        min_km: zone.min_km ?? 0,
+        max_km: zone.max_km ?? 0,
         delivery_fee: zone.delivery_fee,
+        min_fee: zone.min_fee ?? 0,
         estimated_days: zone.estimated_days,
         is_active: zone.is_active,
       });
@@ -74,9 +124,10 @@ export const DeliveryZonesPage: React.FC = () => {
       setEditingZone(null);
       setFormData({
         name: '',
-        zip_code_start: '',
-        zip_code_end: '',
+        min_km: 0,
+        max_km: 0,
         delivery_fee: 0,
+        min_fee: 0,
         estimated_days: 1,
         is_active: true,
       });
@@ -93,12 +144,26 @@ export const DeliveryZonesPage: React.FC = () => {
     try {
       setSaving(true);
       if (editingZone) {
-        await deliveryService.updateZone(editingZone.id, formData as UpdateDeliveryZone);
+        const payload: UpdateDeliveryZone = {
+          ...formData,
+          name: formData.name.trim(),
+          min_km: Number.isFinite(formData.min_km) ? formData.min_km : 0,
+          max_km: Number.isFinite(formData.max_km) ? formData.max_km : 0,
+          min_fee: Number.isFinite(formData.min_fee) ? formData.min_fee : 0,
+        };
+        await deliveryService.updateZone(editingZone.id, payload);
       } else {
-        await deliveryService.createZone(formData);
+        const payload: CreateDeliveryZone = {
+          ...formData,
+          name: formData.name.trim(),
+          min_km: Number.isFinite(formData.min_km) ? formData.min_km : 0,
+          max_km: Number.isFinite(formData.max_km) ? formData.max_km : 0,
+          min_fee: Number.isFinite(formData.min_fee) ? formData.min_fee : 0,
+        };
+        await deliveryService.createZone(payload);
       }
       handleCloseModal();
-      loadZones();
+      loadData();
     } catch (error) {
       console.error('Error saving delivery zone:', error);
     } finally {
@@ -109,7 +174,7 @@ export const DeliveryZonesPage: React.FC = () => {
   const handleToggleActive = async (zone: DeliveryZone) => {
     try {
       await deliveryService.toggleActive(zone.id);
-      loadZones();
+      loadData();
     } catch (error) {
       console.error('Error toggling zone:', error);
     }
@@ -122,7 +187,7 @@ export const DeliveryZonesPage: React.FC = () => {
       await deliveryService.deleteZone(deletingZone.id);
       setIsDeleteModalOpen(false);
       setDeletingZone(null);
-      loadZones();
+      loadData();
     } catch (error) {
       console.error('Error deleting zone:', error);
     } finally {
@@ -130,12 +195,34 @@ export const DeliveryZonesPage: React.FC = () => {
     }
   };
 
-  const formatZipCode = (zip: string) => {
-    const clean = zip.replace(/\D/g, '');
-    if (clean.length === 8) {
-      return `${clean.slice(0, 5)}-${clean.slice(5)}`;
+  const handleSaveStoreLocation = async () => {
+    setStoreError('');
+    if (!storeForm.zip_code) {
+      setStoreError('Informe o CEP da loja.');
+      return;
     }
-    return zip;
+
+    try {
+      setSavingStore(true);
+      const payload: UpdateStoreLocation = {
+        ...storeForm,
+        zip_code: storeForm.zip_code.replace(/\D/g, '').slice(0, 8),
+      };
+      const updated = await deliveryService.updateStoreLocation(payload);
+      setStoreLocation(updated);
+      setStoreForm({
+        name: updated.name || '',
+        zip_code: updated.zip_code || '',
+        address: updated.address || '',
+        city: updated.city || '',
+        state: updated.state || '',
+      });
+    } catch (error) {
+      console.error('Error updating store location:', error);
+      setStoreError('N?o foi poss?vel salvar o CEP da loja.');
+    } finally {
+      setSavingStore(false);
+    }
   };
 
   if (loading && zones.length === 0) {
@@ -144,19 +231,107 @@ export const DeliveryZonesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Zonas de Entrega</h1>
-          <p className="text-gray-500">Gerencie as zonas e taxas de entrega</p>
+          <p className="text-gray-500">Calcule frete por quilometragem e gerencie faixas de pre?o</p>
         </div>
         <Button onClick={() => handleOpenModal()}>
           <PlusIcon className="w-5 h-5 mr-2" />
-          Nova Zona
+          Nova Faixa
         </Button>
       </div>
 
-      {/* Stats */}
+      <Card className="p-4">
+        <div className="flex items-start gap-4 flex-wrap">
+          <div className="flex-1 min-w-[240px]">
+            <h2 className="text-lg font-semibold text-gray-900">Localiza??o da Loja</h2>
+            <p className="text-sm text-gray-500">Defina o CEP para calcular distancias e rotas</p>
+          </div>
+          <div className="flex-1 min-w-[260px]">
+            <Input
+              type="text"
+              placeholder="Nome da loja"
+              value={storeForm.name || ''}
+              onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">CEP *</label>
+            <Input
+              type="text"
+              value={storeForm.zip_code}
+              onChange={(e) => setStoreForm({
+                ...storeForm,
+                zip_code: e.target.value.replace(/\D/g, '').slice(0, 8),
+              })}
+              placeholder="00000000"
+              maxLength={8}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Endere?o</label>
+            <Input
+              type="text"
+              value={storeForm.address || ''}
+              onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
+              placeholder="Rua e numero"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+            <Input
+              type="text"
+              value={storeForm.city || ''}
+              onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
+              placeholder="Cidade"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <Input
+              type="text"
+              value={storeForm.state || ''}
+              onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
+              placeholder="UF"
+            />
+          </div>
+        </div>
+
+        {storeError && (
+          <p className="text-sm text-red-600 mt-2">{storeError}</p>
+        )}
+
+        <div className="flex justify-end mt-4">
+          <Button onClick={handleSaveStoreLocation} disabled={savingStore}>
+            {savingStore ? 'Salvando...' : 'Salvar localiza??o'}
+          </Button>
+        </div>
+
+        {mapInfo && (
+          <div className="mt-4">
+            <div className="rounded-lg overflow-hidden border border-gray-200">
+              <iframe
+                title="Mapa da loja"
+                src={mapInfo.mapUrl}
+                className="w-full h-64"
+              />
+            </div>
+            <a
+              href={mapInfo.externalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
+            >
+              Ver no mapa
+            </a>
+          </div>
+        )}
+      </Card>
+
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="p-4">
@@ -165,7 +340,7 @@ export const DeliveryZonesPage: React.FC = () => {
                 <MapPinIcon className="w-6 h-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-500">Total de Zonas</p>
+                <p className="text-sm text-gray-500">Total de Faixas</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
             </div>
@@ -187,7 +362,7 @@ export const DeliveryZonesPage: React.FC = () => {
                 <TruckIcon className="w-6 h-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-500">Taxa Média</p>
+                <p className="text-sm text-gray-500">Pre?o M?dio/KM</p>
                 <p className="text-2xl font-bold">R$ {stats.avg_fee?.toFixed(2) || '0.00'}</p>
               </div>
             </div>
@@ -198,7 +373,7 @@ export const DeliveryZonesPage: React.FC = () => {
                 <TruckIcon className="w-6 h-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-500">Prazo Médio</p>
+                <p className="text-sm text-gray-500">Prazo M?dio</p>
                 <p className="text-2xl font-bold">{stats.avg_days?.toFixed(0) || '0'} dias</p>
               </div>
             </div>
@@ -206,7 +381,6 @@ export const DeliveryZonesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
       <Card className="p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
@@ -214,7 +388,7 @@ export const DeliveryZonesPage: React.FC = () => {
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Buscar por nome ou CEP..."
+                placeholder="Buscar por nome..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -223,7 +397,7 @@ export const DeliveryZonesPage: React.FC = () => {
           </div>
           <select
             value={filterActive === undefined ? '' : String(filterActive)}
-            onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
+            onChange={(e) => setFilterActive(e.target.value == '' ? undefined : e.target.value === 'true')}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
           >
             <option value="">Todos os status</option>
@@ -233,20 +407,22 @@ export const DeliveryZonesPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Zones List */}
       <Card>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Zona
+                  Faixa
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Faixa de CEP
+                  Distancia (KM)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Taxa de Entrega
+                  Pre?o por KM
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Taxa M?nima
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Prazo
@@ -255,7 +431,7 @@ export const DeliveryZonesPage: React.FC = () => {
                   Status
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
+                  A??es
                 </th>
               </tr>
             </thead>
@@ -270,16 +446,21 @@ export const DeliveryZonesPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-mono text-sm text-gray-600">
-                      {formatZipCode(zone.zip_code_start)} - {formatZipCode(zone.zip_code_end)}
+                      {formatKm(zone.min_km)} - {zone.max_km !== null && zone.max_km !== undefined ? formatKm(zone.max_km) : '?'} km
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-lg font-semibold text-green-600">
-                      R$ {zone.delivery_fee.toFixed(2)}
+                      R$ {zone.delivery_fee.toFixed(2)} / km
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-600">
+                      {zone.min_fee ? `R$ ${zone.min_fee.toFixed(2)}` : '-'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {zone.estimated_days} {zone.estimated_days === 1 ? 'dia útil' : 'dias úteis'}
+                    {zone.estimated_days} {zone.estimated_days === 1 ? 'dia ?til' : 'dias ?teis'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
@@ -315,14 +496,14 @@ export const DeliveryZonesPage: React.FC = () => {
           {zones.length === 0 && (
             <div className="text-center py-12">
               <MapPinIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma zona encontrada</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma faixa encontrada</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Comece criando uma nova zona de entrega.
+                Cadastre faixas de quilometragem para calcular o frete.
               </p>
               <div className="mt-6">
                 <Button onClick={() => handleOpenModal()}>
                   <PlusIcon className="w-5 h-5 mr-2" />
-                  Nova Zona
+                  Nova Faixa
                 </Button>
               </div>
             </div>
@@ -330,50 +511,47 @@ export const DeliveryZonesPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Create/Edit Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingZone ? 'Editar Zona de Entrega' : 'Nova Zona de Entrega'}
+        title={editingZone ? 'Editar Faixa de Entrega' : 'Nova Faixa de Entrega'}
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nome da Zona *
+              Nome da Faixa *
             </label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Ex: Centro, Zona Sul, Região Metropolitana"
+              placeholder="Ex: Ate 5km, Zona Metropolitana"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                CEP Inicial *
+                KM Inicial *
               </label>
               <Input
-                type="text"
-                value={formData.zip_code_start}
-                onChange={(e) => setFormData({ ...formData, zip_code_start: e.target.value.replace(/\D/g, '').slice(0, 8) })}
-                placeholder="00000000"
-                maxLength={8}
-                className="font-mono"
+                type="number"
+                value={formData.min_km ?? ''}
+                onChange={(e) => setFormData({ ...formData, min_km: parseFloat(e.target.value) || 0 })}
+                min="0"
+                step="0.01"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                CEP Final *
+                KM Final *
               </label>
               <Input
-                type="text"
-                value={formData.zip_code_end}
-                onChange={(e) => setFormData({ ...formData, zip_code_end: e.target.value.replace(/\D/g, '').slice(0, 8) })}
-                placeholder="99999999"
-                maxLength={8}
-                className="font-mono"
+                type="number"
+                value={formData.max_km ?? ''}
+                onChange={(e) => setFormData({ ...formData, max_km: parseFloat(e.target.value) || 0 })}
+                min="0"
+                step="0.01"
               />
             </div>
           </div>
@@ -381,7 +559,7 @@ export const DeliveryZonesPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Taxa de Entrega (R$) *
+                Pre?o por KM (R$) *
               </label>
               <Input
                 type="number"
@@ -393,6 +571,21 @@ export const DeliveryZonesPage: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Taxa M?nima (R$)
+              </label>
+              <Input
+                type="number"
+                value={formData.min_fee ?? ''}
+                onChange={(e) => setFormData({ ...formData, min_fee: parseFloat(e.target.value) || 0 })}
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Prazo de Entrega (dias) *
               </label>
               <Input
@@ -402,28 +595,27 @@ export const DeliveryZonesPage: React.FC = () => {
                 min="1"
               />
             </div>
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="is_active"
-              checked={formData.is_active}
-              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-            />
-            <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
-              Zona ativa
-            </label>
+            <div className="flex items-center mt-6">
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
+                Faixa ativa
+              </label>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="secondary" onClick={handleCloseModal}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={saving || !formData.name || !formData.zip_code_start || !formData.zip_code_end}
+            <Button
+              onClick={handleSave}
+              disabled={saving || !formData.name}
             >
               {saving ? 'Salvando...' : editingZone ? 'Salvar' : 'Criar'}
             </Button>
@@ -431,19 +623,18 @@ export const DeliveryZonesPage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => {
           setIsDeleteModalOpen(false);
           setDeletingZone(null);
         }}
-        title="Excluir Zona de Entrega"
+        title="Excluir Faixa de Entrega"
       >
         <div className="space-y-4">
           <p className="text-gray-600">
-            Tem certeza que deseja excluir a zona <strong>{deletingZone?.name}</strong>?
-            Esta ação não pode ser desfeita.
+            Tem certeza que deseja excluir a faixa <strong>{deletingZone?.name}</strong>?
+            Esta a??o nao pode ser desfeita.
           </p>
           <div className="flex justify-end gap-3">
             <Button

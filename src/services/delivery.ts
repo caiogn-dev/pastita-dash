@@ -4,9 +4,12 @@ import { PaginatedResponse } from '../types';
 export interface DeliveryZone {
   id: string;
   name: string;
-  zip_code_start: string;
-  zip_code_end: string;
+  zip_code_start?: string | null;
+  zip_code_end?: string | null;
+  min_km?: number | null;
+  max_km?: number | null;
   delivery_fee: number;
+  min_fee?: number | null;
   estimated_days: number;
   is_active: boolean;
   created_at: string;
@@ -15,18 +18,24 @@ export interface DeliveryZone {
 
 export interface CreateDeliveryZone {
   name: string;
-  zip_code_start: string;
-  zip_code_end: string;
+  zip_code_start?: string | null;
+  zip_code_end?: string | null;
+  min_km?: number | null;
+  max_km?: number | null;
   delivery_fee: number;
+  min_fee?: number | null;
   estimated_days?: number;
   is_active?: boolean;
 }
 
 export interface UpdateDeliveryZone {
   name?: string;
-  zip_code_start?: string;
-  zip_code_end?: string;
+  zip_code_start?: string | null;
+  zip_code_end?: string | null;
+  min_km?: number | null;
+  max_km?: number | null;
   delivery_fee?: number;
+  min_fee?: number | null;
   estimated_days?: number;
   is_active?: boolean;
 }
@@ -39,6 +48,28 @@ export interface DeliveryZoneStats {
   avg_days: number;
 }
 
+export interface StoreLocation {
+  id: string;
+  name: string;
+  zip_code: string;
+  address: string;
+  city: string;
+  state: string;
+  latitude: number | null;
+  longitude: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateStoreLocation {
+  name?: string;
+  zip_code: string;
+  address?: string;
+  city?: string;
+  state?: string;
+}
+
 export interface DeliveryZoneFilters {
   is_active?: boolean;
   search?: string;
@@ -48,6 +79,7 @@ export interface DeliveryZoneFilters {
 
 class DeliveryService {
   private baseUrl = '/ecommerce/admin/delivery-zones';
+  private storeUrl = '/ecommerce/admin/store-location';
 
   async getZones(filters?: DeliveryZoneFilters): Promise<PaginatedResponse<DeliveryZone>> {
     const params = new URLSearchParams();
@@ -98,6 +130,19 @@ class DeliveryService {
 
   async getStats(): Promise<DeliveryZoneStats> {
     const response = await api.get<DeliveryZoneStats>(`${this.baseUrl}/stats/`);
+    return response.data;
+  }
+
+  async getStoreLocation(): Promise<StoreLocation | null> {
+    const response = await api.get<StoreLocation | Record<string, never>>(`${this.storeUrl}/`);
+    if (response.data && Object.keys(response.data).length > 0) {
+      return response.data as StoreLocation;
+    }
+    return null;
+  }
+
+  async updateStoreLocation(data: UpdateStoreLocation): Promise<StoreLocation> {
+    const response = await api.post<StoreLocation>(`${this.storeUrl}/`, data);
     return response.data;
   }
 }
