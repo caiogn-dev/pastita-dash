@@ -242,7 +242,7 @@ export const ProductsPage: React.FC = () => {
       escapeCsvValue(product.stock_quantity),
       escapeCsvValue(product.category || ''),
       escapeCsvValue(product.description || ''),
-      escapeCsvValue(product.is_active),
+      escapeCsvValue(product.is_active ? 'true' : 'false'),
     ].join(',')));
     const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
