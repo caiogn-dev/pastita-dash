@@ -19,9 +19,10 @@ import {
   UpdateStoreLocation,
 } from '../../services/delivery';
 
-const formatKm = (value?: number | null) => {
-  if (value === null || value === undefined || Number.isNaN(value)) return '0.00';
-  return value.toFixed(2);
+const formatKm = (value?: number | string | null) => {
+  const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
+  if (!Number.isFinite(numeric)) return '0.00';
+  return numeric.toFixed(2);
 };
 
 const formatMoney = (value?: number | string | null) => {
