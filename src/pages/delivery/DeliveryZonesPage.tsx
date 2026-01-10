@@ -30,15 +30,39 @@ const formatMoney = (value?: number | string | null) => {
   return numeric.toFixed(2);
 };
 
-const buildMapUrls = (lat: number, lng: number) => {
-  const delta = 0.01;
-  const left = lng - delta;
-  const right = lng + delta;
-  const top = lat + delta;
-  const bottom = lat - delta;
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lng}`;
-  const externalUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
-  return { mapUrl, externalUrl };
+const formatCep = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+};
+
+const buildMapUrls = ({
+  lat,
+  lng,
+  query,
+}: {
+  lat?: number | string | null;
+  lng?: number | string | null;
+  query?: string;
+}) => {
+  const parsedLat = typeof lat === 'string' ? Number.parseFloat(lat) : lat;
+  const parsedLng = typeof lng === 'string' ? Number.parseFloat(lng) : lng;
+  const hasCoords = Number.isFinite(parsedLat) && Number.isFinite(parsedLng);
+  if (hasCoords && parsedLat != null && parsedLng != null) {
+    const coords = `${parsedLat},${parsedLng}`;
+    return {
+      mapUrl: `https://www.google.com/maps?q=${coords}&output=embed`,
+      externalUrl: `https://www.google.com/maps?q=${coords}`,
+    };
+  }
+  if (query) {
+    const encoded = encodeURIComponent(query);
+    return {
+      mapUrl: `https://www.google.com/maps?q=${encoded}&output=embed`,
+      externalUrl: `https://www.google.com/maps?q=${encoded}`,
+    };
+  }
+  return null;
 };
 
 export const DeliveryZonesPage: React.FC = () => {
@@ -76,8 +100,19 @@ export const DeliveryZonesPage: React.FC = () => {
   });
 
   const mapInfo = useMemo(() => {
-    if (storeLocation?.latitude == null || storeLocation?.longitude == null) return null;
-    return buildMapUrls(storeLocation.latitude, storeLocation.longitude);
+    if (!storeLocation) return null;
+    const queryParts = [
+      storeLocation.address,
+      storeLocation.city,
+      storeLocation.state,
+      storeLocation.zip_code,
+      'Brasil',
+    ].filter(Boolean);
+    return buildMapUrls({
+      lat: storeLocation.latitude,
+      lng: storeLocation.longitude,
+      query: queryParts.join(', '),
+    });
   }, [storeLocation]);
 
   const loadData = useCallback(async () => {
@@ -201,7 +236,8 @@ export const DeliveryZonesPage: React.FC = () => {
     }
   };
 
-  const handleSaveStoreLocation = async () => {
+  const handleSaveStoreLocation = async (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
     setStoreError('');
     if (!storeForm.zip_code) {
       setStoreError('Informe o CEP da loja.');
@@ -225,7 +261,7 @@ export const DeliveryZonesPage: React.FC = () => {
       });
     } catch (error) {
       console.error('Error updating store location:', error);
-      setStoreError('N?o foi poss?vel salvar o CEP da loja.');
+      setStoreError('Não foi possível salvar o CEP da loja.');
     } finally {
       setSavingStore(false);
     }
@@ -249,91 +285,91 @@ export const DeliveryZonesPage: React.FC = () => {
       </div>
 
       <Card className="p-4">
-        <div className="flex items-start gap-4 flex-wrap">
-          <div className="flex-1 min-w-[240px]">
-            <h2 className="text-lg font-semibold text-gray-900">Localiza??o da Loja</h2>
-            <p className="text-sm text-gray-500">Defina o CEP para calcular distancias e rotas</p>
-          </div>
-          <div className="flex-1 min-w-[260px]">
-            <Input
-              type="text"
-              placeholder="Nome da loja"
-              value={storeForm.name || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">CEP *</label>
-            <Input
-              type="text"
-              value={storeForm.zip_code}
-              onChange={(e) => setStoreForm({
-                ...storeForm,
-                zip_code: e.target.value.replace(/\D/g, '').slice(0, 8),
-              })}
-              placeholder="00000000"
-              maxLength={8}
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Endere?o</label>
-            <Input
-              type="text"
-              value={storeForm.address || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
-              placeholder="Rua e numero"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
-            <Input
-              type="text"
-              value={storeForm.city || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
-              placeholder="Cidade"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <Input
-              type="text"
-              value={storeForm.state || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
-              placeholder="UF"
-            />
-          </div>
-        </div>
-
-        {storeError && (
-          <p className="text-sm text-red-600 mt-2">{storeError}</p>
-        )}
-
-        <div className="flex justify-end mt-4">
-          <Button onClick={handleSaveStoreLocation} disabled={savingStore}>
-            {savingStore ? 'Salvando...' : 'Salvar localiza??o'}
-          </Button>
-        </div>
-
-        {mapInfo && (
-          <div className="mt-4">
-            <div className="rounded-lg overflow-hidden border border-gray-200">
-              <iframe
-                title="Mapa da loja"
-                src={mapInfo.mapUrl}
-                className="w-full h-64"
+        <form onSubmit={handleSaveStoreLocation} className="space-y-4">
+          <div className="flex items-start gap-4 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
+              <h2 className="text-lg font-semibold text-gray-900">Localização da Loja</h2>
+              <p className="text-sm text-gray-500">
+                Informe o CEP e pressione Enter para carregar os dados da loja.
+              </p>
+            </div>
+            <div className="flex-1 min-w-[260px]">
+              <Input
+                type="text"
+                placeholder="Nome da loja"
+                value={storeForm.name || ''}
+                onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
               />
             </div>
-            <a
-              href={mapInfo.externalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
-            >
-              Ver no mapa
-            </a>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">CEP *</label>
+              <Input
+                type="text"
+                value={formatCep(storeForm.zip_code)}
+                onChange={(e) => setStoreForm({
+                  ...storeForm,
+                  zip_code: e.target.value.replace(/\D/g, '').slice(0, 8),
+                })}
+                placeholder="77020-170"
+                maxLength={9}
+                inputMode="numeric"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button type="submit" disabled={savingStore}>
+                {savingStore ? 'Salvando...' : 'Buscar dados'}
+              </Button>
+            </div>
+          </div>
+
+          {storeError && (
+            <p className="text-sm text-red-600">{storeError}</p>
+          )}
+        </form>
+
+        {storeLocation && (
+          <div className="mt-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input
+                label="Endereço"
+                value={storeLocation.address || ''}
+                disabled
+              />
+              <Input
+                label="Cidade"
+                value={storeLocation.city || ''}
+                disabled
+              />
+              <Input
+                label="Estado"
+                value={storeLocation.state || ''}
+                disabled
+              />
+            </div>
+
+            {mapInfo && (
+              <div>
+                <div className="rounded-lg overflow-hidden border border-gray-200">
+                  <iframe
+                    title="Mapa da loja"
+                    src={mapInfo.mapUrl}
+                    className="w-full h-64"
+                    loading="lazy"
+                  />
+                </div>
+                <a
+                  href={mapInfo.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
+                >
+                  Ver no Google Maps
+                </a>
+              </div>
+            )}
           </div>
         )}
       </Card>
