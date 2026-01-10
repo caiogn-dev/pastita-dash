@@ -24,6 +24,12 @@ const formatKm = (value?: number | null) => {
   return value.toFixed(2);
 };
 
+const formatMoney = (value?: number | string | null) => {
+  const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
+  if (Number.isNaN(numeric)) return '0.00';
+  return numeric.toFixed(2);
+};
+
 const buildMapUrls = (lat: number, lng: number) => {
   const delta = 0.01;
   const left = lng - delta;
@@ -451,12 +457,12 @@ export const DeliveryZonesPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-lg font-semibold text-green-600">
-                      R$ {zone.delivery_fee.toFixed(2)} / km
+                      R$ {formatMoney(zone.delivery_fee)} / km
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-600">
-                      {zone.min_fee ? `R$ ${zone.min_fee.toFixed(2)}` : '-'}
+                      {zone.min_fee ? `R$ ${formatMoney(zone.min_fee)}` : '-'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
