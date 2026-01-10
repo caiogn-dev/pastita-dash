@@ -55,18 +55,19 @@ const buildMapUrls = ({
   const parsedLat = typeof lat === 'string' ? Number.parseFloat(lat) : lat;
   const parsedLng = typeof lng === 'string' ? Number.parseFloat(lng) : lng;
   const hasCoords = Number.isFinite(parsedLat) && Number.isFinite(parsedLng);
+  const normalizedQuery = query?.trim();
+  if (normalizedQuery) {
+    const encoded = encodeURIComponent(normalizedQuery);
+    return {
+      mapUrl: `https://www.google.com/maps?q=${encoded}&output=embed`,
+      externalUrl: `https://www.google.com/maps?q=${encoded}`,
+    };
+  }
   if (hasCoords && parsedLat != null && parsedLng != null) {
     const coords = `${parsedLat},${parsedLng}`;
     return {
       mapUrl: `https://www.google.com/maps?q=${coords}&output=embed`,
       externalUrl: `https://www.google.com/maps?q=${coords}`,
-    };
-  }
-  if (query) {
-    const encoded = encodeURIComponent(query);
-    return {
-      mapUrl: `https://www.google.com/maps?q=${encoded}&output=embed`,
-      externalUrl: `https://www.google.com/maps?q=${encoded}`,
     };
   }
   return null;
@@ -109,6 +110,7 @@ export const DeliveryZonesPage: React.FC = () => {
   const mapInfo = useMemo(() => {
     if (!storeLocation) return null;
     const queryParts = [
+      storeLocation.name,
       storeLocation.address,
       storeLocation.city,
       storeLocation.state,
@@ -118,7 +120,7 @@ export const DeliveryZonesPage: React.FC = () => {
     return buildMapUrls({
       lat: storeLocation.latitude,
       lng: storeLocation.longitude,
-      query: queryParts.join(', '),
+      query: storeLocation.name?.trim() || queryParts.join(', '),
     });
   }, [storeLocation]);
 
