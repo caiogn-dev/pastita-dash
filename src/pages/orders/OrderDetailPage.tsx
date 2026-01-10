@@ -216,20 +216,22 @@ export const OrderDetailPage: React.FC = () => {
             leftIcon={<ArrowLeftIcon className="w-5 h-5" />}
             onClick={() => navigate('/orders')}
           >
-            Voltar
+            <span className="hidden sm:inline">Voltar</span>
           </Button>
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Status and Actions */}
         <Card>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <StatusBadge status={order.status} />
-              <span className="text-2xl font-bold text-gray-900">
-                R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </span>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <StatusBadge status={order.status} />
+                <span className="text-xl md:text-2xl font-bold text-gray-900">
+                  R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {getStatusActions().map(({ action, label, variant }) => (
@@ -245,6 +247,7 @@ export const OrderDetailPage: React.FC = () => {
                       handleStatusAction(action);
                     }
                   }}
+                  className="flex-1 sm:flex-none"
                 >
                   {label}
                 </Button>
@@ -253,6 +256,7 @@ export const OrderDetailPage: React.FC = () => {
                 variant="secondary"
                 size="sm"
                 onClick={() => setNoteModal(true)}
+                className="flex-1 sm:flex-none"
               >
                 Adicionar Nota
               </Button>
@@ -260,21 +264,21 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Customer Info */}
           <Card title="Cliente">
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-500">Nome</p>
-                <p className="font-medium">{order.customer_name || '-'}</p>
+                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Nome</p>
+                <p className="text-sm md:text-base font-medium text-gray-900">{order.customer_name || '-'}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Telefone</p>
-                <p className="font-medium">{order.customer_phone}</p>
+                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Telefone</p>
+                <p className="text-sm md:text-base font-medium text-gray-900">{order.customer_phone}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium">{order.customer_email || '-'}</p>
+                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Email</p>
+                <p className="text-sm md:text-base font-medium text-gray-900 break-all">{order.customer_email || '-'}</p>
               </div>
             </div>
           </Card>
@@ -283,27 +287,25 @@ export const OrderDetailPage: React.FC = () => {
           <Card title="Entrega">
             <div className="space-y-3">
               {order.shipping_address && Object.keys(order.shipping_address).length > 0 ? (
-                <>
-                  <div>
-                    <p className="text-sm text-gray-500">Endereço</p>
-                    <p className="font-medium">
-                      {(order.shipping_address as Record<string, string>).street || '-'}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {(order.shipping_address as Record<string, string>).city},{' '}
-                      {(order.shipping_address as Record<string, string>).state}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      CEP: {(order.shipping_address as Record<string, string>).zip_code}
-                    </p>
-                  </div>
-                </>
+                <div>
+                  <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Endereço</p>
+                  <p className="text-sm md:text-base font-medium text-gray-900">
+                    {(order.shipping_address as Record<string, string>).street || '-'}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {(order.shipping_address as Record<string, string>).city},{' '}
+                    {(order.shipping_address as Record<string, string>).state}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    CEP: {(order.shipping_address as Record<string, string>).zip_code}
+                  </p>
+                </div>
               ) : (
-                <p className="text-gray-500">Endereço não informado</p>
+                <p className="text-sm text-gray-500 italic">Endereço não informado</p>
               )}
               <div>
-                <p className="text-sm text-gray-500">Frete</p>
-                <p className="font-medium">
+                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Frete</p>
+                <p className="text-sm md:text-base font-medium text-gray-900">
                   R$ {order.shipping_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
@@ -311,14 +313,14 @@ export const OrderDetailPage: React.FC = () => {
           </Card>
 
           {/* Payment Info */}
-          <Card title="Pagamento">
+          <Card title="Pagamento" className="md:col-span-2 lg:col-span-1">
             <div className="space-y-3">
               {payments.length > 0 ? (
                 payments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{payment.payment_method || 'N/A'}</p>
-                      <p className="text-sm text-gray-500">
+                  <div key={payment.id} className="flex items-start justify-between gap-2 p-3 bg-gray-50 rounded-lg">
+                    <div className="min-w-0">
+                      <p className="text-sm md:text-base font-medium text-gray-900">{payment.payment_method || 'N/A'}</p>
+                      <p className="text-sm text-gray-600">
                         R$ {payment.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                       {payment.payment_url && (
@@ -326,9 +328,9 @@ export const OrderDetailPage: React.FC = () => {
                           href={payment.payment_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-sm text-primary-600 hover:text-primary-700"
+                          className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center gap-1"
                         >
-                          Abrir link de pagamento
+                          Abrir link →
                         </a>
                       )}
                     </div>
@@ -336,7 +338,7 @@ export const OrderDetailPage: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500">Nenhum pagamento registrado</p>
+                <p className="text-sm text-gray-500 italic">Nenhum pagamento registrado</p>
               )}
             </div>
           </Card>
@@ -352,40 +354,98 @@ export const OrderDetailPage: React.FC = () => {
                 leftIcon={<PlusIcon className="w-4 h-4" />}
                 onClick={() => setAddItemModal(true)}
               >
-                Adicionar Item
+                <span className="hidden sm:inline">Adicionar Item</span>
+                <span className="sm:hidden">Adicionar</span>
               </Button>
             )
           }
         >
-          <div className="overflow-x-auto">
+          {/* Mobile Items View */}
+          <div className="block md:hidden divide-y divide-gray-200">
+            {order.items?.map((item: OrderItem) => (
+              <div key={item.id} className="py-3 space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">{item.product_name}</p>
+                    {item.product_sku && (
+                      <p className="text-xs text-gray-500">SKU: {item.product_sku}</p>
+                    )}
+                  </div>
+                  {!['cancelled', 'delivered', 'refunded'].includes(order.status) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Remover
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">
+                    {item.quantity}x R$ {item.unit_price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    R$ {item.total_price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+            ))}
+            
+            {/* Mobile Summary */}
+            <div className="pt-3 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="text-gray-900">R$ {order.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              {order.discount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-600">Desconto</span>
+                  <span className="text-green-600">- R$ {order.discount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Frete</span>
+                <span className="text-gray-900">R$ {order.shipping_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-base font-bold pt-2 border-t border-gray-200">
+                <span className="text-gray-900">Total</span>
+                <span className="text-gray-900">R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead>
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Produto
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                     SKU
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Qtd
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Preço Unit.
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Total
                   </th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3 w-24"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {order.items?.map((item: OrderItem) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">
                       {item.product_name}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-gray-600">
                       {item.product_sku || '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 text-right">
@@ -403,6 +463,7 @@ export const OrderDetailPage: React.FC = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleRemoveItem(item.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           Remover
                         </Button>
@@ -413,7 +474,7 @@ export const OrderDetailPage: React.FC = () => {
               </tbody>
               <tfoot>
                 <tr className="bg-gray-50">
-                  <td colSpan={4} className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
+                  <td colSpan={4} className="px-4 py-3 text-sm font-medium text-gray-700 text-right">
                     Subtotal
                   </td>
                   <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
@@ -433,7 +494,7 @@ export const OrderDetailPage: React.FC = () => {
                   </tr>
                 )}
                 <tr className="bg-gray-50">
-                  <td colSpan={4} className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
+                  <td colSpan={4} className="px-4 py-3 text-sm font-medium text-gray-700 text-right">
                     Frete
                   </td>
                   <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">

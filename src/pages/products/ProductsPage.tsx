@@ -285,13 +285,14 @@ export const ProductsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
-          <p className="text-gray-500">Gerencie o cat?logo da loja</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Produtos</h1>
+          <p className="text-sm md:text-base text-gray-500">Gerencie o catálogo da loja</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             ref={importInputRef}
             type="file"
@@ -301,26 +302,30 @@ export const ProductsPage: React.FC = () => {
           />
           <Button
             variant="secondary"
+            size="sm"
             onClick={() => importInputRef.current?.click()}
             disabled={importing}
+            className="flex-1 sm:flex-none"
           >
-            <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
-            {importing ? 'Importando...' : 'Importar CSV'}
+            <ArrowUpTrayIcon className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">{importing ? 'Importando...' : 'Importar'}</span>
           </Button>
-          <Button variant="secondary" onClick={handleExportCsv}>
-            <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
-            Exportar CSV
+          <Button variant="secondary" size="sm" onClick={handleExportCsv} className="flex-1 sm:flex-none">
+            <ArrowDownTrayIcon className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Exportar</span>
           </Button>
-          <Button onClick={() => handleOpenModal()}>
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Novo Produto
+          <Button size="sm" onClick={() => handleOpenModal()} className="flex-1 sm:flex-none">
+            <PlusIcon className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Novo Produto</span>
+            <span className="sm:hidden">Novo</span>
           </Button>
         </div>
       </div>
 
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[200px]">
+      {/* Filters */}
+      <Card className="p-3 md:p-4">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+          <div className="flex-1">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
@@ -332,60 +337,138 @@ export const ProductsPage: React.FC = () => {
               />
             </div>
           </div>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">Todas as categorias</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-          <select
-            value={filterActive === undefined ? '' : String(filterActive)}
-            onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">Todos os status</option>
-            <option value="true">Ativos</option>
-            <option value="false">Inativos</option>
-          </select>
-          <select
-            value={stockFilter}
-            onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="all">Todos os estoques</option>
-            <option value="in_stock">Dispon?vel</option>
-            <option value="low_stock">Estoque baixo</option>
-            <option value="out_of_stock">Sem estoque</option>
-          </select>
+          <div className="grid grid-cols-3 sm:flex gap-2 sm:gap-3">
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            >
+              <option value="">Categoria</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            <select
+              value={filterActive === undefined ? '' : String(filterActive)}
+              onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
+              className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            >
+              <option value="">Status</option>
+              <option value="true">Ativos</option>
+              <option value="false">Inativos</option>
+            </select>
+            <select
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
+              className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            >
+              <option value="all">Estoque</option>
+              <option value="in_stock">Disponível</option>
+              <option value="low_stock">Baixo</option>
+              <option value="out_of_stock">Sem</option>
+            </select>
+          </div>
         </div>
       </Card>
 
+      {/* Products Table */}
       <Card>
-        <div className="overflow-x-auto">
+        {/* Mobile Cards View */}
+        <div className="block md:hidden divide-y divide-gray-200">
+          {filteredProducts.map((product) => {
+            const qty = product.stock_quantity || 0;
+            const isLow = qty > 0 && qty <= LOW_STOCK_THRESHOLD;
+            const isOut = qty <= 0;
+            return (
+              <div key={product.id} className="p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+                    {product.image_url || product.image ? (
+                      <img
+                        src={product.image_url || product.image || ''}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <PhotoIcon className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-gray-900 truncate">{product.name}</p>
+                        <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+                        {product.category && (
+                          <p className="text-xs text-gray-500">{product.category}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleToggleActive(product)}
+                        className="focus:outline-none shrink-0"
+                      >
+                        <Badge variant={product.is_active ? 'success' : 'danger'}>
+                          {product.is_active ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-semibold text-gray-900">
+                      R$ {formatMoney(product.price)}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-gray-600">{qty} un</span>
+                      {isOut && <Badge variant="danger">Sem</Badge>}
+                      {isLow && <Badge variant="warning">Baixo</Badge>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleOpenModal(product)}
+                      className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
+                    >
+                      <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeletingProduct(product);
+                        setIsDeleteModalOpen(true);
+                      }}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Produto
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Categoria
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pre?o
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Preço
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estoque
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  A??es
+                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ações
                 </th>
               </tr>
             </thead>
@@ -396,9 +479,9 @@ export const ProductsPage: React.FC = () => {
                 const isOut = qty <= 0;
                 return (
                   <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                           {product.image_url || product.image ? (
                             <img
                               src={product.image_url || product.image || ''}
@@ -406,22 +489,22 @@ export const ProductsPage: React.FC = () => {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <PhotoIcon className="w-6 h-6 text-gray-400" />
+                            <PhotoIcon className="w-5 h-5 lg:w-6 lg:h-6 text-gray-400" />
                           )}
                         </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{product.name}</div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-900 truncate max-w-[200px]">{product.name}</div>
                           <div className="text-sm text-gray-500">SKU: {product.sku}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {product.category || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       R$ {formatMoney(product.price)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <span>{qty}</span>
                         {isOut && <Badge variant="danger">Sem estoque</Badge>}
@@ -429,7 +512,7 @@ export const ProductsPage: React.FC = () => {
                         {!isOut && !isLow && <Badge variant="success">OK</Badge>}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => handleToggleActive(product)}
                         className="focus:outline-none"
@@ -439,44 +522,49 @@ export const ProductsPage: React.FC = () => {
                         </Badge>
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleOpenModal(product)}
-                        className="text-primary-600 hover:text-primary-900 mr-3"
-                      >
-                        <PencilIcon className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeletingProduct(product);
-                          setIsDeleteModalOpen(true);
-                        }}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleOpenModal(product)}
+                          className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <PencilIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeletingProduct(product);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Excluir"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          {filteredProducts.length === 0 && (
-            <div className="text-center py-12">
-              <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum produto encontrado</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Cadastre novos produtos para aparecerem aqui.
-              </p>
-              <div className="mt-6">
-                <Button onClick={() => handleOpenModal()}>
-                  <PlusIcon className="w-5 h-5 mr-2" />
-                  Novo Produto
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
+
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12 px-4">
+            <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum produto encontrado</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Cadastre novos produtos para aparecerem aqui.
+            </p>
+            <div className="mt-6">
+              <Button onClick={() => handleOpenModal()}>
+                <PlusIcon className="w-5 h-5 mr-2" />
+                Novo Produto
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Modal

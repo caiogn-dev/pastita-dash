@@ -279,41 +279,42 @@ export const DeliveryZonesPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Zonas de Entrega</h1>
-          <p className="text-gray-500">Calcule frete por quilometragem e gerencie faixas de pre?o</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Zonas de Entrega</h1>
+          <p className="text-sm md:text-base text-gray-500">Calcule frete por quilometragem e gerencie faixas de preço</p>
         </div>
-        <Button onClick={() => handleOpenModal()}>
+        <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto">
           <PlusIcon className="w-5 h-5 mr-2" />
           Nova Faixa
         </Button>
       </div>
 
-      <Card className="p-4">
+      {/* Store Location Card */}
+      <Card className="p-4 md:p-6">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Localização da Loja</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Informe o CEP para carregar os dados da loja automaticamente.
+          </p>
+        </div>
+
         <form onSubmit={handleSaveStoreLocation} className="space-y-4">
-          <div className="flex items-start gap-4 flex-wrap">
-            <div className="flex-1 min-w-[240px]">
-              <h2 className="text-lg font-semibold text-gray-900">Localização da Loja</h2>
-              <p className="text-sm text-gray-500">
-                Informe o CEP e pressione Enter para carregar os dados da loja.
-              </p>
-            </div>
-            <div className="flex-1 min-w-[260px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="sm:col-span-2">
               <Input
+                label="Nome da loja"
                 type="text"
-                placeholder="Nome da loja"
+                placeholder="Ex: Pastita Palmas"
                 value={storeForm.name || ''}
                 onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">CEP *</label>
               <Input
+                label="CEP *"
                 type="text"
                 value={formatCep(storeForm.zip_code)}
                 onChange={(e) => setStoreForm({
@@ -326,27 +327,30 @@ export const DeliveryZonesPage: React.FC = () => {
               />
             </div>
             <div className="flex items-end">
-              <Button type="submit" disabled={savingStore}>
-                {savingStore ? 'Salvando...' : 'Buscar dados'}
+              <Button type="submit" disabled={savingStore} className="w-full">
+                {savingStore ? 'Salvando...' : 'Buscar CEP'}
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Input
-              label="Endere?o"
+              label="Endereço"
               value={storeForm.address || ''}
               onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
+              placeholder="Rua, número"
             />
             <Input
               label="Cidade"
               value={storeForm.city || ''}
               onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
+              placeholder="Cidade"
             />
             <Input
               label="Estado"
               value={storeForm.state || ''}
               onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
+              placeholder="UF"
             />
           </div>
 
@@ -355,102 +359,82 @@ export const DeliveryZonesPage: React.FC = () => {
           )}
         </form>
 
-        {storeLocation && (
-          <div className="mt-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
-                label="Endereço"
-                value={storeLocation.address || ''}
-                disabled
-              />
-              <Input
-                label="Cidade"
-                value={storeLocation.city || ''}
-                disabled
-              />
-              <Input
-                label="Estado"
-                value={storeLocation.state || ''}
-                disabled
+        {storeLocation && mapInfo && (
+          <div className="mt-6">
+            <div className="rounded-lg overflow-hidden border border-gray-200">
+              <iframe
+                title="Mapa da loja"
+                src={mapInfo.mapUrl}
+                className="w-full h-48 md:h-64"
+                loading="lazy"
               />
             </div>
-
-            {mapInfo && (
-              <div>
-                <div className="rounded-lg overflow-hidden border border-gray-200">
-                  <iframe
-                    title="Mapa da loja"
-                    src={mapInfo.mapUrl}
-                    className="w-full h-64"
-                    loading="lazy"
-                  />
-                </div>
-                <a
-                  href={mapInfo.externalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
-                >
-                  Ver no Google Maps
-                </a>
-              </div>
-            )}
+            <a
+              href={mapInfo.externalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
+            >
+              Ver no Google Maps →
+            </a>
           </div>
         )}
       </Card>
 
+      {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <Card className="p-3 md:p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <MapPinIcon className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-blue-100 rounded-lg shrink-0">
+                <MapPinIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Total de Faixas</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+              <div className="ml-3 md:ml-4 min-w-0">
+                <p className="text-xs md:text-sm text-gray-500 truncate">Total de Faixas</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
             </div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-3 md:p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircleIcon className="w-6 h-6 text-green-600" />
+              <div className="p-2 bg-green-100 rounded-lg shrink-0">
+                <CheckCircleIcon className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Ativas</p>
-                <p className="text-2xl font-bold">{stats.active}</p>
+              <div className="ml-3 md:ml-4 min-w-0">
+                <p className="text-xs md:text-sm text-gray-500 truncate">Ativas</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.active}</p>
               </div>
             </div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-3 md:p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <TruckIcon className="w-6 h-6 text-yellow-600" />
+              <div className="p-2 bg-yellow-100 rounded-lg shrink-0">
+                <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Valor M?dio</p>
-                <p className="text-2xl font-bold">R$ {formatMoney(stats.avg_fee)}</p>
+              <div className="ml-3 md:ml-4 min-w-0">
+                <p className="text-xs md:text-sm text-gray-500 truncate">Valor Médio</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900">R$ {formatMoney(stats.avg_fee)}</p>
               </div>
             </div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-3 md:p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <TruckIcon className="w-6 h-6 text-purple-600" />
+              <div className="p-2 bg-purple-100 rounded-lg shrink-0">
+                <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Prazo M?dio</p>
-                <p className="text-2xl font-bold">{formatDays(stats.avg_days)} dias</p>
+              <div className="ml-3 md:ml-4 min-w-0">
+                <p className="text-xs md:text-sm text-gray-500 truncate">Prazo Médio</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900">{formatDays(stats.avg_days)} dias</p>
               </div>
             </div>
           </Card>
         </div>
       )}
 
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[200px]">
+      {/* Filters */}
+      <Card className="p-3 md:p-4">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+          <div className="flex-1">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
@@ -464,8 +448,8 @@ export const DeliveryZonesPage: React.FC = () => {
           </div>
           <select
             value={filterActive === undefined ? '' : String(filterActive)}
-            onChange={(e) => setFilterActive(e.target.value == '' ? undefined : e.target.value === 'true')}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
+            className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
           >
             <option value="">Todos os status</option>
             <option value="true">Ativas</option>
@@ -474,58 +458,122 @@ export const DeliveryZonesPage: React.FC = () => {
         </div>
       </Card>
 
+      {/* Zones Table */}
       <Card>
-        <div className="overflow-x-auto">
+        {/* Mobile Cards View */}
+        <div className="block md:hidden divide-y divide-gray-200">
+          {zones.map((zone) => (
+            <div key={zone.id} className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPinIcon className="w-5 h-5 text-gray-400" />
+                  <span className="font-medium text-gray-900">{zone.name}</span>
+                </div>
+                <button
+                  onClick={() => handleToggleActive(zone)}
+                  className="focus:outline-none"
+                >
+                  <Badge variant={zone.is_active ? 'success' : 'danger'}>
+                    {zone.is_active ? 'Ativa' : 'Inativa'}
+                  </Badge>
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-500">Distância:</span>
+                  <span className="ml-1 font-mono text-gray-700">
+                    {zone.distance_label
+                      ? zone.distance_label
+                      : zone.min_km !== null && zone.min_km !== undefined
+                        ? `${formatKm(zone.min_km)} - ${zone.max_km !== null && zone.max_km !== undefined ? formatKm(zone.max_km) : '?'} km`
+                        : '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Prazo:</span>
+                  <span className="ml-1 text-gray-700">
+                    {zone.estimated_days} {zone.estimated_days === 1 ? 'dia útil' : 'dias úteis'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-semibold text-green-600">
+                  R$ {formatMoney(zone.delivery_fee)}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleOpenModal(zone)}
+                    className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
+                  >
+                    <PencilIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeletingZone(zone);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Faixa
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Faixa (KM)
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Distância (KM)
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Valor da Entrega
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Valor
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Prazo
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  A??es
+                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ações
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {zones.map((zone) => (
                 <tr key={zone.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <MapPinIcon className="w-5 h-5 text-gray-400 mr-2" />
-                      <div className="font-medium text-gray-900">{zone.name}</div>
+                      <span className="font-medium text-gray-900">{zone.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-mono text-sm text-gray-600">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                    <span className="font-mono text-sm text-gray-700">
                       {zone.distance_label
                         ? zone.distance_label
                         : zone.min_km !== null && zone.min_km !== undefined
                           ? `${formatKm(zone.min_km)} - ${zone.max_km !== null && zone.max_km !== undefined ? formatKm(zone.max_km) : '?'} km`
                           : '—'}
-                    </div>
+                    </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-lg font-semibold text-green-600">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                    <span className="text-base font-semibold text-green-600">
                       R$ {formatMoney(zone.delivery_fee)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {zone.estimated_days} {zone.estimated_days === 1 ? 'dia ?til' : 'dias ?teis'}
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {zone.estimated_days} {zone.estimated_days === 1 ? 'dia útil' : 'dias úteis'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() => handleToggleActive(zone)}
                       className="focus:outline-none"
@@ -535,66 +583,68 @@ export const DeliveryZonesPage: React.FC = () => {
                       </Badge>
                     </button>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleOpenModal(zone)}
-                      className="text-primary-600 hover:text-primary-900 mr-3"
-                    >
-                      <PencilIcon className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDeletingZone(zone);
-                        setIsDeleteModalOpen(true);
-                      }}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <TrashIcon className="w-5 h-5" />
-                    </button>
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => handleOpenModal(zone)}
+                        className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <PencilIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeletingZone(zone);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Excluir"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {zones.length === 0 && (
-            <div className="text-center py-12">
-              <MapPinIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma faixa encontrada</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Cadastre faixas de quilometragem para calcular o frete.
-              </p>
-              <div className="mt-6">
-                <Button onClick={() => handleOpenModal()}>
-                  <PlusIcon className="w-5 h-5 mr-2" />
-                  Nova Faixa
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
+
+        {zones.length === 0 && (
+          <div className="text-center py-12 px-4">
+            <MapPinIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma faixa encontrada</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Cadastre faixas de quilometragem para calcular o frete.
+            </p>
+            <div className="mt-6">
+              <Button onClick={() => handleOpenModal()}>
+                <PlusIcon className="w-5 h-5 mr-2" />
+                Nova Faixa
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
+      {/* Create/Edit Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         title={editingZone ? 'Editar Faixa de Entrega' : 'Nova Faixa de Entrega'}
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nome da Faixa *
-            </label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Ex: Ate 5km, Zona Metropolitana"
-            />
-          </div>
+          <Input
+            label="Nome da Faixa *"
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Ex: Até 5km, Zona Metropolitana"
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Faixa de Dist?ncia *
+              Faixa de Distância *
             </label>
             <select
               value={formData.distance_band}
@@ -607,41 +657,34 @@ export const DeliveryZonesPage: React.FC = () => {
                   name: prev.name || matched?.label || prev.name,
                 }));
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
             >
-              <option value="">Selecione</option>
+              <option value="">Selecione uma faixa</option>
               {DISTANCE_BANDS.map((band) => (
                 <option key={band.value} value={band.value}>{band.label}</option>
               ))}
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Valor da Entrega (R$) *
-            </label>
-            <Input
-              type="number"
-              value={formData.delivery_fee}
-              onChange={(e) => setFormData({ ...formData, delivery_fee: parseFloat(e.target.value) || 0 })}
-              min="0"
-              step="0.01"
-            />
-          </div>
+          <Input
+            label="Valor da Entrega (R$) *"
+            type="number"
+            value={formData.delivery_fee}
+            onChange={(e) => setFormData({ ...formData, delivery_fee: parseFloat(e.target.value) || 0 })}
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+          />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Prazo de Entrega (dias) *
-              </label>
-              <Input
-                type="number"
-                value={formData.estimated_days}
-                onChange={(e) => setFormData({ ...formData, estimated_days: parseInt(e.target.value) || 1 })}
-                min="1"
-              />
-            </div>
-            <div className="flex items-center mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Prazo de Entrega (dias) *"
+              type="number"
+              value={formData.estimated_days}
+              onChange={(e) => setFormData({ ...formData, estimated_days: parseInt(e.target.value) || 1 })}
+              min="1"
+            />
+            <div className="flex items-center sm:mt-7">
               <input
                 type="checkbox"
                 id="is_active"
@@ -655,20 +698,22 @@ export const DeliveryZonesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={handleCloseModal}>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">
+            <Button variant="secondary" onClick={handleCloseModal} className="w-full sm:w-auto">
               Cancelar
             </Button>
             <Button
               onClick={handleSave}
               disabled={saving || !formData.name || !formData.distance_band}
+              className="w-full sm:w-auto"
             >
-              {saving ? 'Salvando...' : editingZone ? 'Salvar' : 'Criar'}
+              {saving ? 'Salvando...' : editingZone ? 'Salvar Alterações' : 'Criar Faixa'}
             </Button>
           </div>
         </div>
       </Modal>
 
+      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => {
@@ -679,21 +724,22 @@ export const DeliveryZonesPage: React.FC = () => {
       >
         <div className="space-y-4">
           <p className="text-gray-600">
-            Tem certeza que deseja excluir a faixa <strong>{deletingZone?.name}</strong>?
-            Esta a??o nao pode ser desfeita.
+            Tem certeza que deseja excluir a faixa <strong className="text-gray-900">{deletingZone?.name}</strong>?
+            Esta ação não pode ser desfeita.
           </p>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">
             <Button
               variant="secondary"
               onClick={() => {
                 setIsDeleteModalOpen(false);
                 setDeletingZone(null);
               }}
+              className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
-            <Button variant="danger" onClick={handleDelete} disabled={saving}>
-              {saving ? 'Excluindo...' : 'Excluir'}
+            <Button variant="danger" onClick={handleDelete} disabled={saving} className="w-full sm:w-auto">
+              {saving ? 'Excluindo...' : 'Excluir Faixa'}
             </Button>
           </div>
         </div>
