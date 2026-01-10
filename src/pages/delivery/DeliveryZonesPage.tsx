@@ -43,6 +43,15 @@ const formatCep = (value: string) => {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 };
 
+const DISTANCE_BANDS = [
+  { value: '0_2', label: '0 - 2 km' },
+  { value: '2_5', label: '2 - 5 km' },
+  { value: '5_8', label: '5 - 8 km' },
+  { value: '8_12', label: '8 - 12 km' },
+  { value: '12_15', label: '12 - 15 km' },
+  { value: '15_20', label: '15 - 20 km' },
+];
+
 const buildMapUrls = ({
   lat,
   lng,
@@ -99,10 +108,8 @@ export const DeliveryZonesPage: React.FC = () => {
 
   const [formData, setFormData] = useState<CreateDeliveryZone>({
     name: '',
-    min_km: 0,
-    max_km: 0,
+    distance_band: '',
     delivery_fee: 0,
-    min_fee: 0,
     estimated_days: 1,
     is_active: true,
   });
@@ -163,10 +170,8 @@ export const DeliveryZonesPage: React.FC = () => {
       setEditingZone(zone);
       setFormData({
         name: zone.name,
-        min_km: zone.min_km ?? 0,
-        max_km: zone.max_km ?? 0,
+        distance_band: zone.distance_band || '',
         delivery_fee: zone.delivery_fee,
-        min_fee: zone.min_fee ?? 0,
         estimated_days: zone.estimated_days,
         is_active: zone.is_active,
       });
@@ -174,10 +179,8 @@ export const DeliveryZonesPage: React.FC = () => {
       setEditingZone(null);
       setFormData({
         name: '',
-        min_km: 0,
-        max_km: 0,
+        distance_band: '',
         delivery_fee: 0,
-        min_fee: 0,
         estimated_days: 1,
         is_active: true,
       });
@@ -197,18 +200,13 @@ export const DeliveryZonesPage: React.FC = () => {
         const payload: UpdateDeliveryZone = {
           ...formData,
           name: formData.name.trim(),
-          min_km: Number.isFinite(formData.min_km) ? formData.min_km : 0,
-          max_km: Number.isFinite(formData.max_km) ? formData.max_km : 0,
-          min_fee: Number.isFinite(formData.min_fee) ? formData.min_fee : 0,
+          distance_band: formData.distance_band,
         };
         await deliveryService.updateZone(editingZone.id, payload);
       } else {
         const payload: CreateDeliveryZone = {
           ...formData,
           name: formData.name.trim(),
-          min_km: Number.isFinite(formData.min_km) ? formData.min_km : 0,
-          max_km: Number.isFinite(formData.max_km) ? formData.max_km : 0,
-          min_fee: Number.isFinite(formData.min_fee) ? formData.min_fee : 0,
         };
         await deliveryService.createZone(payload);
       }
@@ -334,6 +332,24 @@ export const DeliveryZonesPage: React.FC = () => {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input
+              label="Endere?o"
+              value={storeForm.address || ''}
+              onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
+            />
+            <Input
+              label="Cidade"
+              value={storeForm.city || ''}
+              onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
+            />
+            <Input
+              label="Estado"
+              value={storeForm.state || ''}
+              onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
+            />
+          </div>
+
           {storeError && (
             <p className="text-sm text-red-600">{storeError}</p>
           )}
@@ -413,7 +429,7 @@ export const DeliveryZonesPage: React.FC = () => {
                 <TruckIcon className="w-6 h-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-500">Pre?o M?dio/KM</p>
+                <p className="text-sm text-gray-500">Valor M?dio</p>
                 <p className="text-2xl font-bold">R$ {formatMoney(stats.avg_fee)}</p>
               </div>
             </div>
@@ -467,13 +483,10 @@ export const DeliveryZonesPage: React.FC = () => {
                   Faixa
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Distancia (KM)
+                  Faixa (KM)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pre?o por KM
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Taxa M?nima
+                  Valor da Entrega
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Prazo
@@ -497,17 +510,16 @@ export const DeliveryZonesPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-mono text-sm text-gray-600">
-                      {formatKm(zone.min_km)} - {zone.max_km !== null && zone.max_km !== undefined ? formatKm(zone.max_km) : '?'} km
+                      {zone.distance_label
+                        ? zone.distance_label
+                        : zone.min_km !== null && zone.min_km !== undefined
+                          ? `${formatKm(zone.min_km)} - ${zone.max_km !== null && zone.max_km !== undefined ? formatKm(zone.max_km) : '?'} km`
+                          : '—'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-lg font-semibold text-green-600">
-                      R$ {formatMoney(zone.delivery_fee)} / km
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-600">
-                      {zone.min_fee ? `R$ ${formatMoney(zone.min_fee)}` : '-'}
+                      R$ {formatMoney(zone.delivery_fee)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -580,58 +592,41 @@ export const DeliveryZonesPage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                KM Inicial *
-              </label>
-              <Input
-                type="number"
-                value={formData.min_km ?? ''}
-                onChange={(e) => setFormData({ ...formData, min_km: parseFloat(e.target.value) || 0 })}
-                min="0"
-                step="0.01"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                KM Final *
-              </label>
-              <Input
-                type="number"
-                value={formData.max_km ?? ''}
-                onChange={(e) => setFormData({ ...formData, max_km: parseFloat(e.target.value) || 0 })}
-                min="0"
-                step="0.01"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Faixa de Dist?ncia *
+            </label>
+            <select
+              value={formData.distance_band}
+              onChange={(e) => {
+                const nextBand = e.target.value;
+                const matched = DISTANCE_BANDS.find((band) => band.value === nextBand);
+                setFormData((prev) => ({
+                  ...prev,
+                  distance_band: nextBand,
+                  name: prev.name || matched?.label || prev.name,
+                }));
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">Selecione</option>
+              {DISTANCE_BANDS.map((band) => (
+                <option key={band.value} value={band.value}>{band.label}</option>
+              ))}
+            </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Pre?o por KM (R$) *
-              </label>
-              <Input
-                type="number"
-                value={formData.delivery_fee}
-                onChange={(e) => setFormData({ ...formData, delivery_fee: parseFloat(e.target.value) || 0 })}
-                min="0"
-                step="0.01"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Taxa M?nima (R$)
-              </label>
-              <Input
-                type="number"
-                value={formData.min_fee ?? ''}
-                onChange={(e) => setFormData({ ...formData, min_fee: parseFloat(e.target.value) || 0 })}
-                min="0"
-                step="0.01"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Valor da Entrega (R$) *
+            </label>
+            <Input
+              type="number"
+              value={formData.delivery_fee}
+              onChange={(e) => setFormData({ ...formData, delivery_fee: parseFloat(e.target.value) || 0 })}
+              min="0"
+              step="0.01"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -666,7 +661,7 @@ export const DeliveryZonesPage: React.FC = () => {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={saving || !formData.name}
+              disabled={saving || !formData.name || !formData.distance_band}
             >
               {saving ? 'Salvando...' : editingZone ? 'Salvar' : 'Criar'}
             </Button>

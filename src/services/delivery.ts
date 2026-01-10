@@ -4,12 +4,11 @@ import { PaginatedResponse } from '../types';
 export interface DeliveryZone {
   id: string;
   name: string;
-  zip_code_start?: string | null;
-  zip_code_end?: string | null;
+  distance_band?: string | null;
+  distance_label?: string | null;
   min_km?: number | null;
   max_km?: number | null;
   delivery_fee: number;
-  min_fee?: number | null;
   estimated_days: number;
   is_active: boolean;
   created_at: string;
@@ -18,24 +17,16 @@ export interface DeliveryZone {
 
 export interface CreateDeliveryZone {
   name: string;
-  zip_code_start?: string | null;
-  zip_code_end?: string | null;
-  min_km?: number | null;
-  max_km?: number | null;
+  distance_band: string;
   delivery_fee: number;
-  min_fee?: number | null;
   estimated_days?: number;
   is_active?: boolean;
 }
 
 export interface UpdateDeliveryZone {
   name?: string;
-  zip_code_start?: string | null;
-  zip_code_end?: string | null;
-  min_km?: number | null;
-  max_km?: number | null;
+  distance_band?: string;
   delivery_fee?: number;
-  min_fee?: number | null;
   estimated_days?: number;
   is_active?: boolean;
 }

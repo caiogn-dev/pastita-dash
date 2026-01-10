@@ -11,6 +11,7 @@ export { auditService } from './audit';
 export { campaignsService } from './campaigns';
 export { couponsService } from './coupons';
 export { deliveryService } from './delivery';
+export { productsService } from './products';
 export {
   companyProfileApi,
   autoMessageApi,
