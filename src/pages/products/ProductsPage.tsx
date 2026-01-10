@@ -19,7 +19,7 @@ const formatMoney = (value?: number | string | null) => {
   return numeric.toFixed(2);
 };
 
-const escapeCsvValue = (value: string | number | null | undefined) => {
+const escapeCsvValue = (value: string | number | boolean | null | undefined) => {
   const text = String(value ?? '');
   if (/[",\n]/.test(text)) {
     return `"${text.replace(/"/g, '""')}"`;
