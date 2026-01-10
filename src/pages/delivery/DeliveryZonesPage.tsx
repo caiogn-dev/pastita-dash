@@ -30,6 +30,12 @@ const formatMoney = (value?: number | string | null) => {
   return numeric.toFixed(2);
 };
 
+const formatDays = (value?: number | string | null) => {
+  const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
+  if (Number.isNaN(numeric)) return '0';
+  return String(Math.round(numeric));
+};
+
 const formatCep = (value: string) => {
   const digits = value.replace(/\D/g, '').slice(0, 8);
   if (digits.length <= 5) return digits;
@@ -405,7 +411,7 @@ export const DeliveryZonesPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-500">Pre?o M?dio/KM</p>
-                <p className="text-2xl font-bold">R$ {stats.avg_fee?.toFixed(2) || '0.00'}</p>
+                <p className="text-2xl font-bold">R$ {formatMoney(stats.avg_fee)}</p>
               </div>
             </div>
           </Card>
@@ -416,7 +422,7 @@ export const DeliveryZonesPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-500">Prazo M?dio</p>
-                <p className="text-2xl font-bold">{stats.avg_days?.toFixed(0) || '0'} dias</p>
+                <p className="text-2xl font-bold">{formatDays(stats.avg_days)} dias</p>
               </div>
             </div>
           </Card>

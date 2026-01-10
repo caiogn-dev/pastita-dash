@@ -143,11 +143,17 @@ export const CouponsPage: React.FC = () => {
     }
   };
 
+  const formatMoney = (value: number | string | null | undefined) => {
+    const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
+    if (Number.isNaN(numeric)) return '0.00';
+    return numeric.toFixed(2);
+  };
+
   const formatDiscount = (coupon: Coupon) => {
     if (coupon.discount_type === 'percentage') {
       return `${coupon.discount_value}%`;
     }
-    return `R$ ${coupon.discount_value.toFixed(2)}`;
+    return `R$ ${formatMoney(coupon.discount_value)}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -307,7 +313,7 @@ export const CouponsPage: React.FC = () => {
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {coupon.min_purchase > 0 ? `R$ ${coupon.min_purchase.toFixed(2)}` : '-'}
+                    {Number(coupon.min_purchase || 0) > 0 ? `R$ ${formatMoney(coupon.min_purchase)}` : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {coupon.used_count}
