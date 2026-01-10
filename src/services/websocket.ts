@@ -140,7 +140,7 @@ export const dashboardWS = new WebSocketService();
 // Helper to get WebSocket URL
 export const getWebSocketUrl = (path: string): string => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = import.meta.env.VITE_WS_HOST || window.location.host;
+  const host = import.meta.env.VITE_WS_HOST;
   return `${protocol}//${host}${path}`;
 };
 
