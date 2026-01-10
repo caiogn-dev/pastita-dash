@@ -321,6 +321,16 @@ export const OrderDetailPage: React.FC = () => {
                       <p className="text-sm text-gray-500">
                         R$ {payment.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
+                      {payment.payment_url && (
+                        <a
+                          href={payment.payment_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-primary-600 hover:text-primary-700"
+                        >
+                          Abrir link de pagamento
+                        </a>
+                      )}
                     </div>
                     <StatusBadge status={payment.status} />
                   </div>

@@ -281,6 +281,23 @@ export const PaymentsPage: React.FC = () => {
       render: (payment: Payment) => <StatusBadge status={payment.status} />,
     },
     {
+      key: 'payment_url',
+      header: 'Link',
+      render: (payment: Payment) =>
+        payment.payment_url ? (
+          <a
+            href={payment.payment_url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-primary-600 hover:text-primary-700"
+          >
+            Abrir
+          </a>
+        ) : (
+          <span className="text-sm text-gray-400">-</span>
+        ),
+    },
+    {
       key: 'created_at',
       header: 'Data',
       render: (payment: Payment) => (
