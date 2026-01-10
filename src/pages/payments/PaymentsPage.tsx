@@ -567,7 +567,7 @@ export const PaymentsPage: React.FC = () => {
             placeholder="https://sua-api.com/webhooks/pagamentos"
           />
           <Textarea
-            label="Configura??o (JSON)"
+            label="Configuração (JSON)"
             rows={4}
             value={gatewayForm.configuration}
             onChange={(e) => setGatewayForm((prev) => ({ ...prev, configuration: e.target.value }))}

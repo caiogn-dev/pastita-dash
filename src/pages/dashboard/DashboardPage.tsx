@@ -21,7 +21,7 @@ import {
   Filler,
 } from 'chart.js';
 import { Header } from '../../components/layout';
-import { Card, StatCard, PageLoading } from '../../components/common';
+import { Card, StatCard, PageLoading, Loading, Select } from '../../components/common';
 import { dashboardService } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { DashboardOverview, DashboardCharts } from '../../types';
@@ -44,38 +44,62 @@ export const DashboardPage: React.FC = () => {
   const { selectedAccount } = useAccountStore();
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [charts, setCharts] = useState<DashboardCharts | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingOverview, setIsLoadingOverview] = useState(true);
+  const [isLoadingCharts, setIsLoadingCharts] = useState(true);
+  const [chartRangeDays, setChartRangeDays] = useState(7);
 
   useEffect(() => {
-    loadData();
+    loadOverview();
   }, [selectedAccount]);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  useEffect(() => {
+    loadCharts();
+  }, [selectedAccount, chartRangeDays]);
+
+  const loadOverview = async () => {
+    setIsLoadingOverview(true);
     try {
-      const [overviewData, chartsData] = await Promise.all([
-        dashboardService.getOverview(selectedAccount?.id),
-        dashboardService.getCharts(selectedAccount?.id, 7),
-      ]);
+      const overviewData = await dashboardService.getOverview(selectedAccount?.id);
       setOverview(overviewData);
-      setCharts(chartsData);
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingOverview(false);
     }
   };
 
-  if (isLoading) {
+  const loadCharts = async () => {
+    setIsLoadingCharts(true);
+    try {
+      const chartsData = await dashboardService.getCharts(selectedAccount?.id, chartRangeDays);
+      setCharts(chartsData);
+    } catch (error) {
+      console.error('Error loading charts:', error);
+    } finally {
+      setIsLoadingCharts(false);
+    }
+  };
+
+  if (isLoadingOverview && !overview) {
     return <PageLoading />;
   }
 
+  const chartRangeOptions = [
+    { value: '7', label: 'Últimos 7 dias' },
+    { value: '14', label: 'Últimos 14 dias' },
+    { value: '30', label: 'Últimos 30 dias' },
+    { value: '90', label: 'Últimos 90 dias' },
+  ];
+
+  const chartRangeLabel = chartRangeDays === 1 ? '1 dia' : `${chartRangeDays} dias`;
+  const showChartsLoading = isLoadingCharts && !charts;
+
   const messagesChartData = {
-    labels: charts?.messages_per_day.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
+    labels: charts?.messages_per_day?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
     datasets: [
       {
         label: 'Recebidas',
-        data: charts?.messages_per_day.map((d) => d.inbound) || [],
+        data: charts?.messages_per_day?.map((d) => d.inbound) || [],
         borderColor: '#25D366',
         backgroundColor: 'rgba(37, 211, 102, 0.1)',
         fill: true,
@@ -83,11 +107,88 @@ export const DashboardPage: React.FC = () => {
       },
       {
         label: 'Enviadas',
-        data: charts?.messages_per_day.map((d) => d.outbound) || [],
+        data: charts?.messages_per_day?.map((d) => d.outbound) || [],
         borderColor: '#128C7E',
         backgroundColor: 'rgba(18, 140, 126, 0.1)',
         fill: true,
         tension: 0.4,
+      },
+    ],
+  };
+
+  const ordersChartData = {
+    labels: charts?.orders_per_day?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
+    datasets: [
+      {
+        label: 'Pedidos',
+        data: charts?.orders_per_day?.map((d) => d.count) || [],
+        borderColor: '#F97316',
+        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+        fill: true,
+        tension: 0.4,
+        yAxisID: 'y',
+      },
+      {
+        label: 'Receita (R$)',
+        data: charts?.orders_per_day?.map((d) => d.revenue) || [],
+        borderColor: '#2563EB',
+        backgroundColor: 'rgba(37, 99, 235, 0.12)',
+        fill: true,
+        tension: 0.4,
+        yAxisID: 'y1',
+      },
+    ],
+  };
+
+  const conversationsChartData = {
+    labels: charts?.conversations_per_day?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
+    datasets: [
+      {
+        label: 'Novas',
+        data: charts?.conversations_per_day?.map((d) => d.new) || [],
+        borderColor: '#22C55E',
+        backgroundColor: 'rgba(34, 197, 94, 0.12)',
+        fill: true,
+        tension: 0.4,
+      },
+      {
+        label: 'Resolvidas',
+        data: charts?.conversations_per_day?.map((d) => d.resolved) || [],
+        borderColor: '#14B8A6',
+        backgroundColor: 'rgba(20, 184, 166, 0.12)',
+        fill: true,
+        tension: 0.4,
+      },
+    ],
+  };
+
+  const messageTypeLabels = Object.keys(charts?.message_types || {});
+  const messageTypeLabelMap: Record<string, string> = {
+    text: 'Texto',
+    image: 'Imagem',
+    audio: 'Áudio',
+    video: 'Vídeo',
+    document: 'Documento',
+    sticker: 'Sticker',
+    location: 'Localização',
+    contact: 'Contato',
+  };
+
+  const messageTypesData = {
+    labels: messageTypeLabels.map((label) => messageTypeLabelMap[label] || label.replace(/_/g, ' ')),
+    datasets: [
+      {
+        data: messageTypeLabels.map((label) => charts?.message_types?.[label] || 0),
+        backgroundColor: [
+          '#34D399',
+          '#60A5FA',
+          '#FBBF24',
+          '#F472B6',
+          '#A78BFA',
+          '#F97316',
+          '#2DD4BF',
+          '#93C5FD',
+        ],
       },
     ],
   };
@@ -153,46 +254,169 @@ export const DashboardPage: React.FC = () => {
           />
         </div>
 
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Analytics detalhado</h2>
+            <p className="text-sm text-gray-500">
+              Indicadores dos últimos {chartRangeLabel}.
+            </p>
+          </div>
+          <div className="w-full sm:w-64">
+            <Select
+              label="Período"
+              value={String(chartRangeDays)}
+              onChange={(e) => setChartRangeDays(Number(e.target.value))}
+              options={chartRangeOptions}
+            />
+          </div>
+        </div>
+
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Messages Chart */}
-          <Card title="Mensagens (7 dias)" className="lg:col-span-2">
+          <Card title={`Mensagens (${chartRangeLabel})`} className="lg:col-span-2">
             <div className="h-80">
-              <Line
-                data={messagesChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'top',
+              {showChartsLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <Loading size="lg" />
+                </div>
+              ) : (
+                <Line
+                  data={messagesChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                      },
                     },
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                      },
                     },
-                  },
-                }}
-              />
+                  }}
+                />
+              )}
             </div>
           </Card>
 
           {/* Order Status Chart */}
           <Card title="Status dos Pedidos">
             <div className="h-80 flex items-center justify-center">
-              <Doughnut
-                data={orderStatusData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'bottom',
+              {showChartsLoading ? (
+                <Loading size="lg" />
+              ) : (
+                <Doughnut
+                  data={orderStatusData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                      },
                     },
-                  },
-                }}
-              />
+                  }}
+                />
+              )}
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card title={`Pedidos e Receita (${chartRangeLabel})`} className="lg:col-span-2">
+            <div className="h-80">
+              {showChartsLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <Loading size="lg" />
+                </div>
+              ) : (
+                <Line
+                  data={ordersChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                      },
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        title: {
+                          display: true,
+                          text: 'Pedidos',
+                        },
+                      },
+                      y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        grid: {
+                          drawOnChartArea: false,
+                        },
+                        ticks: {
+                          callback: (value) =>
+                            `R$ ${Number(value).toLocaleString('pt-BR')}`,
+                        },
+                      },
+                    },
+                  }}
+                />
+              )}
+            </div>
+          </Card>
+
+          <Card title="Tipos de Mensagem">
+            <div className="h-80 flex items-center justify-center">
+              {showChartsLoading ? (
+                <Loading size="lg" />
+              ) : (
+                <Doughnut
+                  data={messageTypesData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                      },
+                    },
+                  }}
+                />
+              )}
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card title={`Conversas (${chartRangeLabel})`} className="lg:col-span-3">
+            <div className="h-80">
+              {showChartsLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <Loading size="lg" />
+                </div>
+              ) : (
+                <Line
+                  data={conversationsChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                      },
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                      },
+                    },
+                  }}
+                />
+              )}
             </div>
           </Card>
         </div>

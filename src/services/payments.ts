@@ -100,6 +100,7 @@ export const paymentsService = {
     api_secret?: string;
     webhook_secret?: string;
     endpoint_url?: string;
+    webhook_url?: string;
     configuration?: Record<string, unknown>;
   }): Promise<PaymentGateway> => {
     const response = await api.post<PaymentGateway>('/payments/gateways/', data);
