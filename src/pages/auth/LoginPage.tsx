@@ -10,7 +10,7 @@ export const LoginPage: React.FC = () => {
   const { setAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: '',
   });
 
@@ -19,10 +19,9 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await authService.login(formData.username, formData.password);
+      const response = await authService.login(formData.email, formData.password);
       setAuth(response.token, {
         id: response.user_id,
-        username: response.username,
         email: response.email,
         first_name: response.first_name,
         last_name: response.last_name,
@@ -55,9 +54,9 @@ export const LoginPage: React.FC = () => {
               label="Usuário"
               type="text"
               required
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              placeholder="Digite seu usuário"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="Digite seu e-mail"
             />
             <Input
               label="Senha"

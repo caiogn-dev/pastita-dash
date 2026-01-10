@@ -15,7 +15,7 @@ import {
   Select,
   Textarea,
 } from '../../components/common';
-import { paymentsService, getErrorMessage } from '../../services';
+import { paymentsService, exportService, getErrorMessage } from '../../services';
 import { Payment, PaymentGateway } from '../../types';
 
 const PAYMENT_STATUS_OPTIONS = [
@@ -64,6 +64,7 @@ export const PaymentsPage: React.FC = () => {
   const [gatewayForm, setGatewayForm] = useState(DEFAULT_GATEWAY_FORM);
   const [gatewayErrors, setGatewayErrors] = useState<Record<string, string>>({});
   const [isCreatingGateway, setIsCreatingGateway] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -202,6 +203,23 @@ export const PaymentsPage: React.FC = () => {
       toast.error(getErrorMessage(error));
     } finally {
       setIsCreatingGateway(false);
+    }
+  };
+
+  const handleExport = async (format: 'csv' | 'xlsx') => {
+    setIsExporting(true);
+    try {
+      const blob = await exportService.exportPayments({
+        format,
+        status: statusFilter || undefined,
+      });
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      exportService.downloadBlob(blob, `pagamentos-${dateStamp}.${format}`);
+      toast.success('Exportação concluída!');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -373,27 +391,49 @@ export const PaymentsPage: React.FC = () => {
 
       <div className="p-6">
         {/* Tabs */}
-        <div className="flex gap-4 mb-6">
-          <button
-            className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-              activeTab === 'payments'
-                ? 'bg-primary-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            onClick={() => setActiveTab('payments')}
-          >
-            Pagamentos
-          </button>
-          <button
-            className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-              activeTab === 'gateways'
-                ? 'bg-primary-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            onClick={() => setActiveTab('gateways')}
-          >
-            Gateways
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex gap-4">
+            <button
+              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                activeTab === 'payments'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => setActiveTab('payments')}
+            >
+              Pagamentos
+            </button>
+            <button
+              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                activeTab === 'gateways'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => setActiveTab('gateways')}
+            >
+              Gateways
+            </button>
+          </div>
+          {activeTab === 'payments' && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleExport('csv')}
+                isLoading={isExporting}
+              >
+                Exportar CSV
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleExport('xlsx')}
+                isLoading={isExporting}
+              >
+                Exportar XLSX
+              </Button>
+            </div>
+          )}
         </div>
 
         {activeTab === 'payments' ? (
