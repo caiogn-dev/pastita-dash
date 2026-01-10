@@ -57,19 +57,19 @@ export const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-6 ${className}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:p-4 lg:p-6 ${className}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs md:text-sm font-medium text-gray-500 truncate">{title}</p>
+          <p className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mt-0.5 md:mt-1 truncate">{value}</p>
           {change && (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2 ${changeColors[changeType]}`}>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 md:mt-2 ${changeColors[changeType]}`}>
               {change}
             </span>
           )}
         </div>
         {icon && (
-          <div className="p-3 bg-primary-50 rounded-lg text-primary-600">
+          <div className="p-2 md:p-3 bg-primary-50 rounded-lg text-primary-600 shrink-0">
             {icon}
           </div>
         )}

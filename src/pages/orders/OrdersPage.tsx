@@ -235,7 +235,7 @@ export const OrdersPage: React.FC = () => {
       });
       const dateStamp = new Date().toISOString().slice(0, 10);
       exportService.downloadBlob(blob, `pedidos-${dateStamp}.${format}`);
-      toast.success('Exporta??o conclu?da!');
+      toast.success('Exportação concluída!');
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -381,75 +381,104 @@ export const OrdersPage: React.FC = () => {
           <div className="flex flex-wrap gap-2">
             <Button
               variant="secondary"
+              size="sm"
               onClick={() => handleExport('csv')}
               isLoading={isExporting}
+              className="hidden sm:inline-flex"
             >
-              Exportar CSV
+              CSV
             </Button>
             <Button
               variant="secondary"
+              size="sm"
               onClick={() => handleExport('xlsx')}
               isLoading={isExporting}
+              className="hidden sm:inline-flex"
             >
-              Exportar XLSX
+              XLSX
             </Button>
             <Button
-              leftIcon={<PlusIcon className="w-5 h-5" />}
+              size="sm"
+              leftIcon={<PlusIcon className="w-4 h-4" />}
               onClick={() => setCreateModal(true)}
             >
-              Novo Pedido
+              <span className="hidden sm:inline">Novo Pedido</span>
+              <span className="sm:hidden">Novo</span>
             </Button>
           </div>
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Status Tabs */}
-        <OrderStatusTabs
-          value={statusFilter}
-          onChange={setStatusFilter}
-          counts={statusCounts}
-        />
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <OrderStatusTabs
+            value={statusFilter}
+            onChange={setStatusFilter}
+            counts={statusCounts}
+          />
+        </div>
 
         {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
           <div className="relative flex-1">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar por número, cliente, telefone ou email..."
+              placeholder="Buscar por número, cliente..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm md:text-base"
             />
+          </div>
+          <div className="flex gap-2 sm:hidden">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleExport('csv')}
+              isLoading={isExporting}
+              className="flex-1"
+            >
+              CSV
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleExport('xlsx')}
+              isLoading={isExporting}
+              className="flex-1"
+            >
+              XLSX
+            </Button>
           </div>
           {(statusFilter || searchQuery) && (
             <Button
               variant="ghost"
+              size="sm"
               onClick={() => {
                 setStatusFilter(null);
                 setSearchQuery('');
               }}
             >
-              Limpar Filtros
+              Limpar
             </Button>
           )}
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-4">
           {Object.entries(ORDER_STATUS_CONFIG).slice(0, 6).map(([key, config]) => (
             <button
               key={key}
               onClick={() => setStatusFilter(statusFilter === key ? null : key)}
-              className={`p-4 rounded-lg border transition-all ${
+              className={`p-2 md:p-4 rounded-lg border transition-all ${
                 statusFilter === key
                   ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
                   : 'border-gray-200 bg-white hover:border-gray-300'
               }`}
             >
-              <p className="text-2xl font-bold text-gray-900">{statusCounts[key] || 0}</p>
-              <p className="text-sm text-gray-600">{config.label}</p>
+              <p className="text-lg md:text-2xl font-bold text-gray-900">{statusCounts[key] || 0}</p>
+              <p className="text-xs md:text-sm text-gray-600 truncate">{config.label}</p>
             </button>
           ))}
         </div>

@@ -219,45 +219,45 @@ export const DashboardPage: React.FC = () => {
         subtitle={`Última atualização: ${overview?.timestamp ? format(new Date(overview.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : '-'}`}
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
           <StatCard
             title="Mensagens Hoje"
             value={overview?.messages.today || 0}
-            icon={<InboxIcon className="w-6 h-6" />}
+            icon={<InboxIcon className="w-5 h-5 md:w-6 md:h-6" />}
           />
           <StatCard
             title="Conversas Ativas"
             value={overview?.conversations.active || 0}
-            icon={<ChatBubbleLeftRightIcon className="w-6 h-6" />}
+            icon={<ChatBubbleLeftRightIcon className="w-5 h-5 md:w-6 md:h-6" />}
           />
           <StatCard
             title="Pedidos Hoje"
             value={overview?.orders.today || 0}
-            icon={<ShoppingCartIcon className="w-6 h-6" />}
+            icon={<ShoppingCartIcon className="w-5 h-5 md:w-6 md:h-6" />}
           />
           <StatCard
             title="Receita Hoje"
             value={`R$ ${(overview?.orders.revenue_today || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-            icon={<CurrencyDollarIcon className="w-6 h-6" />}
+            icon={<CurrencyDollarIcon className="w-5 h-5 md:w-6 md:h-6" />}
           />
           <StatCard
             title="Interações LLM"
             value={overview?.langflow.interactions_today || 0}
-            icon={<CpuChipIcon className="w-6 h-6" />}
+            icon={<CpuChipIcon className="w-5 h-5 md:w-6 md:h-6" />}
           />
           <StatCard
             title="Contas Ativas"
             value={overview?.accounts.active || 0}
-            icon={<UserGroupIcon className="w-6 h-6" />}
+            icon={<UserGroupIcon className="w-5 h-5 md:w-6 md:h-6" />}
           />
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Analytics detalhado</h2>
-            <p className="text-sm text-gray-500">
+            <h2 className="text-base md:text-lg font-semibold text-gray-900">Analytics detalhado</h2>
+            <p className="text-xs md:text-sm text-gray-500">
               Indicadores dos últimos {chartRangeLabel}.
             </p>
           </div>
