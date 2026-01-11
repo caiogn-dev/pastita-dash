@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import logger from 'services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout';
 import { FullPageLoading } from './components/common';
@@ -62,7 +63,7 @@ const App: React.FC = () => {
           // Initialize WebSocket connections
           initializeWebSockets(token);
         } catch (error) {
-          console.error('Error loading accounts:', error);
+          logger.error('Error loading accounts:', error);
         }
       } else {
         // Disconnect WebSockets when not authenticated

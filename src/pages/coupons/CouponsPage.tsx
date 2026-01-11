@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import logger from '../../services/logger';
 import {
   PlusIcon,
   PencilIcon,
@@ -54,7 +55,7 @@ export const CouponsPage: React.FC = () => {
       setCoupons(couponsData.results);
       setStats(statsData);
     } catch (error) {
-      console.error('Error loading coupons:', error);
+      logger.error('Error loading coupons:', error);
     } finally {
       setLoading(false);
     }
@@ -113,7 +114,7 @@ export const CouponsPage: React.FC = () => {
       handleCloseModal();
       loadCoupons();
     } catch (error) {
-      console.error('Error saving coupon:', error);
+      logger.error('Error saving coupon:', error);
     } finally {
       setSaving(false);
     }
@@ -124,7 +125,7 @@ export const CouponsPage: React.FC = () => {
       await couponsService.toggleActive(coupon.id);
       loadCoupons();
     } catch (error) {
-      console.error('Error toggling coupon:', error);
+      logger.error('Error toggling coupon:', error);
     }
   };
 
@@ -137,7 +138,7 @@ export const CouponsPage: React.FC = () => {
       setDeletingCoupon(null);
       loadCoupons();
     } catch (error) {
-      console.error('Error deleting coupon:', error);
+      logger.error('Error deleting coupon:', error);
     } finally {
       setSaving(false);
     }

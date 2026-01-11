@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import logger from '../../services/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -111,7 +112,7 @@ export default function ReportsPage() {
       setCompanies(companiesRes.results);
     } catch (error) {
       toast.error('Erro ao carregar dados');
-      console.error(error);
+      logger.error(error);
     } finally {
       setLoading(false);
     }
@@ -147,7 +148,7 @@ export default function ReportsPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao criar agendamento');
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -158,7 +159,7 @@ export default function ReportsPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao gerar relatório');
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -169,7 +170,7 @@ export default function ReportsPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao pausar agendamento');
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -180,7 +181,7 @@ export default function ReportsPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao retomar agendamento');
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -193,7 +194,7 @@ export default function ReportsPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao excluir agendamento');
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -218,7 +219,7 @@ export default function ReportsPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao gerar relatório');
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -235,7 +236,7 @@ export default function ReportsPage() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       toast.error('Erro ao baixar relatório');
-      console.error(error);
+      logger.error(error);
     }
   };
 

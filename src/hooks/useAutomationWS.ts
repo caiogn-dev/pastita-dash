@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
+import logger from '../services/logger';
 import { useAuthStore } from '../stores/authStore';
 import { AutomationWebSocketEvent } from '../types';
 
@@ -38,7 +39,7 @@ export function useAutomationWS(options: UseAutomationWSOptions = {}) {
       const ws = new WebSocket(getWebSocketUrl());
 
       ws.onopen = () => {
-        console.log('Automation WebSocket connected');
+        logger.info('Automation WebSocket connected');
         setIsConnected(true);
         reconnectAttempts.current = 0;
 
@@ -83,12 +84,12 @@ export function useAutomationWS(options: UseAutomationWSOptions = {}) {
               break;
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          logger.error('Error parsing WebSocket message:', error);
         }
       };
 
       ws.onclose = (event) => {
-        console.log('Automation WebSocket closed:', event.code, event.reason);
+        logger.info('Automation WebSocket closed:', event.code, event.reason);
         setIsConnected(false);
         wsRef.current = null;
 
@@ -103,12 +104,12 @@ export function useAutomationWS(options: UseAutomationWSOptions = {}) {
       };
 
       ws.onerror = (error) => {
-        console.error('Automation WebSocket error:', error);
+        logger.error('Automation WebSocket error:', error);
       };
 
       wsRef.current = ws;
     } catch (error) {
-      console.error('Failed to create WebSocket:', error);
+      logger.error('Failed to create WebSocket:', error);
     }
   }, [token, getWebSocketUrl, options]);
 

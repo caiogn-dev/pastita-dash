@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import logger from '../../services/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -76,7 +77,7 @@ export default function ScheduledMessagesPage() {
       setAccounts(accountsRes.results);
     } catch (error) {
       toast.error('Erro ao carregar mensagens agendadas');
-      console.error(error);
+      logger.error(error);
     } finally {
       setLoading(false);
     }
@@ -109,7 +110,7 @@ export default function ScheduledMessagesPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao agendar mensagem');
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -122,7 +123,7 @@ export default function ScheduledMessagesPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao cancelar mensagem');
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -138,7 +139,7 @@ export default function ScheduledMessagesPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao reagendar mensagem');
-      console.error(error);
+      logger.error(error);
     }
   };
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import logger from '../../services/logger';
 import {
   ChatBubbleLeftRightIcon,
   InboxIcon,
@@ -62,7 +63,7 @@ export const DashboardPage: React.FC = () => {
       const overviewData = await dashboardService.getOverview(selectedAccount?.id);
       setOverview(overviewData);
     } catch (error) {
-      console.error('Error loading dashboard:', error);
+      logger.error('Error loading dashboard:', error);
     } finally {
       setIsLoadingOverview(false);
     }
@@ -74,7 +75,7 @@ export const DashboardPage: React.FC = () => {
       const chartsData = await dashboardService.getCharts(selectedAccount?.id, chartRangeDays);
       setCharts(chartsData);
     } catch (error) {
-      console.error('Error loading charts:', error);
+      logger.error('Error loading charts:', error);
     } finally {
       setIsLoadingCharts(false);
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import logger from '../../services/logger';
 import { BellIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -46,7 +47,7 @@ export const NotificationDropdown: React.FC = () => {
       const response = await notificationsService.getNotifications();
       setNotifications(response.results);
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      logger.error('Error loading notifications:', error);
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +58,7 @@ export const NotificationDropdown: React.FC = () => {
       const response = await notificationsService.getUnreadCount();
       setUnreadCount(response.count);
     } catch (error) {
-      console.error('Error loading unread count:', error);
+      logger.error('Error loading unread count:', error);
     }
   };
 
@@ -69,7 +70,7 @@ export const NotificationDropdown: React.FC = () => {
       );
       setUnreadCount(0);
     } catch (error) {
-      console.error('Error marking all as read:', error);
+      logger.error('Error marking all as read:', error);
     }
   };
 
@@ -83,7 +84,7 @@ export const NotificationDropdown: React.FC = () => {
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Error marking as read:', error);
+      logger.error('Error marking as read:', error);
     }
   };
 

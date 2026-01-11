@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import logger from '../../services/logger';
 import {
   PlusIcon,
   PencilIcon,
@@ -155,7 +156,7 @@ export const DeliveryZonesPage: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error loading delivery zones:', error);
+      logger.error('Error loading delivery zones:', error);
     } finally {
       setLoading(false);
     }
@@ -213,7 +214,7 @@ export const DeliveryZonesPage: React.FC = () => {
       handleCloseModal();
       loadData();
     } catch (error) {
-      console.error('Error saving delivery zone:', error);
+      logger.error('Error saving delivery zone:', error);
     } finally {
       setSaving(false);
     }
@@ -224,7 +225,7 @@ export const DeliveryZonesPage: React.FC = () => {
       await deliveryService.toggleActive(zone.id);
       loadData();
     } catch (error) {
-      console.error('Error toggling zone:', error);
+      logger.error('Error toggling zone:', error);
     }
   };
 
@@ -237,7 +238,7 @@ export const DeliveryZonesPage: React.FC = () => {
       setDeletingZone(null);
       loadData();
     } catch (error) {
-      console.error('Error deleting zone:', error);
+      logger.error('Error deleting zone:', error);
     } finally {
       setSaving(false);
     }
@@ -267,7 +268,7 @@ export const DeliveryZonesPage: React.FC = () => {
         state: updated.state || '',
       });
     } catch (error) {
-      console.error('Error updating store location:', error);
+      logger.error('Error updating store location:', error);
       setStoreError('Não foi possível salvar o CEP da loja.');
     } finally {
       setSavingStore(false);

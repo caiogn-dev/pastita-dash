@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logger from '../../services/logger';
 import { Link } from 'react-router-dom';
 import {
   PlusIcon,
@@ -30,7 +31,7 @@ const CompanyProfilesPage: React.FC = () => {
       setTotalCount(response.count);
     } catch (error) {
       toast.error('Erro ao carregar perfis de empresa');
-      console.error(error);
+      logger.error(error);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import logger from '../../services/logger';
 import {
   PlusIcon,
   PencilIcon,
@@ -110,7 +111,7 @@ export const ProductsPage: React.FC = () => {
       setProducts(productsData.results);
       setCategories(categoriesData);
     } catch (error) {
-      console.error('Error loading products:', error);
+      logger.error('Error loading products:', error);
     } finally {
       setLoading(false);
     }
@@ -203,7 +204,7 @@ export const ProductsPage: React.FC = () => {
       handleCloseModal();
       loadData();
     } catch (error) {
-      console.error('Error saving product:', error);
+      logger.error('Error saving product:', error);
     } finally {
       setSaving(false);
     }
@@ -214,7 +215,7 @@ export const ProductsPage: React.FC = () => {
       await productsService.updateProduct(product.id, { is_active: !product.is_active });
       loadData();
     } catch (error) {
-      console.error('Error toggling product status:', error);
+      logger.error('Error toggling product status:', error);
     }
   };
 
@@ -227,7 +228,7 @@ export const ProductsPage: React.FC = () => {
       setDeletingProduct(null);
       loadData();
     } catch (error) {
-      console.error('Error deleting product:', error);
+      logger.error('Error deleting product:', error);
     } finally {
       setSaving(false);
     }
@@ -271,7 +272,7 @@ export const ProductsPage: React.FC = () => {
       }
       loadData();
     } catch (error) {
-      console.error('Error importing products:', error);
+      logger.error('Error importing products:', error);
     } finally {
       setImporting(false);
       if (importInputRef.current) {

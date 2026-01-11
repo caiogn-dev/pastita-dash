@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import logger from '../../services/logger';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
@@ -42,7 +43,7 @@ export const AccountFormPage: React.FC = () => {
       const response = await langflowService.getFlows();
       setFlows(response.results);
     } catch (error) {
-      console.error('Error loading flows:', error);
+      logger.error('Error loading flows:', error);
     }
   };
 

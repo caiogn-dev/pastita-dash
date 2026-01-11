@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logger from '../../services/logger';
 import { Link } from 'react-router-dom';
 import {
   UserGroupIcon,
@@ -60,7 +61,7 @@ const CustomerSessionsPage: React.FC = () => {
       const response = await companyProfileApi.list({ page_size: 100 });
       setCompanies(response.results);
     } catch (error) {
-      console.error('Error loading companies:', error);
+      logger.error('Error loading companies:', error);
     }
   };
 
