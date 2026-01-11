@@ -89,7 +89,7 @@ export function useAutomationWS(options: UseAutomationWSOptions = {}) {
       };
 
       ws.onclose = (event) => {
-        logger.info('Automation WebSocket closed:', event.code, event.reason);
+        logger.info('Automation WebSocket closed', { code: event.code, reason: event.reason });
         setIsConnected(false);
         wsRef.current = null;
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import logger from 'services/logger';
+import logger from './services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout';
 import { FullPageLoading } from './components/common';
