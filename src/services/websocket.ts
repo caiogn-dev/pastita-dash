@@ -2,6 +2,8 @@
  * WebSocket service for real-time updates.
  */
 
+import logger from './logger';
+
 type MessageHandler = (data: unknown) => void;
 
 interface WebSocketMessage {
@@ -31,7 +33,7 @@ class WebSocketService {
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
-      console.log('WebSocket connected');
+      logger.wsEvent('connected', { url: this.url });
       this.reconnectAttempts = 0;
       this.emit('connection_established', { connected: true });
     };
@@ -41,32 +43,32 @@ class WebSocketService {
         const data: WebSocketMessage = JSON.parse(event.data);
         this.emit(data.type, data);
       } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+        logger.error('Error parsing WebSocket message', error as Error, { url: this.url });
       }
     };
 
     this.ws.onclose = (event) => {
-      console.log('WebSocket disconnected:', event.code, event.reason);
+      logger.wsEvent('disconnected', { url: this.url, code: event.code, reason: event.reason });
       this.emit('connection_closed', { code: event.code, reason: event.reason });
       this.attemptReconnect();
     };
 
     this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      logger.error('WebSocket error', null, { url: this.url, error: String(error) });
       this.emit('connection_error', { error });
     };
   }
 
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('Max reconnect attempts reached');
+      logger.warn('Max reconnect attempts reached', { url: this.url });
       return;
     }
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
-    console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    logger.wsEvent('reconnecting', { url: this.url, delay, attempt: this.reconnectAttempts });
 
     setTimeout(() => {
       this.createConnection();
@@ -85,7 +87,7 @@ class WebSocketService {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
     } else {
-      console.warn('WebSocket is not connected');
+      logger.warn('WebSocket is not connected, cannot send message', { url: this.url, type: data.type });
     }
   }
 
@@ -118,7 +120,7 @@ class WebSocketService {
       try {
         handler(data);
       } catch (error) {
-        console.error(`Error in handler for event ${event}:`, error);
+        logger.error(`Error in handler for event ${event}`, error as Error, { url: this.url });
       }
     });
   }
