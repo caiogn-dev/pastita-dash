@@ -170,7 +170,7 @@ export interface Order {
   customer_phone: string;
   customer_name: string;
   customer_email: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'awaiting_payment' | 'paid' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+  status: 'pending' | 'confirmed' | 'processing' | 'preparing' | 'ready' | 'out_for_delivery' | 'awaiting_payment' | 'paid' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
   subtotal: number;
   discount: number;
   shipping_cost: number;
