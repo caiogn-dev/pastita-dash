@@ -38,41 +38,52 @@ export {
 } from './scheduling';
 
 // Pastita API - Massas Artesanais
-export { default as pastitaApi } from './pastitaApi';
 export type {
   Produto,
   Molho,
   Carne,
   Rondelli,
   Combo,
-  ItemCarrinho,
-  ItemComboCarrinho,
-  Carrinho,
-  ItemPedido,
-  ItemComboPedido,
+  ComboItem,
   Pedido,
-  Catalogo,
-  ProdutoInput,
+  PedidoItem,
+  PedidoEndereco,
+  Category,
+  DashboardStats,
   MolhoInput,
   CarneInput,
   RondelliInput,
   ComboInput,
   PastitaStats,
+  Catalogo,
 } from './pastitaApi';
 export {
-  getCatalogo,
+  // Products
+  getProducts,
+  getProduct,
+  createProduct,
+  updateProduct,
+  deleteProduct,
   getProdutos,
   getProduto,
+  createProduto,
+  updateProduto,
+  deleteProduto,
+  // Molhos
   getMolhos,
   getMolho,
   createMolho,
   updateMolho,
   deleteMolho,
+  toggleMolhoActive,
+  // Carnes
   getCarnes,
   getCarne,
   createCarne,
   updateCarne,
   deleteCarne,
+  toggleCarneActive,
+  // Rondellis
   getRondellis,
   getRondellisClassicos,
   getRondellisGourmet,
@@ -80,6 +91,8 @@ export {
   createRondelli,
   updateRondelli,
   deleteRondelli,
+  toggleRondelliActive,
+  // Combos
   getCombos,
   getCombosDestaques,
   getCombo,
@@ -88,11 +101,26 @@ export {
   deleteCombo,
   toggleComboActive,
   toggleComboDestaque,
+  // Orders
   getPedidos,
   getPedido,
   getStatusPedido,
+  updatePedidoStatus,
   getWhatsAppConfirmacao,
+  // Categories
+  getCategories,
+  getCategory,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  // Dashboard
+  getDashboardStats,
   getPastitaStats,
+  getCatalog,
+  getCatalogo,
+  // Toggle
+  toggleProductActive,
+  toggleProductFeatured,
 } from './pastitaApi';
 
 // Logger

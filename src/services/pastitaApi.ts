@@ -1,715 +1,694 @@
 /**
  * Pastita API Service
- * Handles all API calls to the Pastita backend endpoints for dashboard management
- * 
- * UPDATED: Now uses the unified stores API instead of legacy /pastita/ endpoints
- * All products are managed through /stores/products/ with store filter
+ * Uses the unified stores API: /stores/
+ * All endpoints filter by store=pastita
  */
 
 import api from './api';
 import logger from './logger';
 
-// Store slug for Pastita - can be configured via environment
 const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
-
-// Base URLs for the unified API
 const STORES_BASE = '/stores';
-const STORE_PRODUCTS_URL = `${STORES_BASE}/products`;
-const STORE_CATEGORIES_URL = `${STORES_BASE}/categories`;
-const STORE_COMBOS_URL = `${STORES_BASE}/combos`;
-const STORE_ORDERS_URL = `${STORES_BASE}/orders`;
-
-// Legacy Pastita API base (for backward compatibility during migration)
-const PASTITA_BASE = '/pastita';
-
-// Helper to get store ID (cached)
-let cachedStoreId: string | null = null;
-
-async function getStoreId(): Promise<string> {
-  if (cachedStoreId) return cachedStoreId;
-  
-  try {
-    const response = await api.get(`${STORES_BASE}/stores/`, { params: { slug: STORE_SLUG } });
-    const stores = response.data.results || response.data;
-    if (stores.length > 0) {
-      cachedStoreId = stores[0].id as string;
-      return cachedStoreId;
-    }
-    throw new Error(`Store with slug '${STORE_SLUG}' not found`);
-  } catch (error) {
-    logger.apiError(`${STORES_BASE}/stores/`, error);
-    throw error;
-  }
-}
-
-// Clear cached store ID (useful for testing)
-export function clearStoreCache(): void {
-  cachedStoreId = null;
-}
 
 // =============================================================================
-// TYPES - Matching Django serializers exactly
+// TYPES
 // =============================================================================
 
 export interface Produto {
   id: number;
+  name: string;
+  description: string;
+  price: string | number;
+  sale_price: string | number | null;
+  image: string | null;
+  is_active: boolean;
+  is_featured: boolean;
+  stock_quantity: number;
+  category: number | null;
+  category_name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  // Legacy aliases
   nome: string;
   descricao: string;
-  preco: string | number;  // API returns string, but we handle both
+  preco: string | number;
   imagem: string | null;
-  imagem_url: string | null;
   ativo: boolean;
-  criado_em: string;
-  atualizado_em?: string;
-  estoque?: number;
-  tipo_produto?: 'molho' | 'carne' | 'rondelli' | 'produto';
+  destaque?: boolean;
+  quantidade?: string | number;
+  tipo?: string;
+  tipo_display?: string;
+  message?: string;
+  [key: string]: any;
 }
 
 export interface Molho extends Produto {
-  tipo: string;  // 'tradicional', 'especial', 'gourmet'
-  tipo_display: string;
-  quantidade: string | number;  // ml - API returns string
+  tipo: string;
+  quantidade: string | number;
 }
 
 export interface Carne extends Produto {
-  tipo: string;  // 'bovina', 'suina', 'frango', 'peixe'
-  tipo_display: string;
-  quantidade: string | number;  // grams - API returns string
-  molhos: number[];  // IDs of compatible sauces
-  molhos_compativeis: Molho[];
+  tipo: string;
+  quantidade: string | number;
+  molhos?: number[];
+  molhos_compativeis?: Molho[] | number[];
 }
 
 export interface Rondelli extends Produto {
-  categoria: string;  // 'classico', 'gourmet', 'especial'
-  categoria_display: string;
+  categoria: string;
+  categoria_display?: string;
   sabor: string;
-  sabor_display: string;
-  quantidade: string | number;  // grams - API returns string
+  sabor_display?: string;
   is_gourmet: boolean;
+  quantidade: string | number;
 }
 
-export interface Combo {
-  id: number;
-  nome: string;
-  descricao: string;
-  preco: string | number;  // API returns string
-  preco_original: string | number | null;
-  imagem: string | null;
-  imagem_url: string | null;
-  ativo: boolean;
-  destaque: boolean;
-  estoque?: number;
+export interface Combo extends Produto {
+  items?: ComboItem[];
+  preco_original?: string | number | null;
   quantidade_pessoas?: number;
-  molhos: number[];  // IDs
-  molhos_inclusos: Molho[];
-  carne: number | null;  // ID
-  carne_inclusa: Carne | null;
-  rondelli: number | null;  // ID
-  rondelli_incluso: Rondelli | null;
-  economia: string | number;
-  percentual_desconto: number;
-  criado_em: string;
+  molhos?: number[];
+  molhos_inclusos?: Molho[] | number[];
+  carne?: number | null;
+  carne_inclusa?: Carne | null;
+  rondelli?: number | null;
+  rondelli_incluso?: Rondelli | null;
 }
 
-export interface ItemCarrinho {
-  id: number;
-  produto: Produto;
-  quantidade: number;
-  subtotal: string;
+export interface ComboItem {
+  product_id: number;
+  quantity: number;
 }
 
-export interface ItemComboCarrinho {
-  id: number;
-  combo: Combo;
-  quantidade: number;
-  subtotal: string;
-}
-
-export interface Carrinho {
-  id: number;
-  itens: ItemCarrinho[];
-  combos: ItemComboCarrinho[];
-  total_produtos: string;
-  total_combos: string;
-  total: string;
-}
-
-export interface ItemPedido {
-  id: number;
-  produto: number;
-  produto_info?: Produto;
-  nome_produto: string;
-  quantidade: number;
-  preco_unitario: number;
-  subtotal: number;
-}
-
-export interface ItemComboPedido {
-  id: number;
-  combo: number;
-  combo_info?: Combo;
-  nome_combo: string;
-  quantidade: number;
-  preco_unitario: number;
-  subtotal: number;
-}
-
-export interface EnderecoEntrega {
-  rua: string;
-  numero: string;
-  complemento?: string;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  cep: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-export interface Pedido {
-  id: number;
-  usuario: number;
-  status: string;
-  status_display?: string;
-  subtotal: number;
-  taxa_entrega: number;
-  desconto: number;
-  cupom_codigo?: string | null;
-  total: number;
-  cliente_nome: string;
-  cliente_telefone: string;
-  cliente_email?: string;
-  endereco_entrega: EnderecoEntrega | null;
-  observacoes: string;
-  preference_id: string | null;
-  payment_id: string | null;
-  criado_em: string;
-  atualizado_em: string;
-  itens: ItemPedido[];
-  itens_combo: ItemComboPedido[];
-}
-
-export interface Catalogo {
-  massas_classicos: Rondelli[];  // Matches Django CatalogoView response
-  massas_gourmet: Rondelli[];
-  molhos: Molho[];
-  carnes: Carne[];
-  combos: Combo[];
-}
-
-export interface ProdutoInput {
+// Input types for create/update (flexible to accept any fields)
+export interface MolhoInput {
   nome: string;
   descricao?: string;
   preco: number | string;
+  tipo?: string;
+  quantidade?: string;
   ativo?: boolean;
-  imagem?: File | null;
-}
-
-export interface MolhoInput {
-  nome: string;
-  tipo: string;  // 'tradicional', 'especial', 'gourmet'
-  descricao?: string;
-  quantidade: number;  // ml
-  preco: number;
-  ativo?: boolean;
-  imagem?: File | null;
+  [key: string]: any;
 }
 
 export interface CarneInput {
   nome: string;
-  tipo: string;  // 'bovina', 'suina', 'frango', 'peixe'
   descricao?: string;
-  quantidade: number;  // grams
-  preco: number;
-  molhos_compativeis: number[];  // IDs of compatible sauces
+  preco: number | string;
+  tipo?: string;
+  quantidade?: string;
   ativo?: boolean;
-  imagem?: File | null;
+  molhos?: number[];
+  molhos_compativeis?: number[];
+  [key: string]: any;
 }
 
 export interface RondelliInput {
   nome: string;
-  sabor: string;
-  categoria: string;  // 'classico', 'gourmet', 'especial'
   descricao?: string;
-  preco: number;
+  preco: number | string;
+  categoria?: string;
+  sabor?: string;
   is_gourmet?: boolean;
+  quantidade?: string;
   ativo?: boolean;
-  imagem?: File | null;
+  [key: string]: any;
 }
 
 export interface ComboInput {
   nome: string;
   descricao?: string;
-  preco: number;
-  preco_original?: number;
+  preco: number | string;
+  preco_original?: number | string | null;
   quantidade_pessoas?: number;
   ativo?: boolean;
   destaque?: boolean;
-  molhos_inclusos: number[];  // IDs
-  carne_inclusa?: number | null;  // ID
-  rondelli_incluso?: number | null;  // ID
-  imagem?: File | null;
+  items?: ComboItem[];
+  molhos_inclusos?: number[];
+  carne_inclusa?: number | null;
+  rondelli_incluso?: number | null;
+  [key: string]: any;
+}
+
+export interface PedidoEndereco {
+  rua: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+}
+
+export interface Pedido {
+  id: string;
+  order_number: string;
+  status: string;
+  payment_status: string;
+  delivery_method: string;
+  subtotal: string;
+  delivery_fee: string;
+  discount: string;
+  total: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  delivery_address: string;
+  delivery_number: string;
+  delivery_complement: string;
+  delivery_neighborhood: string;
+  delivery_city: string;
+  delivery_state: string;
+  delivery_zip: string;
+  notes: string;
+  items: PedidoItem[];
+  created_at: string;
+  updated_at: string;
+  // Legacy aliases
+  numero?: string;
+  status_pagamento?: string;
+  cliente_nome?: string;
+  cliente_email?: string;
+  cliente_telefone?: string;
+  endereco_entrega?: PedidoEndereco;
+  taxa_entrega?: string;
+  desconto?: string;
+  observacoes?: string;
+  criado_em?: string;
+  itens?: PedidoItem[];
+}
+
+export interface PedidoItem {
+  id: number;
+  product_id: number;
+  product_name: string;
+  quantity: number;
+  unit_price: string;
+  total_price: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface DashboardStats {
+  total_orders: number;
+  pending_orders: number;
+  total_revenue: number;
+  total_products: number;
 }
 
 // =============================================================================
-// CATALOG / PRODUCTS
+// HELPER - Normalize product data
 // =============================================================================
 
-/**
- * Get full catalog (all products organized by category)
- */
-export async function getCatalogo(): Promise<Catalogo> {
+function normalizeProduct(p: any): Produto {
+  return {
+    ...p,
+    // Legacy aliases
+    nome: p.name || p.nome || '',
+    descricao: p.description || p.descricao || '',
+    preco: p.price || p.preco || '0',
+    imagem: p.image || p.imagem || null,
+    ativo: p.is_active ?? p.ativo ?? true,
+    destaque: p.is_featured ?? p.destaque ?? false,
+    quantidade: p.stock_quantity?.toString() || p.quantidade || '0',
+    tipo: p.metadata?.tipo || p.tipo || '',
+    tipo_display: p.metadata?.tipo_display || p.tipo_display || '',
+    categoria: p.metadata?.categoria || p.categoria || '',
+    categoria_display: p.metadata?.categoria_display || p.categoria_display || '',
+    sabor: p.metadata?.sabor || p.sabor || '',
+    sabor_display: p.metadata?.sabor_display || p.sabor_display || '',
+    is_gourmet: p.metadata?.is_gourmet ?? p.is_gourmet ?? false,
+    preco_original: p.sale_price || p.preco_original || null,
+    quantidade_pessoas: p.metadata?.quantidade_pessoas || p.quantidade_pessoas || 0,
+  };
+}
+
+function normalizeOrder(o: any): Pedido {
+  // delivery_address is a JSON object from the API
+  const addr = o.delivery_address || {};
+  
+  return {
+    ...o,
+    // Legacy aliases
+    numero: o.order_number,
+    status_pagamento: o.payment_status,
+    cliente_nome: o.customer_name,
+    cliente_email: o.customer_email,
+    cliente_telefone: o.customer_phone,
+    taxa_entrega: o.delivery_fee,
+    desconto: o.discount,
+    observacoes: o.customer_notes || o.delivery_notes,
+    criado_em: o.created_at,
+    itens: o.items,
+    endereco_entrega: addr && Object.keys(addr).length > 0 ? {
+      rua: addr.street || addr.rua || addr.address || '',
+      numero: addr.number || addr.numero || '',
+      complemento: addr.complement || addr.complemento || '',
+      bairro: addr.neighborhood || addr.bairro || '',
+      cidade: addr.city || addr.cidade || '',
+      estado: addr.state || addr.estado || '',
+      cep: addr.zip || addr.cep || addr.zipcode || '',
+    } : null,
+  };
+}
+
+// =============================================================================
+// PRODUCTS (Generic)
+// =============================================================================
+
+export async function getProducts(params: Record<string, any> = {}): Promise<Produto[]> {
   try {
-    const response = await api.get(`${PASTITA_BASE}/catalogo/`);
-    return response.data;
+    const response = await api.get(`${STORES_BASE}/products/`, {
+      params: { store: STORE_SLUG, ...params }
+    });
+    const results = response.data.results || response.data;
+    return results.map(normalizeProduct);
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/catalogo/`, error);
+    logger.apiError(`${STORES_BASE}/products/`, error);
     throw error;
   }
 }
 
-/**
- * Get all products
- */
-export async function getProdutos(params: Record<string, string> = {}): Promise<Produto[]> {
+export async function getProduct(id: number): Promise<Produto> {
   try {
-    const response = await api.get(`${PASTITA_BASE}/produtos/`, { params });
-    return response.data.results || response.data;
+    const response = await api.get(`${STORES_BASE}/products/${id}/`);
+    return normalizeProduct(response.data);
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/produtos/`, error);
+    logger.apiError(`${STORES_BASE}/products/${id}/`, error);
     throw error;
   }
 }
 
-/**
- * Get single product by ID
- */
-export async function getProduto(id: number): Promise<Produto> {
+export async function createProduct(data: Partial<Produto>): Promise<Produto> {
   try {
-    const response = await api.get(`${PASTITA_BASE}/produtos/${id}/`);
-    return response.data;
+    const payload = {
+      store: STORE_SLUG,
+      name: data.nome || data.name,
+      description: data.descricao || data.description,
+      price: data.preco || data.price,
+      sale_price: data.sale_price,
+      is_active: data.ativo ?? data.is_active ?? true,
+      is_featured: data.is_featured ?? false,
+      category: data.category,
+      sort_order: data.sort_order ?? 0,
+    };
+    const response = await api.post(`${STORES_BASE}/products/`, payload);
+    return normalizeProduct(response.data);
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/produtos/${id}/`, error);
+    logger.apiError(`${STORES_BASE}/products/`, error, data);
+    throw error;
+  }
+}
+
+export async function updateProduct(id: number, data: Partial<Produto>): Promise<Produto> {
+  try {
+    const payload: any = {};
+    if (data.nome !== undefined || data.name !== undefined) payload.name = data.nome || data.name;
+    if (data.descricao !== undefined || data.description !== undefined) payload.description = data.descricao || data.description;
+    if (data.preco !== undefined || data.price !== undefined) payload.price = data.preco || data.price;
+    if (data.sale_price !== undefined) payload.sale_price = data.sale_price;
+    if (data.ativo !== undefined || data.is_active !== undefined) payload.is_active = data.ativo ?? data.is_active;
+    if (data.is_featured !== undefined) payload.is_featured = data.is_featured;
+    if (data.category !== undefined) payload.category = data.category;
+    if (data.sort_order !== undefined) payload.sort_order = data.sort_order;
+    
+    const response = await api.patch(`${STORES_BASE}/products/${id}/`, payload);
+    return normalizeProduct(response.data);
+  } catch (error) {
+    logger.apiError(`${STORES_BASE}/products/${id}/`, error, data);
+    throw error;
+  }
+}
+
+export async function deleteProduct(id: number): Promise<void> {
+  try {
+    await api.delete(`${STORES_BASE}/products/${id}/`);
+  } catch (error) {
+    logger.apiError(`${STORES_BASE}/products/${id}/`, error);
     throw error;
   }
 }
 
 // =============================================================================
-// MOLHOS (Sauces)
+// MOLHOS (filter by category)
 // =============================================================================
 
-export async function getMolhos(params: Record<string, string> = {}): Promise<Molho[]> {
-  try {
-    const response = await api.get(`${PASTITA_BASE}/molhos/`, { params });
-    return response.data.results || response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/molhos/`, error);
-    throw error;
-  }
+export async function getMolhos(params: Record<string, any> = {}): Promise<Molho[]> {
+  return getProducts({ category__slug: 'molhos', ...params }) as Promise<Molho[]>;
 }
 
 export async function getMolho(id: number): Promise<Molho> {
-  try {
-    const response = await api.get(`${PASTITA_BASE}/molhos/${id}/`);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/molhos/${id}/`, error);
-    throw error;
-  }
+  return getProduct(id) as Promise<Molho>;
 }
 
-export async function createMolho(data: MolhoInput): Promise<Molho> {
-  try {
-    const response = await api.post(`${PASTITA_BASE}/admin/molhos/`, data);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/molhos/`, error, data);
-    throw error;
-  }
+export async function createMolho(data: any): Promise<Molho> {
+  return createProduct(data) as Promise<Molho>;
 }
 
-export async function updateMolho(id: number, data: Partial<MolhoInput>): Promise<Molho> {
-  try {
-    const response = await api.patch(`${PASTITA_BASE}/admin/molhos/${id}/`, data);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/molhos/${id}/`, error, data);
-    throw error;
-  }
+export async function updateMolho(id: number, data: any): Promise<Molho> {
+  return updateProduct(id, data) as Promise<Molho>;
 }
 
 export async function deleteMolho(id: number): Promise<void> {
-  try {
-    await api.delete(`${PASTITA_BASE}/admin/molhos/${id}/`);
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/molhos/${id}/`, error);
-    throw error;
-  }
+  return deleteProduct(id);
 }
 
 // =============================================================================
-// CARNES (Meats)
+// CARNES (filter by category)
 // =============================================================================
 
-export async function getCarnes(params: Record<string, string> = {}): Promise<Carne[]> {
-  try {
-    const response = await api.get(`${PASTITA_BASE}/carnes/`, { params });
-    return response.data.results || response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/carnes/`, error);
-    throw error;
-  }
+export async function getCarnes(params: Record<string, any> = {}): Promise<Carne[]> {
+  return getProducts({ category__slug: 'carnes', ...params }) as Promise<Carne[]>;
 }
 
 export async function getCarne(id: number): Promise<Carne> {
-  try {
-    const response = await api.get(`${PASTITA_BASE}/carnes/${id}/`);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/carnes/${id}/`, error);
-    throw error;
-  }
+  return getProduct(id) as Promise<Carne>;
 }
 
-export async function createCarne(data: CarneInput): Promise<Carne> {
-  try {
-    const response = await api.post(`${PASTITA_BASE}/admin/carnes/`, data);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/carnes/`, error, data);
-    throw error;
-  }
+export async function createCarne(data: any): Promise<Carne> {
+  return createProduct(data) as Promise<Carne>;
 }
 
-export async function updateCarne(id: number, data: Partial<CarneInput>): Promise<Carne> {
-  try {
-    const response = await api.patch(`${PASTITA_BASE}/admin/carnes/${id}/`, data);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/carnes/${id}/`, error, data);
-    throw error;
-  }
+export async function updateCarne(id: number, data: any): Promise<Carne> {
+  return updateProduct(id, data) as Promise<Carne>;
 }
 
 export async function deleteCarne(id: number): Promise<void> {
-  try {
-    await api.delete(`${PASTITA_BASE}/admin/carnes/${id}/`);
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/carnes/${id}/`, error);
-    throw error;
-  }
+  return deleteProduct(id);
 }
 
 // =============================================================================
-// RONDELLIS (Pastas)
+// RONDELLIS (filter by category)
 // =============================================================================
 
-export async function getRondellis(params: Record<string, string> = {}): Promise<Rondelli[]> {
-  try {
-    const response = await api.get(`${PASTITA_BASE}/rondellis/`, { params });
-    return response.data.results || response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/rondellis/`, error);
-    throw error;
-  }
+export async function getRondellis(params: Record<string, any> = {}): Promise<Rondelli[]> {
+  return getProducts({ category__slug: 'rondellis', ...params }) as Promise<Rondelli[]>;
 }
 
 export async function getRondellisClassicos(): Promise<Rondelli[]> {
-  try {
-    const response = await api.get(`${PASTITA_BASE}/rondellis/classicos/`);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/rondellis/classicos/`, error);
-    throw error;
-  }
+  const all = await getRondellis();
+  return all.filter(r => !r.is_gourmet);
 }
 
 export async function getRondellisGourmet(): Promise<Rondelli[]> {
-  try {
-    const response = await api.get(`${PASTITA_BASE}/rondellis/gourmet/`);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/rondellis/gourmet/`, error);
-    throw error;
-  }
+  const all = await getRondellis();
+  return all.filter(r => r.is_gourmet);
 }
 
 export async function getRondelli(id: number): Promise<Rondelli> {
-  try {
-    const response = await api.get(`${PASTITA_BASE}/rondellis/${id}/`);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/rondellis/${id}/`, error);
-    throw error;
-  }
+  return getProduct(id) as Promise<Rondelli>;
 }
 
-export async function createRondelli(data: RondelliInput): Promise<Rondelli> {
-  try {
-    const response = await api.post(`${PASTITA_BASE}/admin/rondellis/`, data);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/rondellis/`, error, data);
-    throw error;
-  }
+export async function createRondelli(data: any): Promise<Rondelli> {
+  return createProduct(data) as Promise<Rondelli>;
 }
 
-export async function updateRondelli(id: number, data: Partial<RondelliInput>): Promise<Rondelli> {
-  try {
-    const response = await api.patch(`${PASTITA_BASE}/admin/rondellis/${id}/`, data);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/rondellis/${id}/`, error, data);
-    throw error;
-  }
+export async function updateRondelli(id: number, data: any): Promise<Rondelli> {
+  return updateProduct(id, data) as Promise<Rondelli>;
 }
 
 export async function deleteRondelli(id: number): Promise<void> {
-  try {
-    await api.delete(`${PASTITA_BASE}/admin/rondellis/${id}/`);
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/rondellis/${id}/`, error);
-    throw error;
-  }
+  return deleteProduct(id);
 }
 
 // =============================================================================
 // COMBOS
 // =============================================================================
 
-export async function getCombos(params: Record<string, string> = {}): Promise<Combo[]> {
+export async function getCombos(params: Record<string, any> = {}): Promise<Combo[]> {
   try {
-    const response = await api.get(`${PASTITA_BASE}/combos/`, { params });
-    return response.data.results || response.data;
+    const response = await api.get(`${STORES_BASE}/combos/`, {
+      params: { store: STORE_SLUG, ...params }
+    });
+    const results = response.data.results || response.data;
+    return results.map(normalizeProduct);
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/combos/`, error);
-    throw error;
-  }
-}
-
-export async function getCombosDestaques(): Promise<Combo[]> {
-  try {
-    const response = await api.get(`${PASTITA_BASE}/combos/destaques/`);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/combos/destaques/`, error);
+    logger.apiError(`${STORES_BASE}/combos/`, error);
     throw error;
   }
 }
 
 export async function getCombo(id: number): Promise<Combo> {
   try {
-    const response = await api.get(`${PASTITA_BASE}/combos/${id}/`);
-    return response.data;
+    const response = await api.get(`${STORES_BASE}/combos/${id}/`);
+    return normalizeProduct(response.data);
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/combos/${id}/`, error);
+    logger.apiError(`${STORES_BASE}/combos/${id}/`, error);
     throw error;
   }
 }
 
-export async function createCombo(data: ComboInput): Promise<Combo> {
+export async function createCombo(data: any): Promise<Combo> {
   try {
-    const response = await api.post(`${PASTITA_BASE}/admin/combos/`, data);
-    return response.data;
+    const response = await api.post(`${STORES_BASE}/combos/`, {
+      store: STORE_SLUG,
+      ...data
+    });
+    return normalizeProduct(response.data);
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/combos/`, error, data);
+    logger.apiError(`${STORES_BASE}/combos/`, error, data);
     throw error;
   }
 }
 
-export async function updateCombo(id: number, data: Partial<ComboInput>): Promise<Combo> {
+export async function updateCombo(id: number, data: any): Promise<Combo> {
   try {
-    const response = await api.patch(`${PASTITA_BASE}/admin/combos/${id}/`, data);
-    return response.data;
+    const response = await api.patch(`${STORES_BASE}/combos/${id}/`, data);
+    return normalizeProduct(response.data);
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/combos/${id}/`, error, data);
+    logger.apiError(`${STORES_BASE}/combos/${id}/`, error, data);
     throw error;
   }
 }
 
 export async function deleteCombo(id: number): Promise<void> {
   try {
-    await api.delete(`${PASTITA_BASE}/admin/combos/${id}/`);
+    await api.delete(`${STORES_BASE}/combos/${id}/`);
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/combos/${id}/`, error);
-    throw error;
-  }
-}
-
-export async function toggleComboActive(id: number): Promise<{ id: number; ativo: boolean; message: string }> {
-  try {
-    const response = await api.post(`${PASTITA_BASE}/admin/combos/${id}/toggle_active/`);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/combos/${id}/toggle_active/`, error);
-    throw error;
-  }
-}
-
-export async function toggleComboDestaque(id: number): Promise<{ id: number; destaque: boolean; message: string }> {
-  try {
-    const response = await api.post(`${PASTITA_BASE}/admin/combos/${id}/toggle_destaque/`);
-    return response.data;
-  } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/admin/combos/${id}/toggle_destaque/`, error);
+    logger.apiError(`${STORES_BASE}/combos/${id}/`, error);
     throw error;
   }
 }
 
 // =============================================================================
-// PEDIDOS (Orders)
+// ORDERS (Pedidos)
 // =============================================================================
 
-export async function getPedidos(params: Record<string, string> = {}): Promise<Pedido[]> {
+export async function getPedidos(params: Record<string, any> = {}): Promise<Pedido[]> {
   try {
-    const response = await api.get(`${PASTITA_BASE}/pedidos/`, { params });
+    const response = await api.get(`${STORES_BASE}/orders/`, {
+      params: { store: STORE_SLUG, ...params }
+    });
+    const results = response.data.results || response.data;
+    return results.map(normalizeOrder);
+  } catch (error) {
+    logger.apiError(`${STORES_BASE}/orders/`, error);
+    throw error;
+  }
+}
+
+export async function getPedido(id: string | number): Promise<Pedido> {
+  try {
+    const response = await api.get(`${STORES_BASE}/orders/${id}/`);
+    return normalizeOrder(response.data);
+  } catch (error) {
+    logger.apiError(`${STORES_BASE}/orders/${id}/`, error);
+    throw error;
+  }
+}
+
+export async function updatePedidoStatus(id: string | number, status: string): Promise<Pedido> {
+  try {
+    const response = await api.patch(`${STORES_BASE}/orders/${id}/`, { status });
+    return normalizeOrder(response.data);
+  } catch (error) {
+    logger.apiError(`${STORES_BASE}/orders/${id}/`, error);
+    throw error;
+  }
+}
+
+export async function getStatusPedido(id: string | number): Promise<{ status: string; payment_status: string }> {
+  try {
+    const response = await api.get(`${STORES_BASE}/orders/${id}/payment-status/`);
+    return response.data;
+  } catch (error) {
+    logger.apiError(`${STORES_BASE}/orders/${id}/payment-status/`, error);
+    throw error;
+  }
+}
+
+// =============================================================================
+// CATEGORIES
+// =============================================================================
+
+export async function getCategories(params: Record<string, any> = {}): Promise<Category[]> {
+  try {
+    const response = await api.get(`${STORES_BASE}/categories/`, {
+      params: { store: STORE_SLUG, ...params }
+    });
     return response.data.results || response.data;
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/pedidos/`, error);
+    logger.apiError(`${STORES_BASE}/categories/`, error);
     throw error;
   }
 }
 
-export async function getPedido(id: number): Promise<Pedido> {
+export async function getCategory(id: number): Promise<Category> {
   try {
-    const response = await api.get(`${PASTITA_BASE}/pedidos/${id}/`);
+    const response = await api.get(`${STORES_BASE}/categories/${id}/`);
     return response.data;
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/pedidos/${id}/`, error);
+    logger.apiError(`${STORES_BASE}/categories/${id}/`, error);
     throw error;
   }
 }
 
-export async function getStatusPedido(id: number): Promise<{ status: string; payment_status: string }> {
+export async function createCategory(data: Partial<Category>): Promise<Category> {
   try {
-    const response = await api.get(`${PASTITA_BASE}/pedidos/${id}/status/`);
+    const response = await api.post(`${STORES_BASE}/categories/`, {
+      store: STORE_SLUG,
+      ...data
+    });
     return response.data;
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/pedidos/${id}/status/`, error);
+    logger.apiError(`${STORES_BASE}/categories/`, error, data);
     throw error;
   }
 }
 
-export async function updatePedidoStatus(id: number, status: string): Promise<Pedido> {
+export async function updateCategory(id: number, data: Partial<Category>): Promise<Category> {
   try {
-    const response = await api.post(`${PASTITA_BASE}/pedidos/${id}/update_status/`, { status });
+    const response = await api.patch(`${STORES_BASE}/categories/${id}/`, data);
     return response.data;
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/pedidos/${id}/update_status/`, error);
+    logger.apiError(`${STORES_BASE}/categories/${id}/`, error, data);
     throw error;
   }
 }
 
-export async function getWhatsAppConfirmacao(id: number): Promise<{ whatsapp_url: string }> {
+export async function deleteCategory(id: number): Promise<void> {
   try {
-    const response = await api.get(`${PASTITA_BASE}/pedidos/${id}/whatsapp/`);
-    return response.data;
+    await api.delete(`${STORES_BASE}/categories/${id}/`);
   } catch (error) {
-    logger.apiError(`${PASTITA_BASE}/pedidos/${id}/whatsapp/`, error);
+    logger.apiError(`${STORES_BASE}/categories/${id}/`, error);
     throw error;
   }
 }
 
 // =============================================================================
-// STATISTICS
+// DASHBOARD STATS
 // =============================================================================
 
-export interface PastitaStats {
-  total_produtos: number;
-  total_molhos: number;
-  total_carnes: number;
-  total_rondellis: number;
-  total_combos: number;
-  total_pedidos: number;
-  pedidos_pendentes: number;
-  pedidos_pagos: number;
-  receita_total: string;
-}
-
-export async function getPastitaStats(): Promise<PastitaStats> {
+export async function getDashboardStats(): Promise<DashboardStats> {
   try {
-    // This endpoint would need to be created on the backend
-    const [produtos, molhos, carnes, rondellis, combos, pedidos] = await Promise.all([
-      getProdutos(),
-      getMolhos(),
-      getCarnes(),
-      getRondellis(),
-      getCombos(),
-      getPedidos(),
-    ]);
-
-    const pedidosPagos = pedidos.filter(p => p.status === 'pago' || p.status === 'entregue');
-    const receitaTotal = pedidosPagos.reduce((acc, p) => acc + p.total, 0);
-
+    // Get orders
+    const ordersResponse = await api.get(`${STORES_BASE}/orders/`, {
+      params: { store: STORE_SLUG }
+    });
+    const orders = ordersResponse.data.results || ordersResponse.data;
+    
+    // Get products
+    const productsResponse = await api.get(`${STORES_BASE}/products/`, {
+      params: { store: STORE_SLUG }
+    });
+    const products = productsResponse.data.results || productsResponse.data;
+    
+    // Calculate stats
+    const pendingOrders = orders.filter((o: any) => o.status === 'pending' || o.status === 'confirmed');
+    const totalRevenue = orders
+      .filter((o: any) => o.payment_status === 'paid')
+      .reduce((sum: number, o: any) => sum + parseFloat(o.total || '0'), 0);
+    
     return {
-      total_produtos: produtos.length,
-      total_molhos: molhos.length,
-      total_carnes: carnes.length,
-      total_rondellis: rondellis.length,
-      total_combos: combos.length,
-      total_pedidos: pedidos.length,
-      pedidos_pendentes: pedidos.filter(p => p.status === 'pendente').length,
-      pedidos_pagos: pedidosPagos.length,
-      receita_total: receitaTotal.toFixed(2),
+      total_orders: orders.length,
+      pending_orders: pendingOrders.length,
+      total_revenue: totalRevenue,
+      total_products: products.length,
     };
   } catch (error) {
-    logger.apiError('pastita/stats', error);
+    logger.apiError('dashboard stats', error);
+    return {
+      total_orders: 0,
+      pending_orders: 0,
+      total_revenue: 0,
+      total_products: 0,
+    };
+  }
+}
+
+// =============================================================================
+// CATALOG (Public)
+// =============================================================================
+
+export async function getCatalog(): Promise<any> {
+  try {
+    const response = await api.get(`${STORES_BASE}/s/${STORE_SLUG}/catalog/`);
+    return response.data;
+  } catch (error) {
+    logger.apiError(`${STORES_BASE}/s/${STORE_SLUG}/catalog/`, error);
     throw error;
   }
 }
 
 // =============================================================================
-// DEFAULT EXPORT
+// LEGACY ALIASES (for backward compatibility in components)
 // =============================================================================
 
-const pastitaApi = {
-  // Catalog
-  getCatalogo,
-  getProdutos,
-  getProduto,
+// Produtos
+export const getProdutos = getProducts;
+export const getProduto = getProduct;
+export const createProduto = createProduct;
+export const updateProduto = updateProduct;
+export const deleteProduto = deleteProduct;
 
-  // Molhos
-  getMolhos,
-  getMolho,
-  createMolho,
-  updateMolho,
-  deleteMolho,
+// Catalog alias
+export const getCatalogo = getCatalog;
 
-  // Carnes
-  getCarnes,
-  getCarne,
-  createCarne,
-  updateCarne,
-  deleteCarne,
+// Combos destaques
+export async function getCombosDestaques(): Promise<Combo[]> {
+  const combos = await getCombos();
+  return combos.filter(c => c.destaque);
+}
 
-  // Rondellis
-  getRondellis,
-  getRondellisClassicos,
-  getRondellisGourmet,
-  getRondelli,
-  createRondelli,
-  updateRondelli,
-  deleteRondelli,
+// Toggle functions (update is_active/is_featured)
+export async function toggleProductActive(id: number): Promise<Produto> {
+  const product = await getProduct(id);
+  return updateProduct(id, { is_active: !product.is_active });
+}
 
-  // Combos
-  getCombos,
-  getCombosDestaques,
-  getCombo,
-  createCombo,
-  updateCombo,
-  deleteCombo,
-  toggleComboActive,
-  toggleComboDestaque,
+export async function toggleProductFeatured(id: number): Promise<Produto> {
+  const product = await getProduct(id);
+  return updateProduct(id, { is_featured: !product.is_featured });
+}
 
-  // Pedidos
-  getPedidos,
-  getPedido,
-  getStatusPedido,
-  updatePedidoStatus,
-  getWhatsAppConfirmacao,
+export const toggleMolhoActive = toggleProductActive;
+export const toggleCarneActive = toggleProductActive;
+export const toggleRondelliActive = toggleProductActive;
+export const toggleComboActive = toggleProductActive;
+export const toggleComboDestaque = toggleProductFeatured;
 
-  // Stats
-  getPastitaStats,
-};
+// WhatsApp confirmation
+export async function getWhatsAppConfirmacao(orderId: string | number): Promise<{ url: string }> {
+  try {
+    const response = await api.get(`${STORES_BASE}/orders/${orderId}/whatsapp/`);
+    return response.data;
+  } catch (error) {
+    logger.apiError(`${STORES_BASE}/orders/${orderId}/whatsapp/`, error);
+    throw error;
+  }
+}
 
-export default pastitaApi;
+// Stats alias
+export const getPastitaStats = getDashboardStats;
+
+// Types re-export for compatibility
+export type PastitaStats = DashboardStats;
+export type Catalogo = any;
