@@ -82,6 +82,21 @@ export const OrderDetailPage: React.FC = () => {
         case 'paid':
           updated = await ordersService.markPaid(order.id);
           break;
+        case 'processing':
+          updated = await ordersService.startProcessing(order.id);
+          break;
+        case 'preparing':
+          updated = await ordersService.startPreparing(order.id);
+          break;
+        case 'ready':
+          updated = await ordersService.markReady(order.id);
+          break;
+        case 'out_for_delivery':
+          updated = await ordersService.markOutForDelivery(order.id);
+          break;
+        case 'delivered':
+          updated = await ordersService.deliverOrder(order.id);
+          break;
         case 'deliver':
           updated = await ordersService.deliverOrder(order.id);
           break;
