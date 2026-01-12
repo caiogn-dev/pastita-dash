@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import logger from '../../services/logger';
 import {
   PlusIcon,
@@ -10,6 +10,8 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
+import DeliveryZonesMap from '../../components/maps/DeliveryZonesMap';
+import { useAccountStore } from '../../stores/accountStore';
 import {
   deliveryService,
   DeliveryZone,
@@ -53,41 +55,14 @@ const DISTANCE_BANDS = [
   { value: '15_20', label: '15 - 20 km' },
 ];
 
-const buildMapUrls = ({
-  lat,
-  lng,
-  query,
-}: {
-  lat?: number | string | null;
-  lng?: number | string | null;
-  query?: string;
-}) => {
-  const parsedLat = typeof lat === 'string' ? Number.parseFloat(lat) : lat;
-  const parsedLng = typeof lng === 'string' ? Number.parseFloat(lng) : lng;
-  const hasCoords = Number.isFinite(parsedLat) && Number.isFinite(parsedLng);
-  const normalizedQuery = query?.trim();
-  if (normalizedQuery) {
-    const encoded = encodeURIComponent(normalizedQuery);
-    return {
-      mapUrl: `https://www.google.com/maps?q=${encoded}&output=embed`,
-      externalUrl: `https://www.google.com/maps?q=${encoded}`,
-    };
-  }
-  if (hasCoords && parsedLat != null && parsedLng != null) {
-    const coords = `${parsedLat},${parsedLng}`;
-    return {
-      mapUrl: `https://www.google.com/maps?q=${coords}&output=embed`,
-      externalUrl: `https://www.google.com/maps?q=${coords}`,
-    };
-  }
-  return null;
-};
-
 export const DeliveryZonesPage: React.FC = () => {
+  const { accounts, selectedAccount } = useAccountStore();
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
+  const [storeAccountId, setStoreAccountId] = useState('');
   const [storeForm, setStoreForm] = useState<UpdateStoreLocation>({
+    account_id: '',
     name: '',
     zip_code: '',
     address: '',
@@ -115,23 +90,6 @@ export const DeliveryZonesPage: React.FC = () => {
     is_active: true,
   });
 
-  const mapInfo = useMemo(() => {
-    if (!storeLocation) return null;
-    const queryParts = [
-      storeLocation.name,
-      storeLocation.address,
-      storeLocation.city,
-      storeLocation.state,
-      storeLocation.zip_code,
-      'Brasil',
-    ].filter(Boolean);
-    return buildMapUrls({
-      lat: storeLocation.latitude,
-      lng: storeLocation.longitude,
-      query: storeLocation.name?.trim() || queryParts.join(', '),
-    });
-  }, [storeLocation]);
-
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -141,26 +99,38 @@ export const DeliveryZonesPage: React.FC = () => {
           is_active: filterActive,
         }),
         deliveryService.getStats(),
-        deliveryService.getStoreLocation(),
+        deliveryService.getStoreLocation(storeAccountId || undefined),
       ]);
       setZones(zonesData.results);
       setStats(statsData);
       if (storeData) {
         setStoreLocation(storeData);
         setStoreForm({
+          account_id: storeData.account_id || storeAccountId || '',
           name: storeData.name || '',
           zip_code: storeData.zip_code || '',
           address: storeData.address || '',
           city: storeData.city || '',
           state: storeData.state || '',
         });
+      } else {
+        setStoreForm((prev) => ({
+          ...prev,
+          account_id: storeAccountId,
+        }));
       }
     } catch (error) {
       logger.error('Error loading delivery zones:', error);
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive]);
+  }, [search, filterActive, storeAccountId]);
+
+  useEffect(() => {
+    const nextId = selectedAccount?.id || '';
+    setStoreAccountId(nextId);
+    setStoreForm((prev) => ({ ...prev, account_id: nextId }));
+  }, [selectedAccount?.id]);
 
   useEffect(() => {
     loadData();
@@ -261,6 +231,7 @@ export const DeliveryZonesPage: React.FC = () => {
       const updated = await deliveryService.updateStoreLocation(payload);
       setStoreLocation(updated);
       setStoreForm({
+        account_id: updated.account_id ?? storeAccountId ?? storeForm.account_id ?? '',
         name: updated.name || '',
         zip_code: updated.zip_code || '',
         address: updated.address || '',
@@ -304,6 +275,25 @@ export const DeliveryZonesPage: React.FC = () => {
 
         <form onSubmit={handleSaveStoreLocation} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Conta</label>
+              <select
+                value={storeAccountId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setStoreAccountId(nextId);
+                  setStoreForm((prev) => ({ ...prev, account_id: nextId }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
+              >
+                <option value="">Conta padrao</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="sm:col-span-2">
               <Input
                 label="Nome da loja"
@@ -360,24 +350,9 @@ export const DeliveryZonesPage: React.FC = () => {
           )}
         </form>
 
-        {storeLocation && mapInfo && (
+        {storeLocation && (
           <div className="mt-6">
-            <div className="rounded-lg overflow-hidden border border-gray-200">
-              <iframe
-                title="Mapa da loja"
-                src={mapInfo.mapUrl}
-                className="w-full h-48 md:h-64"
-                loading="lazy"
-              />
-            </div>
-            <a
-              href={mapInfo.externalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
-            >
-              Ver no Google Maps →
-            </a>
+            <DeliveryZonesMap storeLocation={storeLocation} zones={zones} height="260px" />
           </div>
         )}
       </Card>

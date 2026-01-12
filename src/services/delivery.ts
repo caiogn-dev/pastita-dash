@@ -41,6 +41,8 @@ export interface DeliveryZoneStats {
 
 export interface StoreLocation {
   id: string;
+  account_id?: string | null;
+  account_name?: string | null;
   name: string;
   zip_code: string;
   address: string;
@@ -54,6 +56,7 @@ export interface StoreLocation {
 }
 
 export interface UpdateStoreLocation {
+  account_id?: string | null;
   name?: string;
   zip_code: string;
   address?: string;
@@ -124,8 +127,9 @@ class DeliveryService {
     return response.data;
   }
 
-  async getStoreLocation(): Promise<StoreLocation | null> {
-    const response = await api.get<StoreLocation | Record<string, never>>(`${this.storeUrl}/`);
+  async getStoreLocation(accountId?: string): Promise<StoreLocation | null> {
+    const params = accountId ? { params: { account_id: accountId } } : undefined;
+    const response = await api.get<StoreLocation | Record<string, never>>(`${this.storeUrl}/`, params);
     if (response.data && Object.keys(response.data).length > 0) {
       return response.data as StoreLocation;
     }
