@@ -4,7 +4,6 @@
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import logger from '../services/logger';
 
 const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
@@ -28,7 +27,7 @@ interface UseOrdersWebSocketOptions {
 export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
   const { token } = useAuthStore();
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<OrderUpdate | null>(null);
@@ -49,7 +48,7 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
 
   const connect = useCallback(() => {
     if (!token) {
-      logger.warn('No token available for WebSocket connection');
+      console.warn('No token available for WebSocket connection');
       return;
     }
 
@@ -59,12 +58,12 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
 
     try {
       const url = getWebSocketUrl();
-      logger.info('Connecting to orders WebSocket:', url.replace(token, '***'));
+      console.log('Connecting to orders WebSocket');
       
       wsRef.current = new WebSocket(url);
 
       wsRef.current.onopen = () => {
-        logger.info('Orders WebSocket connected');
+        console.log('Orders WebSocket connected');
         setIsConnected(true);
         reconnectAttemptsRef.current = 0;
       };
@@ -72,7 +71,7 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
       wsRef.current.onmessage = (event) => {
         try {
           const data: OrderUpdate = JSON.parse(event.data);
-          logger.debug('Orders WebSocket message:', data);
+          console.debug('Orders WebSocket message:', data.type);
           setLastMessage(data);
 
           switch (data.type) {
@@ -89,20 +88,20 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
               onPaymentReceived?.(data);
               break;
             default:
-              logger.debug('Unknown WebSocket message type:', data.type);
+              console.debug('Unknown WebSocket message type:', data.type);
           }
         } catch (error) {
-          logger.error('Error parsing WebSocket message:', error);
+          console.error('Error parsing WebSocket message:', error);
         }
       };
 
       wsRef.current.onclose = (event) => {
-        logger.info('Orders WebSocket disconnected:', event.code, event.reason);
+        console.log('Orders WebSocket disconnected:', event.code);
         setIsConnected(false);
 
         if (autoReconnect && reconnectAttemptsRef.current < 5) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
-          logger.info(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1})`);
+          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
@@ -111,11 +110,11 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
         }
       };
 
-      wsRef.current.onerror = (error) => {
-        logger.error('Orders WebSocket error:', error);
+      wsRef.current.onerror = () => {
+        console.error('Orders WebSocket error');
       };
     } catch (error) {
-      logger.error('Error creating WebSocket:', error);
+      console.error('Error creating WebSocket:', error);
     }
   }, [token, getWebSocketUrl, autoReconnect, onOrderCreated, onOrderUpdated, onStatusChanged, onPaymentReceived]);
 

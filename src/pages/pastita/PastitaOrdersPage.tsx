@@ -79,13 +79,14 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, on
   const formatAddress = () => {
     const addr = pedido.endereco_entrega || pedido.delivery_address;
     if (!addr || typeof addr !== 'object') return null;
+    const addrAny = addr as Record<string, string>;
     const parts = [
-      addr.rua || addr.street,
-      addr.numero || addr.number,
-      addr.complemento || addr.complement,
-      addr.bairro || addr.neighborhood,
-      addr.cidade || addr.city,
-      addr.estado || addr.state,
+      addrAny.rua || addrAny.street,
+      addrAny.numero || addrAny.number,
+      addrAny.complemento || addrAny.complement,
+      addrAny.bairro || addrAny.neighborhood,
+      addrAny.cidade || addrAny.city,
+      addrAny.estado || addrAny.state,
     ].filter(Boolean);
     return parts.join(', ');
   };
