@@ -210,16 +210,18 @@ export const PaymentsPage: React.FC = () => {
     },
     {
       key: 'payment_link',
-      header: 'Link Pagamento',
+      header: 'PIX / Link',
       render: (order: Pedido) => {
         const orderAny = order as unknown as Record<string, unknown>;
+        const pixCode = orderAny.pix_code as string;
+        const paymentMethod = orderAny.payment_method as string;
         
-        // Check for direct payment link
+        // Check for direct payment link (for card payments)
         const directLink = (orderAny.payment_url as string) || 
                           (orderAny.payment_link as string) || 
                           (orderAny.init_point as string);
         
-        // Generate link from payment_preference_id if available
+        // Generate link from payment_preference_id if available (for card payments)
         const preferenceId = orderAny.payment_preference_id as string;
         const generatedLink = preferenceId 
           ? `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`
@@ -227,6 +229,24 @@ export const PaymentsPage: React.FC = () => {
         
         const paymentLink = directLink || generatedLink;
         
+        // For PIX payments, show copy PIX code button
+        if (pixCode) {
+          return (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(pixCode);
+                toast.success('Código PIX copiado! Envie para o cliente.');
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-green-700 bg-green-50 hover:bg-green-100 rounded-lg font-medium transition-colors"
+            >
+              <ClipboardIcon className="w-4 h-4" />
+              Copiar PIX
+            </button>
+          );
+        }
+        
+        // For card payments with link
         if (paymentLink) {
           return (
             <div className="flex items-center gap-2">
@@ -256,11 +276,11 @@ export const PaymentsPage: React.FC = () => {
         }
         
         // If payment method is cash, no link needed
-        const paymentMethod = orderAny.payment_method as string;
         if (paymentMethod === 'cash') {
-          return <span className="text-sm text-gray-500">Dinheiro</span>;
+          return <span className="text-sm text-gray-500">💵 Dinheiro</span>;
         }
         
+        // No payment info yet
         return <span className="text-sm text-gray-400">-</span>;
       },
     },
