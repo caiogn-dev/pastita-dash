@@ -210,11 +210,13 @@ export const PaymentsPage: React.FC = () => {
     },
     {
       key: 'payment_link',
-      header: 'PIX / Link',
+      header: 'Link Pagamento',
       render: (order: Pedido) => {
         const orderAny = order as unknown as Record<string, unknown>;
-        const pixCode = orderAny.pix_code as string;
         const paymentMethod = orderAny.payment_method as string;
+        
+        // PIX ticket URL (Mercado Pago payment page with QR code)
+        const pixTicketUrl = orderAny.pix_ticket_url as string;
         
         // Check for direct payment link (for card payments)
         const directLink = (orderAny.payment_url as string) || 
@@ -227,26 +229,10 @@ export const PaymentsPage: React.FC = () => {
           ? `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`
           : null;
         
-        const paymentLink = directLink || generatedLink;
+        // Priority: pix_ticket_url > direct link > generated link
+        const paymentLink = pixTicketUrl || directLink || generatedLink;
         
-        // For PIX payments, show copy PIX code button
-        if (pixCode) {
-          return (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(pixCode);
-                toast.success('Código PIX copiado! Envie para o cliente.');
-              }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-green-700 bg-green-50 hover:bg-green-100 rounded-lg font-medium transition-colors"
-            >
-              <ClipboardIcon className="w-4 h-4" />
-              Copiar PIX
-            </button>
-          );
-        }
-        
-        // For card payments with link
+        // Show link if available
         if (paymentLink) {
           return (
             <div className="flex items-center gap-2">
@@ -254,7 +240,7 @@ export const PaymentsPage: React.FC = () => {
                 href={paymentLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg font-medium transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >
                 <LinkIcon className="w-4 h-4" />
@@ -264,9 +250,9 @@ export const PaymentsPage: React.FC = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   navigator.clipboard.writeText(paymentLink);
-                  toast.success('Link copiado!');
+                  toast.success('Link copiado! Envie para o cliente.');
                 }}
-                className="p-1 text-gray-400 hover:text-gray-600"
+                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
                 title="Copiar link"
               >
                 <ClipboardIcon className="w-4 h-4" />
