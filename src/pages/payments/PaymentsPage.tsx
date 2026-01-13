@@ -15,6 +15,8 @@ import {
   BanknotesIcon,
   CreditCardIcon,
   QrCodeIcon,
+  LinkIcon,
+  ClipboardIcon,
 } from '@heroicons/react/24/outline';
 import { Header } from '../../components/layout';
 import {
@@ -205,6 +207,52 @@ export const PaymentsPage: React.FC = () => {
       render: (order: Pedido) => (
         <PaymentStatusBadge status={order.payment_status || 'pending'} />
       ),
+    },
+    {
+      key: 'payment_link',
+      header: 'Link',
+      render: (order: Pedido) => {
+        const orderAny = order as unknown as Record<string, unknown>;
+        // Check for payment link in various fields
+        const paymentLink = (orderAny.payment_url as string) || 
+                           (orderAny.payment_link as string) || 
+                           (orderAny.init_point as string) ||
+                           (orderAny.sandbox_init_point as string);
+        const pixCode = (orderAny.pix_code as string);
+        
+        if (paymentLink) {
+          return (
+            <a
+              href={paymentLink}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <LinkIcon className="w-4 h-4" />
+              Abrir
+            </a>
+          );
+        }
+        
+        if (pixCode) {
+          return (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(pixCode);
+                toast.success('Código PIX copiado!');
+              }}
+              className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-800 font-medium"
+            >
+              <ClipboardIcon className="w-4 h-4" />
+              Copiar PIX
+            </button>
+          );
+        }
+        
+        return <span className="text-sm text-gray-400">-</span>;
+      },
     },
     {
       key: 'created_at',
