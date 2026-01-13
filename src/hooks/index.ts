@@ -4,3 +4,4 @@ export {
   useChatWebSocket,
 } from './useWebSocket';
 export { useAutomationWS } from './useAutomationWS';
+export { useOrdersWebSocket } from './useOrdersWebSocket';
