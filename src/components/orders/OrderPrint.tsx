@@ -54,17 +54,19 @@ export const useOrderPrint = () => {
       const addr = pedido.endereco_entrega || pedido.delivery_address;
       if (!addr || typeof addr !== 'object') return '';
       
+      const addrAny = addr as unknown as Record<string, string>;
       const parts = [];
-      if (addr.rua || addr.street) parts.push(addr.rua || addr.street);
-      if (addr.numero || addr.number) parts.push(addr.numero || addr.number);
-      if (addr.complemento || addr.complement) parts.push(addr.complemento || addr.complement);
-      if (addr.bairro || addr.neighborhood) parts.push(addr.bairro || addr.neighborhood);
+      if (addrAny.rua || addrAny.street) parts.push(addrAny.rua || addrAny.street);
+      if (addrAny.numero || addrAny.number) parts.push(addrAny.numero || addrAny.number);
+      if (addrAny.complemento || addrAny.complement) parts.push(addrAny.complemento || addrAny.complement);
+      if (addrAny.bairro || addrAny.neighborhood) parts.push(addrAny.bairro || addrAny.neighborhood);
       
       return parts.join(', ');
     };
 
     const getPaymentMethod = () => {
-      const method = pedido.payment_method || 'pix';
+      const pedidoAny = pedido as unknown as Record<string, unknown>;
+      const method = (pedidoAny.payment_method as string) || 'pix';
       const methods: Record<string, string> = {
         pix: 'PIX',
         credit_card: 'Cartão de Crédito',
@@ -96,18 +98,23 @@ export const useOrderPrint = () => {
     const storeAddress = options?.storeAddress || 'Palmas - TO';
 
     // Build items HTML
-    const itemsHtml = pedido.items?.map((item) => `
+    const itemsHtml = pedido.items?.map((item) => {
+      const itemAny = item as unknown as Record<string, unknown>;
+      const variantName = itemAny.variant_name as string | undefined;
+      return `
       <div style="margin: 4px 0;">
         <div style="display: flex; justify-content: space-between;">
           <span>${item.quantity}x ${item.product_name}</span>
           <span>${formatMoney(item.total_price || (item.quantity * Number(item.unit_price)))}</span>
         </div>
-        ${item.variant_name ? `<div style="font-size: 10px; padding-left: 8px;">${item.variant_name}</div>` : ''}
+        ${variantName ? `<div style="font-size: 10px; padding-left: 8px;">${variantName}</div>` : ''}
       </div>
-    `).join('') || '';
+    `;
+    }).join('') || '';
 
     // Build notes HTML
-    const notes = pedido.customer_notes || pedido.observacoes || pedido.delivery_notes;
+    const pedidoAny = pedido as unknown as Record<string, unknown>;
+    const notes = (pedidoAny.customer_notes as string) || pedido.observacoes || (pedidoAny.delivery_notes as string);
     const notesHtml = notes ? `
       <div style="margin: 8px 0; padding: 8px 0; border-bottom: 1px dashed #000;">
         <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px; text-transform: uppercase;">OBSERVAÇÕES</div>

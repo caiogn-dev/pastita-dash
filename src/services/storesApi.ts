@@ -70,6 +70,7 @@ export interface StoreInput {
   pickup_enabled?: boolean;
   min_order_value?: number;
   default_delivery_fee?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface StoreIntegration {

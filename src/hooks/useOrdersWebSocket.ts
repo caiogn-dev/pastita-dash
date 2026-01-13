@@ -136,7 +136,7 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(data));
     } else {
-      logger.warn('WebSocket not connected, cannot send message');
+      console.warn('WebSocket not connected, cannot send message');
     }
   }, []);
 
