@@ -38,7 +38,7 @@ import {
 } from './pages/automation';
 
 // Pastita Pages
-import { PastitaProductsPage, PastitaOrdersPage } from './pages/pastita';
+import { PastitaProductsPage, PastitaOrdersPage, PastitaSettingsPage } from './pages/pastita';
 
 // Stores Pages
 import { StoresPage } from './pages/stores';
@@ -134,6 +134,7 @@ const App: React.FC = () => {
         {/* Pastita Routes */}
         <Route path="pastita/products" element={<PastitaProductsPage />} />
         <Route path="pastita/orders" element={<PastitaOrdersPage />} />
+        <Route path="pastita/settings" element={<PastitaSettingsPage />} />
         
         {/* Stores Routes */}
         <Route path="stores" element={<StoresPage />} />

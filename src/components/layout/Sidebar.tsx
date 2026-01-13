@@ -53,8 +53,9 @@ const navigation: NavItem[] = [
     href: '/pastita', 
     icon: Squares2X2Icon,
     children: [
-      { name: 'Produtos', href: '/pastita/products', icon: Squares2X2Icon },
       { name: 'Pedidos', href: '/pastita/orders', icon: ShoppingCartIcon },
+      { name: 'Produtos', href: '/pastita/products', icon: Squares2X2Icon },
+      { name: 'Configurações', href: '/pastita/settings', icon: Cog6ToothIcon },
     ]
   },
   { 

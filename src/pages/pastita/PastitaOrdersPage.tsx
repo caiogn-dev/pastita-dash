@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import {
   MagnifyingGlassIcon,
@@ -17,6 +17,8 @@ import {
   BellAlertIcon,
   CurrencyDollarIcon,
   ShoppingBagIcon,
+  PrinterIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid';
 import {
@@ -26,6 +28,7 @@ import {
   type Pedido,
 } from '../../services/pastitaApi';
 import { useOrdersWebSocket } from '../../hooks';
+import { useOrderPrint, getAutoPrintEnabled, setAutoPrintEnabled, AUTO_PRINT_KEY } from '../../components/orders/OrderPrint';
 import logger from '../../services/logger';
 
 type OrderStatus = 'all' | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'cancelled';
@@ -52,9 +55,10 @@ interface OrderDetailModalProps {
   pedido: Pedido;
   onClose: () => void;
   onStatusChange: (id: string, status: string) => void;
+  onPrint: (pedido: Pedido) => void;
 }
 
-const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, onStatusChange }) => {
+const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, onStatusChange, onPrint }) => {
   const status = statusConfig[pedido.status] || statusConfig.pending;
   const paymentStatus = paymentStatusConfig[pedido.payment_status] || paymentStatusConfig.pending;
 
@@ -66,6 +70,10 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, on
       );
       window.open(`https://wa.me/55${phone}?text=${message}`, '_blank');
     }
+  };
+
+  const handlePrint = () => {
+    onPrint(pedido);
   };
 
   const formatAddress = () => {
@@ -232,19 +240,27 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, on
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
+        <div className="p-4 border-t bg-gray-50 flex justify-between">
           <button 
-            onClick={handleWhatsApp} 
-            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-medium"
+            onClick={handlePrint} 
+            className="flex items-center gap-2 px-5 py-2.5 bg-gray-700 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
           >
-            <ChatBubbleLeftIcon className="w-4 h-4" /> WhatsApp
+            <PrinterIcon className="w-4 h-4" /> Imprimir
           </button>
-          <button 
-            onClick={onClose} 
-            className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-          >
-            Fechar
-          </button>
+          <div className="flex gap-3">
+            <button 
+              onClick={handleWhatsApp} 
+              className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-medium"
+            >
+              <ChatBubbleLeftIcon className="w-4 h-4" /> WhatsApp
+            </button>
+            <button 
+              onClick={onClose} 
+              className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+            >
+              Fechar
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -285,6 +301,47 @@ export const PastitaOrdersPage: React.FC = () => {
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus>('all');
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
   const [newOrderAlert, setNewOrderAlert] = useState(false);
+  const [autoPrintEnabled, setAutoPrintEnabledState] = useState(getAutoPrintEnabled());
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Print hook
+  const { printOrder } = useOrderPrint();
+  
+  // Track printed orders to avoid duplicates
+  const printedOrdersRef = useRef<Set<string>>(new Set());
+
+  // Handle print
+  const handlePrintOrder = useCallback((pedido: Pedido) => {
+    printOrder(pedido);
+    toast.success(`🖨️ Imprimindo pedido #${pedido.order_number}`, { duration: 2000 });
+  }, [printOrder]);
+
+  // Auto-print handler for paid orders
+  const handleAutoPrint = useCallback(async (orderId: string) => {
+    if (!autoPrintEnabled) return;
+    
+    // Check if already printed
+    if (printedOrdersRef.current.has(orderId)) return;
+    
+    try {
+      const order = await getPedido(orderId);
+      if (order.payment_status === 'paid') {
+        printedOrdersRef.current.add(orderId);
+        handlePrintOrder(order);
+        toast.success(`🖨️ Impressão automática - Pedido #${order.order_number}`, { duration: 3000 });
+      }
+    } catch (error) {
+      logger.error('Error auto-printing order:', error);
+    }
+  }, [autoPrintEnabled, handlePrintOrder]);
+
+  // Toggle auto-print
+  const toggleAutoPrint = useCallback(() => {
+    const newValue = !autoPrintEnabled;
+    setAutoPrintEnabledState(newValue);
+    setAutoPrintEnabled(newValue);
+    toast.success(newValue ? '🖨️ Impressão automática ativada' : '🖨️ Impressão automática desativada');
+  }, [autoPrintEnabled]);
 
   // Real-time WebSocket connection
   const { isConnected, lastMessage } = useOrdersWebSocket({
@@ -309,6 +366,10 @@ export const PastitaOrdersPage: React.FC = () => {
       toast.success(`💰 Pagamento recebido - Pedido #${data.order_number || data.order_id}!`, {
         duration: 5000,
       });
+      // Auto-print when payment is received
+      if (data.order_id) {
+        handleAutoPrint(data.order_id);
+      }
       fetchPedidos();
     },
   });
@@ -405,6 +466,19 @@ export const PastitaOrdersPage: React.FC = () => {
                   Novos pedidos!
                 </button>
               )}
+              {/* Auto-print toggle */}
+              <button 
+                onClick={toggleAutoPrint}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
+                  autoPrintEnabled 
+                    ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={autoPrintEnabled ? 'Impressão automática ativada' : 'Impressão automática desativada'}
+              >
+                <PrinterIcon className="w-5 h-5" />
+                <span className="hidden sm:inline">Auto</span>
+              </button>
               <button 
                 onClick={fetchPedidos} 
                 disabled={loading}
@@ -596,6 +670,7 @@ export const PastitaOrdersPage: React.FC = () => {
           pedido={selectedPedido}
           onClose={() => setSelectedPedido(null)}
           onStatusChange={handleStatusChange}
+          onPrint={handlePrintOrder}
         />
       )}
     </div>
