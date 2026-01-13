@@ -1,6 +1,7 @@
 /**
  * Order Print Component
- * Formats order data for thermal printers (80mm width - Epson TM-T20 compatible)
+ * Formats order data for thermal printers (80mm width - Epson TM-T20)
+ * Optimized for thermal printing with high contrast
  */
 import { useRef, useCallback } from 'react';
 import { Pedido } from '../../services/pastitaApi';
@@ -57,22 +58,29 @@ export const useOrderPrint = () => {
       const addrAny = addr as unknown as Record<string, string>;
       const parts = [];
       if (addrAny.rua || addrAny.street) parts.push(addrAny.rua || addrAny.street);
-      if (addrAny.numero || addrAny.number) parts.push(addrAny.numero || addrAny.number);
+      if (addrAny.numero || addrAny.number) parts.push(`nº ${addrAny.numero || addrAny.number}`);
       if (addrAny.complemento || addrAny.complement) parts.push(addrAny.complemento || addrAny.complement);
       if (addrAny.bairro || addrAny.neighborhood) parts.push(addrAny.bairro || addrAny.neighborhood);
       
       return parts.join(', ');
     };
 
+    const getDeliveryMethod = () => {
+      const pedidoAny = pedido as unknown as Record<string, unknown>;
+      const method = (pedidoAny.delivery_method as string) || 'delivery';
+      return method === 'pickup' ? '🏪 RETIRADA' : '🛵 ENTREGA';
+    };
+
     const getPaymentMethod = () => {
       const pedidoAny = pedido as unknown as Record<string, unknown>;
       const method = (pedidoAny.payment_method as string) || 'pix';
       const methods: Record<string, string> = {
-        pix: 'PIX',
-        credit_card: 'Cartão de Crédito',
-        debit_card: 'Cartão de Débito',
-        cash: 'Dinheiro',
-        mercadopago: 'Mercado Pago',
+        pix: '💠 PIX',
+        credit_card: '💳 Crédito',
+        debit_card: '💳 Débito',
+        cash: '💵 Dinheiro',
+        card: '💳 Cartão',
+        mercadopago: '💠 Mercado Pago',
       };
       return methods[method] || method.toUpperCase();
     };
@@ -80,10 +88,10 @@ export const useOrderPrint = () => {
     const getPaymentStatus = () => {
       const status = pedido.payment_status || 'pending';
       const statuses: Record<string, string> = {
-        pending: 'AGUARDANDO',
-        paid: 'PAGO',
-        failed: 'FALHOU',
-        refunded: 'REEMBOLSADO',
+        pending: '⏳ AGUARDANDO',
+        paid: '✅ PAGO',
+        failed: '❌ FALHOU',
+        refunded: '↩️ REEMBOLSADO',
       };
       return statuses[status] || status.toUpperCase();
     };
@@ -101,14 +109,18 @@ export const useOrderPrint = () => {
     const itemsHtml = pedido.items?.map((item) => {
       const itemAny = item as unknown as Record<string, unknown>;
       const variantName = itemAny.variant_name as string | undefined;
+      const itemNotes = itemAny.notes as string | undefined;
+      const itemTotal = item.total_price || (item.quantity * Number(item.unit_price));
       return `
-      <div style="margin: 4px 0;">
-        <div style="display: flex; justify-content: space-between;">
-          <span>${item.quantity}x ${item.product_name}</span>
-          <span>${formatMoney(item.total_price || (item.quantity * Number(item.unit_price)))}</span>
-        </div>
-        ${variantName ? `<div style="font-size: 10px; padding-left: 8px;">${variantName}</div>` : ''}
-      </div>
+      <tr>
+        <td class="item-qty">${item.quantity}x</td>
+        <td class="item-name">
+          ${item.product_name}
+          ${variantName ? `<br><small>${variantName}</small>` : ''}
+          ${itemNotes ? `<br><small class="item-notes">📝 ${itemNotes}</small>` : ''}
+        </td>
+        <td class="item-price">${formatMoney(itemTotal)}</td>
+      </tr>
     `;
     }).join('') || '';
 
@@ -116,9 +128,9 @@ export const useOrderPrint = () => {
     const pedidoAny = pedido as unknown as Record<string, unknown>;
     const notes = (pedidoAny.customer_notes as string) || pedido.observacoes || (pedidoAny.delivery_notes as string);
     const notesHtml = notes ? `
-      <div style="margin: 8px 0; padding: 8px 0; border-bottom: 1px dashed #000;">
-        <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px; text-transform: uppercase;">OBSERVAÇÕES</div>
-        <div>${notes}</div>
+      <div class="notes-section">
+        <div class="notes-title">📝 OBSERVAÇÕES</div>
+        <div class="notes-text">${notes}</div>
       </div>
     ` : '';
 
@@ -134,6 +146,14 @@ export const useOrderPrint = () => {
             margin: 0;
           }
           
+          @media print {
+            html, body {
+              width: 80mm;
+              margin: 0;
+              padding: 0;
+            }
+          }
+          
           * {
             margin: 0;
             padding: 0;
@@ -143,92 +163,270 @@ export const useOrderPrint = () => {
           body {
             width: 80mm;
             max-width: 80mm;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Lucida Console', 'Courier New', monospace;
             font-size: 12px;
-            line-height: 1.3;
-            padding: 5mm;
+            line-height: 1.4;
+            padding: 3mm;
+            color: #000;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           
+          /* ===== HEADER ===== */
           .header {
             text-align: center;
-            border-bottom: 1px dashed #000;
-            padding-bottom: 8px;
+            padding-bottom: 10px;
             margin-bottom: 8px;
+            border-bottom: 2px dashed #000;
           }
           
-          .title {
-            font-size: 16px;
-            font-weight: bold;
+          .store-name {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
           }
           
-          .subtitle {
-            font-size: 10px;
+          .store-info {
+            font-size: 11px;
+            font-weight: 600;
             margin-top: 4px;
           }
           
-          .section {
+          /* ===== ORDER NUMBER ===== */
+          .order-header {
+            background: #000;
+            color: #fff;
+            text-align: center;
+            padding: 8px 4px;
             margin: 8px 0;
+          }
+          
+          .order-number {
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+          }
+          
+          .order-date {
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+          }
+          
+          .delivery-badge {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 800;
+            margin-top: 6px;
+            padding: 2px 8px;
+            background: #fff;
+            color: #000;
+          }
+          
+          /* ===== SECTIONS ===== */
+          .section {
+            margin: 10px 0;
             padding: 8px 0;
             border-bottom: 1px dashed #000;
           }
           
           .section-title {
-            font-weight: bold;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+          }
+          
+          /* ===== CUSTOMER ===== */
+          .customer-name {
+            font-size: 14px;
+            font-weight: 800;
+          }
+          
+          .customer-phone {
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 2px;
+          }
+          
+          .customer-address {
             font-size: 11px;
-            margin-bottom: 4px;
+            font-weight: 600;
+            margin-top: 6px;
+            padding: 6px;
+            background: #f0f0f0;
+            border: 1px solid #000;
+          }
+          
+          .address-label {
+            font-weight: 900;
+            font-size: 10px;
             text-transform: uppercase;
           }
           
-          .row {
+          /* ===== ITEMS TABLE ===== */
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+          }
+          
+          .items-table td {
+            padding: 4px 2px;
+            vertical-align: top;
+            font-weight: 700;
+          }
+          
+          .item-qty {
+            width: 25px;
+            font-weight: 900;
+            font-size: 12px;
+          }
+          
+          .item-name {
+            font-weight: 700;
+          }
+          
+          .item-name small {
+            font-size: 9px;
+            font-weight: 600;
+            color: #333;
+          }
+          
+          .item-notes {
+            font-style: italic;
+          }
+          
+          .item-price {
+            width: 70px;
+            text-align: right;
+            font-weight: 800;
+          }
+          
+          /* ===== TOTALS ===== */
+          .totals-section {
+            margin: 10px 0;
+            padding: 8px 0;
+          }
+          
+          .total-row {
             display: flex;
             justify-content: space-between;
-            margin: 2px 0;
+            padding: 3px 0;
+            font-size: 12px;
+            font-weight: 700;
           }
           
-          .total {
-            font-size: 14px;
-            font-weight: bold;
-            text-align: right;
+          .total-row.discount {
+            color: #000;
+          }
+          
+          .grand-total {
+            display: flex;
+            justify-content: space-between;
             margin-top: 8px;
             padding-top: 8px;
-            border-top: 2px solid #000;
+            border-top: 3px double #000;
+            font-size: 16px;
+            font-weight: 900;
           }
           
+          /* ===== PAYMENT ===== */
+          .payment-section {
+            background: #f5f5f5;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #000;
+          }
+          
+          .payment-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 0;
+          }
+          
+          .payment-status {
+            font-weight: 900;
+            font-size: 13px;
+          }
+          
+          /* ===== NOTES ===== */
+          .notes-section {
+            margin: 10px 0;
+            padding: 8px;
+            background: #fff8dc;
+            border: 2px solid #000;
+          }
+          
+          .notes-title {
+            font-size: 11px;
+            font-weight: 900;
+            margin-bottom: 4px;
+          }
+          
+          .notes-text {
+            font-size: 11px;
+            font-weight: 700;
+            font-style: italic;
+          }
+          
+          /* ===== FOOTER ===== */
           .footer {
             text-align: center;
-            font-size: 10px;
             margin-top: 12px;
-            padding-top: 8px;
-            border-top: 1px dashed #000;
+            padding-top: 10px;
+            border-top: 2px dashed #000;
           }
           
-          .center { text-align: center; }
-          .bold { font-weight: bold; }
-          .large { font-size: 14px; }
+          .footer-thanks {
+            font-size: 13px;
+            font-weight: 800;
+          }
+          
+          .footer-divider {
+            font-size: 10px;
+            margin: 6px 0;
+            letter-spacing: -1px;
+          }
+          
+          .footer-time {
+            font-size: 9px;
+            font-weight: 600;
+          }
+          
+          /* ===== UTILITIES ===== */
+          .text-center { text-align: center; }
+          .text-right { text-align: right; }
+          .bold { font-weight: 900; }
         </style>
       </head>
       <body>
         <!-- Header -->
         <div class="header">
-          <div class="title">${storeName}</div>
-          <div class="subtitle">${storePhone}</div>
-          <div class="subtitle">${storeAddress}</div>
+          <div class="store-name">🍝 ${storeName}</div>
+          <div class="store-info">${storePhone}</div>
+          <div class="store-info">${storeAddress}</div>
         </div>
 
         <!-- Order Info -->
-        <div class="section">
-          <div class="center bold large">PEDIDO #${pedido.order_number}</div>
-          <div class="center">${formatDate(pedido.created_at)}</div>
+        <div class="order-header">
+          <div class="order-number">PEDIDO #${pedido.order_number}</div>
+          <div class="order-date">${formatDate(pedido.created_at)}</div>
+          <div class="delivery-badge">${getDeliveryMethod()}</div>
         </div>
 
         <!-- Customer Info -->
         <div class="section">
-          <div class="section-title">CLIENTE</div>
-          <div>${pedido.customer_name || pedido.cliente_nome}</div>
-          <div>${pedido.customer_phone || pedido.cliente_telefone}</div>
+          <div class="section-title">👤 CLIENTE</div>
+          <div class="customer-name">${pedido.customer_name || pedido.cliente_nome}</div>
+          <div class="customer-phone">📞 ${pedido.customer_phone || pedido.cliente_telefone}</div>
           ${formatAddress() ? `
-            <div style="margin-top: 4px;">
-              <strong>Entrega:</strong><br>
+            <div class="customer-address">
+              <div class="address-label">📍 Endereço de Entrega:</div>
               ${formatAddress()}
             </div>
           ` : ''}
@@ -236,40 +434,45 @@ export const useOrderPrint = () => {
 
         <!-- Items -->
         <div class="section">
-          <div class="section-title">ITENS</div>
-          ${itemsHtml}
+          <div class="section-title">🛒 ITENS DO PEDIDO</div>
+          <table class="items-table">
+            ${itemsHtml}
+          </table>
         </div>
 
         <!-- Totals -->
-        <div class="section">
-          <div class="row">
+        <div class="totals-section">
+          <div class="total-row">
             <span>Subtotal:</span>
             <span>${formatMoney(subtotal)}</span>
           </div>
           ${deliveryFee > 0 ? `
-            <div class="row">
+            <div class="total-row">
               <span>Taxa de Entrega:</span>
               <span>${formatMoney(deliveryFee)}</span>
             </div>
           ` : ''}
           ${discount > 0 ? `
-            <div class="row">
+            <div class="total-row discount">
               <span>Desconto:</span>
-              <span>-${formatMoney(discount)}</span>
+              <span>- ${formatMoney(discount)}</span>
             </div>
           ` : ''}
-          <div class="total">TOTAL: ${formatMoney(total)}</div>
+          <div class="grand-total">
+            <span>TOTAL:</span>
+            <span>${formatMoney(total)}</span>
+          </div>
         </div>
 
         <!-- Payment Info -->
-        <div class="section">
-          <div class="row">
-            <span>Pagamento:</span>
+        <div class="payment-section">
+          <div class="payment-row">
+            <span>Forma de Pagamento:</span>
             <span>${getPaymentMethod()}</span>
           </div>
-          <div class="row">
+          <div class="payment-row">
             <span>Status:</span>
-            <span class="bold">${getPaymentStatus()}</span>
+            <span class="payment-status">${getPaymentStatus()}</span>
           </div>
         </div>
 
@@ -277,9 +480,9 @@ export const useOrderPrint = () => {
 
         <!-- Footer -->
         <div class="footer">
-          <div>Obrigado pela preferência!</div>
-          <div style="margin-top: 4px;">================================</div>
-          <div style="font-size: 9px; margin-top: 4px;">${new Date().toLocaleString('pt-BR')}</div>
+          <div class="footer-thanks">😋 Obrigado pela preferência!</div>
+          <div class="footer-divider">════════════════════════════════</div>
+          <div class="footer-time">Impresso em ${new Date().toLocaleString('pt-BR')}</div>
         </div>
       </body>
       </html>
@@ -293,7 +496,7 @@ export const useOrderPrint = () => {
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
-    }, 250);
+    }, 300);
   }, []);
 
   return { printOrder };
