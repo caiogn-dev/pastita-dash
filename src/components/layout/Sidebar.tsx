@@ -23,6 +23,8 @@ import {
   Squares2X2Icon,
   XMarkIcon,
   BuildingStorefrontIcon,
+  ChartBarIcon,
+  PresentationChartLineIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -39,15 +41,8 @@ interface SidebarProps {
 
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
+  { name: 'Relatórios', href: '/analytics', icon: PresentationChartLineIcon },
   { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
-  { name: 'Contas WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
-  { name: 'Mensagens', href: '/messages', icon: InboxIcon },
-  { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
-  { name: 'Pedidos', href: '/orders', icon: ShoppingCartIcon },
-  { name: 'Pagamentos', href: '/payments', icon: CreditCardIcon },
-  { name: 'Produtos', href: '/products', icon: Squares2X2Icon },
-  { name: 'Cupons', href: '/coupons', icon: TagIcon },
-  { name: 'Zonas de Entrega', href: '/delivery-zones', icon: TruckIcon },
   { 
     name: 'Pastita', 
     href: '/pastita', 
@@ -58,6 +53,14 @@ const navigation: NavItem[] = [
       { name: 'Configurações', href: '/pastita/settings', icon: Cog6ToothIcon },
     ]
   },
+  { name: 'Pedidos', href: '/orders', icon: ShoppingCartIcon },
+  { name: 'Produtos', href: '/products', icon: Squares2X2Icon },
+  { name: 'Cupons', href: '/coupons', icon: TagIcon },
+  { name: 'Zonas de Entrega', href: '/delivery-zones', icon: TruckIcon },
+  { name: 'Pagamentos', href: '/payments', icon: CreditCardIcon },
+  { name: 'Contas WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
+  { name: 'Mensagens', href: '/messages', icon: InboxIcon },
+  { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
   { 
     name: 'Automação', 
     href: '/automation', 

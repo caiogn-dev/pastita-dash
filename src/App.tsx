@@ -40,6 +40,9 @@ import {
 // Pastita Pages
 import { PastitaProductsPage, PastitaOrdersPage, PastitaSettingsPage } from './pages/pastita';
 
+// Analytics/Reports Pages
+import { AnalyticsPage } from './pages/reports';
+
 // Stores Pages
 import { StoresPage } from './pages/stores';
 
@@ -135,6 +138,10 @@ const App: React.FC = () => {
         <Route path="pastita/products" element={<PastitaProductsPage />} />
         <Route path="pastita/orders" element={<PastitaOrdersPage />} />
         <Route path="pastita/settings" element={<PastitaSettingsPage />} />
+        
+        {/* Analytics/Reports Routes */}
+        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="reports" element={<AnalyticsPage />} />
         
         {/* Stores Routes */}
         <Route path="stores" element={<StoresPage />} />
