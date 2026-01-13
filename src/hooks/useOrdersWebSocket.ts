@@ -1,11 +1,18 @@
 /**
  * Hook for real-time order updates via WebSocket
  * Connects to /ws/stores/{store_slug}/orders/
+ * 
+ * Features:
+ * - Automatic reconnection with exponential backoff
+ * - Graceful handling of server resource limits
+ * - Connection state management
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 
 const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
+const MAX_RECONNECT_ATTEMPTS = 10;
+const MAX_RECONNECT_DELAY = 60000; // 1 minute max
 
 interface OrderUpdate {
   type: 'order_created' | 'order_updated' | 'order_status_changed' | 'payment_received';
@@ -22,6 +29,7 @@ interface UseOrdersWebSocketOptions {
   onStatusChanged?: (data: OrderUpdate) => void;
   onPaymentReceived?: (data: OrderUpdate) => void;
   autoReconnect?: boolean;
+  enabled?: boolean;
 }
 
 export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
@@ -29,8 +37,10 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const isConnectingRef = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<OrderUpdate | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const {
     onOrderCreated,
@@ -38,6 +48,7 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
     onStatusChanged,
     onPaymentReceived,
     autoReconnect = true,
+    enabled = true,
   } = options;
 
   const getWebSocketUrl = useCallback(() => {
@@ -47,14 +58,22 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
   }, [token]);
 
   const connect = useCallback(() => {
-    if (!token) {
-      console.warn('No token available for WebSocket connection');
+    if (!enabled || !token) {
       return;
     }
 
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+    // Prevent multiple simultaneous connection attempts
+    if (isConnectingRef.current || wsRef.current?.readyState === WebSocket.OPEN) {
       return;
     }
+
+    // Close any existing connection first
+    if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    isConnectingRef.current = true;
 
     try {
       const url = getWebSocketUrl();
@@ -65,13 +84,14 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
       wsRef.current.onopen = () => {
         console.log('Orders WebSocket connected');
         setIsConnected(true);
+        setConnectionError(null);
         reconnectAttemptsRef.current = 0;
+        isConnectingRef.current = false;
       };
 
       wsRef.current.onmessage = (event) => {
         try {
           const data: OrderUpdate = JSON.parse(event.data);
-          console.debug('Orders WebSocket message:', data.type);
           setLastMessage(data);
 
           switch (data.type) {
@@ -87,8 +107,6 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
             case 'payment_received':
               onPaymentReceived?.(data);
               break;
-            default:
-              console.debug('Unknown WebSocket message type:', data.type);
           }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
@@ -98,25 +116,40 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
       wsRef.current.onclose = (event) => {
         console.log('Orders WebSocket disconnected:', event.code);
         setIsConnected(false);
+        isConnectingRef.current = false;
 
-        if (autoReconnect && reconnectAttemptsRef.current < 5) {
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
-          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1})`);
+        // Handle specific close codes
+        if (event.code === 1006) {
+          // Abnormal closure - could be server resource limits
+          setConnectionError('Conexão perdida. Tentando reconectar...');
+        }
+
+        if (autoReconnect && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+          // Exponential backoff with jitter
+          const baseDelay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), MAX_RECONNECT_DELAY);
+          const jitter = Math.random() * 1000;
+          const delay = baseDelay + jitter;
+          
+          console.log(`Reconnecting in ${Math.round(delay)}ms (attempt ${reconnectAttemptsRef.current + 1}/${MAX_RECONNECT_ATTEMPTS})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
             connect();
           }, delay);
+        } else if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+          setConnectionError('Não foi possível conectar ao servidor. Atualize a página para tentar novamente.');
         }
       };
 
       wsRef.current.onerror = () => {
         console.error('Orders WebSocket error');
+        isConnectingRef.current = false;
       };
     } catch (error) {
       console.error('Error creating WebSocket:', error);
+      isConnectingRef.current = false;
     }
-  }, [token, getWebSocketUrl, autoReconnect, onOrderCreated, onOrderUpdated, onStatusChanged, onPaymentReceived]);
+  }, [enabled, token, getWebSocketUrl, autoReconnect, onOrderCreated, onOrderUpdated, onStatusChanged, onPaymentReceived]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -151,6 +184,7 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
   return {
     isConnected,
     lastMessage,
+    connectionError,
     connect,
     disconnect,
     send,

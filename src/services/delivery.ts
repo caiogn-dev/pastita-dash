@@ -102,6 +102,7 @@ export interface DeliveryZoneFilters {
 class DeliveryService {
   private baseUrl = '/stores/delivery-zones';
   private storeUrl = '/stores/stores';
+  private storeSlug = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
   async getZones(filters?: DeliveryZoneFilters): Promise<PaginatedResponse<DeliveryZone>> {
     const params = new URLSearchParams();
@@ -169,15 +170,22 @@ class DeliveryService {
   }
 
   async getStoreLocation(): Promise<StoreLocation | null> {
-    const response = await api.get<StoreLocation | Record<string, never>>(`${this.storeUrl}/`);
-    if (response.data && Object.keys(response.data).length > 0) {
-      return response.data as StoreLocation;
+    try {
+      // Use the store slug to get the store location
+      const response = await api.get<StoreLocation>(`${this.storeUrl}/${this.storeSlug}/`);
+      if (response.data && Object.keys(response.data).length > 0) {
+        return response.data as StoreLocation;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching store location:', error);
+      return null;
     }
-    return null;
   }
 
   async updateStoreLocation(data: UpdateStoreLocation): Promise<StoreLocation> {
-    const response = await api.post<StoreLocation>(`${this.storeUrl}/`, data);
+    // Use PATCH to update the store with the slug
+    const response = await api.patch<StoreLocation>(`${this.storeUrl}/${this.storeSlug}/`, data);
     return response.data;
   }
 }

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import logger from '../../services/logger';
 import {
   PlusIcon,
@@ -8,6 +9,7 @@ import {
   TruckIcon,
   MapPinIcon,
   CheckCircleIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
 import {
@@ -17,7 +19,6 @@ import {
   UpdateDeliveryZone,
   DeliveryZoneStats,
   StoreLocation,
-  UpdateStoreLocation,
 } from '../../services/delivery';
 import { useStoreContextStore } from '../../stores';
 
@@ -37,12 +38,6 @@ const formatDays = (value?: number | string | null) => {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
   if (Number.isNaN(numeric)) return '0';
   return String(Math.round(numeric));
-};
-
-const formatCep = (value: string) => {
-  const digits = value.replace(/\D/g, '').slice(0, 8);
-  if (digits.length <= 5) return digits;
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 };
 
 const DISTANCE_BANDS = [
@@ -89,15 +84,6 @@ export const DeliveryZonesPage: React.FC = () => {
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
-  const [storeForm, setStoreForm] = useState<UpdateStoreLocation>({
-    name: '',
-    zip_code: '',
-    address: '',
-    city: '',
-    state: '',
-  });
-  const [storeError, setStoreError] = useState('');
-  const [savingStore, setSavingStore] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -150,13 +136,6 @@ export const DeliveryZonesPage: React.FC = () => {
       setStats(statsData);
       if (storeData) {
         setStoreLocation(storeData);
-        setStoreForm({
-          name: storeData.name || '',
-          zip_code: storeData.zip_code || '',
-          address: storeData.address || '',
-          city: storeData.city || '',
-          state: storeData.state || '',
-        });
       }
     } catch (error) {
       logger.error('Error loading delivery zones:', error);
@@ -247,37 +226,6 @@ export const DeliveryZonesPage: React.FC = () => {
     }
   };
 
-  const handleSaveStoreLocation = async (event?: React.FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
-    setStoreError('');
-    if (!storeForm.zip_code) {
-      setStoreError('Informe o CEP da loja.');
-      return;
-    }
-
-    try {
-      setSavingStore(true);
-      const payload: UpdateStoreLocation = {
-        ...storeForm,
-        zip_code: storeForm.zip_code.replace(/\D/g, '').slice(0, 8),
-      };
-      const updated = await deliveryService.updateStoreLocation(payload);
-      setStoreLocation(updated);
-      setStoreForm({
-        name: updated.name || '',
-        zip_code: updated.zip_code || '',
-        address: updated.address || '',
-        city: updated.city || '',
-        state: updated.state || '',
-      });
-    } catch (error) {
-      logger.error('Error updating store location:', error);
-      setStoreError('Não foi possível salvar o CEP da loja.');
-    } finally {
-      setSavingStore(false);
-    }
-  };
-
   if (loading && zones.length === 0) {
     return <Loading />;
   }
@@ -296,91 +244,82 @@ export const DeliveryZonesPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Store Location Card */}
+      {/* Store Location Card - Read Only */}
       <Card className="p-4 md:p-6">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Localização da Loja</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Informe o CEP para carregar os dados da loja automaticamente.
-          </p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Localização da Loja</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              A localização é usada para calcular a distância de entrega.
+            </p>
+          </div>
+          <Link
+            to="/pastita/settings"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            <Cog6ToothIcon className="w-4 h-4" />
+            Editar Localização
+          </Link>
         </div>
 
-        <form onSubmit={handleSaveStoreLocation} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="sm:col-span-2">
-              <Input
-                label="Nome da loja"
-                type="text"
-                placeholder="Ex: Pastita Palmas"
-                value={storeForm.name || ''}
-                onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
-              />
+        {storeLocation ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="sm:col-span-2">
+                <p className="text-sm font-medium text-gray-500">Nome da Loja</p>
+                <p className="text-base text-gray-900">{storeLocation.name || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">CEP</p>
+                <p className="text-base text-gray-900">{storeLocation.zip_code || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Cidade/Estado</p>
+                <p className="text-base text-gray-900">
+                  {storeLocation.city && storeLocation.state 
+                    ? `${storeLocation.city}/${storeLocation.state}` 
+                    : '-'}
+                </p>
+              </div>
             </div>
+            
             <div>
-              <Input
-                label="CEP *"
-                type="text"
-                value={formatCep(storeForm.zip_code)}
-                onChange={(e) => setStoreForm({
-                  ...storeForm,
-                  zip_code: e.target.value.replace(/\D/g, '').slice(0, 8),
-                })}
-                placeholder="77020-170"
-                maxLength={9}
-                inputMode="numeric"
-              />
+              <p className="text-sm font-medium text-gray-500">Endereço</p>
+              <p className="text-base text-gray-900">{storeLocation.address || '-'}</p>
             </div>
-            <div className="flex items-end">
-              <Button type="submit" disabled={savingStore} className="w-full">
-                {savingStore ? 'Salvando...' : 'Buscar CEP'}
-              </Button>
-            </div>
+
+            {mapInfo && (
+              <div className="mt-4">
+                <div className="rounded-lg overflow-hidden border border-gray-200">
+                  <iframe
+                    title="Mapa da loja"
+                    src={mapInfo.mapUrl}
+                    className="w-full h-48 md:h-64"
+                    loading="lazy"
+                  />
+                </div>
+                <a
+                  href={mapInfo.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
+                >
+                  Ver no Google Maps →
+                </a>
+              </div>
+            )}
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Input
-              label="Endereço"
-              value={storeForm.address || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
-              placeholder="Rua, número"
-            />
-            <Input
-              label="Cidade"
-              value={storeForm.city || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
-              placeholder="Cidade"
-            />
-            <Input
-              label="Estado"
-              value={storeForm.state || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
-              placeholder="UF"
-            />
-          </div>
-
-          {storeError && (
-            <p className="text-sm text-red-600">{storeError}</p>
-          )}
-        </form>
-
-        {storeLocation && mapInfo && (
-          <div className="mt-6">
-            <div className="rounded-lg overflow-hidden border border-gray-200">
-              <iframe
-                title="Mapa da loja"
-                src={mapInfo.mapUrl}
-                className="w-full h-48 md:h-64"
-                loading="lazy"
-              />
-            </div>
-            <a
-              href={mapInfo.externalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
+        ) : (
+          <div className="text-center py-8">
+            <MapPinIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 mb-4">Localização não configurada</p>
+            <Link
+              to="/pastita/settings"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Ver no Google Maps →
-            </a>
+              <Cog6ToothIcon className="w-4 h-4" />
+              Configurar Localização
+            </Link>
           </div>
         )}
       </Card>
