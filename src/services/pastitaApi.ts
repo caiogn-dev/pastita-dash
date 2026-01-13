@@ -144,6 +144,7 @@ export interface PedidoEndereco {
 export interface Pedido {
   id: string;
   order_number: string;
+  access_token: string;  // Secure token for public order access
   status: string;
   payment_status: string;
   delivery_method: string;
@@ -165,6 +166,12 @@ export interface Pedido {
   items: PedidoItem[];
   created_at: string;
   updated_at: string;
+  // Payment fields
+  payment_method?: string;
+  pix_code?: string;
+  pix_qr_code?: string;
+  pix_ticket_url?: string;
+  payment_preference_id?: string;
   // Legacy aliases
   numero?: string;
   status_pagamento?: string;

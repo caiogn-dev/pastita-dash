@@ -215,7 +215,7 @@ export const PaymentsPage: React.FC = () => {
         const orderAny = order as unknown as Record<string, unknown>;
         const paymentMethod = orderAny.payment_method as string;
         const pixCode = orderAny.pix_code as string;
-        const orderNumber = order.order_number;
+        const accessToken = orderAny.access_token as string;
         
         // PIX ticket URL from Mercado Pago
         const pixTicketUrl = orderAny.pix_ticket_url as string;
@@ -231,13 +231,13 @@ export const PaymentsPage: React.FC = () => {
           ? `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`
           : null;
         
-        // For PIX payments with pix_code, generate link to payment page on client site
-        // This page shows the QR code and PIX code together
-        const clientPaymentLink = pixCode && orderNumber
-          ? `https://pastita.delivery/pendente?order=${orderNumber}`
+        // SECURE: Generate link using access_token (not order_number)
+        // This prevents unauthorized access to order details
+        const clientPaymentLink = pixCode && accessToken
+          ? `https://pastita.com.br/pendente?token=${accessToken}`
           : null;
         
-        // Priority: pix_ticket_url > client payment page > direct link > preference link
+        // Priority: pix_ticket_url > client payment page (with token) > direct link > preference link
         const paymentLink = pixTicketUrl || clientPaymentLink || directLink || preferenceLink;
         
         // Show link if available
