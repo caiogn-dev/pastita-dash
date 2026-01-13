@@ -210,45 +210,55 @@ export const PaymentsPage: React.FC = () => {
     },
     {
       key: 'payment_link',
-      header: 'Link',
+      header: 'Link Pagamento',
       render: (order: Pedido) => {
         const orderAny = order as unknown as Record<string, unknown>;
-        // Check for payment link in various fields
-        const paymentLink = (orderAny.payment_url as string) || 
-                           (orderAny.payment_link as string) || 
-                           (orderAny.init_point as string) ||
-                           (orderAny.sandbox_init_point as string);
-        const pixCode = (orderAny.pix_code as string);
+        
+        // Check for direct payment link
+        const directLink = (orderAny.payment_url as string) || 
+                          (orderAny.payment_link as string) || 
+                          (orderAny.init_point as string);
+        
+        // Generate link from payment_preference_id if available
+        const preferenceId = orderAny.payment_preference_id as string;
+        const generatedLink = preferenceId 
+          ? `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`
+          : null;
+        
+        const paymentLink = directLink || generatedLink;
         
         if (paymentLink) {
           return (
-            <a
-              href={paymentLink}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <LinkIcon className="w-4 h-4" />
-              Abrir
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href={paymentLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <LinkIcon className="w-4 h-4" />
+                Abrir
+              </a>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(paymentLink);
+                  toast.success('Link copiado!');
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600"
+                title="Copiar link"
+              >
+                <ClipboardIcon className="w-4 h-4" />
+              </button>
+            </div>
           );
         }
         
-        if (pixCode) {
-          return (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(pixCode);
-                toast.success('Código PIX copiado!');
-              }}
-              className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-800 font-medium"
-            >
-              <ClipboardIcon className="w-4 h-4" />
-              Copiar PIX
-            </button>
-          );
+        // If payment method is cash, no link needed
+        const paymentMethod = orderAny.payment_method as string;
+        if (paymentMethod === 'cash') {
+          return <span className="text-sm text-gray-500">Dinheiro</span>;
         }
         
         return <span className="text-sm text-gray-400">-</span>;
