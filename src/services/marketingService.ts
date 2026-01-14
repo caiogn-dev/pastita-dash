@@ -592,12 +592,41 @@ export const whatsappCampaignsApi = {
 export const marketingStatsApi = {
   async get(storeId: string): Promise<MarketingStats> {
     try {
-      const response = await api.get<MarketingStats>(`${BASE_URL}/stats/`, {
+      const response = await api.get(`${BASE_URL}/stats/`, {
         params: { store: storeId }
       });
-      return response.data;
-    } catch {
-      // Return mock stats if endpoint doesn't exist
+      
+      // Map API response to our format
+      const data = response.data;
+      return {
+        email: {
+          total_campaigns: data.campaigns?.total || 0,
+          total_sent: data.emails?.sent || 0,
+          total_delivered: data.emails?.delivered || 0,
+          total_opened: data.emails?.opened || 0,
+          total_clicked: data.emails?.clicked || 0,
+          open_rate: data.rates?.open_rate || 0,
+          click_rate: data.rates?.click_rate || 0,
+        },
+        whatsapp: {
+          total_campaigns: 0,
+          total_sent: 0,
+          total_delivered: 0,
+          total_read: 0,
+          total_replied: 0,
+          delivery_rate: 0,
+          read_rate: 0,
+        },
+        subscribers: {
+          total: data.subscribers?.total || 0,
+          active: data.subscribers?.active || 0,
+          unsubscribed: (data.subscribers?.total || 0) - (data.subscribers?.active || 0),
+          new_this_month: data.subscribers?.new_last_30_days || 0,
+        },
+      };
+    } catch (error) {
+      logger.warn('Error fetching marketing stats:', { error: String(error) });
+      // Return empty stats if endpoint doesn't exist
       return {
         email: {
           total_campaigns: 0,
