@@ -541,7 +541,27 @@ export const emailCampaignsApi = {
   },
 
   async create(data: EmailCampaignInput): Promise<EmailCampaign> {
-    const response = await api.post<EmailCampaign>(`${BASE_URL}/campaigns/`, data);
+    // Clean up the data - remove null/undefined/empty template
+    const cleanData: Record<string, unknown> = { ...data };
+    
+    // Remove template if it's not a valid UUID
+    if (!cleanData.template || 
+        cleanData.template === null || 
+        (typeof cleanData.template === 'string' && 
+         (cleanData.template.startsWith('preset-') || cleanData.template === ''))) {
+      delete cleanData.template;
+    }
+    
+    // Remove empty strings and undefined values
+    Object.keys(cleanData).forEach(key => {
+      if (cleanData[key] === '' || cleanData[key] === undefined || cleanData[key] === null) {
+        delete cleanData[key];
+      }
+    });
+    
+    logger.info('Creating email campaign', { data: cleanData });
+    
+    const response = await api.post<EmailCampaign>(`${BASE_URL}/campaigns/`, cleanData);
     return response.data;
   },
 
