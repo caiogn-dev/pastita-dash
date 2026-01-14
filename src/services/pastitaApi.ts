@@ -1,16 +1,29 @@
 /**
- * Store Products API Service
+ * @deprecated This module is deprecated. Use storeApi.ts instead.
+ * 
+ * Store Products API Service (LEGACY)
  * Uses the unified stores API: /stores/
  * 
- * MULTI-TENANT: All endpoints now use dynamic store selection.
- * The store slug is passed as parameter or uses the selected store from context.
+ * MIGRATION GUIDE:
+ * - Import from './storeApi' instead of './pastitaApi'
+ * - Use storeApi.getProducts() instead of getProducts()
+ * - Use storeApi.getOrders() instead of getPedidos()
+ * - Types: Product instead of Produto, Order instead of Pedido
  * 
- * For backwards compatibility, VITE_STORE_SLUG env var is used as fallback.
+ * This file will be removed in a future version.
  */
 
 import api from './api';
 import logger from './logger';
 import { useStoreContextStore } from '../stores/storeContextStore';
+
+// Log deprecation warning in development
+if (import.meta.env.DEV) {
+  console.warn(
+    '[DEPRECATED] pastitaApi.ts is deprecated. Please migrate to storeApi.ts. ' +
+    'See the migration guide in the file header.'
+  );
+}
 
 // Fallback store slug from env (for backwards compatibility)
 const DEFAULT_STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
