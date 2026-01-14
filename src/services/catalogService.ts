@@ -1,15 +1,30 @@
 /**
- * Catalog Service
+ * @deprecated This module is deprecated. Use storeApi.ts instead.
+ * 
+ * Catalog Service (LEGACY)
  * 
  * Complete service for managing store catalog:
  * - Products (with dynamic product types)
  * - Categories
  * - Product Types (with custom fields)
  * 
- * All operations are store-scoped for multi-tenant support.
+ * MIGRATION GUIDE:
+ * - Import from './storeApi' instead of './catalogService'
+ * - Use storeApi.getProducts() instead of catalogService.getProducts()
+ * - Use storeApi.getCategories() instead of catalogService.getCategories()
+ * 
+ * This file will be removed in a future version.
  */
 import api from './api';
 import logger from './logger';
+
+// Log deprecation warning in development
+if (import.meta.env.DEV) {
+  console.warn(
+    '[DEPRECATED] catalogService.ts is deprecated. Please migrate to storeApi.ts. ' +
+    'See the migration guide in the file header.'
+  );
+}
 
 const BASE_URL = '/stores';
 

@@ -198,6 +198,37 @@ export interface DashboardStats {
   revenue_today: number;
 }
 
+export interface CustomField {
+  name: string;
+  label: string;
+  type: 'text' | 'number' | 'select' | 'multiselect' | 'boolean' | 'textarea' | 'date' | 'color';
+  required?: boolean;
+  placeholder?: string;
+  default_value?: string | number | boolean;
+  options?: Array<{ value: string; label: string }>;
+  min?: number;
+  max?: number;
+  step?: number;
+  rows?: number;
+}
+
+export interface ProductType {
+  id: string;
+  store: string;
+  name: string;
+  slug: string;
+  description: string;
+  icon?: string;
+  image?: string;
+  custom_fields: CustomField[];
+  sort_order: number;
+  is_active: boolean;
+  show_in_menu: boolean;
+  products_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -549,6 +580,65 @@ class StoreApiClient {
       throw error;
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // PRODUCT TYPES
+  // ---------------------------------------------------------------------------
+
+  async getProductTypes(params: ApiParams = {}, storeSlug?: string): Promise<ProductType[]> {
+    const store = resolveStore(storeSlug);
+    try {
+      const response = await api.get(`${this.baseUrl}/s/${store}/product-types/`, { params });
+      return response.data.results || response.data;
+    } catch (error) {
+      logger.error('Failed to fetch product types', { store, error });
+      throw error;
+    }
+  }
+
+  async getProductType(id: string, storeSlug?: string): Promise<ProductType> {
+    const store = resolveStore(storeSlug);
+    try {
+      const response = await api.get(`${this.baseUrl}/s/${store}/product-types/${id}/`);
+      return response.data;
+    } catch (error) {
+      logger.error('Failed to fetch product type', { id, error });
+      throw error;
+    }
+  }
+
+  async createProductType(data: Partial<ProductType>, storeSlug?: string): Promise<ProductType> {
+    const store = resolveStore(storeSlug);
+    try {
+      const response = await api.post(`${this.baseUrl}/s/${store}/product-types/`, data);
+      logger.info('Product type created', { id: response.data.id });
+      return response.data;
+    } catch (error) {
+      logger.error('Failed to create product type', { error });
+      throw error;
+    }
+  }
+
+  async updateProductType(id: string, data: Partial<ProductType>): Promise<ProductType> {
+    try {
+      const response = await api.patch(`${this.baseUrl}/product-types/${id}/`, data);
+      logger.info('Product type updated', { id });
+      return response.data;
+    } catch (error) {
+      logger.error('Failed to update product type', { id, error });
+      throw error;
+    }
+  }
+
+  async deleteProductType(id: string): Promise<void> {
+    try {
+      await api.delete(`${this.baseUrl}/product-types/${id}/`);
+      logger.info('Product type deleted', { id });
+    } catch (error) {
+      logger.error('Failed to delete product type', { id, error });
+      throw error;
+    }
+  }
 }
 
 // =============================================================================
@@ -608,6 +698,13 @@ export function useStoreApi() {
     createDeliveryZone: (data: Partial<DeliveryZone>) => storeApi.createDeliveryZone(data, selectedStore?.slug),
     updateDeliveryZone: storeApi.updateDeliveryZone.bind(storeApi),
     deleteDeliveryZone: storeApi.deleteDeliveryZone.bind(storeApi),
+    
+    // Product Types
+    getProductTypes: (params?: ApiParams) => storeApi.getProductTypes(params, selectedStore?.slug),
+    getProductType: (id: string) => storeApi.getProductType(id, selectedStore?.slug),
+    createProductType: (data: Partial<ProductType>) => storeApi.createProductType(data, selectedStore?.slug),
+    updateProductType: storeApi.updateProductType.bind(storeApi),
+    deleteProductType: storeApi.deleteProductType.bind(storeApi),
     
     // Dashboard
     getDashboardStats: () => storeApi.getDashboardStats(selectedStore?.slug),
