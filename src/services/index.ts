@@ -1,17 +1,68 @@
+// =============================================================================
+// CORE SERVICES
+// =============================================================================
+
 export { default as api, getErrorMessage } from './api';
 export { authService } from './auth';
 export { dashboardService } from './dashboard';
+export { default as logger } from './logger';
+
+// =============================================================================
+// STORE API (Multi-tenant) - NEW ARCHITECTURE
+// =============================================================================
+
+export { 
+  storeApi, 
+  useStoreApi,
+  getActiveStoreSlug,
+  type Product,
+  type Category,
+  type Order,
+  type OrderItem,
+  type OrderStatus,
+  type PaymentStatus,
+  type DeliveryMethod,
+  type DeliveryAddress,
+  type Coupon,
+  type DeliveryZone,
+  type DashboardStats as StoreDashboardStats,
+  type ApiParams,
+  type PaginatedResponse,
+} from './storeApi';
+
+// =============================================================================
+// COMMUNICATION SERVICES
+// =============================================================================
+
 export { whatsappService } from './whatsapp';
 export { conversationsService } from './conversations';
+export { notificationsService } from './notifications';
+export {
+  notificationWS,
+  chatWS,
+  dashboardWS,
+  getWebSocketUrl,
+  initializeWebSockets,
+  disconnectWebSockets,
+} from './websocket';
+
+// =============================================================================
+// BUSINESS SERVICES
+// =============================================================================
+
 export { ordersService } from './orders';
 export { paymentsService } from './payments';
-export { langflowService } from './langflow';
-export { notificationsService } from './notifications';
-export { auditService } from './audit';
-export { campaignsService } from './campaigns';
 export { couponsService } from './coupons';
 export { deliveryService } from './delivery';
 export { productsService } from './products';
+
+// =============================================================================
+// AUTOMATION & AI
+// =============================================================================
+
+export { langflowService } from './langflow';
+export { auditService } from './audit';
+export { campaignsService } from './campaigns';
 export {
   companyProfileApi,
   autoMessageApi,
@@ -23,21 +74,17 @@ export {
   messageVariables,
 } from './automation';
 export {
-  notificationWS,
-  chatWS,
-  dashboardWS,
-  getWebSocketUrl,
-  initializeWebSockets,
-  disconnectWebSockets,
-} from './websocket';
-export { exportService } from './export';
-export {
   scheduledMessagesService,
   reportSchedulesService,
   generatedReportsService,
 } from './scheduling';
+export { exportService } from './export';
 
-// Pastita API - Massas Artesanais
+// =============================================================================
+// LEGACY API (Deprecated - use storeApi instead)
+// =============================================================================
+
+// @deprecated Use storeApi instead - these exports are for backwards compatibility
 export type {
   Produto,
   Molho,
@@ -48,8 +95,8 @@ export type {
   Pedido,
   PedidoItem,
   PedidoEndereco,
-  Category,
-  DashboardStats,
+  Category as LegacyCategory,
+  DashboardStats as LegacyDashboardStats,
   MolhoInput,
   CarneInput,
   RondelliInput,
@@ -122,6 +169,3 @@ export {
   toggleProductActive,
   toggleProductFeatured,
 } from './pastitaApi';
-
-// Logger
-export { default as logger } from './logger';

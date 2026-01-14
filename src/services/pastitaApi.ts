@@ -1,14 +1,41 @@
 /**
- * Pastita API Service
+ * Store Products API Service
  * Uses the unified stores API: /stores/
- * All endpoints filter by store=pastita
+ * 
+ * MULTI-TENANT: All endpoints now use dynamic store selection.
+ * The store slug is passed as parameter or uses the selected store from context.
+ * 
+ * For backwards compatibility, VITE_STORE_SLUG env var is used as fallback.
  */
 
 import api from './api';
 import logger from './logger';
+import { useStoreContextStore } from '../stores/storeContextStore';
 
-const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
+// Fallback store slug from env (for backwards compatibility)
+const DEFAULT_STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
 const STORES_BASE = '/stores';
+
+/**
+ * Get the current store slug from context or fallback
+ * This is used internally by API functions
+ */
+export function getCurrentStoreSlug(): string {
+  // Try to get from Zustand store (works outside React components)
+  const state = useStoreContextStore.getState();
+  if (state.selectedStore?.slug) {
+    return state.selectedStore.slug;
+  }
+  // Fallback to env var
+  return DEFAULT_STORE_SLUG;
+}
+
+/**
+ * Helper to get store param - uses provided slug or current context
+ */
+function getStoreParam(storeSlug?: string): string {
+  return storeSlug || getCurrentStoreSlug();
+}
 
 // =============================================================================
 // TYPES
@@ -274,7 +301,7 @@ function normalizeOrder(o: any): Pedido {
 export async function getProducts(params: Record<string, any> = {}): Promise<Produto[]> {
   try {
     const response = await api.get(`${STORES_BASE}/products/`, {
-      params: { store: STORE_SLUG, ...params }
+      params: { store: getStoreParam(), ...params }
     });
     const results = response.data.results || response.data;
     return results.map(normalizeProduct);
@@ -297,7 +324,7 @@ export async function getProduct(id: number): Promise<Produto> {
 export async function createProduct(data: Partial<Produto>): Promise<Produto> {
   try {
     const payload = {
-      store: STORE_SLUG,
+      store: getStoreParam(),
       name: data.nome || data.name,
       description: data.descricao || data.description,
       price: data.preco || data.price,
@@ -433,7 +460,7 @@ export async function deleteRondelli(id: number): Promise<void> {
 export async function getCombos(params: Record<string, any> = {}): Promise<Combo[]> {
   try {
     const response = await api.get(`${STORES_BASE}/combos/`, {
-      params: { store: STORE_SLUG, ...params }
+      params: { store: getStoreParam(), ...params }
     });
     const results = response.data.results || response.data;
     return results.map(normalizeProduct);
@@ -456,7 +483,7 @@ export async function getCombo(id: number): Promise<Combo> {
 export async function createCombo(data: any): Promise<Combo> {
   try {
     const response = await api.post(`${STORES_BASE}/combos/`, {
-      store: STORE_SLUG,
+      store: getStoreParam(),
       ...data
     });
     return normalizeProduct(response.data);
@@ -492,7 +519,7 @@ export async function deleteCombo(id: number): Promise<void> {
 export async function getPedidos(params: Record<string, any> = {}): Promise<Pedido[]> {
   try {
     const response = await api.get(`${STORES_BASE}/orders/`, {
-      params: { store: STORE_SLUG, ...params }
+      params: { store: getStoreParam(), ...params }
     });
     const results = response.data.results || response.data;
     return results.map(normalizeOrder);
@@ -539,7 +566,7 @@ export async function getStatusPedido(id: string | number): Promise<{ status: st
 export async function getCategories(params: Record<string, any> = {}): Promise<Category[]> {
   try {
     const response = await api.get(`${STORES_BASE}/categories/`, {
-      params: { store: STORE_SLUG, ...params }
+      params: { store: getStoreParam(), ...params }
     });
     return response.data.results || response.data;
   } catch (error) {
@@ -561,7 +588,7 @@ export async function getCategory(id: number): Promise<Category> {
 export async function createCategory(data: Partial<Category>): Promise<Category> {
   try {
     const response = await api.post(`${STORES_BASE}/categories/`, {
-      store: STORE_SLUG,
+      store: getStoreParam(),
       ...data
     });
     return response.data;
@@ -598,13 +625,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   try {
     // Get orders
     const ordersResponse = await api.get(`${STORES_BASE}/orders/`, {
-      params: { store: STORE_SLUG }
+      params: { store: getStoreParam() }
     });
     const orders = ordersResponse.data.results || ordersResponse.data;
     
     // Get products
     const productsResponse = await api.get(`${STORES_BASE}/products/`, {
-      params: { store: STORE_SLUG }
+      params: { store: getStoreParam() }
     });
     const products = productsResponse.data.results || productsResponse.data;
     
@@ -635,12 +662,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 // CATALOG (Public)
 // =============================================================================
 
-export async function getCatalog(): Promise<any> {
+export async function getCatalog(storeSlug?: string): Promise<any> {
+  const slug = getStoreParam(storeSlug);
   try {
-    const response = await api.get(`${STORES_BASE}/s/${STORE_SLUG}/catalog/`);
+    const response = await api.get(`${STORES_BASE}/s/${slug}/catalog/`);
     return response.data;
   } catch (error) {
-    logger.apiError(`${STORES_BASE}/s/${STORE_SLUG}/catalog/`, error);
+    logger.apiError(`${STORES_BASE}/s/${slug}/catalog/`, error);
     throw error;
   }
 }
