@@ -44,7 +44,7 @@ import { PastitaProductsPage, PastitaOrdersPage, PastitaSettingsPage } from './p
 import { AnalyticsPage } from './pages/reports';
 
 // Stores Pages
-import { StoresPage } from './pages/stores';
+import { StoresPage, StoreDetailPage } from './pages/stores';
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -145,6 +145,12 @@ const App: React.FC = () => {
         
         {/* Stores Routes */}
         <Route path="stores" element={<StoresPage />} />
+        <Route path="stores/:storeId" element={<StoreDetailPage />} />
+        <Route path="stores/:storeId/products" element={<ProductsPage />} />
+        <Route path="stores/:storeId/orders" element={<OrdersPage />} />
+        <Route path="stores/:storeId/coupons" element={<CouponsPage />} />
+        <Route path="stores/:storeId/delivery" element={<DeliveryZonesPage />} />
+        <Route path="stores/:storeId/analytics" element={<AnalyticsPage />} />
       </Route>
 
       {/* Catch all */}

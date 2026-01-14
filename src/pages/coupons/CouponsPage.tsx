@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import logger from '../../services/logger';
 import {
   PlusIcon,
@@ -14,7 +15,11 @@ import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from 
 import { useStore } from '../../hooks';
 
 export const CouponsPage: React.FC = () => {
-  const { storeId, storeName, isStoreSelected } = useStore();
+  const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
+  const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
+  
+  // Use route storeId if available, otherwise use context
+  const storeId = routeStoreId || contextStoreId;
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [stats, setStats] = useState<CouponStats | null>(null);
   const [loading, setLoading] = useState(true);

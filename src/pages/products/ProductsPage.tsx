@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import logger from '../../services/logger';
 import {
   PlusIcon,
@@ -69,7 +70,11 @@ const parseCsv = (content: string) => {
 };
 
 export const ProductsPage: React.FC = () => {
-  const { storeId, storeName, isStoreSelected } = useStore();
+  const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
+  const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
+  
+  // Use route storeId if available, otherwise use context
+  const storeId = routeStoreId || contextStoreId;
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);

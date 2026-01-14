@@ -1,6 +1,15 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { PlusIcon, MagnifyingGlassIcon, TruckIcon, CreditCardIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useNavigate, useParams } from 'react-router-dom';
+import { 
+  MagnifyingGlassIcon, 
+  TruckIcon, 
+  CreditCardIcon, 
+  XMarkIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
+  FunnelIcon,
+  ArrowPathIcon,
+} from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -16,13 +25,20 @@ import {
   PageLoading,
   OrderStatusTabs,
 } from '../../components/common';
+import { OrdersKanban, ORDER_STATUSES } from '../../components/orders/OrdersKanban';
 import { exportService, getErrorMessage } from '../../services';
 import { unifiedApi, UnifiedOrder, UnifiedOrderFilters } from '../../services/unifiedApi';
-import { useStoreContextStore } from '../../stores';
+import { useStore } from '../../hooks';
+
+type ViewMode = 'kanban' | 'table';
 
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { selectedStore } = useStoreContextStore();
+  const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
+  const { storeId: contextStoreId, storeName } = useStore();
+  
+  // Use route storeId if available, otherwise use context
+  const effectiveStoreId = routeStoreId || contextStoreId;
   
   // State
   const [orders, setOrders] = useState<UnifiedOrder[]>([]);
@@ -30,6 +46,8 @@ export const OrdersPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [showAllStatuses, setShowAllStatuses] = useState(false);
   
   // Modal states
   const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
@@ -46,7 +64,7 @@ export const OrdersPage: React.FC = () => {
     setIsLoading(true);
     try {
       const filters: UnifiedOrderFilters = {
-        store: selectedStore?.id,
+        store: effectiveStoreId || undefined,
         status: statusFilter || undefined,
         search: searchQuery || undefined,
       };
@@ -58,11 +76,46 @@ export const OrdersPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedStore?.id, statusFilter, searchQuery]);
+  }, [effectiveStoreId, statusFilter, searchQuery]);
 
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  // Handle status change from Kanban drag-and-drop
+  const handleKanbanStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      // Map status to API action
+      switch (newStatus) {
+        case 'confirmed':
+          await unifiedApi.confirmOrder(orderId);
+          break;
+        case 'preparing':
+          await unifiedApi.prepareOrder(orderId);
+          break;
+        case 'ready':
+          // Custom action for ready status
+          await unifiedApi.updateOrderStatus(orderId, 'ready');
+          break;
+        case 'shipped':
+          await unifiedApi.shipOrder(orderId, '', '');
+          break;
+        case 'delivered':
+          await unifiedApi.deliverOrder(orderId);
+          break;
+        case 'cancelled':
+          await unifiedApi.cancelOrder(orderId, 'Cancelado via Kanban');
+          break;
+        default:
+          throw new Error(`Status não suportado: ${newStatus}`);
+      }
+      toast.success('Status atualizado!');
+      await loadOrders();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+      throw error;
+    }
+  };
 
   // Calculate status counts
   const statusCounts = useMemo(() => {
@@ -331,17 +384,67 @@ export const OrdersPage: React.FC = () => {
     },
   ];
 
+  // Visible statuses for Kanban
+  const visibleStatuses = useMemo(() => {
+    if (showAllStatuses) {
+      return ORDER_STATUSES.map(s => s.id);
+    }
+    // Default: show active statuses only
+    return ['pending', 'confirmed', 'preparing', 'ready', 'shipped'];
+  }, [showAllStatuses]);
+
   if (isLoading) {
     return <PageLoading />;
   }
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       <Header
         title="Pedidos"
-        subtitle={`${filteredOrders.length} pedido(s)${selectedStore ? ` - ${selectedStore.name}` : ''}`}
+        subtitle={`${filteredOrders.length} pedido(s)${storeName ? ` - ${storeName}` : ''}`}
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`p-1.5 rounded ${viewMode === 'kanban' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                title="Visualização Kanban"
+              >
+                <Squares2X2Icon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded ${viewMode === 'table' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                title="Visualização em Lista"
+              >
+                <ListBulletIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Refresh */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={loadOrders}
+              title="Atualizar"
+            >
+              <ArrowPathIcon className="w-4 h-4" />
+            </Button>
+
+            {/* Show All Statuses (Kanban only) */}
+            {viewMode === 'kanban' && (
+              <Button
+                variant={showAllStatuses ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setShowAllStatuses(!showAllStatuses)}
+                title="Mostrar todos os status"
+              >
+                <FunnelIcon className="w-4 h-4" />
+              </Button>
+            )}
+
+            {/* Export */}
             <Button
               variant="secondary"
               size="sm"
@@ -364,18 +467,9 @@ export const OrdersPage: React.FC = () => {
         }
       />
 
-      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-        {/* Status Tabs */}
-        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-          <OrderStatusTabs
-            value={statusFilter}
-            onChange={setStatusFilter}
-            counts={statusCounts}
-          />
-        </div>
-
-        {/* Search */}
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+      <div className="flex-1 p-4 md:p-6 space-y-4 overflow-hidden">
+        {/* Search Bar */}
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -383,26 +477,52 @@ export const OrdersPage: React.FC = () => {
               placeholder="Buscar por número, cliente, telefone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
         </div>
 
-        {/* Orders Table */}
-        <Card>
-          {filteredOrders.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">Nenhum pedido encontrado</p>
-            </div>
-          ) : (
-            <Table
-              columns={columns}
-              data={filteredOrders}
-              keyExtractor={(order) => order.id}
-              onRowClick={(order) => navigate(`/orders/${order.id}`)}
+        {/* Kanban View */}
+        {viewMode === 'kanban' && (
+          <div className="flex-1 overflow-hidden">
+            <OrdersKanban
+              orders={filteredOrders}
+              onOrderClick={(order) => navigate(`/orders/${order.id}`)}
+              onStatusChange={handleKanbanStatusChange}
+              visibleStatuses={visibleStatuses}
             />
-          )}
-        </Card>
+          </div>
+        )}
+
+        {/* Table View */}
+        {viewMode === 'table' && (
+          <>
+            {/* Status Tabs */}
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <OrderStatusTabs
+                value={statusFilter}
+                onChange={setStatusFilter}
+                counts={statusCounts}
+              />
+            </div>
+
+            {/* Orders Table */}
+            <Card>
+              {filteredOrders.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">Nenhum pedido encontrado</p>
+                </div>
+              ) : (
+                <Table
+                  columns={columns}
+                  data={filteredOrders}
+                  keyExtractor={(order) => order.id}
+                  onRowClick={(order) => navigate(`/orders/${order.id}`)}
+                />
+              )}
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Ship Modal */}
