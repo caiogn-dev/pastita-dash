@@ -75,12 +75,12 @@ export const ORDER_STATUSES = [
     aliases: ['pronto', 'ready_for_pickup', 'ready_for_delivery']
   },
   { 
-    id: 'shipped', 
+    id: 'out_for_delivery', 
     label: 'Em Entrega', 
     color: 'bg-indigo-50 border-indigo-200',
     headerColor: 'bg-indigo-500',
     icon: TruckIcon,
-    aliases: ['enviado', 'em_entrega', 'out_for_delivery']
+    aliases: ['shipped', 'enviado', 'em_entrega', 'delivering']
   },
   { 
     id: 'delivered', 

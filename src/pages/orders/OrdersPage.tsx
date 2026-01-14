@@ -95,8 +95,8 @@ export const OrdersPage: React.FC = () => {
       case 'ready':
         await unifiedApi.updateOrderStatus(orderId, 'ready');
         break;
-      case 'shipped':
-        await unifiedApi.shipOrder(orderId, '', '');
+      case 'out_for_delivery':
+        await unifiedApi.updateOrderStatus(orderId, 'out_for_delivery');
         break;
       case 'delivered':
         await unifiedApi.deliverOrder(orderId);

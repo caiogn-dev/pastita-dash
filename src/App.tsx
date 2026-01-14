@@ -16,7 +16,7 @@ import { AccountDetailPage } from './pages/accounts/AccountDetailPage';
 import { MessagesPage } from './pages/messages/MessagesPage';
 import { ConversationsPage } from './pages/conversations/ConversationsPage';
 import { OrdersPage } from './pages/orders/OrdersPage';
-import { OrderDetailPage } from './pages/orders/OrderDetailPage';
+import { OrderDetailPageNew as OrderDetailPage } from './pages/orders/OrderDetailPageNew';
 import { PaymentsPage } from './pages/payments/PaymentsPage';
 import { LangflowPage } from './pages/langflow/LangflowPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
