@@ -82,39 +82,33 @@ export const OrdersPage: React.FC = () => {
     loadOrders();
   }, [loadOrders]);
 
-  // Handle status change from Kanban drag-and-drop
+  // Handle status change from Kanban drag-and-drop (optimistic update handled by Kanban)
   const handleKanbanStatusChange = async (orderId: string, newStatus: string) => {
-    try {
-      // Map status to API action
-      switch (newStatus) {
-        case 'confirmed':
-          await unifiedApi.confirmOrder(orderId);
-          break;
-        case 'preparing':
-          await unifiedApi.prepareOrder(orderId);
-          break;
-        case 'ready':
-          // Custom action for ready status
-          await unifiedApi.updateOrderStatus(orderId, 'ready');
-          break;
-        case 'shipped':
-          await unifiedApi.shipOrder(orderId, '', '');
-          break;
-        case 'delivered':
-          await unifiedApi.deliverOrder(orderId);
-          break;
-        case 'cancelled':
-          await unifiedApi.cancelOrder(orderId, 'Cancelado via Kanban');
-          break;
-        default:
-          throw new Error(`Status não suportado: ${newStatus}`);
-      }
-      toast.success('Status atualizado!');
-      await loadOrders();
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-      throw error;
+    // Map status to API action
+    switch (newStatus) {
+      case 'confirmed':
+        await unifiedApi.confirmOrder(orderId);
+        break;
+      case 'preparing':
+        await unifiedApi.prepareOrder(orderId);
+        break;
+      case 'ready':
+        await unifiedApi.updateOrderStatus(orderId, 'ready');
+        break;
+      case 'shipped':
+        await unifiedApi.shipOrder(orderId, '', '');
+        break;
+      case 'delivered':
+        await unifiedApi.deliverOrder(orderId);
+        break;
+      case 'cancelled':
+        await unifiedApi.cancelOrder(orderId, 'Cancelado via Kanban');
+        break;
+      default:
+        throw new Error(`Status não suportado: ${newStatus}`);
     }
+    toast.success('Status atualizado!');
+    // Note: No loadOrders() here - Kanban handles optimistic updates
   };
 
   // Calculate status counts
