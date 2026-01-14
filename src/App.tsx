@@ -46,6 +46,9 @@ import { AnalyticsPage } from './pages/reports';
 // Stores Pages
 import { StoresPage, StoreDetailPage } from './pages/stores';
 
+// Marketing Pages
+import { MarketingPage } from './pages/marketing';
+
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
@@ -151,6 +154,14 @@ const App: React.FC = () => {
         <Route path="stores/:storeId/coupons" element={<CouponsPage />} />
         <Route path="stores/:storeId/delivery" element={<DeliveryZonesPage />} />
         <Route path="stores/:storeId/analytics" element={<AnalyticsPage />} />
+        
+        {/* Marketing Routes */}
+        <Route path="marketing" element={<MarketingPage />} />
+        <Route path="marketing/email" element={<MarketingPage />} />
+        <Route path="marketing/email/new" element={<MarketingPage />} />
+        <Route path="marketing/email/templates" element={<MarketingPage />} />
+        <Route path="marketing/whatsapp" element={<MarketingPage />} />
+        <Route path="marketing/whatsapp/new" element={<MarketingPage />} />
       </Route>
 
       {/* Catch all */}

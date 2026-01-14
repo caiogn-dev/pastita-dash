@@ -28,6 +28,11 @@ import {
   CakeIcon,
   UsersIcon,
   MapPinIcon,
+  MegaphoneIcon,
+  EnvelopeIcon,
+  SparklesIcon,
+  RocketLaunchIcon,
+  QueueListIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -37,6 +42,12 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   children?: NavItem[];
   badge?: string;
+  section?: string;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
 }
 
 interface SidebarProps {
@@ -44,77 +55,71 @@ interface SidebarProps {
 }
 
 // Menu organizado por seções lógicas
-const navigation: NavItem[] = [
-  // Principal
-  { name: 'Dashboard', href: '/', icon: HomeIcon },
-  { name: 'Relatórios', href: '/analytics', icon: PresentationChartLineIcon },
-  
-  // E-commerce
-  { 
-    name: 'Vendas', 
-    href: '/orders', 
-    icon: ShoppingCartIcon,
-    children: [
-      { name: 'Pedidos', href: '/orders', icon: ShoppingCartIcon },
-      { name: 'Pagamentos', href: '/payments', icon: CreditCardIcon },
+const navigationSections: NavSection[] = [
+  {
+    title: 'Principal',
+    items: [
+      { name: 'Dashboard', href: '/', icon: HomeIcon },
+      { name: 'Pedidos', href: '/orders', icon: ShoppingCartIcon, badge: 'Kanban' },
     ]
   },
-  { 
-    name: 'Catálogo', 
-    href: '/products', 
-    icon: Squares2X2Icon,
-    children: [
+  {
+    title: 'Catálogo',
+    items: [
       { name: 'Produtos', href: '/products', icon: Squares2X2Icon },
       { name: 'Cupons', href: '/coupons', icon: TagIcon },
+      { name: 'Zonas de Entrega', href: '/delivery-zones', icon: TruckIcon },
     ]
   },
-  
-  // Entrega
-  { 
-    name: 'Entregas', 
-    href: '/delivery-zones', 
-    icon: TruckIcon,
-    children: [
-      { name: 'Zonas de Entrega', href: '/delivery-zones', icon: MapPinIcon },
+  {
+    title: 'Marketing',
+    items: [
+      { name: 'Campanhas', href: '/marketing', icon: MegaphoneIcon },
+      { name: 'Email Marketing', href: '/marketing/email', icon: EnvelopeIcon },
+      { name: 'WhatsApp Marketing', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
     ]
   },
-  
-  // Comunicação
-  { 
-    name: 'Comunicação', 
-    href: '/conversations', 
-    icon: ChatBubbleLeftRightIcon,
-    children: [
+  {
+    title: 'Comunicação',
+    items: [
       { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
       { name: 'Mensagens', href: '/messages', icon: InboxIcon },
       { name: 'Contas WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
     ]
   },
-  
-  // Automação & IA
-  { 
-    name: 'Automação', 
-    href: '/automation', 
-    icon: BoltIcon,
-    children: [
-      { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
-      { name: 'Sessões', href: '/automation/sessions', icon: UserGroupIcon },
-      { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
-      { name: 'Relatórios', href: '/automation/reports', icon: DocumentChartBarIcon },
-      { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
+  {
+    title: 'Automação & IA',
+    items: [
+      { name: 'Langflow (IA)', href: '/langflow', icon: CpuChipIcon },
+      { 
+        name: 'Automação', 
+        href: '/automation/companies', 
+        icon: BoltIcon,
+        children: [
+          { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
+          { name: 'Sessões', href: '/automation/sessions', icon: UserGroupIcon },
+          { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
+          { name: 'Relatórios', href: '/automation/reports', icon: DocumentChartBarIcon },
+          { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
+        ]
+      },
     ]
   },
-  { name: 'Langflow (IA)', href: '/langflow', icon: CpuChipIcon },
-  
-  // Admin
-  { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
-  { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
+  {
+    title: 'Administração',
+    items: [
+      { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
+      { name: 'Relatórios', href: '/analytics', icon: PresentationChartLineIcon },
+      { name: 'Pagamentos', href: '/payments', icon: CreditCardIcon },
+      { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
+    ]
+  },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { logout, user } = useAuthStore();
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Automação']);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const handleLogout = () => {
     logout();
@@ -133,16 +138,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     );
   };
 
+  const isItemActive = (item: NavItem): boolean => {
+    if (location.pathname === item.href) return true;
+    if (item.children) {
+      return item.children.some(child => location.pathname.startsWith(child.href));
+    }
+    return false;
+  };
+
   const renderNavItem = (item: NavItem, depth = 0) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.name);
+    const isActive = isItemActive(item);
 
     if (hasChildren) {
       return (
         <div key={item.name}>
           <button
             onClick={() => toggleExpand(item.name)}
-            className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-100`}
+            className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100'
+            }`}
           >
             <div className="flex items-center">
               <item.icon className="w-5 h-5 mr-3" />
@@ -155,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             )}
           </button>
           {isExpanded && (
-            <div className="ml-4 mt-1 space-y-1">
+            <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 pl-2">
               {item.children!.map(child => renderNavItem(child, depth + 1))}
             </div>
           )}
@@ -170,15 +186,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         end={item.href === '/'}
         onClick={handleNavClick}
         className={({ isActive }) =>
-          `flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+          `flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
             isActive
               ? 'bg-primary-50 text-primary-700'
               : 'text-gray-700 hover:bg-gray-100'
           }`
         }
       >
-        <item.icon className="w-5 h-5 mr-3" />
-        {item.name}
+        <div className="flex items-center">
+          <item.icon className="w-5 h-5 mr-3" />
+          {item.name}
+        </div>
+        {item.badge && (
+          <span className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded">
+            {item.badge}
+          </span>
+        )}
       </NavLink>
     );
   };
@@ -207,8 +230,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => renderNavItem(item))}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        {navigationSections.map((section, index) => (
+          <div key={section.title} className={index > 0 ? 'mt-6' : ''}>
+            <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              {section.title}
+            </h3>
+            <div className="space-y-1">
+              {section.items.map((item) => renderNavItem(item))}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* User section */}
@@ -224,7 +256,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
               <p className="text-sm font-medium text-gray-900">
                 {user?.first_name || user?.username || 'Usuário'}
               </p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+              <p className="text-xs text-gray-500 truncate max-w-[120px]">{user?.email}</p>
             </div>
           </div>
           <button
