@@ -20,7 +20,7 @@ import {
   DeliveryZoneStats,
   StoreLocation,
 } from '../../services/delivery';
-import { useStoreContextStore } from '../../stores';
+import { useStore } from '../../hooks';
 
 const formatKm = (value?: number | string | null) => {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
@@ -80,10 +80,11 @@ const buildMapUrls = ({
 };
 
 export const DeliveryZonesPage: React.FC = () => {
-  const { selectedStore } = useStoreContextStore();
+  const { storeId, storeName, isStoreSelected } = useStore();
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -96,6 +97,7 @@ export const DeliveryZonesPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState<CreateDeliveryZone>({
+    store: storeId || undefined,
     name: '',
     distance_band: '',
     delivery_fee: 0,
@@ -121,15 +123,21 @@ export const DeliveryZonesPage: React.FC = () => {
   }, [storeLocation]);
 
   const loadData = useCallback(async () => {
+    if (!storeId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
       const [zonesData, statsData, storeData] = await Promise.all([
         deliveryService.getZones({
-          store: selectedStore?.id,
+          store: storeId,
           search: search || undefined,
           is_active: filterActive,
         }),
-        deliveryService.getStats(selectedStore?.id),
+        deliveryService.getStats(storeId),
         deliveryService.getStoreLocation(),
       ]);
       setZones(zonesData.results);
@@ -137,16 +145,22 @@ export const DeliveryZonesPage: React.FC = () => {
       if (storeData) {
         setStoreLocation(storeData);
       }
-    } catch (error) {
-      logger.error('Error loading delivery zones:', error);
+    } catch (err) {
+      logger.error('Error loading delivery zones:', err);
+      setError('Erro ao carregar zonas de entrega');
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive, selectedStore?.id]);
+  }, [search, filterActive, storeId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Update form data when store changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, store: storeId || undefined }));
+  }, [storeId]);
 
   const handleOpenModal = (zone?: DeliveryZone) => {
     if (zone) {
@@ -177,11 +191,19 @@ export const DeliveryZonesPage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!storeId) {
+      setError('Selecione uma loja antes de criar uma zona de entrega');
+      return;
+    }
+
     try {
       setSaving(true);
+      setError(null);
+      
       if (editingZone) {
         const payload: UpdateDeliveryZone = {
           ...formData,
+          store: storeId,
           name: formData.name.trim(),
           distance_band: formData.distance_band,
         };
@@ -189,14 +211,16 @@ export const DeliveryZonesPage: React.FC = () => {
       } else {
         const payload: CreateDeliveryZone = {
           ...formData,
+          store: storeId,
           name: formData.name.trim(),
         };
         await deliveryService.createZone(payload);
       }
       handleCloseModal();
       loadData();
-    } catch (error) {
-      logger.error('Error saving delivery zone:', error);
+    } catch (err) {
+      logger.error('Error saving delivery zone:', err);
+      setError('Erro ao salvar zona de entrega');
     } finally {
       setSaving(false);
     }

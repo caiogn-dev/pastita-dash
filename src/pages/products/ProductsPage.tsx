@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading, Textarea } from '../../components/common';
 import { productsService, Product, CreateProduct } from '../../services/products';
+import { useStore } from '../../hooks';
 
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -68,6 +69,7 @@ const parseCsv = (content: string) => {
 };
 
 export const ProductsPage: React.FC = () => {
+  const { storeId, storeName, isStoreSelected } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +77,7 @@ export const ProductsPage: React.FC = () => {
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
   const [filterCategory, setFilterCategory] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'out_of_stock' | 'low_stock'>('all');
+  const [error, setError] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -92,16 +95,24 @@ export const ProductsPage: React.FC = () => {
     stock_quantity: 0,
     is_active: true,
     image: null,
+    store: storeId || undefined,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadData = useCallback(async () => {
+    if (!storeId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
       const [productsData, categoriesData] = await Promise.all([
         productsService.getProducts({
+          store: storeId,
           search: search || undefined,
           category: filterCategory || undefined,
           is_active: filterActive,
@@ -110,16 +121,22 @@ export const ProductsPage: React.FC = () => {
       ]);
       setProducts(productsData.results);
       setCategories(categoriesData);
-    } catch (error) {
-      logger.error('Error loading products:', error);
+    } catch (err) {
+      logger.error('Error loading products:', err);
+      setError('Erro ao carregar produtos');
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive, filterCategory]);
+  }, [search, filterActive, filterCategory, storeId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Update form data when store changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, store: storeId || undefined }));
+  }, [storeId]);
 
   const filteredProducts = useMemo(() => {
     if (stockFilter === 'all') return products;
@@ -182,10 +199,18 @@ export const ProductsPage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!storeId) {
+      setError('Selecione uma loja antes de criar um produto');
+      return;
+    }
+
     try {
       setSaving(true);
+      setError(null);
+      
       const payload: CreateProduct = {
         ...formData,
+        store: storeId,
         name: formData.name.trim(),
         sku: formData.sku.trim(),
         description: formData.description?.trim() || '',
@@ -203,8 +228,9 @@ export const ProductsPage: React.FC = () => {
       }
       handleCloseModal();
       loadData();
-    } catch (error) {
-      logger.error('Error saving product:', error);
+    } catch (err) {
+      logger.error('Error saving product:', err);
+      setError('Erro ao salvar produto');
     } finally {
       setSaving(false);
     }

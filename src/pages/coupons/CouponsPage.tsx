@@ -11,10 +11,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
-import { useStoreContextStore } from '../../stores';
+import { useStore } from '../../hooks';
 
 export const CouponsPage: React.FC = () => {
-  const { selectedStore } = useStoreContextStore();
+  const { storeId, storeName, isStoreSelected } = useStore();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [stats, setStats] = useState<CouponStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,9 +28,11 @@ export const CouponsPage: React.FC = () => {
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [deletingCoupon, setDeletingCoupon] = useState<Coupon | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Form state
-  const [formData, setFormData] = useState<CreateCoupon>({
+  // Form state - includes store ID
+  const getInitialFormData = useCallback((): CreateCoupon => ({
+    store: storeId || undefined,
     code: '',
     description: '',
     discount_type: 'percentage',
@@ -41,32 +43,47 @@ export const CouponsPage: React.FC = () => {
     is_active: true,
     valid_from: new Date().toISOString().split('T')[0],
     valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-  });
+  }), [storeId]);
+
+  const [formData, setFormData] = useState<CreateCoupon>(getInitialFormData());
 
   const loadCoupons = useCallback(async () => {
+    if (!storeId) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
+      setError(null);
       const [couponsData, statsData] = await Promise.all([
         couponsService.getCoupons({
-          store: selectedStore?.id,
+          store: storeId,
           search: search || undefined,
           is_active: filterActive,
           discount_type: filterType || undefined,
         }),
-        couponsService.getStats(selectedStore?.id),
+        couponsService.getStats(storeId),
       ]);
       setCoupons(couponsData.results);
       setStats(statsData);
-    } catch (error) {
-      logger.error('Error loading coupons:', error);
+    } catch (err) {
+      logger.error('Error loading coupons:', err);
+      setError('Erro ao carregar cupons');
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive, filterType, selectedStore?.id]);
+  }, [search, filterActive, filterType, storeId]);
 
+  // Reload when store changes
   useEffect(() => {
     loadCoupons();
   }, [loadCoupons]);
+
+  // Update form data when store changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, store: storeId || undefined }));
+  }, [storeId]);
 
   const handleOpenModal = (coupon?: Coupon) => {
     if (coupon) {
@@ -107,17 +124,29 @@ export const CouponsPage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!storeId) {
+      setError('Selecione uma loja antes de criar um cupom');
+      return;
+    }
+
     try {
       setSaving(true);
+      setError(null);
+      
+      // Ensure store is always included
+      const dataToSave = { ...formData, store: storeId };
+      
       if (editingCoupon) {
-        await couponsService.updateCoupon(editingCoupon.id, formData as UpdateCoupon);
+        await couponsService.updateCoupon(editingCoupon.id, dataToSave as UpdateCoupon);
       } else {
-        await couponsService.createCoupon(formData);
+        await couponsService.createCoupon(dataToSave);
       }
       handleCloseModal();
       loadCoupons();
-    } catch (error) {
-      logger.error('Error saving coupon:', error);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar cupom';
+      logger.error('Error saving coupon:', err);
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
