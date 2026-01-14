@@ -1,4 +1,22 @@
+/**
+ * @deprecated This module is deprecated. Use marketingService.ts instead.
+ * 
+ * MIGRATION GUIDE:
+ * - For WhatsApp campaigns: use marketingService.whatsappCampaigns
+ * - For Email campaigns: use marketingService.emailCampaigns
+ * - For Contact lists: use marketingService.subscribers
+ * 
+ * This file will be removed in a future version.
+ */
 import api from './api';
+
+// Log deprecation warning in development
+if (import.meta.env.DEV) {
+  console.warn(
+    '[DEPRECATED] campaigns.ts is deprecated. Please migrate to marketingService.ts. ' +
+    'See the migration guide in the file header.'
+  );
+}
 
 export interface Campaign {
   id: string;

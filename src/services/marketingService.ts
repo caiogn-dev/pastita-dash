@@ -444,26 +444,43 @@ const generateSlug = (name: string): string => {
 export const emailTemplatesApi = {
   async list(storeId: string): Promise<EmailTemplate[]> {
     try {
-      // For now, return mock data since backend might not have this endpoint yet
-      // In production, this would call the actual API
-      const mockTemplates: EmailTemplate[] = Object.entries(EMAIL_TEMPLATE_PRESETS).map(([key, preset], index) => ({
-        id: `template-${key}`,
-        store: storeId,
-        name: preset.name || key,
-        slug: key,
-        subject: preset.subject || '',
-        html_content: preset.html_content || '',
-        template_type: preset.template_type || 'custom',
-        variables: preset.variables || [],
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
-      return mockTemplates;
+      // Try to fetch from API first
+      const response = await api.get<{ results?: EmailTemplate[] } | EmailTemplate[]>(`${BASE_URL}/templates/`, {
+        params: { store: storeId }
+      });
+      
+      const templates = Array.isArray(response.data) 
+        ? response.data 
+        : response.data.results || [];
+      
+      // If API returns templates, use them
+      if (templates.length > 0) {
+        return templates;
+      }
+      
+      // Fallback to preset templates if no custom templates exist
+      return emailTemplatesApi.getPresetTemplates(storeId);
     } catch (error) {
-      logger.error('Failed to fetch email templates', error);
-      throw error;
+      logger.warn('API not available, using preset templates', { error: String(error) });
+      // Fallback to preset templates
+      return emailTemplatesApi.getPresetTemplates(storeId);
     }
+  },
+
+  getPresetTemplates(storeId: string): EmailTemplate[] {
+    return Object.entries(EMAIL_TEMPLATE_PRESETS).map(([key, preset]) => ({
+      id: `preset-${key}`,
+      store: storeId,
+      name: preset.name || key,
+      slug: key,
+      subject: preset.subject || '',
+      html_content: preset.html_content || '',
+      template_type: preset.template_type || 'custom',
+      variables: preset.variables || [],
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
   },
 
   async get(id: string): Promise<EmailTemplate> {
@@ -501,50 +518,67 @@ export const emailTemplatesApi = {
 // =============================================================================
 
 export const emailCampaignsApi = {
-  async list(storeId: string): Promise<PaginatedResponse<EmailCampaign>> {
-    const response = await api.get<PaginatedResponse<EmailCampaign>>(`${BASE_URL}/email-campaigns/`, {
-      params: { store: storeId }
-    });
-    return response.data;
+  async list(storeId: string): Promise<EmailCampaign[]> {
+    try {
+      const response = await api.get<{ results?: EmailCampaign[] } | EmailCampaign[]>(`${BASE_URL}/campaigns/`, {
+        params: { store: storeId }
+      });
+      return Array.isArray(response.data) 
+        ? response.data 
+        : response.data.results || [];
+    } catch (error) {
+      logger.warn('Failed to fetch campaigns', { error: String(error) });
+      return [];
+    }
   },
 
   async get(id: string): Promise<EmailCampaign> {
-    const response = await api.get<EmailCampaign>(`${BASE_URL}/email-campaigns/${id}/`);
+    const response = await api.get<EmailCampaign>(`${BASE_URL}/campaigns/${id}/`);
     return response.data;
   },
 
   async create(data: EmailCampaignInput): Promise<EmailCampaign> {
-    const response = await api.post<EmailCampaign>(`${BASE_URL}/email-campaigns/`, data);
+    const response = await api.post<EmailCampaign>(`${BASE_URL}/campaigns/`, data);
     return response.data;
   },
 
   async update(id: string, data: Partial<EmailCampaignInput>): Promise<EmailCampaign> {
-    const response = await api.patch<EmailCampaign>(`${BASE_URL}/email-campaigns/${id}/`, data);
+    const response = await api.patch<EmailCampaign>(`${BASE_URL}/campaigns/${id}/`, data);
     return response.data;
   },
 
   async delete(id: string): Promise<void> {
-    await api.delete(`${BASE_URL}/email-campaigns/${id}/`);
+    await api.delete(`${BASE_URL}/campaigns/${id}/`);
   },
 
-  async send(id: string): Promise<void> {
-    await api.post(`${BASE_URL}/email-campaigns/${id}/send/`);
+  async send(id: string): Promise<{ success: boolean; sent?: number; failed?: number; error?: string }> {
+    const response = await api.post<{ success: boolean; sent?: number; failed?: number; error?: string }>(
+      `${BASE_URL}/campaigns/${id}/send/`
+    );
+    return response.data;
   },
 
   async schedule(id: string, scheduledAt: string): Promise<EmailCampaign> {
-    const response = await api.post<EmailCampaign>(`${BASE_URL}/email-campaigns/${id}/schedule/`, {
+    const response = await api.post<EmailCampaign>(`${BASE_URL}/campaigns/${id}/schedule/`, {
       scheduled_at: scheduledAt
     });
     return response.data;
   },
 
   async pause(id: string): Promise<EmailCampaign> {
-    const response = await api.post<EmailCampaign>(`${BASE_URL}/email-campaigns/${id}/pause/`);
+    const response = await api.post<EmailCampaign>(`${BASE_URL}/campaigns/${id}/pause/`);
     return response.data;
   },
 
   async cancel(id: string): Promise<EmailCampaign> {
-    const response = await api.post<EmailCampaign>(`${BASE_URL}/email-campaigns/${id}/cancel/`);
+    const response = await api.post<EmailCampaign>(`${BASE_URL}/campaigns/${id}/cancel/`);
+    return response.data;
+  },
+
+  async getRecipients(id: string): Promise<{ email: string; name: string; status: string }[]> {
+    const response = await api.get<{ email: string; name: string; status: string }[]>(
+      `${BASE_URL}/campaigns/${id}/recipients/`
+    );
     return response.data;
   },
 };
@@ -658,6 +692,109 @@ export const marketingStatsApi = {
 };
 
 // =============================================================================
+// QUICK ACTIONS API
+// =============================================================================
+
+export interface SendCouponEmailParams {
+  store: string;
+  to_email: string;
+  customer_name: string;
+  coupon_code: string;
+  discount_value: string;
+  expiry_date?: string;
+}
+
+export interface SendWelcomeEmailParams {
+  store: string;
+  to_email: string;
+  customer_name: string;
+}
+
+export const quickActionsApi = {
+  async sendCouponEmail(params: SendCouponEmailParams): Promise<{ success: boolean; id?: string; error?: string }> {
+    try {
+      const response = await api.post<{ success: boolean; id?: string; error?: string }>(
+        `${BASE_URL}/actions/send_coupon/`,
+        params
+      );
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      logger.error('Failed to send coupon email', { error: String(error) });
+      return { success: false, error: err.response?.data?.error || 'Erro ao enviar email' };
+    }
+  },
+
+  async sendWelcomeEmail(params: SendWelcomeEmailParams): Promise<{ success: boolean; id?: string; error?: string }> {
+    try {
+      const response = await api.post<{ success: boolean; id?: string; error?: string }>(
+        `${BASE_URL}/actions/send_welcome/`,
+        params
+      );
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      logger.error('Failed to send welcome email', { error: String(error) });
+      return { success: false, error: err.response?.data?.error || 'Erro ao enviar email' };
+    }
+  },
+};
+
+// =============================================================================
+// SUBSCRIBERS API
+// =============================================================================
+
+export interface Subscriber {
+  id: string;
+  store: string;
+  email: string;
+  name: string;
+  phone?: string;
+  status: 'active' | 'unsubscribed' | 'bounced' | 'complained';
+  tags: string[];
+  source?: string;
+  total_orders: number;
+  total_spent: number;
+  accepts_marketing: boolean;
+  subscribed_at: string;
+  created_at: string;
+}
+
+export const subscribersApi = {
+  async list(storeId: string): Promise<Subscriber[]> {
+    try {
+      const response = await api.get<{ results?: Subscriber[] } | Subscriber[]>(`${BASE_URL}/subscribers/`, {
+        params: { store: storeId }
+      });
+      return Array.isArray(response.data) 
+        ? response.data 
+        : response.data.results || [];
+    } catch (error) {
+      logger.warn('Failed to fetch subscribers', { error: String(error) });
+      return [];
+    }
+  },
+
+  async create(data: Partial<Subscriber>): Promise<Subscriber> {
+    const response = await api.post<Subscriber>(`${BASE_URL}/subscribers/`, data);
+    return response.data;
+  },
+
+  async importCsv(storeId: string, contacts: { email: string; name?: string; phone?: string }[]): Promise<{ created: number; updated: number; total: number }> {
+    const response = await api.post<{ created: number; updated: number; total: number }>(
+      `${BASE_URL}/subscribers/import_csv/`,
+      { store: storeId, contacts }
+    );
+    return response.data;
+  },
+
+  async unsubscribe(id: string): Promise<Subscriber> {
+    const response = await api.post<Subscriber>(`${BASE_URL}/subscribers/${id}/unsubscribe/`);
+    return response.data;
+  },
+};
+
+// =============================================================================
 // COMBINED SERVICE
 // =============================================================================
 
@@ -666,6 +803,8 @@ export const marketingService = {
   emailCampaigns: emailCampaignsApi,
   whatsappCampaigns: whatsappCampaignsApi,
   stats: marketingStatsApi,
+  quickActions: quickActionsApi,
+  subscribers: subscribersApi,
   presets: EMAIL_TEMPLATE_PRESETS,
 };
 
