@@ -123,8 +123,8 @@ export const DashboardPage: React.FC = () => {
       {
         label: 'Pedidos',
         data: charts?.orders_per_day?.map((d) => d.count) || [],
-        borderColor: '#F97316',
-        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+        borderColor: '#722F37', // Marsala
+        backgroundColor: 'rgba(114, 47, 55, 0.15)',
         fill: true,
         tension: 0.4,
         yAxisID: 'y',
@@ -132,8 +132,8 @@ export const DashboardPage: React.FC = () => {
       {
         label: 'Receita (R$)',
         data: charts?.orders_per_day?.map((d) => d.revenue) || [],
-        borderColor: '#2563EB',
-        backgroundColor: 'rgba(37, 99, 235, 0.12)',
+        borderColor: '#8B3A42', // Marsala light
+        backgroundColor: 'rgba(139, 58, 66, 0.12)',
         fill: true,
         tension: 0.4,
         yAxisID: 'y1',

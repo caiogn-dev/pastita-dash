@@ -7,18 +7,30 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Pastita brand colors
         primary: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#25D366',
-          600: '#16a34a',
-          700: '#15803d',
-          800: '#166534',
-          900: '#14532d',
+          50: '#fdf2f3',
+          100: '#fce4e6',
+          200: '#facdd2',
+          300: '#f5a3ad',
+          400: '#ed6b7b',
+          500: '#722F37', // Marsala - main brand color
+          600: '#5c262d',
+          700: '#4d1f25',
+          800: '#411b20',
+          900: '#391a1e',
         },
+        marsala: {
+          DEFAULT: '#722F37',
+          light: '#8B3A42',
+          dark: '#5c262d',
+        },
+        cream: {
+          DEFAULT: '#FDF5E6',
+          light: '#FFFAF0',
+          dark: '#F5E6D3',
+        },
+        // Keep WhatsApp colors for messaging features
         whatsapp: {
           light: '#25D366',
           dark: '#128C7E',
