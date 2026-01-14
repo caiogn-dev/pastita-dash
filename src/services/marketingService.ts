@@ -71,14 +71,17 @@ export interface EmailCampaign {
 export interface EmailCampaignInput {
   store: string;
   name: string;
-  template: string;
+  template?: string | null;  // UUID of template, or null for custom content
   subject: string;
-  from_name: string;
-  from_email: string;
+  html_content: string;      // Required: the actual HTML content
+  text_content?: string;     // Optional plain text version
+  from_name?: string;
+  from_email?: string;
   reply_to?: string;
   scheduled_at?: string;
-  target_audience: EmailCampaign['target_audience'];
-  custom_segment?: Record<string, unknown>;
+  audience_type?: 'all' | 'segment' | 'custom';
+  audience_filters?: Record<string, unknown>;
+  recipient_list?: Array<{ email: string; name?: string; variables?: Record<string, string> }>;
 }
 
 export interface WhatsAppCampaign {

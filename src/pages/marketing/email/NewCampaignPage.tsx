@@ -174,30 +174,45 @@ export const NewCampaignPage: React.FC = () => {
 
     setSending(true);
     try {
-      // Create campaign
+      // Get the final HTML with variables replaced
+      const finalHtml = getPreviewHtml();
+      
+      // Only include template ID if it's a real UUID (not a preset)
+      const templateId = selectedTemplate?.id && !selectedTemplate.id.startsWith('preset-') 
+        ? selectedTemplate.id 
+        : null;
+
+      // Create campaign with all required data
       const campaign = await marketingService.emailCampaigns.create({
         store: storeId,
         name: campaignData.name,
         subject: campaignData.subject,
-        from_name: campaignData.from_name,
-        from_email: campaignData.from_email,
-        reply_to: campaignData.reply_to,
-        target_audience: 'custom',
-        template: selectedTemplate?.id || '',
+        html_content: finalHtml,
+        from_name: campaignData.from_name || storeName || 'Pastita',
+        from_email: campaignData.from_email || undefined,
+        reply_to: campaignData.reply_to || undefined,
+        audience_type: 'custom',
+        recipient_list: campaignData.recipient_list.map(r => ({
+          email: r.email,
+          name: r.name || undefined,
+        })),
+        template: templateId,
       });
 
       // Send campaign
       const result = await marketingService.emailCampaigns.send(campaign.id);
 
       if (result.success) {
-        toast.success(`Campanha enviada! ${result.sent} emails enviados.`);
+        toast.success(`Campanha enviada! ${result.sent || campaignData.recipient_list.length} emails enviados.`);
         navigate('/marketing');
       } else {
         toast.error(result.error || 'Erro ao enviar campanha');
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: { message?: string } } } };
       logger.error('Failed to send campaign', error);
-      toast.error('Erro ao enviar campanha');
+      const errorMessage = err.response?.data?.error?.message || 'Erro ao enviar campanha';
+      toast.error(errorMessage);
     } finally {
       setSending(false);
     }
