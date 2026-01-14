@@ -361,8 +361,8 @@ const AnalyticsPage: React.FC = () => {
                   stroke={theme.palette.text.secondary}
                 />
                 <RechartsTooltip
-                  formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
-                  labelFormatter={(label) => {
+                  formatter={(value: number | undefined) => [formatCurrency(value ?? 0), 'Faturamento']}
+                  labelFormatter={(label: string) => {
                     try {
                       return format(parseISO(label), "dd 'de' MMMM", { locale: ptBR });
                     } catch {
