@@ -97,8 +97,27 @@ export interface Order {
   items: OrderItem[];
   pix_code?: string;
   pix_qr_code?: string;
+  pix_ticket_url?: string;
+  payment_url?: string;
+  payment_link?: string;
+  init_point?: string;
+  payment_preference_id?: string;
   created_at: string;
   updated_at: string;
+  
+  // Legacy field aliases (Portuguese) - for backwards compatibility
+  /** @deprecated Use customer_name instead */
+  cliente_nome?: string;
+  /** @deprecated Use customer_phone instead */
+  cliente_telefone?: string;
+  /** @deprecated Use delivery_address instead */
+  endereco_entrega?: DeliveryAddress | null;
+  /** @deprecated Use delivery_fee instead */
+  taxa_entrega?: string;
+  /** @deprecated Use discount instead */
+  desconto?: string;
+  /** @deprecated Use customer_notes instead */
+  observacoes?: string;
 }
 
 export interface OrderItem {
@@ -134,6 +153,7 @@ export type OrderStatus =
 
 export type PaymentStatus = 
   | 'pending' 
+  | 'processing'
   | 'paid' 
   | 'failed' 
   | 'refunded';

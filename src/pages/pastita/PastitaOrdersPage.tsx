@@ -21,12 +21,10 @@ import {
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid';
-import {
-  getPedidos,
-  getPedido,
-  updatePedidoStatus,
-  type Pedido,
-} from '../../services/pastitaApi';
+import { storeApi, type Order } from '../../services/storeApi';
+
+// Type alias for backwards compatibility
+type Pedido = Order;
 import { useOrdersWebSocket } from '../../hooks';
 import { useOrderPrint, getAutoPrintEnabled, setAutoPrintEnabled, AUTO_PRINT_KEY } from '../../components/orders/OrderPrint';
 import logger from '../../services/logger';
@@ -325,7 +323,7 @@ export const PastitaOrdersPage: React.FC = () => {
     if (printedOrdersRef.current.has(orderId)) return;
     
     try {
-      const order = await getPedido(orderId);
+      const order = await storeApi.getOrder(orderId);
       if (order.payment_status === 'paid') {
         printedOrdersRef.current.add(orderId);
         handlePrintOrder(order);
@@ -383,7 +381,7 @@ export const PastitaOrdersPage: React.FC = () => {
       if (statusFilter !== 'all') params.status = statusFilter;
       if (paymentFilter !== 'all') params.payment_status = paymentFilter;
       
-      const data = await getPedidos(params);
+      const data = await storeApi.getOrders(params);
       setPedidos(data);
     } catch (error) {
       logger.error('Error fetching orders:', error);
@@ -399,11 +397,11 @@ export const PastitaOrdersPage: React.FC = () => {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      await updatePedidoStatus(id, newStatus);
+      await storeApi.updateOrderStatus(id, newStatus as any);
       toast.success('Status atualizado com sucesso!');
       fetchPedidos();
       if (selectedPedido?.id === id) {
-        const updated = await getPedido(id);
+        const updated = await storeApi.getOrder(id);
         setSelectedPedido(updated);
       }
     } catch (error) {

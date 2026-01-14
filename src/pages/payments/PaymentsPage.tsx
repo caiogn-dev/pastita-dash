@@ -1,5 +1,5 @@
 /**
- * Payments Page - Shows payment information from Pastita orders
+ * Payments Page - Shows payment information from store orders
  * Uses the unified stores API to fetch orders with payment data
  */
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
@@ -26,7 +26,7 @@ import {
   PageLoading,
   StatusFilter,
 } from '../../components/common';
-import { getPedidos, updatePedidoStatus, type Pedido } from '../../services/pastitaApi';
+import { storeApi, type Order } from '../../services/storeApi';
 import logger from '../../services/logger';
 
 // Payment status options based on StoreOrder.PaymentStatus
@@ -70,15 +70,15 @@ const PaymentStatusBadge: React.FC<{ status: string }> = ({ status }) => {
 };
 
 export const PaymentsPage: React.FC = () => {
-  const [orders, setOrders] = useState<Pedido[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Get all orders from Pastita store, ordered by most recent
-      const ordersData = await getPedidos({ ordering: '-created_at' });
+      // Get all orders from store, ordered by most recent
+      const ordersData = await storeApi.getOrders({ ordering: '-created_at' });
       setOrders(ordersData);
     } catch (error) {
       logger.error('Error loading payments:', error);
@@ -93,12 +93,12 @@ export const PaymentsPage: React.FC = () => {
   }, [loadData]);
 
   // Handle confirm payment (mark as paid)
-  const handleConfirmPayment = async (order: Pedido) => {
+  const handleConfirmPayment = async (order: Order) => {
     try {
-      await updatePedidoStatus(order.id, 'paid');
+      await storeApi.updateOrderStatus(order.id, 'confirmed');
       setOrders(orders.map(o => 
         o.id === order.id 
-          ? { ...o, payment_status: 'paid', status_pagamento: 'paid' } 
+          ? { ...o, payment_status: 'paid' } 
           : o
       ));
       toast.success(`Pagamento do pedido #${order.order_number} confirmado!`);
@@ -172,26 +172,25 @@ export const PaymentsPage: React.FC = () => {
     {
       key: 'order_number',
       header: 'Pedido',
-      render: (order: Pedido) => (
+      render: (order: Order) => (
         <div>
           <span className="font-semibold text-gray-900">#{order.order_number}</span>
-          <p className="text-xs text-gray-500">{order.customer_name || order.cliente_nome}</p>
+          <p className="text-xs text-gray-500">{order.customer_name}</p>
         </div>
       ),
     },
     {
       key: 'total',
       header: 'Valor',
-      render: (order: Pedido) => (
+      render: (order: Order) => (
         <span className="font-semibold text-gray-900">{formatMoney(order.total)}</span>
       ),
     },
     {
       key: 'payment_method',
       header: 'Método',
-      render: (order: Pedido) => {
-        const orderAny = order as unknown as Record<string, unknown>;
-        const method = (orderAny.payment_method as string) || 'pix';
+      render: (order: Order) => {
+        const method = order.payment_method || 'pix';
         const methodInfo = PAYMENT_METHOD_LABELS[method] || { label: method, icon: <CurrencyDollarIcon className="w-4 h-4" /> };
         return (
           <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
@@ -204,48 +203,39 @@ export const PaymentsPage: React.FC = () => {
     {
       key: 'payment_status',
       header: 'Status',
-      render: (order: Pedido) => (
+      render: (order: Order) => (
         <PaymentStatusBadge status={order.payment_status || 'pending'} />
       ),
     },
     {
       key: 'payment_link',
       header: 'Link Pagamento',
-      render: (order: Pedido) => {
-        const orderAny = order as unknown as Record<string, unknown>;
-        const paymentMethod = orderAny.payment_method as string;
-        const pixCode = orderAny.pix_code as string;
-        const accessToken = orderAny.access_token as string;
-        
-        // PIX ticket URL from Mercado Pago
-        const pixTicketUrl = orderAny.pix_ticket_url as string;
+      render: (order: Order) => {
+        const { payment_method, pix_code, access_token, pix_ticket_url, payment_url, payment_link, init_point, payment_preference_id } = order;
         
         // Check for direct payment link (for card payments)
-        const directLink = (orderAny.payment_url as string) || 
-                          (orderAny.payment_link as string) || 
-                          (orderAny.init_point as string);
+        const directLink = payment_url || payment_link || init_point;
         
         // Generate link from payment_preference_id if available (for card payments)
-        const preferenceId = orderAny.payment_preference_id as string;
-        const preferenceLink = preferenceId 
-          ? `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`
+        const preferenceLink = payment_preference_id 
+          ? `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${payment_preference_id}`
           : null;
         
         // SECURE: Generate link using access_token (not order_number)
         // This prevents unauthorized access to order details
-        const clientPaymentLink = pixCode && accessToken
-          ? `https://pastita.com.br/pendente?token=${accessToken}`
+        const clientPaymentLink = pix_code && access_token
+          ? `https://pastita.com.br/pendente?token=${access_token}`
           : null;
         
         // Priority: pix_ticket_url > client payment page (with token) > direct link > preference link
-        const paymentLink = pixTicketUrl || clientPaymentLink || directLink || preferenceLink;
+        const finalPaymentLink = pix_ticket_url || clientPaymentLink || directLink || preferenceLink;
         
         // Show link if available
-        if (paymentLink) {
+        if (finalPaymentLink) {
           return (
             <div className="flex items-center gap-2">
               <a
-                href={paymentLink}
+                href={finalPaymentLink}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg font-medium transition-colors"
@@ -257,7 +247,7 @@ export const PaymentsPage: React.FC = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigator.clipboard.writeText(paymentLink);
+                  navigator.clipboard.writeText(finalPaymentLink);
                   toast.success('Link copiado! Envie para o cliente.');
                 }}
                 className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
@@ -270,7 +260,7 @@ export const PaymentsPage: React.FC = () => {
         }
         
         // If payment method is cash, no link needed
-        if (paymentMethod === 'cash') {
+        if (payment_method === 'cash') {
           return <span className="text-sm text-gray-500">💵 Dinheiro</span>;
         }
         
@@ -281,7 +271,7 @@ export const PaymentsPage: React.FC = () => {
     {
       key: 'created_at',
       header: 'Data',
-      render: (order: Pedido) => (
+      render: (order: Order) => (
         <div className="text-sm">
           <p className="text-gray-900">{format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}</p>
           <p className="text-gray-500">{format(new Date(order.created_at), "HH:mm", { locale: ptBR })}</p>
@@ -291,7 +281,7 @@ export const PaymentsPage: React.FC = () => {
     {
       key: 'actions',
       header: 'Ações',
-      render: (order: Pedido) => (
+      render: (order: Order) => (
         <div className="flex items-center gap-2">
           {order.payment_status === 'pending' && (
             <Button

@@ -4,7 +4,10 @@
  * Optimized for thermal printing with high contrast
  */
 import { useRef, useCallback } from 'react';
-import { Pedido } from '../../services/pastitaApi';
+import { Order } from '../../services/storeApi';
+
+// Type alias for backwards compatibility
+type Pedido = Order;
 
 // Hook for printing orders
 export const useOrderPrint = () => {
