@@ -558,27 +558,61 @@ export const NewCampaignPage: React.FC = () => {
                 </div>
               </Card>
 
-              {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
+              {/* Variables Info Card */}
+              <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <SparklesIcon className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-blue-900 mb-2">Personalização Automática</h3>
+                    <p className="text-sm text-blue-700 mb-3">
+                      As variáveis do template serão preenchidas automaticamente com os dados de cada cliente:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                        {'{{customer_name}}'} → Nome do cliente
+                      </span>
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                        {'{{first_name}}'} → Primeiro nome
+                      </span>
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                        {'{{email}}'} → Email
+                      </span>
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                        {'{{store_name}}'} → Nome da loja
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Custom Variables (only for non-automatic variables like coupon_code) */}
+              {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.filter(v => 
+                !['customer_name', 'first_name', 'name', 'email', 'phone', 'store_name', 'store_url', 'year'].includes(v)
+              ).length > 0 && (
                 <Card className="p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Personalização</h3>
+                  <h3 className="font-semibold text-gray-900 mb-4">Valores Personalizados</h3>
                   <p className="text-sm text-gray-500 mb-4">
-                    Preencha os valores que serão substituídos no template.
+                    Preencha os valores específicos desta campanha:
                   </p>
                   <div className="space-y-4">
-                    {selectedTemplate.variables.map(variable => (
-                      <div key={variable}>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {variable}
-                        </label>
-                        <input
-                          type="text"
-                          value={campaignData.variables[variable] || ''}
-                          onChange={e => handleVariableChange(variable, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                          placeholder={`Valor para ${variable}`}
-                        />
-                      </div>
-                    ))}
+                    {selectedTemplate.variables
+                      .filter(v => !['customer_name', 'first_name', 'name', 'email', 'phone', 'store_name', 'store_url', 'year'].includes(v))
+                      .map(variable => (
+                        <div key={variable}>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {variable.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </label>
+                          <input
+                            type="text"
+                            value={campaignData.variables[variable] || ''}
+                            onChange={e => handleVariableChange(variable, e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            placeholder={`Ex: ${variable === 'coupon_code' ? 'DESCONTO10' : variable === 'discount_value' ? '10%' : variable === 'expiry_date' ? '31/12/2026' : ''}`}
+                          />
+                        </div>
+                      ))}
                   </div>
                 </Card>
               )}

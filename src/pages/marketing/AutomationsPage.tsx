@@ -445,9 +445,23 @@ export default function AutomationsPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="Ex: Seu pedido #{{order_number}} foi confirmado!"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Use {'{{name}}'}, {'{{order_number}}'}, {'{{store_name}}'} para personalização
+          </div>
+
+          {/* Variables Info */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-blue-900 mb-2">📝 Variáveis Disponíveis</h4>
+            <p className="text-xs text-blue-700 mb-2">
+              Use estas variáveis no assunto e conteúdo - serão preenchidas automaticamente:
             </p>
+            <div className="flex flex-wrap gap-1">
+              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{customer_name}}'}</code>
+              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{first_name}}'}</code>
+              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{email}}'}</code>
+              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{store_name}}'}</code>
+              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{order_number}}'}</code>
+              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{order_total}}'}</code>
+              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{tracking_code}}'}</code>
+            </div>
           </div>
 
           <div>
@@ -461,6 +475,9 @@ export default function AutomationsPage() {
               rows={8}
               placeholder="<html>...</html>"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              💡 Dica: Copie um template da página de Marketing e personalize aqui
+            </p>
           </div>
 
           <div>

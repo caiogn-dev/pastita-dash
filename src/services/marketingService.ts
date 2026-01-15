@@ -1031,3 +1031,155 @@ export const automationsApi = {
     return response.data;
   },
 };
+
+// =============================================================================
+// TEMPLATE VARIABLES API
+// =============================================================================
+
+export interface TemplateVariable {
+  name: string;
+  description: string;
+  example: string;
+}
+
+export interface TemplateVariableCategory {
+  description: string;
+  variables: TemplateVariable[];
+}
+
+export interface TemplateVariables {
+  customer: TemplateVariableCategory;
+  store: TemplateVariableCategory;
+  order: TemplateVariableCategory;
+  coupon: TemplateVariableCategory;
+  promotion: TemplateVariableCategory;
+}
+
+export interface SampleCustomer {
+  email: string;
+  name: string;
+  first_name: string;
+  phone: string;
+}
+
+export interface PreviewResult {
+  preview_html: string;
+  variables_used: Record<string, string>;
+}
+
+export const templateVariablesApi = {
+  /**
+   * Get all available template variables with descriptions
+   */
+  async getAvailable(): Promise<TemplateVariables> {
+    try {
+      const response = await api.get<TemplateVariables>(`${BASE_URL}/variables/available/`);
+      return response.data;
+    } catch {
+      // Return default variables if API fails
+      return {
+        customer: {
+          description: 'Variáveis do cliente (preenchidas automaticamente)',
+          variables: [
+            { name: 'customer_name', description: 'Nome completo do cliente', example: 'João Silva' },
+            { name: 'first_name', description: 'Primeiro nome do cliente', example: 'João' },
+            { name: 'email', description: 'Email do cliente', example: 'joao@email.com' },
+            { name: 'phone', description: 'Telefone do cliente', example: '(11) 99999-9999' },
+          ]
+        },
+        store: {
+          description: 'Variáveis da loja',
+          variables: [
+            { name: 'store_name', description: 'Nome da loja', example: 'Pastita' },
+            { name: 'store_url', description: 'URL da loja', example: 'https://pastita.com.br' },
+            { name: 'year', description: 'Ano atual', example: '2026' },
+          ]
+        },
+        order: {
+          description: 'Variáveis de pedido (para automações de pedido)',
+          variables: [
+            { name: 'order_number', description: 'Número do pedido', example: 'PAS-2026-001' },
+            { name: 'order_total', description: 'Total do pedido', example: '89.90' },
+            { name: 'order_status', description: 'Status do pedido', example: 'confirmed' },
+            { name: 'tracking_code', description: 'Código de rastreio', example: 'BR123456789' },
+          ]
+        },
+        coupon: {
+          description: 'Variáveis de cupom',
+          variables: [
+            { name: 'coupon_code', description: 'Código do cupom', example: 'DESCONTO10' },
+            { name: 'discount_value', description: 'Valor do desconto', example: '10%' },
+            { name: 'expiry_date', description: 'Data de expiração', example: '31/12/2026' },
+          ]
+        },
+        promotion: {
+          description: 'Variáveis de promoção',
+          variables: [
+            { name: 'promotion_title', description: 'Título da promoção', example: 'Black Friday' },
+            { name: 'promotion_description', description: 'Descrição da promoção', example: 'Até 50% OFF' },
+          ]
+        }
+      };
+    }
+  },
+
+  /**
+   * Generate a preview of a template with sample data
+   */
+  async preview(htmlContent: string, storeId?: string, customerEmail?: string): Promise<PreviewResult> {
+    try {
+      const response = await api.post<PreviewResult>(`${BASE_URL}/variables/preview/`, {
+        html_content: htmlContent,
+        store: storeId,
+        customer_email: customerEmail,
+      });
+      return response.data;
+    } catch {
+      // Fallback: do client-side replacement with sample data
+      const variables: Record<string, string> = {
+        customer_name: 'Cliente Exemplo',
+        name: 'Cliente Exemplo',
+        first_name: 'Cliente',
+        email: 'cliente@exemplo.com',
+        phone: '(11) 99999-9999',
+        store_name: 'Pastita',
+        store_url: 'https://pastita.com.br',
+        year: new Date().getFullYear().toString(),
+        order_number: 'PAS-2026-001',
+        order_total: '89.90',
+        order_status: 'confirmed',
+        tracking_code: 'BR123456789',
+        coupon_code: 'DESCONTO10',
+        discount_value: '10%',
+        expiry_date: '31/12/2026',
+        promotion_title: 'Promoção Especial',
+        promotion_description: 'Aproveite descontos incríveis!',
+      };
+
+      let previewHtml = htmlContent;
+      Object.entries(variables).forEach(([key, value]) => {
+        previewHtml = previewHtml.replace(new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g'), value);
+      });
+
+      return { preview_html: previewHtml, variables_used: variables };
+    }
+  },
+
+  /**
+   * Get a sample customer for preview
+   */
+  async getSampleCustomer(storeId?: string): Promise<SampleCustomer> {
+    try {
+      const params = storeId ? { store: storeId } : {};
+      const response = await api.get<SampleCustomer>(`${BASE_URL}/variables/sample_customer/`, { params });
+      return response.data;
+    } catch {
+      return {
+        email: 'cliente@exemplo.com',
+        name: 'Cliente Exemplo',
+        first_name: 'Cliente',
+        phone: '(11) 99999-9999',
+      };
+    }
+  },
+};
