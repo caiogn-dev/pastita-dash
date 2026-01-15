@@ -177,27 +177,36 @@ export const NewCampaignPage: React.FC = () => {
       // Get the final HTML with variables replaced
       const finalHtml = getPreviewHtml();
       
-      // Only include template ID if it's a real UUID (not a preset)
-      const templateId = selectedTemplate?.id && !selectedTemplate.id.startsWith('preset-') 
+      // NEVER send preset IDs to the server - they are frontend-only
+      // Only include template ID if it's a real UUID (36 chars with dashes)
+      const isValidUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      const templateId = selectedTemplate?.id && isValidUUID(selectedTemplate.id) 
         ? selectedTemplate.id 
-        : null;
+        : undefined;
 
-      // Create campaign with all required data
-      const campaign = await marketingService.emailCampaigns.create({
+      // Build campaign data - only include fields that have values
+      const campaignPayload: Parameters<typeof marketingService.emailCampaigns.create>[0] = {
         store: storeId,
         name: campaignData.name,
         subject: campaignData.subject,
         html_content: finalHtml,
-        from_name: campaignData.from_name || storeName || 'Pastita',
-        from_email: campaignData.from_email || undefined,
-        reply_to: campaignData.reply_to || undefined,
         audience_type: 'custom',
         recipient_list: campaignData.recipient_list.map(r => ({
           email: r.email,
           name: r.name || undefined,
         })),
-        template: templateId,
-      });
+      };
+
+      // Only add optional fields if they have values
+      if (campaignData.from_name) campaignPayload.from_name = campaignData.from_name;
+      if (campaignData.from_email) campaignPayload.from_email = campaignData.from_email;
+      if (campaignData.reply_to) campaignPayload.reply_to = campaignData.reply_to;
+      if (templateId) campaignPayload.template = templateId;
+
+      logger.info('Creating campaign with payload', { payload: campaignPayload });
+
+      // Create campaign with all required data
+      const campaign = await marketingService.emailCampaigns.create(campaignPayload);
 
       // Send campaign
       const result = await marketingService.emailCampaigns.send(campaign.id);
