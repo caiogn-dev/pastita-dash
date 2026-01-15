@@ -1,18 +1,26 @@
 /**
- * New Email Campaign Page
+ * New Email Campaign Page - Professional Revamp
  * 
- * Create and send email marketing campaigns.
+ * Simplified flow:
+ * 1. Choose template
+ * 2. Customize content
+ * 3. Select audience (All / Segment / Custom)
+ * 4. Review & Send
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   EnvelopeIcon,
   UserGroupIcon,
   PaperAirplaneIcon,
-  ClockIcon,
   EyeIcon,
   SparklesIcon,
+  CheckCircleIcon,
+  UsersIcon,
+  TagIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading } from '../../../components/common';
@@ -20,83 +28,211 @@ import { useStore } from '../../../hooks';
 import {
   marketingService,
   EmailTemplate,
-  EmailCampaignInput,
   EMAIL_TEMPLATE_PRESETS,
 } from '../../../services/marketingService';
 import logger from '../../../services/logger';
 
+// =============================================================================
+// TYPES
+// =============================================================================
+
 type Step = 'template' | 'content' | 'audience' | 'review';
+type AudienceType = 'all' | 'segment' | 'custom';
+
+interface Subscriber {
+  id: string;
+  email: string;
+  name: string;
+  status: string;
+  tags: string[];
+  total_orders: number;
+  total_spent: number;
+}
+
+interface SegmentFilters {
+  tags: string[];
+  minOrders: number | null;
+  minSpent: number | null;
+  hasOrdered: boolean | null;
+}
 
 interface CampaignData {
   name: string;
   subject: string;
   from_name: string;
-  from_email: string;
-  reply_to: string;
   html_content: string;
-  audience_type: 'all' | 'custom';
-  recipient_list: { email: string; name: string }[];
+  audienceType: AudienceType;
+  segmentFilters: SegmentFilters;
+  selectedSubscribers: string[];
   variables: Record<string, string>;
 }
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
 
 const STEPS: { id: Step; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'template', label: 'Template', icon: SparklesIcon },
   { id: 'content', label: 'Conteúdo', icon: EnvelopeIcon },
   { id: 'audience', label: 'Audiência', icon: UserGroupIcon },
-  { id: 'review', label: 'Revisar', icon: EyeIcon },
+  { id: 'review', label: 'Enviar', icon: PaperAirplaneIcon },
 ];
+
+const AUDIENCE_OPTIONS = [
+  {
+    type: 'all' as AudienceType,
+    title: 'Todos os Contatos',
+    description: 'Enviar para todos os subscribers ativos',
+    icon: UsersIcon,
+  },
+  {
+    type: 'segment' as AudienceType,
+    title: 'Segmento',
+    description: 'Filtrar por tags, compras, etc',
+    icon: FunnelIcon,
+  },
+  {
+    type: 'custom' as AudienceType,
+    title: 'Lista Personalizada',
+    description: 'Selecionar contatos específicos',
+    icon: TagIcon,
+  },
+];
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
 
 export const NewCampaignPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { storeId, storeName } = useStore();
 
+  // State
   const [currentStep, setCurrentStep] = useState<Step>('template');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [subscriberSearch, setSubscriberSearch] = useState('');
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [showPreview, setShowPreview] = useState(false);
 
   const [campaignData, setCampaignData] = useState<CampaignData>({
     name: '',
     subject: '',
     from_name: storeName || 'Pastita',
-    from_email: '',
-    reply_to: '',
     html_content: '',
-    audience_type: 'custom',
-    recipient_list: [],
+    audienceType: 'all',
+    segmentFilters: {
+      tags: [],
+      minOrders: null,
+      minSpent: null,
+      hasOrdered: null,
+    },
+    selectedSubscribers: [],
     variables: {},
   });
 
-  const [recipientInput, setRecipientInput] = useState({ email: '', name: '' });
+  // =============================================================================
+  // DATA LOADING
+  // =============================================================================
 
-  // Load templates
   useEffect(() => {
-    const loadTemplates = async () => {
+    const loadData = async () => {
       if (!storeId) return;
       setLoading(true);
+      
       try {
-        const data = await marketingService.emailTemplates.list(storeId);
-        setTemplates(data);
+        // Load templates and subscribers in parallel
+        const [templatesData, subscribersData] = await Promise.all([
+          marketingService.emailTemplates.list(storeId),
+          marketingService.subscribers.list(storeId, { status: 'active' }),
+        ]);
 
-        // Check if template is specified in URL
+        setTemplates(templatesData);
+        setSubscribers(subscribersData);
+
+        // Extract unique tags
+        const tags = new Set<string>();
+        subscribersData.forEach(s => s.tags?.forEach(t => tags.add(t)));
+        setAvailableTags(Array.from(tags));
+
+        // Check for template in URL
         const templateSlug = searchParams.get('template');
         if (templateSlug) {
-          const preset = data.find(t => t.slug === templateSlug);
+          const preset = templatesData.find(t => t.slug === templateSlug);
           if (preset) {
             handleSelectTemplate(preset);
           }
         }
       } catch (error) {
-        logger.error('Failed to load templates', error);
+        logger.error('Failed to load data', error);
+        toast.error('Erro ao carregar dados');
       } finally {
         setLoading(false);
       }
     };
-    loadTemplates();
+
+    loadData();
   }, [storeId, searchParams]);
+
+  // =============================================================================
+  // COMPUTED VALUES
+  // =============================================================================
+
+  const filteredSubscribers = useMemo(() => {
+    let result = subscribers;
+
+    // Apply segment filters
+    if (campaignData.audienceType === 'segment') {
+      const { tags, minOrders, minSpent, hasOrdered } = campaignData.segmentFilters;
+      
+      if (tags.length > 0) {
+        result = result.filter(s => tags.some(t => s.tags?.includes(t)));
+      }
+      if (minOrders !== null) {
+        result = result.filter(s => s.total_orders >= minOrders);
+      }
+      if (minSpent !== null) {
+        result = result.filter(s => s.total_spent >= minSpent);
+      }
+      if (hasOrdered === true) {
+        result = result.filter(s => s.total_orders > 0);
+      } else if (hasOrdered === false) {
+        result = result.filter(s => s.total_orders === 0);
+      }
+    }
+
+    // Apply search
+    if (subscriberSearch) {
+      const search = subscriberSearch.toLowerCase();
+      result = result.filter(s => 
+        s.email.toLowerCase().includes(search) ||
+        s.name.toLowerCase().includes(search)
+      );
+    }
+
+    return result;
+  }, [subscribers, campaignData.audienceType, campaignData.segmentFilters, subscriberSearch]);
+
+  const audienceCount = useMemo(() => {
+    switch (campaignData.audienceType) {
+      case 'all':
+        return subscribers.length;
+      case 'segment':
+        return filteredSubscribers.length;
+      case 'custom':
+        return campaignData.selectedSubscribers.length;
+      default:
+        return 0;
+    }
+  }, [campaignData.audienceType, subscribers.length, filteredSubscribers.length, campaignData.selectedSubscribers.length]);
+
+  // =============================================================================
+  // HANDLERS
+  // =============================================================================
 
   const handleSelectTemplate = (template: EmailTemplate) => {
     setSelectedTemplate(template);
@@ -105,37 +241,9 @@ export const NewCampaignPage: React.FC = () => {
       name: `Campanha - ${template.name}`,
       subject: template.subject,
       html_content: template.html_content,
-      variables: template.variables.reduce((acc, v) => ({ ...acc, [v]: '' }), {}),
+      variables: template.variables?.reduce((acc, v) => ({ ...acc, [v]: '' }), {}) || {},
     }));
     setCurrentStep('content');
-  };
-
-  const handleAddRecipient = () => {
-    if (!recipientInput.email) {
-      toast.error('Email é obrigatório');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientInput.email)) {
-      toast.error('Email inválido');
-      return;
-    }
-    if (campaignData.recipient_list.some(r => r.email === recipientInput.email)) {
-      toast.error('Email já adicionado');
-      return;
-    }
-
-    setCampaignData(prev => ({
-      ...prev,
-      recipient_list: [...prev.recipient_list, { ...recipientInput }],
-    }));
-    setRecipientInput({ email: '', name: '' });
-  };
-
-  const handleRemoveRecipient = (email: string) => {
-    setCampaignData(prev => ({
-      ...prev,
-      recipient_list: prev.recipient_list.filter(r => r.email !== email),
-    }));
   };
 
   const handleVariableChange = (key: string, value: string) => {
@@ -145,14 +253,41 @@ export const NewCampaignPage: React.FC = () => {
     }));
   };
 
+  const handleToggleSubscriber = (subscriberId: string) => {
+    setCampaignData(prev => ({
+      ...prev,
+      selectedSubscribers: prev.selectedSubscribers.includes(subscriberId)
+        ? prev.selectedSubscribers.filter(id => id !== subscriberId)
+        : [...prev.selectedSubscribers, subscriberId],
+    }));
+  };
+
+  const handleSelectAllFiltered = () => {
+    setCampaignData(prev => ({
+      ...prev,
+      selectedSubscribers: filteredSubscribers.map(s => s.id),
+    }));
+  };
+
+  const handleClearSelection = () => {
+    setCampaignData(prev => ({
+      ...prev,
+      selectedSubscribers: [],
+    }));
+  };
+
   const getPreviewHtml = useCallback(() => {
     let html = campaignData.html_content;
+    
+    // Replace custom variables
     Object.entries(campaignData.variables).forEach(([key, value]) => {
       html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || `{{${key}}}`);
     });
-    // Replace store variables
+    
+    // Replace system variables
     html = html.replace(/\{\{store_name\}\}/g, storeName || 'Loja');
     html = html.replace(/\{\{year\}\}/g, new Date().getFullYear().toString());
+    
     return html;
   }, [campaignData.html_content, campaignData.variables, storeName]);
 
@@ -162,57 +297,57 @@ export const NewCampaignPage: React.FC = () => {
       return;
     }
 
-    if (campaignData.recipient_list.length === 0) {
-      toast.error('Adicione pelo menos um destinatário');
-      return;
-    }
-
-    if (!campaignData.subject) {
-      toast.error('Assunto é obrigatório');
+    if (audienceCount === 0) {
+      toast.error('Selecione pelo menos um destinatário');
       return;
     }
 
     setSending(true);
     try {
-      // Get the final HTML with variables replaced
       const finalHtml = getPreviewHtml();
       
-      // NEVER send preset IDs to the server - they are frontend-only
-      // Only include template ID if it's a real UUID (36 chars with dashes)
-      const isValidUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      const templateId = selectedTemplate?.id && isValidUUID(selectedTemplate.id) 
-        ? selectedTemplate.id 
-        : undefined;
-
-      // Build campaign data - only include fields that have values
-      const campaignPayload: Parameters<typeof marketingService.emailCampaigns.create>[0] = {
+      // Build base payload
+      const basePayload = {
         store: storeId,
         name: campaignData.name,
         subject: campaignData.subject,
         html_content: finalHtml,
-        audience_type: 'custom',
-        recipient_list: campaignData.recipient_list.map(r => ({
-          email: r.email,
-          name: r.name || undefined,
-        })),
+        from_name: campaignData.from_name || storeName || 'Pastita',
+        audience_type: campaignData.audienceType as 'all' | 'segment' | 'custom',
       };
 
-      // Only add optional fields if they have values
-      if (campaignData.from_name) campaignPayload.from_name = campaignData.from_name;
-      if (campaignData.from_email) campaignPayload.from_email = campaignData.from_email;
-      if (campaignData.reply_to) campaignPayload.reply_to = campaignData.reply_to;
-      if (templateId) campaignPayload.template = templateId;
+      // Add audience-specific data
+      let audienceData = {};
+      if (campaignData.audienceType === 'segment') {
+        audienceData = {
+          audience_filters: {
+            tags: campaignData.segmentFilters.tags,
+            min_orders: campaignData.segmentFilters.minOrders,
+            min_spent: campaignData.segmentFilters.minSpent,
+          },
+        };
+      } else if (campaignData.audienceType === 'custom') {
+        // Get selected subscriber details
+        const selectedSubs = subscribers.filter(s => 
+          campaignData.selectedSubscribers.includes(s.id)
+        );
+        audienceData = {
+          recipient_list: selectedSubs.map(s => ({
+            email: s.email,
+            name: s.name,
+          })),
+        };
+      }
 
-      logger.info('Creating campaign with payload', { payload: campaignPayload });
+      const payload = { ...basePayload, ...audienceData };
+      logger.info('Creating campaign', { payload });
 
-      // Create campaign with all required data
-      const campaign = await marketingService.emailCampaigns.create(campaignPayload);
-
-      // Send campaign
+      // Create and send campaign
+      const campaign = await marketingService.emailCampaigns.create(payload);
       const result = await marketingService.emailCampaigns.send(campaign.id);
 
       if (result.success) {
-        toast.success(`Campanha enviada! ${result.sent || campaignData.recipient_list.length} emails enviados.`);
+        toast.success(`🎉 Campanha enviada para ${audienceCount} contatos!`);
         navigate('/marketing');
       } else {
         toast.error(result.error || 'Erro ao enviar campanha');
@@ -220,12 +355,15 @@ export const NewCampaignPage: React.FC = () => {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string } } } };
       logger.error('Failed to send campaign', error);
-      const errorMessage = err.response?.data?.error?.message || 'Erro ao enviar campanha';
-      toast.error(errorMessage);
+      toast.error(err.response?.data?.error?.message || 'Erro ao enviar campanha');
     } finally {
       setSending(false);
     }
   };
+
+  // =============================================================================
+  // NAVIGATION
+  // =============================================================================
 
   const canProceed = () => {
     switch (currentStep) {
@@ -234,7 +372,7 @@ export const NewCampaignPage: React.FC = () => {
       case 'content':
         return !!campaignData.subject && !!campaignData.name;
       case 'audience':
-        return campaignData.recipient_list.length > 0;
+        return audienceCount > 0;
       case 'review':
         return true;
       default:
@@ -255,6 +393,10 @@ export const NewCampaignPage: React.FC = () => {
       setCurrentStep(STEPS[currentIndex - 1].id);
     }
   };
+
+  // =============================================================================
+  // RENDER
+  // =============================================================================
 
   if (!storeId) {
     return (
@@ -280,15 +422,23 @@ export const NewCampaignPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/marketing')}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Nova Campanha de Email</h1>
+                <h1 className="text-xl font-bold text-gray-900">Nova Campanha</h1>
                 <p className="text-sm text-gray-500">{storeName}</p>
               </div>
             </div>
+            
+            {/* Audience count badge */}
+            {currentStep !== 'template' && (
+              <div className="flex items-center gap-2 bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full">
+                <UsersIcon className="w-4 h-4" />
+                <span className="font-medium">{audienceCount} destinatários</span>
+              </div>
+            )}
           </div>
 
           {/* Steps */}
@@ -307,11 +457,15 @@ export const NewCampaignPage: React.FC = () => {
                       isActive
                         ? 'bg-primary-100 text-primary-700'
                         : isPast
-                        ? 'bg-green-100 text-green-700 cursor-pointer'
+                        ? 'bg-green-100 text-green-700 cursor-pointer hover:bg-green-200'
                         : 'bg-gray-100 text-gray-400'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    {isPast ? (
+                      <CheckCircleIcon className="w-5 h-5" />
+                    ) : (
+                      <Icon className="w-5 h-5" />
+                    )}
                     <span className="font-medium">{step.label}</span>
                   </button>
                   {index < STEPS.length - 1 && (
@@ -341,16 +495,12 @@ export const NewCampaignPage: React.FC = () => {
                   onClick={() => handleSelectTemplate(template)}
                   className={`bg-white rounded-xl border text-left cursor-pointer transition-all hover:shadow-lg ${
                     selectedTemplate?.id === template.id
-                      ? 'ring-2 ring-primary-500'
-                      : 'border-gray-200'
+                      ? 'ring-2 ring-primary-500 border-primary-500'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <div className="h-32 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden rounded-t-xl">
-                    <div
-                      className="absolute inset-0 scale-[0.25] origin-top-left pointer-events-none"
-                      dangerouslySetInnerHTML={{ __html: template.html_content.slice(0, 1500) }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent" />
+                  <div className="h-32 bg-gradient-to-br from-primary-50 to-primary-100 relative overflow-hidden rounded-t-xl flex items-center justify-center">
+                    <EnvelopeIcon className="w-12 h-12 text-primary-300" />
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-900">{template.name}</h3>
@@ -377,7 +527,7 @@ export const NewCampaignPage: React.FC = () => {
                       type="text"
                       value={campaignData.name}
                       onChange={e => setCampaignData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Ex: Promoção de Natal"
                     />
                   </div>
@@ -389,7 +539,7 @@ export const NewCampaignPage: React.FC = () => {
                       type="text"
                       value={campaignData.subject}
                       onChange={e => setCampaignData(prev => ({ ...prev, subject: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Ex: 🎁 Presente especial para você!"
                     />
                   </div>
@@ -401,27 +551,30 @@ export const NewCampaignPage: React.FC = () => {
                       type="text"
                       value={campaignData.from_name}
                       onChange={e => setCampaignData(prev => ({ ...prev, from_name: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Ex: Pastita"
                     />
                   </div>
                 </div>
               </Card>
 
-              {selectedTemplate && selectedTemplate.variables.length > 0 && (
+              {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
                 <Card className="p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Variáveis do Template</h3>
+                  <h3 className="font-semibold text-gray-900 mb-4">Personalização</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Preencha os valores que serão substituídos no template.
+                  </p>
                   <div className="space-y-4">
                     {selectedTemplate.variables.map(variable => (
                       <div key={variable}>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {`{{${variable}}}`}
+                          {variable}
                         </label>
                         <input
                           type="text"
                           value={campaignData.variables[variable] || ''}
                           onChange={e => handleVariableChange(variable, e.target.value)}
-                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                           placeholder={`Valor para ${variable}`}
                         />
                       </div>
@@ -435,21 +588,13 @@ export const NewCampaignPage: React.FC = () => {
               <Card className="p-4 sticky top-32">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900">Preview</h3>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowPreview(true)}
-                  >
+                  <Button variant="secondary" size="sm" onClick={() => setShowPreview(true)}>
                     <EyeIcon className="w-4 h-4 mr-1" />
-                    Tela Cheia
+                    Expandir
                   </Button>
                 </div>
                 <div className="border rounded-lg overflow-hidden bg-gray-100" style={{ height: '400px' }}>
-                  <iframe
-                    srcDoc={getPreviewHtml()}
-                    className="w-full h-full"
-                    title="Email Preview"
-                  />
+                  <iframe srcDoc={getPreviewHtml()} className="w-full h-full" title="Preview" />
                 </div>
               </Card>
             </div>
@@ -459,57 +604,214 @@ export const NewCampaignPage: React.FC = () => {
         {/* Step: Audience */}
         {currentStep === 'audience' && (
           <div className="space-y-6">
-            <Card className="p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Adicionar Destinatários</h3>
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="email"
-                  value={recipientInput.email}
-                  onChange={e => setRecipientInput(prev => ({ ...prev, email: e.target.value }))}
-                  className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Email"
-                  onKeyDown={e => e.key === 'Enter' && handleAddRecipient()}
-                />
-                <input
-                  type="text"
-                  value={recipientInput.name}
-                  onChange={e => setRecipientInput(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-48 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Nome (opcional)"
-                  onKeyDown={e => e.key === 'Enter' && handleAddRecipient()}
-                />
-                <Button onClick={handleAddRecipient}>Adicionar</Button>
-              </div>
-
-              {campaignData.recipient_list.length > 0 ? (
-                <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
-                  {campaignData.recipient_list.map((recipient, index) => (
-                    <div key={index} className="flex items-center justify-between p-3">
-                      <div>
-                        <p className="font-medium text-gray-900">{recipient.email}</p>
-                        {recipient.name && (
-                          <p className="text-sm text-gray-500">{recipient.name}</p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleRemoveRecipient(recipient.email)}
-                        className="text-red-500 hover:text-red-700 text-sm"
-                      >
-                        Remover
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <UserGroupIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>Nenhum destinatário adicionado</p>
-                </div>
-              )}
-
-              <p className="text-sm text-gray-500 mt-4">
-                Total: {campaignData.recipient_list.length} destinatário(s)
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Selecione a Audiência</h2>
+              <p className="text-gray-500">
+                Você tem <strong>{subscribers.length}</strong> contatos ativos.
               </p>
+            </div>
+
+            {/* Audience Type Selection */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {AUDIENCE_OPTIONS.map(option => {
+                const Icon = option.icon;
+                const isSelected = campaignData.audienceType === option.type;
+                
+                return (
+                  <button
+                    key={option.type}
+                    onClick={() => setCampaignData(prev => ({ 
+                      ...prev, 
+                      audienceType: option.type,
+                      selectedSubscribers: option.type === 'all' ? [] : prev.selectedSubscribers,
+                    }))}
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      isSelected
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <Icon className={`w-8 h-8 mb-2 ${isSelected ? 'text-primary-600' : 'text-gray-400'}`} />
+                    <h3 className={`font-semibold ${isSelected ? 'text-primary-900' : 'text-gray-900'}`}>
+                      {option.title}
+                    </h3>
+                    <p className="text-sm text-gray-500">{option.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Segment Filters */}
+            {campaignData.audienceType === 'segment' && (
+              <Card className="p-6">
+                <h3 className="font-semibold text-gray-900 mb-4">Filtros do Segmento</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Tags */}
+                  {availableTags.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableTags.map(tag => (
+                          <button
+                            key={tag}
+                            onClick={() => {
+                              setCampaignData(prev => ({
+                                ...prev,
+                                segmentFilters: {
+                                  ...prev.segmentFilters,
+                                  tags: prev.segmentFilters.tags.includes(tag)
+                                    ? prev.segmentFilters.tags.filter(t => t !== tag)
+                                    : [...prev.segmentFilters.tags, tag],
+                                },
+                              }));
+                            }}
+                            className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                              campaignData.segmentFilters.tags.includes(tag)
+                                ? 'bg-primary-100 text-primary-700'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Min Orders */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mínimo de Pedidos
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={campaignData.segmentFilters.minOrders ?? ''}
+                      onChange={e => setCampaignData(prev => ({
+                        ...prev,
+                        segmentFilters: {
+                          ...prev.segmentFilters,
+                          minOrders: e.target.value ? parseInt(e.target.value) : null,
+                        },
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      placeholder="Ex: 1"
+                    />
+                  </div>
+
+                  {/* Has Ordered */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Histórico de Compras
+                    </label>
+                    <select
+                      value={campaignData.segmentFilters.hasOrdered === null ? '' : String(campaignData.segmentFilters.hasOrdered)}
+                      onChange={e => setCampaignData(prev => ({
+                        ...prev,
+                        segmentFilters: {
+                          ...prev.segmentFilters,
+                          hasOrdered: e.target.value === '' ? null : e.target.value === 'true',
+                        },
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">Todos</option>
+                      <option value="true">Já compraram</option>
+                      <option value="false">Nunca compraram</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    <strong>{filteredSubscribers.length}</strong> contatos correspondem aos filtros
+                  </p>
+                </div>
+              </Card>
+            )}
+
+            {/* Custom Selection */}
+            {campaignData.audienceType === 'custom' && (
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Selecionar Contatos</h3>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" size="sm" onClick={handleSelectAllFiltered}>
+                      Selecionar Todos
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={handleClearSelection}>
+                      Limpar
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Search */}
+                <div className="relative mb-4">
+                  <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={subscriberSearch}
+                    onChange={e => setSubscriberSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    placeholder="Buscar por email ou nome..."
+                  />
+                </div>
+
+                {/* Subscriber List */}
+                <div className="border rounded-lg divide-y max-h-80 overflow-y-auto">
+                  {filteredSubscribers.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      Nenhum contato encontrado
+                    </div>
+                  ) : (
+                    filteredSubscribers.map(subscriber => (
+                      <label
+                        key={subscriber.id}
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={campaignData.selectedSubscribers.includes(subscriber.id)}
+                          onChange={() => handleToggleSubscriber(subscriber.id)}
+                          className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{subscriber.email}</p>
+                          {subscriber.name && (
+                            <p className="text-sm text-gray-500 truncate">{subscriber.name}</p>
+                          )}
+                        </div>
+                        {subscriber.total_orders > 0 && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            {subscriber.total_orders} pedidos
+                          </span>
+                        )}
+                      </label>
+                    ))
+                  )}
+                </div>
+
+                <p className="text-sm text-gray-500 mt-4">
+                  {campaignData.selectedSubscribers.length} de {filteredSubscribers.length} selecionados
+                </p>
+              </Card>
+            )}
+
+            {/* Summary */}
+            <Card className="p-4 bg-primary-50 border-primary-200">
+              <div className="flex items-center gap-3">
+                <UsersIcon className="w-8 h-8 text-primary-600" />
+                <div>
+                  <p className="font-semibold text-primary-900">
+                    {audienceCount} {audienceCount === 1 ? 'destinatário' : 'destinatários'}
+                  </p>
+                  <p className="text-sm text-primary-700">
+                    {campaignData.audienceType === 'all' && 'Todos os contatos ativos'}
+                    {campaignData.audienceType === 'segment' && 'Contatos que correspondem aos filtros'}
+                    {campaignData.audienceType === 'custom' && 'Contatos selecionados manualmente'}
+                  </p>
+                </div>
+              </div>
             </Card>
           </div>
         )}
@@ -521,47 +823,46 @@ export const NewCampaignPage: React.FC = () => {
               <Card className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Resumo da Campanha</h3>
                 <dl className="space-y-3">
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">Nome:</dt>
-                    <dd className="font-medium">{campaignData.name}</dd>
+                  <div className="flex justify-between py-2 border-b">
+                    <dt className="text-gray-500">Nome</dt>
+                    <dd className="font-medium text-gray-900">{campaignData.name}</dd>
                   </div>
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">Assunto:</dt>
-                    <dd className="font-medium">{campaignData.subject}</dd>
+                  <div className="flex justify-between py-2 border-b">
+                    <dt className="text-gray-500">Assunto</dt>
+                    <dd className="font-medium text-gray-900">{campaignData.subject}</dd>
                   </div>
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">Remetente:</dt>
-                    <dd className="font-medium">{campaignData.from_name}</dd>
+                  <div className="flex justify-between py-2 border-b">
+                    <dt className="text-gray-500">Remetente</dt>
+                    <dd className="font-medium text-gray-900">{campaignData.from_name}</dd>
                   </div>
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">Template:</dt>
-                    <dd className="font-medium">{selectedTemplate?.name}</dd>
+                  <div className="flex justify-between py-2 border-b">
+                    <dt className="text-gray-500">Template</dt>
+                    <dd className="font-medium text-gray-900">{selectedTemplate?.name}</dd>
                   </div>
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">Destinatários:</dt>
-                    <dd className="font-medium">{campaignData.recipient_list.length}</dd>
+                  <div className="flex justify-between py-2">
+                    <dt className="text-gray-500">Destinatários</dt>
+                    <dd className="font-medium text-primary-600">{audienceCount} contatos</dd>
                   </div>
                 </dl>
               </Card>
 
-              <Card className="p-6 bg-yellow-50 border-yellow-200">
-                <h3 className="font-semibold text-yellow-800 mb-2">⚠️ Atenção</h3>
-                <p className="text-yellow-700 text-sm">
-                  Ao enviar a campanha, os emails serão disparados imediatamente para todos os
-                  destinatários. Certifique-se de que todas as informações estão corretas.
+              <Card className="p-6 bg-amber-50 border-amber-200">
+                <h3 className="font-semibold text-amber-800 mb-2 flex items-center gap-2">
+                  <PaperAirplaneIcon className="w-5 h-5" />
+                  Pronto para enviar?
+                </h3>
+                <p className="text-amber-700 text-sm">
+                  Ao clicar em "Enviar Campanha", os emails serão disparados imediatamente 
+                  para {audienceCount} {audienceCount === 1 ? 'contato' : 'contatos'}.
                 </p>
               </Card>
             </div>
 
             <div>
-              <Card className="p-4">
+              <Card className="p-4 sticky top-32">
                 <h3 className="font-semibold text-gray-900 mb-4">Preview Final</h3>
                 <div className="border rounded-lg overflow-hidden bg-gray-100" style={{ height: '400px' }}>
-                  <iframe
-                    srcDoc={getPreviewHtml()}
-                    className="w-full h-full"
-                    title="Email Preview"
-                  />
+                  <iframe srcDoc={getPreviewHtml()} className="w-full h-full" title="Preview" />
                 </div>
               </Card>
             </div>
@@ -582,18 +883,18 @@ export const NewCampaignPage: React.FC = () => {
           {currentStep === 'review' ? (
             <Button
               onClick={handleSendCampaign}
-              disabled={sending || !canProceed()}
-              className="bg-green-600 hover:bg-green-700"
+              disabled={sending || audienceCount === 0}
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               {sending ? (
                 <>
-                  <ClockIcon className="w-5 h-5 mr-2 animate-spin" />
+                  <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Enviando...
                 </>
               ) : (
                 <>
                   <PaperAirplaneIcon className="w-5 h-5 mr-2" />
-                  Enviar Campanha
+                  Enviar para {audienceCount} contatos
                 </>
               )}
             </Button>
@@ -619,11 +920,7 @@ export const NewCampaignPage: React.FC = () => {
               </button>
             </div>
             <div className="p-4" style={{ height: 'calc(90vh - 80px)' }}>
-              <iframe
-                srcDoc={getPreviewHtml()}
-                className="w-full h-full border rounded-lg"
-                title="Email Preview Full"
-              />
+              <iframe srcDoc={getPreviewHtml()} className="w-full h-full border rounded-lg" title="Preview" />
             </div>
           </div>
         </div>

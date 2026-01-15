@@ -784,10 +784,14 @@ export interface Subscriber {
 }
 
 export const subscribersApi = {
-  async list(storeId: string): Promise<Subscriber[]> {
+  async list(storeId: string, filters?: { status?: string; tags?: string[] }): Promise<Subscriber[]> {
     try {
+      const params: Record<string, string | string[]> = { store: storeId };
+      if (filters?.status) params.status = filters.status;
+      if (filters?.tags && filters.tags.length > 0) params.tags = filters.tags;
+      
       const response = await api.get<{ results?: Subscriber[] } | Subscriber[]>(`${BASE_URL}/subscribers/`, {
-        params: { store: storeId }
+        params
       });
       return Array.isArray(response.data) 
         ? response.data 
@@ -795,6 +799,20 @@ export const subscribersApi = {
     } catch (error) {
       logger.warn('Failed to fetch subscribers', { error: String(error) });
       return [];
+    }
+  },
+  
+  async count(storeId: string, status?: string): Promise<number> {
+    try {
+      const params: Record<string, string> = { store: storeId };
+      if (status) params.status = status;
+      
+      const response = await api.get<{ count: number }>(`${BASE_URL}/subscribers/count/`, { params });
+      return response.data.count;
+    } catch {
+      // Fallback: get list and count
+      const list = await this.list(storeId, { status });
+      return list.length;
     }
   },
 
