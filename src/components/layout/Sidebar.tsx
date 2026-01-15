@@ -76,6 +76,8 @@ const navigationSections: NavSection[] = [
     items: [
       { name: 'Campanhas', href: '/marketing', icon: MegaphoneIcon },
       { name: 'Email Marketing', href: '/marketing/email', icon: EnvelopeIcon },
+      { name: 'Automações', href: '/marketing/automations', icon: BoltIcon },
+      { name: 'Contatos', href: '/marketing/subscribers', icon: UserGroupIcon },
       { name: 'WhatsApp Marketing', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
     ]
   },

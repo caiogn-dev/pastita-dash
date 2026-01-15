@@ -876,3 +876,158 @@ export const marketingService = {
 };
 
 export default marketingService;
+
+
+// =============================================================================
+// EMAIL AUTOMATION API
+// =============================================================================
+
+export interface EmailAutomation {
+  id: string;
+  store: string;
+  name: string;
+  description: string;
+  trigger_type: string;
+  trigger_type_display: string;
+  subject: string;
+  html_content: string;
+  template?: string;
+  template_name?: string;
+  delay_minutes: number;
+  is_active: boolean;
+  conditions: Record<string, unknown>;
+  total_sent: number;
+  total_opened: number;
+  total_clicked: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailAutomationLog {
+  id: string;
+  automation: string;
+  automation_name: string;
+  trigger_type: string;
+  recipient_email: string;
+  recipient_name: string;
+  status: 'pending' | 'sent' | 'failed' | 'opened' | 'clicked';
+  trigger_data: Record<string, unknown>;
+  scheduled_at?: string;
+  sent_at?: string;
+  opened_at?: string;
+  error_message?: string;
+  created_at: string;
+}
+
+export interface TriggerType {
+  value: string;
+  label: string;
+}
+
+export const automationsApi = {
+  async list(storeId: string): Promise<EmailAutomation[]> {
+    try {
+      const response = await api.get<{ results?: EmailAutomation[] } | EmailAutomation[]>(
+        `${BASE_URL}/automations/`,
+        { params: { store: storeId } }
+      );
+      return Array.isArray(response.data) 
+        ? response.data 
+        : response.data.results || [];
+    } catch (error) {
+      logger.warn('Failed to fetch automations', { error: String(error) });
+      return [];
+    }
+  },
+
+  async get(id: string): Promise<EmailAutomation | null> {
+    try {
+      const response = await api.get<EmailAutomation>(`${BASE_URL}/automations/${id}/`);
+      return response.data;
+    } catch {
+      return null;
+    }
+  },
+
+  async create(data: Partial<EmailAutomation>): Promise<EmailAutomation> {
+    const response = await api.post<EmailAutomation>(`${BASE_URL}/automations/`, data);
+    return response.data;
+  },
+
+  async update(id: string, data: Partial<EmailAutomation>): Promise<EmailAutomation> {
+    const response = await api.patch<EmailAutomation>(`${BASE_URL}/automations/${id}/`, data);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<void> {
+    await api.delete(`${BASE_URL}/automations/${id}/`);
+  },
+
+  async toggle(id: string): Promise<EmailAutomation> {
+    const response = await api.post<EmailAutomation>(`${BASE_URL}/automations/${id}/toggle/`);
+    return response.data;
+  },
+
+  async getTriggerTypes(): Promise<TriggerType[]> {
+    try {
+      const response = await api.get<TriggerType[]>(`${BASE_URL}/automations/trigger_types/`);
+      return response.data;
+    } catch {
+      // Return default trigger types if API fails
+      return [
+        { value: 'new_user', label: 'Novo Usuário' },
+        { value: 'welcome', label: 'Boas-vindas' },
+        { value: 'order_confirmed', label: 'Pedido Confirmado' },
+        { value: 'order_preparing', label: 'Pedido em Preparo' },
+        { value: 'order_shipped', label: 'Pedido Enviado' },
+        { value: 'order_delivered', label: 'Pedido Entregue' },
+        { value: 'order_cancelled', label: 'Pedido Cancelado' },
+        { value: 'payment_confirmed', label: 'Pagamento Confirmado' },
+        { value: 'payment_failed', label: 'Pagamento Falhou' },
+        { value: 'cart_abandoned', label: 'Carrinho Abandonado' },
+        { value: 'coupon_sent', label: 'Cupom Enviado' },
+        { value: 'birthday', label: 'Aniversário' },
+        { value: 'review_request', label: 'Solicitar Avaliação' },
+      ];
+    }
+  },
+
+  async getLogs(automationId: string): Promise<EmailAutomationLog[]> {
+    try {
+      const response = await api.get<EmailAutomationLog[]>(
+        `${BASE_URL}/automations/${automationId}/logs/`
+      );
+      return response.data;
+    } catch {
+      return [];
+    }
+  },
+
+  async test(automationId: string, email: string): Promise<{ success: boolean; error?: string }> {
+    const response = await api.post<{ success: boolean; error?: string }>(
+      `${BASE_URL}/automations/test/`,
+      { automation_id: automationId, email }
+    );
+    return response.data;
+  },
+
+  async trigger(
+    storeId: string,
+    triggerType: string,
+    recipientEmail: string,
+    recipientName?: string,
+    context?: Record<string, unknown>
+  ): Promise<{ success: boolean; error?: string }> {
+    const response = await api.post<{ success: boolean; error?: string }>(
+      `${BASE_URL}/automations/trigger/`,
+      {
+        store: storeId,
+        trigger_type: triggerType,
+        recipient_email: recipientEmail,
+        recipient_name: recipientName || '',
+        context: context || {},
+      }
+    );
+    return response.data;
+  },
+};
