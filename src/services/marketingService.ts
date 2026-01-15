@@ -784,21 +784,46 @@ export interface Subscriber {
 }
 
 export const subscribersApi = {
-  async list(storeId: string, filters?: { status?: string; tags?: string[] }): Promise<Subscriber[]> {
+  /**
+   * List all customers (aggregated from orders + subscribers)
+   * This is the main endpoint for getting contacts for campaigns
+   */
+  async list(storeId: string, filters?: { status?: string; tags?: string[]; search?: string }): Promise<Subscriber[]> {
     try {
       const params: Record<string, string | string[]> = { store: storeId };
       if (filters?.status) params.status = filters.status;
-      if (filters?.tags && filters.tags.length > 0) params.tags = filters.tags;
+      if (filters?.search) params.search = filters.search;
       
-      const response = await api.get<{ results?: Subscriber[] } | Subscriber[]>(`${BASE_URL}/subscribers/`, {
-        params
-      });
-      return Array.isArray(response.data) 
+      // Use the unified customers endpoint that aggregates from orders + subscribers
+      const response = await api.get<{ results?: Subscriber[]; count?: number } | Subscriber[]>(
+        `${BASE_URL}/customers/`, 
+        { params }
+      );
+      
+      const results = Array.isArray(response.data) 
         ? response.data 
         : response.data.results || [];
+      
+      logger.info('Fetched customers', { count: results.length });
+      return results;
     } catch (error) {
-      logger.warn('Failed to fetch subscribers', { error: String(error) });
-      return [];
+      logger.warn('Failed to fetch customers, trying subscribers fallback', { error: String(error) });
+      
+      // Fallback to subscribers endpoint
+      try {
+        const params: Record<string, string | string[]> = { store: storeId };
+        if (filters?.status) params.status = filters.status;
+        
+        const response = await api.get<{ results?: Subscriber[] } | Subscriber[]>(
+          `${BASE_URL}/subscribers/`, 
+          { params }
+        );
+        return Array.isArray(response.data) 
+          ? response.data 
+          : response.data.results || [];
+      } catch {
+        return [];
+      }
     }
   },
   
@@ -807,7 +832,7 @@ export const subscribersApi = {
       const params: Record<string, string> = { store: storeId };
       if (status) params.status = status;
       
-      const response = await api.get<{ count: number }>(`${BASE_URL}/subscribers/count/`, { params });
+      const response = await api.get<{ count: number }>(`${BASE_URL}/customers/count/`, { params });
       return response.data.count;
     } catch {
       // Fallback: get list and count
@@ -817,6 +842,7 @@ export const subscribersApi = {
   },
 
   async create(data: Partial<Subscriber>): Promise<Subscriber> {
+    // Create in subscribers table
     const response = await api.post<Subscriber>(`${BASE_URL}/subscribers/`, data);
     return response.data;
   },

@@ -1,7 +1,9 @@
 /**
- * Subscribers Management Page
+ * Customers/Contacts Management Page
  * 
- * Manage email subscribers/contacts for marketing campaigns.
+ * Shows all customers aggregated from:
+ * - Orders (customers who made purchases)
+ * - Subscribers (manually added or imported)
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,11 +13,11 @@ import {
   MagnifyingGlassIcon,
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
-  TagIcon,
   EnvelopeIcon,
   CheckCircleIcon,
   XCircleIcon,
   TrashIcon,
+  ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../components/common';
@@ -63,7 +65,7 @@ export const SubscribersPage: React.FC = () => {
   // =============================================================================
 
   useEffect(() => {
-    const loadSubscribers = async () => {
+    const loadCustomers = async () => {
       if (!storeId) {
         setLoading(false);
         return;
@@ -71,17 +73,19 @@ export const SubscribersPage: React.FC = () => {
 
       try {
         setLoading(true);
+        // This now fetches from /customers/ which aggregates orders + subscribers
         const data = await marketingService.subscribers.list(storeId);
         setSubscribers(data);
+        logger.info('Loaded customers', { count: data.length });
       } catch (error) {
-        logger.error('Failed to load subscribers', error);
+        logger.error('Failed to load customers', error);
         toast.error('Erro ao carregar contatos');
       } finally {
         setLoading(false);
       }
     };
 
-    loadSubscribers();
+    loadCustomers();
   }, [storeId]);
 
   // =============================================================================
@@ -112,8 +116,8 @@ export const SubscribersPage: React.FC = () => {
   const stats = useMemo(() => ({
     total: subscribers.length,
     active: subscribers.filter(s => s.status === 'active').length,
+    withOrders: subscribers.filter(s => (s.total_orders || 0) > 0).length,
     unsubscribed: subscribers.filter(s => s.status === 'unsubscribed').length,
-    bounced: subscribers.filter(s => s.status === 'bounced').length,
   }), [subscribers]);
 
   // =============================================================================
@@ -292,23 +296,23 @@ export const SubscribersPage: React.FC = () => {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <ShoppingBagIcon className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{stats.withOrders}</p>
+              <p className="text-sm text-gray-500">Com Pedidos</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <XCircleIcon className="w-6 h-6 text-yellow-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{stats.unsubscribed}</p>
               <p className="text-sm text-gray-500">Descadastrados</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <XCircleIcon className="w-6 h-6 text-red-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.bounced}</p>
-              <p className="text-sm text-gray-500">Bounced</p>
             </div>
           </div>
         </Card>
