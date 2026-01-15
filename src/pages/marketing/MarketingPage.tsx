@@ -254,9 +254,9 @@ export const MarketingPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => navigate('/marketing/email')}>
-            <EnvelopeIcon className="w-5 h-5 mr-2" />
-            Email Marketing
+          <Button variant="secondary" onClick={() => navigate('/marketing/subscribers')}>
+            <UserGroupIcon className="w-5 h-5 mr-2" />
+            Contatos
           </Button>
           <Button onClick={() => navigate('/marketing/email/new')}>
             <PlusIcon className="w-5 h-5 mr-2" />
