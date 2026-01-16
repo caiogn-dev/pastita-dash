@@ -22,7 +22,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Card, Button, Modal, Loading, Header } from '../../../components/common';
+import { Card, Button, Modal, Loading } from '../../../components/common';
 import { useStore } from '../../../hooks';
 import api from '../../../services/api';
 
@@ -175,16 +175,17 @@ export const CampaignsListPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <Header
-        title="Campanhas de Email"
-        subtitle={`${campaigns.length} campanha(s)`}
-        actions={
-          <Button onClick={() => navigate('/marketing/email/new')}>
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Nova Campanha
-          </Button>
-        }
-      />
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Campanhas de Email</h1>
+          <p className="text-gray-500">{campaigns.length} campanha(s)</p>
+        </div>
+        <Button onClick={() => navigate('/marketing/email/new')}>
+          <PlusIcon className="w-5 h-5 mr-2" />
+          Nova Campanha
+        </Button>
+      </div>
 
       {campaigns.length === 0 ? (
         <Card className="p-12 text-center">
