@@ -62,7 +62,6 @@ export { productsService } from './products';
 
 export { langflowService } from './langflow';
 export { auditService } from './audit';
-export { campaignsService } from './campaigns';
 export {
   companyProfileApi,
   autoMessageApi,
