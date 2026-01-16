@@ -186,6 +186,15 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon: Ico
 // MAIN PAGE COMPONENT
 // =============================================================================
 
+interface Campaign {
+  id: string;
+  name: string;
+  subject: string;
+  status: string;
+  emails_sent: number;
+  created_at: string;
+}
+
 export const MarketingPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
@@ -196,6 +205,7 @@ export const MarketingPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<MarketingStats | null>(null);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
 
   const loadData = useCallback(async () => {
@@ -206,12 +216,14 @@ export const MarketingPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const [statsData, templatesData] = await Promise.all([
+      const [statsData, templatesData, campaignsData] = await Promise.all([
         marketingService.stats.get(storeId),
         marketingService.emailTemplates.list(storeId),
+        marketingService.emailCampaigns.list(storeId),
       ]);
       setStats(statsData);
       setTemplates(templatesData);
+      setCampaigns(campaignsData.slice(0, 5)); // Last 5 campaigns
     } catch (error) {
       logger.error('Error loading marketing data:', error);
       toast.error('Erro ao carregar dados de marketing');
@@ -359,25 +371,36 @@ export const MarketingPage: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Campanhas Recentes</h2>
           <Button variant="secondary" size="sm" onClick={() => navigate('/marketing/email')}>
-            Ver Todas ({stats?.email?.total_campaigns || 0})
+            Ver Todas ({campaigns.length || stats?.email?.total_campaigns || 0})
           </Button>
         </div>
-        {stats?.email?.total_campaigns && stats.email.total_campaigns > 0 ? (
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.email.total_campaigns}</p>
-                <p className="text-sm text-gray-500">campanhas criadas</p>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-semibold text-green-600">{stats.email?.total_sent || 0}</p>
-                <p className="text-sm text-gray-500">emails enviados</p>
-              </div>
-              <Button onClick={() => navigate('/marketing/email')}>
-                Ver Campanhas
-              </Button>
-            </div>
-          </Card>
+        {campaigns.length > 0 ? (
+          <div className="space-y-3">
+            {campaigns.map((campaign) => (
+              <Card key={campaign.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/marketing/email')}>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 truncate">{campaign.name}</h3>
+                    <p className="text-sm text-gray-500 truncate">{campaign.subject}</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      campaign.status === 'sent' ? 'bg-green-100 text-green-700' :
+                      campaign.status === 'draft' ? 'bg-gray-100 text-gray-700' :
+                      campaign.status === 'sending' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-blue-100 text-blue-700'
+                    }`}>
+                      {campaign.status === 'sent' ? 'Enviada' :
+                       campaign.status === 'draft' ? 'Rascunho' :
+                       campaign.status === 'sending' ? 'Enviando' :
+                       campaign.status}
+                    </span>
+                    <span className="text-sm text-gray-500">{campaign.emails_sent} enviados</span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         ) : (
           <Card className="p-8 text-center">
             <MegaphoneIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
