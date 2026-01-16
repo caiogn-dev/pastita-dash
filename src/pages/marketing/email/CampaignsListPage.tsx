@@ -93,7 +93,7 @@ export const CampaignsListPage: React.FC = () => {
         params.store = storeId;
       }
       
-      const response = await api.get(`/api/v1/marketing/campaigns/`, { params });
+      const response = await api.get(`/marketing/campaigns/`, { params });
       console.log('Campaigns response:', response.data);
       
       const data = response.data.results || response.data || [];
@@ -113,7 +113,7 @@ export const CampaignsListPage: React.FC = () => {
   const loadRecipients = async (campaignId: string) => {
     try {
       setLoadingRecipients(true);
-      const response = await api.get(`/api/v1/marketing/campaigns/${campaignId}/recipients/`);
+      const response = await api.get(`/marketing/campaigns/${campaignId}/recipients/`);
       setRecipients(response.data.results || response.data || []);
     } catch (error) {
       console.error('Error loading recipients:', error);
@@ -134,7 +134,7 @@ export const CampaignsListPage: React.FC = () => {
     
     try {
       setActionLoading(campaign.id);
-      const response = await api.post(`/api/v1/marketing/campaigns/${campaign.id}/send/`);
+      const response = await api.post(`/marketing/campaigns/${campaign.id}/send/`);
       toast.success(`Campanha enviada! ${response.data.sent} emails enviados.`);
       loadCampaigns();
     } catch (error: any) {
@@ -149,7 +149,7 @@ export const CampaignsListPage: React.FC = () => {
     
     try {
       setActionLoading(campaign.id);
-      await api.delete(`/api/v1/marketing/campaigns/${campaign.id}/`);
+      await api.delete(`/marketing/campaigns/${campaign.id}/`);
       toast.success('Campanha excluída');
       loadCampaigns();
     } catch (error) {
