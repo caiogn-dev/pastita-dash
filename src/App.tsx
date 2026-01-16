@@ -48,7 +48,7 @@ import { StoresPage, StoreDetailPage } from './pages/stores';
 
 // Marketing Pages
 import { MarketingPage, SubscribersPage } from './pages/marketing';
-import { NewCampaignPage } from './pages/marketing/email';
+import { NewCampaignPage, CampaignsListPage } from './pages/marketing/email';
 import AutomationsPage from './pages/marketing/AutomationsPage';
 
 // Protected Route wrapper
@@ -161,7 +161,8 @@ const App: React.FC = () => {
         <Route path="marketing" element={<MarketingPage />} />
         <Route path="marketing/subscribers" element={<SubscribersPage />} />
         <Route path="marketing/automations" element={<AutomationsPage />} />
-        <Route path="marketing/email" element={<MarketingPage />} />
+        <Route path="marketing/email" element={<CampaignsListPage />} />
+        <Route path="marketing/email/campaigns" element={<CampaignsListPage />} />
         <Route path="marketing/email/new" element={<NewCampaignPage />} />
         <Route path="marketing/email/templates" element={<MarketingPage />} />
         <Route path="marketing/whatsapp" element={<MarketingPage />} />

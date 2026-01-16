@@ -359,17 +359,35 @@ export const MarketingPage: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Campanhas Recentes</h2>
           <Button variant="secondary" size="sm" onClick={() => navigate('/marketing/email')}>
-            Ver Todas
+            Ver Todas ({stats?.campaigns?.total || 0})
           </Button>
         </div>
-        <Card className="p-8 text-center">
-          <MegaphoneIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 mb-4">Nenhuma campanha criada ainda</p>
-          <Button onClick={() => navigate('/marketing/email/new')}>
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Criar Primeira Campanha
-          </Button>
-        </Card>
+        {stats?.campaigns?.total && stats.campaigns.total > 0 ? (
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.campaigns.total}</p>
+                <p className="text-sm text-gray-500">campanhas criadas</p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-semibold text-green-600">{stats.emails?.sent || 0}</p>
+                <p className="text-sm text-gray-500">emails enviados</p>
+              </div>
+              <Button onClick={() => navigate('/marketing/email')}>
+                Ver Campanhas
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-8 text-center">
+            <MegaphoneIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 mb-4">Nenhuma campanha criada ainda</p>
+            <Button onClick={() => navigate('/marketing/email/new')}>
+              <PlusIcon className="w-5 h-5 mr-2" />
+              Criar Primeira Campanha
+            </Button>
+          </Card>
+        )}
       </div>
 
       {/* Template Preview Modal */}
