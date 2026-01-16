@@ -141,9 +141,31 @@ export const dashboardWS = new WebSocketService();
 
 // Helper to get WebSocket URL
 export const getWebSocketUrl = (path: string): string => {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = import.meta.env.VITE_WS_HOST;
-  return `${protocol}//${host}${path}`;
+  // Get WebSocket host from env or derive from API URL
+  let wsHost = import.meta.env.VITE_WS_HOST;
+  
+  if (!wsHost) {
+    // Try to derive from API URL
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    if (apiUrl) {
+      try {
+        const url = new URL(apiUrl);
+        wsHost = url.host;
+      } catch {
+        wsHost = window.location.host;
+      }
+    } else {
+      wsHost = window.location.host;
+    }
+  }
+  
+  // Determine protocol based on host
+  const isSecure = wsHost.includes('railway.app') || 
+                   wsHost.includes('vercel.app') || 
+                   window.location.protocol === 'https:';
+  const protocol = isSecure ? 'wss:' : 'ws:';
+  
+  return `${protocol}//${wsHost}${path}`;
 };
 
 // Initialize WebSocket connections

@@ -52,9 +52,34 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
   } = options;
 
   const getWebSocketUrl = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = import.meta.env.VITE_WS_HOST || window.location.host;
-    return `${protocol}//${host}/ws/stores/${STORE_SLUG}/orders/?token=${token}`;
+    // Get WebSocket host from env or derive from API URL
+    let wsHost = import.meta.env.VITE_WS_HOST;
+    
+    if (!wsHost) {
+      // Try to derive from API URL
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      if (apiUrl) {
+        try {
+          const url = new URL(apiUrl);
+          wsHost = url.host;
+        } catch {
+          // Fallback to window.location.host
+          wsHost = window.location.host;
+        }
+      } else {
+        wsHost = window.location.host;
+      }
+    }
+    
+    // Determine protocol based on host (production uses wss)
+    const isSecure = wsHost.includes('railway.app') || 
+                     wsHost.includes('vercel.app') || 
+                     window.location.protocol === 'https:';
+    const protocol = isSecure ? 'wss:' : 'ws:';
+    
+    const url = `${protocol}//${wsHost}/ws/stores/${STORE_SLUG}/orders/?token=${token}`;
+    console.log('WebSocket URL:', url);
+    return url;
   }, [token]);
 
   const connect = useCallback(() => {
