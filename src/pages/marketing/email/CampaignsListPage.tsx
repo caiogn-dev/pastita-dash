@@ -84,14 +84,20 @@ export const CampaignsListPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const loadCampaigns = useCallback(async () => {
-    if (!storeId) return;
-    
     try {
       setLoading(true);
-      const response = await api.get(`/api/v1/marketing/campaigns/`, {
-        params: { store: storeId }
-      });
-      setCampaigns(response.data.results || response.data || []);
+      console.log('Loading campaigns, storeId:', storeId);
+      
+      const params: Record<string, string> = {};
+      if (storeId) {
+        params.store = storeId;
+      }
+      
+      const response = await api.get(`/api/v1/marketing/campaigns/`, { params });
+      console.log('Campaigns response:', response.data);
+      
+      const data = response.data.results || response.data || [];
+      setCampaigns(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading campaigns:', error);
       toast.error('Erro ao carregar campanhas');
