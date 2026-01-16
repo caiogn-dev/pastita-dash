@@ -191,7 +191,8 @@ interface Campaign {
   name: string;
   subject: string;
   status: string;
-  emails_sent: number;
+  emails_sent?: number;
+  total_recipients?: number;
   created_at: string;
 }
 
@@ -223,7 +224,7 @@ export const MarketingPage: React.FC = () => {
       ]);
       setStats(statsData);
       setTemplates(templatesData);
-      setCampaigns(campaignsData.slice(0, 5)); // Last 5 campaigns
+      setCampaigns((campaignsData as Campaign[]).slice(0, 5)); // Last 5 campaigns
     } catch (error) {
       logger.error('Error loading marketing data:', error);
       toast.error('Erro ao carregar dados de marketing');
@@ -377,7 +378,11 @@ export const MarketingPage: React.FC = () => {
         {campaigns.length > 0 ? (
           <div className="space-y-3">
             {campaigns.map((campaign) => (
-              <Card key={campaign.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/marketing/email')}>
+              <div 
+                key={campaign.id} 
+                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => navigate('/marketing/email')}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-900 truncate">{campaign.name}</h3>
@@ -395,10 +400,10 @@ export const MarketingPage: React.FC = () => {
                        campaign.status === 'sending' ? 'Enviando' :
                        campaign.status}
                     </span>
-                    <span className="text-sm text-gray-500">{campaign.emails_sent} enviados</span>
+                    <span className="text-sm text-gray-500">{campaign.emails_sent || 0} enviados</span>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         ) : (
