@@ -28,6 +28,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, Modal, PageLoading } from '../../components/common';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import { Order, Payment } from '../../types';
+import { useOrderPrint } from '../../components/orders/OrderPrint';
 
 // =============================================================================
 // STATUS CONFIGURATION
@@ -169,6 +170,7 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCa
 export const OrderDetailPageNew: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { printOrder } = useOrderPrint();
   
   const [order, setOrder] = useState<Order | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -498,17 +500,21 @@ export const OrderDetailPageNew: React.FC = () => {
             </Card>
 
             {/* Actions */}
-            {!isCancelled && !isCompleted && (
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Ações</h2>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => window.print()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
-                  >
-                    <PrinterIcon className="w-5 h-5" />
-                    Imprimir Pedido
-                  </button>
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Ações</h2>
+              <div className="space-y-2">
+                <button
+                  onClick={() => printOrder(order as any, {
+                    storeName: 'PASTITA',
+                    storePhone: '(63) 9117-2166',
+                    storeAddress: 'Palmas - TO'
+                  })}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors text-primary-700 font-medium"
+                >
+                  <PrinterIcon className="w-5 h-5" />
+                  🖨️ Imprimir Pedido
+                </button>
+                {!isCancelled && !isCompleted && (
                   <button
                     onClick={() => setShowCancelModal(true)}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-red-600"
@@ -516,9 +522,9 @@ export const OrderDetailPageNew: React.FC = () => {
                     <XMarkIcon className="w-5 h-5" />
                     Cancelar Pedido
                   </button>
-                </div>
-              </Card>
-            )}
+                )}
+              </div>
+            </Card>
           </div>
         </div>
       </div>
