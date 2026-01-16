@@ -50,7 +50,7 @@ export const ORDER_STATUSES = [
     color: 'bg-yellow-50 border-yellow-200',
     headerColor: 'bg-yellow-500',
     icon: ClockIcon,
-    aliases: ['pendente', 'awaiting_payment']
+    aliases: ['pendente', 'awaiting_payment', 'processing']  // processing = aguardando pagamento
   },
   { 
     id: 'confirmed', 
@@ -66,7 +66,7 @@ export const ORDER_STATUSES = [
     color: 'bg-orange-50 border-orange-200',
     headerColor: 'bg-orange-500',
     icon: FireIcon,
-    aliases: ['preparando', 'processing']
+    aliases: ['preparando']
   },
   { 
     id: 'ready', 
