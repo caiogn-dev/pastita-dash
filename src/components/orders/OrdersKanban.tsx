@@ -15,6 +15,8 @@ import {
   useSensors,
   DragStartEvent,
   DragEndEvent,
+  DragOverEvent,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -234,13 +236,26 @@ interface KanbanColumnProps {
   orders: UnifiedOrder[];
   onOrderClick?: (order: UnifiedOrder) => void;
   updatingOrders?: Set<string>;
+  isOver?: boolean;
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClick, updatingOrders }) => {
   const Icon = status.icon;
   
+  // Make the column a drop target
+  const { setNodeRef, isOver } = useDroppable({
+    id: status.id,
+  });
+  
   return (
-    <div className={`flex flex-col min-w-[280px] max-w-[320px] rounded-lg border ${status.color}`}>
+    <div 
+      ref={setNodeRef}
+      className={`
+        flex flex-col min-w-[280px] max-w-[320px] rounded-lg border-2 transition-all duration-200
+        ${status.color}
+        ${isOver ? 'ring-2 ring-primary-500 ring-offset-2 scale-[1.02] border-primary-400' : ''}
+      `}
+    >
       {/* Column Header */}
       <div className={`${status.headerColor} text-white px-3 py-2 rounded-t-lg`}>
         <div className="flex items-center justify-between">
@@ -255,11 +270,19 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
       </div>
 
       {/* Column Content */}
-      <div className="flex-1 p-2 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[200px]">
+      <div className={`
+        flex-1 p-2 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[200px]
+        transition-colors duration-200
+        ${isOver ? 'bg-primary-50/50' : ''}
+      `}>
         <SortableContext items={orders.map(o => o.id)} strategy={verticalListSortingStrategy}>
           {orders.length === 0 ? (
-            <div className="text-center py-8 text-gray-400 text-sm">
-              Nenhum pedido
+            <div className={`
+              text-center py-8 text-sm border-2 border-dashed rounded-lg
+              transition-colors duration-200
+              ${isOver ? 'border-primary-400 text-primary-500 bg-primary-50' : 'border-gray-200 text-gray-400'}
+            `}>
+              {isOver ? '✓ Solte aqui' : 'Nenhum pedido'}
             </div>
           ) : (
             orders.map((order) => (
@@ -390,16 +413,34 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     const activeOrderId = active.id as string;
     const overId = over.id as string;
 
+    // Find source column
     const sourceColumn = findColumn(activeOrderId);
     
+    // Determine destination column
+    // First check if dropped directly on a column (status id)
     let destColumn: string | null = null;
-    if (ORDER_STATUSES.some(s => s.id === overId)) {
+    
+    // Check if overId is a status column
+    const isStatusColumn = ORDER_STATUSES.some(s => s.id === overId);
+    if (isStatusColumn) {
       destColumn = overId;
     } else {
+      // Dropped on another order card - find which column that card is in
       destColumn = findColumn(overId);
     }
 
-    if (!sourceColumn || !destColumn || sourceColumn === destColumn) return;
+    // Validate
+    if (!sourceColumn || !destColumn) {
+      console.log('Invalid drag: source or dest column not found');
+      return;
+    }
+    
+    if (sourceColumn === destColumn) {
+      console.log('Same column, no change needed');
+      return;
+    }
+
+    console.log(`Moving order ${activeOrderId} from ${sourceColumn} to ${destColumn}`);
 
     // OPTIMISTIC UPDATE: Update local state immediately
     setLocalOrders(prev => 
@@ -417,8 +458,10 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     if (onStatusChange) {
       try {
         await onStatusChange(activeOrderId, destColumn);
+        console.log(`Successfully updated order ${activeOrderId} to ${destColumn}`);
       } catch (error) {
         // ROLLBACK: Revert to original status on error
+        console.error('Failed to update order status:', error);
         setLocalOrders(prev => 
           prev.map(order => 
             order.id === activeOrderId 
@@ -426,16 +469,22 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
               : order
           )
         );
-        console.error('Failed to update order status:', error);
+      } finally {
+        // Remove from updating set
+        setUpdatingOrders(prev => {
+          const next = new Set(prev);
+          next.delete(activeOrderId);
+          return next;
+        });
       }
+    } else {
+      // No onStatusChange handler, just remove updating state
+      setUpdatingOrders(prev => {
+        const next = new Set(prev);
+        next.delete(activeOrderId);
+        return next;
+      });
     }
-
-    // Remove from updating set
-    setUpdatingOrders(prev => {
-      const next = new Set(prev);
-      next.delete(activeOrderId);
-      return next;
-    });
   };
 
   return (
