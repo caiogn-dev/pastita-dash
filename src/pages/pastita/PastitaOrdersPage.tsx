@@ -19,13 +19,15 @@ import {
   ShoppingBagIcon,
   PrinterIcon,
   Cog6ToothIcon,
+  SignalIcon,
+  SignalSlashIcon,
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid';
 import { storeApi, type Order } from '../../services/storeApi';
 
 // Type alias for backwards compatibility
 type Pedido = Order;
-import { useOrdersWebSocket } from '../../hooks';
+import { useOrdersWebSocket, useNotificationSound } from '../../hooks';
 import { useOrderPrint, getAutoPrintEnabled, setAutoPrintEnabled, AUTO_PRINT_KEY } from '../../components/orders/OrderPrint';
 import logger from '../../services/logger';
 
@@ -342,11 +344,15 @@ export const PastitaOrdersPage: React.FC = () => {
     toast.success(newValue ? '🖨️ Impressão automática ativada' : '🖨️ Impressão automática desativada');
   }, [autoPrintEnabled]);
 
+  // Notification sounds
+  const { playOrderSound, playSuccessSound } = useNotificationSound({ enabled: true });
+
   // Real-time WebSocket connection
-  const { isConnected, lastMessage } = useOrdersWebSocket({
+  const { isConnected, connectionError } = useOrdersWebSocket({
     onOrderCreated: (data) => {
+      playOrderSound();
       toast.success(`🎉 Novo pedido #${data.order_number || data.order_id}!`, {
-        duration: 5000,
+        duration: 6000,
         icon: '🛒',
       });
       setNewOrderAlert(true);
@@ -362,8 +368,9 @@ export const PastitaOrdersPage: React.FC = () => {
       fetchPedidos();
     },
     onPaymentReceived: (data) => {
+      playSuccessSound();
       toast.success(`💰 Pagamento recebido - Pedido #${data.order_number || data.order_id}!`, {
-        duration: 5000,
+        duration: 6000,
       });
       // Auto-print when payment is received
       if (data.order_id) {

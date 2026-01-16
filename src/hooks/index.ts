@@ -7,6 +7,9 @@ export {
 export { useAutomationWS } from './useAutomationWS';
 export { useOrdersWebSocket } from './useOrdersWebSocket';
 
+// Notification sound hook
+export { useNotificationSound } from './useNotificationSound';
+
 // Store context hook
 export { 
   useStore, 

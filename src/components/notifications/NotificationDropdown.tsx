@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import logger from '../../services/logger';
 import { BellIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { notificationsService, Notification } from '../../services/notifications';
 import { useNotificationWebSocket } from '../../hooks/useWebSocket';
+import { useNotificationSound } from '../../hooks';
+
+// Polling interval when WebSocket is disconnected (30 seconds)
+const POLLING_INTERVAL = 30000;
 
 export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,7 +16,36 @@ export const NotificationDropdown: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { subscribe } = useNotificationWebSocket();
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastCountRef = useRef(0);
+  const { subscribe, isConnected } = useNotificationWebSocket();
+  const { playNotificationSound } = useNotificationSound({ enabled: true });
+
+  const loadNotifications = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await notificationsService.getNotifications();
+      setNotifications(response.results);
+    } catch (error) {
+      logger.error('Error loading notifications:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const response = await notificationsService.getUnreadCount();
+      // Play sound if count increased (new notification)
+      if (response.count > lastCountRef.current && lastCountRef.current > 0) {
+        playNotificationSound();
+      }
+      lastCountRef.current = response.count;
+      setUnreadCount(response.count);
+    } catch (error) {
+      logger.error('Error loading unread count:', error);
+    }
+  }, [playNotificationSound]);
 
   useEffect(() => {
     loadNotifications();
@@ -21,6 +54,7 @@ export const NotificationDropdown: React.FC = () => {
     // Subscribe to real-time notifications
     const unsubscribe = subscribe('notification', (data: unknown) => {
       const notification = (data as { notification: Notification }).notification;
+      playNotificationSound();
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1);
     });
@@ -28,7 +62,29 @@ export const NotificationDropdown: React.FC = () => {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [subscribe, loadNotifications, loadUnreadCount, playNotificationSound]);
+
+  // Fallback polling when WebSocket is disconnected
+  useEffect(() => {
+    if (!isConnected) {
+      // Start polling
+      pollingRef.current = setInterval(() => {
+        loadUnreadCount();
+      }, POLLING_INTERVAL);
+    } else {
+      // Stop polling when connected
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    }
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, [isConnected, loadUnreadCount]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -40,27 +96,6 @@ export const NotificationDropdown: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const loadNotifications = async () => {
-    setIsLoading(true);
-    try {
-      const response = await notificationsService.getNotifications();
-      setNotifications(response.results);
-    } catch (error) {
-      logger.error('Error loading notifications:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadUnreadCount = async () => {
-    try {
-      const response = await notificationsService.getUnreadCount();
-      setUnreadCount(response.count);
-    } catch (error) {
-      logger.error('Error loading unread count:', error);
-    }
-  };
 
   const handleMarkAllAsRead = async () => {
     try {

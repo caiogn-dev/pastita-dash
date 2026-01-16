@@ -9,6 +9,8 @@ import {
   ListBulletIcon,
   FunnelIcon,
   ArrowPathIcon,
+  SignalIcon,
+  SignalSlashIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -28,7 +30,7 @@ import {
 import { OrdersKanban, ORDER_STATUSES } from '../../components/orders/OrdersKanban';
 import { exportService, getErrorMessage } from '../../services';
 import { unifiedApi, UnifiedOrder, UnifiedOrderFilters } from '../../services/unifiedApi';
-import { useStore } from '../../hooks';
+import { useStore, useOrdersWebSocket, useNotificationSound } from '../../hooks';
 
 type ViewMode = 'kanban' | 'table';
 
@@ -58,6 +60,38 @@ export const OrdersPage: React.FC = () => {
   const [shipForm, setShipForm] = useState({ tracking_code: '', carrier: '' });
   const [paymentForm, setPaymentForm] = useState({ payment_reference: '' });
   const [cancelForm, setCancelForm] = useState({ reason: '' });
+  
+  // Notification sound
+  const { playOrderSound, playSuccessSound } = useNotificationSound({ enabled: true });
+  
+  // Real-time WebSocket connection
+  const { isConnected, connectionError } = useOrdersWebSocket({
+    onOrderCreated: (data) => {
+      playOrderSound();
+      toast.success(`🎉 Novo pedido #${data.order_number || data.order_id?.slice(0, 8)}!`, {
+        duration: 6000,
+        icon: '🛒',
+      });
+      loadOrders();
+    },
+    onOrderUpdated: () => {
+      loadOrders();
+    },
+    onStatusChanged: (data) => {
+      toast(`📦 Pedido #${data.order_number} → ${data.status}`, {
+        duration: 4000,
+      });
+      loadOrders();
+    },
+    onPaymentReceived: (data) => {
+      playSuccessSound();
+      toast.success(`💰 Pagamento confirmado - #${data.order_number || data.order_id?.slice(0, 8)}!`, {
+        duration: 6000,
+      });
+      loadOrders();
+    },
+    enabled: true,
+  });
 
   // Load orders from unified API
   const loadOrders = useCallback(async () => {
@@ -398,6 +432,28 @@ export const OrdersPage: React.FC = () => {
         subtitle={`${filteredOrders.length} pedido(s)${storeName ? ` - ${storeName}` : ''}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            {/* WebSocket Connection Status */}
+            <div 
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
+                isConnected 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-red-100 text-red-700'
+              }`}
+              title={isConnected ? 'Conectado - Atualizações em tempo real' : connectionError || 'Desconectado'}
+            >
+              {isConnected ? (
+                <>
+                  <SignalIcon className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Ao vivo</span>
+                </>
+              ) : (
+                <>
+                  <SignalSlashIcon className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Offline</span>
+                </>
+              )}
+            </div>
+
             {/* View Mode Toggle */}
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <button
