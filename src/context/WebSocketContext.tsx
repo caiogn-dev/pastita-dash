@@ -30,8 +30,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuthStore();
   const ws = useRef<WebSocket | null>(null);
   const listeners = useRef<Map<string, Set<Callback>>>(new Map());
-  const reconnectTimer = useRef<NodeJS.Timeout>();
-  const pingTimer = useRef<NodeJS.Timeout>();
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const attempts = useRef(0);
   
   const [isConnected, setIsConnected] = useState(false);
@@ -91,7 +91,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     socket.onclose = (e) => {
       console.log('[WS] Closed:', e.code);
       setIsConnected(false);
-      clearInterval(pingTimer.current);
+      if (pingTimer.current) clearInterval(pingTimer.current);
       
       if (e.code !== 1000 && attempts.current < 10) {
         const delay = Math.min(1000 * Math.pow(1.5, attempts.current), 30000);
@@ -128,8 +128,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
-      clearTimeout(reconnectTimer.current);
-      clearInterval(pingTimer.current);
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      if (pingTimer.current) clearInterval(pingTimer.current);
       ws.current?.close(1000);
     };
   }, [connect]);

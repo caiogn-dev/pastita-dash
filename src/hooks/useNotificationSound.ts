@@ -14,7 +14,7 @@ interface Options {
 export const useNotificationSound = (opts: Options = {}) => {
   const { enabled = true, volume = 0.5 } = opts;
   const ctx = useRef<AudioContext | null>(null);
-  const alertInterval = useRef<NodeJS.Timeout>();
+  const alertInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isAlertActive, setIsAlertActive] = useState(false);
 
   useEffect(() => {
@@ -84,7 +84,9 @@ export const useNotificationSound = (opts: Options = {}) => {
     }
   }, []);
 
-  return { playOrderSound, playSuccessSound, stopAlert, isAlertActive };
+  const playNotificationSound = playOrderSound; // Alias for compatibility
+
+  return { playOrderSound, playSuccessSound, playNotificationSound, stopAlert, isAlertActive };
 };
 
 export default useNotificationSound;
