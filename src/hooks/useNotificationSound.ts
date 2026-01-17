@@ -14,7 +14,7 @@ interface Options {
 export const useNotificationSound = (opts: Options = {}) => {
   const { enabled = true, volume = 0.5 } = opts;
   const ctx = useRef<AudioContext | null>(null);
-  const alertInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const alertInterval = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const [isAlertActive, setIsAlertActive] = useState(false);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export const useNotificationSound = (opts: Options = {}) => {
     document.addEventListener('click', init, { once: true });
     return () => {
       document.removeEventListener('click', init);
-      clearInterval(alertInterval.current);
+      if (alertInterval.current) clearInterval(alertInterval.current);
     };
   }, []);
 
@@ -65,7 +65,7 @@ export const useNotificationSound = (opts: Options = {}) => {
   }, [enabled, playOnce, isAlertActive]);
 
   const stopAlert = useCallback(() => {
-    clearInterval(alertInterval.current);
+    if (alertInterval.current) clearInterval(alertInterval.current);
     setIsAlertActive(false);
   }, []);
 
