@@ -345,38 +345,58 @@ export const PastitaOrdersPage: React.FC = () => {
   }, [autoPrintEnabled]);
 
   // Notification sounds
-  const { playOrderSound, playSuccessSound } = useNotificationSound({ enabled: true });
+  const { playOrderSound, playSuccessSound, stopAlert, isAlertActive } = useNotificationSound({ enabled: true });
+
+  // Stop alert on click
+  useEffect(() => {
+    if (isAlertActive) {
+      const stop = () => stopAlert();
+      document.addEventListener('click', stop, { once: true });
+      return () => document.removeEventListener('click', stop);
+    }
+  }, [isAlertActive, stopAlert]);
 
   // Real-time WebSocket connection
   const { isConnected, connectionError } = useOrdersWebSocket({
     onOrderCreated: (data) => {
+      console.log('[PastitaOrders] New order:', data);
       playOrderSound();
       toast.success(`🎉 Novo pedido #${data.order_number || data.order_id}!`, {
         duration: 6000,
         icon: '🛒',
       });
       setNewOrderAlert(true);
-      fetchPedidos();
+      // Debounced refresh
+      setTimeout(() => fetchPedidos(), 500);
     },
-    onOrderUpdated: () => {
-      fetchPedidos();
+    onOrderUpdated: (data) => {
+      console.log('[PastitaOrders] Order updated:', data);
+      // Update in state without full reload
+      setPedidos(prev => prev.map(p => 
+        p.id === data.order_id ? { ...p, ...data } : p
+      ));
     },
     onStatusChanged: (data) => {
-      toast(`Pedido #${data.order_number} atualizado para ${data.status}`, {
-        icon: '📦',
-      });
-      fetchPedidos();
+      console.log('[PastitaOrders] Status changed:', data);
+      toast(`Pedido #${data.order_number} → ${data.status}`, { icon: '📦' });
+      setPedidos(prev => prev.map(p => 
+        p.id === data.order_id ? { ...p, status: data.status || p.status } : p
+      ));
     },
     onPaymentReceived: (data) => {
+      console.log('[PastitaOrders] Payment received:', data);
       playSuccessSound();
-      toast.success(`💰 Pagamento recebido - Pedido #${data.order_number || data.order_id}!`, {
+      toast.success(`💰 Pagamento confirmado - #${data.order_number || data.order_id}!`, {
         duration: 6000,
       });
+      // Update payment status in state
+      setPedidos(prev => prev.map(p => 
+        p.id === data.order_id ? { ...p, payment_status: 'paid' } : p
+      ));
       // Auto-print when payment is received
       if (data.order_id) {
-        handleAutoPrint(data.order_id);
+        handleAutoPrint(data.order_id as string);
       }
-      fetchPedidos();
     },
   });
 

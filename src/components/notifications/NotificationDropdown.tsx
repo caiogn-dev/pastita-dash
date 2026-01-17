@@ -4,11 +4,7 @@ import { BellIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { notificationsService, Notification } from '../../services/notifications';
-import { useNotificationWebSocket } from '../../hooks/useWebSocket';
-import { useNotificationSound } from '../../hooks';
-
-// Polling interval when WebSocket is disconnected (30 seconds)
-const POLLING_INTERVAL = 30000;
+import { useWS } from '../../context/WebSocketContext';
 
 export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,10 +12,7 @@ export const NotificationDropdown: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastCountRef = useRef(0);
-  const { subscribe, isConnected } = useNotificationWebSocket();
-  const { playNotificationSound } = useNotificationSound({ enabled: true });
+  const { isConnected, on } = useWS();
 
   const loadNotifications = useCallback(async () => {
     setIsLoading(true);
@@ -36,55 +29,31 @@ export const NotificationDropdown: React.FC = () => {
   const loadUnreadCount = useCallback(async () => {
     try {
       const response = await notificationsService.getUnreadCount();
-      // Play sound if count increased (new notification)
-      if (response.count > lastCountRef.current && lastCountRef.current > 0) {
-        playNotificationSound();
-      }
-      lastCountRef.current = response.count;
       setUnreadCount(response.count);
     } catch (error) {
       logger.error('Error loading unread count:', error);
     }
-  }, [playNotificationSound]);
+  }, []);
 
+  // Initial load
   useEffect(() => {
     loadNotifications();
     loadUnreadCount();
+  }, [loadNotifications, loadUnreadCount]);
 
-    // Subscribe to real-time notifications
-    const unsubscribe = subscribe('notification', (data: unknown) => {
-      const notification = (data as { notification: Notification }).notification;
-      playNotificationSound();
-      setNotifications((prev) => [notification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
+  // Subscribe to WebSocket events for real-time updates
+  useEffect(() => {
+    // Listen for new orders (which create notifications)
+    const unsubOrder = on('order_created', () => {
+      // Increment count and refresh after a delay
+      setUnreadCount(prev => prev + 1);
+      setTimeout(() => loadNotifications(), 1000);
     });
 
     return () => {
-      unsubscribe();
+      unsubOrder();
     };
-  }, [subscribe, loadNotifications, loadUnreadCount, playNotificationSound]);
-
-  // Fallback polling when WebSocket is disconnected
-  useEffect(() => {
-    if (!isConnected) {
-      // Start polling
-      pollingRef.current = setInterval(() => {
-        loadUnreadCount();
-      }, POLLING_INTERVAL);
-    } else {
-      // Stop polling when connected
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    }
-
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    };
-  }, [isConnected, loadUnreadCount]);
+  }, [on, loadNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

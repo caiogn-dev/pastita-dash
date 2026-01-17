@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   MagnifyingGlassIcon, 
@@ -83,31 +83,60 @@ export const OrdersPage: React.FC = () => {
   // Notification sound
   const { playOrderSound, playSuccessSound, stopAlert, isAlertActive } = useNotificationSound({ enabled: true });
 
-  // Real-time WebSocket connection with stable callbacks via refs
+  // Track if we need to refresh (debounced)
+  const pendingRefresh = useRef(false);
+  const refreshTimeout = useRef<number | undefined>(undefined);
+
+  // Debounced refresh - prevents multiple API calls
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimeout.current) {
+      window.clearTimeout(refreshTimeout.current);
+    }
+    pendingRefresh.current = true;
+    refreshTimeout.current = window.setTimeout(() => {
+      if (pendingRefresh.current) {
+        pendingRefresh.current = false;
+        loadOrders();
+      }
+    }, 500); // Wait 500ms before refreshing
+  }, [loadOrders]);
+
+  // Real-time WebSocket connection
   const { isConnected, connectionError } = useOrdersWebSocket({
     onOrderCreated: (data) => {
+      console.log('[Orders] New order received:', data);
       playOrderSound();
-      toast.success(`🎉 Novo pedido #${data.order_number || data.order_id?.slice(0, 8)}!`, {
+      toast.success(`🎉 Novo pedido #${data.order_number || data.order_id?.toString().slice(0, 8)}!`, {
         duration: 6000,
         icon: '🛒',
       });
-      loadOrders();
+      scheduleRefresh();
     },
-    onOrderUpdated: () => {
-      loadOrders();
+    onOrderUpdated: (data) => {
+      console.log('[Orders] Order updated:', data);
+      // Update order in state without full reload
+      setOrders(prev => prev.map(o => 
+        o.id === data.order_id ? { ...o, ...data } : o
+      ));
     },
     onStatusChanged: (data) => {
-      toast(`📦 Pedido #${data.order_number} → ${data.status}`, {
-        duration: 4000,
-      });
-      loadOrders();
+      console.log('[Orders] Status changed:', data);
+      toast(`📦 Pedido #${data.order_number} → ${data.status}`, { duration: 4000 });
+      // Update order status in state
+      setOrders(prev => prev.map(o => 
+        o.id === data.order_id ? { ...o, status: data.status || o.status } : o
+      ));
     },
     onPaymentReceived: (data) => {
+      console.log('[Orders] Payment received:', data);
       playSuccessSound();
-      toast.success(`💰 Pagamento confirmado - #${data.order_number || data.order_id?.slice(0, 8)}!`, {
+      toast.success(`💰 Pagamento confirmado - #${data.order_number || data.order_id?.toString().slice(0, 8)}!`, {
         duration: 6000,
       });
-      loadOrders();
+      // Update payment status in state
+      setOrders(prev => prev.map(o => 
+        o.id === data.order_id ? { ...o, payment_status: 'paid' } : o
+      ));
     },
     enabled: true,
   });
@@ -121,8 +150,15 @@ export const OrdersPage: React.FC = () => {
     }
   }, [isAlertActive, stopAlert]);
 
+  // Initial load only
   useEffect(() => {
     loadOrders();
+    // Cleanup timeout on unmount
+    return () => {
+      if (refreshTimeout.current) {
+        window.clearTimeout(refreshTimeout.current);
+      }
+    };
   }, [loadOrders]);
 
   // Handle status change from Kanban drag-and-drop (optimistic update handled by Kanban)
