@@ -13,21 +13,29 @@ interface NotificationSoundOptions {
 }
 
 export const useNotificationSound = (options: NotificationSoundOptions = {}) => {
-  const { enabled = true, volume = 0.6 } = options;
+  const { enabled = true, volume = 1.0 } = options; // Volume at 100%
   
   const audioCtx = useRef<AudioContext | null>(null);
   const alertIntervalId = useRef<number | undefined>(undefined);
   const [isAlertActive, setIsAlertActive] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize AudioContext on user interaction
+  // Initialize AudioContext
   const initAudio = useCallback(() => {
-    if (audioCtx.current) return audioCtx.current;
+    if (audioCtx.current && audioCtx.current.state !== 'closed') {
+      // Resume if suspended
+      if (audioCtx.current.state === 'suspended') {
+        audioCtx.current.resume().then(() => {
+          console.log('[Sound] AudioContext resumed');
+        });
+      }
+      return audioCtx.current;
+    }
     
     try {
       audioCtx.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       setIsInitialized(true);
-      console.log('[Sound] AudioContext initialized');
+      console.log('[Sound] AudioContext initialized, state:', audioCtx.current.state);
       return audioCtx.current;
     } catch (e) {
       console.error('[Sound] Failed to create AudioContext:', e);
@@ -83,30 +91,37 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
   }, []);
 
   // Play order sound (arpeggio)
-  const playOrderSoundOnce = useCallback(() => {
+  const playOrderSoundOnce = useCallback(async () => {
     let ctx = audioCtx.current;
     if (!ctx) {
       ctx = initAudio();
-      if (!ctx) return;
+      if (!ctx) {
+        console.error('[Sound] No AudioContext available');
+        return;
+      }
     }
 
+    // MUST resume if suspended (browser requirement)
     if (ctx.state === 'suspended') {
-      ctx.resume();
+      console.log('[Sound] Resuming suspended AudioContext...');
+      await ctx.resume();
+      console.log('[Sound] AudioContext resumed, state:', ctx.state);
     }
 
     const now = ctx.currentTime;
+    console.log('[Sound] Playing at time:', now, 'state:', ctx.state);
     
-    // First wave - ascending
+    // First wave - ascending (louder)
     ORDER_FREQUENCIES.forEach((freq, i) => {
-      playTone(freq, 0.25, now + i * 0.1, volume * 0.5);
+      playTone(freq, 0.3, now + i * 0.12, volume * 0.7);
     });
     
     // Second wave - ascending (delayed)
     ORDER_FREQUENCIES.forEach((freq, i) => {
-      playTone(freq, 0.2, now + 0.6 + i * 0.08, volume * 0.4);
+      playTone(freq, 0.25, now + 0.7 + i * 0.1, volume * 0.5);
     });
     
-    console.log('[Sound] Playing order sound');
+    console.log('[Sound] Order sound scheduled');
   }, [initAudio, playTone, volume]);
 
   // Stop the repeating alert

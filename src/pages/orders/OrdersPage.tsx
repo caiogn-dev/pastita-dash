@@ -499,6 +499,18 @@ export const OrdersPage: React.FC = () => {
               )}
             </div>
 
+            {/* Test Sound Button */}
+            <button
+              onClick={() => {
+                console.log('[Test] Playing test sound...');
+                playOrderSound();
+              }}
+              className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+              title="Testar som de notificação"
+            >
+              🔊 Testar
+            </button>
+
             {/* View Mode Toggle */}
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <button
