@@ -5,7 +5,8 @@ import { Layout } from './components/layout';
 import { FullPageLoading } from './components/common';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
-import { whatsappService, initializeWebSockets, disconnectWebSockets } from './services';
+import { whatsappService } from './services';
+import { WebSocketProvider } from './context/WebSocketContext';
 
 // Pages
 import { LoginPage } from './pages/auth/LoginPage';
@@ -62,7 +63,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-const App: React.FC = () => {
+// Inner app content
+const AppContent: React.FC = () => {
   const { isAuthenticated, token } = useAuthStore();
   const { setAccounts } = useAccountStore();
   const [isInitializing, setIsInitializing] = useState(true);
@@ -73,25 +75,14 @@ const App: React.FC = () => {
         try {
           const response = await whatsappService.getAccounts();
           setAccounts(response.results);
-          
-          // Initialize WebSocket connections
-          initializeWebSockets(token);
         } catch (error) {
           logger.error('Error loading accounts:', error);
         }
-      } else {
-        // Disconnect WebSockets when not authenticated
-        disconnectWebSockets();
       }
       setIsInitializing(false);
     };
-
     initialize();
-    
-    return () => {
-      disconnectWebSockets();
-    };
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, setAccounts]);
 
   if (isInitializing) {
     return <FullPageLoading />;
@@ -172,6 +163,21 @@ const App: React.FC = () => {
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  );
+};
+
+// Main App with WebSocket Provider (singleton)
+const App: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
+  
+  if (!isAuthenticated) {
+    return <AppContent />;
+  }
+  
+  return (
+    <WebSocketProvider>
+      <AppContent />
+    </WebSocketProvider>
   );
 };
 
