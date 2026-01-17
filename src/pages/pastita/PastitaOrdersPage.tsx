@@ -356,6 +356,28 @@ export const PastitaOrdersPage: React.FC = () => {
     }
   }, [isAlertActive, stopAlert]);
 
+  // Debounced refresh - prevents rate limiting
+  const refreshTimeoutRef = useRef<number | undefined>(undefined);
+  const lastRefreshRef = useRef<number>(0);
+  
+  const scheduleRefresh = useCallback(() => {
+    const now = Date.now();
+    // Don't refresh more than once every 3 seconds
+    if (now - lastRefreshRef.current < 3000) {
+      console.log('[PastitaOrders] Skipping refresh - too soon');
+      return;
+    }
+    
+    if (refreshTimeoutRef.current) {
+      window.clearTimeout(refreshTimeoutRef.current);
+    }
+    
+    refreshTimeoutRef.current = window.setTimeout(() => {
+      lastRefreshRef.current = Date.now();
+      fetchPedidos();
+    }, 1000);
+  }, [fetchPedidos]);
+
   // Real-time WebSocket connection
   const { isConnected, connectionError } = useOrdersWebSocket({
     onOrderCreated: (data) => {
@@ -366,19 +388,16 @@ export const PastitaOrdersPage: React.FC = () => {
         icon: '🛒',
       });
       setNewOrderAlert(true);
-      // Debounced refresh
-      setTimeout(() => fetchPedidos(), 500);
+      scheduleRefresh();
     },
     onOrderUpdated: (data) => {
       console.log('[PastitaOrders] Order updated:', data);
-      // Refresh to get updated order
-      setTimeout(() => fetchPedidos(), 300);
+      scheduleRefresh();
     },
     onStatusChanged: (data) => {
       console.log('[PastitaOrders] Status changed:', data);
       toast(`Pedido #${data.order_number} → ${data.status}`, { icon: '📦' });
-      // Refresh to get updated status
-      setTimeout(() => fetchPedidos(), 300);
+      scheduleRefresh();
     },
     onPaymentReceived: (data) => {
       console.log('[PastitaOrders] Payment received:', data);
@@ -386,8 +405,7 @@ export const PastitaOrdersPage: React.FC = () => {
       toast.success(`💰 Pagamento confirmado - #${data.order_number || data.order_id}!`, {
         duration: 6000,
       });
-      // Refresh to get updated payment status
-      setTimeout(() => fetchPedidos(), 300);
+      scheduleRefresh();
       // Auto-print when payment is received
       if (data.order_id) {
         handleAutoPrint(data.order_id as string);

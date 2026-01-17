@@ -83,22 +83,26 @@ export const OrdersPage: React.FC = () => {
   // Notification sound
   const { playOrderSound, playSuccessSound, stopAlert, isAlertActive } = useNotificationSound({ enabled: true });
 
-  // Track if we need to refresh (debounced)
-  const pendingRefresh = useRef(false);
+  // Debounced refresh - prevents rate limiting
   const refreshTimeout = useRef<number | undefined>(undefined);
+  const lastRefresh = useRef<number>(0);
 
-  // Debounced refresh - prevents multiple API calls
   const scheduleRefresh = useCallback(() => {
+    const now = Date.now();
+    // Don't refresh more than once every 3 seconds
+    if (now - lastRefresh.current < 3000) {
+      console.log('[Orders] Skipping refresh - too soon');
+      return;
+    }
+    
     if (refreshTimeout.current) {
       window.clearTimeout(refreshTimeout.current);
     }
-    pendingRefresh.current = true;
+    
     refreshTimeout.current = window.setTimeout(() => {
-      if (pendingRefresh.current) {
-        pendingRefresh.current = false;
-        loadOrders();
-      }
-    }, 500); // Wait 500ms before refreshing
+      lastRefresh.current = Date.now();
+      loadOrders();
+    }, 1000);
   }, [loadOrders]);
 
   // Real-time WebSocket connection
