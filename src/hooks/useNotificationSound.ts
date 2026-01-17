@@ -1,92 +1,193 @@
 /**
  * Hook for playing notification sounds
- * Uses Web Audio API
+ * Uses Web Audio API with proper initialization
  */
 import { useCallback, useRef, useEffect, useState } from 'react';
 
-const ORDER_FREQS = [659.25, 783.99, 987.77, 1174.66];
+const ORDER_FREQUENCIES = [659.25, 783.99, 987.77, 1174.66]; // E5, G5, B5, D6
+const SUCCESS_FREQUENCIES = [523.25, 783.99]; // C5, G5
 
-interface Options {
+interface NotificationSoundOptions {
   enabled?: boolean;
   volume?: number;
 }
 
-export const useNotificationSound = (opts: Options = {}) => {
-  const { enabled = true, volume = 0.5 } = opts;
-  const ctx = useRef<AudioContext | null>(null);
-  const alertInterval = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+export const useNotificationSound = (options: NotificationSoundOptions = {}) => {
+  const { enabled = true, volume = 0.6 } = options;
+  
+  const audioCtx = useRef<AudioContext | null>(null);
+  const alertIntervalId = useRef<number | undefined>(undefined);
   const [isAlertActive, setIsAlertActive] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Initialize AudioContext on user interaction
+  const initAudio = useCallback(() => {
+    if (audioCtx.current) return audioCtx.current;
+    
+    try {
+      audioCtx.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      setIsInitialized(true);
+      console.log('[Sound] AudioContext initialized');
+      return audioCtx.current;
+    } catch (e) {
+      console.error('[Sound] Failed to create AudioContext:', e);
+      return null;
+    }
+  }, []);
+
+  // Request notification permission and init audio on first click
   useEffect(() => {
-    const init = () => {
-      if (!ctx.current) ctx.current = new AudioContext();
+    const handleInteraction = () => {
+      initAudio();
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(p => console.log('[Sound] Notification permission:', p));
+      }
     };
-    document.addEventListener('click', init, { once: true });
+
+    document.addEventListener('click', handleInteraction, { once: true });
+    document.addEventListener('keydown', handleInteraction, { once: true });
+    
     return () => {
-      document.removeEventListener('click', init);
-      if (alertInterval.current) clearInterval(alertInterval.current);
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+      if (alertIntervalId.current) {
+        window.clearInterval(alertIntervalId.current);
+      }
     };
+  }, [initAudio]);
+
+  // Play a single tone
+  const playTone = useCallback((freq: number, duration: number, startTime: number, vol: number) => {
+    const ctx = audioCtx.current;
+    if (!ctx) return;
+
+    try {
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(freq, startTime);
+
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(vol, startTime + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    } catch (e) {
+      console.error('[Sound] playTone error:', e);
+    }
   }, []);
 
-  const tone = useCallback((freq: number, dur: number, start: number, vol: number) => {
-    if (!ctx.current) return;
-    const osc = ctx.current.createOscillator();
-    const gain = ctx.current.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.current.destination);
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0, start);
-    gain.gain.linearRampToValueAtTime(vol, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.01, start + dur);
-    osc.start(start);
-    osc.stop(start + dur);
+  // Play order sound (arpeggio)
+  const playOrderSoundOnce = useCallback(() => {
+    let ctx = audioCtx.current;
+    if (!ctx) {
+      ctx = initAudio();
+      if (!ctx) return;
+    }
+
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
+    const now = ctx.currentTime;
+    
+    // First wave - ascending
+    ORDER_FREQUENCIES.forEach((freq, i) => {
+      playTone(freq, 0.25, now + i * 0.1, volume * 0.5);
+    });
+    
+    // Second wave - ascending (delayed)
+    ORDER_FREQUENCIES.forEach((freq, i) => {
+      playTone(freq, 0.2, now + 0.6 + i * 0.08, volume * 0.4);
+    });
+    
+    console.log('[Sound] Playing order sound');
+  }, [initAudio, playTone, volume]);
+
+  // Stop the repeating alert
+  const stopAlert = useCallback(() => {
+    if (alertIntervalId.current) {
+      window.clearInterval(alertIntervalId.current);
+      alertIntervalId.current = undefined;
+    }
+    setIsAlertActive(false);
+    console.log('[Sound] Alert stopped');
   }, []);
 
-  const playOnce = useCallback(() => {
-    if (!ctx.current) ctx.current = new AudioContext();
-    if (ctx.current.state === 'suspended') ctx.current.resume();
-    const now = ctx.current.currentTime;
-    ORDER_FREQS.forEach((f, i) => tone(f, 0.25, now + i * 0.1, volume * 0.5));
-    ORDER_FREQS.forEach((f, i) => tone(f, 0.2, now + 0.6 + i * 0.08, volume * 0.4));
-  }, [tone, volume]);
-
+  // Play order sound with optional repeat
   const playOrderSound = useCallback(() => {
-    if (!enabled) return;
-    playOnce();
+    if (!enabled) {
+      console.log('[Sound] Disabled, not playing');
+      return;
+    }
+
+    console.log('[Sound] playOrderSound called');
+    playOrderSoundOnce();
+
+    // Start repeating if not already active
     if (!isAlertActive) {
       setIsAlertActive(true);
-      alertInterval.current = setInterval(playOnce, 3000);
-      setTimeout(() => stopAlert(), 30000);
+      alertIntervalId.current = window.setInterval(playOrderSoundOnce, 4000);
+      
+      // Auto-stop after 30 seconds
+      window.setTimeout(() => {
+        stopAlert();
+      }, 30000);
     }
+
     // Browser notification
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('🍝 Novo Pedido!', { body: 'Novo pedido recebido' });
+      try {
+        new Notification('🍝 Novo Pedido!', {
+          body: 'Você tem um novo pedido para processar',
+          icon: '/favicon.ico',
+          tag: 'new-order',
+          requireInteraction: true,
+        });
+      } catch (e) {
+        console.error('[Sound] Notification error:', e);
+      }
     }
-  }, [enabled, playOnce, isAlertActive]);
+  }, [enabled, playOrderSoundOnce, isAlertActive, stopAlert]);
 
-  const stopAlert = useCallback(() => {
-    if (alertInterval.current) clearInterval(alertInterval.current);
-    setIsAlertActive(false);
-  }, []);
-
+  // Play success sound
   const playSuccessSound = useCallback(() => {
-    if (!enabled || !ctx.current) return;
-    if (ctx.current.state === 'suspended') ctx.current.resume();
-    const now = ctx.current.currentTime;
-    tone(523.25, 0.15, now, volume * 0.3);
-    tone(783.99, 0.3, now + 0.15, volume * 0.35);
-  }, [enabled, tone, volume]);
+    if (!enabled) return;
 
-  // Request notification permission
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      document.addEventListener('click', () => Notification.requestPermission(), { once: true });
+    let ctx = audioCtx.current;
+    if (!ctx) {
+      ctx = initAudio();
+      if (!ctx) return;
     }
-  }, []);
 
-  const playNotificationSound = playOrderSound; // Alias for compatibility
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
 
-  return { playOrderSound, playSuccessSound, playNotificationSound, stopAlert, isAlertActive };
+    const now = ctx.currentTime;
+    playTone(SUCCESS_FREQUENCIES[0], 0.15, now, volume * 0.4);
+    playTone(SUCCESS_FREQUENCIES[1], 0.3, now + 0.15, volume * 0.45);
+    
+    console.log('[Sound] Playing success sound');
+  }, [enabled, initAudio, playTone, volume]);
+
+  // Alias for compatibility
+  const playNotificationSound = playOrderSound;
+
+  return {
+    playOrderSound,
+    playSuccessSound,
+    playNotificationSound,
+    stopAlert,
+    isAlertActive,
+    isInitialized,
+    initAudio,
+  };
 };
 
 export default useNotificationSound;
