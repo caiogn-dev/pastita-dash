@@ -359,6 +359,7 @@ export const PastitaOrdersPage: React.FC = () => {
   // Debounced refresh - prevents rate limiting
   const refreshTimeoutRef = useRef<number | undefined>(undefined);
   const lastRefreshRef = useRef<number>(0);
+  const fetchPedidosRef = useRef<() => void>(() => {});
   
   const scheduleRefresh = useCallback(() => {
     const now = Date.now();
@@ -374,9 +375,9 @@ export const PastitaOrdersPage: React.FC = () => {
     
     refreshTimeoutRef.current = window.setTimeout(() => {
       lastRefreshRef.current = Date.now();
-      fetchPedidos();
+      fetchPedidosRef.current();
     }, 1000);
-  }, [fetchPedidos]);
+  }, []);
 
   // Real-time WebSocket connection
   const { isConnected, connectionError } = useOrdersWebSocket({
@@ -430,6 +431,11 @@ export const PastitaOrdersPage: React.FC = () => {
       setLoading(false);
     }
   }, [statusFilter, paymentFilter]);
+
+  // Keep ref updated for scheduleRefresh
+  useEffect(() => {
+    fetchPedidosRef.current = fetchPedidos;
+  }, [fetchPedidos]);
 
   useEffect(() => {
     fetchPedidos();
