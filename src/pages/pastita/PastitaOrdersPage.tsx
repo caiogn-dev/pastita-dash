@@ -371,17 +371,14 @@ export const PastitaOrdersPage: React.FC = () => {
     },
     onOrderUpdated: (data) => {
       console.log('[PastitaOrders] Order updated:', data);
-      // Update in state without full reload
-      setPedidos(prev => prev.map(p => 
-        p.id === data.order_id ? { ...p, ...data } : p
-      ));
+      // Refresh to get updated order
+      setTimeout(() => fetchPedidos(), 300);
     },
     onStatusChanged: (data) => {
       console.log('[PastitaOrders] Status changed:', data);
       toast(`Pedido #${data.order_number} → ${data.status}`, { icon: '📦' });
-      setPedidos(prev => prev.map(p => 
-        p.id === data.order_id ? { ...p, status: data.status || p.status } : p
-      ));
+      // Refresh to get updated status
+      setTimeout(() => fetchPedidos(), 300);
     },
     onPaymentReceived: (data) => {
       console.log('[PastitaOrders] Payment received:', data);
@@ -389,10 +386,8 @@ export const PastitaOrdersPage: React.FC = () => {
       toast.success(`💰 Pagamento confirmado - #${data.order_number || data.order_id}!`, {
         duration: 6000,
       });
-      // Update payment status in state
-      setPedidos(prev => prev.map(p => 
-        p.id === data.order_id ? { ...p, payment_status: 'paid' } : p
-      ));
+      // Refresh to get updated payment status
+      setTimeout(() => fetchPedidos(), 300);
       // Auto-print when payment is received
       if (data.order_id) {
         handleAutoPrint(data.order_id as string);
