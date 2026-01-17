@@ -61,10 +61,29 @@ export const OrdersPage: React.FC = () => {
   const [paymentForm, setPaymentForm] = useState({ payment_reference: '' });
   const [cancelForm, setCancelForm] = useState({ reason: '' });
   
+  // Load orders from unified API (defined first for use in WebSocket handlers)
+  const loadOrders = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const filters: UnifiedOrderFilters = {
+        store: effectiveStoreId || undefined,
+        status: statusFilter || undefined,
+        search: searchQuery || undefined,
+      };
+      
+      const response = await unifiedApi.getOrders(filters);
+      setOrders(response.results);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [effectiveStoreId, statusFilter, searchQuery]);
+
   // Notification sound
-  const { playOrderSound, playSuccessSound } = useNotificationSound({ enabled: true });
-  
-  // Real-time WebSocket connection
+  const { playOrderSound, playSuccessSound, stopAlert, isAlertActive } = useNotificationSound({ enabled: true });
+
+  // Real-time WebSocket connection with stable callbacks via refs
   const { isConnected, connectionError } = useOrdersWebSocket({
     onOrderCreated: (data) => {
       playOrderSound();
@@ -93,24 +112,14 @@ export const OrdersPage: React.FC = () => {
     enabled: true,
   });
 
-  // Load orders from unified API
-  const loadOrders = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const filters: UnifiedOrderFilters = {
-        store: effectiveStoreId || undefined,
-        status: statusFilter || undefined,
-        search: searchQuery || undefined,
-      };
-      
-      const response = await unifiedApi.getOrders(filters);
-      setOrders(response.results);
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsLoading(false);
+  // Stop alert when user interacts with the page
+  useEffect(() => {
+    if (isAlertActive) {
+      const stopOnInteraction = () => stopAlert();
+      document.addEventListener('click', stopOnInteraction, { once: true });
+      return () => document.removeEventListener('click', stopOnInteraction);
     }
-  }, [effectiveStoreId, statusFilter, searchQuery]);
+  }, [isAlertActive, stopAlert]);
 
   useEffect(() => {
     loadOrders();
