@@ -160,17 +160,17 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
   return (
     <div
       className={`
-        bg-white rounded-lg shadow-sm border-2 p-3 mb-2 cursor-pointer
-        transition-all duration-300 hover:shadow-md hover:border-primary-300
+        bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 p-3 mb-2 cursor-pointer
+        transition-all duration-300 hover:shadow-md hover:border-primary-300 dark:hover:border-primary-500
         ${isDragging ? 'shadow-lg ring-2 ring-primary-500 scale-105' : ''}
         ${isUpdating ? 'opacity-70 border-primary-300' : ''}
-        ${isSuccess ? 'border-green-400 bg-green-50 animate-pulse' : 'border-gray-100'}
+        ${isSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/30 animate-pulse' : 'border-gray-100 dark:border-gray-700'}
       `}
       onClick={() => !isUpdating && onClick?.(order)}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <span className="font-bold text-gray-900 text-sm">
+        <span className="font-bold text-gray-900 dark:text-white text-sm">
           #{order.order_number}
         </span>
         <div className="flex items-center gap-2">
@@ -178,13 +178,13 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
             <ArrowPathIcon className="w-4 h-4 text-primary-500 animate-spin" />
           )}
           {isSuccess && (
-            <div className="flex items-center gap-1 text-green-600">
+            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
               <CheckIcon className="w-4 h-4" />
               <span className="text-xs font-medium">Movido!</span>
             </div>
           )}
           {!isUpdating && !isSuccess && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {format(new Date(order.created_at), 'HH:mm', { locale: ptBR })}
             </span>
           )}
@@ -193,8 +193,8 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
 
       {/* Customer */}
       <div className="flex items-center gap-1.5 mb-2">
-        <UserIcon className="w-3.5 h-3.5 text-gray-400" />
-        <span className="text-sm text-gray-700 truncate">
+        <UserIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
           {order.customer_name || 'Cliente'}
         </span>
       </div>
@@ -202,16 +202,16 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       {/* Phone */}
       {order.customer_phone && (
         <div className="flex items-center gap-1.5 mb-2">
-          <PhoneIcon className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-xs text-gray-500">{order.customer_phone}</span>
+          <PhoneIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+          <span className="text-xs text-gray-500 dark:text-gray-400">{order.customer_phone}</span>
         </div>
       )}
 
       {/* Delivery Address */}
       {order.delivery_address && (
         <div className="flex items-start gap-1.5 mb-2">
-          <MapPinIcon className="w-3.5 h-3.5 text-gray-400 mt-0.5" />
-          <span className="text-xs text-gray-500 line-clamp-2">
+          <MapPinIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5" />
+          <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
             {typeof order.delivery_address === 'string' 
               ? order.delivery_address 
               : order.delivery_address.street || 'Endereço não informado'}
@@ -220,13 +220,13 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       )}
 
       {/* Items count */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-        <span className="text-xs text-gray-500">
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
           {order.items_count || 0} item(ns)
         </span>
         <div className="flex items-center gap-1">
-          <CurrencyDollarIcon className="w-4 h-4 text-green-600" />
-          <span className="font-bold text-green-600">
+          <CurrencyDollarIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <span className="font-bold text-green-600 dark:text-green-400">
             R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </span>
         </div>
@@ -235,7 +235,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       {/* Store badge */}
       {order.store_name && (
         <div className="mt-2">
-          <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+          <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full">
             {order.store_name}
           </span>
         </div>
@@ -267,8 +267,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
       ref={setNodeRef}
       className={`
         flex flex-col min-w-[280px] max-w-[320px] rounded-xl border-2 transition-all duration-300
-        ${status.color}
-        ${isOver ? 'ring-2 ring-primary-500 ring-offset-2 scale-[1.02] border-primary-400 shadow-lg' : ''}
+        ${status.color} dark:bg-gray-800/50 dark:border-gray-700
+        ${isOver ? 'ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-gray-900 scale-[1.02] border-primary-400 shadow-lg' : ''}
       `}
     >
       {/* Column Header */}
@@ -288,14 +288,14 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
       <div className={`
         flex-1 p-3 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[200px]
         transition-all duration-300
-        ${isOver ? 'bg-primary-50/50' : ''}
+        ${isOver ? 'bg-primary-50/50 dark:bg-primary-900/20' : ''}
       `}>
         <SortableContext items={orders.map(o => o.id)} strategy={verticalListSortingStrategy}>
           {orders.length === 0 ? (
             <div className={`
               text-center py-8 text-sm border-2 border-dashed rounded-xl
               transition-all duration-300
-              ${isOver ? 'border-primary-400 text-primary-600 bg-primary-50 scale-105' : 'border-gray-200 text-gray-400'}
+              ${isOver ? 'border-primary-400 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 scale-105' : 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500'}
             `}>
               {isOver ? (
                 <div className="flex flex-col items-center gap-2">
