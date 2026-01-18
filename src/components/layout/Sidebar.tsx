@@ -19,7 +19,7 @@ import {
   ClockIcon,
   DocumentChartBarIcon,
   TagIcon,
-  TruckIcon,
+
   Squares2X2Icon,
   XMarkIcon,
   BuildingStorefrontIcon,
@@ -62,7 +62,6 @@ const navigationSections: NavSection[] = [
     items: [
       { name: 'Produtos', href: '/products', icon: Squares2X2Icon },
       { name: 'Cupons', href: '/coupons', icon: TagIcon },
-      { name: 'Zonas de Entrega', href: '/delivery-zones', icon: TruckIcon },
     ]
   },
   {
@@ -202,7 +201,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           <button
             onClick={() => toggleExpand(item.name)}
             className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-              isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100'
+              isActive 
+                ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' 
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
             <div className="flex items-center">
@@ -216,7 +217,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             )}
           </button>
           {isExpanded && (
-            <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 pl-2">
+            <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-gray-700 pl-2">
               {item.children!.map(child => renderNavItem(child, depth + 1))}
             </div>
           )}
@@ -233,8 +234,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         className={({ isActive }) =>
           `flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
             isActive
-              ? 'bg-primary-50 text-primary-700'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`
         }
       >
@@ -243,7 +244,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           {item.name}
         </div>
         {item.badge && (
-          <span className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded">
+          <span className="text-xs bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 px-1.5 py-0.5 rounded">
             {item.badge}
           </span>
         )}
@@ -252,24 +253,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-gray-200 w-64">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 w-64 transition-colors">
       {/* Dynamic Logo based on selected store */}
-      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
           {brandInfo.logo ? (
-            // Use store logo if available
             <img 
               src={brandInfo.logo} 
               alt={brandInfo.name}
               className="w-10 h-10 rounded-xl object-cover shadow-sm"
               onError={(e) => {
-                // Fallback to initial on error
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
           ) : null}
-          {/* Fallback initial logo */}
           <div 
             className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 ${brandInfo.logo ? 'hidden' : ''}`}
             style={{ 
@@ -279,16 +277,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             <span className="text-white font-bold text-lg">{brandInfo.initial}</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-gray-900 text-lg leading-tight truncate max-w-[120px]">
+            <span className="font-bold text-gray-900 dark:text-white text-lg leading-tight truncate max-w-[120px]">
               {brandInfo.name}
             </span>
-            <span className="text-xs text-gray-500">Dashboard</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Dashboard</span>
           </div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg lg:hidden"
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg lg:hidden transition-colors"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -299,7 +297,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {navigationSections.map((section, index) => (
           <div key={section.title} className={index > 0 ? 'mt-6' : ''}>
-            <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               {section.title}
             </h3>
             <div className="space-y-1">
@@ -310,24 +308,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       </nav>
 
       {/* User section */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-primary-700">
+            <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/50 rounded-full flex items-center justify-center">
+              <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
                 {user?.first_name?.[0] || user?.username?.[0] || 'U'}
               </span>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {user?.first_name || user?.username || 'Usuário'}
               </p>
-              <p className="text-xs text-gray-500 truncate max-w-[120px]">{user?.email}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{user?.email}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             title="Sair"
           >
             <ArrowRightOnRectangleIcon className="w-5 h-5" />

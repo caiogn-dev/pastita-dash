@@ -24,8 +24,7 @@ import { SettingsPage } from './pages/settings/SettingsPage';
 
 // E-commerce Pages
 import { CouponsPage } from './pages/coupons';
-import { DeliveryZonesPage } from './pages/delivery';
-import { ProductsPage } from './pages/products';
+import { ProductsPageNew as ProductsPage } from './pages/products/ProductsPageNew';
 
 // Automation Pages
 import {
@@ -114,7 +113,6 @@ const AppContent: React.FC = () => {
         
         {/* E-commerce Routes */}
         <Route path="coupons" element={<CouponsPage />} />
-        <Route path="delivery-zones" element={<DeliveryZonesPage />} />
         <Route path="products" element={<ProductsPage />} />
         
         <Route path="langflow" element={<LangflowPage />} />
@@ -145,7 +143,6 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/products" element={<ProductsPage />} />
         <Route path="stores/:storeId/orders" element={<OrdersPage />} />
         <Route path="stores/:storeId/coupons" element={<CouponsPage />} />
-        <Route path="stores/:storeId/delivery" element={<DeliveryZonesPage />} />
         <Route path="stores/:storeId/analytics" element={<AnalyticsPage />} />
         
         {/* Marketing Routes */}
