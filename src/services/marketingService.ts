@@ -411,8 +411,8 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
-                <a href="{{store_url}}/cart" style="display: inline-block; background: #722F37; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                  Finalizar Compra
+                <a href="{{store_url}}" style="display: inline-block; background: #722F37; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                  Ver Cardápio
                 </a>
               </div>
             </td>
