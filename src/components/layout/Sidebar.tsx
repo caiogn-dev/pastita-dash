@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   HomeIcon,
@@ -23,18 +23,12 @@ import {
   Squares2X2Icon,
   XMarkIcon,
   BuildingStorefrontIcon,
-  ChartBarIcon,
   PresentationChartLineIcon,
-  CakeIcon,
-  UsersIcon,
-  MapPinIcon,
   MegaphoneIcon,
   EnvelopeIcon,
-  SparklesIcon,
-  RocketLaunchIcon,
-  QueueListIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
+import { useStore } from '../../hooks/useStore';
 
 interface NavItem {
   name: string;
@@ -120,8 +114,57 @@ const navigationSections: NavSection[] = [
 
 export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { logout, user } = useAuthStore();
+  const { store, storeName } = useStore();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  // Dynamic brand info based on selected store
+  const brandInfo = useMemo(() => {
+    // Default Pastita branding
+    const defaultBrand = {
+      name: 'Pastita',
+      logo: null as string | null,
+      primaryColor: '#722F37',
+      secondaryColor: '#8B3A42',
+      initial: 'P',
+    };
+
+    if (!store) return defaultBrand;
+
+    // Check if it's Agrião based on store name or slug
+    const isAgriao = store.name?.toLowerCase().includes('agriao') || 
+                     store.slug?.toLowerCase().includes('agriao');
+
+    if (isAgriao) {
+      return {
+        name: store.name || 'Agrião',
+        logo: store.logo_url || null,
+        primaryColor: '#4A5D23',
+        secondaryColor: '#6B8E23',
+        initial: 'A',
+      };
+    }
+
+    return {
+      name: store.name || 'Pastita',
+      logo: store.logo_url || null,
+      primaryColor: store.primary_color || '#722F37',
+      secondaryColor: store.secondary_color || '#8B3A42',
+      initial: store.name?.[0]?.toUpperCase() || 'P',
+    };
+  }, [store]);
+
+  // Apply theme based on store
+  useEffect(() => {
+    const isAgriao = store?.name?.toLowerCase().includes('agriao') || 
+                     store?.slug?.toLowerCase().includes('agriao');
+    
+    if (isAgriao) {
+      document.documentElement.setAttribute('data-theme', 'agriao');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [store]);
 
   const handleLogout = () => {
     logout();
@@ -210,14 +253,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-200 w-64">
-      {/* Logo Pastita */}
+      {/* Dynamic Logo based on selected store */}
       <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#722F37] to-[#8B3A42] rounded-xl flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-lg">P</span>
+          {brandInfo.logo ? (
+            // Use store logo if available
+            <img 
+              src={brandInfo.logo} 
+              alt={brandInfo.name}
+              className="w-10 h-10 rounded-xl object-cover shadow-sm"
+              onError={(e) => {
+                // Fallback to initial on error
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          {/* Fallback initial logo */}
+          <div 
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 ${brandInfo.logo ? 'hidden' : ''}`}
+            style={{ 
+              background: `linear-gradient(135deg, ${brandInfo.primaryColor} 0%, ${brandInfo.secondaryColor} 100%)` 
+            }}
+          >
+            <span className="text-white font-bold text-lg">{brandInfo.initial}</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-gray-900 text-lg leading-tight">Pastita</span>
+            <span className="font-bold text-gray-900 text-lg leading-tight truncate max-w-[120px]">
+              {brandInfo.name}
+            </span>
             <span className="text-xs text-gray-500">Dashboard</span>
           </div>
         </div>

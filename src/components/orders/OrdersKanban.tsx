@@ -3,8 +3,12 @@
  * 
  * Drag-and-drop Kanban board for managing orders.
  * Features optimistic updates for smooth UX.
+ * 
+ * IMPORTANT: This component maintains its own internal state for orders
+ * to enable smooth drag-and-drop with optimistic updates. External order
+ * changes are merged carefully to avoid overwriting local updates.
  */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -15,7 +19,6 @@ import {
   useSensors,
   DragStartEvent,
   DragEndEvent,
-  DragOverEvent,
   useDroppable,
 } from '@dnd-kit/core';
 import {
@@ -39,6 +42,7 @@ import {
   CurrencyDollarIcon,
   MapPinIcon,
   ArrowPathIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline';
 import { UnifiedOrder } from '../../services/unifiedApi';
 
@@ -124,10 +128,11 @@ interface OrderCardProps {
   onClick?: (order: UnifiedOrder) => void;
   isDragging?: boolean;
   isUpdating?: boolean;
+  isSuccess?: boolean;
 }
 
 // Sortable Order Card
-const SortableOrderCard: React.FC<OrderCardProps> = ({ order, onClick, isUpdating }) => {
+const SortableOrderCard: React.FC<OrderCardProps> = ({ order, onClick, isUpdating, isSuccess }) => {
   const {
     attributes,
     listeners,
@@ -145,20 +150,21 @@ const SortableOrderCard: React.FC<OrderCardProps> = ({ order, onClick, isUpdatin
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <OrderCard order={order} onClick={onClick} isDragging={isDragging} isUpdating={isUpdating} />
+      <OrderCard order={order} onClick={onClick} isDragging={isDragging} isUpdating={isUpdating} isSuccess={isSuccess} />
     </div>
   );
 };
 
 // Order Card Component
-const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpdating }) => {
+const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpdating, isSuccess }) => {
   return (
     <div
       className={`
         bg-white rounded-lg shadow-sm border-2 p-3 mb-2 cursor-pointer
-        transition-all duration-200 hover:shadow-md hover:border-primary-300
-        ${isDragging ? 'shadow-lg ring-2 ring-primary-500' : ''}
-        ${isUpdating ? 'opacity-70' : ''}
+        transition-all duration-300 hover:shadow-md hover:border-primary-300
+        ${isDragging ? 'shadow-lg ring-2 ring-primary-500 scale-105' : ''}
+        ${isUpdating ? 'opacity-70 border-primary-300' : ''}
+        ${isSuccess ? 'border-green-400 bg-green-50 animate-pulse' : 'border-gray-100'}
       `}
       onClick={() => !isUpdating && onClick?.(order)}
     >
@@ -171,9 +177,17 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
           {isUpdating && (
             <ArrowPathIcon className="w-4 h-4 text-primary-500 animate-spin" />
           )}
-          <span className="text-xs text-gray-500">
-            {format(new Date(order.created_at), 'HH:mm', { locale: ptBR })}
-          </span>
+          {isSuccess && (
+            <div className="flex items-center gap-1 text-green-600">
+              <CheckIcon className="w-4 h-4" />
+              <span className="text-xs font-medium">Movido!</span>
+            </div>
+          )}
+          {!isUpdating && !isSuccess && (
+            <span className="text-xs text-gray-500">
+              {format(new Date(order.created_at), 'HH:mm', { locale: ptBR })}
+            </span>
+          )}
         </div>
       </div>
 
@@ -236,10 +250,11 @@ interface KanbanColumnProps {
   orders: UnifiedOrder[];
   onOrderClick?: (order: UnifiedOrder) => void;
   updatingOrders?: Set<string>;
+  successOrders?: Set<string>;
   isOver?: boolean;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClick, updatingOrders }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClick, updatingOrders, successOrders }) => {
   const Icon = status.icon;
   
   // Make the column a drop target
@@ -251,19 +266,19 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
     <div 
       ref={setNodeRef}
       className={`
-        flex flex-col min-w-[280px] max-w-[320px] rounded-lg border-2 transition-all duration-200
+        flex flex-col min-w-[280px] max-w-[320px] rounded-xl border-2 transition-all duration-300
         ${status.color}
-        ${isOver ? 'ring-2 ring-primary-500 ring-offset-2 scale-[1.02] border-primary-400' : ''}
+        ${isOver ? 'ring-2 ring-primary-500 ring-offset-2 scale-[1.02] border-primary-400 shadow-lg' : ''}
       `}
     >
       {/* Column Header */}
-      <div className={`${status.headerColor} text-white px-3 py-2 rounded-t-lg`}>
+      <div className={`${status.headerColor} text-white px-4 py-3 rounded-t-xl`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Icon className="w-4 h-4" />
-            <span className="font-semibold text-sm">{status.label}</span>
+            <Icon className="w-5 h-5" />
+            <span className="font-semibold">{status.label}</span>
           </div>
-          <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">
+          <span className="bg-white/20 px-2.5 py-1 rounded-full text-xs font-bold min-w-[28px] text-center">
             {orders.length}
           </span>
         </div>
@@ -271,18 +286,23 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
 
       {/* Column Content */}
       <div className={`
-        flex-1 p-2 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[200px]
-        transition-colors duration-200
+        flex-1 p-3 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[200px]
+        transition-all duration-300
         ${isOver ? 'bg-primary-50/50' : ''}
       `}>
         <SortableContext items={orders.map(o => o.id)} strategy={verticalListSortingStrategy}>
           {orders.length === 0 ? (
             <div className={`
-              text-center py-8 text-sm border-2 border-dashed rounded-lg
-              transition-colors duration-200
-              ${isOver ? 'border-primary-400 text-primary-500 bg-primary-50' : 'border-gray-200 text-gray-400'}
+              text-center py-8 text-sm border-2 border-dashed rounded-xl
+              transition-all duration-300
+              ${isOver ? 'border-primary-400 text-primary-600 bg-primary-50 scale-105' : 'border-gray-200 text-gray-400'}
             `}>
-              {isOver ? '✓ Solte aqui' : 'Nenhum pedido'}
+              {isOver ? (
+                <div className="flex flex-col items-center gap-2">
+                  <CheckIcon className="w-6 h-6" />
+                  <span>Solte aqui</span>
+                </div>
+              ) : 'Nenhum pedido'}
             </div>
           ) : (
             orders.map((order) => (
@@ -291,6 +311,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
                 order={order}
                 onClick={onOrderClick}
                 isUpdating={updatingOrders?.has(order.id)}
+                isSuccess={successOrders?.has(order.id)}
               />
             ))
           )}
@@ -308,6 +329,13 @@ interface OrdersKanbanProps {
   visibleStatuses?: string[];
 }
 
+// Store for local status overrides - persists across re-renders
+interface StatusOverride {
+  status: string;
+  timestamp: number;
+  confirmed: boolean; // true after API success
+}
+
 export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
   orders: externalOrders,
   onOrderClick,
@@ -315,28 +343,53 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
   visibleStatuses,
 }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [localOrders, setLocalOrders] = useState<UnifiedOrder[]>(externalOrders);
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
+  
+  // Use a ref to store status overrides - this survives external order updates
+  const statusOverridesRef = useRef<Map<string, StatusOverride>>(new Map());
+  // Force re-render when overrides change
+  const [overrideVersion, setOverrideVersion] = useState(0);
+  
+  // Success animation state
+  const [successOrders, setSuccessOrders] = useState<Set<string>>(new Set());
 
-  // Sync local orders with external orders (but preserve optimistic updates)
+  // Cleanup old confirmed overrides after 10 seconds
   useEffect(() => {
-    setLocalOrders(prev => {
-      // Keep optimistic updates for orders that are still being updated
-      const updatingIds = Array.from(updatingOrders);
-      if (updatingIds.length === 0) {
-        return externalOrders;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      let changed = false;
+      
+      for (const [id, data] of statusOverridesRef.current.entries()) {
+        // Only remove confirmed overrides after 10 seconds
+        // This gives enough time for the backend data to propagate
+        if (data.confirmed && now - data.timestamp > 10000) {
+          statusOverridesRef.current.delete(id);
+          changed = true;
+        }
       }
       
-      // Merge: use external data but keep local status for updating orders
-      return externalOrders.map(order => {
-        if (updatingOrders.has(order.id)) {
-          const localOrder = prev.find(o => o.id === order.id);
-          return localOrder || order;
-        }
-        return order;
-      });
+      if (changed) {
+        setOverrideVersion(v => v + 1);
+      }
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Compute the effective orders - merge external with local overrides
+  const effectiveOrders = useMemo(() => {
+    return externalOrders.map(order => {
+      const override = statusOverridesRef.current.get(order.id);
+      
+      if (override) {
+        // If we have a local override, use it
+        // This ensures the order stays in the correct column
+        return { ...order, status: override.status };
+      }
+      
+      return order;
     });
-  }, [externalOrders, updatingOrders]);
+  }, [externalOrders, overrideVersion]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -349,7 +402,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     })
   );
 
-  // Group orders by status
+  // Group orders by status - using effectiveOrders which includes local overrides
   const ordersByStatus = useMemo(() => {
     const grouped: Record<string, UnifiedOrder[]> = {};
     
@@ -357,7 +410,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
       grouped[status.id] = [];
     });
 
-    localOrders.forEach(order => {
+    effectiveOrders.forEach(order => {
       const normalizedStatus = normalizeStatus(order.status);
       if (grouped[normalizedStatus]) {
         grouped[normalizedStatus].push(order);
@@ -374,7 +427,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     });
 
     return grouped;
-  }, [localOrders]);
+  }, [effectiveOrders]);
 
   // Filter visible statuses
   const displayStatuses = useMemo(() => {
@@ -387,18 +440,18 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
   // Get active order for drag overlay
   const activeOrder = useMemo(() => {
     if (!activeId) return null;
-    return localOrders.find(o => o.id === activeId) || null;
-  }, [activeId, localOrders]);
+    return effectiveOrders.find(o => o.id === activeId) || null;
+  }, [activeId, effectiveOrders]);
 
   // Find which column an order is in
-  const findColumn = (orderId: string): string | null => {
+  const findColumn = useCallback((orderId: string): string | null => {
     for (const [status, statusOrders] of Object.entries(ordersByStatus)) {
       if (statusOrders.some(o => o.id === orderId)) {
         return status;
       }
     }
     return null;
-  };
+  }, [ordersByStatus]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -440,16 +493,16 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
       return;
     }
 
-    console.log(`Moving order ${activeOrderId} from ${sourceColumn} to ${destColumn}`);
+    console.log(`[Kanban] Moving order ${activeOrderId} from ${sourceColumn} to ${destColumn}`);
 
-    // OPTIMISTIC UPDATE: Update local state immediately
-    setLocalOrders(prev => 
-      prev.map(order => 
-        order.id === activeOrderId 
-          ? { ...order, status: destColumn as string }
-          : order
-      )
-    );
+    // OPTIMISTIC UPDATE: Add status override immediately
+    // This will persist even if external orders are updated
+    statusOverridesRef.current.set(activeOrderId, {
+      status: destColumn,
+      timestamp: Date.now(),
+      confirmed: false,
+    });
+    setOverrideVersion(v => v + 1); // Force re-render
 
     // Mark order as updating (shows spinner)
     setUpdatingOrders(prev => new Set(prev).add(activeOrderId));
@@ -458,17 +511,33 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     if (onStatusChange) {
       try {
         await onStatusChange(activeOrderId, destColumn);
-        console.log(`Successfully updated order ${activeOrderId} to ${destColumn}`);
+        console.log(`[Kanban] Successfully updated order ${activeOrderId} to ${destColumn}`);
+        
+        // Mark as confirmed - this extends the override lifetime
+        const currentOverride = statusOverridesRef.current.get(activeOrderId);
+        if (currentOverride) {
+          statusOverridesRef.current.set(activeOrderId, {
+            ...currentOverride,
+            confirmed: true,
+            timestamp: Date.now(), // Reset timer on confirmation
+          });
+        }
+        
+        // Show success animation
+        setSuccessOrders(prev => new Set(prev).add(activeOrderId));
+        setTimeout(() => {
+          setSuccessOrders(prev => {
+            const next = new Set(prev);
+            next.delete(activeOrderId);
+            return next;
+          });
+        }, 2000);
+        
       } catch (error) {
-        // ROLLBACK: Revert to original status on error
-        console.error('Failed to update order status:', error);
-        setLocalOrders(prev => 
-          prev.map(order => 
-            order.id === activeOrderId 
-              ? { ...order, status: sourceColumn as string }
-              : order
-          )
-        );
+        // ROLLBACK: Remove the override on error, revert to original status
+        console.error('[Kanban] Failed to update order status:', error);
+        statusOverridesRef.current.delete(activeOrderId);
+        setOverrideVersion(v => v + 1);
       } finally {
         // Remove from updating set
         setUpdatingOrders(prev => {
@@ -478,7 +547,14 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
         });
       }
     } else {
-      // No onStatusChange handler, just remove updating state
+      // No onStatusChange handler - mark as confirmed anyway
+      const currentOverride = statusOverridesRef.current.get(activeOrderId);
+      if (currentOverride) {
+        statusOverridesRef.current.set(activeOrderId, {
+          ...currentOverride,
+          confirmed: true,
+        });
+      }
       setUpdatingOrders(prev => {
         const next = new Set(prev);
         next.delete(activeOrderId);
@@ -502,14 +578,15 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
             orders={ordersByStatus[status.id] || []}
             onOrderClick={onOrderClick}
             updatingOrders={updatingOrders}
+            successOrders={successOrders}
           />
         ))}
       </div>
 
-      {/* Drag Overlay */}
+      {/* Drag Overlay - Enhanced with shadow and rotation */}
       <DragOverlay>
         {activeOrder ? (
-          <div className="rotate-3 scale-105">
+          <div className="rotate-2 scale-105 shadow-2xl">
             <OrderCard order={activeOrder} isDragging />
           </div>
         ) : null}
