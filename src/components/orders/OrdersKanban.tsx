@@ -338,6 +338,9 @@ interface LocalOrderState {
   isConfirmed: boolean; // API returned success
 }
 
+// How long to keep local state after confirmation (in ms)
+const LOCAL_STATE_TTL = 60000; // 60 seconds - external data should sync by then
+
 export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
   orders: externalOrders,
   onOrderClick,
@@ -347,43 +350,42 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
   const [activeId, setActiveId] = useState<string | null>(null);
   
   // LOCAL STATE: This is the source of truth for order statuses in Kanban
-  // It starts with external orders but is updated locally on drag
+  // It persists until external data matches OR TTL expires
   const [localOrderStates, setLocalOrderStates] = useState<Map<string, LocalOrderState>>(new Map());
   
   // Success animation state
   const [successOrders, setSuccessOrders] = useState<Set<string>>(new Set());
 
-  // Sync new orders from external (add new ones, but DON'T overwrite local states)
+  // Cleanup: Only remove local state when external data matches
   useEffect(() => {
+    const now = Date.now();
+    
     setLocalOrderStates(prev => {
       const next = new Map(prev);
       let hasChanges = false;
       
-      // Add new orders that don't exist locally
-      externalOrders.forEach(order => {
-        const existing = next.get(order.id);
+      for (const [orderId, state] of prev.entries()) {
+        if (!state.isConfirmed) continue; // Keep pending states
         
-        if (!existing) {
-          // New order - add it
-          hasChanges = true;
-        } else if (existing.isConfirmed) {
-          // Only update if the external status matches our confirmed status
-          // This means the backend has caught up
-          const now = Date.now();
-          if (order.status === existing.status && now - existing.timestamp > 3000) {
-            // Backend confirmed, we can remove local override after 3 seconds
-            next.delete(order.id);
-            hasChanges = true;
-          }
-        }
-        // If isPending or recently confirmed, keep local state
-      });
-      
-      // Remove orders that no longer exist externally
-      for (const orderId of next.keys()) {
-        if (!externalOrders.find(o => o.id === orderId)) {
+        const externalOrder = externalOrders.find(o => o.id === orderId);
+        
+        if (!externalOrder) {
+          // Order no longer exists - remove local state
           next.delete(orderId);
           hasChanges = true;
+          continue;
+        }
+        
+        // ONLY remove local state if external matches our confirmed status
+        if (externalOrder.status === state.status) {
+          // External caught up! Safe to remove local state
+          next.delete(orderId);
+          hasChanges = true;
+          console.log(`[Kanban] External synced for ${orderId}: ${state.status}`);
+        } else if (now - state.timestamp > LOCAL_STATE_TTL) {
+          // TTL expired but external doesn't match - keep local state anyway
+          // This prevents the "snap back" issue
+          console.log(`[Kanban] TTL expired but keeping local state for ${orderId} (external: ${externalOrder.status}, local: ${state.status})`);
         }
       }
       
@@ -391,13 +393,14 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     });
   }, [externalOrders]);
 
-  // Compute effective orders - local state takes precedence
+  // Compute effective orders - local state ALWAYS takes precedence for confirmed orders
   const effectiveOrders = useMemo(() => {
     return externalOrders.map(order => {
       const localState = localOrderStates.get(order.id);
       
       if (localState && (localState.isPending || localState.isConfirmed)) {
-        // Use local status if we have a pending or recently confirmed update
+        // ALWAYS use local status if we have it
+        // This prevents WebSocket/refresh from overwriting our confirmed changes
         return { ...order, status: localState.status };
       }
       
@@ -568,18 +571,8 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
           });
         }, 2000);
         
-        // Clear local state after 15 seconds (enough time for external data to sync)
-        setTimeout(() => {
-          setLocalOrderStates(prev => {
-            const next = new Map(prev);
-            const current = next.get(activeOrderId);
-            // Only remove if still confirmed (not a new pending update)
-            if (current && current.isConfirmed && !current.isPending) {
-              next.delete(activeOrderId);
-            }
-            return next;
-          });
-        }, 15000);
+        // NOTE: Don't clear local state with setTimeout!
+        // The cleanup useEffect will remove it when external data matches
         
       } catch (error) {
         // ROLLBACK: Revert to original status on error
