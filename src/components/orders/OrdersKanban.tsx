@@ -329,11 +329,13 @@ interface OrdersKanbanProps {
   visibleStatuses?: string[];
 }
 
-// Store for local status overrides - persists across re-renders
-interface StatusOverride {
+// Local status overrides - completely managed by Kanban
+interface LocalOrderState {
   status: string;
+  originalStatus: string;
   timestamp: number;
-  confirmed: boolean; // true after API success
+  isPending: boolean; // API call in progress
+  isConfirmed: boolean; // API returned success
 }
 
 export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
@@ -343,53 +345,76 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
   visibleStatuses,
 }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
   
-  // Use a ref to store status overrides - this survives external order updates
-  const statusOverridesRef = useRef<Map<string, StatusOverride>>(new Map());
-  // Force re-render when overrides change
-  const [overrideVersion, setOverrideVersion] = useState(0);
+  // LOCAL STATE: This is the source of truth for order statuses in Kanban
+  // It starts with external orders but is updated locally on drag
+  const [localOrderStates, setLocalOrderStates] = useState<Map<string, LocalOrderState>>(new Map());
   
   // Success animation state
   const [successOrders, setSuccessOrders] = useState<Set<string>>(new Set());
 
-  // Cleanup old confirmed overrides after 10 seconds
+  // Sync new orders from external (add new ones, but DON'T overwrite local states)
   useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      let changed = false;
+    setLocalOrderStates(prev => {
+      const next = new Map(prev);
+      let hasChanges = false;
       
-      for (const [id, data] of statusOverridesRef.current.entries()) {
-        // Only remove confirmed overrides after 10 seconds
-        // This gives enough time for the backend data to propagate
-        if (data.confirmed && now - data.timestamp > 10000) {
-          statusOverridesRef.current.delete(id);
-          changed = true;
+      // Add new orders that don't exist locally
+      externalOrders.forEach(order => {
+        const existing = next.get(order.id);
+        
+        if (!existing) {
+          // New order - add it
+          hasChanges = true;
+        } else if (existing.isConfirmed) {
+          // Only update if the external status matches our confirmed status
+          // This means the backend has caught up
+          const now = Date.now();
+          if (order.status === existing.status && now - existing.timestamp > 3000) {
+            // Backend confirmed, we can remove local override after 3 seconds
+            next.delete(order.id);
+            hasChanges = true;
+          }
+        }
+        // If isPending or recently confirmed, keep local state
+      });
+      
+      // Remove orders that no longer exist externally
+      for (const orderId of next.keys()) {
+        if (!externalOrders.find(o => o.id === orderId)) {
+          next.delete(orderId);
+          hasChanges = true;
         }
       }
       
-      if (changed) {
-        setOverrideVersion(v => v + 1);
-      }
-    }, 2000);
-    
-    return () => clearInterval(interval);
-  }, []);
+      return hasChanges ? next : prev;
+    });
+  }, [externalOrders]);
 
-  // Compute the effective orders - merge external with local overrides
+  // Compute effective orders - local state takes precedence
   const effectiveOrders = useMemo(() => {
     return externalOrders.map(order => {
-      const override = statusOverridesRef.current.get(order.id);
+      const localState = localOrderStates.get(order.id);
       
-      if (override) {
-        // If we have a local override, use it
-        // This ensures the order stays in the correct column
-        return { ...order, status: override.status };
+      if (localState && (localState.isPending || localState.isConfirmed)) {
+        // Use local status if we have a pending or recently confirmed update
+        return { ...order, status: localState.status };
       }
       
       return order;
     });
-  }, [externalOrders, overrideVersion]);
+  }, [externalOrders, localOrderStates]);
+  
+  // Get updating orders for UI
+  const updatingOrders = useMemo(() => {
+    const updating = new Set<string>();
+    localOrderStates.forEach((state, id) => {
+      if (state.isPending) {
+        updating.add(id);
+      }
+    });
+    return updating;
+  }, [localOrderStates]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -495,33 +520,43 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
 
     console.log(`[Kanban] Moving order ${activeOrderId} from ${sourceColumn} to ${destColumn}`);
 
-    // OPTIMISTIC UPDATE: Add status override immediately
-    // This will persist even if external orders are updated
-    statusOverridesRef.current.set(activeOrderId, {
-      status: destColumn,
-      timestamp: Date.now(),
-      confirmed: false,
-    });
-    setOverrideVersion(v => v + 1); // Force re-render
+    // Get current order to preserve original status for potential rollback
+    const currentOrder = effectiveOrders.find(o => o.id === activeOrderId);
+    const originalStatus = currentOrder?.status || sourceColumn;
 
-    // Mark order as updating (shows spinner)
-    setUpdatingOrders(prev => new Set(prev).add(activeOrderId));
+    // OPTIMISTIC UPDATE: Set local state immediately
+    setLocalOrderStates(prev => {
+      const next = new Map(prev);
+      next.set(activeOrderId, {
+        status: destColumn,
+        originalStatus: originalStatus,
+        timestamp: Date.now(),
+        isPending: true,
+        isConfirmed: false,
+      });
+      return next;
+    });
 
     // Call API in background
     if (onStatusChange) {
       try {
         await onStatusChange(activeOrderId, destColumn);
-        console.log(`[Kanban] Successfully updated order ${activeOrderId} to ${destColumn}`);
+        console.log(`[Kanban] ✅ Successfully updated order ${activeOrderId} to ${destColumn}`);
         
-        // Mark as confirmed - this extends the override lifetime
-        const currentOverride = statusOverridesRef.current.get(activeOrderId);
-        if (currentOverride) {
-          statusOverridesRef.current.set(activeOrderId, {
-            ...currentOverride,
-            confirmed: true,
-            timestamp: Date.now(), // Reset timer on confirmation
-          });
-        }
+        // Mark as confirmed - keep local state active
+        setLocalOrderStates(prev => {
+          const next = new Map(prev);
+          const current = next.get(activeOrderId);
+          if (current) {
+            next.set(activeOrderId, {
+              ...current,
+              isPending: false,
+              isConfirmed: true,
+              timestamp: Date.now(), // Reset timer
+            });
+          }
+          return next;
+        });
         
         // Show success animation
         setSuccessOrders(prev => new Set(prev).add(activeOrderId));
@@ -533,31 +568,40 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
           });
         }, 2000);
         
+        // Clear local state after 15 seconds (enough time for external data to sync)
+        setTimeout(() => {
+          setLocalOrderStates(prev => {
+            const next = new Map(prev);
+            const current = next.get(activeOrderId);
+            // Only remove if still confirmed (not a new pending update)
+            if (current && current.isConfirmed && !current.isPending) {
+              next.delete(activeOrderId);
+            }
+            return next;
+          });
+        }, 15000);
+        
       } catch (error) {
-        // ROLLBACK: Remove the override on error, revert to original status
-        console.error('[Kanban] Failed to update order status:', error);
-        statusOverridesRef.current.delete(activeOrderId);
-        setOverrideVersion(v => v + 1);
-      } finally {
-        // Remove from updating set
-        setUpdatingOrders(prev => {
-          const next = new Set(prev);
-          next.delete(activeOrderId);
+        // ROLLBACK: Revert to original status on error
+        console.error('[Kanban] ❌ Failed to update order status:', error);
+        setLocalOrderStates(prev => {
+          const next = new Map(prev);
+          next.delete(activeOrderId); // Remove override, will use external status
           return next;
         });
       }
     } else {
-      // No onStatusChange handler - mark as confirmed anyway
-      const currentOverride = statusOverridesRef.current.get(activeOrderId);
-      if (currentOverride) {
-        statusOverridesRef.current.set(activeOrderId, {
-          ...currentOverride,
-          confirmed: true,
-        });
-      }
-      setUpdatingOrders(prev => {
-        const next = new Set(prev);
-        next.delete(activeOrderId);
+      // No onStatusChange handler - just mark as confirmed
+      setLocalOrderStates(prev => {
+        const next = new Map(prev);
+        const current = next.get(activeOrderId);
+        if (current) {
+          next.set(activeOrderId, {
+            ...current,
+            isPending: false,
+            isConfirmed: true,
+          });
+        }
         return next;
       });
     }
