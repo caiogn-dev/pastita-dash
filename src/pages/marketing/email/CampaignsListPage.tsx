@@ -178,8 +178,8 @@ export const CampaignsListPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Campanhas de Email</h1>
-          <p className="text-gray-500">{campaigns.length} campanha(s)</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Campanhas de Email</h1>
+          <p className="text-gray-500 dark:text-gray-400">{campaigns.length} campanha(s)</p>
         </div>
         <Button onClick={() => navigate('/marketing/email/new')}>
           <PlusIcon className="w-5 h-5 mr-2" />
@@ -190,8 +190,8 @@ export const CampaignsListPage: React.FC = () => {
       {campaigns.length === 0 ? (
         <Card className="p-12 text-center">
           <EnvelopeIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma campanha criada</h3>
-          <p className="text-gray-500 mb-6">Crie sua primeira campanha de email marketing</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Nenhuma campanha criada</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">Crie sua primeira campanha de email marketing</p>
           <Button onClick={() => navigate('/marketing/email/new')}>
             <PlusIcon className="w-5 h-5 mr-2" />
             Criar Campanha
@@ -209,13 +209,13 @@ export const CampaignsListPage: React.FC = () => {
                   {/* Campaign Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-gray-900 truncate">{campaign.name}</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">{campaign.name}</h3>
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
                         <StatusIcon className="w-3 h-3" />
                         {statusConfig.label}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 truncate mb-2">{campaign.subject}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate mb-2">{campaign.subject}</p>
                     <div className="flex flex-wrap items-center gap-4 text-xs text-gray-400">
                       <span>Audiência: {AUDIENCE_LABELS[campaign.audience_type] || campaign.audience_type}</span>
                       <span>Criada: {format(new Date(campaign.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
@@ -227,18 +227,18 @@ export const CampaignsListPage: React.FC = () => {
 
                   {/* Stats */}
                   {campaign.status === 'sent' && (
-                    <div className="flex items-center gap-6 px-4 py-2 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-6 px-4 py-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <div className="text-center">
-                        <p className="text-lg font-bold text-gray-900">{campaign.emails_sent}</p>
-                        <p className="text-xs text-gray-500">Enviados</p>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">{campaign.emails_sent}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Enviados</p>
                       </div>
                       <div className="text-center">
                         <p className="text-lg font-bold text-blue-600">{getOpenRate(campaign)}%</p>
-                        <p className="text-xs text-gray-500">Abertura</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Abertura</p>
                       </div>
                       <div className="text-center">
                         <p className="text-lg font-bold text-green-600">{getClickRate(campaign)}%</p>
-                        <p className="text-xs text-gray-500">Cliques</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Cliques</p>
                       </div>
                     </div>
                   )}
@@ -303,58 +303,58 @@ export const CampaignsListPage: React.FC = () => {
         {loadingRecipients ? (
           <div className="py-12 text-center">
             <ArrowPathIcon className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-2" />
-            <p className="text-gray-500">Carregando destinatários...</p>
+            <p className="text-gray-500 dark:text-gray-400">Carregando destinatários...</p>
           </div>
         ) : recipients.length === 0 ? (
           <div className="py-12 text-center">
             <EnvelopeIcon className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-500">Nenhum destinatário encontrado</p>
+            <p className="text-gray-500 dark:text-gray-400">Nenhum destinatário encontrado</p>
           </div>
         ) : (
           <div className="space-y-4">
             {/* Summary */}
-            <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900">{recipients.length}</p>
-                <p className="text-xs text-gray-500">Total</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{recipients.length}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600">
                   {recipients.filter(r => r.status === 'sent' || r.status === 'delivered' || r.status === 'opened' || r.status === 'clicked').length}
                 </p>
-                <p className="text-xs text-gray-500">Enviados</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Enviados</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-blue-600">
                   {recipients.filter(r => r.status === 'opened' || r.status === 'clicked').length}
                 </p>
-                <p className="text-xs text-gray-500">Abertos</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Abertos</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-red-600">
                   {recipients.filter(r => r.status === 'failed' || r.status === 'bounced').length}
                 </p>
-                <p className="text-xs text-gray-500">Falhas</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Falhas</p>
               </div>
             </div>
 
             {/* Recipients List */}
             <div className="max-h-96 overflow-y-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 sticky top-0">
+                <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
                   <tr>
-                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-2">Email</th>
-                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-2">Nome</th>
-                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-2">Status</th>
-                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-2">Enviado em</th>
-                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-2">Erro</th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 px-4 py-2">Email</th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 px-4 py-2">Nome</th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 px-4 py-2">Status</th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 px-4 py-2">Enviado em</th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 px-4 py-2">Erro</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {recipients.map((recipient) => (
-                    <tr key={recipient.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-900">{recipient.email}</td>
-                      <td className="px-4 py-2 text-sm text-gray-500">{recipient.name || '-'}</td>
+                    <tr key={recipient.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900">
+                      <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{recipient.email}</td>
+                      <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{recipient.name || '-'}</td>
                       <td className="px-4 py-2">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                           recipient.status === 'sent' || recipient.status === 'delivered' ? 'bg-green-100 text-green-700' :
@@ -365,7 +365,7 @@ export const CampaignsListPage: React.FC = () => {
                           {recipient.status}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-500">
+                      <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
                         {recipient.sent_at ? format(new Date(recipient.sent_at), "dd/MM HH:mm") : '-'}
                       </td>
                       <td className="px-4 py-2 text-sm text-red-500 max-w-xs truncate" title={recipient.error_message || ''}>
