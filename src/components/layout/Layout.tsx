@@ -40,7 +40,7 @@ export const Layout: React.FC = () => {
             <Bars3Icon className="w-6 h-6" />
           </button>
           <div className="ml-3 flex items-center gap-2">
-            <img src="/pastita-logo.ico" alt="Pastita" className="w-6 h-6" />
+            <img src="/pastita-logo.svg" alt="Pastita" className="w-8 h-8" />
             <span className="font-semibold text-gray-900 dark:text-white">Pastita</span>
           </div>
         </div>
