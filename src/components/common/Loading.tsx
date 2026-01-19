@@ -34,14 +34,11 @@ export const FullPageLoading: React.FC = () => {
   return (
     <div className="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-50 transition-colors">
       <div className="text-center">
-        <div 
-          className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg animate-pulse"
-          style={{ 
-            background: 'linear-gradient(135deg, #722F37 0%, #8B3A42 100%)' 
-          }}
-        >
-          <span className="text-white font-bold text-3xl">P</span>
-        </div>
+        <img 
+          src="/pastita-logo.svg" 
+          alt="Pastita" 
+          className="w-20 h-20 mx-auto mb-4 animate-pulse"
+        />
         <Loading size="md" />
         <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Pastita Dashboard</p>
       </div>

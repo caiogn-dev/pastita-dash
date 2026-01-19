@@ -119,10 +119,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   // Dynamic brand info based on selected store
   const brandInfo = useMemo(() => {
-    // Default Pastita branding - use gradient initial since .ico doesn't render well in img tags
+    // Default Pastita branding with local SVG logo
     const defaultBrand = {
       name: 'Pastita',
-      logo: null as string | null, // ICO files don't render properly, use styled initial
+      logo: '/pastita-logo.svg',
       primaryColor: '#722F37',
       secondaryColor: '#8B3A42',
       initial: 'P',
@@ -144,13 +144,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       };
     }
 
-    // For Pastita stores, use styled initial (ICO doesn't work well in img tags)
+    // For Pastita stores, use local SVG logo
     const isPastita = store.name?.toLowerCase().includes('pastita') || 
                       store.slug?.toLowerCase().includes('pastita');
 
     return {
       name: store.name || 'Pastita',
-      logo: isPastita ? null : (store.logo_url || null), // Only use logo_url for non-Pastita stores
+      logo: isPastita ? '/pastita-logo.svg' : (store.logo_url || null),
       primaryColor: store.primary_color || '#722F37',
       secondaryColor: store.secondary_color || '#8B3A42',
       initial: store.name?.[0]?.toUpperCase() || 'P',
