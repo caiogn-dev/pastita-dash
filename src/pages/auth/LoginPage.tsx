@@ -39,12 +39,13 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-4">
-            <img 
-              src="https://pastita.com.br/pastita-logo.ico" 
-              alt="Pastita" 
-              className="w-20 h-20"
-            />
+          <div 
+            className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg"
+            style={{ 
+              background: 'linear-gradient(135deg, #722F37 0%, #8B3A42 100%)' 
+            }}
+          >
+            <span className="text-white font-bold text-4xl">P</span>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Pastita</h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Dashboard de Gerenciamento</p>
