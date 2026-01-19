@@ -130,7 +130,7 @@ const AutomationLogsPage: React.FC = () => {
             className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
               showFilters
                 ? 'border-green-500 text-green-700 bg-green-50'
-                : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
             <FunnelIcon className="h-5 w-5 mr-2" />
