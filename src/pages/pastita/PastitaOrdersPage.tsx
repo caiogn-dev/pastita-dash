@@ -35,13 +35,13 @@ type OrderStatus = 'all' | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'de
 type PaymentStatus = 'all' | 'pending' | 'paid' | 'failed' | 'refunded';
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
-  pending: { label: 'Pendente', color: 'text-amber-700', bgColor: 'bg-amber-50 border-amber-200', icon: <ClockIcon className="w-4 h-4" /> },
-  confirmed: { label: 'Confirmado', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200', icon: <CheckCircleIcon className="w-4 h-4" /> },
-  preparing: { label: 'Preparando', color: 'text-purple-700', bgColor: 'bg-purple-50 border-purple-200', icon: <CubeIcon className="w-4 h-4" /> },
+  pending: { label: 'Pendente', color: 'text-amber-700 dark:text-amber-300', bgColor: 'bg-amber-50 border-amber-200', icon: <ClockIcon className="w-4 h-4" /> },
+  confirmed: { label: 'Confirmado', color: 'text-blue-700 dark:text-blue-300', bgColor: 'bg-blue-50 border-blue-200', icon: <CheckCircleIcon className="w-4 h-4" /> },
+  preparing: { label: 'Preparando', color: 'text-purple-700 dark:text-purple-300', bgColor: 'bg-purple-50 border-purple-200', icon: <CubeIcon className="w-4 h-4" /> },
   ready: { label: 'Pronto', color: 'text-emerald-700', bgColor: 'bg-emerald-50 border-emerald-200', icon: <CheckCircleSolidIcon className="w-4 h-4" /> },
   delivering: { label: 'Em Entrega', color: 'text-indigo-700', bgColor: 'bg-indigo-50 border-indigo-200', icon: <TruckIcon className="w-4 h-4" /> },
-  delivered: { label: 'Entregue', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200', icon: <CheckCircleSolidIcon className="w-4 h-4" /> },
-  cancelled: { label: 'Cancelado', color: 'text-red-700', bgColor: 'bg-red-50 border-red-200', icon: <XCircleIcon className="w-4 h-4" /> },
+  delivered: { label: 'Entregue', color: 'text-green-700 dark:text-green-300', bgColor: 'bg-green-50 border-green-200', icon: <CheckCircleSolidIcon className="w-4 h-4" /> },
+  cancelled: { label: 'Cancelado', color: 'text-red-700 dark:text-red-300', bgColor: 'bg-red-50 border-red-200', icon: <XCircleIcon className="w-4 h-4" /> },
 };
 
 const paymentStatusConfig: Record<string, { label: string; color: string; bgColor: string }> = {
@@ -95,7 +95,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, on
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6">
           <div className="flex justify-between items-start">
@@ -122,20 +122,20 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, on
           <div className="p-6 space-y-6">
             {/* Customer Info */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                  <PhoneIcon className="w-3.5 h-3.5 text-green-600" />
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
+                  <PhoneIcon className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                 </span>
                 Cliente
               </h4>
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                <p className="font-semibold text-gray-900">{pedido.customer_name || pedido.cliente_nome}</p>
-                <p className="text-sm text-gray-600 flex items-center gap-2">
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 space-y-2">
+                <p className="font-semibold text-gray-900 dark:text-white">{pedido.customer_name || pedido.cliente_nome}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                   <PhoneIcon className="w-4 h-4 text-gray-400" />
                   {pedido.customer_phone || pedido.cliente_telefone}
                 </p>
                 {pedido.customer_email && (
-                  <p className="text-sm text-gray-600">{pedido.customer_email}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{pedido.customer_email}</p>
                 )}
               </div>
             </div>
@@ -143,34 +143,34 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, on
             {/* Delivery Address */}
             {formatAddress() && (
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                    <MapPinIcon className="w-3.5 h-3.5 text-blue-600" />
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <span className="w-6 h-6 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
+                    <MapPinIcon className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   </span>
                   Endereço de Entrega
                 </h4>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-gray-700">{formatAddress()}</p>
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4">
+                  <p className="text-gray-700 dark:text-gray-300">{formatAddress()}</p>
                 </div>
               </div>
             )}
 
             {/* Order Items */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
-                  <ShoppingBagIcon className="w-3.5 h-3.5 text-purple-600" />
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center">
+                  <ShoppingBagIcon className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 </span>
                 Itens do Pedido
               </h4>
-              <div className="bg-gray-50 rounded-xl divide-y divide-gray-200">
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl divide-y divide-gray-200">
                 {pedido.items?.map((item) => (
                   <div key={item.id} className="p-4 flex justify-between items-center">
                     <div>
-                      <p className="font-medium text-gray-900">{item.product_name}</p>
-                      <p className="text-sm text-gray-500">Qtd: {item.quantity} × R$ {Number(item.unit_price).toFixed(2)}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{item.product_name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Qtd: {item.quantity} × R$ {Number(item.unit_price).toFixed(2)}</p>
                     </div>
-                    <p className="font-semibold text-gray-900">R$ {Number(item.total_price || (item.quantity * Number(item.unit_price))).toFixed(2)}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">R$ {Number(item.total_price || (item.quantity * Number(item.unit_price))).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
@@ -178,31 +178,31 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, on
 
             {/* Order Summary */}
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 space-y-2">
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>Subtotal</span>
                 <span>R$ {Number(pedido.subtotal || pedido.total).toFixed(2)}</span>
               </div>
               {Number(pedido.delivery_fee || pedido.taxa_entrega || 0) > 0 && (
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                   <span>Taxa de Entrega</span>
                   <span>R$ {Number(pedido.delivery_fee || pedido.taxa_entrega).toFixed(2)}</span>
                 </div>
               )}
               {Number(pedido.discount || pedido.desconto || 0) > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
+                <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                   <span>Desconto</span>
                   <span>-R$ {Number(pedido.discount || pedido.desconto).toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200">
+              <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200 dark:border-gray-700">
                 <span>Total</span>
-                <span className="text-green-600">R$ {Number(pedido.total).toFixed(2)}</span>
+                <span className="text-green-600 dark:text-green-400">R$ {Number(pedido.total).toFixed(2)}</span>
               </div>
             </div>
 
             {/* Status Actions */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Alterar Status</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Alterar Status</h4>
               <div className="flex flex-wrap gap-2">
                 {statusFlow.map((s) => {
                   const config = statusConfig[s];
@@ -241,7 +241,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, on
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50 flex justify-between">
+        <div className="p-4 border-t bg-gray-50 dark:bg-gray-900 flex justify-between">
           <button 
             onClick={handlePrint} 
             className="flex items-center gap-2 px-5 py-2.5 bg-gray-700 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
@@ -257,7 +257,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ pedido, onClose, on
             </button>
             <button 
               onClick={onClose} 
-              className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              className="px-5 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 transition-colors font-medium"
             >
               Fechar
             </button>
@@ -276,10 +276,10 @@ const StatCard: React.FC<{
   color: string;
   trend?: { value: number; isPositive: boolean };
 }> = ({ title, value, icon, color, trend }) => (
-  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+  <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
     <div className="flex items-start justify-between">
       <div>
-        <p className="text-sm text-gray-500 font-medium">{title}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{title}</p>
         <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
         {trend && (
           <p className={`text-xs mt-1 ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
@@ -484,20 +484,20 @@ export const PastitaOrdersPage: React.FC = () => {
   }, [pedidos]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-xl">
-                <ShoppingBagIcon className="w-6 h-6 text-green-600" />
+              <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-xl">
+                <ShoppingBagIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Pedidos Pastita</h1>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Pedidos Pastita</h1>
                 <div className="flex items-center gap-2 text-sm">
                   <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                  <span className="text-gray-500">{isConnected ? 'Conectado em tempo real' : 'Desconectado'}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{isConnected ? 'Conectado em tempo real' : 'Desconectado'}</span>
                 </div>
               </div>
             </div>
@@ -505,7 +505,7 @@ export const PastitaOrdersPage: React.FC = () => {
               {newOrderAlert && (
                 <button 
                   onClick={fetchPedidos}
-                  className="flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-xl animate-pulse"
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-xl animate-pulse"
                 >
                   <BellAlertIcon className="w-5 h-5" />
                   Novos pedidos!
@@ -543,20 +543,20 @@ export const PastitaOrdersPage: React.FC = () => {
           <StatCard
             title="Total de Pedidos"
             value={stats.total}
-            icon={<ShoppingBagIcon className="w-5 h-5 text-blue-600" />}
-            color="text-blue-600"
+            icon={<ShoppingBagIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+            color="text-blue-600 dark:text-blue-400"
           />
           <StatCard
             title="Pedidos Hoje"
             value={stats.today}
-            icon={<ClockIcon className="w-5 h-5 text-purple-600" />}
-            color="text-purple-600"
+            icon={<ClockIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
+            color="text-purple-600 dark:text-purple-400"
           />
           <StatCard
             title="Pendentes"
             value={stats.pending}
-            icon={<ClockIcon className="w-5 h-5 text-amber-600" />}
-            color="text-amber-600"
+            icon={<ClockIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" />}
+            color="text-amber-600 dark:text-amber-400"
           />
           <StatCard
             title="Em Preparo"
@@ -567,8 +567,8 @@ export const PastitaOrdersPage: React.FC = () => {
           <StatCard
             title="Faturamento Total"
             value={`R$ ${stats.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-            icon={<CurrencyDollarIcon className="w-5 h-5 text-green-600" />}
-            color="text-green-600"
+            icon={<CurrencyDollarIcon className="w-5 h-5 text-green-600 dark:text-green-400" />}
+            color="text-green-600 dark:text-green-400"
           />
           <StatCard
             title="Faturamento Hoje"
@@ -579,7 +579,7 @@ export const PastitaOrdersPage: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
@@ -589,7 +589,7 @@ export const PastitaOrdersPage: React.FC = () => {
                 placeholder="Buscar por número, cliente ou telefone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
               />
             </div>
             
@@ -599,7 +599,7 @@ export const PastitaOrdersPage: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as OrderStatus)}
-                className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white"
+                className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white dark:bg-gray-800"
               >
                 <option value="all">Todos os Status</option>
                 {Object.entries(statusConfig).map(([key, config]) => (
@@ -614,7 +614,7 @@ export const PastitaOrdersPage: React.FC = () => {
               <select
                 value={paymentFilter}
                 onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus)}
-                className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white"
+                className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white dark:bg-gray-800"
               >
                 <option value="all">Todos Pagamentos</option>
                 {Object.entries(paymentStatusConfig).map(([key, config]) => (
@@ -626,33 +626,33 @@ export const PastitaOrdersPage: React.FC = () => {
         </div>
 
         {/* Orders Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           {loading ? (
             <div className="p-12 text-center">
               <ArrowPathIcon className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-3" />
-              <p className="text-gray-500">Carregando pedidos...</p>
+              <p className="text-gray-500 dark:text-gray-400">Carregando pedidos...</p>
             </div>
           ) : filteredPedidos.length === 0 ? (
             <div className="p-12 text-center">
               <ShoppingBagIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">Nenhum pedido encontrado</p>
+              <p className="text-gray-500 dark:text-gray-400 font-medium">Nenhum pedido encontrado</p>
               <p className="text-gray-400 text-sm mt-1">Tente ajustar os filtros</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pedido</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pagamento</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Data</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Ações</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pedido</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cliente</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pagamento</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100">
                   {filteredPedidos.map((pedido) => {
                     const status = statusConfig[pedido.status] || statusConfig.pending;
                     const payment = paymentStatusConfig[pedido.payment_status] || paymentStatusConfig.pending;
@@ -660,16 +660,16 @@ export const PastitaOrdersPage: React.FC = () => {
                     return (
                       <tr 
                         key={pedido.id} 
-                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 transition-colors cursor-pointer"
                         onClick={() => setSelectedPedido(pedido)}
                       >
                         <td className="px-6 py-4">
-                          <span className="font-semibold text-gray-900">#{pedido.order_number}</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">#{pedido.order_number}</span>
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-medium text-gray-900">{pedido.customer_name || pedido.cliente_nome}</p>
-                            <p className="text-sm text-gray-500">{pedido.customer_phone || pedido.cliente_telefone}</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{pedido.customer_name || pedido.cliente_nome}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{pedido.customer_phone || pedido.cliente_telefone}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -684,17 +684,17 @@ export const PastitaOrdersPage: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="font-bold text-gray-900">R$ {Number(pedido.total).toFixed(2)}</span>
+                          <span className="font-bold text-gray-900 dark:text-white">R$ {Number(pedido.total).toFixed(2)}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
                             {new Date(pedido.created_at).toLocaleDateString('pt-BR')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <button 
                             onClick={(e) => { e.stopPropagation(); setSelectedPedido(pedido); }}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 rounded-lg transition-colors"
                           >
                             <EyeIcon className="w-5 h-5" />
                           </button>

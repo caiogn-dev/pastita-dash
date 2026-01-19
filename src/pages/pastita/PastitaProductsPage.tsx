@@ -64,7 +64,7 @@ const Tabs: React.FC<TabProps> = ({ active, onChange }) => {
   ];
 
   return (
-    <div className="border-b border-gray-200">
+    <div className="border-b border-gray-200 dark:border-gray-700">
       <nav className="-mb-px flex space-x-8">
         {tabs.map((tab) => (
           <button
@@ -120,27 +120,27 @@ const MolhoForm: React.FC<MolhoFormProps> = ({ molho, onSave, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold mb-4">
           {molho ? 'Editar Molho' : 'Novo Molho'}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
             <input
               type="text"
               value={formData.nome}
               onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo</label>
             <select
               value={formData.tipo}
               onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
             >
               <option value="tradicional">Tradicional</option>
               <option value="especial">Especial</option>
@@ -148,33 +148,33 @@ const MolhoForm: React.FC<MolhoFormProps> = ({ molho, onSave, onClose }) => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Descrição</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label>
             <textarea
               value={formData.descricao}
               onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               rows={3}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Quantidade (ml)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantidade (ml)</label>
               <input
                 type="number"
                 value={formData.quantidade}
                 onChange={(e) => setFormData({ ...formData, quantidade: parseInt(e.target.value) })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Preço (R$)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço (R$)</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.preco}
                 onChange={(e) => setFormData({ ...formData, preco: parseFloat(e.target.value) })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                 required
               />
             </div>
@@ -184,15 +184,15 @@ const MolhoForm: React.FC<MolhoFormProps> = ({ molho, onSave, onClose }) => {
               type="checkbox"
               checked={formData.ativo}
               onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
             />
-            <label className="ml-2 block text-sm text-gray-900">Ativo</label>
+            <label className="ml-2 block text-sm text-gray-900 dark:text-white">Ativo</label>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200"
             >
               Cancelar
             </button>
@@ -245,27 +245,27 @@ const CarneForm: React.FC<CarneFormProps> = ({ carne, molhos, onSave, onClose })
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold mb-4">
           {carne ? 'Editar Carne' : 'Nova Carne'}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
             <input
               type="text"
               value={formData.nome}
               onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo</label>
             <select
               value={formData.tipo}
               onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
             >
               <option value="bovina">Bovina</option>
               <option value="suina">Suína</option>
@@ -274,39 +274,39 @@ const CarneForm: React.FC<CarneFormProps> = ({ carne, molhos, onSave, onClose })
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Descrição</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label>
             <textarea
               value={formData.descricao}
               onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               rows={3}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Quantidade (g)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantidade (g)</label>
               <input
                 type="number"
                 value={formData.quantidade}
                 onChange={(e) => setFormData({ ...formData, quantidade: parseInt(e.target.value) })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Preço (R$)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço (R$)</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.preco}
                 onChange={(e) => setFormData({ ...formData, preco: parseFloat(e.target.value) })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Molhos Compatíveis</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Molhos Compatíveis</label>
             <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
               {molhos.map((molho) => (
                 <label key={molho.id} className="flex items-center">
@@ -326,9 +326,9 @@ const CarneForm: React.FC<CarneFormProps> = ({ carne, molhos, onSave, onClose })
                         });
                       }
                     }}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
                   />
-                  <span className="ml-2 text-sm text-gray-700">{molho.nome}</span>
+                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{molho.nome}</span>
                 </label>
               ))}
             </div>
@@ -338,15 +338,15 @@ const CarneForm: React.FC<CarneFormProps> = ({ carne, molhos, onSave, onClose })
               type="checkbox"
               checked={formData.ativo}
               onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
             />
-            <label className="ml-2 block text-sm text-gray-900">Ativo</label>
+            <label className="ml-2 block text-sm text-gray-900 dark:text-white">Ativo</label>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200"
             >
               Cancelar
             </button>
@@ -398,37 +398,37 @@ const RondelliForm: React.FC<RondelliFormProps> = ({ rondelli, onSave, onClose }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold mb-4">
           {rondelli ? 'Editar Rondelli' : 'Novo Rondelli'}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
             <input
               type="text"
               value={formData.nome}
               onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Sabor</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Sabor</label>
             <input
               type="text"
               value={formData.sabor}
               onChange={(e) => setFormData({ ...formData, sabor: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Categoria</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
             <select
               value={formData.categoria}
               onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
             >
               <option value="classico">Clássico</option>
               <option value="gourmet">Gourmet</option>
@@ -436,22 +436,22 @@ const RondelliForm: React.FC<RondelliFormProps> = ({ rondelli, onSave, onClose }
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Descrição</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label>
             <textarea
               value={formData.descricao}
               onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               rows={3}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Preço (R$)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço (R$)</label>
             <input
               type="number"
               step="0.01"
               value={formData.preco}
               onChange={(e) => setFormData({ ...formData, preco: parseFloat(e.target.value) })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
             />
           </div>
@@ -461,25 +461,25 @@ const RondelliForm: React.FC<RondelliFormProps> = ({ rondelli, onSave, onClose }
                 type="checkbox"
                 checked={formData.is_gourmet}
                 onChange={(e) => setFormData({ ...formData, is_gourmet: e.target.checked })}
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
               />
-              <span className="ml-2 text-sm text-gray-900">Gourmet</span>
+              <span className="ml-2 text-sm text-gray-900 dark:text-white">Gourmet</span>
             </label>
             <label className="flex items-center">
               <input
                 type="checkbox"
                 checked={formData.ativo}
                 onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
               />
-              <span className="ml-2 text-sm text-gray-900">Ativo</span>
+              <span className="ml-2 text-sm text-gray-900 dark:text-white">Ativo</span>
             </label>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200"
             >
               Cancelar
             </button>
@@ -537,69 +537,69 @@ const ComboForm: React.FC<ComboFormProps> = ({ combo, molhos, carnes, rondellis,
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold mb-4">
           {combo ? 'Editar Combo' : 'Novo Combo'}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
             <input
               type="text"
               value={formData.nome}
               onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Descrição</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label>
             <textarea
               value={formData.descricao}
               onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               rows={3}
             />
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Preço (R$)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço (R$)</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.preco}
                 onChange={(e) => setFormData({ ...formData, preco: parseFloat(e.target.value) })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Preço Original</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço Original</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.preco_original}
                 onChange={(e) => setFormData({ ...formData, preco_original: parseFloat(e.target.value) })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Pessoas</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Pessoas</label>
               <input
                 type="number"
                 value={formData.quantidade_pessoas}
                 onChange={(e) => setFormData({ ...formData, quantidade_pessoas: parseInt(e.target.value) })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Carne Inclusa</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Carne Inclusa</label>
             <select
               value={formData.carne_inclusa || ''}
               onChange={(e) => setFormData({ ...formData, carne_inclusa: e.target.value ? parseInt(e.target.value) : null })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
             >
               <option value="">Nenhuma</option>
               {carnes.map((carne) => (
@@ -608,11 +608,11 @@ const ComboForm: React.FC<ComboFormProps> = ({ combo, molhos, carnes, rondellis,
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Rondelli Incluso</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Rondelli Incluso</label>
             <select
               value={formData.rondelli_incluso || ''}
               onChange={(e) => setFormData({ ...formData, rondelli_incluso: e.target.value ? parseInt(e.target.value) : null })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
             >
               <option value="">Nenhum</option>
               {rondellis.map((rondelli) => (
@@ -621,7 +621,7 @@ const ComboForm: React.FC<ComboFormProps> = ({ combo, molhos, carnes, rondellis,
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Molhos Inclusos</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Molhos Inclusos</label>
             <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
               {molhos.map((molho) => (
                 <label key={molho.id} className="flex items-center">
@@ -641,9 +641,9 @@ const ComboForm: React.FC<ComboFormProps> = ({ combo, molhos, carnes, rondellis,
                         });
                       }
                     }}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
                   />
-                  <span className="ml-2 text-sm text-gray-700">{molho.nome}</span>
+                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{molho.nome}</span>
                 </label>
               ))}
             </div>
@@ -654,25 +654,25 @@ const ComboForm: React.FC<ComboFormProps> = ({ combo, molhos, carnes, rondellis,
                 type="checkbox"
                 checked={formData.ativo}
                 onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
               />
-              <span className="ml-2 text-sm text-gray-900">Ativo</span>
+              <span className="ml-2 text-sm text-gray-900 dark:text-white">Ativo</span>
             </label>
             <label className="flex items-center">
               <input
                 type="checkbox"
                 checked={formData.destaque}
                 onChange={(e) => setFormData({ ...formData, destaque: e.target.checked })}
-                className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                className="h-4 w-4 text-yellow-600 dark:text-yellow-400 focus:ring-yellow-500 border-gray-300 dark:border-gray-600 rounded"
               />
-              <span className="ml-2 text-sm text-gray-900">Destaque</span>
+              <span className="ml-2 text-sm text-gray-900 dark:text-white">Destaque</span>
             </label>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200"
             >
               Cancelar
             </button>
@@ -870,7 +870,7 @@ export const PastitaProductsPage: React.FC = () => {
     if (loading) {
       return (
         <div className="flex items-center justify-center h-64">
-          <RefreshCw className="w-8 h-8 animate-spin text-green-600" />
+          <RefreshCw className="w-8 h-8 animate-spin text-green-600 dark:text-green-400" />
         </div>
       );
     }
@@ -880,31 +880,31 @@ export const PastitaProductsPage: React.FC = () => {
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filterBySearch(molhos).map((molho) => (
-              <div key={molho.id} className="bg-white rounded-lg shadow p-4">
+              <div key={molho.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-semibold text-gray-900">{molho.nome}</h4>
-                    <p className="text-sm text-gray-500">{molho.tipo}</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{molho.nome}</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{molho.tipo}</p>
                   </div>
                   <span className={`px-2 py-1 text-xs rounded-full ${molho.ativo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                     {molho.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">{molho.descricao}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{molho.descricao}</p>
                 <div className="flex justify-between items-center mt-4">
-                  <span className="text-lg font-bold text-green-600">
+                  <span className="text-lg font-bold text-green-600 dark:text-green-400">
                     R$ {Number(molho.preco).toFixed(2)}
                   </span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setEditingMolho(molho); setShowMolhoForm(true); }}
-                      className="p-2 text-gray-600 hover:text-green-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:text-green-400"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteMolho(molho.id)}
-                      className="p-2 text-gray-600 hover:text-red-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:text-red-400"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -919,31 +919,31 @@ export const PastitaProductsPage: React.FC = () => {
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filterBySearch(carnes).map((carne) => (
-              <div key={carne.id} className="bg-white rounded-lg shadow p-4">
+              <div key={carne.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-semibold text-gray-900">{carne.nome}</h4>
-                    <p className="text-sm text-gray-500">{carne.tipo} - {carne.quantidade}g</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{carne.nome}</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{carne.tipo} - {carne.quantidade}g</p>
                   </div>
                   <span className={`px-2 py-1 text-xs rounded-full ${carne.ativo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                     {carne.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">{carne.descricao}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{carne.descricao}</p>
                 <div className="flex justify-between items-center mt-4">
-                  <span className="text-lg font-bold text-green-600">
+                  <span className="text-lg font-bold text-green-600 dark:text-green-400">
                     R$ {Number(carne.preco).toFixed(2)}
                   </span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setEditingCarne(carne); setShowCarneForm(true); }}
-                      className="p-2 text-gray-600 hover:text-green-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:text-green-400"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteCarne(carne.id)}
-                      className="p-2 text-gray-600 hover:text-red-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:text-red-400"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -958,15 +958,15 @@ export const PastitaProductsPage: React.FC = () => {
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filterBySearch(rondellis).map((rondelli) => (
-              <div key={rondelli.id} className="bg-white rounded-lg shadow p-4">
+              <div key={rondelli.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-semibold text-gray-900">{rondelli.nome}</h4>
-                    <p className="text-sm text-gray-500">{rondelli.sabor} - {rondelli.categoria}</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{rondelli.nome}</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{rondelli.sabor} - {rondelli.categoria}</p>
                   </div>
                   <div className="flex gap-1">
                     {rondelli.is_gourmet && (
-                      <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                      <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800">
                         Gourmet
                       </span>
                     )}
@@ -975,21 +975,21 @@ export const PastitaProductsPage: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">{rondelli.descricao}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{rondelli.descricao}</p>
                 <div className="flex justify-between items-center mt-4">
-                  <span className="text-lg font-bold text-green-600">
+                  <span className="text-lg font-bold text-green-600 dark:text-green-400">
                     R$ {Number(rondelli.preco).toFixed(2)}
                   </span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setEditingRondelli(rondelli); setShowRondelliForm(true); }}
-                      className="p-2 text-gray-600 hover:text-green-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:text-green-400"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteRondelli(rondelli.id)}
-                      className="p-2 text-gray-600 hover:text-red-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:text-red-400"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1004,15 +1004,15 @@ export const PastitaProductsPage: React.FC = () => {
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filterBySearch(combos).map((combo) => (
-              <div key={combo.id} className="bg-white rounded-lg shadow p-4">
+              <div key={combo.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-semibold text-gray-900">{combo.nome}</h4>
-                    <p className="text-sm text-gray-500">Para {combo.quantidade_pessoas} pessoas</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{combo.nome}</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Para {combo.quantidade_pessoas} pessoas</p>
                   </div>
                   <div className="flex gap-1">
                     {combo.destaque && (
-                      <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                      <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800">
                         Destaque
                       </span>
                     )}
@@ -1021,10 +1021,10 @@ export const PastitaProductsPage: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">{combo.descricao}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{combo.descricao}</p>
                 <div className="flex justify-between items-center mt-4">
                   <div>
-                    <span className="text-lg font-bold text-green-600">
+                    <span className="text-lg font-bold text-green-600 dark:text-green-400">
                       R$ {Number(combo.preco).toFixed(2)}
                     </span>
                     {combo.preco_original && Number(combo.preco_original) > Number(combo.preco) && (
@@ -1036,27 +1036,27 @@ export const PastitaProductsPage: React.FC = () => {
                   <div className="flex gap-1">
                     <button
                       onClick={() => handleToggleComboActive(combo.id)}
-                      className="p-2 text-gray-600 hover:text-green-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:text-green-400"
                       title={combo.ativo ? 'Desativar' : 'Ativar'}
                     >
                       {combo.ativo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                     <button
                       onClick={() => handleToggleComboDestaque(combo.id)}
-                      className="p-2 text-gray-600 hover:text-yellow-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:text-yellow-400"
                       title={combo.destaque ? 'Remover destaque' : 'Destacar'}
                     >
                       {combo.destaque ? <StarOff className="w-4 h-4" /> : <Star className="w-4 h-4" />}
                     </button>
                     <button
                       onClick={() => { setEditingCombo(combo); setShowComboForm(true); }}
-                      className="p-2 text-gray-600 hover:text-green-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:text-green-400"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteCombo(combo.id)}
-                      className="p-2 text-gray-600 hover:text-red-600"
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:text-red-400"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1094,8 +1094,8 @@ export const PastitaProductsPage: React.FC = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Produtos Pastita</h1>
-          <p className="text-gray-600">Gerencie os produtos da Pastita Massas Artesanais</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Produtos Pastita</h1>
+          <p className="text-gray-600 dark:text-gray-400">Gerencie os produtos da Pastita Massas Artesanais</p>
         </div>
         <button
           onClick={handleAddNew}
@@ -1115,12 +1115,12 @@ export const PastitaProductsPage: React.FC = () => {
               placeholder="Buscar produtos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
           <button
             onClick={fetchData}
-            className="p-2 text-gray-600 hover:text-green-600 border border-gray-300 rounded-lg"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:text-green-400 border border-gray-300 dark:border-gray-600 rounded-lg"
           >
             <RefreshCw className="w-5 h-5" />
           </button>

@@ -252,7 +252,7 @@ export const OrderDetailPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
                 <StatusBadge status={order.status} />
-                <span className="text-xl md:text-2xl font-bold text-gray-900">
+                <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   R$ {(order.total ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
@@ -293,16 +293,16 @@ export const OrderDetailPage: React.FC = () => {
           <Card title="Cliente">
             <div className="space-y-3">
               <div>
-                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Nome</p>
-                <p className="text-sm md:text-base font-medium text-gray-900">{order.customer_name || '-'}</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nome</p>
+                <p className="text-sm md:text-base font-medium text-gray-900 dark:text-white">{order.customer_name || '-'}</p>
               </div>
               <div>
-                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Telefone</p>
-                <p className="text-sm md:text-base font-medium text-gray-900">{order.customer_phone}</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">Telefone</p>
+                <p className="text-sm md:text-base font-medium text-gray-900 dark:text-white">{order.customer_phone}</p>
               </div>
               <div>
-                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Email</p>
-                <p className="text-sm md:text-base font-medium text-gray-900 break-all">{order.customer_email || '-'}</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</p>
+                <p className="text-sm md:text-base font-medium text-gray-900 dark:text-white break-all">{order.customer_email || '-'}</p>
               </div>
             </div>
           </Card>
@@ -315,26 +315,26 @@ export const OrderDetailPage: React.FC = () => {
                 const hasAddress = address && Object.keys(address).length > 0;
                 return hasAddress ? (
                   <div>
-                    <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Endereço</p>
-                    <p className="text-sm md:text-base font-medium text-gray-900">
+                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">Endereço</p>
+                    <p className="text-sm md:text-base font-medium text-gray-900 dark:text-white">
                       {(address as Record<string, string>).street || (address as Record<string, string>).address || '-'}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       {(address as Record<string, string>).neighborhood && `${(address as Record<string, string>).neighborhood}, `}
                       {(address as Record<string, string>).city},{' '}
                       {(address as Record<string, string>).state}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       CEP: {(address as Record<string, string>).zip_code || (address as Record<string, string>).cep || '-'}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">Endereço não informado</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">Endereço não informado</p>
                 );
               })()}
               <div>
-                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wide">Frete</p>
-                <p className="text-sm md:text-base font-medium text-gray-900">
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">Frete</p>
+                <p className="text-sm md:text-base font-medium text-gray-900 dark:text-white">
                   R$ {(order.delivery_fee ?? order.shipping_cost ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
@@ -346,10 +346,10 @@ export const OrderDetailPage: React.FC = () => {
             <div className="space-y-3">
               {payments.length > 0 ? (
                 payments.map((payment) => (
-                  <div key={payment.id} className="flex items-start justify-between gap-2 p-3 bg-gray-50 rounded-lg">
+                  <div key={payment.id} className="flex items-start justify-between gap-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                     <div className="min-w-0">
-                      <p className="text-sm md:text-base font-medium text-gray-900">{payment.payment_method || 'N/A'}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm md:text-base font-medium text-gray-900 dark:text-white">{payment.payment_method || 'N/A'}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         R$ {(payment.amount ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                       {payment.payment_url && (
@@ -367,7 +367,7 @@ export const OrderDetailPage: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 italic">Nenhum pagamento registrado</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">Nenhum pagamento registrado</p>
               )}
             </div>
           </Card>
@@ -395,9 +395,9 @@ export const OrderDetailPage: React.FC = () => {
               <div key={item.id} className="py-3 space-y-2">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-medium text-gray-900">{item.product_name}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{item.product_name}</p>
                     {item.product_sku && (
-                      <p className="text-xs text-gray-500">SKU: {item.product_sku}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">SKU: {item.product_sku}</p>
                     )}
                   </div>
                   {!['cancelled', 'delivered', 'refunded'].includes(order.status) && (
@@ -405,17 +405,17 @@ export const OrderDetailPage: React.FC = () => {
                       size="sm"
                       variant="ghost"
                       onClick={() => handleRemoveItem(item.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:text-red-300"
                     >
                       Remover
                     </Button>
                   )}
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">
+                  <span className="text-gray-600 dark:text-gray-400">
                     {item.quantity}x R$ {(item.unit_price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-gray-900 dark:text-white">
                     R$ {(item.subtotal ?? item.total_price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -425,22 +425,22 @@ export const OrderDetailPage: React.FC = () => {
             {/* Mobile Summary */}
             <div className="pt-3 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotal</span>
-                <span className="text-gray-900">R$ {(order.subtotal ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
+                <span className="text-gray-900 dark:text-white">R$ {(order.subtotal ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
               {(order.discount ?? 0) > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-green-600">Desconto</span>
-                  <span className="text-green-600">- R$ {(order.discount ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-green-600 dark:text-green-400">Desconto</span>
+                  <span className="text-green-600 dark:text-green-400">- R$ {(order.discount ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Frete</span>
-                <span className="text-gray-900">R$ {(order.delivery_fee ?? order.shipping_cost ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span className="text-gray-600 dark:text-gray-400">Frete</span>
+                <span className="text-gray-900 dark:text-white">R$ {(order.delivery_fee ?? order.shipping_cost ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex justify-between text-base font-bold pt-2 border-t border-gray-200">
-                <span className="text-gray-900">Total</span>
-                <span className="text-gray-900">R$ {(order.total ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              <div className="flex justify-between text-base font-bold pt-2 border-t border-gray-200 dark:border-gray-700">
+                <span className="text-gray-900 dark:text-white">Total</span>
+                <span className="text-gray-900 dark:text-white">R$ {(order.total ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -448,42 +448,42 @@ export const OrderDetailPage: React.FC = () => {
           {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     Produto
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     SKU
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     Qtd
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     Preço Unit.
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     Total
                   </th>
                   <th className="px-4 py-3 w-24"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-gray-200 bg-white dark:bg-gray-800">
                 {order.items?.map((item: OrderItem) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                       {item.product_name}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {item.product_sku || '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right">
                       {item.quantity}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right">
                       R$ {(item.unit_price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white text-right">
                       R$ {(item.subtotal ?? item.total_price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -492,7 +492,7 @@ export const OrderDetailPage: React.FC = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleRemoveItem(item.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 dark:text-red-400 hover:text-red-700 dark:text-red-300 hover:bg-red-50"
                         >
                           Remover
                         </Button>
@@ -502,40 +502,40 @@ export const OrderDetailPage: React.FC = () => {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-gray-50">
-                  <td colSpan={4} className="px-4 py-3 text-sm font-medium text-gray-700 text-right">
+                <tr className="bg-gray-50 dark:bg-gray-900">
+                  <td colSpan={4} className="px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 text-right">
                     Subtotal
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white text-right">
                     R$ {(order.subtotal ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td></td>
                 </tr>
                 {(order.discount ?? 0) > 0 && (
-                  <tr className="bg-gray-50">
-                    <td colSpan={4} className="px-4 py-3 text-sm font-medium text-green-600 text-right">
+                  <tr className="bg-gray-50 dark:bg-gray-900">
+                    <td colSpan={4} className="px-4 py-3 text-sm font-medium text-green-600 dark:text-green-400 text-right">
                       Desconto
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-green-600 text-right">
+                    <td className="px-4 py-3 text-sm font-medium text-green-600 dark:text-green-400 text-right">
                       - R$ {(order.discount ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </td>
                     <td></td>
                   </tr>
                 )}
-                <tr className="bg-gray-50">
-                  <td colSpan={4} className="px-4 py-3 text-sm font-medium text-gray-700 text-right">
+                <tr className="bg-gray-50 dark:bg-gray-900">
+                  <td colSpan={4} className="px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 text-right">
                     Frete
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white text-right">
                     R$ {(order.delivery_fee ?? order.shipping_cost ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td></td>
                 </tr>
-                <tr className="bg-gray-100">
-                  <td colSpan={4} className="px-4 py-3 text-base font-bold text-gray-900 text-right">
+                <tr className="bg-gray-100 dark:bg-gray-700">
+                  <td colSpan={4} className="px-4 py-3 text-base font-bold text-gray-900 dark:text-white text-right">
                     Total
                   </td>
-                  <td className="px-4 py-3 text-base font-bold text-gray-900 text-right">
+                  <td className="px-4 py-3 text-base font-bold text-gray-900 dark:text-white text-right">
                     R$ {(order.total ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td></td>
@@ -551,14 +551,14 @@ export const OrderDetailPage: React.FC = () => {
             <div className="space-y-4">
               {order.notes && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Notas do Cliente</p>
-                  <p className="mt-1 text-gray-900">{order.notes}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Notas do Cliente</p>
+                  <p className="mt-1 text-gray-900 dark:text-white">{order.notes}</p>
                 </div>
               )}
               {order.internal_notes && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Notas Internas</p>
-                  <p className="mt-1 text-gray-900">{order.internal_notes}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Notas Internas</p>
+                  <p className="mt-1 text-gray-900 dark:text-white">{order.internal_notes}</p>
                 </div>
               )}
             </div>
@@ -586,14 +586,14 @@ export const OrderDetailPage: React.FC = () => {
                       </div>
                       <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
-                          <p className="text-sm text-gray-900">{event.description}</p>
+                          <p className="text-sm text-gray-900 dark:text-white">{event.description}</p>
                           {event.old_status && event.new_status && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               {event.old_status} → {event.new_status}
                             </p>
                           )}
                         </div>
-                        <div className="whitespace-nowrap text-right text-sm text-gray-500">
+                        <div className="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
                           {format(new Date(event.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                         </div>
                       </div>
@@ -658,9 +658,9 @@ export const OrderDetailPage: React.FC = () => {
               type="checkbox"
               checked={noteForm.is_internal}
               onChange={(e) => setNoteForm({ ...noteForm, is_internal: e.target.checked })}
-              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+              className="rounded border-gray-300 dark:border-gray-600 text-green-600 dark:text-green-400 focus:ring-green-500"
             />
-            <span className="text-sm text-gray-700">Nota interna (não visível para o cliente)</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">Nota interna (não visível para o cliente)</span>
           </label>
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={() => setNoteModal(false)}>

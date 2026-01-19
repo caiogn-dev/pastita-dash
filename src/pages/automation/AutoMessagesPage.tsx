@@ -215,13 +215,13 @@ const AutoMessagesPage: React.FC = () => {
         <div className="flex items-center space-x-4">
           <Link
             to={`/automation/companies/${companyId}`}
-            className="p-2 text-gray-400 hover:text-gray-600"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-400"
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Mensagens Automáticas</h1>
-            <p className="text-sm text-gray-500">{company?.company_name}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mensagens Automáticas</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{company?.company_name}</p>
           </div>
         </div>
         <button
@@ -241,14 +241,14 @@ const AutoMessagesPage: React.FC = () => {
       {Object.keys(eventTypeLabels).map((eventType) => {
         const eventMessages = groupedMessages[eventType] || [];
         return (
-          <div key={eventType} className="bg-white shadow rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-lg font-medium text-gray-900">
+          <div key={eventType} className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 {eventTypeLabels[eventType as AutoMessageEventType]}
               </h3>
             </div>
             {eventMessages.length === 0 ? (
-              <div className="px-6 py-8 text-center text-gray-500">
+              <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                 <ChatBubbleLeftRightIcon className="mx-auto h-8 w-8 text-gray-400" />
                 <p className="mt-2">Nenhuma mensagem configurada</p>
                 <button
@@ -257,7 +257,7 @@ const AutoMessagesPage: React.FC = () => {
                     setFormData(prev => ({ ...prev, event_type: eventType as AutoMessageEventType }));
                     setShowModal(true);
                   }}
-                  className="mt-2 text-green-600 hover:text-green-700 text-sm font-medium"
+                  className="mt-2 text-green-600 dark:text-green-400 hover:text-green-700 dark:text-green-300 text-sm font-medium"
                 >
                   + Adicionar mensagem
                 </button>
@@ -269,7 +269,7 @@ const AutoMessagesPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3">
-                          <h4 className="text-sm font-medium text-gray-900 truncate">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
                             {message.name}
                           </h4>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
@@ -280,12 +280,12 @@ const AutoMessagesPage: React.FC = () => {
                             {message.is_active ? 'Ativo' : 'Inativo'}
                           </span>
                           {message.delay_seconds > 0 && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
                               Delay: {message.delay_seconds}s
                             </span>
                           )}
                         </div>
-                        <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                           {message.message_text}
                         </p>
                         {message.buttons && message.buttons.length > 0 && (
@@ -293,7 +293,7 @@ const AutoMessagesPage: React.FC = () => {
                             {message.buttons.map((btn, i) => (
                               <span
                                 key={i}
-                                className="inline-flex items-center px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs"
+                                className="inline-flex items-center px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-800 text-xs"
                               >
                                 {btn.title}
                               </span>
@@ -304,14 +304,14 @@ const AutoMessagesPage: React.FC = () => {
                       <div className="flex items-center space-x-2 ml-4">
                         <button
                           onClick={() => setTestModal(message)}
-                          className="p-2 text-gray-400 hover:text-blue-600"
+                          className="p-2 text-gray-400 hover:text-blue-600 dark:text-blue-400"
                           title="Testar"
                         >
                           <PlayIcon className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => handleEdit(message)}
-                          className="p-2 text-gray-400 hover:text-green-600"
+                          className="p-2 text-gray-400 hover:text-green-600 dark:text-green-400"
                           title="Editar"
                         >
                           <PencilIcon className="h-5 w-5" />
@@ -331,7 +331,7 @@ const AutoMessagesPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleDelete(message.id)}
-                          className="p-2 text-gray-400 hover:text-red-600"
+                          className="p-2 text-gray-400 hover:text-red-600 dark:text-red-400"
                           title="Excluir"
                         >
                           <TrashIcon className="h-5 w-5" />
@@ -350,24 +350,24 @@ const AutoMessagesPage: React.FC = () => {
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setShowModal(false)} />
-            <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 bg-gray-50 dark:bg-gray-9000 bg-opacity-75" onClick={() => setShowModal(false)} />
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <form onSubmit={handleSubmit}>
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     {editingMessage ? 'Editar Mensagem' : 'Nova Mensagem'}
                   </h3>
                 </div>
                 <div className="px-6 py-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Tipo de Evento
                       </label>
                       <select
                         value={formData.event_type}
                         onChange={(e) => setFormData({ ...formData, event_type: e.target.value as AutoMessageEventType })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                       >
                         {Object.entries(eventTypeLabels).map(([value, label]) => (
                           <option key={value} value={value}>{label}</option>
@@ -375,7 +375,7 @@ const AutoMessagesPage: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Nome Interno
                       </label>
                       <input
@@ -383,13 +383,13 @@ const AutoMessagesPage: React.FC = () => {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Texto da Mensagem
                     </label>
                     <textarea
@@ -397,17 +397,17 @@ const AutoMessagesPage: React.FC = () => {
                       value={formData.message_text}
                       onChange={(e) => setFormData({ ...formData, message_text: e.target.value })}
                       required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                     />
                     <div className="mt-2">
-                      <p className="text-xs text-gray-500 mb-1">Variáveis disponíveis:</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Variáveis disponíveis:</p>
                       <div className="flex flex-wrap gap-1">
                         {messageVariables.map((v) => (
                           <button
                             key={v.key}
                             type="button"
                             onClick={() => insertVariable(v.key)}
-                            className="inline-flex items-center px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200"
+                            className="inline-flex items-center px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs hover:bg-gray-200"
                             title={v.description}
                           >
                             {`{${v.key}}`}
@@ -419,7 +419,7 @@ const AutoMessagesPage: React.FC = () => {
 
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Delay (segundos)
                       </label>
                       <input
@@ -427,11 +427,11 @@ const AutoMessagesPage: React.FC = () => {
                         min="0"
                         value={formData.delay_seconds}
                         onChange={(e) => setFormData({ ...formData, delay_seconds: parseInt(e.target.value) })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Prioridade
                       </label>
                       <input
@@ -439,7 +439,7 @@ const AutoMessagesPage: React.FC = () => {
                         min="1"
                         value={formData.priority}
                         onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                       />
                     </div>
                     <div className="flex items-end">
@@ -448,9 +448,9 @@ const AutoMessagesPage: React.FC = () => {
                           type="checkbox"
                           checked={formData.is_active}
                           onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Ativo</span>
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Ativo</span>
                       </label>
                     </div>
                   </div>
@@ -458,14 +458,14 @@ const AutoMessagesPage: React.FC = () => {
                   {/* Buttons */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Botões Interativos (máx. 3)
                       </label>
                       {(formData.buttons?.length || 0) < 3 && (
                         <button
                           type="button"
                           onClick={addButton}
-                          className="text-sm text-green-600 hover:text-green-700"
+                          className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:text-green-300"
                         >
                           + Adicionar botão
                         </button>
@@ -478,19 +478,19 @@ const AutoMessagesPage: React.FC = () => {
                           placeholder="ID"
                           value={btn.id}
                           onChange={(e) => updateButton(index, 'id', e.target.value)}
-                          className="w-32 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
+                          className="w-32 rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
                         />
                         <input
                           type="text"
                           placeholder="Título do botão"
                           value={btn.title}
                           onChange={(e) => updateButton(index, 'title', e.target.value)}
-                          className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
+                          className="flex-1 rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
                         />
                         <button
                           type="button"
                           onClick={() => removeButton(index)}
-                          className="p-1 text-red-500 hover:text-red-700"
+                          className="p-1 text-red-500 hover:text-red-700 dark:text-red-300"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -498,7 +498,7 @@ const AutoMessagesPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -506,7 +506,7 @@ const AutoMessagesPage: React.FC = () => {
                       setEditingMessage(null);
                       resetForm();
                     }}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
                   >
                     Cancelar
                   </button>
@@ -527,20 +527,20 @@ const AutoMessagesPage: React.FC = () => {
       {testModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => {
+            <div className="fixed inset-0 bg-gray-50 dark:bg-gray-9000 bg-opacity-75" onClick={() => {
               setTestModal(null);
               setTestPhone('');
               setTestResult(null);
             }} />
-            <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Testar Mensagem: {testModal.name}
                 </h3>
               </div>
               <div className="px-6 py-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Número de Telefone
                   </label>
                   <input
@@ -548,20 +548,20 @@ const AutoMessagesPage: React.FC = () => {
                     value={testPhone}
                     onChange={(e) => setTestPhone(e.target.value)}
                     placeholder="5511999999999"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleTest}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
                 >
                   Visualizar Preview
                 </button>
                 {testResult && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
-                    <div className="bg-green-100 rounded-lg p-3 text-sm whitespace-pre-wrap">
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview:</p>
+                    <div className="bg-green-100 dark:bg-green-900/40 rounded-lg p-3 text-sm whitespace-pre-wrap">
                       {testResult}
                     </div>
                     {testModal.buttons && testModal.buttons.length > 0 && (
@@ -569,7 +569,7 @@ const AutoMessagesPage: React.FC = () => {
                         {testModal.buttons.map((btn, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-green-500 text-green-700 text-sm"
+                            className="inline-flex items-center px-3 py-1 rounded-full bg-white dark:bg-gray-800 border border-green-500 text-green-700 dark:text-green-300 text-sm"
                           >
                             {btn.title}
                           </span>
@@ -579,7 +579,7 @@ const AutoMessagesPage: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -587,7 +587,7 @@ const AutoMessagesPage: React.FC = () => {
                     setTestPhone('');
                     setTestResult(null);
                   }}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
                 >
                   Fechar
                 </button>

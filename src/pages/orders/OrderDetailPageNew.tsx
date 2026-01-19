@@ -108,7 +108,7 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCa
       <div className="flex items-center justify-center py-6">
         <div className="flex items-center gap-3 px-6 py-3 bg-red-50 rounded-full">
           <XMarkIcon className="w-6 h-6 text-red-500" />
-          <span className="text-lg font-semibold text-red-700">Pedido Cancelado</span>
+          <span className="text-lg font-semibold text-red-700 dark:text-red-300">Pedido Cancelado</span>
         </div>
       </div>
     );
@@ -267,23 +267,23 @@ export const OrderDetailPageNew: React.FC = () => {
   const address = order.delivery_address || order.shipping_address;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-white dark:bg-gray-800 border-b sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/orders')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-lg transition-colors"
               >
-                <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
+                <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                   Pedido #{order.order_number}
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {format(new Date(order.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                 </p>
               </div>
@@ -338,7 +338,7 @@ export const OrderDetailPageNew: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Items */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Itens do Pedido</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Itens do Pedido</h2>
               <div className="space-y-3">
                 {order.items?.map((item, index) => (
                   <div 
@@ -346,17 +346,17 @@ export const OrderDetailPageNew: React.FC = () => {
                     className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
+                      <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-lg">
                         🍝
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{item.product_name}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-medium text-gray-900 dark:text-white">{item.product_name}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {item.quantity}x {formatMoney(item.unit_price)}
                         </p>
                       </div>
                     </div>
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-gray-900 dark:text-white">
                       {formatMoney(item.subtotal || item.total_price)}
                     </p>
                   </div>
@@ -364,24 +364,24 @@ export const OrderDetailPageNew: React.FC = () => {
               </div>
 
               {/* Summary */}
-              <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
-                <div className="flex justify-between text-gray-600">
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>Subtotal</span>
                   <span>{formatMoney(order.subtotal)}</span>
                 </div>
                 {(order.delivery_fee || order.shipping_cost) ? (
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>Entrega</span>
                     <span>{formatMoney(order.delivery_fee || order.shipping_cost)}</span>
                   </div>
                 ) : null}
                 {order.discount ? (
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-green-600 dark:text-green-400">
                     <span>Desconto</span>
                     <span>-{formatMoney(order.discount)}</span>
                   </div>
                 ) : null}
-                <div className="flex justify-between text-xl font-bold text-gray-900 pt-2">
+                <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white pt-2">
                   <span>Total</span>
                   <span>{formatMoney(order.total)}</span>
                 </div>
@@ -391,8 +391,8 @@ export const OrderDetailPageNew: React.FC = () => {
             {/* Notes */}
             {order.notes && (
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">Observações</h2>
-                <p className="text-gray-600 bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Observações</h2>
+                <p className="text-gray-600 dark:text-gray-400 bg-yellow-50 p-4 rounded-lg border border-yellow-100">
                   {order.notes}
                 </p>
               </Card>
@@ -403,7 +403,7 @@ export const OrderDetailPageNew: React.FC = () => {
           <div className="space-y-6">
             {/* Customer */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Cliente</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Cliente</h2>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
@@ -412,27 +412,27 @@ export const OrderDetailPageNew: React.FC = () => {
                     </span>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{order.customer_name || 'Cliente'}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{order.customer_name || 'Cliente'}</p>
                   </div>
                 </div>
                 
                 {order.customer_phone && (
                   <a 
                     href={`tel:${order.customer_phone}`}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-800 transition-colors"
                   >
                     <PhoneIcon className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-700">{order.customer_phone}</span>
+                    <span className="text-gray-700 dark:text-gray-300">{order.customer_phone}</span>
                   </a>
                 )}
                 
                 {order.customer_email && (
                   <a 
                     href={`mailto:${order.customer_email}`}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-800 transition-colors"
                   >
                     <EnvelopeIcon className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-700 text-sm truncate">{order.customer_email}</span>
+                    <span className="text-gray-700 dark:text-gray-300 text-sm truncate">{order.customer_email}</span>
                   </a>
                 )}
               </div>
@@ -441,22 +441,22 @@ export const OrderDetailPageNew: React.FC = () => {
             {/* Delivery Address */}
             {address && Object.keys(address).length > 0 && (
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Entrega</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Entrega</h2>
                 <div className="flex items-start gap-3">
                   <MapPinIcon className="w-5 h-5 text-gray-400 mt-0.5" />
-                  <div className="text-gray-700">
+                  <div className="text-gray-700 dark:text-gray-300">
                     <p className="font-medium">
                       {(address as Record<string, string>).street || (address as Record<string, string>).address}
                       {(address as Record<string, string>).number && `, ${(address as Record<string, string>).number}`}
                     </p>
                     {(address as Record<string, string>).complement && (
-                      <p className="text-sm text-gray-500">{(address as Record<string, string>).complement}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{(address as Record<string, string>).complement}</p>
                     )}
                     <p className="text-sm">
                       {(address as Record<string, string>).neighborhood && `${(address as Record<string, string>).neighborhood}, `}
                       {(address as Record<string, string>).city} - {(address as Record<string, string>).state}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       CEP: {(address as Record<string, string>).zip_code || (address as Record<string, string>).cep}
                     </p>
                   </div>
@@ -466,13 +466,13 @@ export const OrderDetailPageNew: React.FC = () => {
 
             {/* Payment */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Pagamento</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pagamento</h2>
               {payments.length > 0 ? (
                 <div className="space-y-3">
                   {payments.map((payment) => (
-                    <div key={payment.id} className="p-3 bg-gray-50 rounded-lg">
+                    <div key={payment.id} className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-gray-900 dark:text-white">
                           {payment.payment_method === 'pix' ? '💠 PIX' : 
                            payment.payment_method === 'credit_card' ? '💳 Cartão' :
                            payment.payment_method === 'cash' ? '💵 Dinheiro' :
@@ -486,14 +486,14 @@ export const OrderDetailPageNew: React.FC = () => {
                           {['paid', 'approved', 'completed'].includes(payment.status) ? '✓ Pago' : '⏳ Pendente'}
                         </span>
                       </div>
-                      <p className="text-lg font-bold text-gray-900 mt-1">
+                      <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
                         {formatMoney(payment.amount)}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-4">
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
                   Nenhum pagamento registrado
                 </p>
               )}
@@ -501,7 +501,7 @@ export const OrderDetailPageNew: React.FC = () => {
 
             {/* Actions */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Ações</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ações</h2>
               <div className="space-y-2">
                 <button
                   onClick={() => printOrder(order as any, {
@@ -517,7 +517,7 @@ export const OrderDetailPageNew: React.FC = () => {
                 {!isCancelled && !isCompleted && (
                   <button
                     onClick={() => setShowCancelModal(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-red-600"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 dark:bg-red-900/40 rounded-lg transition-colors text-red-600 dark:text-red-400"
                   >
                     <XMarkIcon className="w-5 h-5" />
                     Cancelar Pedido
@@ -536,10 +536,10 @@ export const OrderDetailPageNew: React.FC = () => {
         title="Cancelar Pedido"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Tem certeza que deseja cancelar o pedido <strong>#{order.order_number}</strong>?
           </p>
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-red-600 dark:text-red-400">
             Esta ação não pode ser desfeita.
           </p>
           <div className="flex justify-end gap-3 pt-4">

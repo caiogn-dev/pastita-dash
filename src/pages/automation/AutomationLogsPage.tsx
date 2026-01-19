@@ -112,15 +112,15 @@ const AutomationLogsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Logs de Automação</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Logs de Automação</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Histórico de todas as ações de automação
           </p>
         </div>
         <div className="flex space-x-2">
           <button
             onClick={loadStats}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
           >
             <ChartBarIcon className="h-5 w-5 mr-2" />
             Estatísticas
@@ -138,7 +138,7 @@ const AutomationLogsPage: React.FC = () => {
           </button>
           <button
             onClick={loadLogs}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
           >
             <ArrowPathIcon className="h-5 w-5" />
           </button>
@@ -147,17 +147,17 @@ const AutomationLogsPage: React.FC = () => {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-white shadow rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Empresa</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Empresa</label>
               <select
                 value={filters.company_id}
                 onChange={(e) => {
                   setFilters({ ...filters, company_id: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               >
                 <option value="">Todas</option>
                 {companies.map((company) => (
@@ -168,14 +168,14 @@ const AutomationLogsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Tipo de Ação</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Ação</label>
               <select
                 value={filters.action_type}
                 onChange={(e) => {
                   setFilters({ ...filters, action_type: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               >
                 <option value="">Todos</option>
                 {Object.entries(actionTypeLabels).map(([value, label]) => (
@@ -184,14 +184,14 @@ const AutomationLogsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
               <select
                 value={filters.is_error}
                 onChange={(e) => {
                   setFilters({ ...filters, is_error: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               >
                 <option value="">Todos</option>
                 <option value="false">Sucesso</option>
@@ -199,7 +199,7 @@ const AutomationLogsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Telefone</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Telefone</label>
               <input
                 type="text"
                 value={filters.phone_number}
@@ -208,7 +208,7 @@ const AutomationLogsPage: React.FC = () => {
                   setPage(1);
                 }}
                 placeholder="Buscar por telefone"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500"
               />
             </div>
             <div className="flex items-end">
@@ -217,7 +217,7 @@ const AutomationLogsPage: React.FC = () => {
                   setFilters({ company_id: '', action_type: '', is_error: '', phone_number: '' });
                   setPage(1);
                 }}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
               >
                 Limpar filtros
               </button>
@@ -227,7 +227,7 @@ const AutomationLogsPage: React.FC = () => {
       )}
 
       {/* Logs Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <LoadingSpinner size="lg" />
@@ -235,47 +235,47 @@ const AutomationLogsPage: React.FC = () => {
         ) : logs.length === 0 ? (
           <div className="text-center py-12">
             <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum log encontrado</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum log encontrado</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Os logs aparecerão aqui conforme as automações são executadas.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Data/Hora
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Empresa
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Ação
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Telefone
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Descrição
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
                 {logs.map((log) => (
                   <tr
                     key={log.id}
-                    className="hover:bg-gray-50 cursor-pointer"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 cursor-pointer"
                     onClick={() => setSelectedLog(log)}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(log.created_at)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {log.company_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -285,10 +285,10 @@ const AutomationLogsPage: React.FC = () => {
                         {actionTypeLabels[log.action_type] || log.action_type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {log.phone_number || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
                       {log.description}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -307,26 +307,26 @@ const AutomationLogsPage: React.FC = () => {
 
         {/* Pagination */}
         {totalCount > 50 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
               >
                 Anterior
               </button>
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={page * 50 >= totalCount}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
               >
                 Próximo
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   Mostrando <span className="font-medium">{(page - 1) * 50 + 1}</span> a{' '}
                   <span className="font-medium">{Math.min(page * 50, totalCount)}</span> de{' '}
                   <span className="font-medium">{totalCount}</span> resultados
@@ -336,14 +336,14 @@ const AutomationLogsPage: React.FC = () => {
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
                 >
                   Anterior
                 </button>
                 <button
                   onClick={() => setPage(p => p + 1)}
                   disabled={page * 50 >= totalCount}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
                 >
                   Próximo
                 </button>
@@ -357,11 +357,11 @@ const AutomationLogsPage: React.FC = () => {
       {selectedLog && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setSelectedLog(null)} />
-            <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b border-gray-200">
+            <div className="fixed inset-0 bg-gray-50 dark:bg-gray-9000 bg-opacity-75" onClick={() => setSelectedLog(null)} />
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     Detalhes do Log
                   </h3>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -374,39 +374,39 @@ const AutomationLogsPage: React.FC = () => {
               <div className="px-6 py-4 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Data/Hora</label>
-                    <p className="mt-1 text-sm text-gray-900">{formatDate(selectedLog.created_at)}</p>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Data/Hora</label>
+                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{formatDate(selectedLog.created_at)}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Empresa</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedLog.company_name}</p>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Empresa</label>
+                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedLog.company_name}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Telefone</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedLog.phone_number || '-'}</p>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Telefone</label>
+                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedLog.phone_number || '-'}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Tipo de Evento</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedLog.event_type || '-'}</p>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de Evento</label>
+                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedLog.event_type || '-'}</p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Descrição</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedLog.description}</p>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Descrição</label>
+                  <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedLog.description}</p>
                 </div>
 
                 {selectedLog.is_error && selectedLog.error_message && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <label className="block text-sm font-medium text-red-800">Mensagem de Erro</label>
-                    <p className="mt-1 text-sm text-red-700">{selectedLog.error_message}</p>
+                    <p className="mt-1 text-sm text-red-700 dark:text-red-300">{selectedLog.error_message}</p>
                   </div>
                 )}
 
                 {Object.keys(selectedLog.request_data).length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-2">Dados da Requisição</label>
-                    <pre className="bg-gray-50 rounded-lg p-4 text-xs overflow-x-auto">
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Dados da Requisição</label>
+                    <pre className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-xs overflow-x-auto">
                       {JSON.stringify(selectedLog.request_data, null, 2)}
                     </pre>
                   </div>
@@ -414,17 +414,17 @@ const AutomationLogsPage: React.FC = () => {
 
                 {Object.keys(selectedLog.response_data).length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-2">Dados da Resposta</label>
-                    <pre className="bg-gray-50 rounded-lg p-4 text-xs overflow-x-auto">
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Dados da Resposta</label>
+                    <pre className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-xs overflow-x-auto">
                       {JSON.stringify(selectedLog.response_data, null, 2)}
                     </pre>
                   </div>
                 )}
               </div>
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
                 <button
                   onClick={() => setSelectedLog(null)}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
                 >
                   Fechar
                 </button>
@@ -438,37 +438,37 @@ const AutomationLogsPage: React.FC = () => {
       {showStats && stats && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setShowStats(false)} />
-            <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">
+            <div className="fixed inset-0 bg-gray-50 dark:bg-gray-9000 bg-opacity-75" onClick={() => setShowStats(false)} />
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Estatísticas de Automação
                 </h3>
               </div>
               <div className="px-6 py-4 space-y-6">
                 {/* Summary */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                    <p className="text-sm text-gray-500">Total de Logs</p>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Total de Logs</p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-gray-900">{stats.today}</p>
-                    <p className="text-sm text-gray-500">Hoje</p>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.today}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Hoje</p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-gray-900">{stats.this_week}</p>
-                    <p className="text-sm text-gray-500">Esta Semana</p>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.this_week}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Esta Semana</p>
                   </div>
                   <div className="bg-red-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-red-600">{stats.error_rate}%</p>
-                    <p className="text-sm text-gray-500">Taxa de Erro</p>
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.error_rate}%</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Taxa de Erro</p>
                   </div>
                 </div>
 
                 {/* By Action Type */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Por Tipo de Ação</h4>
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Por Tipo de Ação</h4>
                   <div className="space-y-2">
                     {stats.by_action_type.map((item) => (
                       <div key={item.action_type} className="flex items-center justify-between">
@@ -477,7 +477,7 @@ const AutomationLogsPage: React.FC = () => {
                         }`}>
                           {actionTypeLabels[item.action_type] || item.action_type}
                         </span>
-                        <span className="text-sm font-medium text-gray-900">{item.count}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{item.count}</span>
                       </div>
                     ))}
                   </div>
@@ -485,27 +485,27 @@ const AutomationLogsPage: React.FC = () => {
 
                 {/* By Day */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Últimos 7 Dias</h4>
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Últimos 7 Dias</h4>
                   <div className="space-y-2">
                     {stats.by_day.map((item) => (
                       <div key={item.date} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">{item.date}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{item.date}</span>
                         <div className="flex items-center">
                           <div
                             className="h-2 bg-green-500 rounded"
                             style={{ width: `${Math.max(4, (item.count / Math.max(...stats.by_day.map(d => d.count))) * 100)}px` }}
                           />
-                          <span className="ml-2 text-sm font-medium text-gray-900">{item.count}</span>
+                          <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">{item.count}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
                 <button
                   onClick={() => setShowStats(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
                 >
                   Fechar
                 </button>

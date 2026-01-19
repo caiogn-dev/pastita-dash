@@ -79,10 +79,10 @@ export const MessagesPage: React.FC = () => {
       header: 'Contato',
       render: (msg: Message) => (
         <div>
-          <p className="font-medium text-gray-900">
+          <p className="font-medium text-gray-900 dark:text-white">
             {msg.direction === 'inbound' ? msg.from_number : msg.to_number}
           </p>
-          <p className="text-sm text-gray-500">{msg.account_name}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{msg.account_name}</p>
         </div>
       ),
     },
@@ -91,7 +91,7 @@ export const MessagesPage: React.FC = () => {
       header: 'Conteúdo',
       render: (msg: Message) => (
         <div className="max-w-md">
-          <p className="text-sm text-gray-900 truncate">
+          <p className="text-sm text-gray-900 dark:text-white truncate">
             {msg.text_body || `[${msg.message_type}]`}
           </p>
         </div>
@@ -101,7 +101,7 @@ export const MessagesPage: React.FC = () => {
       key: 'type',
       header: 'Tipo',
       render: (msg: Message) => (
-        <span className="text-sm text-gray-600 capitalize">{msg.message_type}</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">{msg.message_type}</span>
       ),
     },
     {
@@ -113,7 +113,7 @@ export const MessagesPage: React.FC = () => {
       key: 'created_at',
       header: 'Data',
       render: (msg: Message) => (
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-gray-600 dark:text-gray-400">
           {format(new Date(msg.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
         </span>
       ),

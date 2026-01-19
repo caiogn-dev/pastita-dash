@@ -211,8 +211,8 @@ export const AccountFormPage: React.FC = () => {
                 />
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <p className="font-medium text-gray-900">Resposta Automática</p>
-                    <p className="text-sm text-gray-500">Processar mensagens com Langflow automaticamente</p>
+                    <p className="font-medium text-gray-900 dark:text-white">Resposta Automática</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Processar mensagens com Langflow automaticamente</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -221,13 +221,13 @@ export const AccountFormPage: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, auto_response_enabled: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-800 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
                   </label>
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <p className="font-medium text-gray-900">Handoff para Humano</p>
-                    <p className="text-sm text-gray-500">Permitir transferência para atendente humano</p>
+                    <p className="font-medium text-gray-900 dark:text-white">Handoff para Humano</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Permitir transferência para atendente humano</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -236,7 +236,7 @@ export const AccountFormPage: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, human_handoff_enabled: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-800 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
                   </label>
                 </div>
               </div>

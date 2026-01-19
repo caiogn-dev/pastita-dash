@@ -213,7 +213,7 @@ export default function AutomationsPage() {
   if (!storeId) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Selecione uma loja para gerenciar automações</p>
+        <p className="text-gray-500 dark:text-gray-400">Selecione uma loja para gerenciar automações</p>
       </div>
     );
   }
@@ -223,8 +223,8 @@ export default function AutomationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Automações de Email</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Automações de Email</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             Configure emails automáticos para eventos do sistema
           </p>
         </div>
@@ -242,47 +242,47 @@ export default function AutomationsPage() {
               <BoltIcon className="w-6 h-6 text-primary-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{automations.length}</p>
-              <p className="text-sm text-gray-500">Total</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{automations.length}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <PlayIcon className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
+              <PlayIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {automations.filter(a => a.is_active).length}
               </p>
-              <p className="text-sm text-gray-500">Ativas</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Ativas</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <EnvelopeIcon className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+              <EnvelopeIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {automations.reduce((sum, a) => sum + a.total_sent, 0)}
               </p>
-              <p className="text-sm text-gray-500">Emails Enviados</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Emails Enviados</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <CheckCircleIcon className="w-6 h-6 text-purple-600" />
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+              <CheckCircleIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {automations.reduce((sum, a) => sum + a.total_opened, 0)}
               </p>
-              <p className="text-sm text-gray-500">Abertos</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Abertos</p>
             </div>
           </div>
         </Card>
@@ -292,10 +292,10 @@ export default function AutomationsPage() {
       {automations.length === 0 ? (
         <Card className="p-12 text-center">
           <BoltIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             Nenhuma automação configurada
           </h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
             Crie automações para enviar emails automaticamente quando eventos ocorrerem
           </p>
           <Button onClick={() => setShowCreateModal(true)}>
@@ -321,18 +321,18 @@ export default function AutomationsPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900">{automation.name}</h3>
+                        <h3 className="font-medium text-gray-900 dark:text-white">{automation.name}</h3>
                         {automation.is_active ? (
-                          <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
+                          <span className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full">
                             Ativa
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
+                          <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
                             Pausada
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {automation.trigger_type_display}
                         {automation.delay_minutes > 0 && (
                           <span className="ml-2">
@@ -349,14 +349,14 @@ export default function AutomationsPage() {
 
                   <div className="flex items-center gap-4">
                     <div className="text-right text-sm">
-                      <p className="text-gray-900 font-medium">{automation.total_sent}</p>
-                      <p className="text-gray-500">enviados</p>
+                      <p className="text-gray-900 dark:text-white font-medium">{automation.total_sent}</p>
+                      <p className="text-gray-500 dark:text-gray-400">enviados</p>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => openTestModal(automation)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                        className="p-2 text-gray-400 hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 rounded-lg"
                         title="Enviar teste"
                       >
                         <BeakerIcon className="w-5 h-5" />
@@ -378,7 +378,7 @@ export default function AutomationsPage() {
                       </button>
                       <button
                         onClick={() => handleDelete(automation)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                        className="p-2 text-gray-400 hover:text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
                         title="Excluir"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -404,26 +404,26 @@ export default function AutomationsPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nome da Automação *
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="Ex: Email de confirmação de pedido"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Gatilho (Quando enviar) *
             </label>
             <select
               value={formData.trigger_type}
               onChange={e => setFormData(prev => ({ ...prev, trigger_type: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Selecione um gatilho...</option>
               {triggerTypes.map(type => (
@@ -435,14 +435,14 @@ export default function AutomationsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Assunto do Email *
             </label>
             <input
               type="text"
               value={formData.subject}
               onChange={e => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="Ex: Seu pedido #{{order_number}} foi confirmado!"
             />
           </div>
@@ -450,38 +450,38 @@ export default function AutomationsPage() {
           {/* Variables Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="text-sm font-medium text-blue-900 mb-2">📝 Variáveis Disponíveis</h4>
-            <p className="text-xs text-blue-700 mb-2">
+            <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
               Use estas variáveis no assunto e conteúdo - serão preenchidas automaticamente:
             </p>
             <div className="flex flex-wrap gap-1">
-              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{customer_name}}'}</code>
-              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{first_name}}'}</code>
-              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{email}}'}</code>
-              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{store_name}}'}</code>
-              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{order_number}}'}</code>
-              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{order_total}}'}</code>
-              <code className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{'{{tracking_code}}'}</code>
+              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{customer_name}}'}</code>
+              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{first_name}}'}</code>
+              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{email}}'}</code>
+              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{store_name}}'}</code>
+              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{order_number}}'}</code>
+              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{order_total}}'}</code>
+              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{tracking_code}}'}</code>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Conteúdo HTML *
             </label>
             <textarea
               value={formData.html_content}
               onChange={e => setFormData(prev => ({ ...prev, html_content: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 font-mono text-sm"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 font-mono text-sm"
               rows={8}
               placeholder="<html>...</html>"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               💡 Dica: Copie um template da página de Marketing e personalize aqui
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Delay (minutos)
             </label>
             <input
@@ -489,9 +489,9 @@ export default function AutomationsPage() {
               min="0"
               value={formData.delay_minutes}
               onChange={e => setFormData(prev => ({ ...prev, delay_minutes: parseInt(e.target.value) || 0 }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               0 = envio imediato. Use delay para emails como "solicitar avaliação" (ex: 1440 = 24h)
             </p>
           </div>
@@ -502,9 +502,9 @@ export default function AutomationsPage() {
               id="is_active"
               checked={formData.is_active}
               onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
             />
-            <label htmlFor="is_active" className="text-sm text-gray-700">
+            <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-gray-300">
               Ativar automação imediatamente
             </label>
           </div>
@@ -537,20 +537,20 @@ export default function AutomationsPage() {
         title="Enviar Email de Teste"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Envie um email de teste para verificar como a automação 
             <strong> "{selectedAutomation?.name}"</strong> será exibida.
           </p>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email para teste
             </label>
             <input
               type="email"
               value={testEmail}
               onChange={e => setTestEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="seu@email.com"
             />
           </div>

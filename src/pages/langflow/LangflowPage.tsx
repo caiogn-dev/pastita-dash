@@ -161,8 +161,8 @@ export const LangflowPage: React.FC = () => {
       header: 'Nome',
       render: (flow: LangflowFlow) => (
         <div>
-          <p className="font-medium text-gray-900">{flow.name}</p>
-          <p className="text-sm text-gray-500 truncate max-w-xs">{flow.description || '-'}</p>
+          <p className="font-medium text-gray-900 dark:text-white">{flow.name}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{flow.description || '-'}</p>
         </div>
       ),
     },
@@ -170,7 +170,7 @@ export const LangflowPage: React.FC = () => {
       key: 'flow_id',
       header: 'Flow ID',
       render: (flow: LangflowFlow) => (
-        <span className="font-mono text-sm text-gray-600">{flow.flow_id.slice(0, 12)}...</span>
+        <span className="font-mono text-sm text-gray-600 dark:text-gray-400">{flow.flow_id.slice(0, 12)}...</span>
       ),
     },
     {
@@ -182,14 +182,14 @@ export const LangflowPage: React.FC = () => {
       key: 'accounts',
       header: 'Contas',
       render: (flow: LangflowFlow) => (
-        <span className="text-sm text-gray-600">{flow.accounts?.length || 0}</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400">{flow.accounts?.length || 0}</span>
       ),
     },
     {
       key: 'timeout',
       header: 'Timeout',
       render: (flow: LangflowFlow) => (
-        <span className="text-sm text-gray-600">{flow.timeout_seconds}s</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400">{flow.timeout_seconds}s</span>
       ),
     },
     {
@@ -248,7 +248,7 @@ export const LangflowPage: React.FC = () => {
       key: 'session_id',
       header: 'Session ID',
       render: (session: LangflowSession) => (
-        <span className="font-mono text-sm text-gray-600">{session.session_id.slice(0, 12)}...</span>
+        <span className="font-mono text-sm text-gray-600 dark:text-gray-400">{session.session_id.slice(0, 12)}...</span>
       ),
     },
     {
@@ -256,21 +256,21 @@ export const LangflowPage: React.FC = () => {
       header: 'Flow',
       render: (session: LangflowSession) => {
         const flow = flows.find((f) => f.id === session.flow);
-        return <span className="text-sm text-gray-900">{flow?.name || session.flow}</span>;
+        return <span className="text-sm text-gray-900 dark:text-white">{flow?.name || session.flow}</span>;
       },
     },
     {
       key: 'interactions',
       header: 'Interações',
       render: (session: LangflowSession) => (
-        <span className="text-sm text-gray-600">{session.interaction_count}</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400">{session.interaction_count}</span>
       ),
     },
     {
       key: 'last_interaction',
       header: 'Última Interação',
       render: (session: LangflowSession) => (
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-gray-600 dark:text-gray-400">
           {format(new Date(session.last_interaction_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
         </span>
       ),
@@ -385,13 +385,13 @@ export const LangflowPage: React.FC = () => {
             </Card>
 
             <Card title="Resposta">
-              <div className="min-h-[200px] bg-gray-50 rounded-lg p-4">
+              <div className="min-h-[200px] bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                 {isProcessing ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
                   </div>
                 ) : playgroundResponse ? (
-                  <p className="text-gray-900 whitespace-pre-wrap">{playgroundResponse}</p>
+                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{playgroundResponse}</p>
                 ) : (
                   <p className="text-gray-400 text-center">A resposta aparecerá aqui...</p>
                 )}
@@ -477,21 +477,21 @@ export const LangflowPage: React.FC = () => {
         {statsModal.stats && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <p className="text-sm text-gray-500">Total de Interações</p>
-                <p className="text-2xl font-bold text-gray-900">{statsModal.stats.total_interactions}</p>
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Total de Interações</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{statsModal.stats.total_interactions}</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <p className="text-sm text-gray-500">Tempo Médio</p>
-                <p className="text-2xl font-bold text-gray-900">{statsModal.stats.avg_duration_ms}ms</p>
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Tempo Médio</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{statsModal.stats.avg_duration_ms}ms</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <p className="text-sm text-gray-500">Sessões Ativas</p>
-                <p className="text-2xl font-bold text-gray-900">{statsModal.stats.active_sessions}</p>
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Sessões Ativas</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{statsModal.stats.active_sessions}</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <p className="text-sm text-gray-500">Taxa de Sucesso</p>
-                <p className="text-2xl font-bold text-green-600">
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Taxa de Sucesso</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {statsModal.stats.by_status?.success
                     ? Math.round((statsModal.stats.by_status.success / statsModal.stats.total_interactions) * 100)
                     : 0}%
@@ -499,12 +499,12 @@ export const LangflowPage: React.FC = () => {
               </div>
             </div>
             <div className="border-t pt-4">
-              <h4 className="font-medium text-gray-900 mb-2">Por Status</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Por Status</h4>
               <div className="space-y-2">
                 {Object.entries(statsModal.stats.by_status || {}).map(([status, count]) => (
                   <div key={status} className="flex justify-between">
-                    <span className="text-sm text-gray-600 capitalize">{status}</span>
-                    <span className="text-sm font-medium text-gray-900">{count as number}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">{status}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{count as number}</span>
                   </div>
                 ))}
               </div>
@@ -522,27 +522,27 @@ export const LangflowPage: React.FC = () => {
       >
         <div className="max-h-96 overflow-y-auto space-y-3">
           {logsModal.logs.length === 0 ? (
-            <p className="text-center text-gray-500 py-4">Nenhum log encontrado</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 py-4">Nenhum log encontrado</p>
           ) : (
             logsModal.logs.map((log) => (
-              <div key={log.id} className="bg-gray-50 rounded-lg p-3">
+              <div key={log.id} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <StatusBadge status={log.status} />
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     {format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })}
                   </span>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm">
-                    <span className="font-medium text-gray-700">Input:</span>{' '}
-                    <span className="text-gray-600">{log.input_message.slice(0, 100)}...</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Input:</span>{' '}
+                    <span className="text-gray-600 dark:text-gray-400">{log.input_message.slice(0, 100)}...</span>
                   </p>
                   <p className="text-sm">
-                    <span className="font-medium text-gray-700">Output:</span>{' '}
-                    <span className="text-gray-600">{log.output_message?.slice(0, 100) || '-'}...</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Output:</span>{' '}
+                    <span className="text-gray-600 dark:text-gray-400">{log.output_message?.slice(0, 100) || '-'}...</span>
                   </p>
                   {log.duration_ms && (
-                    <p className="text-xs text-gray-500">Duração: {log.duration_ms}ms</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Duração: {log.duration_ms}ms</p>
                   )}
                   {log.error_message && (
                     <p className="text-xs text-red-500">Erro: {log.error_message}</p>

@@ -389,12 +389,12 @@ export const OrdersPage: React.FC = () => {
       header: 'Pedido',
       render: (order: UnifiedOrder) => (
         <div>
-          <p className="font-semibold text-gray-900">#{order.order_number}</p>
-          <p className="text-sm text-gray-500">
+          <p className="font-semibold text-gray-900 dark:text-white">#{order.order_number}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {format(new Date(order.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
           </p>
           {order.source && (
-            <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
+            <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
               {order.source}
             </span>
           )}
@@ -406,8 +406,8 @@ export const OrdersPage: React.FC = () => {
       header: 'Cliente',
       render: (order: UnifiedOrder) => (
         <div>
-          <p className="font-medium text-gray-900">{order.customer_name || '-'}</p>
-          <p className="text-sm text-gray-500">{order.customer_phone || '-'}</p>
+          <p className="font-medium text-gray-900 dark:text-white">{order.customer_name || '-'}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{order.customer_phone || '-'}</p>
         </div>
       ),
     },
@@ -415,7 +415,7 @@ export const OrdersPage: React.FC = () => {
       key: 'items',
       header: 'Itens',
       render: (order: UnifiedOrder) => (
-        <span className="text-sm font-medium text-gray-900">
+        <span className="text-sm font-medium text-gray-900 dark:text-white">
           {order.items_count || 0} item(ns)
         </span>
       ),
@@ -424,7 +424,7 @@ export const OrdersPage: React.FC = () => {
       key: 'total',
       header: 'Total',
       render: (order: UnifiedOrder) => (
-        <span className="font-semibold text-gray-900">
+        <span className="font-semibold text-gray-900 dark:text-white">
           R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
         </span>
       ),
@@ -509,14 +509,14 @@ export const OrdersPage: React.FC = () => {
                 console.log('[Test] Playing test sound...');
                 playOrderSound();
               }}
-              className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+              className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-full hover:bg-purple-200"
               title="Testar som de notificação"
             >
               🔊 Testar
             </button>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('kanban')}
                 className={`p-1.5 rounded ${viewMode === 'kanban' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
@@ -588,7 +588,7 @@ export const OrdersPage: React.FC = () => {
               placeholder="Buscar por número, cliente, telefone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -621,7 +621,7 @@ export const OrdersPage: React.FC = () => {
             <Card>
               {filteredOrders.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">Nenhum pedido encontrado</p>
+                  <p className="text-gray-500 dark:text-gray-400">Nenhum pedido encontrado</p>
                 </div>
               ) : (
                 <Table
