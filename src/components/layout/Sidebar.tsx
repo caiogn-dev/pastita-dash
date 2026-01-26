@@ -80,6 +80,16 @@ const navigationSections: NavSection[] = [
       { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
       { name: 'Mensagens', href: '/messages', icon: InboxIcon },
       { name: 'Contas WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
+      { 
+        name: 'Instagram', 
+        href: '/instagram', 
+        icon: ChatBubbleLeftRightIcon,
+        badge: 'Novo',
+        children: [
+          { name: 'Contas', href: '/instagram/accounts', icon: DevicePhoneMobileIcon },
+          { name: 'Inbox DM', href: '/instagram/inbox', icon: InboxIcon },
+        ]
+      },
     ]
   },
   {

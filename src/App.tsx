@@ -51,6 +51,9 @@ import { MarketingPage, SubscribersPage } from './pages/marketing';
 import { NewCampaignPage, CampaignsListPage } from './pages/marketing/email';
 import AutomationsPage from './pages/marketing/AutomationsPage';
 
+// Instagram Pages
+import { InstagramAccounts, InstagramInbox } from './pages/instagram';
+
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
@@ -155,6 +158,11 @@ const AppContent: React.FC = () => {
         <Route path="marketing/email/templates" element={<MarketingPage />} />
         <Route path="marketing/whatsapp" element={<MarketingPage />} />
         <Route path="marketing/whatsapp/new" element={<MarketingPage />} />
+        
+        {/* Instagram Routes */}
+        <Route path="instagram" element={<InstagramAccounts />} />
+        <Route path="instagram/accounts" element={<InstagramAccounts />} />
+        <Route path="instagram/inbox" element={<InstagramInbox />} />
       </Route>
 
       {/* Catch all */}
