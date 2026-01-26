@@ -472,8 +472,8 @@ export const OrdersPage: React.FC = () => {
     if (showAllStatuses) {
       return ORDER_STATUSES.map(s => s.id);
     }
-    // Default: show active statuses (full delivery flow)
-    return ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
+    // Default: show active statuses (full delivery flow including awaiting_payment)
+    return ['pending', 'awaiting_payment', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
   }, [showAllStatuses]);
 
   if (isLoading) {
