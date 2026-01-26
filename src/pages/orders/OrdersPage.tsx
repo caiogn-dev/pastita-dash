@@ -63,6 +63,7 @@ export const OrdersPage: React.FC = () => {
   
   // Load orders from unified API (defined first for use in WebSocket handlers)
   const loadOrders = useCallback(async () => {
+    console.log('[Orders] loadOrders called with storeId:', effectiveStoreId);
     setIsLoading(true);
     try {
       const filters: UnifiedOrderFilters = {
@@ -71,9 +72,12 @@ export const OrdersPage: React.FC = () => {
         search: searchQuery || undefined,
       };
       
+      console.log('[Orders] Fetching orders with filters:', filters);
       const response = await unifiedApi.getOrders(filters);
+      console.log('[Orders] Received', response.results.length, 'orders');
       setOrders(response.results);
     } catch (error) {
+      console.error('[Orders] Error loading orders:', error);
       toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
@@ -114,7 +118,9 @@ export const OrdersPage: React.FC = () => {
         duration: 6000,
         icon: '🛒',
       });
-      scheduleRefresh();
+      // Force immediate refresh for new orders (bypass debounce)
+      lastRefresh.current = 0;
+      loadOrders();
     },
     onOrderUpdated: (data) => {
       console.log('[Orders] Order updated:', data);
