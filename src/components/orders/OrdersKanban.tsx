@@ -46,15 +46,26 @@ import {
 } from '@heroicons/react/24/outline';
 import { UnifiedOrder } from '../../services/unifiedApi';
 
-// Order status configuration
+// Order status configuration - SEMANTIC FLOW
+// Separates "order received" from "payment confirmed" for clarity
 export const ORDER_STATUSES = [
   { 
     id: 'pending', 
-    label: 'Pendente', 
-    color: 'bg-yellow-50 border-yellow-200',
-    headerColor: 'bg-yellow-500',
+    label: 'Recebido', 
+    color: 'bg-gray-50 border-gray-300',
+    headerColor: 'bg-gray-500',
     icon: ClockIcon,
-    aliases: ['pendente', 'awaiting_payment', 'processing']  // processing = aguardando pagamento
+    aliases: ['pendente', 'received'],
+    description: 'Pedido recebido, aguardando ação'
+  },
+  { 
+    id: 'awaiting_payment', 
+    label: 'Aguard. Pagamento', 
+    color: 'bg-amber-50 border-amber-300',
+    headerColor: 'bg-amber-500',
+    icon: CurrencyDollarIcon,
+    aliases: ['processing', 'payment_pending'],
+    description: 'Aguardando confirmação de pagamento'
   },
   { 
     id: 'confirmed', 
@@ -62,7 +73,8 @@ export const ORDER_STATUSES = [
     color: 'bg-blue-50 border-blue-200',
     headerColor: 'bg-blue-500',
     icon: CheckCircleIcon,
-    aliases: ['confirmado', 'aprovado', 'paid']
+    aliases: ['confirmado', 'aprovado', 'paid', 'payment_confirmed'],
+    description: 'Pagamento confirmado - Pronto para produção'
   },
   { 
     id: 'preparing', 
@@ -70,7 +82,8 @@ export const ORDER_STATUSES = [
     color: 'bg-orange-50 border-orange-200',
     headerColor: 'bg-orange-500',
     icon: FireIcon,
-    aliases: ['preparando']
+    aliases: ['preparando', 'in_production'],
+    description: 'Em produção na cozinha'
   },
   { 
     id: 'ready', 
@@ -78,7 +91,8 @@ export const ORDER_STATUSES = [
     color: 'bg-purple-50 border-purple-200',
     headerColor: 'bg-purple-500',
     icon: CheckCircleIcon,
-    aliases: ['pronto', 'ready_for_pickup', 'ready_for_delivery']
+    aliases: ['pronto', 'ready_for_pickup', 'ready_for_delivery'],
+    description: 'Pronto para entrega/retirada'
   },
   { 
     id: 'out_for_delivery', 
@@ -86,7 +100,8 @@ export const ORDER_STATUSES = [
     color: 'bg-indigo-50 border-indigo-200',
     headerColor: 'bg-indigo-500',
     icon: TruckIcon,
-    aliases: ['shipped', 'enviado', 'em_entrega', 'delivering']
+    aliases: ['shipped', 'enviado', 'em_entrega', 'delivering'],
+    description: 'Saiu para entrega'
   },
   { 
     id: 'delivered', 
@@ -94,7 +109,8 @@ export const ORDER_STATUSES = [
     color: 'bg-green-50 border-green-200',
     headerColor: 'bg-green-500',
     icon: HomeIcon,
-    aliases: ['entregue', 'completed']
+    aliases: ['entregue', 'completed'],
+    description: 'Pedido finalizado'
   },
   { 
     id: 'cancelled', 
@@ -102,7 +118,8 @@ export const ORDER_STATUSES = [
     color: 'bg-red-50 border-red-200',
     headerColor: 'bg-red-500',
     icon: XCircleIcon,
-    aliases: ['cancelado', 'refunded']
+    aliases: ['cancelado', 'refunded', 'failed'],
+    description: 'Pedido cancelado'
   },
 ];
 
@@ -155,6 +172,34 @@ const SortableOrderCard: React.FC<OrderCardProps> = ({ order, onClick, isUpdatin
   );
 };
 
+// Payment Status Badge Component
+const PaymentBadge: React.FC<{ paymentStatus?: string; paymentMethod?: string }> = ({ 
+  paymentStatus, 
+  paymentMethod 
+}) => {
+  const configs: Record<string, { label: string; color: string; icon: string }> = {
+    pending: { label: 'Aguardando', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', icon: '💳' },
+    awaiting: { label: 'Processando', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300', icon: '⏳' },
+    processing: { label: 'Processando', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300', icon: '⏳' },
+    paid: { label: 'Pago', color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', icon: '✅' },
+    failed: { label: 'Falhou', color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300', icon: '❌' },
+    refunded: { label: 'Reembolsado', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300', icon: '↩️' },
+  };
+  
+  const status = paymentStatus?.toLowerCase() || 'pending';
+  const config = configs[status] || configs.pending;
+  
+  // Show payment method for cash
+  const isCash = paymentMethod?.toLowerCase() === 'cash' || paymentMethod?.toLowerCase() === 'dinheiro';
+  
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${config.color}`}>
+      <span>{config.icon}</span>
+      <span>{isCash && status === 'pending' ? 'Dinheiro' : config.label}</span>
+    </span>
+  );
+};
+
 // Order Card Component
 const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpdating, isSuccess }) => {
   return (
@@ -189,6 +234,14 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
             </span>
           )}
         </div>
+      </div>
+
+      {/* Payment Status Badge - NEW */}
+      <div className="mb-2">
+        <PaymentBadge 
+          paymentStatus={order.payment_status} 
+          paymentMethod={order.payment_method} 
+        />
       </div>
 
       {/* Customer */}

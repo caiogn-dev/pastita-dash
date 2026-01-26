@@ -19,6 +19,7 @@ export interface UnifiedOrder {
   customer_phone: string;
   status: string;
   payment_status: string;
+  payment_method?: string;  // Payment method (e.g., 'pix', 'credit_card', 'cash')
   subtotal: number;
   discount: number;
   delivery_fee: number;

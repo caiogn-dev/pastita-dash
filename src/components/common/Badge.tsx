@@ -63,16 +63,48 @@ export const Badge: React.FC<BadgeProps> = ({
 };
 
 // Order status configuration with specific colors and icons
-export const ORDER_STATUS_CONFIG: Record<string, { variant: BadgeProps['variant']; label: string; description: string }> = {
-  pending: { variant: 'warning', label: 'Pendente', description: 'Aguardando confirmação' },
-  confirmed: { variant: 'info', label: 'Confirmado', description: 'Pedido confirmado' },
-  processing: { variant: 'purple', label: 'Processando', description: 'Em processamento' },
-  awaiting_payment: { variant: 'orange', label: 'Aguardando Pagamento', description: 'Aguardando pagamento do cliente' },
-  paid: { variant: 'success', label: 'Pago', description: 'Pagamento confirmado' },
-  shipped: { variant: 'teal', label: 'Enviado', description: 'Pedido enviado' },
-  delivered: { variant: 'indigo', label: 'Entregue', description: 'Pedido entregue' },
-  cancelled: { variant: 'danger', label: 'Cancelado', description: 'Pedido cancelado' },
-  refunded: { variant: 'gray', label: 'Reembolsado', description: 'Valor reembolsado' },
+// SEMANTIC FLOW: received -> awaiting_payment -> confirmed (paid) -> preparing -> ready -> out_for_delivery -> delivered
+export const ORDER_STATUS_CONFIG: Record<string, { variant: BadgeProps['variant']; label: string; description: string; icon?: string }> = {
+  // Initial states
+  pending: { variant: 'gray', label: 'Recebido', description: 'Pedido recebido', icon: '📥' },
+  received: { variant: 'gray', label: 'Recebido', description: 'Pedido recebido', icon: '📥' },
+  
+  // Payment states
+  awaiting_payment: { variant: 'orange', label: 'Aguard. Pagamento', description: 'Aguardando pagamento do cliente', icon: '💳' },
+  processing: { variant: 'orange', label: 'Processando', description: 'Pagamento em processamento', icon: '⏳' },
+  payment_pending: { variant: 'orange', label: 'Pagamento Pendente', description: 'Aguardando confirmação de pagamento', icon: '💳' },
+  
+  // Confirmed states (payment received)
+  confirmed: { variant: 'info', label: 'Confirmado', description: 'Pagamento confirmado - Pronto para produção', icon: '✅' },
+  paid: { variant: 'success', label: 'Pago', description: 'Pagamento confirmado', icon: '✅' },
+  payment_confirmed: { variant: 'success', label: 'Pago', description: 'Pagamento confirmado via webhook', icon: '✅' },
+  
+  // Production states
+  preparing: { variant: 'warning', label: 'Preparando', description: 'Em produção na cozinha', icon: '🔥' },
+  in_production: { variant: 'warning', label: 'Em Produção', description: 'Sendo preparado', icon: '🔥' },
+  ready: { variant: 'purple', label: 'Pronto', description: 'Pronto para entrega/retirada', icon: '📦' },
+  
+  // Delivery states
+  shipped: { variant: 'teal', label: 'Enviado', description: 'Pedido enviado', icon: '🚚' },
+  out_for_delivery: { variant: 'indigo', label: 'Em Entrega', description: 'Saiu para entrega', icon: '🚚' },
+  delivered: { variant: 'success', label: 'Entregue', description: 'Pedido entregue', icon: '🏠' },
+  completed: { variant: 'success', label: 'Finalizado', description: 'Pedido concluído', icon: '✔️' },
+  
+  // Cancelled states
+  cancelled: { variant: 'danger', label: 'Cancelado', description: 'Pedido cancelado', icon: '❌' },
+  refunded: { variant: 'gray', label: 'Reembolsado', description: 'Valor reembolsado', icon: '↩️' },
+  failed: { variant: 'danger', label: 'Falhou', description: 'Falha no processamento', icon: '❌' },
+};
+
+// Payment status configuration (separate from order status)
+export const PAYMENT_STATUS_CONFIG: Record<string, { variant: BadgeProps['variant']; label: string; icon: string }> = {
+  pending: { variant: 'warning', label: 'Aguardando', icon: '💳' },
+  awaiting: { variant: 'orange', label: 'Processando', icon: '⏳' },
+  processing: { variant: 'orange', label: 'Processando', icon: '⏳' },
+  paid: { variant: 'success', label: 'Pago', icon: '✅' },
+  failed: { variant: 'danger', label: 'Falhou', icon: '❌' },
+  refunded: { variant: 'purple', label: 'Reembolsado', icon: '↩️' },
+  partially_refunded: { variant: 'warning', label: 'Reembolso Parcial', icon: '↩️' },
 };
 
 // Conversation status configuration
