@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -20,6 +21,7 @@ import {
   Tooltip,
   CircularProgress,
   Divider,
+  Snackbar,
 } from '@mui/material';
 import {
   Instagram as InstagramIcon,
@@ -33,6 +35,7 @@ import {
   Message as MessageIcon,
   People as PeopleIcon,
   Key as KeyIcon,
+  Sync as SyncIcon,
 } from '@mui/icons-material';
 import { instagramService, InstagramAccount, CreateInstagramAccount, InstagramAccountStats } from '../../services/instagram';
 
@@ -45,12 +48,15 @@ const statusConfig: Record<string, { color: 'success' | 'warning' | 'error' | 'd
 };
 
 export default function InstagramAccounts() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<InstagramAccount | null>(null);
   const [stats, setStats] = useState<Record<string, InstagramAccountStats>>({});
+  const [syncing, setSyncing] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<CreateInstagramAccount>>({
     name: '',
     instagram_account_id: '',
@@ -65,6 +71,44 @@ export default function InstagramAccounts() {
     auto_response_enabled: false,
   });
   const [saving, setSaving] = useState(false);
+
+  // Handle OAuth callback
+  useEffect(() => {
+    const oauthSuccess = searchParams.get('oauth_success');
+    const oauthError = searchParams.get('error');
+    const oauthData = searchParams.get('data');
+    
+    if (oauthSuccess === 'true' && oauthData) {
+      try {
+        // Decode base64 data from OAuth callback
+        const decodedData = JSON.parse(atob(oauthData));
+        console.log('OAuth data received:', decodedData);
+        
+        // Pre-fill form with OAuth data
+        setFormData(prev => ({
+          ...prev,
+          name: decodedData.username || '',
+          instagram_account_id: decodedData.instagram_account_id || decodedData.instagram_user_id || '',
+          instagram_user_id: decodedData.instagram_user_id || '',
+          username: decodedData.username || '',
+          access_token: decodedData.access_token || '',
+        }));
+        
+        setSuccess(`Conta @${decodedData.username} autorizada! Complete o cadastro abaixo.`);
+        setDialogOpen(true);
+        
+        // Clear URL params
+        setSearchParams({});
+      } catch (err) {
+        console.error('Error parsing OAuth data:', err);
+        setError('Erro ao processar dados de autenticação');
+        setSearchParams({});
+      }
+    } else if (oauthError) {
+      setError(`Erro na autenticação: ${oauthError}`);
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     loadAccounts();
@@ -161,6 +205,31 @@ export default function InstagramAccounts() {
     }
   };
 
+  const handleSyncConversations = async (account: InstagramAccount) => {
+    try {
+      setSyncing(account.id);
+      const result = await instagramService.syncConversations(account.id);
+      setSuccess(`Sincronizado: ${result.synced} conversas encontradas`);
+      loadAccounts();
+    } catch (err) {
+      console.error('Error syncing conversations:', err);
+      setError('Erro ao sincronizar conversas');
+    } finally {
+      setSyncing(null);
+    }
+  };
+
+  const handleConnectInstagram = () => {
+    // Redirect to Instagram OAuth
+    const clientId = '955411496814093';
+    const redirectUri = encodeURIComponent('https://web-production-3e83a.up.railway.app/api/v1/instagram/oauth/callback/');
+    const scope = encodeURIComponent('instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish');
+    
+    const authUrl = `https://www.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+    
+    window.location.href = authUrl;
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -193,9 +262,16 @@ export default function InstagramAccounts() {
             Atualizar
           </Button>
           <Button
-            variant="contained"
+            variant="outlined"
             startIcon={<AddIcon />}
             onClick={() => setDialogOpen(true)}
+          >
+            Adicionar Manual
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<InstagramIcon />}
+            onClick={handleConnectInstagram}
             sx={{
               background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
               '&:hover': {
@@ -203,7 +279,7 @@ export default function InstagramAccounts() {
               },
             }}
           >
-            Conectar Conta
+            Conectar via Instagram
           </Button>
         </Box>
       </Box>
@@ -211,6 +287,12 @@ export default function InstagramAccounts() {
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+      
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess(null)}>
+          {success}
         </Alert>
       )}
 
@@ -339,6 +421,16 @@ export default function InstagramAccounts() {
                     {/* Actions */}
                     <Box display="flex" justifyContent="space-between">
                       <Box>
+                        <Tooltip title="Sincronizar Conversas">
+                          <IconButton 
+                            onClick={() => handleSyncConversations(account)} 
+                            size="small"
+                            disabled={syncing === account.id}
+                            color="primary"
+                          >
+                            {syncing === account.id ? <CircularProgress size={20} /> : <SyncIcon />}
+                          </IconButton>
+                        </Tooltip>
                         <Tooltip title="Sincronizar Perfil">
                           <IconButton onClick={() => handleSyncProfile(account)} size="small">
                             <RefreshIcon />

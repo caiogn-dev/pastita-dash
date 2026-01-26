@@ -151,6 +151,11 @@ export const instagramService = {
     return response.data;
   },
 
+  syncConversations: async (id: string): Promise<{ success: boolean; synced: number; errors: number; total_found: number }> => {
+    const response = await api.post(`/instagram/accounts/${id}/sync_conversations/`);
+    return response.data;
+  },
+
   // ==================== Conversations ====================
 
   getConversations: async (params?: {
