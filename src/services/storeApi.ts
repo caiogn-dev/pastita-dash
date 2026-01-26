@@ -419,6 +419,36 @@ class StoreApiClient {
     }
   }
 
+  /**
+   * Mark order as paid (for manual payment confirmation - cash, transfer, etc)
+   */
+  async markOrderPaid(id: string, paymentReference?: string): Promise<Order> {
+    try {
+      const response = await api.post<Order>(`${this.baseUrl}/orders/${id}/mark_paid/`, {
+        payment_reference: paymentReference || ''
+      });
+      return response.data;
+    } catch (error) {
+      logger.error('Failed to mark order as paid', { id, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Update payment status only (pending, paid, failed, refunded)
+   */
+  async updatePaymentStatus(id: string, paymentStatus: PaymentStatus): Promise<Order> {
+    try {
+      const response = await api.post<Order>(`${this.baseUrl}/orders/${id}/update_payment_status/`, {
+        payment_status: paymentStatus
+      });
+      return response.data;
+    } catch (error) {
+      logger.error('Failed to update payment status', { id, paymentStatus, error });
+      throw error;
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // COUPONS
   // ---------------------------------------------------------------------------

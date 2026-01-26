@@ -95,10 +95,10 @@ export const PaymentsPage: React.FC = () => {
   // Handle confirm payment (mark as paid)
   const handleConfirmPayment = async (order: Order) => {
     try {
-      await storeApi.updateOrderStatus(order.id, 'confirmed');
+      const updatedOrder = await storeApi.markOrderPaid(order.id);
       setOrders(orders.map(o => 
         o.id === order.id 
-          ? { ...o, payment_status: 'paid' } 
+          ? { ...o, payment_status: updatedOrder.payment_status, status: updatedOrder.status } 
           : o
       ));
       toast.success(`Pagamento do pedido #${order.order_number} confirmado!`);
