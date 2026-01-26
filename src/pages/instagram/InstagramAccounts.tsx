@@ -80,8 +80,11 @@ export default function InstagramAccounts() {
     
     if (oauthSuccess === 'true' && oauthData) {
       try {
-        // Decode base64 data from OAuth callback
-        const decodedData = JSON.parse(atob(oauthData));
+        // Decode base64url data from OAuth callback (replace URL-safe chars)
+        const base64 = oauthData.replace(/-/g, '+').replace(/_/g, '/');
+        // Add padding if needed
+        const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4);
+        const decodedData = JSON.parse(atob(padded));
         console.log('OAuth data received:', decodedData);
         
         // Pre-fill form with OAuth data
