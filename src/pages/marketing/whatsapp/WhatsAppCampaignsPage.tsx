@@ -41,10 +41,11 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await whatsappService.campaigns.list();
-      setCampaigns(response.results);
+      setCampaigns(response.results || []);
     } catch (error) {
       logger.error('Failed to load campaigns', error);
-      toast.error('Erro ao carregar campanhas');
+      // Don't show error toast, just show empty state
+      setCampaigns([]);
     } finally {
       setLoading(false);
     }

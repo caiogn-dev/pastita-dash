@@ -103,21 +103,27 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [accountsRes, contactListsRes] = await Promise.all([
-          whatsappService.getAccounts(),
-          whatsappService.contactLists.list(),
-        ]);
-
-        setAccounts(accountsRes.results);
-        setContactLists(contactListsRes.results);
+        // Load accounts first (required)
+        const accountsRes = await whatsappService.getAccounts();
+        const accountsList = accountsRes.results || [];
+        setAccounts(accountsList);
 
         // Auto-select first account if only one
-        if (accountsRes.results.length === 1) {
-          setFormData(prev => ({ ...prev, accountId: accountsRes.results[0].id }));
+        if (accountsList.length === 1) {
+          setFormData(prev => ({ ...prev, accountId: accountsList[0].id }));
+        }
+
+        // Try to load contact lists (optional, may fail)
+        try {
+          const contactListsRes = await whatsappService.contactLists.list();
+          setContactLists(contactListsRes.results || []);
+        } catch {
+          // Contact lists are optional, ignore errors
+          setContactLists([]);
         }
       } catch (error) {
-        logger.error('Failed to load data', error);
-        toast.error('Erro ao carregar dados');
+        logger.error('Failed to load accounts', error);
+        setAccounts([]);
       } finally {
         setLoading(false);
       }
@@ -133,9 +139,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
       try {
         const templatesRes = await whatsappService.getTemplates({ account: formData.accountId });
-        setTemplates(templatesRes.results.filter(t => t.status === 'approved'));
+        const templatesList = templatesRes.results || [];
+        setTemplates(templatesList.filter(t => t.status === 'approved'));
       } catch (error) {
         logger.error('Failed to load templates', error);
+        setTemplates([]);
       }
     };
 
