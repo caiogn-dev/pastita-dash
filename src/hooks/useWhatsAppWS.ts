@@ -203,8 +203,11 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
           console.error('[WhatsApp WS] Error event:', data);
           opts.current.onError?.(data as ErrorEvent);
           break;
-        default:
-          console.log('[WhatsApp WS] Unknown event type:', data.type, data);
+        default: {
+          // Handle unknown event types
+          const unknownData = data as { type: string };
+          console.log('[WhatsApp WS] Unknown event type:', unknownData.type, data);
+        }
       }
     } catch (err) {
       console.error('[WhatsApp WS] Parse error:', err, 'Raw data:', event.data);
