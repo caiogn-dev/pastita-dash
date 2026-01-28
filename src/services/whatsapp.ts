@@ -275,31 +275,31 @@ export const whatsappService = {
   
   contactLists: {
     list: async (params?: Record<string, string>): Promise<PaginatedResponse<ContactList>> => {
-      const response = await api.get<PaginatedResponse<ContactList>>('/campaigns/contact-lists/', { params });
+      const response = await api.get<PaginatedResponse<ContactList>>('/campaigns/contacts/', { params });
       return response.data;
     },
 
     get: async (id: string): Promise<ContactList> => {
-      const response = await api.get<ContactList>(`/campaigns/contact-lists/${id}/`);
+      const response = await api.get<ContactList>(`/campaigns/contacts/${id}/`);
       return response.data;
     },
 
     create: async (data: CreateContactList): Promise<ContactList> => {
-      const response = await api.post<ContactList>('/campaigns/contact-lists/', data);
+      const response = await api.post<ContactList>('/campaigns/contacts/', data);
       return response.data;
     },
 
     update: async (id: string, data: Partial<CreateContactList>): Promise<ContactList> => {
-      const response = await api.patch<ContactList>(`/campaigns/contact-lists/${id}/`, data);
+      const response = await api.patch<ContactList>(`/campaigns/contacts/${id}/`, data);
       return response.data;
     },
 
     delete: async (id: string): Promise<void> => {
-      await api.delete(`/campaigns/contact-lists/${id}/`);
+      await api.delete(`/campaigns/contacts/${id}/`);
     },
 
     importCsv: async (accountId: string, name: string, csvContent: string): Promise<ContactList> => {
-      const response = await api.post<ContactList>('/campaigns/contact-lists/import_csv/', {
+      const response = await api.post<ContactList>('/campaigns/contacts/import_csv/', {
         account_id: accountId,
         name,
         csv_content: csvContent,
