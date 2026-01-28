@@ -165,40 +165,49 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
       
       if (data.type === 'pong') return;
       if (data.type === 'connection_established') {
-        console.log('[WhatsApp WS] Connection confirmed');
+        console.log('[WhatsApp WS] Connection confirmed:', data);
         return;
       }
       if (data.type === 'subscribed' || data.type === 'unsubscribed') {
         console.log(`[WhatsApp WS] ${data.type}:`, data);
         return;
       }
+      if (data.type === 'read_receipt_sent') {
+        console.log('[WhatsApp WS] Read receipt sent:', data);
+        return;
+      }
 
-      console.log('[WhatsApp WS] Event:', data.type, data);
+      console.log('[WhatsApp WS] Event received:', data.type, JSON.stringify(data, null, 2));
 
       switch (data.type) {
         case 'message_received':
+          console.log('[WhatsApp WS] Calling onMessageReceived callback');
           opts.current.onMessageReceived?.(data as MessageReceivedEvent);
           break;
         case 'message_sent':
+          console.log('[WhatsApp WS] Calling onMessageSent callback');
           opts.current.onMessageSent?.(data as MessageSentEvent);
           break;
         case 'status_updated':
+          console.log('[WhatsApp WS] Calling onStatusUpdated callback');
           opts.current.onStatusUpdated?.(data as StatusUpdatedEvent);
           break;
         case 'typing':
           opts.current.onTyping?.(data as TypingEvent);
           break;
         case 'conversation_updated':
+          console.log('[WhatsApp WS] Calling onConversationUpdated callback');
           opts.current.onConversationUpdated?.(data as ConversationUpdatedEvent);
           break;
         case 'error':
+          console.error('[WhatsApp WS] Error event:', data);
           opts.current.onError?.(data as ErrorEvent);
           break;
         default:
-          console.log('[WhatsApp WS] Unknown event type:', data.type);
+          console.log('[WhatsApp WS] Unknown event type:', data.type, data);
       }
     } catch (err) {
-      console.error('[WhatsApp WS] Parse error:', err);
+      console.error('[WhatsApp WS] Parse error:', err, 'Raw data:', event.data);
     }
   }, []);
 

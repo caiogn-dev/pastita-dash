@@ -161,19 +161,44 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   function handleMessageReceived(event: MessageReceivedEvent) {
     const newMessage = event.message;
     
+    console.log('[ChatWindow] Message received via WebSocket:', {
+      message_id: newMessage.id,
+      conversation_id: event.conversation_id,
+      from: newMessage.from_number,
+      direction: newMessage.direction,
+      text: newMessage.text_body?.substring(0, 50),
+    });
+
     // Add to messages if it's for the current conversation
     if (selectedConversation && event.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        // Check for duplicate
-        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) {
+        // Check for duplicate by id or whatsapp_message_id
+        const isDuplicate = prev.some(m => 
+          m.id === newMessage.id || 
+          (m.whatsapp_message_id && m.whatsapp_message_id === newMessage.whatsapp_message_id)
+        );
+        
+        if (isDuplicate) {
+          console.log('[ChatWindow] Duplicate message ignored:', newMessage.id);
           return prev;
         }
+        
+        console.log('[ChatWindow] Adding new message to current conversation');
         return [...prev, newMessage as unknown as Message];
       });
     }
 
     // Update conversation list
     setConversations(prev => {
+      const conversationExists = prev.some(c => c.id === event.conversation_id);
+      
+      if (!conversationExists && event.conversation_id) {
+        // New conversation - reload the list to get full data
+        console.log('[ChatWindow] New conversation detected, reloading list');
+        loadConversations();
+        return prev;
+      }
+      
       const updated = prev.map(conv => {
         if (conv.id === event.conversation_id) {
           return {
@@ -183,6 +208,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
         return conv;
       });
+      
       // Sort by last message
       return updated.sort((a, b) => {
         if (!a.last_message_at) return 1;
@@ -199,12 +225,31 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   function handleStatusUpdated(event: StatusUpdatedEvent) {
+    console.log('[ChatWindow] Status update received:', {
+      message_id: event.message_id,
+      whatsapp_message_id: event.whatsapp_message_id,
+      status: event.status,
+      timestamp: event.timestamp,
+    });
+    
     setMessages(prev => prev.map(msg => {
-      if (msg.id === event.message_id || msg.whatsapp_message_id === event.whatsapp_message_id) {
-        return {
-          ...msg,
-          status: event.status,
-        };
+      // Match by internal id or whatsapp_message_id
+      const isMatch = msg.id === event.message_id || 
+        (event.whatsapp_message_id && msg.whatsapp_message_id === event.whatsapp_message_id);
+      
+      if (isMatch) {
+        console.log('[ChatWindow] Updating message status:', msg.id, '->', event.status);
+        
+        // Update status and relevant timestamp
+        const updates: Partial<Message> = { status: event.status };
+        
+        if (event.status === 'delivered' && event.timestamp) {
+          updates.delivered_at = event.timestamp;
+        } else if (event.status === 'read' && event.timestamp) {
+          updates.read_at = event.timestamp;
+        }
+        
+        return { ...msg, ...updates };
       }
       return msg;
     }));
