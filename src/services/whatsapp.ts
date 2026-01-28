@@ -167,67 +167,67 @@ export const whatsappService = {
   
   campaigns: {
     list: async (params?: Record<string, string>): Promise<PaginatedResponse<WhatsAppCampaign>> => {
-      const response = await api.get<PaginatedResponse<WhatsAppCampaign>>('/campaigns/', { params });
+      const response = await api.get<PaginatedResponse<WhatsAppCampaign>>('/campaigns/campaigns/', { params });
       return response.data;
     },
 
     get: async (id: string): Promise<WhatsAppCampaign> => {
-      const response = await api.get<WhatsAppCampaign>(`/campaigns/${id}/`);
+      const response = await api.get<WhatsAppCampaign>(`/campaigns/campaigns/${id}/`);
       return response.data;
     },
 
     create: async (data: CreateWhatsAppCampaign): Promise<WhatsAppCampaign> => {
-      const response = await api.post<WhatsAppCampaign>('/campaigns/', data);
+      const response = await api.post<WhatsAppCampaign>('/campaigns/campaigns/', data);
       return response.data;
     },
 
     update: async (id: string, data: Partial<CreateWhatsAppCampaign>): Promise<WhatsAppCampaign> => {
-      const response = await api.patch<WhatsAppCampaign>(`/campaigns/${id}/`, data);
+      const response = await api.patch<WhatsAppCampaign>(`/campaigns/campaigns/${id}/`, data);
       return response.data;
     },
 
     delete: async (id: string): Promise<void> => {
-      await api.delete(`/campaigns/${id}/`);
+      await api.delete(`/campaigns/campaigns/${id}/`);
     },
 
     schedule: async (id: string, scheduledAt: string): Promise<WhatsAppCampaign> => {
-      const response = await api.post<WhatsAppCampaign>(`/campaigns/${id}/schedule/`, { scheduled_at: scheduledAt });
+      const response = await api.post<WhatsAppCampaign>(`/campaigns/campaigns/${id}/schedule/`, { scheduled_at: scheduledAt });
       return response.data;
     },
 
     start: async (id: string): Promise<WhatsAppCampaign> => {
-      const response = await api.post<WhatsAppCampaign>(`/campaigns/${id}/start/`);
+      const response = await api.post<WhatsAppCampaign>(`/campaigns/campaigns/${id}/start/`);
       return response.data;
     },
 
     pause: async (id: string): Promise<WhatsAppCampaign> => {
-      const response = await api.post<WhatsAppCampaign>(`/campaigns/${id}/pause/`);
+      const response = await api.post<WhatsAppCampaign>(`/campaigns/campaigns/${id}/pause/`);
       return response.data;
     },
 
     resume: async (id: string): Promise<WhatsAppCampaign> => {
-      const response = await api.post<WhatsAppCampaign>(`/campaigns/${id}/resume/`);
+      const response = await api.post<WhatsAppCampaign>(`/campaigns/campaigns/${id}/resume/`);
       return response.data;
     },
 
     cancel: async (id: string): Promise<WhatsAppCampaign> => {
-      const response = await api.post<WhatsAppCampaign>(`/campaigns/${id}/cancel/`);
+      const response = await api.post<WhatsAppCampaign>(`/campaigns/campaigns/${id}/cancel/`);
       return response.data;
     },
 
     getStats: async (id: string): Promise<CampaignStats> => {
-      const response = await api.get<CampaignStats>(`/campaigns/${id}/stats/`);
+      const response = await api.get<CampaignStats>(`/campaigns/campaigns/${id}/stats/`);
       return response.data;
     },
 
     getRecipients: async (id: string, status?: string): Promise<CampaignRecipient[]> => {
       const params = status ? { status } : {};
-      const response = await api.get<CampaignRecipient[]>(`/campaigns/${id}/recipients/`, { params });
+      const response = await api.get<CampaignRecipient[]>(`/campaigns/campaigns/${id}/recipients/`, { params });
       return response.data;
     },
 
     addRecipients: async (id: string, contacts: ContactInput[]): Promise<{ added: number }> => {
-      const response = await api.post<{ added: number }>(`/campaigns/${id}/add_recipients/`, { contacts });
+      const response = await api.post<{ added: number }>(`/campaigns/campaigns/${id}/add_recipients/`, { contacts });
       return response.data;
     },
   },
@@ -267,6 +267,15 @@ export const whatsappService = {
     getStats: async (accountId?: string): Promise<ScheduledMessageStats> => {
       const params = accountId ? { account_id: accountId } : {};
       const response = await api.get<ScheduledMessageStats>('/campaigns/scheduled/stats/', { params });
+      return response.data;
+    },
+  },
+
+  // ==================== SYSTEM CONTACTS ====================
+  
+  systemContacts: {
+    list: async (params?: { account_id?: string; source?: string; limit?: number }): Promise<{ count: number; results: SystemContact[] }> => {
+      const response = await api.get<{ count: number; results: SystemContact[] }>('/campaigns/system-contacts/', { params });
       return response.data;
     },
   },
@@ -457,4 +466,10 @@ export interface CreateContactList {
   name: string;
   description?: string;
   contacts: Array<{ phone: string; name?: string; variables?: Record<string, string> }>;
+}
+
+export interface SystemContact {
+  phone: string;
+  name: string;
+  source: 'conversation' | 'order' | 'subscriber' | 'session';
 }

@@ -26,7 +26,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Modal, Input } from '../../../components/common';
-import { whatsappService, WhatsAppCampaign, ContactInput, ContactList } from '../../../services/whatsapp';
+import { whatsappService, WhatsAppCampaign, ContactInput, ContactList, SystemContact } from '../../../services/whatsapp';
 import { WhatsAppAccount, MessageTemplate, PaginatedResponse } from '../../../types';
 import logger from '../../../services/logger';
 
@@ -78,8 +78,12 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   const [contactLists, setContactLists] = useState<ContactList[]>([]);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showSystemContactsModal, setShowSystemContactsModal] = useState(false);
   const [csvContent, setCsvContent] = useState('');
   const [newContact, setNewContact] = useState({ phone: '', name: '' });
+  const [systemContacts, setSystemContacts] = useState<SystemContact[]>([]);
+  const [loadingSystemContacts, setLoadingSystemContacts] = useState(false);
+  const [selectedSystemContacts, setSelectedSystemContacts] = useState<Set<string>>(new Set());
 
   const [formData, setFormData] = useState<CampaignFormData>({
     name: '',
@@ -187,6 +191,70 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       templateLanguage: template.language,
       name: prev.name || `Campanha - ${template.name}`,
     }));
+  };
+
+  const handleLoadSystemContacts = async () => {
+    setLoadingSystemContacts(true);
+    setShowSystemContactsModal(true);
+    try {
+      const response = await whatsappService.systemContacts.list({
+        account_id: formData.accountId || undefined,
+        limit: 500,
+      });
+      setSystemContacts(response.results || []);
+      setSelectedSystemContacts(new Set());
+    } catch (error) {
+      logger.error('Failed to load system contacts', error);
+      toast.error('Erro ao carregar contatos');
+      setSystemContacts([]);
+    } finally {
+      setLoadingSystemContacts(false);
+    }
+  };
+
+  const handleToggleSystemContact = (phone: string) => {
+    setSelectedSystemContacts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(phone)) {
+        newSet.delete(phone);
+      } else {
+        newSet.add(phone);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAllSystemContacts = () => {
+    if (selectedSystemContacts.size === systemContacts.length) {
+      setSelectedSystemContacts(new Set());
+    } else {
+      setSelectedSystemContacts(new Set(systemContacts.map(c => c.phone)));
+    }
+  };
+
+  const handleAddSystemContacts = () => {
+    const existingPhones = new Set(formData.contacts.map(c => c.phone));
+    const newContacts: ContactInput[] = [];
+
+    systemContacts.forEach(contact => {
+      if (selectedSystemContacts.has(contact.phone) && !existingPhones.has(contact.phone)) {
+        newContacts.push({ phone: contact.phone, name: contact.name });
+      }
+    });
+
+    if (newContacts.length === 0) {
+      toast.error('Nenhum contato novo selecionado');
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      contacts: [...prev.contacts, ...newContacts],
+    }));
+
+    toast.success(`${newContacts.length} contatos adicionados`);
+    setShowSystemContactsModal(false);
+    setSelectedSystemContacts(new Set());
   };
 
   const handleAddContact = () => {
