@@ -764,7 +764,12 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             </Card>
 
             {/* Import Options */}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              <Button variant="secondary" onClick={handleLoadSystemContacts}>
+                <UserGroupIcon className="w-5 h-5 mr-2" />
+                Carregar do Sistema
+              </Button>
+              
               <Button variant="secondary" onClick={() => setShowImportModal(true)}>
                 <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
                 Importar CSV
@@ -1029,6 +1034,100 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             </Button>
             <Button onClick={handleImportCSV}>
               Importar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* System Contacts Modal */}
+      <Modal
+        isOpen={showSystemContactsModal}
+        onClose={() => setShowSystemContactsModal(false)}
+        title="Contatos do Sistema"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Selecione os contatos que deseja adicionar à campanha
+          </p>
+          
+          {loadingSystemContacts ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : systemContacts.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <UserGroupIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+              <p>Nenhum contato encontrado no sistema</p>
+            </div>
+          ) : (
+            <>
+              {/* Select All */}
+              <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedSystemContacts.size === systemContacts.length}
+                    onChange={handleSelectAllSystemContacts}
+                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                  />
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    Selecionar todos ({systemContacts.length})
+                  </span>
+                </label>
+                <span className="text-sm text-gray-500">
+                  {selectedSystemContacts.size} selecionados
+                </span>
+              </div>
+
+              {/* Contact List */}
+              <div className="max-h-64 overflow-y-auto space-y-1 border rounded-lg p-2">
+                {systemContacts.map((contact) => (
+                  <label
+                    key={contact.phone}
+                    className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedSystemContacts.has(contact.phone)}
+                      onChange={() => handleToggleSystemContact(contact.phone)}
+                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">
+                        {contact.phone}
+                      </p>
+                      {contact.name && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {contact.name}
+                        </p>
+                      )}
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      contact.source === 'conversation' ? 'bg-blue-100 text-blue-700' :
+                      contact.source === 'order' ? 'bg-green-100 text-green-700' :
+                      contact.source === 'subscriber' ? 'bg-purple-100 text-purple-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {contact.source === 'conversation' ? 'Conversa' :
+                       contact.source === 'order' ? 'Pedido' :
+                       contact.source === 'subscriber' ? 'Inscrito' :
+                       contact.source === 'session' ? 'Sessão' : contact.source}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setShowSystemContactsModal(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleAddSystemContacts}
+              disabled={selectedSystemContacts.size === 0}
+            >
+              Adicionar {selectedSystemContacts.size > 0 ? `(${selectedSystemContacts.size})` : ''}
             </Button>
           </div>
         </div>
