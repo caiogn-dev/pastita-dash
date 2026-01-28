@@ -6,6 +6,18 @@ export {
 } from './useWebSocket';
 export { useAutomationWS } from './useAutomationWS';
 export { useOrdersWebSocket } from './useOrdersWebSocket';
+export { useWhatsAppWS } from './useWhatsAppWS';
+export type {
+  WhatsAppMessage,
+  WhatsAppContact,
+  WhatsAppConversation,
+  MessageReceivedEvent,
+  MessageSentEvent,
+  StatusUpdatedEvent,
+  TypingEvent,
+  ConversationUpdatedEvent,
+  ErrorEvent,
+} from './useWhatsAppWS';
 
 // Notification sound hook
 export { useNotificationSound } from './useNotificationSound';
