@@ -6,6 +6,7 @@
  * - Last message preview
  * - Unread count badge
  * - Last activity time
+ * - Status and mode indicators
  */
 import React, { useState, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -14,6 +15,8 @@ import {
   MagnifyingGlassIcon,
   UserCircleIcon,
   ChatBubbleLeftIcon,
+  FunnelIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 
 export interface Contact {
@@ -26,6 +29,7 @@ export interface Contact {
   status?: string;
   mode?: 'auto' | 'human' | 'hybrid';
   isTyping?: boolean;
+  isOnline?: boolean;
 }
 
 export interface ContactListProps {
@@ -137,41 +141,142 @@ export const ContactList: React.FC<ContactListProps> = ({
   emptyMessage = 'Nenhuma conversa encontrada',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [modeFilter, setModeFilter] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const filteredContacts = useMemo(() => {
-    if (!searchQuery.trim()) return contacts;
+    let result = contacts;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(contact =>
+        contact.contactName?.toLowerCase().includes(query) ||
+        contact.phoneNumber.includes(query) ||
+        contact.lastMessagePreview?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply mode filter
+    if (modeFilter) {
+      result = result.filter(contact => contact.mode === modeFilter);
+    }
+    
+    return result;
+  }, [contacts, searchQuery, modeFilter]);
 
-    const query = searchQuery.toLowerCase();
-    return contacts.filter(contact =>
-      contact.contactName?.toLowerCase().includes(query) ||
-      contact.phoneNumber.includes(query) ||
-      contact.lastMessagePreview?.toLowerCase().includes(query)
-    );
-  }, [contacts, searchQuery]);
-
-  // Sort by last message time (most recent first)
+  // Sort by last message time (most recent first), with unread at top
   const sortedContacts = useMemo(() => {
     return [...filteredContacts].sort((a, b) => {
+      // Unread messages first
+      if ((a.unreadCount || 0) > 0 && (b.unreadCount || 0) === 0) return -1;
+      if ((a.unreadCount || 0) === 0 && (b.unreadCount || 0) > 0) return 1;
+      
+      // Then by last message time
       if (!a.lastMessageAt) return 1;
       if (!b.lastMessageAt) return -1;
       return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
     });
   }, [filteredContacts]);
 
+  // Count by mode
+  const modeCounts = useMemo(() => {
+    const counts = { human: 0, auto: 0, hybrid: 0 };
+    contacts.forEach(c => {
+      if (c.mode && counts[c.mode as keyof typeof counts] !== undefined) {
+        counts[c.mode as keyof typeof counts]++;
+      }
+    });
+    return counts;
+  }, [contacts]);
+
+  const totalUnread = useMemo(() => {
+    return contacts.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+  }, [contacts]);
+
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
-      {/* Search header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar conversas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:text-white"
-          />
+      {/* Header with title and unread count */}
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900 dark:text-white">Conversas</h3>
+          {totalUnread > 0 && (
+            <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-medium">
+              {totalUnread} não lida{totalUnread !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
+      </div>
+
+      {/* Search and filter */}
+      <div className="p-3 border-b border-gray-200 dark:border-gray-700 space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:text-white"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-2 rounded-lg transition-colors ${
+              showFilters || modeFilter
+                ? 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
+                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+            title="Filtros"
+          >
+            <FunnelIcon className="w-5 h-5" />
+          </button>
+        </div>
+        
+        {/* Filter chips */}
+        {showFilters && (
+          <div className="flex flex-wrap gap-1">
+            <button
+              onClick={() => setModeFilter(null)}
+              className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                !modeFilter
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+              }`}
+            >
+              Todas ({contacts.length})
+            </button>
+            <button
+              onClick={() => setModeFilter('human')}
+              className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                modeFilter === 'human'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+              }`}
+            >
+              👤 Humano ({modeCounts.human})
+            </button>
+            <button
+              onClick={() => setModeFilter('auto')}
+              className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                modeFilter === 'auto'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+              }`}
+            >
+              🤖 Auto ({modeCounts.auto})
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Contact list */}
@@ -184,7 +289,17 @@ export const ContactList: React.FC<ContactListProps> = ({
         ) : sortedContacts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 p-4">
             <ChatBubbleLeftIcon className="w-12 h-12 mb-2" />
-            <span className="text-sm text-center">{emptyMessage}</span>
+            <span className="text-sm text-center">
+              {searchQuery || modeFilter ? 'Nenhuma conversa encontrada com os filtros aplicados' : emptyMessage}
+            </span>
+            {(searchQuery || modeFilter) && (
+              <button
+                onClick={() => { setSearchQuery(''); setModeFilter(null); }}
+                className="mt-2 text-primary-500 text-sm hover:underline"
+              >
+                Limpar filtros
+              </button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -201,9 +316,9 @@ export const ContactList: React.FC<ContactListProps> = ({
       </div>
 
       {/* Footer with count */}
-      <div className="p-2 border-t border-gray-200 dark:border-gray-700 text-center">
+      <div className="p-2 border-t border-gray-200 dark:border-gray-700 text-center bg-gray-50 dark:bg-gray-900">
         <span className="text-xs text-gray-400">
-          {sortedContacts.length} conversa{sortedContacts.length !== 1 ? 's' : ''}
+          {sortedContacts.length} de {contacts.length} conversa{contacts.length !== 1 ? 's' : ''}
         </span>
       </div>
     </div>
