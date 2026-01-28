@@ -49,6 +49,7 @@ import { StoresPage, StoreDetailPage } from './pages/stores';
 // Marketing Pages
 import { MarketingPage, SubscribersPage } from './pages/marketing';
 import { NewCampaignPage, CampaignsListPage } from './pages/marketing/email';
+import { NewWhatsAppCampaignPage, WhatsAppCampaignsPage } from './pages/marketing/whatsapp';
 import AutomationsPage from './pages/marketing/AutomationsPage';
 
 // Instagram Pages
@@ -156,8 +157,8 @@ const AppContent: React.FC = () => {
         <Route path="marketing/email/campaigns" element={<CampaignsListPage />} />
         <Route path="marketing/email/new" element={<NewCampaignPage />} />
         <Route path="marketing/email/templates" element={<MarketingPage />} />
-        <Route path="marketing/whatsapp" element={<MarketingPage />} />
-        <Route path="marketing/whatsapp/new" element={<MarketingPage />} />
+        <Route path="marketing/whatsapp" element={<WhatsAppCampaignsPage />} />
+        <Route path="marketing/whatsapp/new" element={<NewWhatsAppCampaignPage />} />
         
         {/* Instagram Routes */}
         <Route path="instagram" element={<InstagramAccounts />} />
