@@ -55,6 +55,9 @@ import AutomationsPage from './pages/marketing/AutomationsPage';
 // Instagram Pages
 import { InstagramAccounts, InstagramInbox } from './pages/instagram';
 
+// WhatsApp Pages
+import { WebhookDiagnosticsPage } from './pages/whatsapp';
+
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
@@ -164,6 +167,9 @@ const AppContent: React.FC = () => {
         <Route path="instagram" element={<InstagramAccounts />} />
         <Route path="instagram/accounts" element={<InstagramAccounts />} />
         <Route path="instagram/inbox" element={<InstagramInbox />} />
+        
+        {/* WhatsApp Diagnostics */}
+        <Route path="whatsapp/diagnostics" element={<WebhookDiagnosticsPage />} />
       </Route>
 
       {/* Catch all */}
