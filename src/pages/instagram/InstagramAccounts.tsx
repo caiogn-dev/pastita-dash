@@ -23,20 +23,18 @@ import {
   Divider,
   Snackbar,
 } from '@mui/material';
-import {
-  Instagram as InstagramIcon,
-  Add as AddIcon,
-  Refresh as RefreshIcon,
-  Settings as SettingsIcon,
-  Delete as DeleteIcon,
-  CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
-  Error as ErrorIcon,
-  Message as MessageIcon,
-  People as PeopleIcon,
-  Key as KeyIcon,
-  Sync as SyncIcon,
-} from '@mui/icons-material';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import AddIcon from '@mui/icons-material/Add';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import SettingsIcon from '@mui/icons-material/Settings';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
+import ErrorIcon from '@mui/icons-material/Error';
+import MessageIcon from '@mui/icons-material/Message';
+import PeopleIcon from '@mui/icons-material/People';
+import KeyIcon from '@mui/icons-material/Key';
+import SyncIcon from '@mui/icons-material/Sync';
 import { instagramService, InstagramAccount, CreateInstagramAccount, InstagramAccountStats } from '../../services/instagram';
 
 const statusConfig: Record<string, { color: 'success' | 'warning' | 'error' | 'default'; icon: React.ReactNode; label: string }> = {

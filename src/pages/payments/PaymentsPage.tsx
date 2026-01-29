@@ -3,6 +3,7 @@
  * Uses the unified stores API to fetch orders with payment data
  */
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -26,8 +27,10 @@ import {
   PageLoading,
   StatusFilter,
 } from '../../components/common';
-import { storeApi, type Order } from '../../services/storeApi';
+import { ordersService } from '../../services';
+import { Order } from '../../types';
 import logger from '../../services/logger';
+import { useStore } from '../../hooks';
 
 // Payment status options based on StoreOrder.PaymentStatus
 const PAYMENT_STATUS_OPTIONS = [
@@ -73,20 +76,29 @@ export const PaymentsPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
+  const { storeSlug, stores } = useStore();
+  const effectiveStoreSlug = useMemo(() => {
+    if (!routeStoreId) return storeSlug || null;
+    const match = stores.find((store) => store.id === routeStoreId || store.slug === routeStoreId);
+    return match?.slug || match?.id || routeStoreId;
+  }, [routeStoreId, storeSlug, stores]);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       // Get all orders from store, ordered by most recent
-      const ordersData = await storeApi.getOrders({ ordering: '-created_at' });
-      setOrders(ordersData);
+      const params: Record<string, string> = { ordering: '-created_at' };
+      if (effectiveStoreSlug) params.store = effectiveStoreSlug;
+      const ordersData = await ordersService.getOrders(params);
+      setOrders(ordersData.results);
     } catch (error) {
       logger.error('Error loading payments:', error);
       toast.error('Erro ao carregar pagamentos');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [effectiveStoreSlug]);
 
   useEffect(() => {
     loadData();
@@ -95,10 +107,10 @@ export const PaymentsPage: React.FC = () => {
   // Handle confirm payment (mark as paid)
   const handleConfirmPayment = async (order: Order) => {
     try {
-      const updatedOrder = await storeApi.markOrderPaid(order.id);
-      setOrders(orders.map(o => 
-        o.id === order.id 
-          ? { ...o, payment_status: updatedOrder.payment_status, status: updatedOrder.status } 
+      const updatedOrder = await ordersService.markPaid(order.id);
+      setOrders(orders.map(o =>
+        o.id === order.id
+          ? { ...o, payment_status: updatedOrder.payment_status, status: updatedOrder.status }
           : o
       ));
       toast.success(`Pagamento do pedido #${order.order_number} confirmado!`);

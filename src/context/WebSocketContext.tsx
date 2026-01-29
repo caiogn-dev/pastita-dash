@@ -4,6 +4,7 @@
  */
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { useStore } from '../hooks/useStore';
 
 const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
@@ -28,6 +29,7 @@ const WSContext = createContext<WSContextValue | null>(null);
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuthStore();
+  const { storeSlug, storeId } = useStore();
   const ws = useRef<WebSocket | null>(null);
   const listeners = useRef<Map<string, Set<Callback>>>(new Map());
   const reconnectTimer = useRef<number | undefined>(undefined);
@@ -37,6 +39,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const effectiveStoreSlug = storeSlug || storeId || STORE_SLUG;
 
   const emit = useCallback((event: string, data: OrderEvent) => {
     const eventListeners = listeners.current.get(event);
@@ -93,7 +96,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       host = api ? new URL(api).host : window.location.host;
     }
     const proto = host.includes('railway') || host.includes('vercel') || location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${proto}://${host}/ws/stores/${STORE_SLUG}/orders/?token=${token}`;
+    const url = `${proto}://${host}/ws/stores/${effectiveStoreSlug}/orders/?token=${token}`;
     
     console.log('[WS] Connecting to:', url.replace(/token=.*/, 'token=***'));
     
@@ -176,7 +179,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       console.error('[WS] Connection error:', err);
       isConnecting.current = false;
     }
-  }, [token, emit]);
+  }, [token, emit, effectiveStoreSlug]);
 
   // Subscribe to events
   const on = useCallback((event: string, cb: Callback) => {

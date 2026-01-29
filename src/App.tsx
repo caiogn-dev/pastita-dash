@@ -37,14 +37,12 @@ import {
   ReportsPage,
 } from './pages/automation';
 
-// Pastita Pages
-import { PastitaProductsPage, PastitaOrdersPage, PastitaSettingsPage } from './pages/pastita';
 
 // Analytics/Reports Pages
 import { AnalyticsPage } from './pages/reports';
 
 // Stores Pages
-import { StoresPage, StoreDetailPage } from './pages/stores';
+import { StoresPage, StoreDetailPage, StoreSettingsPage } from './pages/stores';
 
 // Marketing Pages
 import { MarketingPage, SubscribersPage } from './pages/marketing';
@@ -114,14 +112,10 @@ const AppContent: React.FC = () => {
         <Route path="accounts/:id/edit" element={<AccountFormPage />} />
         <Route path="messages" element={<MessagesPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
-        <Route path="orders" element={<OrdersPage />} />
-        <Route path="orders/:id" element={<OrderDetailPage />} />
-        <Route path="payments" element={<PaymentsPage />} />
+        {/* Store-scoped routes for orders and payments */}
         
         {/* E-commerce Routes */}
-        <Route path="coupons" element={<CouponsPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        
+
         <Route path="langflow" element={<LangflowPage />} />
         <Route path="settings" element={<SettingsPage />} />
         
@@ -135,11 +129,6 @@ const AppContent: React.FC = () => {
         <Route path="automation/scheduled" element={<ScheduledMessagesPage />} />
         <Route path="automation/reports" element={<ReportsPage />} />
         
-        {/* Pastita Routes */}
-        <Route path="pastita/products" element={<PastitaProductsPage />} />
-        <Route path="pastita/orders" element={<PastitaOrdersPage />} />
-        <Route path="pastita/settings" element={<PastitaSettingsPage />} />
-        
         {/* Analytics/Reports Routes */}
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="reports" element={<AnalyticsPage />} />
@@ -149,8 +138,11 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId" element={<StoreDetailPage />} />
         <Route path="stores/:storeId/products" element={<ProductsPage />} />
         <Route path="stores/:storeId/orders" element={<OrdersPage />} />
+        <Route path="stores/:storeId/orders/:id" element={<OrderDetailPage />} />
         <Route path="stores/:storeId/coupons" element={<CouponsPage />} />
         <Route path="stores/:storeId/analytics" element={<AnalyticsPage />} />
+        <Route path="stores/:storeId/payments" element={<PaymentsPage />} />
+        <Route path="stores/:storeId/settings" element={<StoreSettingsPage />} />
         
         {/* Marketing Routes */}
         <Route path="marketing" element={<MarketingPage />} />

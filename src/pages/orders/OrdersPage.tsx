@@ -28,22 +28,71 @@ import {
   OrderStatusTabs,
 } from '../../components/common';
 import { OrdersKanban, ORDER_STATUSES } from '../../components/orders/OrdersKanban';
-import { exportService, getErrorMessage } from '../../services';
-import { unifiedApi, UnifiedOrder, UnifiedOrderFilters } from '../../services/unifiedApi';
+import { exportService, getErrorMessage, ordersService } from '../../services';
 import { useStore, useOrdersWebSocket, useNotificationSound } from '../../hooks';
+import { Order } from '../../types';
 
 type ViewMode = 'kanban' | 'table';
+type OrderStatus = Order['status'];
+type PaymentStatus = NonNullable<Order['payment_status']>;
+
+const isOrderStatus = (value: unknown): value is OrderStatus => {
+  return ORDER_STATUSES.some(status => status.id === value);
+};
+
+const isPaymentStatus = (value: unknown): value is PaymentStatus => {
+  return ['pending', 'processing', 'paid', 'failed', 'refunded'].includes(String(value));
+};
+
+const toNumber = (value: unknown): number | undefined => {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string' && value.trim() !== '') return Number(value);
+  return undefined;
+};
+
+const sanitizeOrderUpdate = (data: Record<string, unknown>): Partial<Order> => {
+  const update: Partial<Order> = {};
+  if (typeof data.order_number === 'string') update.order_number = data.order_number;
+  if (isOrderStatus(data.status)) update.status = data.status;
+  if (isPaymentStatus(data.payment_status)) update.payment_status = data.payment_status;
+  const total = toNumber(data.total);
+  if (total !== undefined) update.total = total;
+  const subtotal = toNumber(data.subtotal);
+  if (subtotal !== undefined) update.subtotal = subtotal;
+  const discount = toNumber(data.discount);
+  if (discount !== undefined) update.discount = discount;
+  const deliveryFee = toNumber(data.delivery_fee);
+  if (deliveryFee !== undefined) update.delivery_fee = deliveryFee;
+  const tax = toNumber(data.tax);
+  if (tax !== undefined) update.tax = tax;
+  return update;
+};
+
+const formatMoney = (value: number | string | null | undefined) => {
+  const num = typeof value === 'string' ? Number(value) : value ?? 0;
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+};
 
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName } = useStore();
+  const { storeId: contextStoreId, storeSlug, storeName, stores } = useStore();
   
   // Use route storeId if available, otherwise use context
-  const effectiveStoreId = routeStoreId || contextStoreId;
+  const effectiveStoreId = routeStoreId || storeSlug || contextStoreId;
+  const effectiveStoreSlug = useMemo(() => {
+    if (!routeStoreId) return storeSlug || contextStoreId || null;
+    const match = stores.find((store) => store.id === routeStoreId || store.slug === routeStoreId);
+    return match?.slug || match?.id || routeStoreId;
+  }, [routeStoreId, storeSlug, contextStoreId, stores]);
+  const storeRouteBase = effectiveStoreSlug || effectiveStoreId;
+  const orderDetailRoute = useCallback((orderId: string) => {
+    return storeRouteBase ? `/stores/${storeRouteBase}/orders/${orderId}` : '/stores';
+  }, [storeRouteBase]);
   
   // State
-  const [orders, setOrders] = useState<UnifiedOrder[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,7 +101,7 @@ export const OrdersPage: React.FC = () => {
   const [showAllStatuses, setShowAllStatuses] = useState(false);
   
   // Modal states
-  const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [actionModal, setActionModal] = useState<'ship' | 'payment' | 'cancel' | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   
@@ -66,14 +115,13 @@ export const OrdersPage: React.FC = () => {
     console.log('[Orders] loadOrders called with storeId:', effectiveStoreId);
     setIsLoading(true);
     try {
-      const filters: UnifiedOrderFilters = {
-        store: effectiveStoreId || undefined,
-        status: statusFilter || undefined,
-        search: searchQuery || undefined,
-      };
+      const params: Record<string, string> = {};
+      if (effectiveStoreSlug) params.store = effectiveStoreSlug;
+      if (statusFilter) params.status = statusFilter;
+      if (searchQuery) params.search = searchQuery;
       
-      console.log('[Orders] Fetching orders with filters:', filters);
-      const response = await unifiedApi.getOrders(filters);
+      console.log('[Orders] Fetching orders with params:', params);
+      const response = await ordersService.getOrders(params);
       console.log('[Orders] Received', response.results.length, 'orders');
       setOrders(response.results);
     } catch (error) {
@@ -82,7 +130,7 @@ export const OrdersPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [effectiveStoreId, statusFilter, searchQuery]);
+  }, [effectiveStoreId, effectiveStoreSlug, statusFilter, searchQuery]);
 
   // Notification sound
   const { playOrderSound, playSuccessSound, stopAlert, isAlertActive } = useNotificationSound({ enabled: true });
@@ -125,16 +173,18 @@ export const OrdersPage: React.FC = () => {
     onOrderUpdated: (data) => {
       console.log('[Orders] Order updated:', data);
       // Update order in state without full reload
-      setOrders(prev => prev.map(o => 
-        o.id === data.order_id ? { ...o, ...data } : o
+      const update = sanitizeOrderUpdate(data as Record<string, unknown>);
+      setOrders(prev => prev.map(o =>
+        o.id === data.order_id ? { ...o, ...update } : o
       ));
     },
     onStatusChanged: (data) => {
       console.log('[Orders] Status changed:', data);
       toast(`📦 Pedido #${data.order_number} → ${data.status}`, { duration: 4000 });
       // Update order status in state
-      setOrders(prev => prev.map(o => 
-        o.id === data.order_id ? { ...o, status: data.status || o.status } : o
+      const nextStatus = isOrderStatus(data.status) ? data.status : undefined;
+      setOrders(prev => prev.map(o =>
+        o.id === data.order_id ? { ...o, status: nextStatus || o.status } : o
       ));
     },
     onPaymentReceived: (data) => {
@@ -172,26 +222,29 @@ export const OrdersPage: React.FC = () => {
   }, [loadOrders]);
 
   // Handle status change from Kanban drag-and-drop (optimistic update handled by Kanban)
-  const handleKanbanStatusChange = async (orderId: string, newStatus: string) => {
+  const handleKanbanStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     // Map status to API action
     switch (newStatus) {
       case 'confirmed':
-        await unifiedApi.confirmOrder(orderId);
+        await ordersService.confirmOrder(orderId);
+        break;
+      case 'awaiting_payment':
+        await ordersService.markAwaitingPayment(orderId);
         break;
       case 'preparing':
-        await unifiedApi.prepareOrder(orderId);
+        await ordersService.startPreparing(orderId);
         break;
       case 'ready':
-        await unifiedApi.updateOrderStatus(orderId, 'ready');
+        await ordersService.markReady(orderId);
         break;
       case 'out_for_delivery':
-        await unifiedApi.updateOrderStatus(orderId, 'out_for_delivery');
+        await ordersService.markOutForDelivery(orderId);
         break;
       case 'delivered':
-        await unifiedApi.deliverOrder(orderId);
+        await ordersService.deliverOrder(orderId);
         break;
       case 'cancelled':
-        await unifiedApi.cancelOrder(orderId, 'Cancelado via Kanban');
+        await ordersService.cancelOrder(orderId, 'Cancelado via Kanban');
         break;
       default:
         throw new Error(`Status não suportado: ${newStatus}`);
@@ -229,6 +282,7 @@ export const OrdersPage: React.FC = () => {
       const blob = await exportService.exportOrders({
         format,
         status: statusFilter || undefined,
+        store: effectiveStoreSlug || undefined,
       });
       const dateStamp = new Date().toISOString().slice(0, 10);
       exportService.downloadBlob(blob, `pedidos-${dateStamp}.${format}`);
@@ -241,7 +295,7 @@ export const OrdersPage: React.FC = () => {
   };
 
   // Get available actions for an order
-  const getOrderActions = (order: UnifiedOrder) => {
+  const getOrderActions = (order: Order) => {
     const actions: Array<{ 
       action: string; 
       label: string; 
@@ -284,7 +338,7 @@ export const OrdersPage: React.FC = () => {
   };
 
   // Handle action click
-  const handleAction = (order: UnifiedOrder, action: string) => {
+  const handleAction = (order: Order, action: string) => {
     setSelectedOrder(order);
     
     switch (action) {
@@ -303,18 +357,18 @@ export const OrdersPage: React.FC = () => {
   };
 
   // Update order status via API
-  const handleStatusUpdate = async (order: UnifiedOrder, action: string) => {
+  const handleStatusUpdate = async (order: Order, action: string) => {
     setIsUpdating(true);
     try {
       switch (action) {
         case 'confirm':
-          await unifiedApi.confirmOrder(order.id);
+          await ordersService.confirmOrder(order.id);
           break;
         case 'prepare':
-          await unifiedApi.prepareOrder(order.id);
+          await ordersService.startPreparing(order.id);
           break;
         case 'deliver':
-          await unifiedApi.deliverOrder(order.id);
+          await ordersService.deliverOrder(order.id);
           break;
         default:
           throw new Error(`Ação desconhecida: ${action}`);
@@ -335,7 +389,7 @@ export const OrdersPage: React.FC = () => {
     
     setIsUpdating(true);
     try {
-      await unifiedApi.shipOrder(selectedOrder.id, shipForm.tracking_code, shipForm.carrier);
+      await ordersService.shipOrder(selectedOrder.id, shipForm.tracking_code, shipForm.carrier);
       toast.success('Pedido marcado como enviado!');
       setActionModal(null);
       setSelectedOrder(null);
@@ -355,7 +409,7 @@ export const OrdersPage: React.FC = () => {
     
     setIsUpdating(true);
     try {
-      await unifiedApi.markPaid(selectedOrder.id, paymentForm.payment_reference);
+      await ordersService.markPaid(selectedOrder.id, paymentForm.payment_reference);
       toast.success('Pagamento confirmado!');
       setActionModal(null);
       setSelectedOrder(null);
@@ -375,7 +429,7 @@ export const OrdersPage: React.FC = () => {
     
     setIsUpdating(true);
     try {
-      await unifiedApi.cancelOrder(selectedOrder.id, cancelForm.reason);
+      await ordersService.cancelOrder(selectedOrder.id, cancelForm.reason);
       toast.success('Pedido cancelado!');
       setActionModal(null);
       setSelectedOrder(null);
@@ -393,7 +447,7 @@ export const OrdersPage: React.FC = () => {
     {
       key: 'order_number',
       header: 'Pedido',
-      render: (order: UnifiedOrder) => (
+      render: (order: Order) => (
         <div>
           <p className="font-semibold text-gray-900 dark:text-white">#{order.order_number}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -410,7 +464,7 @@ export const OrdersPage: React.FC = () => {
     {
       key: 'customer',
       header: 'Cliente',
-      render: (order: UnifiedOrder) => (
+      render: (order: Order) => (
         <div>
           <p className="font-medium text-gray-900 dark:text-white">{order.customer_name || '-'}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">{order.customer_phone || '-'}</p>
@@ -420,30 +474,30 @@ export const OrdersPage: React.FC = () => {
     {
       key: 'items',
       header: 'Itens',
-      render: (order: UnifiedOrder) => (
+      render: (order: Order) => (
         <span className="text-sm font-medium text-gray-900 dark:text-white">
-          {order.items_count || 0} item(ns)
+          {order.items_count ?? order.items?.length ?? 0} item(ns)
         </span>
       ),
     },
     {
       key: 'total',
       header: 'Total',
-      render: (order: UnifiedOrder) => (
+      render: (order: Order) => (
         <span className="font-semibold text-gray-900 dark:text-white">
-          R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          R$ {formatMoney(order.total)}
         </span>
       ),
     },
     {
       key: 'status',
       header: 'Status',
-      render: (order: UnifiedOrder) => <OrderStatusBadge status={order.status} />,
+      render: (order: Order) => <OrderStatusBadge status={order.status} />,
     },
     {
       key: 'actions',
       header: 'Ações',
-      render: (order: UnifiedOrder) => {
+      render: (order: Order) => {
         const actions = getOrderActions(order);
         return (
           <div className="flex items-center gap-2">
@@ -604,7 +658,7 @@ export const OrdersPage: React.FC = () => {
           <div className="flex-1 overflow-hidden">
             <OrdersKanban
               orders={filteredOrders}
-              onOrderClick={(order) => navigate(`/orders/${order.id}`)}
+              onOrderClick={(order) => navigate(orderDetailRoute(order.id))}
               onStatusChange={handleKanbanStatusChange}
               visibleStatuses={visibleStatuses}
             />
@@ -634,7 +688,7 @@ export const OrdersPage: React.FC = () => {
                   columns={columns}
                   data={filteredOrders}
                   keyExtractor={(order) => order.id}
-                  onRowClick={(order) => navigate(`/orders/${order.id}`)}
+                  onRowClick={(order) => navigate(orderDetailRoute(order.id))}
                 />
               )}
             </Card>

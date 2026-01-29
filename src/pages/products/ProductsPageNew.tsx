@@ -37,17 +37,13 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
 import { useStore } from '../../hooks';
-import {
-  catalogService,
-  productsApi,
-  categoriesApi,
-  productTypesApi,
-  Product,
-  ProductInput,
-  Category,
-  ProductType,
+import storesApi, {
+  StoreProduct as Product,
+  StoreProductInput as ProductInput,
+  StoreCategory as Category,
+  StoreProductType as ProductType,
   CustomField,
-} from '../../services/catalogService';
+} from '../../services/storesApi';
 import logger from '../../services/logger';
 
 type ViewMode = 'grid' | 'list';
@@ -358,8 +354,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     sku: '',
     barcode: '',
     price: 0,
-    compare_at_price: null,
-    cost_price: null,
+    compare_at_price: undefined,
+    cost_price: undefined,
     category: null,
     product_type: null,
     type_attributes: {},
@@ -417,8 +413,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           sku: `SKU-${Date.now()}`,
           barcode: '',
           price: 0,
-          compare_at_price: null,
-          cost_price: null,
+          compare_at_price: undefined,
+          cost_price: undefined,
           category: null,
           product_type: null,
           type_attributes: {},
@@ -464,10 +460,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     setSaving(true);
     try {
       if (isEditing && product) {
-        await productsApi.update(product.id, formData);
+        await storesApi.updateProduct(product.id, formData);
         toast.success('Produto atualizado!');
       } else {
-        await productsApi.create(formData);
+        await storesApi.createProduct(formData);
         toast.success('Produto criado!');
       }
       onSave();
@@ -812,8 +808,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">R$</span>
                     <input
                       type="number"
-                      value={formData.compare_at_price || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, compare_at_price: Number(e.target.value) || null }))}
+                      value={formData.compare_at_price ?? ''}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        compare_at_price: e.target.value ? Number(e.target.value) : undefined,
+                      }))}
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
                       step="0.01"
                       min="0"
@@ -830,8 +829,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">R$</span>
                     <input
                       type="number"
-                      value={formData.cost_price || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cost_price: Number(e.target.value) || null }))}
+                      value={formData.cost_price ?? ''}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        cost_price: e.target.value ? Number(e.target.value) : undefined,
+                      }))}
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
                       step="0.01"
                       min="0"
@@ -1116,7 +1118,7 @@ export const ProductsPageNew: React.FC = () => {
     try {
       setLoading(true);
       const [productsRes, categoriesRes, typesRes] = await Promise.all([
-        productsApi.list({
+        storesApi.getProducts({
           store: storeId,
           search: search || undefined,
           category: filterCategory || undefined,
@@ -1124,13 +1126,13 @@ export const ProductsPageNew: React.FC = () => {
           status: filterStatus || undefined,
           page_size: 100,
         }),
-        categoriesApi.list(storeId),
-        productTypesApi.list(storeId),
+        storesApi.getCategories(storeId),
+        storesApi.getProductTypes(storeId),
       ]);
       
       setProducts(productsRes.results);
-      setCategories(categoriesRes);
-      setProductTypes(typesRes);
+      setCategories(categoriesRes.results || []);
+      setProductTypes(typesRes.results || []);
     } catch (error) {
       logger.error('Error loading products:', error);
       toast.error('Erro ao carregar produtos');
@@ -1158,7 +1160,7 @@ export const ProductsPageNew: React.FC = () => {
     if (!deletingProduct) return;
     
     try {
-      await productsApi.delete(deletingProduct.id);
+      await storesApi.deleteProduct(deletingProduct.id);
       toast.success('Produto excluído!');
       setDeletingProduct(null);
       loadData();
@@ -1170,7 +1172,7 @@ export const ProductsPageNew: React.FC = () => {
 
   const handleDuplicate = async (product: Product) => {
     try {
-      await productsApi.duplicate(product.id);
+      await storesApi.duplicateProduct(product.id);
       toast.success('Produto duplicado!');
       loadData();
     } catch (error) {
@@ -1181,7 +1183,7 @@ export const ProductsPageNew: React.FC = () => {
 
   const handleToggleFeatured = async (product: Product) => {
     try {
-      await productsApi.toggleFeatured(product.id);
+      await storesApi.updateProduct(product.id, { featured: !product.featured });
       loadData();
     } catch (error) {
       logger.error('Error toggling featured:', error);
@@ -1190,7 +1192,8 @@ export const ProductsPageNew: React.FC = () => {
 
   const handleToggleStatus = async (product: Product) => {
     try {
-      await productsApi.toggleStatus(product.id);
+      const nextStatus = product.status === 'active' ? 'inactive' : 'active';
+      await storesApi.updateProduct(product.id, { status: nextStatus });
       loadData();
     } catch (error) {
       logger.error('Error toggling status:', error);

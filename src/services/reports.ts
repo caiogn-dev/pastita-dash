@@ -4,9 +4,11 @@
  */
 import api from './api';
 import logger from './logger';
+import { getStoreSlug } from '../hooks/useStore';
 
 const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
 const BASE_URL = '/stores/reports';
+const getStoreParam = () => getStoreSlug() || STORE_SLUG;
 
 // =============================================================================
 // TYPES
@@ -146,7 +148,7 @@ export const getRevenueReport = async (
 ): Promise<RevenueReport> => {
   try {
     const response = await api.get(`${BASE_URL}/revenue/`, {
-      params: { store: STORE_SLUG, ...params }
+      params: { store: getStoreParam(), ...params }
     });
     return response.data;
   } catch (error) {
@@ -161,7 +163,7 @@ export const getRevenueReport = async (
 export const getProductsReport = async (params: DateRange = {}): Promise<ProductsReport> => {
   try {
     const response = await api.get(`${BASE_URL}/products/`, {
-      params: { store: STORE_SLUG, ...params }
+      params: { store: getStoreParam(), ...params }
     });
     return response.data;
   } catch (error) {
@@ -176,7 +178,7 @@ export const getProductsReport = async (params: DateRange = {}): Promise<Product
 export const getStockReport = async (low_stock_threshold?: number): Promise<StockReport> => {
   try {
     const response = await api.get(`${BASE_URL}/stock/`, {
-      params: { store: STORE_SLUG, low_stock: low_stock_threshold }
+      params: { store: getStoreParam(), low_stock: low_stock_threshold }
     });
     return response.data;
   } catch (error) {
@@ -191,7 +193,7 @@ export const getStockReport = async (low_stock_threshold?: number): Promise<Stoc
 export const getCustomersReport = async (params: DateRange = {}): Promise<CustomersReport> => {
   try {
     const response = await api.get(`${BASE_URL}/customers/`, {
-      params: { store: STORE_SLUG, ...params }
+      params: { store: getStoreParam(), ...params }
     });
     return response.data;
   } catch (error) {
@@ -206,7 +208,7 @@ export const getCustomersReport = async (params: DateRange = {}): Promise<Custom
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
     const response = await api.get(`${BASE_URL}/dashboard/`, {
-      params: { store: STORE_SLUG }
+      params: { store: getStoreParam() }
     });
     return response.data;
   } catch (error) {
@@ -221,7 +223,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 export const exportOrdersCSV = async (params: DateRange = {}): Promise<Blob> => {
   try {
     const response = await api.get(`${BASE_URL}/orders/export/`, {
-      params: { store: STORE_SLUG, ...params },
+      params: { store: getStoreParam(), ...params },
       responseType: 'blob'
     });
     return response.data;

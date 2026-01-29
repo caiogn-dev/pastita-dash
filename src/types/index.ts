@@ -171,6 +171,8 @@ export interface Order {
   customer_name: string;
   customer_email: string;
   status: 'pending' | 'confirmed' | 'processing' | 'preparing' | 'ready' | 'out_for_delivery' | 'awaiting_payment' | 'paid' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'refunded' | 'failed';
+  payment_status?: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded';
+  payment_method?: string;
   subtotal: number;
   discount: number;
   shipping_cost: number;
@@ -178,12 +180,25 @@ export interface Order {
   tax: number;
   total: number;
   currency: string;
+  delivery_method?: string;
   shipping_address: Record<string, unknown>;
   delivery_address?: Record<string, unknown>;  // API returns delivery_address
   billing_address: Record<string, unknown>;
   notes: string;
   internal_notes: string;
   metadata: Record<string, unknown>;
+  access_token?: string;
+  pix_code?: string;
+  pix_qr_code?: string;
+  pix_ticket_url?: string;
+  payment_url?: string;
+  payment_link?: string;
+  init_point?: string;
+  payment_preference_id?: string;
+  items_count?: number;
+  store_id?: string;
+  store_name?: string;
+  source?: string;
   confirmed_at: string | null;
   paid_at: string | null;
   shipped_at: string | null;
@@ -844,6 +859,7 @@ export interface GenerateReportRequest {
 export interface ExportParams {
   account_id?: string;
   company_id?: string;
+  store?: string;
   start_date?: string;
   end_date?: string;
   format?: 'csv' | 'xlsx';

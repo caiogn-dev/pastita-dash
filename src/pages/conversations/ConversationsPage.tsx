@@ -31,10 +31,12 @@ import {
 } from '../../components/common';
 import { conversationsService, ordersService, exportService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
+import { useStore } from '../../hooks';
 import { Conversation, ConversationNote, Order } from '../../types';
 
 export const ConversationsPage: React.FC = () => {
   const { selectedAccount } = useAccountStore();
+  const { storeSlug, storeId: contextStoreId } = useStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [conversationOrders, setConversationOrders] = useState<Record<string, Order[]>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +54,7 @@ export const ConversationsPage: React.FC = () => {
 
   useEffect(() => {
     loadConversations();
-  }, [selectedAccount]);
+  }, [selectedAccount, storeSlug, contextStoreId]);
 
   const loadConversations = async () => {
     setIsLoading(true);
@@ -68,7 +70,10 @@ export const ConversationsPage: React.FC = () => {
       const ordersMap: Record<string, Order[]> = {};
       for (const conv of response.results) {
         try {
-          const orders = await ordersService.getByCustomer(conv.phone_number, selectedAccount?.id);
+          const orders = await ordersService.getByCustomer(
+            conv.phone_number,
+            storeSlug || contextStoreId || undefined
+          );
           if (orders.length > 0) {
             ordersMap[conv.id] = orders;
           }

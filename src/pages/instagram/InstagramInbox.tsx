@@ -24,18 +24,16 @@ import {
   Tooltip,
   Alert,
 } from '@mui/material';
-import {
-  Instagram as InstagramIcon,
-  Send as SendIcon,
-  Search as SearchIcon,
-  Image as ImageIcon,
-  Refresh as RefreshIcon,
-  Circle as CircleIcon,
-  AccessTime as AccessTimeIcon,
-  Done as DoneIcon,
-  DoneAll as DoneAllIcon,
-  Visibility as VisibilityIcon,
-} from '@mui/icons-material';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import SendIcon from '@mui/icons-material/Send';
+import SearchIcon from '@mui/icons-material/Search';
+import ImageIcon from '@mui/icons-material/Image';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CircleIcon from '@mui/icons-material/Circle';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import DoneIcon from '@mui/icons-material/Done';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   instagramService,
   InstagramAccount,

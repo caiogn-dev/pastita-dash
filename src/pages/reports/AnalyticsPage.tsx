@@ -35,21 +35,19 @@ import {
   useTheme,
   alpha
 } from '@mui/material';
-import {
-  TrendingUp,
-  TrendingDown,
-  Download,
-  Refresh,
-  CalendarMonth,
-  ShoppingCart,
-  People,
-  Inventory,
-  AttachMoney,
-  Warning,
-  CheckCircle,
-  LocalShipping,
-  Star
-} from '@mui/icons-material';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import DownloadIcon from '@mui/icons-material/Download';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import PeopleIcon from '@mui/icons-material/People';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import WarningIcon from '@mui/icons-material/Warning';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import StarIcon from '@mui/icons-material/Star';
 import {
   LineChart,
   Line,
@@ -145,9 +143,9 @@ const StatCard: React.FC<StatCardProps> = ({
             {change !== undefined && (
               <Box display="flex" alignItems="center" mt={1}>
                 {change >= 0 ? (
-                  <TrendingUp sx={{ color: 'success.main', fontSize: 18, mr: 0.5 }} />
+                  <TrendingUpIcon sx={{ color: 'success.main', fontSize: 18, mr: 0.5 }} />
                 ) : (
-                  <TrendingDown sx={{ color: 'error.main', fontSize: 18, mr: 0.5 }} />
+                  <TrendingDownIcon sx={{ color: 'error.main', fontSize: 18, mr: 0.5 }} />
                 )}
                 <Typography
                   variant="body2"
@@ -265,7 +263,7 @@ const AnalyticsPage: React.FC = () => {
             title="Faturamento Hoje"
             value={formatCurrency(dashboardStats?.today.revenue || 0)}
             change={dashboardStats?.today.revenue_change_percent}
-            icon={<AttachMoney />}
+            icon={<AttachMoneyIcon />}
             color="#22c55e"
             loading={loading}
           />
@@ -275,7 +273,7 @@ const AnalyticsPage: React.FC = () => {
             title="Pedidos Hoje"
             value={dashboardStats?.today.orders || 0}
             subtitle={`${dashboardStats?.week.orders || 0} esta semana`}
-            icon={<ShoppingCart />}
+            icon={<ShoppingCartIcon />}
             color="#6366f1"
             loading={loading}
           />
@@ -285,7 +283,7 @@ const AnalyticsPage: React.FC = () => {
             title="Pedidos Pendentes"
             value={dashboardStats?.alerts.pending_orders || 0}
             subtitle="Aguardando ação"
-            icon={<LocalShipping />}
+            icon={<LocalShippingIcon />}
             color="#f59e0b"
             loading={loading}
           />
@@ -295,7 +293,7 @@ const AnalyticsPage: React.FC = () => {
             title="Estoque Baixo"
             value={dashboardStats?.alerts.low_stock_products || 0}
             subtitle="Produtos para repor"
-            icon={<Warning />}
+            icon={<WarningIcon />}
             color="#ef4444"
             loading={loading}
           />
@@ -419,7 +417,7 @@ const AnalyticsPage: React.FC = () => {
                           <TableCell>
                             <Box display="flex" alignItems="center" gap={1}>
                               {index < 3 && (
-                                <Star sx={{ color: index === 0 ? '#fbbf24' : index === 1 ? '#9ca3af' : '#cd7f32', fontSize: 16 }} />
+                                <StarIcon sx={{ color: index === 0 ? '#fbbf24' : index === 1 ? '#9ca3af' : '#cd7f32', fontSize: 16 }} />
                               )}
                               <Typography variant="body2" noWrap sx={{ maxWidth: 150 }}>
                                 {product.product_name}
@@ -516,7 +514,7 @@ const AnalyticsPage: React.FC = () => {
           <StatCard
             title="Total de Produtos"
             value={stockReport?.summary.total_products || 0}
-            icon={<Inventory />}
+            icon={<InventoryIcon />}
             color="#6366f1"
             loading={loading}
           />
@@ -526,7 +524,7 @@ const AnalyticsPage: React.FC = () => {
             title="Estoque Baixo"
             value={stockReport?.summary.low_stock_count || 0}
             subtitle={`Limite: ${stockReport?.summary.low_stock_threshold || 10} unidades`}
-            icon={<Warning />}
+            icon={<WarningIcon />}
             color="#f59e0b"
             loading={loading}
           />
@@ -536,7 +534,7 @@ const AnalyticsPage: React.FC = () => {
             title="Sem Estoque"
             value={stockReport?.summary.out_of_stock_count || 0}
             subtitle="Reposição urgente"
-            icon={<Warning />}
+            icon={<WarningIcon />}
             color="#ef4444"
             loading={loading}
           />
@@ -552,7 +550,7 @@ const AnalyticsPage: React.FC = () => {
           {loading ? (
             <LinearProgress />
           ) : stockReport?.low_stock_products.length === 0 ? (
-            <Alert severity="success" icon={<CheckCircle />}>
+            <Alert severity="success" icon={<CheckCircleIcon />}>
               Todos os produtos estão com estoque adequado!
             </Alert>
           ) : (
@@ -644,14 +642,14 @@ const AnalyticsPage: React.FC = () => {
           
           <Button
             variant="outlined"
-            startIcon={<Download />}
+            startIcon={<DownloadIcon />}
             onClick={handleExportOrders}
           >
             Exportar
           </Button>
           
           <IconButton onClick={loadData} disabled={loading}>
-            <Refresh />
+            <RefreshIcon />
           </IconButton>
         </Box>
       </Box>

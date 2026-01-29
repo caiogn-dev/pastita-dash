@@ -1,5 +1,6 @@
 import api from './api';
 import { ExportParams } from '../types';
+import { getStoreSlug } from '../hooks/useStore';
 
 export const exportService = {
   exportMessages: async (params: ExportParams = {}): Promise<Blob> => {
@@ -11,8 +12,9 @@ export const exportService = {
   },
 
   exportOrders: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get('/export/orders/', {
-      params,
+    const store = params.store || getStoreSlug();
+    const response = await api.get('/stores/reports/orders/export/', {
+      params: { ...params, store: store || params.store },
       responseType: 'blob',
     });
     return response.data;
@@ -36,14 +38,6 @@ export const exportService = {
 
   exportConversations: async (params: ExportParams = {}): Promise<Blob> => {
     const response = await api.get('/export/conversations/', {
-      params,
-      responseType: 'blob',
-    });
-    return response.data;
-  },
-
-  exportPayments: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get('/export/payments/', {
       params,
       responseType: 'blob',
     });

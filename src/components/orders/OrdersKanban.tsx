@@ -44,7 +44,7 @@ import {
   ArrowPathIcon,
   CheckIcon,
 } from '@heroicons/react/24/outline';
-import { UnifiedOrder } from '../../services/unifiedApi';
+import { Order } from '../../types';
 
 // Order status configuration - SEMANTIC FLOW
 // Separates "order received" from "payment confirmed" for clarity
@@ -123,12 +123,14 @@ export const ORDER_STATUSES = [
   },
 ];
 
+type OrderStatus = Order['status'];
+
 // Helper to normalize status
-const normalizeStatus = (status: string): string => {
+const normalizeStatus = (status: string): OrderStatus => {
   const normalized = status.toLowerCase();
   for (const s of ORDER_STATUSES) {
     if (s.id === normalized || s.aliases.includes(normalized)) {
-      return s.id;
+      return s.id as OrderStatus;
     }
   }
   return 'pending';
@@ -140,9 +142,31 @@ const getStatusConfig = (status: string) => {
   return ORDER_STATUSES.find(s => s.id === normalized) || ORDER_STATUSES[0];
 };
 
+const formatCurrency = (value: number | string | null | undefined) => {
+  const num = typeof value === 'string' ? Number(value) : value ?? 0;
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+};
+
+const getItemsCount = (order: Order) => order.items_count ?? order.items?.length ?? 0;
+
+const formatAddress = (address: Order['delivery_address']) => {
+  if (!address) return null;
+  if (typeof address === 'string') return address;
+  const addr = address as Record<string, string>;
+  const parts = [
+    addr.street || addr.rua || addr.logradouro,
+    addr.number || addr.numero,
+    addr.complement || addr.complemento,
+    addr.neighborhood || addr.bairro,
+    addr.city || addr.cidade,
+    addr.state || addr.estado,
+  ].filter(Boolean);
+  return parts.join(', ');
+};
+
 interface OrderCardProps {
-  order: UnifiedOrder;
-  onClick?: (order: UnifiedOrder) => void;
+  order: Order;
+  onClick?: (order: Order) => void;
   isDragging?: boolean;
   isUpdating?: boolean;
   isSuccess?: boolean;
@@ -202,6 +226,11 @@ const PaymentBadge: React.FC<{ paymentStatus?: string; paymentMethod?: string }>
 
 // Order Card Component
 const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpdating, isSuccess }) => {
+  const derivedPaymentStatus = order.payment_status
+    || (['paid', 'confirmed'].includes(order.status?.toLowerCase?.() || '')
+      ? 'paid'
+      : undefined);
+
   return (
     <div
       className={`
@@ -239,7 +268,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       {/* Payment Status Badge - NEW */}
       <div className="mb-2">
         <PaymentBadge 
-          paymentStatus={order.payment_status} 
+          paymentStatus={derivedPaymentStatus} 
           paymentMethod={order.payment_method} 
         />
       </div>
@@ -265,9 +294,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
         <div className="flex items-start gap-1.5 mb-2">
           <MapPinIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5" />
           <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
-            {typeof order.delivery_address === 'string' 
-              ? order.delivery_address 
-              : order.delivery_address.street || 'Endereço não informado'}
+            {formatAddress(order.delivery_address) || 'Endereço não informado'}
           </span>
         </div>
       )}
@@ -275,12 +302,12 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       {/* Items count */}
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
         <span className="text-xs text-gray-500 dark:text-gray-400">
-          {order.items_count || 0} item(ns)
+          {getItemsCount(order)} item(ns)
         </span>
         <div className="flex items-center gap-1">
           <CurrencyDollarIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
           <span className="font-bold text-green-600 dark:text-green-400">
-            R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            R$ {formatCurrency(order.total)}
           </span>
         </div>
       </div>
@@ -300,8 +327,8 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
 // Kanban Column
 interface KanbanColumnProps {
   status: typeof ORDER_STATUSES[0];
-  orders: UnifiedOrder[];
-  onOrderClick?: (order: UnifiedOrder) => void;
+  orders: Order[];
+  onOrderClick?: (order: Order) => void;
   updatingOrders?: Set<string>;
   successOrders?: Set<string>;
   isOver?: boolean;
@@ -376,16 +403,16 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
 
 // Main Kanban Component
 interface OrdersKanbanProps {
-  orders: UnifiedOrder[];
-  onOrderClick?: (order: UnifiedOrder) => void;
-  onStatusChange?: (orderId: string, newStatus: string) => Promise<void>;
+  orders: Order[];
+  onOrderClick?: (order: Order) => void;
+  onStatusChange?: (orderId: string, newStatus: OrderStatus) => Promise<void>;
   visibleStatuses?: string[];
 }
 
 // Local status overrides - completely managed by Kanban
 interface LocalOrderState {
-  status: string;
-  originalStatus: string;
+  status: OrderStatus;
+  originalStatus: OrderStatus;
   timestamp: number;
   isPending: boolean; // API call in progress
   isConfirmed: boolean; // API returned success
@@ -485,7 +512,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
 
   // Group orders by status - using effectiveOrders which includes local overrides
   const ordersByStatus = useMemo(() => {
-    const grouped: Record<string, UnifiedOrder[]> = {};
+    const grouped: Record<string, Order[]> = {};
     
     ORDER_STATUSES.forEach(status => {
       grouped[status.id] = [];
@@ -578,13 +605,14 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
 
     // Get current order to preserve original status for potential rollback
     const currentOrder = effectiveOrders.find(o => o.id === activeOrderId);
-    const originalStatus = currentOrder?.status || sourceColumn;
+    const originalStatus = currentOrder?.status || normalizeStatus(sourceColumn || 'pending');
+    const nextStatus = normalizeStatus(destColumn);
 
     // OPTIMISTIC UPDATE: Set local state immediately
     setLocalOrderStates(prev => {
       const next = new Map(prev);
       next.set(activeOrderId, {
-        status: destColumn,
+        status: nextStatus,
         originalStatus: originalStatus,
         timestamp: Date.now(),
         isPending: true,
@@ -596,8 +624,8 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     // Call API in background
     if (onStatusChange) {
       try {
-        await onStatusChange(activeOrderId, destColumn);
-        console.log(`[Kanban] ✅ Successfully updated order ${activeOrderId} to ${destColumn}`);
+        await onStatusChange(activeOrderId, nextStatus);
+        console.log(`[Kanban] ✅ Successfully updated order ${activeOrderId} to ${nextStatus}`);
         
         // Mark as confirmed - keep local state active
         setLocalOrderStates(prev => {

@@ -144,13 +144,38 @@ export interface StoreCategory {
   description: string;
   image?: string;
   image_url?: string;
-  parent?: string;
+  parent?: string | null;
   children: StoreCategory[];
   sort_order: number;
   is_active: boolean;
   products_count: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface StoreCategoryInput {
+  store: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  image?: File | null;
+  parent?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+export interface CustomField {
+  name: string;
+  label: string;
+  type: 'text' | 'number' | 'select' | 'multiselect' | 'boolean' | 'textarea' | 'date' | 'color';
+  required?: boolean;
+  placeholder?: string;
+  default_value?: string | number | boolean;
+  options?: Array<{ value: string; label: string }>;
+  min?: number;
+  max?: number;
+  step?: number;
+  rows?: number;
 }
 
 export interface StoreProductVariant {
@@ -177,6 +202,10 @@ export interface StoreProduct {
   store: string;
   category?: string;
   category_name?: string;
+  product_type?: string | null;
+  product_type_name?: string;
+  product_type_slug?: string;
+  type_attributes?: Record<string, unknown>;
   name: string;
   slug: string;
   description: string;
@@ -217,7 +246,9 @@ export interface StoreProduct {
 
 export interface StoreProductInput {
   store: string;
-  category?: string;
+  category?: string | null;
+  product_type?: string | null;
+  type_attributes?: Record<string, unknown>;
   name: string;
   slug?: string;
   description?: string;
@@ -233,6 +264,7 @@ export interface StoreProductInput {
   allow_backorder?: boolean;
   status?: string;
   featured?: boolean;
+  main_image?: File | null;
   main_image_url?: string;
   images?: string[];
   meta_title?: string;
@@ -369,6 +401,40 @@ export interface PaginatedResponse<T> {
 // =============================================================================
 
 const BASE_URL = '/stores';
+
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
+const isFile = (value: unknown): value is File => {
+  return typeof File !== 'undefined' && value instanceof File;
+};
+
+const buildFormData = (data: Record<string, unknown>, includeFile = true): FormData => {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === null || value === undefined) return;
+    if (isFile(value) && includeFile) {
+      formData.append(key, value);
+      return;
+    }
+    if (typeof value === 'object') {
+      formData.append(key, JSON.stringify(value));
+      return;
+    }
+    if (typeof value === 'boolean') {
+      formData.append(key, value ? 'true' : 'false');
+      return;
+    }
+    formData.append(key, String(value));
+  });
+  return formData;
+};
 
 // Stores
 export const getStores = async (): Promise<PaginatedResponse<Store>> => {
@@ -575,7 +641,7 @@ export const testWebhook = async (id: string): Promise<{ success: boolean; statu
 // Categories
 export const getCategories = async (storeId?: string): Promise<PaginatedResponse<StoreCategory>> => {
   try {
-    const params = storeId ? { store: storeId } : {};
+    const params = storeId ? { store: storeId, page_size: 100 } : { page_size: 100 };
     const response = await api.get(`${BASE_URL}/categories/`, { params });
     return response.data;
   } catch (error) {
@@ -584,9 +650,17 @@ export const getCategories = async (storeId?: string): Promise<PaginatedResponse
   }
 };
 
-export const createCategory = async (data: Partial<StoreCategory>): Promise<StoreCategory> => {
+export const createCategory = async (data: StoreCategoryInput): Promise<StoreCategory> => {
   try {
-    const response = await api.post(`${BASE_URL}/categories/`, data);
+    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    if (data.image && isFile(data.image)) {
+      const formData = buildFormData(payload);
+      const response = await api.post(`${BASE_URL}/categories/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
+    const response = await api.post(`${BASE_URL}/categories/`, payload);
     return response.data;
   } catch (error) {
     logger.error('Failed to create category', error);
@@ -594,8 +668,15 @@ export const createCategory = async (data: Partial<StoreCategory>): Promise<Stor
   }
 };
 
-export const updateCategory = async (id: string, data: Partial<StoreCategory>): Promise<StoreCategory> => {
+export const updateCategory = async (id: string, data: Partial<StoreCategoryInput>): Promise<StoreCategory> => {
   try {
+    if (data.image && isFile(data.image)) {
+      const formData = buildFormData(data);
+      const response = await api.patch(`${BASE_URL}/categories/${id}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
     const response = await api.patch(`${BASE_URL}/categories/${id}/`, data);
     return response.data;
   } catch (error) {
@@ -617,9 +698,13 @@ export const deleteCategory = async (id: string): Promise<void> => {
 export const getProducts = async (params?: {
   store?: string;
   category?: string;
+  product_type?: string;
   status?: string;
   featured?: boolean;
   search?: string;
+  ordering?: string;
+  page?: number;
+  page_size?: number;
 }): Promise<PaginatedResponse<StoreProduct>> => {
   try {
     const response = await api.get(`${BASE_URL}/products/`, { params });
@@ -642,7 +727,15 @@ export const getProduct = async (id: string): Promise<StoreProduct> => {
 
 export const createProduct = async (data: StoreProductInput): Promise<StoreProduct> => {
   try {
-    const response = await api.post(`${BASE_URL}/products/`, data);
+    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    if (data.main_image && isFile(data.main_image)) {
+      const formData = buildFormData(payload);
+      const response = await api.post(`${BASE_URL}/products/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
+    const response = await api.post(`${BASE_URL}/products/`, payload);
     return response.data;
   } catch (error) {
     logger.error('Failed to create product', error);
@@ -652,6 +745,13 @@ export const createProduct = async (data: StoreProductInput): Promise<StoreProdu
 
 export const updateProduct = async (id: string, data: Partial<StoreProductInput>): Promise<StoreProduct> => {
   try {
+    if (data.main_image && isFile(data.main_image)) {
+      const formData = buildFormData(data);
+      const response = await api.patch(`${BASE_URL}/products/${id}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
     const response = await api.patch(`${BASE_URL}/products/${id}/`, data);
     return response.data;
   } catch (error) {
@@ -1268,24 +1368,33 @@ export interface StoreProductType {
   name: string;
   slug: string;
   description: string;
-  icon: string;
+  icon?: string;
   image?: string;
-  custom_fields: Array<{
-    name: string;
-    type: string;
-    required: boolean;
-    options?: Array<{ value: string; label: string }>;
-  }>;
+  custom_fields: CustomField[];
   sort_order: number;
   is_active: boolean;
   show_in_menu: boolean;
+  products_count?: number;
   created_at: string;
   updated_at: string;
 }
 
+export interface StoreProductTypeInput {
+  store: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  icon?: string;
+  image?: File | null;
+  custom_fields?: CustomField[];
+  sort_order?: number;
+  is_active?: boolean;
+  show_in_menu?: boolean;
+}
+
 export const getProductTypes = async (storeId?: string): Promise<PaginatedResponse<StoreProductType>> => {
   try {
-    const params = storeId ? { store: storeId } : {};
+    const params = storeId ? { store: storeId, page_size: 100 } : { page_size: 100 };
     const response = await api.get(`${BASE_URL}/product-types/`, { params });
     return response.data;
   } catch (error) {
@@ -1294,9 +1403,17 @@ export const getProductTypes = async (storeId?: string): Promise<PaginatedRespon
   }
 };
 
-export const createProductType = async (data: Partial<StoreProductType>): Promise<StoreProductType> => {
+export const createProductType = async (data: StoreProductTypeInput): Promise<StoreProductType> => {
   try {
-    const response = await api.post(`${BASE_URL}/product-types/`, data);
+    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    if (data.image && isFile(data.image)) {
+      const formData = buildFormData(payload);
+      const response = await api.post(`${BASE_URL}/product-types/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
+    const response = await api.post(`${BASE_URL}/product-types/`, payload);
     return response.data;
   } catch (error) {
     logger.error('Failed to create product type', error);
@@ -1304,8 +1421,15 @@ export const createProductType = async (data: Partial<StoreProductType>): Promis
   }
 };
 
-export const updateProductType = async (id: string, data: Partial<StoreProductType>): Promise<StoreProductType> => {
+export const updateProductType = async (id: string, data: Partial<StoreProductTypeInput>): Promise<StoreProductType> => {
   try {
+    if (data.image && isFile(data.image)) {
+      const formData = buildFormData(data);
+      const response = await api.patch(`${BASE_URL}/product-types/${id}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
     const response = await api.patch(`${BASE_URL}/product-types/${id}/`, data);
     return response.data;
   } catch (error) {

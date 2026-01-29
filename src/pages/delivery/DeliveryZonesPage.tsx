@@ -85,6 +85,7 @@ export const DeliveryZonesPage: React.FC = () => {
   
   // Use route storeId if available, otherwise use context
   const storeId = routeStoreId || contextStoreId;
+  const settingsPath = storeId ? `/stores/${storeId}/settings` : '/settings';
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
@@ -282,7 +283,7 @@ export const DeliveryZonesPage: React.FC = () => {
             </p>
           </div>
           <Link
-            to="/pastita/settings"
+            to={settingsPath}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 rounded-lg hover:bg-blue-100 dark:bg-blue-900/40 transition-colors"
           >
             <Cog6ToothIcon className="w-4 h-4" />
@@ -342,7 +343,7 @@ export const DeliveryZonesPage: React.FC = () => {
             <MapPinIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 dark:text-gray-400 mb-4">Localização não configurada</p>
             <Link
-              to="/pastita/settings"
+              to={settingsPath}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Cog6ToothIcon className="w-4 h-4" />

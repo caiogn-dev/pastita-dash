@@ -4,7 +4,7 @@
  * Optimized for thermal printing with high contrast
  */
 import { useRef, useCallback } from 'react';
-import { Order } from '../../services/storeApi';
+import { Order } from '../../types';
 
 // Type alias for backwards compatibility
 type Pedido = Order;
@@ -55,7 +55,8 @@ export const useOrderPrint = () => {
     };
 
     const formatAddress = () => {
-      const addr = pedido.endereco_entrega || pedido.delivery_address;
+      const legacyAddress = (pedido as unknown as { endereco_entrega?: unknown }).endereco_entrega;
+      const addr = legacyAddress || pedido.delivery_address;
       if (!addr || typeof addr !== 'object') return '';
       
       const addrAny = addr as unknown as Record<string, string>;
@@ -100,8 +101,8 @@ export const useOrderPrint = () => {
     };
 
     const subtotal = Number(pedido.subtotal || pedido.total || 0);
-    const deliveryFee = Number(pedido.delivery_fee || pedido.taxa_entrega || 0);
-    const discount = Number(pedido.discount || pedido.desconto || 0);
+    const deliveryFee = Number(pedido.delivery_fee || (pedido as unknown as { taxa_entrega?: number | string }).taxa_entrega || 0);
+    const discount = Number(pedido.discount || (pedido as unknown as { desconto?: number | string }).desconto || 0);
     const total = Number(pedido.total || 0);
 
     const storeName = options?.storeName || 'PASTITA';
@@ -129,7 +130,9 @@ export const useOrderPrint = () => {
 
     // Build notes HTML
     const pedidoAny = pedido as unknown as Record<string, unknown>;
-    const notes = (pedidoAny.customer_notes as string) || pedido.observacoes || (pedidoAny.delivery_notes as string);
+    const notes = (pedidoAny.customer_notes as string)
+      || (pedidoAny.observacoes as string)
+      || (pedidoAny.delivery_notes as string);
     const notesHtml = notes ? `
       <div class="notes-section">
         <div class="notes-title">📝 OBSERVAÇÕES</div>
@@ -425,8 +428,8 @@ export const useOrderPrint = () => {
         <!-- Customer Info -->
         <div class="section">
           <div class="section-title">👤 CLIENTE</div>
-          <div class="customer-name">${pedido.customer_name || pedido.cliente_nome}</div>
-          <div class="customer-phone">📞 ${pedido.customer_phone || pedido.cliente_telefone}</div>
+          <div class="customer-name">${pedido.customer_name || (pedidoAny.cliente_nome as string) || ''}</div>
+          <div class="customer-phone">📞 ${pedido.customer_phone || (pedidoAny.cliente_telefone as string) || ''}</div>
           ${formatAddress() ? `
             <div class="customer-address">
               <div class="address-label">📍 Endereço de Entrega:</div>
