@@ -230,6 +230,11 @@ export const whatsappService = {
       const response = await api.post<{ added: number }>(`/campaigns/campaigns/${id}/add_recipients/`, { contacts });
       return response.data;
     },
+
+    process: async (id: string, batchSize?: number): Promise<{ success: boolean; processed: number; failed: number; remaining: number; campaign_status: string }> => {
+      const response = await api.post(`/campaigns/campaigns/${id}/process/`, { batch_size: batchSize || 50 });
+      return response.data;
+    },
   },
 
   // ==================== SCHEDULED MESSAGES ====================

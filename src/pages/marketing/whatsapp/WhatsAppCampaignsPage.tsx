@@ -125,6 +125,23 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     }
   };
 
+  const handleForceProcess = async (campaign: WhatsAppCampaign) => {
+    setActionLoading(campaign.id);
+    try {
+      const result = await whatsappService.campaigns.process(campaign.id);
+      toast.success(`Processado: ${result.processed} enviadas, ${result.failed} falhas, ${result.remaining} restantes`);
+      loadCampaigns();
+      if (selectedCampaign?.id === campaign.id) {
+        await loadStats(campaign.id);
+      }
+    } catch (error) {
+      logger.error('Failed to process campaign', error);
+      toast.error('Erro ao processar campanha');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleViewStats = async (campaign: WhatsAppCampaign) => {
     setSelectedCampaign(campaign);
     await loadStats(campaign.id);
@@ -295,15 +312,26 @@ export const WhatsAppCampaignsPage: React.FC = () => {
                   )}
 
                   {campaign.status === 'running' && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handlePauseCampaign(campaign)}
-                      disabled={actionLoading === campaign.id}
-                    >
-                      <PauseIcon className="w-4 h-4 mr-1" />
-                      Pausar
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => handleForceProcess(campaign)}
+                        disabled={actionLoading === campaign.id}
+                        title="Forçar processamento (útil se Celery não está rodando)"
+                      >
+                        <ArrowPathIcon className={`w-4 h-4 mr-1 ${actionLoading === campaign.id ? 'animate-spin' : ''}`} />
+                        Processar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handlePauseCampaign(campaign)}
+                        disabled={actionLoading === campaign.id}
+                      >
+                        <PauseIcon className="w-4 h-4 mr-1" />
+                        Pausar
+                      </Button>
+                    </>
                   )}
 
                   {campaign.status === 'paused' && (
