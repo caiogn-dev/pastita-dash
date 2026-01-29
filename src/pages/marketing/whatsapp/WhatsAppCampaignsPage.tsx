@@ -135,19 +135,47 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   // =============================================================================
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { color: string; label: string; icon: React.ReactNode }> = {
-      draft: { color: 'gray', label: 'Rascunho', icon: null },
-      scheduled: { color: 'blue', label: 'Agendada', icon: <ClockIcon className="w-3 h-3" /> },
-      running: { color: 'yellow', label: 'Enviando', icon: <ArrowPathIcon className="w-3 h-3 animate-spin" /> },
-      paused: { color: 'orange', label: 'Pausada', icon: <PauseIcon className="w-3 h-3" /> },
-      completed: { color: 'green', label: 'Concluída', icon: <CheckCircleIcon className="w-3 h-3" /> },
-      cancelled: { color: 'red', label: 'Cancelada', icon: <XCircleIcon className="w-3 h-3" /> },
+    const statusConfig: Record<string, { className: string; label: string; icon: React.ReactNode }> = {
+      draft: { 
+        className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300', 
+        label: 'Rascunho', 
+        icon: null 
+      },
+      scheduled: { 
+        className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300', 
+        label: 'Agendada', 
+        icon: <ClockIcon className="w-3 h-3" /> 
+      },
+      running: { 
+        className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300', 
+        label: 'Enviando', 
+        icon: <ArrowPathIcon className="w-3 h-3 animate-spin" /> 
+      },
+      paused: { 
+        className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300', 
+        label: 'Pausada', 
+        icon: <PauseIcon className="w-3 h-3" /> 
+      },
+      completed: { 
+        className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', 
+        label: 'Concluída', 
+        icon: <CheckCircleIcon className="w-3 h-3" /> 
+      },
+      cancelled: { 
+        className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300', 
+        label: 'Cancelada', 
+        icon: <XCircleIcon className="w-3 h-3" /> 
+      },
     };
 
-    const config = statusConfig[status] || { color: 'gray', label: status, icon: null };
+    const config = statusConfig[status] || { 
+      className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300', 
+      label: status, 
+      icon: null 
+    };
 
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-${config.color}-100 text-${config.color}-700`}>
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>
         {config.icon}
         {config.label}
       </span>
