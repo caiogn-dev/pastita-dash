@@ -1,11 +1,9 @@
 import api from './api';
 import { ExportParams } from '../types';
 
-const BASE_URL = '/api/v1';
-
 export const exportService = {
   exportMessages: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get(`${BASE_URL}/export/messages/`, {
+    const response = await api.get('/export/messages/', {
       params,
       responseType: 'blob',
     });
@@ -13,7 +11,7 @@ export const exportService = {
   },
 
   exportOrders: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get(`${BASE_URL}/export/orders/`, {
+    const response = await api.get('/export/orders/', {
       params,
       responseType: 'blob',
     });
@@ -21,7 +19,7 @@ export const exportService = {
   },
 
   exportSessions: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get(`${BASE_URL}/export/sessions/`, {
+    const response = await api.get('/export/sessions/', {
       params,
       responseType: 'blob',
     });
@@ -29,7 +27,7 @@ export const exportService = {
   },
 
   exportAutomationLogs: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get(`${BASE_URL}/export/automation-logs/`, {
+    const response = await api.get('/export/automation-logs/', {
       params,
       responseType: 'blob',
     });
@@ -37,7 +35,7 @@ export const exportService = {
   },
 
   exportConversations: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get(`${BASE_URL}/export/conversations/`, {
+    const response = await api.get('/export/conversations/', {
       params,
       responseType: 'blob',
     });
@@ -45,7 +43,7 @@ export const exportService = {
   },
 
   exportPayments: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get(`${BASE_URL}/export/payments/`, {
+    const response = await api.get('/export/payments/', {
       params,
       responseType: 'blob',
     });

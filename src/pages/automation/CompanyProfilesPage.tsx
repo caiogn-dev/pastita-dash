@@ -31,7 +31,7 @@ const CompanyProfilesPage: React.FC = () => {
       setTotalCount(response.count);
     } catch (error) {
       toast.error('Erro ao carregar perfis de empresa');
-      logger.error(error);
+      logger.error('Failed to load company profiles', error);
     } finally {
       setLoading(false);
     }
@@ -65,8 +65,8 @@ const CompanyProfilesPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Perfis de Empresa</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Perfis de Empresa</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Configure automações para cada número WhatsApp
           </p>
         </div>
@@ -81,10 +81,10 @@ const CompanyProfilesPage: React.FC = () => {
 
       {/* Profiles Grid */}
       {profiles.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
           <BuildingOfficeIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum perfil configurado</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum perfil configurado</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Crie um perfil de empresa para começar a usar automações.
           </p>
           <div className="mt-6">
@@ -102,19 +102,19 @@ const CompanyProfilesPage: React.FC = () => {
           {profiles.map((profile) => (
             <div
               key={profile.id}
-              className="bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow"
             >
               <div className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <BuildingOfficeIcon className="h-10 w-10 text-green-600" />
+                      <BuildingOfficeIcon className="h-10 w-10 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="ml-4">
-                      <h3 className="text-lg font-medium text-gray-900">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                         {profile.company_name}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {profile.account_phone}
                       </p>
                     </div>
@@ -129,18 +129,18 @@ const CompanyProfilesPage: React.FC = () => {
                 </div>
 
                 <div className="mt-4 space-y-2">
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                     <span className="font-medium mr-2">Tipo:</span>
                     {businessTypeLabels[profile.business_type] || profile.business_type}
                   </div>
                   {profile.website_url && (
-                    <div className="flex items-center text-sm text-gray-500 truncate">
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 truncate">
                       <span className="font-medium mr-2">Site:</span>
                       <a
                         href={profile.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-green-600 hover:text-green-700 truncate"
+                        className="text-green-600 dark:text-green-400 hover:text-green-700 dark:text-green-300 truncate"
                       >
                         {profile.website_url}
                       </a>
@@ -150,17 +150,17 @@ const CompanyProfilesPage: React.FC = () => {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {profile.welcome_message_enabled && (
-                    <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800">
                       Boas-vindas
                     </span>
                   )}
                   {profile.abandoned_cart_notification && (
-                    <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-yellow-100 text-yellow-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800">
                       Carrinho abandonado
                     </span>
                   )}
                   {profile.pix_notification_enabled && (
-                    <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-purple-100 text-purple-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-800">
                       PIX
                     </span>
                   )}
@@ -175,14 +175,14 @@ const CompanyProfilesPage: React.FC = () => {
                   <div className="flex space-x-2">
                     <Link
                       to={`/automation/companies/${profile.id}`}
-                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
                     >
                       <Cog6ToothIcon className="h-4 w-4 mr-1" />
                       Configurar
                     </Link>
                     <Link
                       to={`/automation/companies/${profile.id}/stats`}
-                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
                     >
                       <ChartBarIcon className="h-4 w-4 mr-1" />
                       Stats
@@ -190,7 +190,7 @@ const CompanyProfilesPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleRegenerateApiKey(profile.id)}
-                    className="inline-flex items-center px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+                    className="inline-flex items-center px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 dark:hover:text-gray-300"
                     title="Gerar nova API key"
                   >
                     <KeyIcon className="h-4 w-4" />
@@ -204,26 +204,26 @@ const CompanyProfilesPage: React.FC = () => {
 
       {/* Pagination */}
       {totalCount > 20 && (
-        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow">
+        <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 sm:px-6 rounded-lg shadow">
           <div className="flex flex-1 justify-between sm:hidden">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
             >
               Anterior
             </button>
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page * 20 >= totalCount}
-              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
             >
               Próximo
             </button>
           </div>
           <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 Mostrando <span className="font-medium">{(page - 1) * 20 + 1}</span> a{' '}
                 <span className="font-medium">{Math.min(page * 20, totalCount)}</span> de{' '}
                 <span className="font-medium">{totalCount}</span> resultados
@@ -233,14 +233,14 @@ const CompanyProfilesPage: React.FC = () => {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
               >
                 Anterior
               </button>
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={page * 20 >= totalCount}
-                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
               >
                 Próximo
               </button>

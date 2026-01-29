@@ -3,6 +3,8 @@ import { PaginatedResponse } from '../types';
 
 export interface Coupon {
   id: string;
+  store?: string | null;
+  store_name?: string | null;
   code: string;
   description: string;
   discount_type: 'percentage' | 'fixed';
@@ -20,6 +22,7 @@ export interface Coupon {
 }
 
 export interface CreateCoupon {
+  store?: string | null;
   code: string;
   description?: string;
   discount_type: 'percentage' | 'fixed';
@@ -33,6 +36,7 @@ export interface CreateCoupon {
 }
 
 export interface UpdateCoupon {
+  store?: string | null;
   code?: string;
   description?: string;
   discount_type?: 'percentage' | 'fixed';
@@ -54,6 +58,7 @@ export interface CouponStats {
 }
 
 export interface CouponFilters {
+  store?: string;
   is_active?: boolean;
   discount_type?: 'percentage' | 'fixed';
   search?: string;
@@ -62,11 +67,15 @@ export interface CouponFilters {
 }
 
 class CouponsService {
-  private baseUrl = '/ecommerce/admin/coupons';
+  private baseUrl = '/stores/coupons';
 
   async getCoupons(filters?: CouponFilters): Promise<PaginatedResponse<Coupon>> {
     const params = new URLSearchParams();
     
+    // Store filter - critical for multi-store support
+    if (filters?.store) {
+      params.append('store', filters.store);
+    }
     if (filters?.is_active !== undefined) {
       params.append('is_active', String(filters.is_active));
     }
@@ -114,8 +123,14 @@ class CouponsService {
     return response.data;
   }
 
-  async getStats(): Promise<CouponStats> {
-    const response = await api.get<CouponStats>(`${this.baseUrl}/stats/`);
+  async getStats(storeId?: string): Promise<CouponStats> {
+    const params = new URLSearchParams();
+    if (storeId) {
+      params.append('store', storeId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.baseUrl}/stats/?${queryString}` : `${this.baseUrl}/stats/`;
+    const response = await api.get<CouponStats>(url);
     return response.data;
   }
 }

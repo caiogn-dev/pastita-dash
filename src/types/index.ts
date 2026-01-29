@@ -170,14 +170,16 @@ export interface Order {
   customer_phone: string;
   customer_name: string;
   customer_email: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'awaiting_payment' | 'paid' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+  status: 'pending' | 'confirmed' | 'processing' | 'preparing' | 'ready' | 'out_for_delivery' | 'awaiting_payment' | 'paid' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'refunded' | 'failed';
   subtotal: number;
   discount: number;
   shipping_cost: number;
+  delivery_fee?: number;  // API returns delivery_fee
   tax: number;
   total: number;
   currency: string;
   shipping_address: Record<string, unknown>;
+  delivery_address?: Record<string, unknown>;  // API returns delivery_address
   billing_address: Record<string, unknown>;
   notes: string;
   internal_notes: string;
@@ -197,11 +199,14 @@ export interface OrderItem {
   id: string;
   order: string;
   product_id: string;
+  product: string;  // API returns product UUID
   product_name: string;
   product_sku: string;
+  sku?: string;  // API returns sku
   quantity: number;
   unit_price: number;
-  total_price: number;
+  total_price?: number;
+  subtotal?: number;  // API returns subtotal
   notes: string;
   metadata: Record<string, unknown>;
 }
@@ -668,9 +673,10 @@ export interface AutomationLogStats {
   by_day: Array<{ date: string; count: number }>;
 }
 
-// Scheduled Message types
+// Scheduled Message types (unified model from automation app)
 export type ScheduledMessageStatus = 'pending' | 'processing' | 'sent' | 'failed' | 'cancelled';
 export type ScheduledMessageType = 'text' | 'template' | 'image' | 'document' | 'interactive';
+export type ScheduledMessageSource = 'manual' | 'campaign' | 'automation' | 'api';
 
 export interface ScheduledMessage {
   id: string;
@@ -679,22 +685,32 @@ export interface ScheduledMessage {
   to_number: string;
   contact_name: string;
   message_type: ScheduledMessageType;
-  message_type_display: string;
+  message_type_display?: string;
   message_text: string;
   template_name: string;
   template_language: string;
   template_components: unknown[];
   media_url: string;
   buttons: Array<{ id: string; title: string }>;
+  content: Record<string, unknown>;
   scheduled_at: string;
   timezone: string;
   status: ScheduledMessageStatus;
   status_display: string;
   sent_at: string | null;
   whatsapp_message_id: string;
+  error_code: string;
   error_message: string;
+  // Recurrence support
+  is_recurring: boolean;
+  recurrence_rule: string;
+  next_occurrence: string | null;
+  // Source tracking
+  source: ScheduledMessageSource;
+  campaign_id: string | null;
+  // Metadata
   created_by: number | null;
-  created_by_name: string;
+  created_by_name?: string;
   notes: string;
   metadata: Record<string, unknown>;
   created_at: string;
@@ -712,8 +728,12 @@ export interface CreateScheduledMessage {
   template_components?: unknown[];
   media_url?: string;
   buttons?: Array<{ id: string; title: string }>;
+  content?: Record<string, unknown>;
   scheduled_at: string;
   timezone?: string;
+  is_recurring?: boolean;
+  recurrence_rule?: string;
+  source?: ScheduledMessageSource;
   notes?: string;
   metadata?: Record<string, unknown>;
 }
@@ -724,8 +744,9 @@ export interface ScheduledMessageStats {
   sent: number;
   failed: number;
   cancelled: number;
-  scheduled_today: number;
-  sent_today: number;
+  recurring?: number;
+  scheduled_today?: number;
+  sent_today?: number;
 }
 
 // Report Schedule types

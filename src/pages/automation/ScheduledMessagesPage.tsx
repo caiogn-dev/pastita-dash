@@ -77,7 +77,7 @@ export default function ScheduledMessagesPage() {
       setAccounts(accountsRes.results);
     } catch (error) {
       toast.error('Erro ao carregar mensagens agendadas');
-      logger.error(error);
+      logger.error('Failed to load scheduled messages', error);
     } finally {
       setLoading(false);
     }
@@ -110,7 +110,7 @@ export default function ScheduledMessagesPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao agendar mensagem');
-      logger.error(error);
+      logger.error('Failed to schedule message', error);
     }
   };
 
@@ -123,7 +123,7 @@ export default function ScheduledMessagesPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao cancelar mensagem');
-      logger.error(error);
+      logger.error('Failed to cancel message', error);
     }
   };
 
@@ -139,7 +139,7 @@ export default function ScheduledMessagesPage() {
       fetchData();
     } catch (error) {
       toast.error('Erro ao reagendar mensagem');
-      logger.error(error);
+      logger.error('Failed to reschedule message', error);
     }
   };
 
@@ -158,8 +158,8 @@ export default function ScheduledMessagesPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mensagens Agendadas</h1>
-          <p className="text-gray-600">Agende mensagens para envio futuro</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mensagens Agendadas</h1>
+          <p className="text-gray-600 dark:text-gray-400">Agende mensagens para envio futuro</p>
         </div>
         <Button onClick={() => setIsModalOpen(true)}>
           <PlusIcon className="h-5 w-5 mr-2" />
@@ -171,32 +171,32 @@ export default function ScheduledMessagesPage() {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            <p className="text-sm text-gray-500">Total</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
           </Card>
           <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-blue-600">{stats.pending}</p>
-            <p className="text-sm text-gray-500">Pendentes</p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.pending}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Pendentes</p>
           </Card>
           <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-green-600">{stats.sent}</p>
-            <p className="text-sm text-gray-500">Enviadas</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.sent}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Enviadas</p>
           </Card>
           <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
-            <p className="text-sm text-gray-500">Falhas</p>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.failed}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Falhas</p>
           </Card>
           <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-600">{stats.cancelled}</p>
-            <p className="text-sm text-gray-500">Canceladas</p>
+            <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.cancelled}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Canceladas</p>
           </Card>
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-indigo-600">{stats.scheduled_today}</p>
-            <p className="text-sm text-gray-500">Agendadas Hoje</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Agendadas Hoje</p>
           </Card>
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-emerald-600">{stats.sent_today}</p>
-            <p className="text-sm text-gray-500">Enviadas Hoje</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Enviadas Hoje</p>
           </Card>
         </div>
       )}
@@ -205,7 +205,7 @@ export default function ScheduledMessagesPage() {
       <Card className="p-4">
         <div className="flex flex-wrap gap-4">
           <select
-            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             value={filters.account_id}
             onChange={(e) => setFilters({ ...filters, account_id: e.target.value })}
           >
@@ -217,7 +217,7 @@ export default function ScheduledMessagesPage() {
             ))}
           </select>
           <select
-            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
           >
@@ -237,46 +237,46 @@ export default function ScheduledMessagesPage() {
       <Card>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Destinatário
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Tipo
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Agendado Para
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Conta
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
               {messages.map((message) => (
-                <tr key={message.id} className="hover:bg-gray-50">
+                <tr key={message.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <p className="font-medium text-gray-900">{message.to_number}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{message.to_number}</p>
                       {message.contact_name && (
-                        <p className="text-sm text-gray-500">{message.contact_name}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{message.contact_name}</p>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">
+                    <span className="text-sm text-gray-900 dark:text-white">
                       {messageTypeLabels[message.message_type] || message.message_type}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
+                    <div className="flex items-center text-sm text-gray-900 dark:text-white">
                       <CalendarIcon className="h-4 w-4 mr-1 text-gray-400" />
                       {format(parseISO(message.scheduled_at), "dd/MM/yyyy 'às' HH:mm", {
                         locale: ptBR,
@@ -288,7 +288,7 @@ export default function ScheduledMessagesPage() {
                       {message.status_display}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {message.account_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -326,7 +326,7 @@ export default function ScheduledMessagesPage() {
               ))}
               {messages.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     Nenhuma mensagem agendada encontrada
                   </td>
                 </tr>
@@ -344,9 +344,9 @@ export default function ScheduledMessagesPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Conta WhatsApp *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Conta WhatsApp *</label>
             <select
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               value={formData.account_id}
               onChange={(e) => setFormData({ ...formData, account_id: e.target.value })}
             >
@@ -374,9 +374,9 @@ export default function ScheduledMessagesPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo de Mensagem</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Mensagem</label>
             <select
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               value={formData.message_type}
               onChange={(e) =>
                 setFormData({ ...formData, message_type: e.target.value as any })
@@ -391,9 +391,9 @@ export default function ScheduledMessagesPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Mensagem</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Mensagem</label>
             <textarea
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               rows={4}
               value={formData.message_text || ''}
               onChange={(e) => setFormData({ ...formData, message_text: e.target.value })}
@@ -402,19 +402,19 @@ export default function ScheduledMessagesPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Data e Hora *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data e Hora *</label>
             <input
               type="datetime-local"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               value={formData.scheduled_at}
               onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Notas</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notas</label>
             <textarea
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               rows={2}
               value={formData.notes || ''}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -441,15 +441,15 @@ export default function ScheduledMessagesPage() {
         title="Reagendar Mensagem"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Reagendar mensagem para {selectedMessage?.to_number}
           </p>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nova Data e Hora</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nova Data e Hora</label>
             <input
               type="datetime-local"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               value={newScheduledAt}
               onChange={(e) => setNewScheduledAt(e.target.value)}
             />

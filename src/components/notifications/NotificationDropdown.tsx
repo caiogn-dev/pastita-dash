@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import logger from '../../services/logger';
 import { BellIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { notificationsService, Notification } from '../../services/notifications';
-import { useNotificationWebSocket } from '../../hooks/useWebSocket';
+import { useWS } from '../../context/WebSocketContext';
 
 export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,23 +12,48 @@ export const NotificationDropdown: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { subscribe } = useNotificationWebSocket();
+  const { isConnected, on } = useWS();
 
+  const loadNotifications = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await notificationsService.getNotifications();
+      setNotifications(response.results);
+    } catch (error) {
+      logger.error('Error loading notifications:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const response = await notificationsService.getUnreadCount();
+      setUnreadCount(response.count);
+    } catch (error) {
+      logger.error('Error loading unread count:', error);
+    }
+  }, []);
+
+  // Initial load
   useEffect(() => {
     loadNotifications();
     loadUnreadCount();
+  }, [loadNotifications, loadUnreadCount]);
 
-    // Subscribe to real-time notifications
-    const unsubscribe = subscribe('notification', (data: unknown) => {
-      const notification = (data as { notification: Notification }).notification;
-      setNotifications((prev) => [notification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
+  // Subscribe to WebSocket events for real-time updates
+  useEffect(() => {
+    // Listen for new orders (which create notifications)
+    const unsubOrder = on('order_created', () => {
+      // Increment count and refresh after a delay
+      setUnreadCount(prev => prev + 1);
+      setTimeout(() => loadNotifications(), 1000);
     });
 
     return () => {
-      unsubscribe();
+      unsubOrder();
     };
-  }, []);
+  }, [on, loadNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -40,27 +65,6 @@ export const NotificationDropdown: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const loadNotifications = async () => {
-    setIsLoading(true);
-    try {
-      const response = await notificationsService.getNotifications();
-      setNotifications(response.results);
-    } catch (error) {
-      logger.error('Error loading notifications:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadUnreadCount = async () => {
-    try {
-      const response = await notificationsService.getUnreadCount();
-      setUnreadCount(response.count);
-    } catch (error) {
-      logger.error('Error loading unread count:', error);
-    }
-  };
 
   const handleMarkAllAsRead = async () => {
     try {
@@ -109,7 +113,7 @@ export const NotificationDropdown: React.FC = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+        className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
       >
         <BellIcon className="w-6 h-6" />
         {unreadCount > 0 && (
@@ -120,13 +124,13 @@ export const NotificationDropdown: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-900">Notificações</h3>
+        <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Notificações</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
-                className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
+                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1"
               >
                 <CheckIcon className="w-4 h-4" />
                 Marcar todas como lidas
@@ -136,18 +140,18 @@ export const NotificationDropdown: React.FC = () => {
 
           <div className="max-h-96 overflow-y-auto">
             {isLoading ? (
-              <div className="p-4 text-center text-gray-500">Carregando...</div>
+              <div className="p-4 text-center text-gray-500 dark:text-gray-400">Carregando...</div>
             ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <BellIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                <BellIcon className="w-12 h-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
                 <p>Nenhuma notificação</p>
               </div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                    !notification.is_read ? 'bg-green-50' : ''
+                  className={`px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors ${
+                    !notification.is_read ? 'bg-primary-50 dark:bg-primary-900/30' : ''
                   }`}
                   onClick={() => !notification.is_read && handleMarkAsRead(notification.id)}
                 >
@@ -156,20 +160,20 @@ export const NotificationDropdown: React.FC = () => {
                       {getNotificationIcon(notification.notification_type)}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {notification.title}
                       </p>
-                      <p className="text-sm text-gray-600 line-clamp-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                         {format(new Date(notification.created_at), "dd/MM 'às' HH:mm", {
                           locale: ptBR,
                         })}
                       </p>
                     </div>
                     {!notification.is_read && (
-                      <span className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 mt-2" />
+                      <span className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-2" />
                     )}
                   </div>
                 </div>
@@ -177,13 +181,13 @@ export const NotificationDropdown: React.FC = () => {
             )}
           </div>
 
-          <div className="px-4 py-3 border-t border-gray-200">
+          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => {
                 setIsOpen(false);
                 // Navigate to notifications page
               }}
-              className="text-sm text-green-600 hover:text-green-700 w-full text-center"
+              className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 w-full text-center"
             >
               Ver todas as notificações
             </button>

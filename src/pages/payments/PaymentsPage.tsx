@@ -1,396 +1,304 @@
-import React, { useEffect, useMemo, useState } from 'react';
+/**
+ * Payments Page - Shows payment information from store orders
+ * Uses the unified stores API to fetch orders with payment data
+ */
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import {
+  CurrencyDollarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
+  ArrowPathIcon,
+  BanknotesIcon,
+  CreditCardIcon,
+  QrCodeIcon,
+  LinkIcon,
+  ClipboardIcon,
+} from '@heroicons/react/24/outline';
 import { Header } from '../../components/layout';
 import {
   Card,
   Button,
   Table,
-  StatusBadge,
-  Modal,
-  Input,
   PageLoading,
   StatusFilter,
-  Select,
-  Textarea,
 } from '../../components/common';
-import { paymentsService, exportService, getErrorMessage } from '../../services';
-import { Payment, PaymentGateway } from '../../types';
+import { storeApi, type Order } from '../../services/storeApi';
+import logger from '../../services/logger';
 
+// Payment status options based on StoreOrder.PaymentStatus
 const PAYMENT_STATUS_OPTIONS = [
-  { value: 'pending', label: 'Pendente', color: 'warning' },
+  { value: 'pending', label: 'Aguardando', color: 'warning' },
   { value: 'processing', label: 'Processando', color: 'purple' },
-  { value: 'completed', label: 'Concluído', color: 'success' },
+  { value: 'paid', label: 'Pago', color: 'success' },
   { value: 'failed', label: 'Falhou', color: 'danger' },
-  { value: 'cancelled', label: 'Cancelado', color: 'gray' },
   { value: 'refunded', label: 'Reembolsado', color: 'gray' },
-  { value: 'partially_refunded', label: 'Reembolso parcial', color: 'orange' },
 ];
 
-const GATEWAY_TYPE_OPTIONS = [
-  { value: 'mercadopago', label: 'Mercado Pago' },
-  { value: 'stripe', label: 'Stripe' },
-  { value: 'pagseguro', label: 'PagSeguro' },
-  { value: 'pix', label: 'PIX' },
-  { value: 'custom', label: 'Custom' },
-];
+// Payment method display names
+const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
+  pix: { label: 'PIX', icon: <QrCodeIcon className="w-4 h-4" /> },
+  credit_card: { label: 'Crédito', icon: <CreditCardIcon className="w-4 h-4" /> },
+  debit_card: { label: 'Débito', icon: <CreditCardIcon className="w-4 h-4" /> },
+  cash: { label: 'Dinheiro', icon: <BanknotesIcon className="w-4 h-4" /> },
+  card: { label: 'Cartão', icon: <CreditCardIcon className="w-4 h-4" /> },
+  mercadopago: { label: 'Mercado Pago', icon: <CurrencyDollarIcon className="w-4 h-4" /> },
+};
 
-const DEFAULT_GATEWAY_FORM = {
-  name: '',
-  gateway_type: 'mercadopago',
-  is_enabled: true,
-  is_sandbox: true,
-  endpoint_url: '',
-  webhook_url: '',
-  configuration: '{}',
+// Payment status badge component
+const PaymentStatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const config: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
+    pending: { bg: 'bg-amber-100 dark:bg-amber-900/40 dark:bg-amber-900/40', text: 'text-amber-800 dark:text-amber-300', icon: <ClockIcon className="w-4 h-4" /> },
+    processing: { bg: 'bg-purple-100 dark:bg-purple-900/40 dark:bg-purple-900/40', text: 'text-purple-800 dark:text-purple-300', icon: <ArrowPathIcon className="w-4 h-4 animate-spin" /> },
+    paid: { bg: 'bg-green-100 dark:bg-green-900/40 dark:bg-green-900/40', text: 'text-green-800 dark:text-green-300', icon: <CheckCircleIcon className="w-4 h-4" /> },
+    failed: { bg: 'bg-red-100 dark:bg-red-900/40 dark:bg-red-900/40', text: 'text-red-800 dark:text-red-300', icon: <XCircleIcon className="w-4 h-4" /> },
+    refunded: { bg: 'bg-gray-100 dark:bg-gray-700 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-200 dark:text-gray-300', icon: <ArrowPathIcon className="w-4 h-4" /> },
+  };
+  
+  const { bg, text, icon } = config[status] || config.pending;
+  const label = PAYMENT_STATUS_OPTIONS.find(o => o.value === status)?.label || status;
+  
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bg} ${text}`}>
+      {icon}
+      {label}
+    </span>
+  );
 };
 
 export const PaymentsPage: React.FC = () => {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [gateways, setGateways] = useState<PaymentGateway[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'payments' | 'gateways'>('payments');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [refundModal, setRefundModal] = useState<{ isOpen: boolean; payment: Payment | null }>({
-    isOpen: false,
-    payment: null,
-  });
-  const [refundAmount, setRefundAmount] = useState('');
-  const [refundReason, setRefundReason] = useState('');
-  const [refundError, setRefundError] = useState('');
-  const [isRefunding, setIsRefunding] = useState(false);
-  const [gatewayModalOpen, setGatewayModalOpen] = useState(false);
-  const [gatewayForm, setGatewayForm] = useState(DEFAULT_GATEWAY_FORM);
-  const [gatewayErrors, setGatewayErrors] = useState<Record<string, string>>({});
-  const [isCreatingGateway, setIsCreatingGateway] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [paymentsRes, gatewaysRes] = await Promise.all([
-        paymentsService.getPayments(),
-        paymentsService.getGateways(),
-      ]);
-      setPayments(paymentsRes.results);
-      setGateways(gatewaysRes.results);
+      // Get all orders from store, ordered by most recent
+      const ordersData = await storeApi.getOrders({ ordering: '-created_at' });
+      setOrders(ordersData);
     } catch (error) {
-      toast.error(getErrorMessage(error));
+      logger.error('Error loading payments:', error);
+      toast.error('Erro ao carregar pagamentos');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleConfirmPayment = async (payment: Payment) => {
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Handle confirm payment (mark as paid)
+  const handleConfirmPayment = async (order: Order) => {
     try {
-      const updated = await paymentsService.confirmPayment(payment.id);
-      setPayments(payments.map((p) => (p.id === updated.id ? updated : p)));
-      toast.success('Pagamento confirmado!');
+      const updatedOrder = await storeApi.markOrderPaid(order.id);
+      setOrders(orders.map(o => 
+        o.id === order.id 
+          ? { ...o, payment_status: updatedOrder.payment_status, status: updatedOrder.status } 
+          : o
+      ));
+      toast.success(`Pagamento do pedido #${order.order_number} confirmado!`);
     } catch (error) {
-      toast.error(getErrorMessage(error));
+      logger.error('Error confirming payment:', error);
+      toast.error('Erro ao confirmar pagamento');
     }
   };
 
-  const handleCancelPayment = async (payment: Payment) => {
-    try {
-      const updated = await paymentsService.cancelPayment(payment.id);
-      setPayments(payments.map((p) => (p.id === updated.id ? updated : p)));
-      toast.success('Pagamento cancelado!');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
-  };
+  // Calculate stats
+  const stats = useMemo(() => {
+    const totalRevenue = orders
+      .filter(o => o.payment_status === 'paid')
+      .reduce((sum, o) => sum + Number(o.total || 0), 0);
+    
+    const pendingAmount = orders
+      .filter(o => o.payment_status === 'pending')
+      .reduce((sum, o) => sum + Number(o.total || 0), 0);
+    
+    const todayOrders = orders.filter(o => {
+      const orderDate = new Date(o.created_at);
+      const today = new Date();
+      return orderDate.toDateString() === today.toDateString();
+    });
+    
+    const todayRevenue = todayOrders
+      .filter(o => o.payment_status === 'paid')
+      .reduce((sum, o) => sum + Number(o.total || 0), 0);
+    
+    return {
+      totalRevenue,
+      pendingAmount,
+      todayRevenue,
+      todayCount: todayOrders.length,
+      paidCount: orders.filter(o => o.payment_status === 'paid').length,
+      pendingCount: orders.filter(o => o.payment_status === 'pending').length,
+    };
+  }, [orders]);
 
-  const handleRefund = async () => {
-    if (!refundModal.payment) return;
-    setRefundError('');
-    let amount: number | undefined;
-    if (refundAmount) {
-      amount = Number.parseFloat(refundAmount);
-      if (Number.isNaN(amount) || amount <= 0) {
-        setRefundError('Informe um valor válido para reembolso.');
-        return;
-      }
-      if (amount > refundModal.payment.amount) {
-        setRefundError('O valor não pode ser maior que o pagamento original.');
-        return;
-      }
-    }
-    setIsRefunding(true);
-    try {
-      const reason = refundReason.trim() || undefined;
-      const updated = await paymentsService.refundPayment(refundModal.payment.id, amount, reason);
-      setPayments(payments.map((p) => (p.id === updated.id ? updated : p)));
-      toast.success('Reembolso processado!');
-      setRefundModal({ isOpen: false, payment: null });
-      setRefundAmount('');
-      setRefundReason('');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsRefunding(false);
-    }
-  };
-
-  const handleOpenRefund = (payment: Payment) => {
-    setRefundModal({ isOpen: true, payment });
-    setRefundAmount('');
-    setRefundReason('');
-    setRefundError('');
-  };
-
-  const handleCloseRefund = () => {
-    setRefundModal({ isOpen: false, payment: null });
-    setRefundAmount('');
-    setRefundReason('');
-    setRefundError('');
-  };
-
-  const handleOpenGatewayModal = () => {
-    setGatewayForm({ ...DEFAULT_GATEWAY_FORM });
-    setGatewayErrors({});
-    setGatewayModalOpen(true);
-  };
-
-  const handleCloseGatewayModal = () => {
-    setGatewayModalOpen(false);
-    setGatewayErrors({});
-  };
-
-  const handleCreateGateway = async () => {
-    const errors: Record<string, string> = {};
-    const name = gatewayForm.name.trim();
-    if (!name) {
-      errors.name = 'Informe um nome para o gateway.';
-    }
-
-    let configuration: Record<string, unknown> = {};
-    const configRaw = gatewayForm.configuration.trim();
-    if (configRaw) {
-      try {
-        configuration = JSON.parse(configRaw) as Record<string, unknown>;
-      } catch {
-        errors.configuration = 'Configuração precisa ser um JSON válido.';
-      }
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setGatewayErrors(errors);
-      return;
-    }
-
-    setIsCreatingGateway(true);
-    try {
-      const created = await paymentsService.createGateway({
-        name,
-        gateway_type: gatewayForm.gateway_type,
-        is_enabled: gatewayForm.is_enabled,
-        is_sandbox: gatewayForm.is_sandbox,
-        endpoint_url: gatewayForm.endpoint_url.trim() || undefined,
-        webhook_url: gatewayForm.webhook_url.trim() || undefined,
-        configuration,
-      });
-      setGateways((prev) => [created, ...prev]);
-      toast.success('Gateway criado com sucesso!');
-      handleCloseGatewayModal();
-      setGatewayForm({ ...DEFAULT_GATEWAY_FORM });
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsCreatingGateway(false);
-    }
-  };
-
-  const handleExport = async (format: 'csv' | 'xlsx') => {
-    setIsExporting(true);
-    try {
-      const blob = await exportService.exportPayments({
-        format,
-        status: statusFilter || undefined,
-      });
-      const dateStamp = new Date().toISOString().slice(0, 10);
-      exportService.downloadBlob(blob, `pagamentos-${dateStamp}.${format}`);
-      toast.success('Exportação concluída!');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
+  // Count by payment status
   const paymentStatusCounts = useMemo(() => {
-    return payments.reduce<Record<string, number>>((acc, payment) => {
-      acc[payment.status] = (acc[payment.status] || 0) + 1;
+    return orders.reduce<Record<string, number>>((acc, order) => {
+      const status = order.payment_status || 'pending';
+      acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {});
-  }, [payments]);
+  }, [orders]);
 
-  const filteredPayments = useMemo(() => {
-    if (!statusFilter) return payments;
-    return payments.filter((payment) => payment.status === statusFilter);
-  }, [payments, statusFilter]);
+  // Filter orders by payment status
+  const filteredOrders = useMemo(() => {
+    if (!statusFilter) return orders;
+    return orders.filter(order => order.payment_status === statusFilter);
+  }, [orders, statusFilter]);
 
-  const paymentFilterOptions = useMemo(() => {
-    return PAYMENT_STATUS_OPTIONS.map((option) => ({
+  // Filter options with counts
+  const filterOptions = useMemo(() => {
+    return PAYMENT_STATUS_OPTIONS.map(option => ({
       ...option,
       count: paymentStatusCounts[option.value] || 0,
     }));
   }, [paymentStatusCounts]);
 
-  const paymentColumns = [
+  // Format currency
+  const formatMoney = (value: number | string) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  // Table columns
+  const columns = [
     {
-      key: 'payment_id',
-      header: 'ID',
-      render: (payment: Payment) => (
-        <span className="font-mono text-sm text-gray-600">{payment.payment_id.slice(0, 8)}...</span>
-      ),
-    },
-    {
-      key: 'order',
+      key: 'order_number',
       header: 'Pedido',
-      render: (payment: Payment) => (
-        <span className="text-sm text-gray-900">{payment.order.slice(0, 8)}...</span>
+      render: (order: Order) => (
+        <div>
+          <span className="font-semibold text-gray-900 dark:text-white">#{order.order_number}</span>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{order.customer_name}</p>
+        </div>
       ),
     },
     {
-      key: 'amount',
+      key: 'total',
       header: 'Valor',
-      render: (payment: Payment) => (
-        <span className="font-medium text-gray-900">
-          R$ {payment.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-        </span>
+      render: (order: Order) => (
+        <span className="font-semibold text-gray-900 dark:text-white">{formatMoney(order.total)}</span>
       ),
     },
     {
-      key: 'method',
+      key: 'payment_method',
       header: 'Método',
-      render: (payment: Payment) => (
-        <span className="text-sm text-gray-600 capitalize">
-          {payment.payment_method?.replace('_', ' ') || '-'}
-        </span>
+      render: (order: Order) => {
+        const method = order.payment_method || 'pix';
+        const methodInfo = PAYMENT_METHOD_LABELS[method] || { label: method, icon: <CurrencyDollarIcon className="w-4 h-4" /> };
+        return (
+          <span className="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+            {methodInfo.icon}
+            {methodInfo.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'payment_status',
+      header: 'Status',
+      render: (order: Order) => (
+        <PaymentStatusBadge status={order.payment_status || 'pending'} />
       ),
     },
     {
-      key: 'status',
-      header: 'Status',
-      render: (payment: Payment) => <StatusBadge status={payment.status} />,
-    },
-    {
-      key: 'payment_url',
-      header: 'Link',
-      render: (payment: Payment) =>
-        payment.payment_url ? (
-          <a
-            href={payment.payment_url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm text-primary-600 hover:text-primary-700"
-          >
-            Abrir
-          </a>
-        ) : (
-          <span className="text-sm text-gray-400">-</span>
-        ),
+      key: 'payment_link',
+      header: 'Link Pagamento',
+      render: (order: Order) => {
+        const { payment_method, pix_code, access_token, pix_ticket_url, payment_url, payment_link, init_point, payment_preference_id } = order;
+        
+        // Check for direct payment link (for card payments)
+        const directLink = payment_url || payment_link || init_point;
+        
+        // Generate link from payment_preference_id if available (for card payments)
+        const preferenceLink = payment_preference_id 
+          ? `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${payment_preference_id}`
+          : null;
+        
+        // SECURE: Generate link using access_token (not order_number)
+        // This prevents unauthorized access to order details
+        const clientPaymentLink = pix_code && access_token
+          ? `https://pastita.com.br/pendente?token=${access_token}`
+          : null;
+        
+        // Priority: pix_ticket_url > client payment page (with token) > direct link > preference link
+        const finalPaymentLink = pix_ticket_url || clientPaymentLink || directLink || preferenceLink;
+        
+        // Show link if available
+        if (finalPaymentLink) {
+          return (
+            <div className="flex items-center gap-2">
+              <a
+                href={finalPaymentLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 rounded-lg font-medium transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <LinkIcon className="w-4 h-4" />
+                Abrir
+              </a>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(finalPaymentLink);
+                  toast.success('Link copiado! Envie para o cliente.');
+                }}
+                className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded"
+                title="Copiar link"
+              >
+                <ClipboardIcon className="w-4 h-4" />
+              </button>
+            </div>
+          );
+        }
+        
+        // If payment method is cash, no link needed
+        if (payment_method === 'cash') {
+          return <span className="text-sm text-gray-500 dark:text-gray-400">💵 Dinheiro</span>;
+        }
+        
+        // No payment info yet
+        return <span className="text-sm text-gray-400">-</span>;
+      },
     },
     {
       key: 'created_at',
       header: 'Data',
-      render: (payment: Payment) => (
-        <span className="text-sm text-gray-600">
-          {format(new Date(payment.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-        </span>
+      render: (order: Order) => (
+        <div className="text-sm">
+          <p className="text-gray-900 dark:text-white">{format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}</p>
+          <p className="text-gray-500 dark:text-gray-400">{format(new Date(order.created_at), "HH:mm", { locale: ptBR })}</p>
+        </div>
       ),
     },
     {
       key: 'actions',
       header: 'Ações',
-      render: (payment: Payment) => (
+      render: (order: Order) => (
         <div className="flex items-center gap-2">
-          {payment.status === 'pending' && (
-            <>
-              <Button
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleConfirmPayment(payment);
-                }}
-              >
-                Confirmar
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCancelPayment(payment);
-                }}
-              >
-                Cancelar
-              </Button>
-            </>
-          )}
-          {payment.status === 'completed' && (
+          {order.payment_status === 'pending' && (
             <Button
               size="sm"
-              variant="danger"
               onClick={(e) => {
                 e.stopPropagation();
-                handleOpenRefund(payment);
+                handleConfirmPayment(order);
               }}
             >
-              Reembolsar
+              <CheckCircleIcon className="w-4 h-4 mr-1" />
+              Confirmar
             </Button>
           )}
+          {order.payment_status === 'paid' && (
+            <span className="text-sm text-green-600 dark:text-green-400 font-medium">✓ Pago</span>
+          )}
         </div>
-      ),
-    },
-  ];
-
-  const gatewayColumns = [
-    {
-      key: 'name',
-      header: 'Nome',
-      render: (gateway: PaymentGateway) => (
-        <span className="font-medium text-gray-900">{gateway.name}</span>
-      ),
-    },
-    {
-      key: 'type',
-      header: 'Tipo',
-      render: (gateway: PaymentGateway) => (
-        <span className="text-sm text-gray-600 capitalize">{gateway.gateway_type}</span>
-      ),
-    },
-    {
-      key: 'enabled',
-      header: 'Habilitado',
-      render: (gateway: PaymentGateway) => (
-        <span className={`text-sm ${gateway.is_enabled ? 'text-green-600' : 'text-gray-400'}`}>
-          {gateway.is_enabled ? 'Sim' : 'Não'}
-        </span>
-      ),
-    },
-    {
-      key: 'sandbox',
-      header: 'Sandbox',
-      render: (gateway: PaymentGateway) => (
-        <span className={`text-sm ${gateway.is_sandbox ? 'text-yellow-600' : 'text-green-600'}`}>
-          {gateway.is_sandbox ? 'Sim' : 'Produção'}
-        </span>
-      ),
-    },
-    {
-      key: 'created_at',
-      header: 'Criado em',
-      render: (gateway: PaymentGateway) => (
-        <span className="text-sm text-gray-600">
-          {format(new Date(gateway.created_at), "dd/MM/yyyy", { locale: ptBR })}
-        </span>
       ),
     },
   ];
@@ -403,204 +311,95 @@ export const PaymentsPage: React.FC = () => {
     <div>
       <Header
         title="Pagamentos"
-        subtitle={`${payments.length} pagamento(s) | ${gateways.length} gateway(s)`}
+        subtitle={`${orders.length} pedido(s) | ${formatMoney(stats.totalRevenue)} recebido`}
       />
 
-      <div className="p-6">
-        {/* Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex gap-4">
-            <button
-              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                activeTab === 'payments'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              onClick={() => setActiveTab('payments')}
-            >
-              Pagamentos
-            </button>
-            <button
-              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                activeTab === 'gateways'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              onClick={() => setActiveTab('gateways')}
-            >
-              Gateways
-            </button>
-          </div>
-          {activeTab === 'payments' && (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleExport('csv')}
-                isLoading={isExporting}
-              >
-                Exportar CSV
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleExport('xlsx')}
-                isLoading={isExporting}
-              >
-                Exportar XLSX
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {activeTab === 'payments' ? (
-          <div className="space-y-4">
-            <StatusFilter
-              options={paymentFilterOptions}
-              value={statusFilter}
-              onChange={setStatusFilter}
-              className="flex-wrap"
-            />
-            <Card noPadding>
-              <Table
-                columns={paymentColumns}
-                data={filteredPayments}
-                keyExtractor={(payment) => payment.id}
-                emptyMessage="Nenhum pagamento encontrado"
-              />
-            </Card>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Gateways</h3>
-                <p className="text-sm text-gray-500">Gerencie os provedores de pagamento ativos.</p>
+      <div className="p-6 space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900/40 dark:bg-green-900/40 rounded-lg">
+                <CurrencyDollarIcon className="w-6 h-6 text-green-600 dark:text-green-400 dark:text-green-400" />
               </div>
-              <Button onClick={handleOpenGatewayModal}>Novo gateway</Button>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Receita Hoje</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white dark:text-white">{formatMoney(stats.todayRevenue)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">{stats.todayCount} pedido(s)</p>
+              </div>
             </div>
-            <Card noPadding>
-              <Table
-                columns={gatewayColumns}
-                data={gateways}
-                keyExtractor={(gateway) => gateway.id}
-                emptyMessage="Nenhum gateway configurado"
-              />
-            </Card>
-          </div>
-        )}
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 dark:bg-blue-900/40 rounded-lg">
+                <CheckCircleIcon className="w-6 h-6 text-blue-600 dark:text-blue-400 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Total Recebido</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white dark:text-white">{formatMoney(stats.totalRevenue)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">{stats.paidCount} pago(s)</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/40 dark:bg-amber-900/40 rounded-lg">
+                <ClockIcon className="w-6 h-6 text-amber-600 dark:text-amber-400 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Aguardando</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white dark:text-white">{formatMoney(stats.pendingAmount)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">{stats.pendingCount} pendente(s)</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 dark:bg-purple-900/40 rounded-lg">
+                <BanknotesIcon className="w-6 h-6 text-purple-600 dark:text-purple-400 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Total Pedidos</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white dark:text-white">{orders.length}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">todos os tempos</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <StatusFilter
+            options={filterOptions}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            className="flex-wrap"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={loadData}
+          >
+            <ArrowPathIcon className="w-4 h-4 mr-1" />
+            Atualizar
+          </Button>
+        </div>
+
+        {/* Payments Table */}
+        <Card noPadding>
+          <Table
+            columns={columns}
+            data={filteredOrders}
+            keyExtractor={(order) => order.id}
+            emptyMessage="Nenhum pagamento encontrado"
+          />
+        </Card>
       </div>
-
-      {/* Refund Modal */}
-      <Modal
-        isOpen={refundModal.isOpen}
-        onClose={handleCloseRefund}
-        title="Reembolsar Pagamento"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Valor original: R$ {refundModal.payment?.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </p>
-          <Input
-            label="Valor do Reembolso (deixe em branco para reembolso total)"
-            type="number"
-            step="0.01"
-            min={0}
-            max={refundModal.payment?.amount}
-            value={refundAmount}
-            onChange={(e) => setRefundAmount(e.target.value)}
-            placeholder="Valor"
-            error={refundError || undefined}
-          />
-          <Textarea
-            label="Motivo do reembolso (opcional)"
-            rows={3}
-            value={refundReason}
-            onChange={(e) => setRefundReason(e.target.value)}
-            placeholder="Detalhes para controle interno"
-          />
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={handleCloseRefund}>
-              Cancelar
-            </Button>
-            <Button variant="danger" onClick={handleRefund} isLoading={isRefunding}>
-              Reembolsar
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={gatewayModalOpen}
-        onClose={handleCloseGatewayModal}
-        title="Novo Gateway"
-        size="md"
-      >
-        <div className="space-y-4">
-          <Input
-            label="Nome do gateway"
-            value={gatewayForm.name}
-            onChange={(e) => setGatewayForm((prev) => ({ ...prev, name: e.target.value }))}
-            placeholder="Ex: Mercado Pago Principal"
-            error={gatewayErrors.name}
-          />
-          <Select
-            label="Tipo de gateway"
-            value={gatewayForm.gateway_type}
-            onChange={(e) => setGatewayForm((prev) => ({ ...prev, gateway_type: e.target.value }))}
-            options={GATEWAY_TYPE_OPTIONS}
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="flex items-center gap-2 text-sm text-gray-600">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                checked={gatewayForm.is_enabled}
-                onChange={(e) => setGatewayForm((prev) => ({ ...prev, is_enabled: e.target.checked }))}
-              />
-              Gateway habilitado
-            </label>
-            <label className="flex items-center gap-2 text-sm text-gray-600">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                checked={gatewayForm.is_sandbox}
-                onChange={(e) => setGatewayForm((prev) => ({ ...prev, is_sandbox: e.target.checked }))}
-              />
-              Ambiente sandbox
-            </label>
-          </div>
-          <Input
-            label="Endpoint (opcional)"
-            value={gatewayForm.endpoint_url}
-            onChange={(e) => setGatewayForm((prev) => ({ ...prev, endpoint_url: e.target.value }))}
-            placeholder="https://api.exemplo.com"
-          />
-          <Input
-            label="Webhook (opcional)"
-            value={gatewayForm.webhook_url}
-            onChange={(e) => setGatewayForm((prev) => ({ ...prev, webhook_url: e.target.value }))}
-            placeholder="https://sua-api.com/webhooks/pagamentos"
-          />
-          <Textarea
-            label="Configuração (JSON)"
-            rows={4}
-            value={gatewayForm.configuration}
-            onChange={(e) => setGatewayForm((prev) => ({ ...prev, configuration: e.target.value }))}
-            placeholder='{"client_id": "...", "client_secret": "..."}'
-            error={gatewayErrors.configuration}
-          />
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" onClick={handleCloseGatewayModal}>
-              Cancelar
-            </Button>
-            <Button onClick={handleCreateGateway} isLoading={isCreatingGateway}>
-              Criar gateway
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };
+
+export default PaymentsPage;

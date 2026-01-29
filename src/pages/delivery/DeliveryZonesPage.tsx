@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import logger from '../../services/logger';
 import {
   PlusIcon,
@@ -8,10 +9,9 @@ import {
   TruckIcon,
   MapPinIcon,
   CheckCircleIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import DeliveryZonesMap from '../../components/maps/DeliveryZonesMap';
-import { useAccountStore } from '../../stores/accountStore';
 import {
   deliveryService,
   DeliveryZone,
@@ -19,8 +19,8 @@ import {
   UpdateDeliveryZone,
   DeliveryZoneStats,
   StoreLocation,
-  UpdateStoreLocation,
 } from '../../services/delivery';
+import { useStore } from '../../hooks';
 
 const formatKm = (value?: number | string | null) => {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
@@ -40,12 +40,6 @@ const formatDays = (value?: number | string | null) => {
   return String(Math.round(numeric));
 };
 
-const formatCep = (value: string) => {
-  const digits = value.replace(/\D/g, '').slice(0, 8);
-  if (digits.length <= 5) return digits;
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-};
-
 const DISTANCE_BANDS = [
   { value: '0_2', label: '0 - 2 km' },
   { value: '2_5', label: '2 - 5 km' },
@@ -55,22 +49,46 @@ const DISTANCE_BANDS = [
   { value: '15_20', label: '15 - 20 km' },
 ];
 
+const buildMapUrls = ({
+  lat,
+  lng,
+  query,
+}: {
+  lat?: number | string | null;
+  lng?: number | string | null;
+  query?: string;
+}) => {
+  const parsedLat = typeof lat === 'string' ? Number.parseFloat(lat) : lat;
+  const parsedLng = typeof lng === 'string' ? Number.parseFloat(lng) : lng;
+  const hasCoords = Number.isFinite(parsedLat) && Number.isFinite(parsedLng);
+  const normalizedQuery = query?.trim();
+  if (normalizedQuery) {
+    const encoded = encodeURIComponent(normalizedQuery);
+    return {
+      mapUrl: `https://www.google.com/maps?q=${encoded}&output=embed`,
+      externalUrl: `https://www.google.com/maps?q=${encoded}`,
+    };
+  }
+  if (hasCoords && parsedLat != null && parsedLng != null) {
+    const coords = `${parsedLat},${parsedLng}`;
+    return {
+      mapUrl: `https://www.google.com/maps?q=${coords}&output=embed`,
+      externalUrl: `https://www.google.com/maps?q=${coords}`,
+    };
+  }
+  return null;
+};
+
 export const DeliveryZonesPage: React.FC = () => {
-  const { accounts, selectedAccount } = useAccountStore();
+  const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
+  const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
+  
+  // Use route storeId if available, otherwise use context
+  const storeId = routeStoreId || contextStoreId;
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
-  const [storeAccountId, setStoreAccountId] = useState('');
-  const [storeForm, setStoreForm] = useState<UpdateStoreLocation>({
-    account_id: '',
-    name: '',
-    zip_code: '',
-    address: '',
-    city: '',
-    state: '',
-  });
-  const [storeError, setStoreError] = useState('');
-  const [savingStore, setSavingStore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -83,6 +101,7 @@ export const DeliveryZonesPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState<CreateDeliveryZone>({
+    store: storeId || undefined,
     name: '',
     distance_band: '',
     delivery_fee: 0,
@@ -90,51 +109,62 @@ export const DeliveryZonesPage: React.FC = () => {
     is_active: true,
   });
 
+  const mapInfo = useMemo(() => {
+    if (!storeLocation) return null;
+    const queryParts = [
+      storeLocation.name,
+      storeLocation.address,
+      storeLocation.city,
+      storeLocation.state,
+      storeLocation.zip_code,
+      'Brasil',
+    ].filter(Boolean);
+    return buildMapUrls({
+      lat: storeLocation.latitude,
+      lng: storeLocation.longitude,
+      query: storeLocation.name?.trim() || queryParts.join(', '),
+    });
+  }, [storeLocation]);
+
   const loadData = useCallback(async () => {
+    if (!storeId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
       const [zonesData, statsData, storeData] = await Promise.all([
         deliveryService.getZones({
+          store: storeId,
           search: search || undefined,
           is_active: filterActive,
         }),
-        deliveryService.getStats(),
-        deliveryService.getStoreLocation(storeAccountId || undefined),
+        deliveryService.getStats(storeId),
+        deliveryService.getStoreLocation(),
       ]);
       setZones(zonesData.results);
       setStats(statsData);
       if (storeData) {
         setStoreLocation(storeData);
-        setStoreForm({
-          account_id: storeData.account_id || storeAccountId || '',
-          name: storeData.name || '',
-          zip_code: storeData.zip_code || '',
-          address: storeData.address || '',
-          city: storeData.city || '',
-          state: storeData.state || '',
-        });
-      } else {
-        setStoreForm((prev) => ({
-          ...prev,
-          account_id: storeAccountId,
-        }));
       }
-    } catch (error) {
-      logger.error('Error loading delivery zones:', error);
+    } catch (err) {
+      logger.error('Error loading delivery zones:', err);
+      setError('Erro ao carregar zonas de entrega');
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive, storeAccountId]);
-
-  useEffect(() => {
-    const nextId = selectedAccount?.id || '';
-    setStoreAccountId(nextId);
-    setStoreForm((prev) => ({ ...prev, account_id: nextId }));
-  }, [selectedAccount?.id]);
+  }, [search, filterActive, storeId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Update form data when store changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, store: storeId || undefined }));
+  }, [storeId]);
 
   const handleOpenModal = (zone?: DeliveryZone) => {
     if (zone) {
@@ -165,11 +195,19 @@ export const DeliveryZonesPage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!storeId) {
+      setError('Selecione uma loja antes de criar uma zona de entrega');
+      return;
+    }
+
     try {
       setSaving(true);
+      setError(null);
+      
       if (editingZone) {
         const payload: UpdateDeliveryZone = {
           ...formData,
+          store: storeId,
           name: formData.name.trim(),
           distance_band: formData.distance_band,
         };
@@ -177,14 +215,16 @@ export const DeliveryZonesPage: React.FC = () => {
       } else {
         const payload: CreateDeliveryZone = {
           ...formData,
+          store: storeId,
           name: formData.name.trim(),
         };
         await deliveryService.createZone(payload);
       }
       handleCloseModal();
       loadData();
-    } catch (error) {
-      logger.error('Error saving delivery zone:', error);
+    } catch (err) {
+      logger.error('Error saving delivery zone:', err);
+      setError('Erro ao salvar zona de entrega');
     } finally {
       setSaving(false);
     }
@@ -214,38 +254,6 @@ export const DeliveryZonesPage: React.FC = () => {
     }
   };
 
-  const handleSaveStoreLocation = async (event?: React.FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
-    setStoreError('');
-    if (!storeForm.zip_code) {
-      setStoreError('Informe o CEP da loja.');
-      return;
-    }
-
-    try {
-      setSavingStore(true);
-      const payload: UpdateStoreLocation = {
-        ...storeForm,
-        zip_code: storeForm.zip_code.replace(/\D/g, '').slice(0, 8),
-      };
-      const updated = await deliveryService.updateStoreLocation(payload);
-      setStoreLocation(updated);
-      setStoreForm({
-        account_id: updated.account_id ?? storeAccountId ?? storeForm.account_id ?? '',
-        name: updated.name || '',
-        zip_code: updated.zip_code || '',
-        address: updated.address || '',
-        city: updated.city || '',
-        state: updated.state || '',
-      });
-    } catch (error) {
-      logger.error('Error updating store location:', error);
-      setStoreError('Não foi possível salvar o CEP da loja.');
-    } finally {
-      setSavingStore(false);
-    }
-  };
-
   if (loading && zones.length === 0) {
     return <Loading />;
   }
@@ -255,8 +263,8 @@ export const DeliveryZonesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Zonas de Entrega</h1>
-          <p className="text-sm md:text-base text-gray-500">Calcule frete por quilometragem e gerencie faixas de preço</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Zonas de Entrega</h1>
+          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Calcule frete por quilometragem e gerencie faixas de preço</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto">
           <PlusIcon className="w-5 h-5 mr-2" />
@@ -264,95 +272,82 @@ export const DeliveryZonesPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Store Location Card */}
+      {/* Store Location Card - Read Only */}
       <Card className="p-4 md:p-6">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Localização da Loja</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Informe o CEP para carregar os dados da loja automaticamente.
-          </p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Localização da Loja</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              A localização é usada para calcular a distância de entrega.
+            </p>
+          </div>
+          <Link
+            to="/pastita/settings"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 rounded-lg hover:bg-blue-100 dark:bg-blue-900/40 transition-colors"
+          >
+            <Cog6ToothIcon className="w-4 h-4" />
+            Editar Localização
+          </Link>
         </div>
 
-        <form onSubmit={handleSaveStoreLocation} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {storeLocation ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="sm:col-span-2">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nome da Loja</p>
+                <p className="text-base text-gray-900 dark:text-white">{storeLocation.name || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">CEP</p>
+                <p className="text-base text-gray-900 dark:text-white">{storeLocation.zip_code || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Cidade/Estado</p>
+                <p className="text-base text-gray-900 dark:text-white">
+                  {storeLocation.city && storeLocation.state 
+                    ? `${storeLocation.city}/${storeLocation.state}` 
+                    : '-'}
+                </p>
+              </div>
+            </div>
+            
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Conta</label>
-              <select
-                value={storeAccountId}
-                onChange={(e) => {
-                  const nextId = e.target.value;
-                  setStoreAccountId(nextId);
-                  setStoreForm((prev) => ({ ...prev, account_id: nextId }));
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
-              >
-                <option value="">Conta padrao</option>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
-              </select>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Endereço</p>
+              <p className="text-base text-gray-900 dark:text-white">{storeLocation.address || '-'}</p>
             </div>
-            <div className="sm:col-span-2">
-              <Input
-                label="Nome da loja"
-                type="text"
-                placeholder="Ex: Pastita Palmas"
-                value={storeForm.name || ''}
-                onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Input
-                label="CEP *"
-                type="text"
-                value={formatCep(storeForm.zip_code)}
-                onChange={(e) => setStoreForm({
-                  ...storeForm,
-                  zip_code: e.target.value.replace(/\D/g, '').slice(0, 8),
-                })}
-                placeholder="77020-170"
-                maxLength={9}
-                inputMode="numeric"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button type="submit" disabled={savingStore} className="w-full">
-                {savingStore ? 'Salvando...' : 'Buscar CEP'}
-              </Button>
-            </div>
+
+            {mapInfo && (
+              <div className="mt-4">
+                <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                  <iframe
+                    title="Mapa da loja"
+                    src={mapInfo.mapUrl}
+                    className="w-full h-48 md:h-64"
+                    loading="lazy"
+                  />
+                </div>
+                <a
+                  href={mapInfo.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
+                >
+                  Ver no Google Maps →
+                </a>
+              </div>
+            )}
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Input
-              label="Endereço"
-              value={storeForm.address || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
-              placeholder="Rua, número"
-            />
-            <Input
-              label="Cidade"
-              value={storeForm.city || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
-              placeholder="Cidade"
-            />
-            <Input
-              label="Estado"
-              value={storeForm.state || ''}
-              onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
-              placeholder="UF"
-            />
-          </div>
-
-          {storeError && (
-            <p className="text-sm text-red-600">{storeError}</p>
-          )}
-        </form>
-
-        {storeLocation && (
-          <div className="mt-6">
-            <DeliveryZonesMap storeLocation={storeLocation} zones={zones} height="260px" />
+        ) : (
+          <div className="text-center py-8">
+            <MapPinIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 dark:text-gray-400 mb-4">Localização não configurada</p>
+            <Link
+              to="/pastita/settings"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Cog6ToothIcon className="w-4 h-4" />
+              Configurar Localização
+            </Link>
           </div>
         )}
       </Card>
@@ -362,45 +357,45 @@ export const DeliveryZonesPage: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <Card className="p-3 md:p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg shrink-0">
-                <MapPinIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg shrink-0">
+                <MapPinIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 truncate">Total de Faixas</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">Total de Faixas</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
               </div>
             </div>
           </Card>
           <Card className="p-3 md:p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg shrink-0">
-                <CheckCircleIcon className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+              <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg shrink-0">
+                <CheckCircleIcon className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 truncate">Ativas</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.active}</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">Ativas</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
               </div>
             </div>
           </Card>
           <Card className="p-3 md:p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg shrink-0">
-                <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg shrink-0">
+                <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 truncate">Valor Médio</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">R$ {formatMoney(stats.avg_fee)}</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">Valor Médio</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">R$ {formatMoney(stats.avg_fee)}</p>
               </div>
             </div>
           </Card>
           <Card className="p-3 md:p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg shrink-0">
-                <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg shrink-0">
+                <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 truncate">Prazo Médio</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">{formatDays(stats.avg_days)} dias</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">Prazo Médio</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{formatDays(stats.avg_days)} dias</p>
               </div>
             </div>
           </Card>
@@ -425,7 +420,7 @@ export const DeliveryZonesPage: React.FC = () => {
           <select
             value={filterActive === undefined ? '' : String(filterActive)}
             onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
-            className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
+            className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
           >
             <option value="">Todos os status</option>
             <option value="true">Ativas</option>
@@ -443,7 +438,7 @@ export const DeliveryZonesPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPinIcon className="w-5 h-5 text-gray-400" />
-                  <span className="font-medium text-gray-900">{zone.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{zone.name}</span>
                 </div>
                 <button
                   onClick={() => handleToggleActive(zone)}
@@ -456,8 +451,8 @@ export const DeliveryZonesPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-gray-500">Distância:</span>
-                  <span className="ml-1 font-mono text-gray-700">
+                  <span className="text-gray-500 dark:text-gray-400">Distância:</span>
+                  <span className="ml-1 font-mono text-gray-700 dark:text-gray-300">
                     {zone.distance_label
                       ? zone.distance_label
                       : zone.min_km !== null && zone.min_km !== undefined
@@ -466,14 +461,14 @@ export const DeliveryZonesPage: React.FC = () => {
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Prazo:</span>
-                  <span className="ml-1 text-gray-700">
+                  <span className="text-gray-500 dark:text-gray-400">Prazo:</span>
+                  <span className="ml-1 text-gray-700 dark:text-gray-300">
                     {zone.estimated_days} {zone.estimated_days === 1 ? 'dia útil' : 'dias úteis'}
                   </span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-lg font-semibold text-green-600">
+                <span className="text-lg font-semibold text-green-600 dark:text-green-400">
                   R$ {formatMoney(zone.delivery_fee)}
                 </span>
                 <div className="flex items-center gap-2">
@@ -488,7 +483,7 @@ export const DeliveryZonesPage: React.FC = () => {
                       setDeletingZone(zone);
                       setIsDeleteModalOpen(true);
                     }}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
                   >
                     <TrashIcon className="w-5 h-5" />
                   </button>
@@ -501,39 +496,39 @@ export const DeliveryZonesPage: React.FC = () => {
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Faixa
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Distância (KM)
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Valor
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Prazo
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
               {zones.map((zone) => (
-                <tr key={zone.id} className="hover:bg-gray-50">
+                <tr key={zone.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900">
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <MapPinIcon className="w-5 h-5 text-gray-400 mr-2" />
-                      <span className="font-medium text-gray-900">{zone.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{zone.name}</span>
                     </div>
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <span className="font-mono text-sm text-gray-700">
+                    <span className="font-mono text-sm text-gray-700 dark:text-gray-300">
                       {zone.distance_label
                         ? zone.distance_label
                         : zone.min_km !== null && zone.min_km !== undefined
@@ -542,11 +537,11 @@ export const DeliveryZonesPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <span className="text-base font-semibold text-green-600">
+                    <span className="text-base font-semibold text-green-600 dark:text-green-400">
                       R$ {formatMoney(zone.delivery_fee)}
                     </span>
                   </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                     {zone.estimated_days} {zone.estimated_days === 1 ? 'dia útil' : 'dias úteis'}
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
@@ -573,7 +568,7 @@ export const DeliveryZonesPage: React.FC = () => {
                           setDeletingZone(zone);
                           setIsDeleteModalOpen(true);
                         }}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg transition-colors"
                         title="Excluir"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -589,8 +584,8 @@ export const DeliveryZonesPage: React.FC = () => {
         {zones.length === 0 && (
           <div className="text-center py-12 px-4">
             <MapPinIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma faixa encontrada</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhuma faixa encontrada</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Cadastre faixas de quilometragem para calcular o frete.
             </p>
             <div className="mt-6">
@@ -619,7 +614,7 @@ export const DeliveryZonesPage: React.FC = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Faixa de Distância *
             </label>
             <select
@@ -633,7 +628,7 @@ export const DeliveryZonesPage: React.FC = () => {
                   name: prev.name || matched?.label || prev.name,
                 }));
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
             >
               <option value="">Selecione uma faixa</option>
               {DISTANCE_BANDS.map((band) => (
@@ -666,9 +661,9 @@ export const DeliveryZonesPage: React.FC = () => {
                 id="is_active"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
               />
-              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900 dark:text-white">
                 Faixa ativa
               </label>
             </div>
@@ -699,8 +694,8 @@ export const DeliveryZonesPage: React.FC = () => {
         title="Excluir Faixa de Entrega"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
-            Tem certeza que deseja excluir a faixa <strong className="text-gray-900">{deletingZone?.name}</strong>?
+          <p className="text-gray-600 dark:text-gray-400">
+            Tem certeza que deseja excluir a faixa <strong className="text-gray-900 dark:text-white">{deletingZone?.name}</strong>?
             Esta ação não pode ser desfeita.
           </p>
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">

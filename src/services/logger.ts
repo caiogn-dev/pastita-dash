@@ -103,35 +103,20 @@ export function warn(message: string, context: LogContext = {}): void {
 
 /**
  * Error level logging - always logged, sent to monitoring in production
+ * Accepts unknown type to handle catch block errors safely
  */
-export function error(message: string | Error | unknown, errorObj: unknown = null, context: LogContext = {}): void {
-  const messageText = message instanceof Error
-    ? message.message
-    : typeof message === 'string'
-      ? message
-      : 'Unexpected error';
-
-  const err = errorObj instanceof Error
-    ? errorObj
-    : message instanceof Error
-      ? message
-      : new Error(typeof errorObj === 'string' ? errorObj : messageText);
-
-  const contextPayload = typeof message === 'string' || message instanceof Error
-    ? context
-    : { ...context, originalMessage: message };
-
+export function error(message: string, errorObj: Error | unknown = null, context: LogContext = {}): void {
+  const err = errorObj instanceof Error ? errorObj : new Error(message);
+  
   if (isDevelopment) {
-    console.error(formatMessage('ERROR', messageText, contextPayload));
-    if (errorObj) {
+    console.error(formatMessage('ERROR', message, context));
+    if (errorObj && errorObj !== (message as unknown)) {
       console.error(errorObj);
-    } else if (!(message instanceof Error) && typeof message !== 'string' && message) {
-      console.error(message);
     }
   }
-
+  
   // Always send errors to monitoring
-  sendToMonitoring(err, { message: messageText, ...contextPayload });
+  sendToMonitoring(err, { message, ...context });
 }
 
 /**

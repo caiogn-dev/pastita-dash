@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import logger from '../../services/logger';
 import {
   PlusIcon,
@@ -11,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading, Textarea } from '../../components/common';
 import { productsService, Product, CreateProduct } from '../../services/products';
+import { useStore } from '../../hooks';
 
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -68,6 +70,11 @@ const parseCsv = (content: string) => {
 };
 
 export const ProductsPage: React.FC = () => {
+  const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
+  const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
+  
+  // Use route storeId if available, otherwise use context
+  const storeId = routeStoreId || contextStoreId;
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +82,7 @@ export const ProductsPage: React.FC = () => {
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
   const [filterCategory, setFilterCategory] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'out_of_stock' | 'low_stock'>('all');
+  const [error, setError] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -92,16 +100,24 @@ export const ProductsPage: React.FC = () => {
     stock_quantity: 0,
     is_active: true,
     image: null,
+    store: storeId || undefined,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadData = useCallback(async () => {
+    if (!storeId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
       const [productsData, categoriesData] = await Promise.all([
         productsService.getProducts({
+          store: storeId,
           search: search || undefined,
           category: filterCategory || undefined,
           is_active: filterActive,
@@ -110,16 +126,22 @@ export const ProductsPage: React.FC = () => {
       ]);
       setProducts(productsData.results);
       setCategories(categoriesData);
-    } catch (error) {
-      logger.error('Error loading products:', error);
+    } catch (err) {
+      logger.error('Error loading products:', err);
+      setError('Erro ao carregar produtos');
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive, filterCategory]);
+  }, [search, filterActive, filterCategory, storeId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Update form data when store changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, store: storeId || undefined }));
+  }, [storeId]);
 
   const filteredProducts = useMemo(() => {
     if (stockFilter === 'all') return products;
@@ -182,10 +204,18 @@ export const ProductsPage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!storeId) {
+      setError('Selecione uma loja antes de criar um produto');
+      return;
+    }
+
     try {
       setSaving(true);
+      setError(null);
+      
       const payload: CreateProduct = {
         ...formData,
+        store: storeId,
         name: formData.name.trim(),
         sku: formData.sku.trim(),
         description: formData.description?.trim() || '',
@@ -203,8 +233,9 @@ export const ProductsPage: React.FC = () => {
       }
       handleCloseModal();
       loadData();
-    } catch (error) {
-      logger.error('Error saving product:', error);
+    } catch (err) {
+      logger.error('Error saving product:', err);
+      setError('Erro ao salvar produto');
     } finally {
       setSaving(false);
     }
@@ -290,8 +321,8 @@ export const ProductsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Produtos</h1>
-          <p className="text-sm md:text-base text-gray-500">Gerencie o catálogo da loja</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Produtos</h1>
+          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Gerencie o catálogo da loja</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <input
@@ -342,7 +373,7 @@ export const ProductsPage: React.FC = () => {
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             >
               <option value="">Categoria</option>
               {categories.map((category) => (
@@ -352,7 +383,7 @@ export const ProductsPage: React.FC = () => {
             <select
               value={filterActive === undefined ? '' : String(filterActive)}
               onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             >
               <option value="">Status</option>
               <option value="true">Ativos</option>
@@ -361,7 +392,7 @@ export const ProductsPage: React.FC = () => {
             <select
               value={stockFilter}
               onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
-              className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             >
               <option value="all">Estoque</option>
               <option value="in_stock">Disponível</option>
@@ -383,7 +414,7 @@ export const ProductsPage: React.FC = () => {
             return (
               <div key={product.id} className="p-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                     {product.image_url || product.image ? (
                       <img
                         src={product.image_url || product.image || ''}
@@ -397,10 +428,10 @@ export const ProductsPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-medium text-gray-900 truncate">{product.name}</p>
-                        <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+                        <p className="font-medium text-gray-900 dark:text-white truncate">{product.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">SKU: {product.sku}</p>
                         {product.category && (
-                          <p className="text-xs text-gray-500">{product.category}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{product.category}</p>
                         )}
                       </div>
                       <button
@@ -416,11 +447,11 @@ export const ProductsPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-lg font-semibold text-gray-900">
+                    <span className="text-lg font-semibold text-gray-900 dark:text-white">
                       R$ {formatMoney(product.price)}
                     </span>
                     <div className="flex items-center gap-1">
-                      <span className="text-sm text-gray-600">{qty} un</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{qty} un</span>
                       {isOut && <Badge variant="danger">Sem</Badge>}
                       {isLow && <Badge variant="warning">Baixo</Badge>}
                     </div>
@@ -437,7 +468,7 @@ export const ProductsPage: React.FC = () => {
                         setDeletingProduct(product);
                         setIsDeleteModalOpen(true);
                       }}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
                     >
                       <TrashIcon className="w-5 h-5" />
                     </button>
@@ -451,38 +482,38 @@ export const ProductsPage: React.FC = () => {
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Produto
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Categoria
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Preço
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Estoque
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
               {filteredProducts.map((product) => {
                 const qty = product.stock_quantity || 0;
                 const isLow = qty > 0 && qty <= LOW_STOCK_THRESHOLD;
                 const isOut = qty <= 0;
                 return (
-                  <tr key={product.id} className="hover:bg-gray-50">
+                  <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900">
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                           {product.image_url || product.image ? (
                             <img
                               src={product.image_url || product.image || ''}
@@ -494,18 +525,18 @@ export const ProductsPage: React.FC = () => {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-medium text-gray-900 truncate max-w-[200px]">{product.name}</div>
-                          <div className="text-sm text-gray-500">SKU: {product.sku}</div>
+                          <div className="font-medium text-gray-900 dark:text-white truncate max-w-[200px]">{product.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">SKU: {product.sku}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       {product.category || '-'}
                     </td>
-                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       R$ {formatMoney(product.price)}
                     </td>
-                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center gap-2">
                         <span>{qty}</span>
                         {isOut && <Badge variant="danger">Sem estoque</Badge>}
@@ -537,7 +568,7 @@ export const ProductsPage: React.FC = () => {
                             setDeletingProduct(product);
                             setIsDeleteModalOpen(true);
                           }}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg transition-colors"
                           title="Excluir"
                         >
                           <TrashIcon className="w-5 h-5" />
@@ -554,8 +585,8 @@ export const ProductsPage: React.FC = () => {
         {filteredProducts.length === 0 && (
           <div className="text-center py-12 px-4">
             <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum produto encontrado</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum produto encontrado</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Cadastre novos produtos para aparecerem aqui.
             </p>
             <div className="mt-6">
@@ -622,11 +653,11 @@ export const ProductsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Imagem
             </label>
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex items-center justify-center">
                 {imagePreview ? (
                   <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
@@ -652,9 +683,9 @@ export const ProductsPage: React.FC = () => {
               id="is_active"
               checked={Boolean(formData.is_active)}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
             />
-            <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
+            <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900 dark:text-white">
               Produto ativo
             </label>
           </div>
@@ -682,7 +713,7 @@ export const ProductsPage: React.FC = () => {
         title="Excluir Produto"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Tem certeza que deseja excluir o produto <strong>{deletingProduct?.name}</strong>?
             Esta a??o n?o pode ser desfeita.
           </p>

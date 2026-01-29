@@ -123,8 +123,8 @@ export const DashboardPage: React.FC = () => {
       {
         label: 'Pedidos',
         data: charts?.orders_per_day?.map((d) => d.count) || [],
-        borderColor: '#F97316',
-        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+        borderColor: '#722F37', // Marsala
+        backgroundColor: 'rgba(114, 47, 55, 0.15)',
         fill: true,
         tension: 0.4,
         yAxisID: 'y',
@@ -132,8 +132,8 @@ export const DashboardPage: React.FC = () => {
       {
         label: 'Receita (R$)',
         data: charts?.orders_per_day?.map((d) => d.revenue) || [],
-        borderColor: '#2563EB',
-        backgroundColor: 'rgba(37, 99, 235, 0.12)',
+        borderColor: '#8B3A42', // Marsala light
+        backgroundColor: 'rgba(139, 58, 66, 0.12)',
         fill: true,
         tension: 0.4,
         yAxisID: 'y1',
@@ -257,8 +257,8 @@ export const DashboardPage: React.FC = () => {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base md:text-lg font-semibold text-gray-900">Analytics detalhado</h2>
-            <p className="text-xs md:text-sm text-gray-500">
+            <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white dark:text-white">Analytics detalhado</h2>
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
               Indicadores dos últimos {chartRangeLabel}.
             </p>
           </div>
@@ -429,8 +429,8 @@ export const DashboardPage: React.FC = () => {
             <div className="space-y-3">
               {Object.entries(overview?.messages.by_status || {}).map(([status, count]) => (
                 <div key={status} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 capitalize">{status}</span>
-                  <span className="text-sm font-medium text-gray-900">{count}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">{status}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
                 </div>
               ))}
             </div>
@@ -441,10 +441,10 @@ export const DashboardPage: React.FC = () => {
             <div className="space-y-3">
               {Object.entries(overview?.conversations.by_mode || {}).map(([mode, count]) => (
                 <div key={mode} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 capitalize">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
                     {mode === 'auto' ? 'Automático' : mode === 'human' ? 'Humano' : 'Híbrido'}
                   </span>
-                  <span className="text-sm font-medium text-gray-900">{count}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
                 </div>
               ))}
             </div>
@@ -454,20 +454,20 @@ export const DashboardPage: React.FC = () => {
           <Card title="Estatísticas Langflow">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Interações Hoje</span>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Interações Hoje</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {overview?.langflow.interactions_today || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Tempo Médio</span>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Tempo Médio</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {overview?.langflow.avg_duration_ms || 0}ms
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Taxa de Sucesso</span>
-                <span className="text-sm font-medium text-green-600">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Taxa de Sucesso</span>
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">
                   {overview?.langflow.success_rate || 0}%
                 </span>
               </div>
@@ -478,27 +478,27 @@ export const DashboardPage: React.FC = () => {
         {/* Revenue Summary */}
         <Card title="Resumo Financeiro">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-600 font-medium">Receita Hoje</p>
-              <p className="text-2xl font-bold text-green-700 mt-1">
+            <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-100 dark:border-green-800">
+              <p className="text-sm text-green-600 dark:text-green-400 dark:text-green-400 font-medium">Receita Hoje</p>
+              <p className="text-2xl font-bold text-green-700 dark:text-green-300 dark:text-green-300 mt-1">
                 R$ {(overview?.orders.revenue_today || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-600 font-medium">Receita do Mês</p>
-              <p className="text-2xl font-bold text-blue-700 mt-1">
+            <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
+              <p className="text-sm text-blue-600 dark:text-blue-400 dark:text-blue-400 font-medium">Receita do Mês</p>
+              <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 dark:text-blue-300 mt-1">
                 R$ {(overview?.orders.revenue_month || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <p className="text-sm text-yellow-600 font-medium">Pagamentos Pendentes</p>
-              <p className="text-2xl font-bold text-yellow-700 mt-1">
+            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg border border-yellow-100 dark:border-yellow-800">
+              <p className="text-sm text-yellow-600 dark:text-yellow-400 dark:text-yellow-400 font-medium">Pagamentos Pendentes</p>
+              <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300 dark:text-yellow-300 mt-1">
                 {overview?.payments.pending || 0}
               </p>
             </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-purple-600 font-medium">Pagamentos Hoje</p>
-              <p className="text-2xl font-bold text-purple-700 mt-1">
+            <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-100 dark:border-purple-800">
+              <p className="text-sm text-purple-600 dark:text-purple-400 dark:text-purple-400 font-medium">Pagamentos Hoje</p>
+              <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 dark:text-purple-300 mt-1">
                 {overview?.payments.completed_today || 0}
               </p>
             </div>

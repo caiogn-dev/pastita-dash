@@ -18,12 +18,12 @@ export const Card: React.FC<CardProps> = ({
   noPadding = false,
 }) => {
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-100 ${className}`}>
+    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors ${className}`}>
       {(title || actions) && (
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            {title && <h3 className="text-lg font-semibold text-gray-900">{title}</h3>}
-            {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+            {title && <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>}
+            {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
@@ -51,17 +51,17 @@ export const StatCard: React.FC<StatCardProps> = ({
   className = '',
 }) => {
   const changeColors = {
-    positive: 'text-green-600 bg-green-50',
-    negative: 'text-red-600 bg-red-50',
-    neutral: 'text-gray-600 bg-gray-50',
+    positive: 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/30',
+    negative: 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/30',
+    neutral: 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-700',
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:p-4 lg:p-6 ${className}`}>
+    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 md:p-4 lg:p-6 transition-colors ${className}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs md:text-sm font-medium text-gray-500 truncate">{title}</p>
-          <p className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mt-0.5 md:mt-1 truncate">{value}</p>
+          <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</p>
+          <p className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 md:mt-1 truncate">{value}</p>
           {change && (
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 md:mt-2 ${changeColors[changeType]}`}>
               {change}
@@ -69,7 +69,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           )}
         </div>
         {icon && (
-          <div className="p-2 md:p-3 bg-primary-50 rounded-lg text-primary-600 shrink-0">
+          <div className="p-2 md:p-3 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400 shrink-0">
             {icon}
           </div>
         )}

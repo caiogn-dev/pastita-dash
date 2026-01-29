@@ -77,8 +77,8 @@ export const AccountsPage: React.FC = () => {
       header: 'Nome',
       render: (account: WhatsAppAccount) => (
         <div>
-          <p className="font-medium text-gray-900">{account.name}</p>
-          <p className="text-sm text-gray-500">{account.display_phone_number || account.phone_number}</p>
+          <p className="font-medium text-gray-900 dark:text-white">{account.name}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{account.display_phone_number || account.phone_number}</p>
         </div>
       ),
     },
@@ -86,7 +86,7 @@ export const AccountsPage: React.FC = () => {
       key: 'phone_number_id',
       header: 'Phone Number ID',
       render: (account: WhatsAppAccount) => (
-        <span className="text-sm font-mono text-gray-600">{account.phone_number_id}</span>
+        <span className="text-sm font-mono text-gray-600 dark:text-gray-400">{account.phone_number_id}</span>
       ),
     },
     {
@@ -107,7 +107,7 @@ export const AccountsPage: React.FC = () => {
       key: 'created_at',
       header: 'Criado em',
       render: (account: WhatsAppAccount) => (
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-gray-600 dark:text-gray-400">
           {format(new Date(account.created_at), "dd/MM/yyyy", { locale: ptBR })}
         </span>
       ),

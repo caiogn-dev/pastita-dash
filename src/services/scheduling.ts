@@ -10,7 +10,7 @@ import {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = '/api/v1/automation';
+const BASE_URL = '/automation';
 
 // Scheduled Messages API
 export const scheduledMessagesService = {

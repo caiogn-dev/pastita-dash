@@ -1,6 +1,17 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { PlusIcon, MagnifyingGlassIcon, TruckIcon, CreditCardIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { 
+  MagnifyingGlassIcon, 
+  TruckIcon, 
+  CreditCardIcon, 
+  XMarkIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
+  FunnelIcon,
+  ArrowPathIcon,
+  SignalIcon,
+  SignalSlashIcon,
+} from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -15,64 +26,178 @@ import {
   Select, 
   PageLoading,
   OrderStatusTabs,
-  ORDER_STATUS_CONFIG,
 } from '../../components/common';
-import { ordersService, exportService, getErrorMessage } from '../../services';
-import { useAccountStore } from '../../stores/accountStore';
-import { Order } from '../../types';
+import { OrdersKanban, ORDER_STATUSES } from '../../components/orders/OrdersKanban';
+import { exportService, getErrorMessage } from '../../services';
+import { unifiedApi, UnifiedOrder, UnifiedOrderFilters } from '../../services/unifiedApi';
+import { useStore, useOrdersWebSocket, useNotificationSound } from '../../hooks';
+
+type ViewMode = 'kanban' | 'table';
 
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { accounts, selectedAccount } = useAccountStore();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
+  const { storeId: contextStoreId, storeName } = useStore();
+  
+  // Use route storeId if available, otherwise use context
+  const effectiveStoreId = routeStoreId || contextStoreId;
+  
+  // State
+  const [orders, setOrders] = useState<UnifiedOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [createModal, setCreateModal] = useState(false);
-  const [shipModal, setShipModal] = useState<Order | null>(null);
-  const [paymentModal, setPaymentModal] = useState<Order | null>(null);
-  const [cancelModal, setCancelModal] = useState<Order | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [orderForm, setOrderForm] = useState({
-    account_id: '',
-    customer_phone: '',
-    customer_name: '',
-    customer_email: '',
-    product_name: '',
-    quantity: 1,
-    unit_price: 0,
-  });
-  const [shipForm, setShipForm] = useState({
-    tracking_code: '',
-    carrier: '',
-  });
-  const [paymentForm, setPaymentForm] = useState({
-    payment_reference: '',
-  });
-  const [cancelForm, setCancelForm] = useState({
-    reason: '',
-  });
   const [isExporting, setIsExporting] = useState(false);
-
-  useEffect(() => {
-    loadOrders();
-  }, [selectedAccount]);
-
-  const loadOrders = async () => {
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [showAllStatuses, setShowAllStatuses] = useState(false);
+  
+  // Modal states
+  const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
+  const [actionModal, setActionModal] = useState<'ship' | 'payment' | 'cancel' | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Form states
+  const [shipForm, setShipForm] = useState({ tracking_code: '', carrier: '' });
+  const [paymentForm, setPaymentForm] = useState({ payment_reference: '' });
+  const [cancelForm, setCancelForm] = useState({ reason: '' });
+  
+  // Load orders from unified API (defined first for use in WebSocket handlers)
+  const loadOrders = useCallback(async () => {
+    console.log('[Orders] loadOrders called with storeId:', effectiveStoreId);
     setIsLoading(true);
     try {
-      const params: Record<string, string> = {};
-      if (selectedAccount) {
-        params.account = selectedAccount.id;
-      }
-      const response = await ordersService.getOrders(params);
+      const filters: UnifiedOrderFilters = {
+        store: effectiveStoreId || undefined,
+        status: statusFilter || undefined,
+        search: searchQuery || undefined,
+      };
+      
+      console.log('[Orders] Fetching orders with filters:', filters);
+      const response = await unifiedApi.getOrders(filters);
+      console.log('[Orders] Received', response.results.length, 'orders');
       setOrders(response.results);
     } catch (error) {
+      console.error('[Orders] Error loading orders:', error);
       toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
+  }, [effectiveStoreId, statusFilter, searchQuery]);
+
+  // Notification sound
+  const { playOrderSound, playSuccessSound, stopAlert, isAlertActive } = useNotificationSound({ enabled: true });
+
+  // Debounced refresh - prevents rate limiting
+  const refreshTimeout = useRef<number | undefined>(undefined);
+  const lastRefresh = useRef<number>(0);
+
+  const scheduleRefresh = useCallback(() => {
+    const now = Date.now();
+    // Don't refresh more than once every 3 seconds
+    if (now - lastRefresh.current < 3000) {
+      console.log('[Orders] Skipping refresh - too soon');
+      return;
+    }
+    
+    if (refreshTimeout.current) {
+      window.clearTimeout(refreshTimeout.current);
+    }
+    
+    refreshTimeout.current = window.setTimeout(() => {
+      lastRefresh.current = Date.now();
+      loadOrders();
+    }, 1000);
+  }, [loadOrders]);
+
+  // Real-time WebSocket connection
+  const { isConnected, connectionError } = useOrdersWebSocket({
+    onOrderCreated: (data) => {
+      console.log('[Orders] New order received:', data);
+      playOrderSound();
+      toast.success(`🎉 Novo pedido #${data.order_number || data.order_id?.toString().slice(0, 8)}!`, {
+        duration: 6000,
+        icon: '🛒',
+      });
+      // Force immediate refresh for new orders (bypass debounce)
+      lastRefresh.current = 0;
+      loadOrders();
+    },
+    onOrderUpdated: (data) => {
+      console.log('[Orders] Order updated:', data);
+      // Update order in state without full reload
+      setOrders(prev => prev.map(o => 
+        o.id === data.order_id ? { ...o, ...data } : o
+      ));
+    },
+    onStatusChanged: (data) => {
+      console.log('[Orders] Status changed:', data);
+      toast(`📦 Pedido #${data.order_number} → ${data.status}`, { duration: 4000 });
+      // Update order status in state
+      setOrders(prev => prev.map(o => 
+        o.id === data.order_id ? { ...o, status: data.status || o.status } : o
+      ));
+    },
+    onPaymentReceived: (data) => {
+      console.log('[Orders] Payment received:', data);
+      playSuccessSound();
+      toast.success(`💰 Pagamento confirmado - #${data.order_number || data.order_id?.toString().slice(0, 8)}!`, {
+        duration: 6000,
+      });
+      // Update payment status in state
+      setOrders(prev => prev.map(o => 
+        o.id === data.order_id ? { ...o, payment_status: 'paid' } : o
+      ));
+    },
+    enabled: true,
+  });
+
+  // Stop alert when user interacts with the page
+  useEffect(() => {
+    if (isAlertActive) {
+      const stopOnInteraction = () => stopAlert();
+      document.addEventListener('click', stopOnInteraction, { once: true });
+      return () => document.removeEventListener('click', stopOnInteraction);
+    }
+  }, [isAlertActive, stopAlert]);
+
+  // Initial load only
+  useEffect(() => {
+    loadOrders();
+    // Cleanup timeout on unmount
+    return () => {
+      if (refreshTimeout.current) {
+        window.clearTimeout(refreshTimeout.current);
+      }
+    };
+  }, [loadOrders]);
+
+  // Handle status change from Kanban drag-and-drop (optimistic update handled by Kanban)
+  const handleKanbanStatusChange = async (orderId: string, newStatus: string) => {
+    // Map status to API action
+    switch (newStatus) {
+      case 'confirmed':
+        await unifiedApi.confirmOrder(orderId);
+        break;
+      case 'preparing':
+        await unifiedApi.prepareOrder(orderId);
+        break;
+      case 'ready':
+        await unifiedApi.updateOrderStatus(orderId, 'ready');
+        break;
+      case 'out_for_delivery':
+        await unifiedApi.updateOrderStatus(orderId, 'out_for_delivery');
+        break;
+      case 'delivered':
+        await unifiedApi.deliverOrder(orderId);
+        break;
+      case 'cancelled':
+        await unifiedApi.cancelOrder(orderId, 'Cancelado via Kanban');
+        break;
+      default:
+        throw new Error(`Status não suportado: ${newStatus}`);
+    }
+    toast.success('Status atualizado!');
+    // Note: No loadOrders() here - Kanban handles optimistic updates
   };
 
   // Calculate status counts
@@ -84,154 +209,26 @@ export const OrdersPage: React.FC = () => {
     return counts;
   }, [orders]);
 
-  // Filter orders
+  // Filter orders (client-side for search)
   const filteredOrders = useMemo(() => {
-    let result = orders;
+    if (!searchQuery) return orders;
     
-    if (statusFilter) {
-      result = result.filter((order) => order.status === statusFilter);
-    }
-    
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((order) =>
-        order.order_number.toLowerCase().includes(query) ||
-        order.customer_name?.toLowerCase().includes(query) ||
-        order.customer_phone.includes(query) ||
-        order.customer_email?.toLowerCase().includes(query)
-      );
-    }
-    
-    return result;
-  }, [orders, statusFilter, searchQuery]);
+    const query = searchQuery.toLowerCase();
+    return orders.filter((order) =>
+      order.order_number.toLowerCase().includes(query) ||
+      order.customer_name?.toLowerCase().includes(query) ||
+      order.customer_phone?.includes(query) ||
+      order.customer_email?.toLowerCase().includes(query)
+    );
+  }, [orders, searchQuery]);
 
-  const handleCreateOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCreating(true);
-    try {
-      await ordersService.createOrder({
-        account_id: orderForm.account_id,
-        customer_phone: orderForm.customer_phone,
-        customer_name: orderForm.customer_name,
-        customer_email: orderForm.customer_email,
-        items: [
-          {
-            product_name: orderForm.product_name,
-            quantity: orderForm.quantity,
-            unit_price: orderForm.unit_price,
-          },
-        ],
-      });
-      toast.success('Pedido criado com sucesso!');
-      setCreateModal(false);
-      setOrderForm({
-        account_id: '',
-        customer_phone: '',
-        customer_name: '',
-        customer_email: '',
-        product_name: '',
-        quantity: 1,
-        unit_price: 0,
-      });
-      loadOrders();
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleStatusAction = async (order: Order, action: string) => {
-    try {
-      let updated: Order;
-      switch (action) {
-        case 'confirm':
-          updated = await ordersService.confirmOrder(order.id);
-          break;
-        case 'awaiting_payment':
-          updated = await ordersService.markAwaitingPayment(order.id);
-          break;
-        case 'deliver':
-          updated = await ordersService.deliverOrder(order.id);
-          break;
-        default:
-          return;
-      }
-      setOrders(orders.map((o) => (o.id === updated.id ? updated : o)));
-      toast.success('Status atualizado!');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
-  };
-
-  const handleShipOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!shipModal) return;
-    setIsUpdating(true);
-    try {
-      const updated = await ordersService.shipOrder(
-        shipModal.id,
-        shipForm.tracking_code,
-        shipForm.carrier
-      );
-      setOrders(orders.map((o) => (o.id === updated.id ? updated : o)));
-      toast.success('Pedido marcado como enviado!');
-      setShipModal(null);
-      setShipForm({ tracking_code: '', carrier: '' });
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleMarkPaid = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!paymentModal) return;
-    setIsUpdating(true);
-    try {
-      const updated = await ordersService.markPaid(
-        paymentModal.id,
-        paymentForm.payment_reference
-      );
-      setOrders(orders.map((o) => (o.id === updated.id ? updated : o)));
-      toast.success('Pagamento confirmado!');
-      setPaymentModal(null);
-      setPaymentForm({ payment_reference: '' });
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleCancelOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!cancelModal) return;
-    setIsUpdating(true);
-    try {
-      const updated = await ordersService.cancelOrder(
-        cancelModal.id,
-        cancelForm.reason
-      );
-      setOrders(orders.map((o) => (o.id === updated.id ? updated : o)));
-      toast.success('Pedido cancelado!');
-      setCancelModal(null);
-      setCancelForm({ reason: '' });
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
+  // Export orders
   const handleExport = async (format: 'csv' | 'xlsx') => {
     setIsExporting(true);
     try {
       const blob = await exportService.exportOrders({
         format,
         status: statusFilter || undefined,
-        account_id: selectedAccount?.id,
       });
       const dateStamp = new Date().toISOString().slice(0, 10);
       exportService.downloadBlob(blob, `pedidos-${dateStamp}.${format}`);
@@ -243,95 +240,197 @@ export const OrdersPage: React.FC = () => {
     }
   };
 
-  const getNextActions = (order: Order): Array<{ action: string; label: string; variant?: 'primary' | 'secondary' | 'danger'; icon?: React.ReactNode }> => {
-    const actions: Array<{ action: string; label: string; variant?: 'primary' | 'secondary' | 'danger'; icon?: React.ReactNode }> = [];
+  // Get available actions for an order
+  const getOrderActions = (order: UnifiedOrder) => {
+    const actions: Array<{ 
+      action: string; 
+      label: string; 
+      variant?: 'primary' | 'secondary' | 'danger'; 
+      icon?: React.ReactNode 
+    }> = [];
     
-    switch (order.status) {
+    const status = order.status.toLowerCase();
+    
+    switch (status) {
       case 'pending':
+      case 'pendente':
         actions.push({ action: 'confirm', label: 'Confirmar', variant: 'primary' });
         break;
       case 'confirmed':
-        actions.push({ action: 'awaiting_payment', label: 'Aguardar Pagamento', variant: 'secondary' });
+      case 'confirmado':
+      case 'aprovado':
+        actions.push({ action: 'prepare', label: 'Preparar', variant: 'primary' });
+        break;
+      case 'preparing':
+      case 'preparando':
+        actions.push({ action: 'ship', label: 'Enviar', variant: 'primary', icon: <TruckIcon className="w-4 h-4" /> });
+        break;
+      case 'shipped':
+      case 'enviado':
+        actions.push({ action: 'deliver', label: 'Entregar', variant: 'primary' });
         break;
       case 'awaiting_payment':
         actions.push({ action: 'mark_paid', label: 'Confirmar Pagamento', variant: 'primary', icon: <CreditCardIcon className="w-4 h-4" /> });
         break;
-      case 'paid':
-        actions.push({ action: 'ship', label: 'Enviar', variant: 'primary', icon: <TruckIcon className="w-4 h-4" /> });
-        break;
-      case 'shipped':
-        actions.push({ action: 'deliver', label: 'Confirmar Entrega', variant: 'primary' });
-        break;
     }
     
-    if (!['cancelled', 'delivered', 'refunded'].includes(order.status)) {
+    // Cancel action for non-final statuses
+    const finalStatuses = ['cancelled', 'cancelado', 'delivered', 'entregue', 'refunded'];
+    if (!finalStatuses.includes(status)) {
       actions.push({ action: 'cancel', label: 'Cancelar', variant: 'danger', icon: <XMarkIcon className="w-4 h-4" /> });
     }
     
     return actions;
   };
 
-  const handleAction = (order: Order, action: string) => {
+  // Handle action click
+  const handleAction = (order: UnifiedOrder, action: string) => {
+    setSelectedOrder(order);
+    
     switch (action) {
-      case 'mark_paid':
-        setPaymentModal(order);
-        break;
       case 'ship':
-        setShipModal(order);
+        setActionModal('ship');
+        break;
+      case 'mark_paid':
+        setActionModal('payment');
         break;
       case 'cancel':
-        setCancelModal(order);
+        setActionModal('cancel');
         break;
       default:
-        handleStatusAction(order, action);
+        handleStatusUpdate(order, action);
     }
   };
 
+  // Update order status via API
+  const handleStatusUpdate = async (order: UnifiedOrder, action: string) => {
+    setIsUpdating(true);
+    try {
+      switch (action) {
+        case 'confirm':
+          await unifiedApi.confirmOrder(order.id);
+          break;
+        case 'prepare':
+          await unifiedApi.prepareOrder(order.id);
+          break;
+        case 'deliver':
+          await unifiedApi.deliverOrder(order.id);
+          break;
+        default:
+          throw new Error(`Ação desconhecida: ${action}`);
+      }
+      toast.success('Status atualizado!');
+      await loadOrders();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Handle ship form submit
+  const handleShipSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    
+    setIsUpdating(true);
+    try {
+      await unifiedApi.shipOrder(selectedOrder.id, shipForm.tracking_code, shipForm.carrier);
+      toast.success('Pedido marcado como enviado!');
+      setActionModal(null);
+      setSelectedOrder(null);
+      setShipForm({ tracking_code: '', carrier: '' });
+      await loadOrders();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Handle payment form submit
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    
+    setIsUpdating(true);
+    try {
+      await unifiedApi.markPaid(selectedOrder.id, paymentForm.payment_reference);
+      toast.success('Pagamento confirmado!');
+      setActionModal(null);
+      setSelectedOrder(null);
+      setPaymentForm({ payment_reference: '' });
+      await loadOrders();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Handle cancel form submit
+  const handleCancelSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    
+    setIsUpdating(true);
+    try {
+      await unifiedApi.cancelOrder(selectedOrder.id, cancelForm.reason);
+      toast.success('Pedido cancelado!');
+      setActionModal(null);
+      setSelectedOrder(null);
+      setCancelForm({ reason: '' });
+      await loadOrders();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Table columns
   const columns = [
     {
       key: 'order_number',
       header: 'Pedido',
-      render: (order: Order) => (
+      render: (order: UnifiedOrder) => (
         <div>
-          <p className="font-semibold text-gray-900">#{order.order_number}</p>
-          <p className="text-sm text-gray-500">
+          <p className="font-semibold text-gray-900 dark:text-white">#{order.order_number}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {format(new Date(order.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
           </p>
+          {order.source && (
+            <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+              {order.source}
+            </span>
+          )}
         </div>
       ),
     },
     {
       key: 'customer',
       header: 'Cliente',
-      render: (order: Order) => (
+      render: (order: UnifiedOrder) => (
         <div>
-          <p className="font-medium text-gray-900">{order.customer_name || '-'}</p>
-          <p className="text-sm text-gray-500">{order.customer_phone}</p>
+          <p className="font-medium text-gray-900 dark:text-white">{order.customer_name || '-'}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{order.customer_phone || '-'}</p>
         </div>
       ),
     },
     {
       key: 'items',
       header: 'Itens',
-      render: (order: Order) => (
-        <div>
-          <span className="text-sm font-medium text-gray-900">
-            {order.items?.length || 0} item(ns)
-          </span>
-          {order.items && order.items.length > 0 && (
-            <p className="text-xs text-gray-500 truncate max-w-[150px]">
-              {order.items[0].product_name}
-              {order.items.length > 1 && ` +${order.items.length - 1}`}
-            </p>
-          )}
-        </div>
+      render: (order: UnifiedOrder) => (
+        <span className="text-sm font-medium text-gray-900 dark:text-white">
+          {order.items_count || 0} item(ns)
+        </span>
       ),
     },
     {
       key: 'total',
       header: 'Total',
-      render: (order: Order) => (
-        <span className="font-semibold text-gray-900">
+      render: (order: UnifiedOrder) => (
+        <span className="font-semibold text-gray-900 dark:text-white">
           R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
         </span>
       ),
@@ -339,13 +438,13 @@ export const OrdersPage: React.FC = () => {
     {
       key: 'status',
       header: 'Status',
-      render: (order: Order) => <OrderStatusBadge status={order.status} />,
+      render: (order: UnifiedOrder) => <OrderStatusBadge status={order.status} />,
     },
     {
       key: 'actions',
       header: 'Ações',
-      render: (order: Order) => {
-        const actions = getNextActions(order);
+      render: (order: UnifiedOrder) => {
+        const actions = getOrderActions(order);
         return (
           <div className="flex items-center gap-2">
             {actions.slice(0, 2).map((action) => (
@@ -368,17 +467,101 @@ export const OrdersPage: React.FC = () => {
     },
   ];
 
+  // Visible statuses for Kanban
+  const visibleStatuses = useMemo(() => {
+    if (showAllStatuses) {
+      return ORDER_STATUSES.map(s => s.id);
+    }
+    // Default: show active statuses (full delivery flow including awaiting_payment)
+    return ['pending', 'awaiting_payment', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
+  }, [showAllStatuses]);
+
   if (isLoading) {
     return <PageLoading />;
   }
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       <Header
         title="Pedidos"
-        subtitle={`${filteredOrders.length} de ${orders.length} pedido(s)`}
+        subtitle={`${filteredOrders.length} pedido(s)${storeName ? ` - ${storeName}` : ''}`}
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* WebSocket Connection Status */}
+            <div 
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
+                isConnected 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-red-100 text-red-700'
+              }`}
+              title={isConnected ? 'Conectado - Atualizações em tempo real' : connectionError || 'Desconectado'}
+            >
+              {isConnected ? (
+                <>
+                  <SignalIcon className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Ao vivo</span>
+                </>
+              ) : (
+                <>
+                  <SignalSlashIcon className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Offline</span>
+                </>
+              )}
+            </div>
+
+            {/* Test Sound Button */}
+            <button
+              onClick={() => {
+                console.log('[Test] Playing test sound...');
+                playOrderSound();
+              }}
+              className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-full hover:bg-purple-200"
+              title="Testar som de notificação"
+            >
+              🔊 Testar
+            </button>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`p-1.5 rounded ${viewMode === 'kanban' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                title="Visualização Kanban"
+              >
+                <Squares2X2Icon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                title="Visualização em Lista"
+              >
+                <ListBulletIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Refresh */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={loadOrders}
+              title="Atualizar"
+            >
+              <ArrowPathIcon className="w-4 h-4" />
+            </Button>
+
+            {/* Show All Statuses (Kanban only) */}
+            {viewMode === 'kanban' && (
+              <Button
+                variant={showAllStatuses ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setShowAllStatuses(!showAllStatuses)}
+                title="Mostrar todos os status"
+              >
+                <FunnelIcon className="w-4 h-4" />
+              </Button>
+            )}
+
+            {/* Export */}
             <Button
               variant="secondary"
               size="sm"
@@ -396,290 +579,169 @@ export const OrdersPage: React.FC = () => {
               className="hidden sm:inline-flex"
             >
               XLSX
-            </Button>
-            <Button
-              size="sm"
-              leftIcon={<PlusIcon className="w-4 h-4" />}
-              onClick={() => setCreateModal(true)}
-            >
-              <span className="hidden sm:inline">Novo Pedido</span>
-              <span className="sm:hidden">Novo</span>
             </Button>
           </div>
         }
       />
 
-      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-        {/* Status Tabs */}
-        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-          <OrderStatusTabs
-            value={statusFilter}
-            onChange={setStatusFilter}
-            counts={statusCounts}
-          />
-        </div>
-
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+      <div className="flex-1 p-4 md:p-6 space-y-4 overflow-hidden">
+        {/* Search Bar */}
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar por número, cliente..."
+              placeholder="Buscar por número, cliente, telefone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm md:text-base"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
-          <div className="flex gap-2 sm:hidden">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => handleExport('csv')}
-              isLoading={isExporting}
-              className="flex-1"
-            >
-              CSV
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => handleExport('xlsx')}
-              isLoading={isExporting}
-              className="flex-1"
-            >
-              XLSX
-            </Button>
+        </div>
+
+        {/* Kanban View */}
+        {viewMode === 'kanban' && (
+          <div className="flex-1 overflow-hidden">
+            <OrdersKanban
+              orders={filteredOrders}
+              onOrderClick={(order) => navigate(`/orders/${order.id}`)}
+              onStatusChange={handleKanbanStatusChange}
+              visibleStatuses={visibleStatuses}
+            />
           </div>
-          {(statusFilter || searchQuery) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setStatusFilter(null);
-                setSearchQuery('');
-              }}
-            >
-              Limpar
-            </Button>
-          )}
-        </div>
+        )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-4">
-          {Object.entries(ORDER_STATUS_CONFIG).slice(0, 6).map(([key, config]) => (
-            <button
-              key={key}
-              onClick={() => setStatusFilter(statusFilter === key ? null : key)}
-              className={`p-2 md:p-4 rounded-lg border transition-all ${
-                statusFilter === key
-                  ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
-              }`}
-            >
-              <p className="text-lg md:text-2xl font-bold text-gray-900">{statusCounts[key] || 0}</p>
-              <p className="text-xs md:text-sm text-gray-600 truncate">{config.label}</p>
-            </button>
-          ))}
-        </div>
+        {/* Table View */}
+        {viewMode === 'table' && (
+          <>
+            {/* Status Tabs */}
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <OrderStatusTabs
+                value={statusFilter}
+                onChange={setStatusFilter}
+                counts={statusCounts}
+              />
+            </div>
 
-        {/* Orders Table */}
-        <Card noPadding>
-          <Table
-            columns={columns}
-            data={filteredOrders}
-            keyExtractor={(order) => order.id}
-            onRowClick={(order) => navigate(`/orders/${order.id}`)}
-            emptyMessage={
-              statusFilter || searchQuery
-                ? "Nenhum pedido encontrado com os filtros aplicados"
-                : "Nenhum pedido encontrado"
-            }
-          />
-        </Card>
+            {/* Orders Table */}
+            <Card>
+              {filteredOrders.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 dark:text-gray-400">Nenhum pedido encontrado</p>
+                </div>
+              ) : (
+                <Table
+                  columns={columns}
+                  data={filteredOrders}
+                  keyExtractor={(order) => order.id}
+                  onRowClick={(order) => navigate(`/orders/${order.id}`)}
+                />
+              )}
+            </Card>
+          </>
+        )}
       </div>
 
-      {/* Create Order Modal */}
+      {/* Ship Modal */}
       <Modal
-        isOpen={createModal}
-        onClose={() => setCreateModal(false)}
-        title="Novo Pedido"
-        size="md"
-      >
-        <form onSubmit={handleCreateOrder} className="space-y-4">
-          <Select
-            label="Conta WhatsApp"
-            required
-            value={orderForm.account_id}
-            onChange={(e) => setOrderForm({ ...orderForm, account_id: e.target.value })}
-            options={[
-              { value: '', label: 'Selecione uma conta' },
-              ...accounts.map((acc) => ({ value: acc.id, label: acc.name })),
-            ]}
-          />
-          <Input
-            label="Telefone do Cliente"
-            required
-            value={orderForm.customer_phone}
-            onChange={(e) => setOrderForm({ ...orderForm, customer_phone: e.target.value })}
-            placeholder="5511999999999"
-          />
-          <Input
-            label="Nome do Cliente"
-            value={orderForm.customer_name}
-            onChange={(e) => setOrderForm({ ...orderForm, customer_name: e.target.value })}
-            placeholder="Nome completo"
-          />
-          <Input
-            label="Email do Cliente"
-            type="email"
-            value={orderForm.customer_email}
-            onChange={(e) => setOrderForm({ ...orderForm, customer_email: e.target.value })}
-            placeholder="email@exemplo.com"
-          />
-          <div className="border-t pt-4">
-            <h4 className="font-medium text-gray-900 mb-3">Item do Pedido</h4>
-            <div className="space-y-3">
-              <Input
-                label="Nome do Produto"
-                required
-                value={orderForm.product_name}
-                onChange={(e) => setOrderForm({ ...orderForm, product_name: e.target.value })}
-                placeholder="Nome do produto"
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="Quantidade"
-                  type="number"
-                  min={1}
-                  required
-                  value={orderForm.quantity}
-                  onChange={(e) => setOrderForm({ ...orderForm, quantity: parseInt(e.target.value) })}
-                />
-                <Input
-                  label="Preço Unitário"
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  required
-                  value={orderForm.unit_price}
-                  onChange={(e) => setOrderForm({ ...orderForm, unit_price: parseFloat(e.target.value) })}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setCreateModal(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" isLoading={isCreating}>
-              Criar Pedido
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Ship Order Modal */}
-      <Modal
-        isOpen={!!shipModal}
-        onClose={() => setShipModal(null)}
+        isOpen={actionModal === 'ship'}
+        onClose={() => {
+          setActionModal(null);
+          setSelectedOrder(null);
+        }}
         title="Enviar Pedido"
-        size="sm"
       >
-        <form onSubmit={handleShipOrder} className="space-y-4">
-          <div className="bg-gray-50 rounded-lg p-4 mb-4">
-            <p className="text-sm text-gray-600">Pedido</p>
-            <p className="font-semibold text-gray-900">#{shipModal?.order_number}</p>
-            <p className="text-sm text-gray-600 mt-1">{shipModal?.customer_name}</p>
-          </div>
+        <form onSubmit={handleShipSubmit} className="space-y-4">
           <Input
             label="Código de Rastreio"
             value={shipForm.tracking_code}
             onChange={(e) => setShipForm({ ...shipForm, tracking_code: e.target.value })}
             placeholder="Ex: BR123456789BR"
           />
-          <Select
+          <Input
             label="Transportadora"
             value={shipForm.carrier}
             onChange={(e) => setShipForm({ ...shipForm, carrier: e.target.value })}
-            options={[
-              { value: '', label: 'Selecione uma transportadora' },
-              { value: 'correios', label: 'Correios' },
-              { value: 'jadlog', label: 'Jadlog' },
-              { value: 'sedex', label: 'Sedex' },
-              { value: 'pac', label: 'PAC' },
-              { value: 'transportadora', label: 'Transportadora Própria' },
-              { value: 'motoboy', label: 'Motoboy' },
-              { value: 'outro', label: 'Outro' },
-            ]}
+            placeholder="Ex: Correios, Jadlog..."
           />
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setShipModal(null)}>
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setActionModal(null);
+                setSelectedOrder(null);
+              }}
+            >
               Cancelar
             </Button>
-            <Button type="submit" isLoading={isUpdating} leftIcon={<TruckIcon className="w-4 h-4" />}>
+            <Button type="submit" isLoading={isUpdating}>
               Confirmar Envio
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Payment Confirmation Modal */}
+      {/* Payment Modal */}
       <Modal
-        isOpen={!!paymentModal}
-        onClose={() => setPaymentModal(null)}
+        isOpen={actionModal === 'payment'}
+        onClose={() => {
+          setActionModal(null);
+          setSelectedOrder(null);
+        }}
         title="Confirmar Pagamento"
-        size="sm"
       >
-        <form onSubmit={handleMarkPaid} className="space-y-4">
-          <div className="bg-green-50 rounded-lg p-4 mb-4">
-            <p className="text-sm text-green-600">Valor a confirmar</p>
-            <p className="text-2xl font-bold text-green-700">
-              R$ {paymentModal?.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-            <p className="text-sm text-green-600 mt-1">Pedido #{paymentModal?.order_number}</p>
-          </div>
+        <form onSubmit={handlePaymentSubmit} className="space-y-4">
           <Input
             label="Referência do Pagamento"
             value={paymentForm.payment_reference}
             onChange={(e) => setPaymentForm({ ...paymentForm, payment_reference: e.target.value })}
-            placeholder="Ex: PIX, Cartão, Boleto..."
-            helperText="Opcional: ID da transação ou método de pagamento"
+            placeholder="Ex: PIX, Transferência..."
           />
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setPaymentModal(null)}>
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setActionModal(null);
+                setSelectedOrder(null);
+              }}
+            >
               Cancelar
             </Button>
-            <Button type="submit" isLoading={isUpdating} leftIcon={<CreditCardIcon className="w-4 h-4" />}>
+            <Button type="submit" isLoading={isUpdating}>
               Confirmar Pagamento
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Cancel Order Modal */}
+      {/* Cancel Modal */}
       <Modal
-        isOpen={!!cancelModal}
-        onClose={() => setCancelModal(null)}
+        isOpen={actionModal === 'cancel'}
+        onClose={() => {
+          setActionModal(null);
+          setSelectedOrder(null);
+        }}
         title="Cancelar Pedido"
-        size="sm"
       >
-        <form onSubmit={handleCancelOrder} className="space-y-4">
-          <div className="bg-red-50 rounded-lg p-4 mb-4">
-            <p className="text-sm text-red-600">Atenção!</p>
-            <p className="font-medium text-red-700">
-              Você está prestes a cancelar o pedido #{cancelModal?.order_number}
-            </p>
-            <p className="text-sm text-red-600 mt-1">Esta ação não pode ser desfeita.</p>
-          </div>
+        <form onSubmit={handleCancelSubmit} className="space-y-4">
           <Input
             label="Motivo do Cancelamento"
             value={cancelForm.reason}
             onChange={(e) => setCancelForm({ ...cancelForm, reason: e.target.value })}
-            placeholder="Informe o motivo do cancelamento"
+            placeholder="Informe o motivo..."
+            required
           />
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setCancelModal(null)}>
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setActionModal(null);
+                setSelectedOrder(null);
+              }}
+            >
               Voltar
             </Button>
             <Button type="submit" variant="danger" isLoading={isUpdating}>
@@ -691,3 +753,5 @@ export const OrdersPage: React.FC = () => {
     </div>
   );
 };
+
+export default OrdersPage;
