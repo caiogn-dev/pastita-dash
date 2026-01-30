@@ -63,15 +63,15 @@ export const Badge: React.FC<BadgeProps> = ({
 };
 
 // Order status configuration with specific colors and icons
-// SEMANTIC FLOW: received -> awaiting_payment -> confirmed (paid) -> preparing -> ready -> out_for_delivery -> delivered
+// SEMANTIC FLOW: received -> processing -> confirmed (paid) -> preparing -> ready -> out_for_delivery -> delivered
 export const ORDER_STATUS_CONFIG: Record<string, { variant: BadgeProps['variant']; label: string; description: string; icon?: string }> = {
   // Initial states
   pending: { variant: 'gray', label: 'Recebido', description: 'Pedido recebido', icon: '📥' },
   received: { variant: 'gray', label: 'Recebido', description: 'Pedido recebido', icon: '📥' },
   
   // Payment states
-  awaiting_payment: { variant: 'orange', label: 'Aguard. Pagamento', description: 'Aguardando pagamento do cliente', icon: '💳' },
   processing: { variant: 'orange', label: 'Processando', description: 'Pagamento em processamento', icon: '⏳' },
+  awaiting_payment: { variant: 'orange', label: 'Processando', description: 'Pagamento em processamento', icon: '⏳' },
   payment_pending: { variant: 'orange', label: 'Pagamento Pendente', description: 'Aguardando confirmação de pagamento', icon: '💳' },
   
   // Confirmed states (payment received)
@@ -99,7 +99,6 @@ export const ORDER_STATUS_CONFIG: Record<string, { variant: BadgeProps['variant'
 // Payment status configuration (separate from order status)
 export const PAYMENT_STATUS_CONFIG: Record<string, { variant: BadgeProps['variant']; label: string; icon: string }> = {
   pending: { variant: 'warning', label: 'Aguardando', icon: '💳' },
-  awaiting: { variant: 'orange', label: 'Processando', icon: '⏳' },
   processing: { variant: 'orange', label: 'Processando', icon: '⏳' },
   paid: { variant: 'success', label: 'Pago', icon: '✅' },
   failed: { variant: 'danger', label: 'Falhou', icon: '❌' },

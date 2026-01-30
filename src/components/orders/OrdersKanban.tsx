@@ -59,13 +59,13 @@ export const ORDER_STATUSES = [
     description: 'Pedido recebido, aguardando ação'
   },
   { 
-    id: 'awaiting_payment', 
-    label: 'Aguard. Pagamento', 
+    id: 'processing', 
+    label: 'Processando', 
     color: 'bg-amber-50 border-amber-300',
     headerColor: 'bg-amber-500',
     icon: CurrencyDollarIcon,
-    aliases: ['processing', 'payment_pending'],
-    description: 'Aguardando confirmação de pagamento'
+    aliases: ['awaiting_payment', 'payment_pending'],
+    description: 'Pagamento em processamento'
   },
   { 
     id: 'confirmed', 
@@ -203,11 +203,11 @@ const PaymentBadge: React.FC<{ paymentStatus?: string; paymentMethod?: string }>
 }) => {
   const configs: Record<string, { label: string; color: string; icon: string }> = {
     pending: { label: 'Aguardando', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', icon: '💳' },
-    awaiting: { label: 'Processando', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300', icon: '⏳' },
     processing: { label: 'Processando', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300', icon: '⏳' },
     paid: { label: 'Pago', color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', icon: '✅' },
     failed: { label: 'Falhou', color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300', icon: '❌' },
     refunded: { label: 'Reembolsado', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300', icon: '↩️' },
+    partially_refunded: { label: 'Reembolso Parcial', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300', icon: '↩️' },
   };
   
   const status = paymentStatus?.toLowerCase() || 'pending';

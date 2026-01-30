@@ -164,66 +164,85 @@ export interface ConversationNote {
 // Order types
 export interface Order {
   id: string;
-  account: string;
-  conversation: string | null;
+  store: string;
   order_number: string;
+  access_token?: string;
+  customer?: number | null;
   customer_phone: string;
   customer_name: string;
   customer_email: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'preparing' | 'ready' | 'out_for_delivery' | 'awaiting_payment' | 'paid' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'refunded' | 'failed';
-  payment_status?: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded';
+  status: 'pending' | 'confirmed' | 'processing' | 'paid' | 'preparing' | 'ready' | 'shipped' | 'out_for_delivery' | 'delivered' | 'completed' | 'cancelled' | 'refunded' | 'failed';
+  status_display?: string;
+  payment_status?: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
+  payment_status_display?: string;
   payment_method?: string;
+  payment_id?: string;
+  payment_preference_id?: string;
   subtotal: number;
   discount: number;
-  shipping_cost: number;
-  delivery_fee?: number;  // API returns delivery_fee
+  coupon_code?: string;
   tax: number;
+  delivery_fee: number;
   total: number;
-  currency: string;
-  delivery_method?: string;
-  shipping_address: Record<string, unknown>;
-  delivery_address?: Record<string, unknown>;  // API returns delivery_address
-  billing_address: Record<string, unknown>;
-  notes: string;
-  internal_notes: string;
+  delivery_method?: 'delivery' | 'pickup' | 'digital';
+  delivery_method_display?: string;
+  delivery_address?: Record<string, unknown>;
+  delivery_notes?: string;
+  scheduled_date?: string;
+  scheduled_time?: string;
+  tracking_code?: string;
+  tracking_url?: string;
+  carrier?: string;
+  customer_notes?: string;
+  internal_notes?: string;
   metadata: Record<string, unknown>;
-  access_token?: string;
   pix_code?: string;
   pix_qr_code?: string;
   pix_ticket_url?: string;
-  payment_url?: string;
-  payment_link?: string;
-  init_point?: string;
-  payment_preference_id?: string;
   items_count?: number;
   store_id?: string;
   store_name?: string;
   source?: string;
-  confirmed_at: string | null;
-  paid_at: string | null;
-  shipped_at: string | null;
-  delivered_at: string | null;
-  cancelled_at: string | null;
+  paid_at?: string | null;
+  shipped_at?: string | null;
+  delivered_at?: string | null;
+  cancelled_at?: string | null;
   created_at: string;
   updated_at: string;
   is_active: boolean;
   items: OrderItem[];
+  // Legacy/compat fields (not always present in stores API)
+  account?: string;
+  conversation?: string | null;
+  shipping_cost?: number;
+  shipping_address?: Record<string, unknown>;
+  billing_address?: Record<string, unknown>;
+  notes?: string;
+  currency?: string;
+  payment_url?: string;
+  payment_link?: string;
+  init_point?: string;
+  confirmed_at?: string | null;
 }
 
 export interface OrderItem {
   id: string;
-  order: string;
-  product_id: string;
-  product: string;  // API returns product UUID
+  order?: string;
+  product_id?: string;
+  product?: string;  // API returns product UUID
+  variant?: string;
   product_name: string;
-  product_sku: string;
-  sku?: string;  // API returns sku
+  variant_name?: string;
+  product_sku?: string;
+  sku?: string;
   quantity: number;
   unit_price: number;
   total_price?: number;
-  subtotal?: number;  // API returns subtotal
-  notes: string;
-  metadata: Record<string, unknown>;
+  subtotal?: number;
+  options?: Record<string, unknown>;
+  notes?: string;
+  metadata?: Record<string, unknown>;
+  created_at?: string;
 }
 
 export interface OrderEvent {

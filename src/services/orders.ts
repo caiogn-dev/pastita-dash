@@ -17,7 +17,6 @@ const normalizeOrder = (order: Order): Order => ({
   ...order,
   subtotal: toNumber(order.subtotal),
   discount: toNumber(order.discount),
-  shipping_cost: toNumber(order.shipping_cost),
   delivery_fee: order.delivery_fee !== undefined && order.delivery_fee !== null
     ? toNumber(order.delivery_fee)
     : order.delivery_fee,
@@ -58,13 +57,14 @@ export const ordersService = {
   },
 
   markAwaitingPayment: async (id: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status: 'awaiting_payment' });
+    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status: 'processing' });
     return normalizeOrder(response.data);
   },
 
-  markPaid: async (id: string, paymentReference?: string): Promise<Order> => {
+  markPaid: async (id: string, paymentReference?: string, paymentMethod?: string): Promise<Order> => {
     const response = await api.post<Order>(`${BASE_URL}/${id}/mark_paid/`, {
-      payment_reference: paymentReference,
+      payment_id: paymentReference,
+      payment_method: paymentMethod,
     });
     return normalizeOrder(response.data);
   },
@@ -113,8 +113,8 @@ export const ordersService = {
   },
 
   addItem: async (
-    id: string,
-    item: {
+    _id: string,
+    _item: {
       product_name: string;
       product_id?: string;
       product_sku?: string;
@@ -123,12 +123,11 @@ export const ordersService = {
       notes?: string;
     }
   ): Promise<OrderItem> => {
-    const response = await api.post<OrderItem>(`${BASE_URL}/${id}/add_item/`, item);
-    return response.data;
+    throw new Error('addItem is not supported by the current stores API.');
   },
 
-  removeItem: async (orderId: string, itemId: string): Promise<void> => {
-    await api.delete(`${BASE_URL}/${orderId}/items/${itemId}/`);
+  removeItem: async (_orderId: string, _itemId: string): Promise<void> => {
+    throw new Error('removeItem is not supported by the current stores API.');
   },
 
   updateShipping: async (
@@ -164,7 +163,7 @@ export const ordersService = {
   },
 
   getByCustomer: async (phone: string, storeId?: string): Promise<Order[]> => {
-    const params: Record<string, string> = { customer_phone: phone };
+    const params: Record<string, string> = { search: phone };
     if (storeId) params.store = storeId;
     const response = await api.get<PaginatedResponse<Order>>(`${BASE_URL}/`, { params });
     return response.data.results?.map(normalizeOrder) || [];

@@ -198,11 +198,17 @@ export const OrderStatusTabs: React.FC<{
   const tabs = [
     { value: null, label: 'Todos', count: Object.values(counts).reduce((a, b) => a + b, 0) },
     { value: 'pending', label: 'Pendentes', count: counts.pending },
-    { value: 'awaiting_payment', label: 'Aguardando Pagamento', count: counts.awaiting_payment },
+    { value: 'processing', label: 'Processando', count: counts.processing },
+    { value: 'confirmed', label: 'Confirmados', count: counts.confirmed },
     { value: 'paid', label: 'Pagos', count: counts.paid },
+    { value: 'preparing', label: 'Preparando', count: counts.preparing },
+    { value: 'ready', label: 'Prontos', count: counts.ready },
     { value: 'shipped', label: 'Enviados', count: counts.shipped },
+    { value: 'out_for_delivery', label: 'Em Entrega', count: counts.out_for_delivery },
     { value: 'delivered', label: 'Entregues', count: counts.delivered },
     { value: 'cancelled', label: 'Cancelados', count: counts.cancelled },
+    { value: 'refunded', label: 'Reembolsados', count: counts.refunded },
+    { value: 'failed', label: 'Falhou', count: counts.failed },
   ];
 
   return <StatusTabs tabs={tabs} value={value} onChange={onChange} className={className} />;

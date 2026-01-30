@@ -36,12 +36,28 @@ type ViewMode = 'kanban' | 'table';
 type OrderStatus = Order['status'];
 type PaymentStatus = NonNullable<Order['payment_status']>;
 
+const ORDER_STATUS_VALUES: OrderStatus[] = [
+  'pending',
+  'processing',
+  'confirmed',
+  'paid',
+  'preparing',
+  'ready',
+  'shipped',
+  'out_for_delivery',
+  'delivered',
+  'completed',
+  'cancelled',
+  'refunded',
+  'failed',
+];
+
 const isOrderStatus = (value: unknown): value is OrderStatus => {
-  return ORDER_STATUSES.some(status => status.id === value);
+  return ORDER_STATUS_VALUES.includes(String(value) as OrderStatus);
 };
 
 const isPaymentStatus = (value: unknown): value is PaymentStatus => {
-  return ['pending', 'processing', 'paid', 'failed', 'refunded'].includes(String(value));
+  return ['pending', 'processing', 'paid', 'failed', 'refunded', 'partially_refunded'].includes(String(value));
 };
 
 const toNumber = (value: unknown): number | undefined => {
@@ -228,8 +244,8 @@ export const OrdersPage: React.FC = () => {
       case 'confirmed':
         await ordersService.confirmOrder(orderId);
         break;
-      case 'awaiting_payment':
-        await ordersService.markAwaitingPayment(orderId);
+      case 'processing':
+        await ordersService.startProcessing(orderId);
         break;
       case 'preparing':
         await ordersService.startPreparing(orderId);
@@ -310,9 +326,13 @@ export const OrdersPage: React.FC = () => {
       case 'pendente':
         actions.push({ action: 'confirm', label: 'Confirmar', variant: 'primary' });
         break;
+      case 'processing':
+        actions.push({ action: 'mark_paid', label: 'Confirmar Pagamento', variant: 'primary', icon: <CreditCardIcon className="w-4 h-4" /> });
+        break;
       case 'confirmed':
       case 'confirmado':
       case 'aprovado':
+      case 'paid':
         actions.push({ action: 'prepare', label: 'Preparar', variant: 'primary' });
         break;
       case 'preparing':
@@ -321,15 +341,13 @@ export const OrdersPage: React.FC = () => {
         break;
       case 'shipped':
       case 'enviado':
+      case 'out_for_delivery':
         actions.push({ action: 'deliver', label: 'Entregar', variant: 'primary' });
-        break;
-      case 'awaiting_payment':
-        actions.push({ action: 'mark_paid', label: 'Confirmar Pagamento', variant: 'primary', icon: <CreditCardIcon className="w-4 h-4" /> });
         break;
     }
     
     // Cancel action for non-final statuses
-    const finalStatuses = ['cancelled', 'cancelado', 'delivered', 'entregue', 'refunded'];
+    const finalStatuses = ['cancelled', 'cancelado', 'delivered', 'entregue', 'refunded', 'failed', 'completed'];
     if (!finalStatuses.includes(status)) {
       actions.push({ action: 'cancel', label: 'Cancelar', variant: 'danger', icon: <XMarkIcon className="w-4 h-4" /> });
     }
@@ -526,8 +544,8 @@ export const OrdersPage: React.FC = () => {
     if (showAllStatuses) {
       return ORDER_STATUSES.map(s => s.id);
     }
-    // Default: show active statuses (full delivery flow including awaiting_payment)
-    return ['pending', 'awaiting_payment', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
+    // Default: show active statuses (full delivery flow including processing)
+    return ['pending', 'processing', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
   }, [showAllStatuses]);
 
   if (isLoading) {

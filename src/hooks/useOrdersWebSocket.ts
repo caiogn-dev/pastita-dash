@@ -32,8 +32,11 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
 
     const unsubs = [
       on('order_created', (d) => opts.current.onOrderCreated?.(d)),
-      on('order_updated', (d) => opts.current.onOrderUpdated?.(d)),
-      on('order_status_changed', (d) => opts.current.onStatusChanged?.(d)),
+      on('order_updated', (d) => {
+        opts.current.onOrderUpdated?.(d);
+        opts.current.onStatusChanged?.(d);
+      }),
+      on('order_cancelled', (d) => opts.current.onStatusChanged?.({ ...d, status: 'cancelled' })),
       on('payment_received', (d) => opts.current.onPaymentReceived?.(d)),
     ];
 

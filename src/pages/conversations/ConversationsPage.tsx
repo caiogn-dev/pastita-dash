@@ -136,10 +136,10 @@ export const ConversationsPage: React.FC = () => {
     const orders = conversationOrders[convId] || [];
     if (orders.length === 0) return null;
     
-    const pending = orders.filter(o => ['pending', 'confirmed', 'awaiting_payment'].includes(o.status)).length;
-    const paid = orders.filter(o => o.status === 'paid').length;
-    const shipped = orders.filter(o => o.status === 'shipped').length;
-    const delivered = orders.filter(o => o.status === 'delivered').length;
+    const pending = orders.filter(o => ['pending', 'processing'].includes(o.status)).length;
+    const paid = orders.filter(o => o.payment_status === 'paid' || ['paid', 'confirmed'].includes(o.status)).length;
+    const shipped = orders.filter(o => ['shipped', 'out_for_delivery'].includes(o.status)).length;
+    const delivered = orders.filter(o => ['delivered', 'completed'].includes(o.status)).length;
     
     return { total: orders.length, pending, paid, shipped, delivered };
   };
@@ -717,8 +717,8 @@ export const ConversationsPage: React.FC = () => {
                           'bg-yellow-100 text-yellow-700'
                         }`}>
                           {order.status === 'pending' ? 'Pendente' :
-                           order.status === 'awaiting_payment' ? 'Aguardando Pagamento' :
-                           order.status === 'paid' ? 'Pago' :
+                          order.status === 'processing' ? 'Processando Pagamento' :
+                          order.status === 'paid' ? 'Pago' :
                            order.status === 'shipped' ? 'Enviado' :
                            order.status === 'delivered' ? 'Entregue' :
                            order.status === 'cancelled' ? 'Cancelado' :

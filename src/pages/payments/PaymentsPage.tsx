@@ -39,6 +39,7 @@ const PAYMENT_STATUS_OPTIONS = [
   { value: 'paid', label: 'Pago', color: 'success' },
   { value: 'failed', label: 'Falhou', color: 'danger' },
   { value: 'refunded', label: 'Reembolsado', color: 'gray' },
+  { value: 'partially_refunded', label: 'Reembolso Parcial', color: 'orange' },
 ];
 
 // Payment method display names
@@ -59,6 +60,7 @@ const PaymentStatusBadge: React.FC<{ status: string }> = ({ status }) => {
     paid: { bg: 'bg-green-100 dark:bg-green-900/40 dark:bg-green-900/40', text: 'text-green-800 dark:text-green-300', icon: <CheckCircleIcon className="w-4 h-4" /> },
     failed: { bg: 'bg-red-100 dark:bg-red-900/40 dark:bg-red-900/40', text: 'text-red-800 dark:text-red-300', icon: <XCircleIcon className="w-4 h-4" /> },
     refunded: { bg: 'bg-gray-100 dark:bg-gray-700 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-200 dark:text-gray-300', icon: <ArrowPathIcon className="w-4 h-4" /> },
+    partially_refunded: { bg: 'bg-orange-100 dark:bg-orange-900/40 dark:bg-orange-900/40', text: 'text-orange-800 dark:text-orange-300', icon: <ArrowPathIcon className="w-4 h-4" /> },
   };
   
   const { bg, text, icon } = config[status] || config.pending;
