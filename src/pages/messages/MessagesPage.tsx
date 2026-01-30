@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PaperAirplaneIcon, TableCellsIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Header } from '../../components/layout';
@@ -11,7 +11,7 @@ import { Conversation } from '../../types';
 type ViewMode = 'chat' | 'table';
 
 export const MessagesPage: React.FC = () => {
-  const { accounts, selectedAccount } = useAccountStore();
+  const { accounts, selectedAccount, setSelectedAccount } = useAccountStore();
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
   const [sendModal, setSendModal] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -45,6 +45,12 @@ export const MessagesPage: React.FC = () => {
   const handleConversationSelect = (conversation: Conversation | null) => {
     setSelectedConversation(conversation);
   };
+
+  useEffect(() => {
+    if (!selectedAccount && accounts.length > 0) {
+      setSelectedAccount(accounts[0]);
+    }
+  }, [accounts, selectedAccount, setSelectedAccount]);
 
   // Show loading if no account selected
   if (!selectedAccount) {
@@ -119,6 +125,26 @@ export const MessagesPage: React.FC = () => {
       />
 
       <div className="flex-1 p-6 overflow-hidden">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+            Conta WhatsApp:
+          </label>
+          <select
+            value={selectedAccount?.id || ''}
+            onChange={(e) => {
+              const account = accounts.find((a) => a.id === e.target.value);
+              setSelectedAccount(account || null);
+            }}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#722F37] focus:border-[#722F37]"
+          >
+            <option value="">Todas as contas</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
+            ))}
+          </select>
+        </div>
         {viewMode === 'chat' ? (
           <div className="h-full" style={{ minHeight: 'calc(100vh - 200px)' }}>
             <ChatWindow
