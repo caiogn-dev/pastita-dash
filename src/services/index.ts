@@ -14,14 +14,8 @@ export { default as logger } from './logger';
 export { whatsappService } from './whatsapp';
 export { conversationsService } from './conversations';
 export { notificationsService } from './notifications';
-export {
-  notificationWS,
-  chatWS,
-  dashboardWS,
-  getWebSocketUrl,
-  initializeWebSockets,
-  disconnectWebSockets,
-} from './websocket';
+// Note: WebSocket service stubs have been removed - use WebSocketContext instead
+export { getWebSocketUrl } from './websocket';
 
 // =============================================================================
 // BUSINESS SERVICES
