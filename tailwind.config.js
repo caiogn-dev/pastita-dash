@@ -38,6 +38,21 @@ export default {
           900: '#2D1215',
           950: '#1A0B0D',
         },
+        background: {
+          DEFAULT: '#ffffff',
+          light: '#ffffff',
+          dark: '#0f172a',
+        },
+        surface: {
+          DEFAULT: '#f8fafc',
+          light: '#f8fafc',
+          dark: '#1e293b',
+        },
+        foreground: {
+          DEFAULT: '#111827',
+          light: '#111827',
+          dark: '#f8fafc',
+        },
         // ============================================
         // AGRIÃO BRAND - Verde Agrião (Secondary)
         // ============================================

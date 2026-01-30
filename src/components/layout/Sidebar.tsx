@@ -6,26 +6,15 @@ import {
   ChatBubbleLeftRightIcon,
   InboxIcon,
   ShoppingCartIcon,
-  CreditCardIcon,
-  CpuChipIcon,
-  Cog6ToothIcon,
-  ArrowRightOnRectangleIcon,
-  BoltIcon,
-  BuildingOfficeIcon,
+  Squares2X2Icon,
   UserGroupIcon,
+  DocumentChartBarIcon,
+  Cog6ToothIcon,
   DocumentTextIcon,
+  ArrowRightOnRectangleIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  ClockIcon,
-  DocumentChartBarIcon,
-  TagIcon,
-
-  Squares2X2Icon,
   XMarkIcon,
-  BuildingStorefrontIcon,
-  PresentationChartLineIcon,
-  MegaphoneIcon,
-  EnvelopeIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -64,75 +53,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   const navigationSections: NavSection[] = useMemo(() => ([
     {
-      title: 'Principal',
+      title: 'Operacional',
       items: [
         { name: 'Dashboard', href: '/', icon: HomeIcon },
         { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon, badge: 'Kanban' },
-      ]
+        {
+          name: 'WhatsApp',
+          href: '/accounts',
+          icon: DevicePhoneMobileIcon,
+          children: [
+            { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
+            { name: 'Mensagens', href: '/messages', icon: InboxIcon },
+          ],
+        },
+      ],
     },
     {
-      title: 'Cat??logo',
+      title: 'Gestão',
       items: [
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
-        { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
-      ]
+        { name: 'Clientes', href: '/marketing/subscribers', icon: UserGroupIcon },
+        { name: 'Relatórios', href: '/reports', icon: DocumentChartBarIcon },
+      ],
     },
     {
-      title: 'Marketing',
+      title: 'Sistema',
       items: [
-        { name: 'Campanhas', href: '/marketing', icon: MegaphoneIcon },
-        { name: 'Email Marketing', href: '/marketing/email', icon: EnvelopeIcon },
-        { name: 'Automa????es', href: '/marketing/automations', icon: BoltIcon },
-        { name: 'Contatos', href: '/marketing/subscribers', icon: UserGroupIcon },
-        { name: 'WhatsApp Marketing', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
-      ]
-    },
-    {
-      title: 'Comunica????o',
-      items: [
-        { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
-        { name: 'Mensagens', href: '/messages', icon: InboxIcon },
-        { name: 'Contas WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
-        { 
-          name: 'Instagram', 
-          href: '/instagram', 
-          icon: ChatBubbleLeftRightIcon,
-          badge: 'Novo',
-          children: [
-            { name: 'Contas', href: '/instagram/accounts', icon: DevicePhoneMobileIcon },
-            { name: 'Inbox DM', href: '/instagram/inbox', icon: InboxIcon },
-          ]
-        },
-      ]
-    },
-    {
-      title: 'Automa????o & IA',
-      items: [
-        { name: 'Langflow (IA)', href: '/langflow', icon: CpuChipIcon },
-        { 
-          name: 'Automa????o', 
-          href: '/automation/companies', 
-          icon: BoltIcon,
-          children: [
-            { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
-            { name: 'Sess??es', href: '/automation/sessions', icon: UserGroupIcon },
-            { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
-            { name: 'Relat??rios', href: '/automation/reports', icon: DocumentChartBarIcon },
-            { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
-          ]
-        },
-      ]
-    },
-    {
-      title: 'Administra????o',
-      items: [
-        { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
-        { name: 'Relat??rios', href: storeHref('analytics'), icon: PresentationChartLineIcon },
-        { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
-        { name: 'Configura????es', href: storeHref('settings'), icon: Cog6ToothIcon },
-      ]
+        { name: 'Configurações', href: storeHref('settings'), icon: Cog6ToothIcon },
+        { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
+      ],
     },
   ]), [storeHref]);
+
   // Dynamic brand info based on selected store
   const brandInfo = useMemo(() => {
     // Default Pastita branding with local SVG logo
@@ -273,7 +225,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 w-64 transition-colors">
+    <div className="flex flex-col h-full bg-surface-light dark:bg-surface-dark border-r border-border w-64 transition-colors text-foreground dark:text-foreground-dark">
       {/* Dynamic Logo based on selected store */}
       <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import logger from '../../services/logger';
 import {
   ChatBubbleLeftRightIcon,
@@ -26,6 +26,7 @@ import { Card, StatCard, PageLoading, Loading, Select } from '../../components/c
 import { dashboardService } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { DashboardOverview, DashboardCharts } from '../../types';
+import { useFetch } from '../../hooks/useFetch';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -43,43 +44,39 @@ ChartJS.register(
 
 export const DashboardPage: React.FC = () => {
   const { selectedAccount } = useAccountStore();
-  const [overview, setOverview] = useState<DashboardOverview | null>(null);
-  const [charts, setCharts] = useState<DashboardCharts | null>(null);
-  const [isLoadingOverview, setIsLoadingOverview] = useState(true);
-  const [isLoadingCharts, setIsLoadingCharts] = useState(true);
   const [chartRangeDays, setChartRangeDays] = useState(7);
 
-  useEffect(() => {
-    loadOverview();
-  }, [selectedAccount]);
+  const fetchOverview = useCallback(
+    () => dashboardService.getOverview(selectedAccount?.id),
+    [selectedAccount?.id]
+  );
+  const {
+    data: overview,
+    loading: isLoadingOverview,
+    error: overviewError,
+  } = useFetch(fetchOverview);
+
+  const fetchCharts = useCallback(
+    () => dashboardService.getCharts(selectedAccount?.id, chartRangeDays),
+    [selectedAccount?.id, chartRangeDays]
+  );
+  const {
+    data: charts,
+    loading: isLoadingCharts,
+    error: chartsError,
+  } = useFetch(fetchCharts);
 
   useEffect(() => {
-    loadCharts();
-  }, [selectedAccount, chartRangeDays]);
-
-  const loadOverview = async () => {
-    setIsLoadingOverview(true);
-    try {
-      const overviewData = await dashboardService.getOverview(selectedAccount?.id);
-      setOverview(overviewData);
-    } catch (error) {
-      logger.error('Error loading dashboard:', error);
-    } finally {
-      setIsLoadingOverview(false);
+    if (overviewError) {
+      logger.error('Error loading dashboard overview', overviewError);
     }
-  };
+  }, [overviewError]);
 
-  const loadCharts = async () => {
-    setIsLoadingCharts(true);
-    try {
-      const chartsData = await dashboardService.getCharts(selectedAccount?.id, chartRangeDays);
-      setCharts(chartsData);
-    } catch (error) {
-      logger.error('Error loading charts:', error);
-    } finally {
-      setIsLoadingCharts(false);
+  useEffect(() => {
+    if (chartsError) {
+      logger.error('Error loading dashboard charts', chartsError);
     }
-  };
+  }, [chartsError]);
 
   if (isLoadingOverview && !overview) {
     return <PageLoading />;

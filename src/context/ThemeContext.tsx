@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -47,16 +47,35 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => mediaQuery.removeEventListener('change', handler);
   }, [theme]);
 
-  // Apply theme to document
+  const cssVariables = useMemo(() => {
+    const isDark = resolvedTheme === 'dark';
+    return {
+      '--pastita-background': isDark ? '#0f172a' : '#ffffff',
+      '--pastita-surface': isDark ? '#1e293b' : '#f8fafc',
+      '--pastita-foreground': isDark ? '#f8fafc' : '#0f172a',
+      '--pastita-border': isDark ? '#334155' : '#e5e7eb',
+      '--pastita-primary': '#722F37',
+      '--pastita-chart-accent': isDark ? '#f472b6' : '#de5b72',
+    };
+  }, [resolvedTheme]);
+
   useEffect(() => {
     const root = document.documentElement;
-    
     if (resolvedTheme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
   }, [resolvedTheme]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!root) return;
+
+    Object.entries(cssVariables).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
+  }, [cssVariables]);
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);

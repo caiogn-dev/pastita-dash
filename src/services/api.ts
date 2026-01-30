@@ -28,7 +28,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    const httpStatus = error.response?.status;
+    const errorData = error.response?.data as { code?: string } | undefined;
+    const errorCode = errorData?.code;
+
+    if (
+      httpStatus === 401 ||
+      httpStatus === 403 ||
+      errorCode === 'token_not_valid'
+    ) {
       useAuthStore.getState().logout();
       window.location.href = '/login';
     }

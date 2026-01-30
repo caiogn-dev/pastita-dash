@@ -134,6 +134,7 @@ export interface DashboardStats {
     pending_orders: number;
     low_stock_products: number;
   };
+  generated_at?: string;
 }
 
 // =============================================================================
@@ -207,7 +208,7 @@ export const getCustomersReport = async (params: DateRange = {}): Promise<Custom
  */
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
-    const response = await api.get(`${BASE_URL}/dashboard/`, {
+    const response = await api.get(`/dashboard-stats/`, {
       params: { store: getStoreParam() }
     });
     return response.data;

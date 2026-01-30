@@ -24,6 +24,12 @@
   --brand-primary-100: #F0E0E2;
   --brand-secondary: #D4AF37;
   --brand-accent: #B4646E;
+  --pastita-background: #ffffff;
+  --pastita-surface: #f8fafc;
+  --pastita-foreground: #111827;
+  --pastita-border: #e5e7eb;
+  --pastita-primary: #722F37;
+  --pastita-chart-accent: #ef4444;
   
   /* Surface Colors */
   --surface-bg: #f9fafb;
@@ -77,15 +83,16 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  color: var(--text-primary);
-  background-color: var(--surface-bg);
+  color: var(--pastita-foreground);
+  background-color: var(--pastita-background);
 }
 
 input,
 textarea,
 select {
-  color: var(--text-primary);
-  background-color: var(--surface-card);
+  color: var(--pastita-foreground);
+  background-color: var(--pastita-surface);
+  border-color: var(--pastita-border);
 }
 
 input::placeholder,
@@ -151,6 +158,10 @@ textarea::placeholder {
   
   .btn-icon {
     @apply p-2;
+  }
+  
+  .border-border {
+    border-color: var(--pastita-border);
   }
   
   /* Inputs */
@@ -345,6 +356,6 @@ textarea::placeholder {
 
 /* Selection */
 ::selection {
-  background-color: var(--brand-primary);
+  background-color: var(--pastita-primary);
   color: white;
 }

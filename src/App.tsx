@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import logger from './services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from './components/layout';
+import { MainLayout } from './components/layout';
 import { FullPageLoading } from './components/common';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
@@ -102,7 +102,7 @@ const AppContent: React.FC = () => {
       {/* Protected routes */}
       <Route path="/" element={
         <ProtectedRoute>
-          <Layout />
+          <MainLayout />
         </ProtectedRoute>
       }>
         <Route index element={<DashboardPage />} />
