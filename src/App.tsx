@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import logger from './services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout';
@@ -8,53 +8,56 @@ import { useAccountStore } from './stores/accountStore';
 import { whatsappService } from './services';
 import { WebSocketProvider } from './context/WebSocketContext';
 
-// Pages
-import { LoginPage } from './pages/auth/LoginPage';
-import { DashboardPage } from './pages/dashboard/DashboardPage';
-import { AccountsPage } from './pages/accounts/AccountsPage';
-import { AccountFormPage } from './pages/accounts/AccountFormPage';
-import { AccountDetailPage } from './pages/accounts/AccountDetailPage';
-import { MessagesPage } from './pages/messages/MessagesPage';
-import { ConversationsPage } from './pages/conversations/ConversationsPage';
-import { OrdersPage } from './pages/orders/OrdersPage';
-import { OrderDetailPageNew as OrderDetailPage } from './pages/orders/OrderDetailPageNew';
-import { PaymentsPage } from './pages/payments/PaymentsPage';
-import { LangflowPage } from './pages/langflow/LangflowPage';
-import { SettingsPage } from './pages/settings/SettingsPage';
+// Lazy load pages for better performance
+const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const AccountsPage = lazy(() => import('./pages/accounts/AccountsPage').then(m => ({ default: m.AccountsPage })));
+const AccountFormPage = lazy(() => import('./pages/accounts/AccountFormPage').then(m => ({ default: m.AccountFormPage })));
+const AccountDetailPage = lazy(() => import('./pages/accounts/AccountDetailPage').then(m => ({ default: m.AccountDetailPage })));
+const MessagesPage = lazy(() => import('./pages/messages/MessagesPage').then(m => ({ default: m.MessagesPage })));
+const ConversationsPage = lazy(() => import('./pages/conversations/ConversationsPage').then(m => ({ default: m.ConversationsPage })));
+const OrdersPage = lazy(() => import('./pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
+const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPageNew').then(m => ({ default: m.OrderDetailPageNew })));
+const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
+const LangflowPage = lazy(() => import('./pages/langflow/LangflowPage').then(m => ({ default: m.LangflowPage })));
+const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
 // E-commerce Pages
-import { CouponsPage } from './pages/coupons';
-import { ProductsPageNew as ProductsPage } from './pages/products/ProductsPageNew';
+const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
+const ProductsPage = lazy(() => import('./pages/products/ProductsPageNew').then(m => ({ default: m.ProductsPageNew })));
 
 // Automation Pages
-import {
-  CompanyProfilesPage,
-  CompanyProfileDetailPage,
-  AutoMessagesPage,
-  CustomerSessionsPage,
-  AutomationLogsPage,
-  ScheduledMessagesPage,
-  ReportsPage,
-} from './pages/automation';
-
+const CompanyProfilesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CompanyProfilesPage })));
+const CompanyProfileDetailPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CompanyProfileDetailPage })));
+const AutoMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutoMessagesPage })));
+const CustomerSessionsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CustomerSessionsPage })));
+const AutomationLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutomationLogsPage })));
+const ScheduledMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ScheduledMessagesPage })));
+const ReportsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ReportsPage })));
 
 // Analytics/Reports Pages
-import { AnalyticsPage } from './pages/reports';
+const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
 
 // Stores Pages
-import { StoresPage, StoreDetailPage, StoreSettingsPage } from './pages/stores';
+const StoresPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoresPage })));
+const StoreDetailPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreDetailPage })));
+const StoreSettingsPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreSettingsPage })));
 
 // Marketing Pages
-import { MarketingPage, SubscribersPage } from './pages/marketing';
-import { NewCampaignPage, CampaignsListPage } from './pages/marketing/email';
-import { NewWhatsAppCampaignPage, WhatsAppCampaignsPage } from './pages/marketing/whatsapp';
-import AutomationsPage from './pages/marketing/AutomationsPage';
+const MarketingPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.MarketingPage })));
+const SubscribersPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.SubscribersPage })));
+const NewCampaignPage = lazy(() => import('./pages/marketing/email').then(m => ({ default: m.NewCampaignPage })));
+const CampaignsListPage = lazy(() => import('./pages/marketing/email').then(m => ({ default: m.CampaignsListPage })));
+const NewWhatsAppCampaignPage = lazy(() => import('./pages/marketing/whatsapp').then(m => ({ default: m.NewWhatsAppCampaignPage })));
+const WhatsAppCampaignsPage = lazy(() => import('./pages/marketing/whatsapp').then(m => ({ default: m.WhatsAppCampaignsPage })));
+const AutomationsPage = lazy(() => import('./pages/marketing/AutomationsPage').then(m => ({ default: m.default })));
 
 // Instagram Pages
-import { InstagramAccounts, InstagramInbox } from './pages/instagram';
+const InstagramAccounts = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramAccounts })));
+const InstagramInbox = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramInbox })));
 
 // WhatsApp Pages
-import { WebhookDiagnosticsPage } from './pages/whatsapp';
+const WebhookDiagnosticsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WebhookDiagnosticsPage })));
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -96,7 +99,11 @@ const AppContent: React.FC = () => {
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={
-        isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />
+        isAuthenticated ? <Navigate to="/" replace /> : (
+          <Suspense fallback={<FullPageLoading />}>
+            <LoginPage />
+          </Suspense>
+        )
       } />
 
       {/* Protected routes */}
@@ -105,63 +112,62 @@ const AppContent: React.FC = () => {
           <MainLayout />
         </ProtectedRoute>
       }>
-        <Route index element={<DashboardPage />} />
-        <Route path="accounts" element={<AccountsPage />} />
-        <Route path="accounts/new" element={<AccountFormPage />} />
-        <Route path="accounts/:id" element={<AccountDetailPage />} />
-        <Route path="accounts/:id/edit" element={<AccountFormPage />} />
-        <Route path="messages" element={<MessagesPage />} />
-        <Route path="conversations" element={<ConversationsPage />} />
+        <Route index element={<Suspense fallback={<FullPageLoading />}><DashboardPage /></Suspense>} />
+        <Route path="accounts" element={<Suspense fallback={<FullPageLoading />}><AccountsPage /></Suspense>} />
+        <Route path="accounts/new" element={<Suspense fallback={<FullPageLoading />}><AccountFormPage /></Suspense>} />
+        <Route path="accounts/:id" element={<Suspense fallback={<FullPageLoading />}><AccountDetailPage /></Suspense>} />
+        <Route path="accounts/:id/edit" element={<Suspense fallback={<FullPageLoading />}><AccountFormPage /></Suspense>} />
+        <Route path="messages" element={<Suspense fallback={<FullPageLoading />}><MessagesPage /></Suspense>} />
+        <Route path="conversations" element={<Suspense fallback={<FullPageLoading />}><ConversationsPage /></Suspense>} />
         {/* Store-scoped routes for orders and payments */}
         
         {/* E-commerce Routes */}
-
-        <Route path="langflow" element={<LangflowPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="langflow" element={<Suspense fallback={<FullPageLoading />}><LangflowPage /></Suspense>} />
+        <Route path="settings" element={<Suspense fallback={<FullPageLoading />}><SettingsPage /></Suspense>} />
         
         {/* Automation Routes */}
-        <Route path="automation/companies" element={<CompanyProfilesPage />} />
-        <Route path="automation/companies/new" element={<CompanyProfileDetailPage />} />
-        <Route path="automation/companies/:id" element={<CompanyProfileDetailPage />} />
-        <Route path="automation/companies/:companyId/messages" element={<AutoMessagesPage />} />
-        <Route path="automation/sessions" element={<CustomerSessionsPage />} />
-        <Route path="automation/logs" element={<AutomationLogsPage />} />
-        <Route path="automation/scheduled" element={<ScheduledMessagesPage />} />
-        <Route path="automation/reports" element={<ReportsPage />} />
+        <Route path="automation/companies" element={<Suspense fallback={<FullPageLoading />}><CompanyProfilesPage /></Suspense>} />
+        <Route path="automation/companies/new" element={<Suspense fallback={<FullPageLoading />}><CompanyProfileDetailPage /></Suspense>} />
+        <Route path="automation/companies/:id" element={<Suspense fallback={<FullPageLoading />}><CompanyProfileDetailPage /></Suspense>} />
+        <Route path="automation/companies/:companyId/messages" element={<Suspense fallback={<FullPageLoading />}><AutoMessagesPage /></Suspense>} />
+        <Route path="automation/sessions" element={<Suspense fallback={<FullPageLoading />}><CustomerSessionsPage /></Suspense>} />
+        <Route path="automation/logs" element={<Suspense fallback={<FullPageLoading />}><AutomationLogsPage /></Suspense>} />
+        <Route path="automation/scheduled" element={<Suspense fallback={<FullPageLoading />}><ScheduledMessagesPage /></Suspense>} />
+        <Route path="automation/reports" element={<Suspense fallback={<FullPageLoading />}><ReportsPage /></Suspense>} />
         
         {/* Analytics/Reports Routes */}
-        <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="reports" element={<AnalyticsPage />} />
+        <Route path="analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
+        <Route path="reports" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
         
         {/* Stores Routes */}
-        <Route path="stores" element={<StoresPage />} />
-        <Route path="stores/:storeId" element={<StoreDetailPage />} />
-        <Route path="stores/:storeId/products" element={<ProductsPage />} />
-        <Route path="stores/:storeId/orders" element={<OrdersPage />} />
-        <Route path="stores/:storeId/orders/:id" element={<OrderDetailPage />} />
-        <Route path="stores/:storeId/coupons" element={<CouponsPage />} />
-        <Route path="stores/:storeId/analytics" element={<AnalyticsPage />} />
-        <Route path="stores/:storeId/payments" element={<PaymentsPage />} />
-        <Route path="stores/:storeId/settings" element={<StoreSettingsPage />} />
+        <Route path="stores" element={<Suspense fallback={<FullPageLoading />}><StoresPage /></Suspense>} />
+        <Route path="stores/:storeId" element={<Suspense fallback={<FullPageLoading />}><StoreDetailPage /></Suspense>} />
+        <Route path="stores/:storeId/products" element={<Suspense fallback={<FullPageLoading />}><ProductsPage /></Suspense>} />
+        <Route path="stores/:storeId/orders" element={<Suspense fallback={<FullPageLoading />}><OrdersPage /></Suspense>} />
+        <Route path="stores/:storeId/orders/:id" element={<Suspense fallback={<FullPageLoading />}><OrderDetailPage /></Suspense>} />
+        <Route path="stores/:storeId/coupons" element={<Suspense fallback={<FullPageLoading />}><CouponsPage /></Suspense>} />
+        <Route path="stores/:storeId/analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
+        <Route path="stores/:storeId/payments" element={<Suspense fallback={<FullPageLoading />}><PaymentsPage /></Suspense>} />
+        <Route path="stores/:storeId/settings" element={<Suspense fallback={<FullPageLoading />}><StoreSettingsPage /></Suspense>} />
         
         {/* Marketing Routes */}
-        <Route path="marketing" element={<MarketingPage />} />
-        <Route path="marketing/subscribers" element={<SubscribersPage />} />
-        <Route path="marketing/automations" element={<AutomationsPage />} />
-        <Route path="marketing/email" element={<CampaignsListPage />} />
-        <Route path="marketing/email/campaigns" element={<CampaignsListPage />} />
-        <Route path="marketing/email/new" element={<NewCampaignPage />} />
-        <Route path="marketing/email/templates" element={<MarketingPage />} />
-        <Route path="marketing/whatsapp" element={<WhatsAppCampaignsPage />} />
-        <Route path="marketing/whatsapp/new" element={<NewWhatsAppCampaignPage />} />
+        <Route path="marketing" element={<Suspense fallback={<FullPageLoading />}><MarketingPage /></Suspense>} />
+        <Route path="marketing/subscribers" element={<Suspense fallback={<FullPageLoading />}><SubscribersPage /></Suspense>} />
+        <Route path="marketing/automations" element={<Suspense fallback={<FullPageLoading />}><AutomationsPage /></Suspense>} />
+        <Route path="marketing/email" element={<Suspense fallback={<FullPageLoading />}><CampaignsListPage /></Suspense>} />
+        <Route path="marketing/email/campaigns" element={<Suspense fallback={<FullPageLoading />}><CampaignsListPage /></Suspense>} />
+        <Route path="marketing/email/new" element={<Suspense fallback={<FullPageLoading />}><NewCampaignPage /></Suspense>} />
+        <Route path="marketing/email/templates" element={<Suspense fallback={<FullPageLoading />}><MarketingPage /></Suspense>} />
+        <Route path="marketing/whatsapp" element={<Suspense fallback={<FullPageLoading />}><WhatsAppCampaignsPage /></Suspense>} />
+        <Route path="marketing/whatsapp/new" element={<Suspense fallback={<FullPageLoading />}><NewWhatsAppCampaignPage /></Suspense>} />
         
         {/* Instagram Routes */}
-        <Route path="instagram" element={<InstagramAccounts />} />
-        <Route path="instagram/accounts" element={<InstagramAccounts />} />
-        <Route path="instagram/inbox" element={<InstagramInbox />} />
+        <Route path="instagram" element={<Suspense fallback={<FullPageLoading />}><InstagramAccounts /></Suspense>} />
+        <Route path="instagram/accounts" element={<Suspense fallback={<FullPageLoading />}><InstagramAccounts /></Suspense>} />
+        <Route path="instagram/inbox" element={<Suspense fallback={<FullPageLoading />}><InstagramInbox /></Suspense>} />
         
         {/* WhatsApp Diagnostics */}
-        <Route path="whatsapp/diagnostics" element={<WebhookDiagnosticsPage />} />
+        <Route path="whatsapp/diagnostics" element={<Suspense fallback={<FullPageLoading />}><WebhookDiagnosticsPage /></Suspense>} />
       </Route>
 
       {/* Catch all */}

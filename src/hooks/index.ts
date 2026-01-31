@@ -1,6 +1,9 @@
 // Theme hook
 export { useTheme } from './useTheme';
 
+// Toast hook
+export { useToast } from './useToast';
+
 // WebSocket hooks
 export {
   useNotificationWebSocket,
