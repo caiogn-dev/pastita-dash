@@ -1,10 +1,10 @@
 ﻿import React, { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MagnifyingGlassIcon, Bars3Icon, SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import { useAccountStore } from '../../stores/accountStore';
 import { NotificationDropdown } from '../notifications';
 import { StoreSelector } from './StoreSelector';
-import { useTheme } from '../../context/ThemeContext';
+import { ThemeToggle } from '../theme';
 
 const BREADCRUMB_LABELS: Record<string, string> = {
   analytics: 'Analytics',
@@ -80,7 +80,6 @@ export const Header: React.FC<HeaderProps> = ({
   onMenuClick,
 }) => {
   const { accounts, selectedAccount, setSelectedAccount } = useAccountStore();
-  const { resolvedTheme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
 
@@ -92,13 +91,13 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="border-b border-border bg-surface-light dark:bg-surface-dark px-4 md:px-6 py-4 transition-colors">
+    <header className="border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-black px-4 md:px-6 py-4 transition-colors">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex w-full items-start gap-4 md:items-center">
           {onMenuClick && (
             <button
               onClick={onMenuClick}
-              className="lg:hidden rounded-lg border border-gray-200 bg-white/70 p-2 text-gray-600 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-white"
+              className="lg:hidden rounded-lg border border-gray-200 bg-white/70 p-2 text-gray-600 transition hover:border-gray-300 hover:text-gray-900 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:text-white"
             >
               <Bars3Icon className="h-6 w-6" />
             </button>
@@ -108,11 +107,11 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h1>
               {subtitle && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
+                <p className="text-sm text-gray-500 dark:text-zinc-400">{subtitle}</p>
               )}
             </div>
             <nav aria-label="Breadcrumb" className="mt-1">
-              <ol className="flex flex-wrap items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+              <ol className="flex flex-wrap items-center gap-2 text-xs font-medium text-gray-500 dark:text-zinc-400">
                 {breadcrumbs.map((crumb, index) => {
                   const isLast = index === breadcrumbs.length - 1;
                   return (
@@ -146,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({
                 const account = accounts.find((a) => a.id === e.target.value);
                 setSelectedAccount(account || null);
               }}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-[#722F37] focus:ring-2 focus:ring-[#722F37] focus:ring-offset-0 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-[#722F37] focus:ring-2 focus:ring-[#722F37] focus:ring-offset-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
             >
               <option value="">Todas as contas</option>
               {accounts.map((account) => (
@@ -162,28 +161,18 @@ export const Header: React.FC<HeaderProps> = ({
               onSubmit={handleSearch}
               className="relative hidden min-w-[220px] sm:block"
             >
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
               <input
                 type="text"
                 placeholder="Buscar..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#722F37] focus:ring-2 focus:ring-[#722F37]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#722F37] focus:ring-2 focus:ring-[#722F37]/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
               />
             </form>
           )}
 
-          <button
-            onClick={toggleTheme}
-            className="rounded-lg p-2 text-gray-500 transition hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
-            title={resolvedTheme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-          >
-            {resolvedTheme === 'dark' ? (
-              <SunIcon className="h-5 w-5" />
-            ) : (
-              <MoonIcon className="h-5 w-5" />
-            )}
-          </button>
+          <ThemeToggle />
 
           <NotificationDropdown />
 

@@ -128,21 +128,21 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button
             onClick={onEdit}
-            className="p-2 bg-white dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 bg-white dark:bg-zinc-900 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-700 transition-colors"
             title="Editar"
           >
-            <PencilIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <PencilIcon className="w-5 h-5 text-gray-700 dark:text-zinc-300" />
           </button>
           <button
             onClick={onDuplicate}
-            className="p-2 bg-white dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 bg-white dark:bg-zinc-900 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-700 transition-colors"
             title="Duplicar"
           >
-            <DocumentDuplicateIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <DocumentDuplicateIcon className="w-5 h-5 text-gray-700 dark:text-zinc-300" />
           </button>
           <button
             onClick={onDelete}
-            className="p-2 bg-white dark:bg-gray-800 rounded-full hover:bg-red-100 dark:bg-red-900/40 transition-colors"
+            className="p-2 bg-white dark:bg-zinc-900 rounded-full hover:bg-red-100 dark:bg-red-900/40 transition-colors"
             title="Excluir"
           >
             <TrashIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -152,7 +152,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {/* Featured Badge */}
         <button
           onClick={onToggleFeatured}
-          className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-800 rounded-full shadow-sm hover:shadow-md transition-shadow"
+          className="absolute top-2 right-2 p-1.5 bg-white dark:bg-zinc-900 rounded-full shadow-sm hover:shadow-md transition-shadow"
           title={product.featured ? 'Remover destaque' : 'Destacar'}
         >
           {product.featured ? (
@@ -175,7 +175,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {/* Category & Type */}
         <div className="flex items-center gap-2 mb-2">
           {product.category_name && (
-            <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+            <span className="text-xs text-gray-500 dark:text-zinc-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
               {product.category_name}
             </span>
           )}
@@ -190,7 +190,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">{product.name}</h3>
         
         {/* SKU */}
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">SKU: {product.sku}</p>
+        <p className="text-xs text-gray-500 dark:text-zinc-400 mb-2">SKU: {product.sku}</p>
 
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-3">
@@ -209,7 +209,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <StockBadge quantity={product.stock_quantity} threshold={product.low_stock_threshold} />
           <button
             onClick={onToggleStatus}
-            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 dark:hover:text-gray-300"
+            className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 dark:hover:text-zinc-300"
           >
             <StatusBadge status={product.status} />
           </button>
@@ -236,7 +236,7 @@ const ProductRow: React.FC<ProductRowProps> = ({
   const imageUrl = product.main_image_url || product.main_image;
   
   return (
-    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 transition-colors">
+    <tr className="hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black transition-colors">
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
@@ -250,14 +250,14 @@ const ProductRow: React.FC<ProductRowProps> = ({
           </div>
           <div>
             <p className="font-medium text-gray-900 dark:text-white">{product.name}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">SKU: {product.sku}</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-400">SKU: {product.sku}</p>
           </div>
         </div>
       </td>
       <td className="px-4 py-3">
         <div className="flex flex-col gap-1">
           {product.category_name && (
-            <span className="text-xs text-gray-600 dark:text-gray-400">{product.category_name}</span>
+            <span className="text-xs text-gray-600 dark:text-zinc-400">{product.category_name}</span>
           )}
           {product.product_type_name && (
             <span className="text-xs text-primary-600">{product.product_type_name}</span>
@@ -293,17 +293,17 @@ const ProductRow: React.FC<ProductRowProps> = ({
         <div className="flex items-center gap-1">
           <button
             onClick={onEdit}
-            className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 dark:bg-gray-700 rounded-lg transition-colors"
             title="Editar"
           >
-            <PencilIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <PencilIcon className="w-4 h-4 text-gray-600 dark:text-zinc-400" />
           </button>
           <button
             onClick={onDuplicate}
-            className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 dark:bg-gray-700 rounded-lg transition-colors"
             title="Duplicar"
           >
-            <DocumentDuplicateIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <DocumentDuplicateIcon className="w-4 h-4 text-gray-600 dark:text-zinc-400" />
           </button>
           <button
             onClick={onDelete}
@@ -496,7 +496,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           <select
             value={String(value)}
             onChange={(e) => updateField(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
             required={field.required}
           >
             <option value="">Selecione...</option>
@@ -522,7 +522,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       updateField(selectedValues.filter((v: string) => v !== opt.value));
                     }
                   }}
-                  className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                  className="rounded border-gray-300 dark:border-zinc-700 text-primary-600 focus:ring-primary-500"
                 />
                 <span className="text-sm">{opt.label}</span>
               </label>
@@ -537,7 +537,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               type="checkbox"
               checked={Boolean(value)}
               onChange={(e) => updateField(e.target.checked)}
-              className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+              className="rounded border-gray-300 dark:border-zinc-700 text-primary-600 focus:ring-primary-500"
             />
             <span className="text-sm">{field.label}</span>
           </label>
@@ -553,7 +553,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             max={field.max}
             step={field.step || 1}
             placeholder={field.placeholder}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
             required={field.required}
           />
         );
@@ -565,7 +565,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             onChange={(e) => updateField(e.target.value)}
             rows={field.rows || 3}
             placeholder={field.placeholder}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
             required={field.required}
           />
         );
@@ -587,7 +587,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             value={String(value)}
             onChange={(e) => updateField(e.target.value)}
             placeholder={field.placeholder}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
             required={field.required}
           />
         );
@@ -611,7 +611,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     >
       <form onSubmit={handleSubmit}>
         {/* Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 -mx-6 px-6">
+        <div className="flex border-b border-gray-200 dark:border-zinc-800 mb-6 -mx-6 px-6">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -638,14 +638,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           {activeTab === 'basic' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                   Nome do Produto *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                   placeholder="Ex: Rondelli 4 Queijos"
                   required
                 />
@@ -653,13 +653,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Categoria
                   </label>
                   <select
                     value={formData.category || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value || null }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">Sem categoria</option>
                     {categories.map((cat) => (
@@ -669,7 +669,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Tipo de Produto
                   </label>
                   <select
@@ -679,7 +679,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       product_type: e.target.value || null,
                       type_attributes: {}, // Reset attributes when type changes
                     }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">Sem tipo</option>
                     {productTypes.map((pt) => (
@@ -694,13 +694,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               {/* Custom Fields from Product Type */}
               {selectedProductType && selectedProductType.custom_fields.length > 0 && (
                 <div className="border-t pt-4 mt-4">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-3">
                     Campos de {selectedProductType.name}
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     {selectedProductType.custom_fields.map((field) => (
                       <div key={field.name}>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                           {field.label} {field.required && '*'}
                         </label>
                         {renderCustomField(field)}
@@ -711,55 +711,55 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                   Descrição Curta
                 </label>
                 <input
                   type="text"
                   value={formData.short_description || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, short_description: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                   placeholder="Breve descrição para listagens"
                   maxLength={200}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                   Descrição Completa
                 </label>
                 <textarea
                   value={formData.description || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                   placeholder="Descrição detalhada do produto..."
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     SKU *
                   </label>
                   <input
                     type="text"
                     value={formData.sku || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="Código único"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Código de Barras
                   </label>
                   <input
                     type="text"
                     value={formData.barcode || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="EAN/UPC"
                   />
                 </div>
@@ -771,7 +771,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     type="checkbox"
                     checked={formData.featured}
                     onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
-                    className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                    className="rounded border-gray-300 dark:border-zinc-700 text-primary-600 focus:ring-primary-500"
                   />
                   <span className="text-sm">Produto em destaque</span>
                 </label>
@@ -784,16 +784,16 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Preço de Venda *
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-zinc-400">R$</span>
                     <input
                       type="number"
                       value={formData.price || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, price: Number(e.target.value) }))}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                       step="0.01"
                       min="0"
                       required
@@ -801,11 +801,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Preço Comparativo
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-zinc-400">R$</span>
                     <input
                       type="number"
                       value={formData.compare_at_price ?? ''}
@@ -813,20 +813,20 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         ...prev,
                         compare_at_price: e.target.value ? Number(e.target.value) : undefined,
                       }))}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                       step="0.01"
                       min="0"
                       placeholder="Preço original"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Para mostrar desconto</p>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">Para mostrar desconto</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Custo
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-zinc-400">R$</span>
                     <input
                       type="number"
                       value={formData.cost_price ?? ''}
@@ -834,38 +834,38 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         ...prev,
                         cost_price: e.target.value ? Number(e.target.value) : undefined,
                       }))}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                       step="0.01"
                       min="0"
                       placeholder="Custo do produto"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Para cálculo de margem</p>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">Para cálculo de margem</p>
                 </div>
               </div>
 
               {/* Margin Calculator */}
               {formData.price > 0 && formData.cost_price && formData.cost_price > 0 && (
-                <Card className="p-4 bg-gray-50 dark:bg-gray-900">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Análise de Margem</h4>
+                <Card className="p-4 bg-gray-50 dark:bg-black">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Análise de Margem</h4>
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                         {formatMoney(formData.price - formData.cost_price)}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Lucro Bruto</p>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400">Lucro Bruto</p>
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                         {(((formData.price - formData.cost_price) / formData.price) * 100).toFixed(1)}%
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Margem</p>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400">Margem</p>
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                         {(((formData.price - formData.cost_price) / formData.cost_price) * 100).toFixed(1)}%
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Markup</p>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400">Markup</p>
                     </div>
                   </div>
                 </Card>
@@ -881,7 +881,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   type="checkbox"
                   checked={formData.track_stock}
                   onChange={(e) => setFormData(prev => ({ ...prev, track_stock: e.target.checked }))}
-                  className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                  className="rounded border-gray-300 dark:border-zinc-700 text-primary-600 focus:ring-primary-500"
                 />
                 <span className="text-sm font-medium">Controlar estoque</span>
               </label>
@@ -889,26 +889,26 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               {formData.track_stock && (
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                       Quantidade em Estoque
                     </label>
                     <input
                       type="number"
                       value={formData.stock_quantity || 0}
                       onChange={(e) => setFormData(prev => ({ ...prev, stock_quantity: Number(e.target.value) }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                       min="0"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                       Alerta de Estoque Baixo
                     </label>
                     <input
                       type="number"
                       value={formData.low_stock_threshold || 5}
                       onChange={(e) => setFormData(prev => ({ ...prev, low_stock_threshold: Number(e.target.value) }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                       min="0"
                     />
                   </div>
@@ -918,7 +918,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         type="checkbox"
                         checked={formData.allow_backorder}
                         onChange={(e) => setFormData(prev => ({ ...prev, allow_backorder: e.target.checked }))}
-                        className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                        className="rounded border-gray-300 dark:border-zinc-700 text-primary-600 focus:ring-primary-500"
                       />
                       <span className="text-sm">Permitir venda sem estoque</span>
                     </label>
@@ -927,13 +927,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                   Status do Produto
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as ProductInput['status'] }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="active">Ativo</option>
                   <option value="inactive">Inativo</option>
@@ -948,11 +948,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           {activeTab === 'media' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
                   Imagem Principal
                 </label>
                 <div className="flex items-start gap-4">
-                  <div className="w-40 h-40 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <div className="w-40 h-40 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-zinc-700">
                     {imagePreview ? (
                       <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
@@ -969,12 +969,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     />
                     <label
                       htmlFor="product-image"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black transition-colors"
                     >
                       <PhotoIcon className="w-5 h-5" />
                       Escolher Imagem
                     </label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">
                       Recomendado: 800x800px, JPG ou PNG, máx 2MB
                     </p>
                     {imagePreview && (
@@ -994,14 +994,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                   URL da Imagem (alternativo)
                 </label>
                 <input
                   type="url"
                   value={formData.main_image_url || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, main_image_url: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                   placeholder="https://exemplo.com/imagem.jpg"
                 />
               </div>
@@ -1012,50 +1012,50 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           {activeTab === 'seo' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                   Título SEO
                 </label>
                 <input
                   type="text"
                   value={formData.meta_title || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, meta_title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                   placeholder={formData.name || 'Título para mecanismos de busca'}
                   maxLength={60}
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
                   {(formData.meta_title || formData.name || '').length}/60 caracteres
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                   Descrição SEO
                 </label>
                 <textarea
                   value={formData.meta_description || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, meta_description: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                   placeholder={formData.short_description || 'Descrição para mecanismos de busca'}
                   maxLength={160}
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
                   {(formData.meta_description || formData.short_description || '').length}/160 caracteres
                 </p>
               </div>
 
               {/* SEO Preview */}
-              <Card className="p-4 bg-gray-50 dark:bg-gray-900">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prévia no Google</h4>
-                <div className="bg-white dark:bg-gray-800 p-3 rounded border">
+              <Card className="p-4 bg-gray-50 dark:bg-black">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Prévia no Google</h4>
+                <div className="bg-white dark:bg-zinc-900 p-3 rounded border">
                   <p className="text-blue-600 dark:text-blue-400 text-lg hover:underline cursor-pointer">
                     {formData.meta_title || formData.name || 'Título do Produto'}
                   </p>
                   <p className="text-green-700 dark:text-green-300 text-sm">
                     sualoja.com.br › produtos › {formData.sku || 'sku'}
                   </p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">
+                  <p className="text-gray-600 dark:text-zinc-400 text-sm line-clamp-2">
                     {formData.meta_description || formData.short_description || formData.description || 'Descrição do produto aparecerá aqui...'}
                   </p>
                 </div>
@@ -1215,7 +1215,7 @@ export const ProductsPageNew: React.FC = () => {
       <div className="p-6 text-center">
         <ExclamationTriangleIcon className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-4">Selecione uma loja no menu superior para gerenciar produtos.</p>
+        <p className="text-gray-500 dark:text-zinc-400 mb-4">Selecione uma loja no menu superior para gerenciar produtos.</p>
         <Button onClick={() => navigate('/stores')}>
           Ver Lojas
         </Button>
@@ -1233,7 +1233,7 @@ export const ProductsPageNew: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Produtos</h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-500 dark:text-zinc-400">
             {storeName ? `Catálogo de ${storeName}` : 'Gerencie seu catálogo de produtos'}
           </p>
         </div>
@@ -1252,23 +1252,23 @@ export const ProductsPageNew: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="p-4 text-center">
           <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.active}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Ativos</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">Ativos</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{stats.lowStock}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Estoque Baixo</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">Estoque Baixo</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.outOfStock}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Sem Estoque</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">Sem Estoque</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.featured}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Destaques</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">Destaques</p>
         </Card>
       </div>
 
@@ -1283,7 +1283,7 @@ export const ProductsPageNew: React.FC = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nome, SKU..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -1292,7 +1292,7 @@ export const ProductsPageNew: React.FC = () => {
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
             >
               <option value="">Todas Categorias</option>
               {categories.map((cat) => (
@@ -1303,7 +1303,7 @@ export const ProductsPageNew: React.FC = () => {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
             >
               <option value="">Todos Tipos</option>
               {productTypes.map((pt) => (
@@ -1314,7 +1314,7 @@ export const ProductsPageNew: React.FC = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
             >
               <option value="">Todos Status</option>
               <option value="active">Ativos</option>
@@ -1327,13 +1327,13 @@ export const ProductsPageNew: React.FC = () => {
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-zinc-400'}`}
               >
                 <Squares2X2Icon className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-zinc-400'}`}
               >
                 <ListBulletIcon className="w-5 h-5" />
               </button>
@@ -1347,7 +1347,7 @@ export const ProductsPageNew: React.FC = () => {
         <Card className="p-12 text-center">
           <CubeIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum produto encontrado</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-gray-500 dark:text-zinc-400 mb-4">
             {search || filterCategory || filterType || filterStatus
               ? 'Tente ajustar os filtros'
               : 'Comece adicionando seu primeiro produto'}
@@ -1374,15 +1374,15 @@ export const ProductsPageNew: React.FC = () => {
       ) : (
         <Card className="overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b">
+            <thead className="bg-gray-50 dark:bg-black border-b">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Produto</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Categoria/Tipo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Preço</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estoque</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Destaque</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Ações</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Produto</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Categoria/Tipo</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Preço</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Estoque</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Destaque</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -1423,7 +1423,7 @@ export const ProductsPageNew: React.FC = () => {
         title="Excluir Produto"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-zinc-400">
             Tem certeza que deseja excluir o produto <strong>{deletingProduct?.name}</strong>?
           </p>
           <p className="text-sm text-red-600 dark:text-red-400">

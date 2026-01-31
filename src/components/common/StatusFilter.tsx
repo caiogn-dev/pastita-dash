@@ -42,7 +42,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
           value === null
             ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md'
-            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+            : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700'
         }`}
       >
         Todos
@@ -54,7 +54,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
             value === option.value
               ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+              : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700'
           }`}
         >
           {option.color && (
@@ -64,8 +64,8 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
           {showCounts && option.count !== undefined && (
             <span className={`px-1.5 py-0.5 rounded-full text-xs ${
               value === option.value
-                ? 'bg-white/20 text-white dark:bg-gray-900/20 dark:text-gray-900'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                ? 'bg-white/20 text-white dark:bg-black/20 dark:text-gray-900'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400'
             }`}>
               {option.count}
             </span>
@@ -158,7 +158,7 @@ export const StatusTabs: React.FC<StatusTabsProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`border-b border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`border-b border-gray-200 dark:border-zinc-800 ${className}`}>
       <nav className="-mb-px flex space-x-8" aria-label="Tabs">
         {tabs.map((tab) => (
           <button
@@ -167,7 +167,7 @@ export const StatusTabs: React.FC<StatusTabsProps> = ({
             className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
               value === tab.value
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                : 'border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 hover:border-gray-300 dark:hover:border-gray-600'
             }`}
           >
             {tab.icon}
@@ -176,7 +176,7 @@ export const StatusTabs: React.FC<StatusTabsProps> = ({
               <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
                 value === tab.value
                   ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400'
               }`}>
                 {tab.count}
               </span>
@@ -239,7 +239,7 @@ export const QuickFilterPills: React.FC<QuickFilterPillsProps> = ({
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
             filter.active
               ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-700'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-transparent hover:bg-gray-200 dark:hover:bg-gray-600'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400 border border-transparent hover:bg-gray-200 dark:hover:bg-gray-600'
           }`}
         >
           {filter.label}

@@ -84,7 +84,7 @@ const ContactItem: React.FC<{
         w-full flex items-center gap-3 p-3 text-left transition-colors
         ${isSelected
           ? 'bg-primary-50 dark:bg-primary-900/20 border-l-4 border-primary-500'
-          : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-4 border-transparent'
+          : 'hover:bg-gray-50 dark:hover:bg-zinc-700/50 border-l-4 border-transparent'
         }
       `}
     >
@@ -101,7 +101,7 @@ const ContactItem: React.FC<{
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span className={`font-medium truncate ${contact.unreadCount ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+          <span className={`font-medium truncate ${contact.unreadCount ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-zinc-300'}`}>
             {displayName}
           </span>
           <span className="text-xs text-gray-400 flex-shrink-0">
@@ -112,7 +112,7 @@ const ContactItem: React.FC<{
           {contact.isTyping ? (
             <span className="text-sm text-primary-500 italic">Digitando...</span>
           ) : (
-            <span className={`text-sm truncate ${contact.unreadCount ? 'text-gray-700 dark:text-gray-200 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+            <span className={`text-sm truncate ${contact.unreadCount ? 'text-gray-700 dark:text-gray-200 font-medium' : 'text-gray-500 dark:text-zinc-400'}`}>
               {contact.lastMessagePreview || 'Nenhuma mensagem'}
             </span>
           )}
@@ -195,9 +195,9 @@ export const ContactList: React.FC<ContactListProps> = ({
   }, [contacts]);
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800">
       {/* Header with title and unread count */}
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-black">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-gray-900 dark:text-white">Conversas</h3>
           {totalUnread > 0 && (
@@ -209,7 +209,7 @@ export const ContactList: React.FC<ContactListProps> = ({
       </div>
 
       {/* Search and filter */}
-      <div className="p-3 border-b border-gray-200 dark:border-gray-700 space-y-2">
+      <div className="p-3 border-b border-gray-200 dark:border-zinc-800 space-y-2">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -234,7 +234,7 @@ export const ContactList: React.FC<ContactListProps> = ({
             className={`p-2 rounded-lg transition-colors ${
               showFilters || modeFilter
                 ? 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
             title="Filtros"
           >
@@ -250,7 +250,7 @@ export const ContactList: React.FC<ContactListProps> = ({
               className={`px-2 py-1 text-xs rounded-full transition-colors ${
                 !modeFilter
                   ? 'bg-primary-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400 hover:bg-gray-200'
               }`}
             >
               Todas ({contacts.length})
@@ -260,7 +260,7 @@ export const ContactList: React.FC<ContactListProps> = ({
               className={`px-2 py-1 text-xs rounded-full transition-colors ${
                 modeFilter === 'human'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400 hover:bg-gray-200'
               }`}
             >
               👤 Humano ({modeCounts.human})
@@ -270,7 +270,7 @@ export const ContactList: React.FC<ContactListProps> = ({
               className={`px-2 py-1 text-xs rounded-full transition-colors ${
                 modeFilter === 'auto'
                   ? 'bg-green-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400 hover:bg-gray-200'
               }`}
             >
               🤖 Auto ({modeCounts.auto})
@@ -316,7 +316,7 @@ export const ContactList: React.FC<ContactListProps> = ({
       </div>
 
       {/* Footer with count */}
-      <div className="p-2 border-t border-gray-200 dark:border-gray-700 text-center bg-gray-50 dark:bg-gray-900">
+      <div className="p-2 border-t border-gray-200 dark:border-zinc-800 text-center bg-gray-50 dark:bg-black">
         <span className="text-xs text-gray-400">
           {sortedContacts.length} de {contacts.length} conversa{contacts.length !== 1 ? 's' : ''}
         </span>

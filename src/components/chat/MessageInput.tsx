@@ -131,7 +131,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const canSend = text.trim().length > 0 && !disabled && !isLoading;
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+    <div className="border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
       <div className="flex items-end gap-2">
         {/* Attachment button */}
         {showAttachment && (
@@ -139,7 +139,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             type="button"
             onClick={onAttachmentClick}
             disabled={disabled}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 disabled:opacity-50 transition-colors"
             title="Anexar arquivo"
           >
             <PaperClipIcon className="w-6 h-6" />
@@ -157,10 +157,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             disabled={disabled}
             rows={1}
             className={`
-              w-full resize-none rounded-2xl border border-gray-300 dark:border-gray-600
+              w-full resize-none rounded-2xl border border-gray-300 dark:border-zinc-700
               bg-gray-50 dark:bg-gray-700 px-4 py-3 pr-12
               text-sm text-gray-900 dark:text-white
-              placeholder-gray-400 dark:placeholder-gray-500
+              placeholder-gray-400 dark:placeholder-zinc-500
               focus:ring-2 focus:ring-primary-500 focus:border-transparent
               disabled:opacity-50 disabled:cursor-not-allowed
               transition-all
@@ -181,7 +181,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <button
             type="button"
             disabled={disabled}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 disabled:opacity-50 transition-colors"
             title="Emoji"
           >
             <FaceSmileIcon className="w-6 h-6" />

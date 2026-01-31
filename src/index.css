@@ -64,6 +64,57 @@
   --radius-full: 9999px;
 }
 
+/* ============================================
+   DARK MODE - PRETO PURO (Black #000000)
+   ============================================ */
+.dark {
+  /* Background Colors - Preto Puro */
+  --pastita-background: #000000;
+  --pastita-surface: #0a0a0a;
+  --pastita-foreground: #fafafa;
+  --pastita-border: #27272a;
+  
+  /* Surface Colors */
+  --surface-bg: #000000;
+  --surface-card: #0a0a0a;
+  --surface-elevated: #141414;
+  
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  
+  /* Border & Dividers */
+  --border-default: #27272a;
+  --border-focus: #3f3f46;
+  
+  /* Shadows - mais sutis no dark */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px rgba(114, 47, 55, 0.3);
+}
+
+/* Reset de cores azuladas no dark mode */
+.dark .bg-slate-900,
+.dark .bg-slate-800,
+.dark .bg-gray-900,
+.dark [class*="bg-slate-"],
+.dark [class*="from-slate-"],
+.dark [class*="via-slate-"],
+.dark [class*="to-slate-"] {
+  background-color: #000000 !important;
+}
+
+/* Transição suave entre temas */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
 /* Agrião Theme */
 [data-theme="agriao"] {
   --brand-primary: #4A5D23;
@@ -74,6 +125,11 @@
   --brand-secondary: #8FB06B;
   --brand-accent: #B5C896;
   --shadow-glow: 0 0 20px rgba(74, 93, 35, 0.15);
+}
+
+/* Agrião Dark Mode */
+.dark[data-theme="agriao"] {
+  --shadow-glow: 0 0 20px rgba(74, 93, 35, 0.3);
 }
 
 /* ============================================
@@ -160,7 +216,7 @@ textarea::placeholder {
     @apply p-2;
   }
   
-  .border-border {
+  .border-gray-200 dark:border-zinc-800 {
     border-color: var(--pastita-border);
   }
   

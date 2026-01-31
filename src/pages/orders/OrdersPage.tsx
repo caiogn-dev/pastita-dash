@@ -468,11 +468,11 @@ export const OrdersPage: React.FC = () => {
       render: (order: Order) => (
         <div>
           <p className="font-semibold text-gray-900 dark:text-white">#{order.order_number}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-zinc-400">
             {format(new Date(order.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
           </p>
           {order.source && (
-            <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+            <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400 rounded">
               {order.source}
             </span>
           )}
@@ -485,7 +485,7 @@ export const OrdersPage: React.FC = () => {
       render: (order: Order) => (
         <div>
           <p className="font-medium text-gray-900 dark:text-white">{order.customer_name || '-'}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{order.customer_phone || '-'}</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">{order.customer_phone || '-'}</p>
         </div>
       ),
     },
@@ -597,14 +597,14 @@ export const OrdersPage: React.FC = () => {
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('kanban')}
-                className={`p-1.5 rounded ${viewMode === 'kanban' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                className={`p-1.5 rounded ${viewMode === 'kanban' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300'}`}
                 title="Visualização Kanban"
               >
                 <Squares2X2Icon className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                className={`p-1.5 rounded ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300'}`}
                 title="Visualização em Lista"
               >
                 <ListBulletIcon className="w-5 h-5" />
@@ -666,7 +666,7 @@ export const OrdersPage: React.FC = () => {
               placeholder="Buscar por número, cliente, telefone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -699,7 +699,7 @@ export const OrdersPage: React.FC = () => {
             <Card>
               {filteredOrders.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 dark:text-gray-400">Nenhum pedido encontrado</p>
+                  <p className="text-gray-500 dark:text-zinc-400">Nenhum pedido encontrado</p>
                 </div>
               ) : (
                 <Table

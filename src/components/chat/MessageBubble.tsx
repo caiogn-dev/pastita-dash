@@ -111,7 +111,7 @@ const MediaPreview: React.FC<{ type: string; url?: string; content?: Record<stri
     return (
       <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mb-1">
         <DocumentIcon className="w-8 h-8 text-gray-500" />
-        <span className="text-sm text-gray-600 dark:text-gray-300">Documento</span>
+        <span className="text-sm text-gray-600 dark:text-zinc-300">Documento</span>
       </div>
     );
   }
@@ -121,7 +121,7 @@ const MediaPreview: React.FC<{ type: string; url?: string; content?: Record<stri
     return (
       <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mb-1">
         <MapPinIcon className="w-6 h-6 text-red-500" />
-        <span className="text-sm text-gray-600 dark:text-gray-300">
+        <span className="text-sm text-gray-600 dark:text-zinc-300">
           {location?.name || 'Localização'}
         </span>
       </div>
@@ -132,7 +132,7 @@ const MediaPreview: React.FC<{ type: string; url?: string; content?: Record<stri
     return (
       <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mb-1">
         <UserIcon className="w-6 h-6 text-blue-500" />
-        <span className="text-sm text-gray-600 dark:text-gray-300">Contato</span>
+        <span className="text-sm text-gray-600 dark:text-zinc-300">Contato</span>
       </div>
     );
   }
@@ -141,7 +141,7 @@ const MediaPreview: React.FC<{ type: string; url?: string; content?: Record<stri
     return (
       <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mb-1">
         <ShoppingCartIcon className="w-6 h-6 text-green-500" />
-        <span className="text-sm text-gray-600 dark:text-gray-300">Pedido</span>
+        <span className="text-sm text-gray-600 dark:text-zinc-300">Pedido</span>
       </div>
     );
   }

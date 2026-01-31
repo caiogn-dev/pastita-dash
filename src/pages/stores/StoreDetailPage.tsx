@@ -119,7 +119,7 @@ export const StoreDetailPage: React.FC = () => {
   if (!store) {
     return (
       <div className="p-6 text-center">
-        <p className="text-gray-500 dark:text-gray-400">Loja não encontrada</p>
+        <p className="text-gray-500 dark:text-zinc-400">Loja não encontrada</p>
         <Button onClick={() => navigate('/stores')} className="mt-4">
           Voltar para Lojas
         </Button>
@@ -133,7 +133,7 @@ export const StoreDetailPage: React.FC = () => {
       <div className="mb-6">
         <button
           onClick={() => navigate('/stores')}
-          className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white mb-4"
+          className="flex items-center text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:text-white mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-2" />
           Voltar para Lojas
@@ -154,12 +154,12 @@ export const StoreDetailPage: React.FC = () => {
             )}
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{store.name}</h1>
-              <p className="text-gray-500 dark:text-gray-400">{store.slug}</p>
+              <p className="text-gray-500 dark:text-zinc-400">{store.slug}</p>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={store.status === 'active' ? 'success' : 'gray'}>
                   {store.status === 'active' ? 'Ativa' : 'Inativa'}
                 </Badge>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-gray-500 dark:text-zinc-400">
                   {store.store_type === 'food' ? '🍕 Alimentação' : store.store_type}
                 </span>
               </div>
@@ -198,32 +198,32 @@ export const StoreDetailPage: React.FC = () => {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Receita Total</p>
+            <p className="text-sm text-gray-600 dark:text-zinc-400">Receita Total</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
               R$ {stats.revenue.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
               Hoje: R$ {stats.revenue.today.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Pedidos</p>
+            <p className="text-sm text-gray-600 dark:text-zinc-400">Pedidos</p>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.orders.total}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
               Hoje: {stats.orders.today}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Produtos</p>
+            <p className="text-sm text-gray-600 dark:text-zinc-400">Produtos</p>
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.products.total}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
               Ativos: {stats.products.active}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Clientes</p>
+            <p className="text-sm text-gray-600 dark:text-zinc-400">Clientes</p>
             <p className="text-2xl font-bold text-orange-600">{stats.customers.total}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
               Total cadastrados
             </p>
           </Card>
@@ -231,7 +231,7 @@ export const StoreDetailPage: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+      <div className="border-b border-gray-200 dark:border-zinc-800 mb-6">
         <nav className="flex gap-4 overflow-x-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -265,42 +265,42 @@ export const StoreDetailPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <Link
                 to={`/stores/${storeId}/products`}
-                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-black rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-800 transition-colors"
               >
                 <CubeIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                 <div>
                   <p className="font-medium">Produtos</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{store.products_count} itens</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">{store.products_count} itens</p>
                 </div>
               </Link>
               <Link
                 to={`/stores/${storeId}/orders`}
-                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-black rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-800 transition-colors"
               >
                 <ShoppingCartIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                 <div>
                   <p className="font-medium">Pedidos</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{store.orders_count} pedidos</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">{store.orders_count} pedidos</p>
                 </div>
               </Link>
               <Link
                 to={`/stores/${storeId}/coupons`}
-                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-black rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-800 transition-colors"
               >
                 <TagIcon className="w-8 h-8 text-green-600 dark:text-green-400" />
                 <div>
                   <p className="font-medium">Cupons</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Gerenciar descontos</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Gerenciar descontos</p>
                 </div>
               </Link>
               <Link
                 to={`/stores/${storeId}/delivery`}
-                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-black rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-800 transition-colors"
               >
                 <TruckIcon className="w-8 h-8 text-orange-600" />
                 <div>
                   <p className="font-medium">Entrega</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Zonas e taxas</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Zonas e taxas</p>
                 </div>
               </Link>
             </div>
@@ -312,25 +312,25 @@ export const StoreDetailPage: React.FC = () => {
             <div className="space-y-3">
               {store.email && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Email</p>
                   <p className="font-medium">{store.email}</p>
                 </div>
               )}
               {store.phone && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Telefone</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Telefone</p>
                   <p className="font-medium">{store.phone}</p>
                 </div>
               )}
               {store.whatsapp_number && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">WhatsApp</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">WhatsApp</p>
                   <p className="font-medium">{store.whatsapp_number}</p>
                 </div>
               )}
               {store.address && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Endereço</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Endereço</p>
                   <p className="font-medium">
                     {store.address}
                     {store.city && `, ${store.city}`}
@@ -339,7 +339,7 @@ export const StoreDetailPage: React.FC = () => {
                 </div>
               )}
               <div className="pt-3 border-t">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Configurações de Entrega</p>
+                <p className="text-sm text-gray-500 dark:text-zinc-400">Configurações de Entrega</p>
                 <div className="flex gap-4 mt-1">
                   <span className={`text-sm ${store.delivery_enabled ? 'text-green-600' : 'text-gray-400'}`}>
                     {store.delivery_enabled ? '✓ Delivery' : '✗ Delivery'}
@@ -361,7 +361,7 @@ export const StoreDetailPage: React.FC = () => {
         title="Editar Loja"
         size="lg"
       >
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-gray-500 dark:text-zinc-400">
           Funcionalidade de edição em desenvolvimento.
           Por enquanto, use o Django Admin para editar os dados da loja.
         </p>

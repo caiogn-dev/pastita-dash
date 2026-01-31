@@ -288,23 +288,23 @@ export const OrderDetailPageNew: React.FC = () => {
   const paymentLink = order.pix_ticket_url || order.payment_url || order.payment_link || order.init_point || null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b sticky top-0 z-10">
+      <div className="bg-white dark:bg-zinc-900 border-b sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(ordersRoute)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 dark:bg-gray-700 rounded-lg transition-colors"
               >
-                <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-zinc-400" />
               </button>
               <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                   Pedido #{order.order_number}
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-zinc-400">
                   {format(new Date(order.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                 </p>
               </div>
@@ -372,7 +372,7 @@ export const OrderDetailPageNew: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">{item.product_name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-gray-500 dark:text-zinc-400">
                           {item.quantity}x {formatMoney(item.unit_price)}
                         </p>
                       </div>
@@ -385,13 +385,13 @@ export const OrderDetailPageNew: React.FC = () => {
               </div>
 
               {/* Summary */}
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-zinc-800 space-y-2">
+                <div className="flex justify-between text-gray-600 dark:text-zinc-400">
                   <span>Subtotal</span>
                   <span>{formatMoney(order.subtotal)}</span>
                 </div>
                 {(order.delivery_fee || order.shipping_cost) ? (
-                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                  <div className="flex justify-between text-gray-600 dark:text-zinc-400">
                     <span>Entrega</span>
                     <span>{formatMoney(order.delivery_fee || order.shipping_cost)}</span>
                   </div>
@@ -413,7 +413,7 @@ export const OrderDetailPageNew: React.FC = () => {
             {order.notes && (
               <Card className="p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Observações</h2>
-                <p className="text-gray-600 dark:text-gray-400 bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                <p className="text-gray-600 dark:text-zinc-400 bg-yellow-50 p-4 rounded-lg border border-yellow-100">
                   {order.notes}
                 </p>
               </Card>
@@ -440,20 +440,20 @@ export const OrderDetailPageNew: React.FC = () => {
                 {order.customer_phone && (
                   <a 
                     href={`tel:${order.customer_phone}`}
-                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-800 transition-colors"
                   >
                     <PhoneIcon className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-700 dark:text-gray-300">{order.customer_phone}</span>
+                    <span className="text-gray-700 dark:text-zinc-300">{order.customer_phone}</span>
                   </a>
                 )}
                 
                 {order.customer_email && (
                   <a 
                     href={`mailto:${order.customer_email}`}
-                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-800 transition-colors"
                   >
                     <EnvelopeIcon className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-700 dark:text-gray-300 text-sm truncate">{order.customer_email}</span>
+                    <span className="text-gray-700 dark:text-zinc-300 text-sm truncate">{order.customer_email}</span>
                   </a>
                 )}
               </div>
@@ -465,19 +465,19 @@ export const OrderDetailPageNew: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Entrega</h2>
                 <div className="flex items-start gap-3">
                   <MapPinIcon className="w-5 h-5 text-gray-400 mt-0.5" />
-                  <div className="text-gray-700 dark:text-gray-300">
+                  <div className="text-gray-700 dark:text-zinc-300">
                     <p className="font-medium">
                       {(address as Record<string, string>).street || (address as Record<string, string>).address}
                       {(address as Record<string, string>).number && `, ${(address as Record<string, string>).number}`}
                     </p>
                     {(address as Record<string, string>).complement && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{(address as Record<string, string>).complement}</p>
+                      <p className="text-sm text-gray-500 dark:text-zinc-400">{(address as Record<string, string>).complement}</p>
                     )}
                     <p className="text-sm">
                       {(address as Record<string, string>).neighborhood && `${(address as Record<string, string>).neighborhood}, `}
                       {(address as Record<string, string>).city} - {(address as Record<string, string>).state}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-500 dark:text-zinc-400">
                       CEP: {(address as Record<string, string>).zip_code || (address as Record<string, string>).cep}
                     </p>
                   </div>
@@ -491,7 +491,7 @@ export const OrderDetailPageNew: React.FC = () => {
               {payments.length > 0 ? (
                 <div className="space-y-3">
                   {payments.map((payment) => (
-                    <div key={payment.id} className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <div key={payment.id} className="p-3 bg-gray-50 dark:bg-black rounded-lg">
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-gray-900 dark:text-white">
                           {payment.payment_method === 'pix' ? '💠 PIX' : 
@@ -516,20 +516,20 @@ export const OrderDetailPageNew: React.FC = () => {
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Método</span>
+                    <span className="text-sm text-gray-500 dark:text-zinc-400">Método</span>
                     <span className="font-medium text-gray-900 dark:text-white">
                       {paymentMethodLabel[order.payment_method || ''] || order.payment_method || '-'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Status</span>
+                    <span className="text-sm text-gray-500 dark:text-zinc-400">Status</span>
                     <span className={`text-sm font-semibold ${paymentStatus === 'paid' ? 'text-green-600' : paymentStatus === 'failed' ? 'text-red-600' : 'text-yellow-600'}`}>
                       {paymentStatusLabel[paymentStatus] || paymentStatus}
                     </span>
                   </div>
                   {order.pix_code && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 break-all bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">PIX:</span> {order.pix_code}
+                    <div className="text-xs text-gray-500 dark:text-zinc-400 break-all bg-gray-50 dark:bg-black rounded-lg p-3">
+                      <span className="font-semibold text-gray-700 dark:text-zinc-300">PIX:</span> {order.pix_code}
                     </div>
                   )}
                   {paymentLink && (
@@ -585,7 +585,7 @@ export const OrderDetailPageNew: React.FC = () => {
         title="Cancelar Pedido"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-zinc-400">
             Tem certeza que deseja cancelar o pedido <strong>#{order.order_number}</strong>?
           </p>
           <p className="text-sm text-red-600 dark:text-red-400">

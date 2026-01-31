@@ -255,7 +255,7 @@ export const DashboardPage: React.FC = () => {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white dark:text-white">Analytics detalhado</h2>
-            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
+            <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 dark:text-zinc-400">
               Indicadores dos últimos {chartRangeLabel}.
             </p>
           </div>
@@ -426,7 +426,7 @@ export const DashboardPage: React.FC = () => {
             <div className="space-y-3">
               {Object.entries(overview?.messages.by_status || {}).map(([status, count]) => (
                 <div key={status} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">{status}</span>
+                  <span className="text-sm text-gray-600 dark:text-zinc-400 capitalize">{status}</span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
                 </div>
               ))}
@@ -438,7 +438,7 @@ export const DashboardPage: React.FC = () => {
             <div className="space-y-3">
               {Object.entries(overview?.conversations.by_mode || {}).map(([mode, count]) => (
                 <div key={mode} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                  <span className="text-sm text-gray-600 dark:text-zinc-400 capitalize">
                     {mode === 'auto' ? 'Automático' : mode === 'human' ? 'Humano' : 'Híbrido'}
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
@@ -451,19 +451,19 @@ export const DashboardPage: React.FC = () => {
           <Card title="Estatísticas Langflow">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Interações Hoje</span>
+                <span className="text-sm text-gray-600 dark:text-zinc-400">Interações Hoje</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {overview?.langflow.interactions_today || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Tempo Médio</span>
+                <span className="text-sm text-gray-600 dark:text-zinc-400">Tempo Médio</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {overview?.langflow.avg_duration_ms || 0}ms
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Taxa de Sucesso</span>
+                <span className="text-sm text-gray-600 dark:text-zinc-400">Taxa de Sucesso</span>
                 <span className="text-sm font-medium text-green-600 dark:text-green-400">
                   {overview?.langflow.success_rate || 0}%
                 </span>

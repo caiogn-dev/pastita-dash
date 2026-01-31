@@ -208,10 +208,10 @@ export const StoreSettingsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
         <div className="text-center">
           <ArrowPathIcon className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">Carregando configurações...</p>
+          <p className="text-gray-500 dark:text-zinc-400">Carregando configurações...</p>
         </div>
       </div>
     );
@@ -219,67 +219,67 @@ export const StoreSettingsPage: React.FC = () => {
 
   if (!effectiveStoreId) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
         <div className="text-center max-w-md">
           <BuildingStorefrontIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">Selecione uma loja para configurar.</p>
+          <p className="text-gray-500 dark:text-zinc-400">Selecione uma loja para configurar.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-black p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <BuildingStorefrontIcon className="w-6 h-6 text-primary-600" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configurações da Loja</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{store?.name || 'Loja'}</p>
+            <p className="text-sm text-gray-500 dark:text-zinc-400">{store?.name || 'Loja'}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <BuildingStorefrontIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              <BuildingStorefrontIcon className="w-5 h-5 text-gray-600 dark:text-zinc-300" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Informações da Loja</h2>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Nome</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Nome</label>
                 <input
                   type="text"
                   value={storeForm.name}
                   onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Email</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Email</label>
                 <input
                   type="email"
                   value={storeForm.email}
                   onChange={(e) => setStoreForm({ ...storeForm, email: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Telefone</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Telefone</label>
                 <input
                   type="text"
                   value={storeForm.phone}
                   onChange={(e) => setStoreForm({ ...storeForm, phone: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">WhatsApp</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">WhatsApp</label>
                 <input
                   type="text"
                   value={storeForm.whatsapp_number}
                   onChange={(e) => setStoreForm({ ...storeForm, whatsapp_number: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <button
@@ -292,67 +292,67 @@ export const StoreSettingsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <MapPinIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              <MapPinIcon className="w-5 h-5 text-gray-600 dark:text-zinc-300" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Localização</h2>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Endereço</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Endereço</label>
                 <input
                   type="text"
                   value={storeForm.address}
                   onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Cidade</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Cidade</label>
                   <input
                     type="text"
                     value={storeForm.city}
                     onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Estado</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Estado</label>
                   <input
                     type="text"
                     value={storeForm.state}
                     onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">CEP</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">CEP</label>
                 <input
                   type="text"
                   value={storeForm.zip_code}
                   onChange={(e) => setStoreForm({ ...storeForm, zip_code: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Latitude</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Latitude</label>
                   <input
                     type="text"
                     value={storeForm.latitude}
                     onChange={(e) => setStoreForm({ ...storeForm, latitude: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Longitude</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Longitude</label>
                   <input
                     type="text"
                     value={storeForm.longitude}
                     onChange={(e) => setStoreForm({ ...storeForm, longitude: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
               </div>
@@ -367,62 +367,62 @@ export const StoreSettingsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <TruckIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <TruckIcon className="w-5 h-5 text-gray-600 dark:text-zinc-300" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Entrega</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Taxa Base</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Taxa Base</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_base_fee}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_base_fee: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Taxa por KM</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Taxa por KM</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_fee_per_km}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_fee_per_km: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">KM Grátis</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">KM Grátis</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_free_km}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_free_km: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Taxa Máxima</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Taxa Máxima</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_max_fee}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_max_fee: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Distância Máxima</label>
+                <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Distância Máxima</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_max_distance}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_max_distance: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-2">
+              <div className="bg-gray-50 dark:bg-black rounded-lg p-4">
+                <div className="flex items-center gap-2 text-gray-500 dark:text-zinc-400 mb-2">
                   <CurrencyDollarIcon className="w-4 h-4" />
                   <span className="text-sm font-medium">Exemplo</span>
                 </div>
@@ -443,28 +443,28 @@ export const StoreSettingsPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-2">
               <Cog6ToothIcon className="w-5 h-5 text-gray-500" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
+              <span className="text-sm text-gray-600 dark:text-zinc-400">Status</span>
             </div>
             <p className="text-lg font-semibold text-gray-900 dark:text-white mt-2">
               {store?.status === 'active' ? 'Ativa' : 'Inativa'}
             </p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-2">
               <CheckCircleIcon className="w-5 h-5 text-green-500" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Pedidos</span>
+              <span className="text-sm text-gray-600 dark:text-zinc-400">Pedidos</span>
             </div>
             <p className="text-lg font-semibold text-gray-900 dark:text-white mt-2">
               {store?.orders_count ?? 0}
             </p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-2">
               <ClockIcon className="w-5 h-5 text-blue-500" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Produtos</span>
+              <span className="text-sm text-gray-600 dark:text-zinc-400">Produtos</span>
             </div>
             <p className="text-lg font-semibold text-gray-900 dark:text-white mt-2">
               {store?.products_count ?? 0}

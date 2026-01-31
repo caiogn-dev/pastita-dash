@@ -64,7 +64,7 @@ export const StoreSelector: React.FC = () => {
 
   return (
     <div className="relative flex items-center gap-2">
-      <Store className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+      <Store className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
       <div className="relative">
         <select
           value={selectedStore?.id || ''}
@@ -72,7 +72,7 @@ export const StoreSelector: React.FC = () => {
             const store = stores.find(s => s.id === e.target.value);
             setSelectedStore(store || null);
           }}
-          className="appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 pr-8 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer min-w-[180px] transition-colors"
+          className="appearance-none bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 pr-8 text-sm font-medium text-gray-700 dark:text-zinc-300 hover:border-gray-300 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer min-w-[180px] transition-colors"
           disabled={loading}
         >
           {stores.map((store) => (
@@ -88,7 +88,7 @@ export const StoreSelector: React.FC = () => {
       <button
         onClick={() => fetchStores()}
         disabled={loading}
-        className={`p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${loading ? 'animate-spin' : ''}`}
+        className={`p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors ${loading ? 'animate-spin' : ''}`}
         title="Atualizar lojas"
       >
         <RefreshCw className="w-4 h-4 text-gray-400 dark:text-gray-500" />

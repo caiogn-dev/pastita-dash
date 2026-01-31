@@ -24,7 +24,7 @@ export const PageLoading: React.FC = () => {
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="text-center">
         <Loading size="lg" />
-        <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando...</p>
+        <p className="mt-4 text-gray-500 dark:text-zinc-400">Carregando...</p>
       </div>
     </div>
   );
@@ -32,7 +32,7 @@ export const PageLoading: React.FC = () => {
 
 export const FullPageLoading: React.FC = () => {
   return (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-50 transition-colors">
+    <div className="fixed inset-0 bg-white dark:bg-black flex items-center justify-center z-50 transition-colors">
       <div className="text-center">
         <img 
           src="/pastita-logo.svg" 
@@ -40,7 +40,7 @@ export const FullPageLoading: React.FC = () => {
           className="w-20 h-20 mx-auto mb-4 animate-pulse"
         />
         <Loading size="md" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Pastita Dashboard</p>
+        <p className="mt-4 text-gray-600 dark:text-zinc-400 font-medium">Pastita Dashboard</p>
       </div>
     </div>
   );

@@ -234,7 +234,7 @@ export const SubscribersPage: React.FC = () => {
       <div className="p-6 text-center">
         <UserGroupIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-4">Selecione uma loja para gerenciar contatos.</p>
+        <p className="text-gray-500 dark:text-zinc-400 mb-4">Selecione uma loja para gerenciar contatos.</p>
         <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
       </div>
     );
@@ -250,7 +250,7 @@ export const SubscribersPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Contatos</h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-500 dark:text-zinc-400">
             Gerencie sua lista de contatos para campanhas de marketing
           </p>
         </div>
@@ -279,7 +279,7 @@ export const SubscribersPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
+              <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>
             </div>
           </div>
         </Card>
@@ -290,7 +290,7 @@ export const SubscribersPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Ativos</p>
+              <p className="text-sm text-gray-500 dark:text-zinc-400">Ativos</p>
             </div>
           </div>
         </Card>
@@ -301,7 +301,7 @@ export const SubscribersPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.withOrders}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Com Pedidos</p>
+              <p className="text-sm text-gray-500 dark:text-zinc-400">Com Pedidos</p>
             </div>
           </div>
         </Card>
@@ -312,7 +312,7 @@ export const SubscribersPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.unsubscribed}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Descadastrados</p>
+              <p className="text-sm text-gray-500 dark:text-zinc-400">Descadastrados</p>
             </div>
           </div>
         </Card>
@@ -327,14 +327,14 @@ export const SubscribersPage: React.FC = () => {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="Buscar por email, nome ou telefone..."
             />
           </div>
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
           >
             <option value="all">Todos os status</option>
             <option value="active">Ativos</option>
@@ -352,7 +352,7 @@ export const SubscribersPage: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               {subscribers.length === 0 ? 'Nenhum contato ainda' : 'Nenhum resultado'}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-gray-500 dark:text-zinc-400 mb-4">
               {subscribers.length === 0
                 ? 'Adicione contatos para começar suas campanhas de marketing.'
                 : 'Tente ajustar os filtros de busca.'}
@@ -367,23 +367,23 @@ export const SubscribersPage: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-900 border-b">
+              <thead className="bg-gray-50 dark:bg-black border-b">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Contato</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Tags</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Pedidos</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Ações</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Contato</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Tags</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Pedidos</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {filteredSubscribers.map(subscriber => (
-                  <tr key={subscriber.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900">
+                  <tr key={subscriber.id} className="hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black">
                     <td className="px-4 py-3">
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">{subscriber.email}</p>
                         {subscriber.name && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{subscriber.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-zinc-400">{subscriber.name}</p>
                         )}
                         {subscriber.phone && (
                           <p className="text-sm text-gray-400">{subscriber.phone}</p>
@@ -405,7 +405,7 @@ export const SubscribersPage: React.FC = () => {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {subscriber.tags?.slice(0, 3).map(tag => (
-                          <span key={tag} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
+                          <span key={tag} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400 rounded text-xs">
                             {tag}
                           </span>
                         ))}
@@ -417,7 +417,7 @@ export const SubscribersPage: React.FC = () => {
                     <td className="px-4 py-3">
                       <span className="text-gray-900 dark:text-white">{subscriber.total_orders || 0}</span>
                       {subscriber.total_spent > 0 && (
-                        <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">
+                        <span className="text-sm text-gray-500 dark:text-zinc-400 ml-1">
                           (R$ {subscriber.total_spent.toFixed(2)})
                         </span>
                       )}
@@ -458,38 +458,38 @@ export const SubscribersPage: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Email *
             </label>
             <input
               type="email"
               value={newSubscriber.email}
               onChange={e => setNewSubscriber(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="email@exemplo.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Nome
             </label>
             <input
               type="text"
               value={newSubscriber.name}
               onChange={e => setNewSubscriber(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="Nome do contato"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Telefone
             </label>
             <input
               type="tel"
               value={newSubscriber.phone}
               onChange={e => setNewSubscriber(prev => ({ ...prev, phone: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="(11) 99999-9999"
             />
           </div>
@@ -511,13 +511,13 @@ export const SubscribersPage: React.FC = () => {
         title="Importar Contatos"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-zinc-400">
             Cole os contatos no formato: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">email,nome,telefone</code> (um por linha)
           </p>
           <textarea
             value={importText}
             onChange={e => setImportText(e.target.value)}
-            className="w-full h-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 font-mono text-sm"
+            className="w-full h-48 px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 font-mono text-sm"
             placeholder={`joao@email.com,João Silva,11999999999
 maria@email.com,Maria Santos
 pedro@email.com`}

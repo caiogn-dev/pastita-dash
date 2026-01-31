@@ -34,7 +34,7 @@ export function Table<T>({
 
   if (data.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+      <div className="text-center py-12 text-gray-500 dark:text-zinc-400">
         {emptyMessage}
       </div>
     );
@@ -43,23 +43,23 @@ export function Table<T>({
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-800">
+        <thead className="bg-gray-50 dark:bg-zinc-900">
           <tr>
             {columns.map((column) => (
               <th
                 key={column.key}
-                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${column.className || ''}`}
+                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider ${column.className || ''}`}
               >
                 {column.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="bg-white dark:bg-black divide-y divide-gray-200 dark:divide-gray-700">
           {data.map((item) => (
             <tr
               key={keyExtractor(item)}
-              className={onRowClick ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer' : ''}
+              className={onRowClick ? 'hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer' : ''}
               onClick={() => onRowClick?.(item)}
             >
               {columns.map((column) => (
@@ -99,19 +99,19 @@ export const Pagination: React.FC<PaginationProps> = ({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems || 0);
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 sm:px-6">
+    <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 sm:px-6">
       <div className="flex-1 flex justify-between sm:hidden">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 text-sm font-medium rounded-md text-gray-700 dark:text-zinc-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Anterior
         </button>
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 text-sm font-medium rounded-md text-gray-700 dark:text-zinc-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Próximo
         </button>
@@ -119,7 +119,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div>
           {totalItems && (
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+            <p className="text-sm text-gray-700 dark:text-zinc-300">
               Mostrando <span className="font-medium">{startItem}</span> a{' '}
               <span className="font-medium">{endItem}</span> de{' '}
               <span className="font-medium">{totalItems}</span> resultados
@@ -131,7 +131,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Anterior</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -156,7 +156,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                   className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                     currentPage === pageNum
                       ? 'z-10 bg-primary-50 dark:bg-primary-900/30 border-primary-500 text-primary-600 dark:text-primary-400'
-                      : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
+                      : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-gray-600'
                   }`}
                 >
                   {pageNum}
@@ -166,7 +166,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             <button
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Próximo</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">

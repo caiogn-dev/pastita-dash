@@ -180,12 +180,12 @@ export const WebhookDiagnosticsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Diagnóstico de Webhooks WhatsApp
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-500 dark:text-zinc-400">
             Monitore o recebimento de mensagens em tempo real
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400">
             <input
               type="checkbox"
               checked={autoRefresh}
@@ -298,8 +298,8 @@ export const WebhookDiagnosticsPage: React.FC = () => {
               {accounts.map((account) => (
                 <tr key={account.id}>
                   <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{account.name}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{account.phone_number}</td>
-                  <td className="px-4 py-2 text-sm font-mono text-gray-600 dark:text-gray-400">{account.phone_number_id}</td>
+                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400">{account.phone_number}</td>
+                  <td className="px-4 py-2 text-sm font-mono text-gray-600 dark:text-zinc-400">{account.phone_number_id}</td>
                   <td className="px-4 py-2">
                     <Badge variant={account.status === 'active' ? 'success' : 'warning'}>
                       {account.status}
@@ -404,7 +404,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
                       {event.processing_status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
+                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400">
                     {new Date(event.created_at).toLocaleString('pt-BR')}
                   </td>
                   <td className="px-4 py-2 text-sm text-red-600 dark:text-red-400 max-w-xs truncate">
@@ -436,11 +436,11 @@ export const WebhookDiagnosticsPage: React.FC = () => {
               {recent_inbound_messages.map((msg) => (
                 <tr key={msg.id}>
                   <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{msg.from_number}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{msg.message_type}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">
+                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400">{msg.message_type}</td>
+                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400 max-w-xs truncate">
                     {msg.text_body || '-'}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
+                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400">
                     {new Date(msg.created_at).toLocaleString('pt-BR')}
                   </td>
                 </tr>
@@ -458,8 +458,8 @@ export const WebhookDiagnosticsPage: React.FC = () => {
       </Card>
 
       {/* Server Info */}
-      <Card className="p-4 bg-gray-50 dark:bg-gray-800">
-        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+      <Card className="p-4 bg-gray-50 dark:bg-zinc-900">
+        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-zinc-400">
           <ServerIcon className="w-5 h-5" />
           <span>Servidor: {new Date(data.server_time).toLocaleString('pt-BR')}</span>
           <span>|</span>

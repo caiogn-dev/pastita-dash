@@ -7,10 +7,10 @@ export const MainLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-background text-foreground transition-colors duration-300 dark:bg-background-dark dark:text-foreground-dark">
+    <div className="flex min-h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -27,7 +27,7 @@ export const MainLayout: React.FC = () => {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header title="Painel Operacional" subtitle="CRM Pastita" onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-auto bg-surface-light dark:bg-surface-dark">
+        <main className="flex-1 overflow-auto bg-gray-50 dark:bg-black">
           <div className="min-h-full">
             <Outlet />
           </div>

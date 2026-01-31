@@ -208,7 +208,7 @@ export const CouponsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Cupons de Desconto</h1>
-          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Gerencie os cupons de desconto da loja</p>
+          <p className="text-sm md:text-base text-gray-500 dark:text-zinc-400">Gerencie os cupons de desconto da loja</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto">
           <PlusIcon className="w-5 h-5 mr-2" />
@@ -225,7 +225,7 @@ export const CouponsPage: React.FC = () => {
                 <TagIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">Total</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 truncate">Total</p>
                 <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
               </div>
             </div>
@@ -236,7 +236,7 @@ export const CouponsPage: React.FC = () => {
                 <CheckCircleIcon className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">Ativos</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 truncate">Ativos</p>
                 <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
               </div>
             </div>
@@ -244,10 +244,10 @@ export const CouponsPage: React.FC = () => {
           <Card className="p-3 md:p-4">
             <div className="flex items-center">
               <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg shrink-0">
-                <XCircleIcon className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-400" />
+                <XCircleIcon className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-zinc-400" />
               </div>
               <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">Inativos</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 truncate">Inativos</p>
                 <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.inactive}</p>
               </div>
             </div>
@@ -258,7 +258,7 @@ export const CouponsPage: React.FC = () => {
                 <TagIcon className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">Usos Totais</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 truncate">Usos Totais</p>
                 <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.total_usage}</p>
               </div>
             </div>
@@ -285,7 +285,7 @@ export const CouponsPage: React.FC = () => {
             <select
               value={filterActive === undefined ? '' : String(filterActive)}
               onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="px-2 sm:px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             >
               <option value="">Status</option>
               <option value="true">Ativos</option>
@@ -294,7 +294,7 @@ export const CouponsPage: React.FC = () => {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as 'percentage' | 'fixed' | '')}
-              className="px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="px-2 sm:px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             >
               <option value="">Tipo</option>
               <option value="percentage">%</option>
@@ -316,7 +316,7 @@ export const CouponsPage: React.FC = () => {
                   <div>
                     <p className="font-mono font-bold text-gray-900 dark:text-white">{coupon.code}</p>
                     {coupon.description && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{coupon.description}</p>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400">{coupon.description}</p>
                     )}
                   </div>
                 </div>
@@ -331,26 +331,26 @@ export const CouponsPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Desconto:</span>
+                  <span className="text-gray-500 dark:text-zinc-400">Desconto:</span>
                   <Badge variant={coupon.discount_type === 'percentage' ? 'info' : 'success'} className="ml-1">
                     {formatDiscount(coupon)}
                   </Badge>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Uso:</span>
-                  <span className="ml-1 text-gray-700 dark:text-gray-300">
+                  <span className="text-gray-500 dark:text-zinc-400">Uso:</span>
+                  <span className="ml-1 text-gray-700 dark:text-zinc-300">
                     {coupon.used_count}{coupon.usage_limit && ` / ${coupon.usage_limit}`}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Mín:</span>
-                  <span className="ml-1 text-gray-700 dark:text-gray-300">
+                  <span className="text-gray-500 dark:text-zinc-400">Mín:</span>
+                  <span className="ml-1 text-gray-700 dark:text-zinc-300">
                     {Number(coupon.min_purchase || 0) > 0 ? `R$ ${formatMoney(coupon.min_purchase)}` : '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Até:</span>
-                  <span className="ml-1 text-gray-700 dark:text-gray-300">{formatDate(coupon.valid_until)}</span>
+                  <span className="text-gray-500 dark:text-zinc-400">Até:</span>
+                  <span className="ml-1 text-gray-700 dark:text-zinc-300">{formatDate(coupon.valid_until)}</span>
                 </div>
               </div>
               <div className="flex items-center justify-end gap-1 pt-2 border-t border-gray-100">
@@ -377,41 +377,41 @@ export const CouponsPage: React.FC = () => {
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="bg-gray-50 dark:bg-black">
               <tr>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                   Código
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                   Desconto
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                   Mín. Compra
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                   Uso
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                   Validade
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200">
               {coupons.map((coupon) => (
-                <tr key={coupon.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900">
+                <tr key={coupon.id} className="hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black">
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <TagIcon className="w-5 h-5 text-gray-400 mr-2" />
                       <div>
                         <div className="font-mono font-bold text-gray-900 dark:text-white">{coupon.code}</div>
                         {coupon.description && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400 max-w-[200px] truncate">{coupon.description}</div>
+                          <div className="text-sm text-gray-500 dark:text-zinc-400 max-w-[200px] truncate">{coupon.description}</div>
                         )}
                       </div>
                     </div>
@@ -421,16 +421,16 @@ export const CouponsPage: React.FC = () => {
                       {formatDiscount(coupon)}
                     </Badge>
                   </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-zinc-400">
                     {Number(coupon.min_purchase || 0) > 0 ? `R$ ${formatMoney(coupon.min_purchase)}` : '-'}
                   </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-zinc-400">
                     {coupon.used_count}
                     {coupon.usage_limit && ` / ${coupon.usage_limit}`}
                   </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-zinc-400">
                     <div>{formatDate(coupon.valid_from)}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">até {formatDate(coupon.valid_until)}</div>
+                    <div className="text-xs text-gray-500 dark:text-zinc-400">até {formatDate(coupon.valid_until)}</div>
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <button
@@ -473,7 +473,7 @@ export const CouponsPage: React.FC = () => {
           <div className="text-center py-12 px-4">
             <TagIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum cupom encontrado</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
               Comece criando um novo cupom de desconto.
             </p>
             <div className="mt-6">
@@ -494,7 +494,7 @@ export const CouponsPage: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Código do Cupom *
             </label>
             <Input
@@ -507,7 +507,7 @@ export const CouponsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Descrição
             </label>
             <Input
@@ -520,20 +520,20 @@ export const CouponsPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Tipo de Desconto *
               </label>
               <select
                 value={formData.discount_type}
                 onChange={(e) => setFormData({ ...formData, discount_type: e.target.value as 'percentage' | 'fixed' })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               >
                 <option value="percentage">Porcentagem (%)</option>
                 <option value="fixed">Valor Fixo (R$)</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Valor do Desconto *
               </label>
               <Input
@@ -548,7 +548,7 @@ export const CouponsPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Compra Mínima (R$)
               </label>
               <Input
@@ -560,7 +560,7 @@ export const CouponsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Desconto Máximo (R$)
               </label>
               <Input
@@ -575,7 +575,7 @@ export const CouponsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Limite de Uso
             </label>
             <Input
@@ -589,7 +589,7 @@ export const CouponsPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Válido a partir de *
               </label>
               <Input
@@ -599,7 +599,7 @@ export const CouponsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Válido até *
               </label>
               <Input
@@ -616,7 +616,7 @@ export const CouponsPage: React.FC = () => {
               id="is_active"
               checked={formData.is_active}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-zinc-700 rounded"
             />
             <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900 dark:text-white">
               Cupom ativo
@@ -644,7 +644,7 @@ export const CouponsPage: React.FC = () => {
         title="Excluir Cupom"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-zinc-400">
             Tem certeza que deseja excluir o cupom <strong>{deletingCoupon?.code}</strong>?
             Esta ação não pode ser desfeita.
           </p>

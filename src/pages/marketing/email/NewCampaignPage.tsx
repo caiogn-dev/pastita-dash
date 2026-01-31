@@ -403,7 +403,7 @@ export const NewCampaignPage: React.FC = () => {
       <div className="p-6 text-center">
         <EnvelopeIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-4">Selecione uma loja para criar campanhas.</p>
+        <p className="text-gray-500 dark:text-zinc-400 mb-4">Selecione uma loja para criar campanhas.</p>
         <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
       </div>
     );
@@ -414,21 +414,21 @@ export const NewCampaignPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b sticky top-0 z-10">
+      <div className="bg-white dark:bg-zinc-900 border-b sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/marketing')}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 dark:bg-gray-700 rounded-lg transition-colors"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
               </button>
               <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">Nova Campanha</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{storeName}</p>
+                <p className="text-sm text-gray-500 dark:text-zinc-400">{storeName}</p>
               </div>
             </div>
             
@@ -485,7 +485,7 @@ export const NewCampaignPage: React.FC = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Escolha um Template</h2>
-              <p className="text-gray-500 dark:text-gray-400">Selecione um template para começar sua campanha.</p>
+              <p className="text-gray-500 dark:text-zinc-400">Selecione um template para começar sua campanha.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -504,7 +504,7 @@ export const NewCampaignPage: React.FC = () => {
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-900 dark:text-white">{template.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{template.subject}</p>
+                    <p className="text-sm text-gray-500 dark:text-zinc-400 line-clamp-1">{template.subject}</p>
                   </div>
                 </button>
               ))}
@@ -520,38 +520,38 @@ export const NewCampaignPage: React.FC = () => {
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Informações da Campanha</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                       Nome da Campanha
                     </label>
                     <input
                       type="text"
                       value={campaignData.name}
                       onChange={e => setCampaignData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Ex: Promoção de Natal"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                       Assunto do Email
                     </label>
                     <input
                       type="text"
                       value={campaignData.subject}
                       onChange={e => setCampaignData(prev => ({ ...prev, subject: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Ex: 🎁 Presente especial para você!"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                       Nome do Remetente
                     </label>
                     <input
                       type="text"
                       value={campaignData.from_name}
                       onChange={e => setCampaignData(prev => ({ ...prev, from_name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Ex: Pastita"
                     />
                   </div>
@@ -593,7 +593,7 @@ export const NewCampaignPage: React.FC = () => {
               ).length > 0 && (
                 <Card className="p-6">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Valores Personalizados</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  <p className="text-sm text-gray-500 dark:text-zinc-400 mb-4">
                     Preencha os valores específicos desta campanha:
                   </p>
                   <div className="space-y-4">
@@ -601,14 +601,14 @@ export const NewCampaignPage: React.FC = () => {
                       .filter(v => !['customer_name', 'first_name', 'name', 'email', 'phone', 'store_name', 'store_url', 'year'].includes(v))
                       .map(variable => (
                         <div key={variable}>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                             {variable.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </label>
                           <input
                             type="text"
                             value={campaignData.variables[variable] || ''}
                             onChange={e => handleVariableChange(variable, e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             placeholder={`Ex: ${variable === 'coupon_code' ? 'DESCONTO10' : variable === 'discount_value' ? '10%' : variable === 'expiry_date' ? '31/12/2026' : ''}`}
                           />
                         </div>
@@ -640,7 +640,7 @@ export const NewCampaignPage: React.FC = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Selecione a Audiência</h2>
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="text-gray-500 dark:text-zinc-400">
                 Você tem <strong>{subscribers.length}</strong> contatos ativos.
               </p>
             </div>
@@ -669,7 +669,7 @@ export const NewCampaignPage: React.FC = () => {
                     <h3 className={`font-semibold ${isSelected ? 'text-primary-900' : 'text-gray-900'}`}>
                       {option.title}
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{option.description}</p>
+                    <p className="text-sm text-gray-500 dark:text-zinc-400">{option.description}</p>
                   </button>
                 );
               })}
@@ -683,7 +683,7 @@ export const NewCampaignPage: React.FC = () => {
                   {/* Tags */}
                   {availableTags.length > 0 && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Tags</label>
                       <div className="flex flex-wrap gap-2">
                         {availableTags.map(tag => (
                           <button
@@ -714,7 +714,7 @@ export const NewCampaignPage: React.FC = () => {
 
                   {/* Min Orders */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
                       Mínimo de Pedidos
                     </label>
                     <input
@@ -728,14 +728,14 @@ export const NewCampaignPage: React.FC = () => {
                           minOrders: e.target.value ? parseInt(e.target.value) : null,
                         },
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                       placeholder="Ex: 1"
                     />
                   </div>
 
                   {/* Has Ordered */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
                       Histórico de Compras
                     </label>
                     <select
@@ -747,7 +747,7 @@ export const NewCampaignPage: React.FC = () => {
                           hasOrdered: e.target.value === '' ? null : e.target.value === 'true',
                         },
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                     >
                       <option value="">Todos</option>
                       <option value="true">Já compraram</option>
@@ -756,8 +756,8 @@ export const NewCampaignPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="mt-4 p-3 bg-gray-50 dark:bg-black rounded-lg">
+                  <p className="text-sm text-gray-600 dark:text-zinc-400">
                     <strong>{filteredSubscribers.length}</strong> contatos correspondem aos filtros
                   </p>
                 </div>
@@ -786,7 +786,7 @@ export const NewCampaignPage: React.FC = () => {
                     type="text"
                     value={subscriberSearch}
                     onChange={e => setSubscriberSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="Buscar por email ou nome..."
                   />
                 </div>
@@ -794,14 +794,14 @@ export const NewCampaignPage: React.FC = () => {
                 {/* Subscriber List */}
                 <div className="border rounded-lg divide-y max-h-80 overflow-y-auto">
                   {filteredSubscribers.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    <div className="p-8 text-center text-gray-500 dark:text-zinc-400">
                       Nenhum contato encontrado
                     </div>
                   ) : (
                     filteredSubscribers.map(subscriber => (
                       <label
                         key={subscriber.id}
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 cursor-pointer"
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black cursor-pointer"
                       >
                         <input
                           type="checkbox"
@@ -812,7 +812,7 @@ export const NewCampaignPage: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 dark:text-white truncate">{subscriber.email}</p>
                           {subscriber.name && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{subscriber.name}</p>
+                            <p className="text-sm text-gray-500 dark:text-zinc-400 truncate">{subscriber.name}</p>
                           )}
                         </div>
                         {subscriber.total_orders > 0 && (
@@ -825,7 +825,7 @@ export const NewCampaignPage: React.FC = () => {
                   )}
                 </div>
 
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                <p className="text-sm text-gray-500 dark:text-zinc-400 mt-4">
                   {campaignData.selectedSubscribers.length} de {filteredSubscribers.length} selecionados
                 </p>
               </Card>
@@ -858,23 +858,23 @@ export const NewCampaignPage: React.FC = () => {
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Resumo da Campanha</h3>
                 <dl className="space-y-3">
                   <div className="flex justify-between py-2 border-b">
-                    <dt className="text-gray-500 dark:text-gray-400">Nome</dt>
+                    <dt className="text-gray-500 dark:text-zinc-400">Nome</dt>
                     <dd className="font-medium text-gray-900 dark:text-white">{campaignData.name}</dd>
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <dt className="text-gray-500 dark:text-gray-400">Assunto</dt>
+                    <dt className="text-gray-500 dark:text-zinc-400">Assunto</dt>
                     <dd className="font-medium text-gray-900 dark:text-white">{campaignData.subject}</dd>
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <dt className="text-gray-500 dark:text-gray-400">Remetente</dt>
+                    <dt className="text-gray-500 dark:text-zinc-400">Remetente</dt>
                     <dd className="font-medium text-gray-900 dark:text-white">{campaignData.from_name}</dd>
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <dt className="text-gray-500 dark:text-gray-400">Template</dt>
+                    <dt className="text-gray-500 dark:text-zinc-400">Template</dt>
                     <dd className="font-medium text-gray-900 dark:text-white">{selectedTemplate?.name}</dd>
                   </div>
                   <div className="flex justify-between py-2">
-                    <dt className="text-gray-500 dark:text-gray-400">Destinatários</dt>
+                    <dt className="text-gray-500 dark:text-zinc-400">Destinatários</dt>
                     <dd className="font-medium text-primary-600">{audienceCount} contatos</dd>
                   </div>
                 </dl>
@@ -943,12 +943,12 @@ export const NewCampaignPage: React.FC = () => {
       {/* Full Preview Modal */}
       {showPreview && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="font-semibold">Preview do Email</h3>
               <button
                 onClick={() => setShowPreview(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-lg"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 dark:bg-gray-700 rounded-lg"
               >
                 ✕
               </button>

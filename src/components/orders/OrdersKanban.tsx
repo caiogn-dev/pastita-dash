@@ -234,11 +234,11 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
   return (
     <div
       className={`
-        bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 p-3 mb-2 cursor-pointer
+        bg-white dark:bg-zinc-900 rounded-lg shadow-sm border-2 p-3 mb-2 cursor-pointer
         transition-all duration-300 hover:shadow-md hover:border-primary-300 dark:hover:border-primary-500
         ${isDragging ? 'shadow-lg ring-2 ring-primary-500 scale-105' : ''}
         ${isUpdating ? 'opacity-70 border-primary-300' : ''}
-        ${isSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/30 animate-pulse' : 'border-gray-100 dark:border-gray-700'}
+        ${isSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/30 animate-pulse' : 'border-gray-100 dark:border-zinc-800'}
       `}
       onClick={() => !isUpdating && onClick?.(order)}
     >
@@ -258,7 +258,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
             </div>
           )}
           {!isUpdating && !isSuccess && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-gray-500 dark:text-zinc-400">
               {format(new Date(order.created_at), 'HH:mm', { locale: ptBR })}
             </span>
           )}
@@ -276,7 +276,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       {/* Customer */}
       <div className="flex items-center gap-1.5 mb-2">
         <UserIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+        <span className="text-sm text-gray-700 dark:text-zinc-300 truncate">
           {order.customer_name || 'Cliente'}
         </span>
       </div>
@@ -285,7 +285,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       {order.customer_phone && (
         <div className="flex items-center gap-1.5 mb-2">
           <PhoneIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-          <span className="text-xs text-gray-500 dark:text-gray-400">{order.customer_phone}</span>
+          <span className="text-xs text-gray-500 dark:text-zinc-400">{order.customer_phone}</span>
         </div>
       )}
 
@@ -293,15 +293,15 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       {order.delivery_address && (
         <div className="flex items-start gap-1.5 mb-2">
           <MapPinIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5" />
-          <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+          <span className="text-xs text-gray-500 dark:text-zinc-400 line-clamp-2">
             {formatAddress(order.delivery_address) || 'Endereço não informado'}
           </span>
         </div>
       )}
 
       {/* Items count */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+        <span className="text-xs text-gray-500 dark:text-zinc-400">
           {getItemsCount(order)} item(ns)
         </span>
         <div className="flex items-center gap-1">
@@ -315,7 +315,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       {/* Store badge */}
       {order.store_name && (
         <div className="mt-2">
-          <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full">
+          <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-300 rounded-full">
             {order.store_name}
           </span>
         </div>
@@ -347,7 +347,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
       ref={setNodeRef}
       className={`
         flex flex-col min-w-[280px] max-w-[320px] rounded-xl border-2 transition-all duration-300
-        ${status.color} dark:bg-gray-800/50 dark:border-gray-700
+        ${status.color} dark:bg-zinc-900/50 dark:border-zinc-800
         ${isOver ? 'ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-gray-900 scale-[1.02] border-primary-400 shadow-lg' : ''}
       `}
     >
@@ -375,7 +375,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
             <div className={`
               text-center py-8 text-sm border-2 border-dashed rounded-xl
               transition-all duration-300
-              ${isOver ? 'border-primary-400 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 scale-105' : 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500'}
+              ${isOver ? 'border-primary-400 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 scale-105' : 'border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-gray-500'}
             `}>
               {isOver ? (
                 <div className="flex flex-col items-center gap-2">

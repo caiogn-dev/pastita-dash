@@ -1,3 +1,6 @@
+// Theme hook
+export { useTheme } from './useTheme';
+
 // WebSocket hooks
 export {
   useNotificationWebSocket,

@@ -362,7 +362,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, {} as Record<string, Message[]>);
 
   return (
-    <div className="flex h-full bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden shadow-lg">
+    <div className="flex h-full bg-gray-100 dark:bg-black rounded-lg overflow-hidden shadow-lg">
       {/* Contact list sidebar */}
       <div className="w-80 flex-shrink-0">
         <ContactList
@@ -378,7 +378,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       <div className="flex-1 flex flex-col">
         {!selectedConversation ? (
           // Empty state
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-white dark:bg-gray-800">
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-white dark:bg-zinc-900">
             <ChatBubbleLeftRightIcon className="w-20 h-20 mb-4 opacity-50" />
             <h3 className="text-xl font-medium mb-2">Selecione uma conversa</h3>
             <p className="text-sm">Escolha uma conversa da lista para começar</p>
@@ -386,7 +386,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         ) : (
           <>
             {/* Chat header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
                   <UserIcon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -395,7 +395,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   <h3 className="font-semibold text-gray-900 dark:text-white">
                     {selectedConversation.contact_name || selectedConversation.phone_number}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">
                     {selectedConversation.phone_number}
                   </p>
                 </div>
@@ -438,7 +438,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <button
                   onClick={loadMessages}
                   disabled={isLoadingMessages}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 disabled:opacity-50 transition-colors"
                   title="Atualizar mensagens"
                 >
                   <ArrowPathIcon className={`w-5 h-5 ${isLoadingMessages ? 'animate-spin' : ''}`} />
@@ -457,7 +457,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {/* Messages area */}
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900"
+              className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-black"
               style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }}
             >
               {isLoadingMessages ? (
@@ -475,7 +475,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   <div key={date}>
                     {/* Date separator */}
                     <div className="flex items-center justify-center my-4">
-                      <span className="px-3 py-1 bg-white dark:bg-gray-700 rounded-full text-xs text-gray-500 dark:text-gray-400 shadow-sm">
+                      <span className="px-3 py-1 bg-white dark:bg-gray-700 rounded-full text-xs text-gray-500 dark:text-zinc-400 shadow-sm">
                         {format(new Date(date), "d 'de' MMMM", { locale: ptBR })}
                       </span>
                     </div>

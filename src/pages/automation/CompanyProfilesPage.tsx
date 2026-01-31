@@ -66,7 +66,7 @@ const CompanyProfilesPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Perfis de Empresa</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
             Configure automações para cada número WhatsApp
           </p>
         </div>
@@ -81,10 +81,10 @@ const CompanyProfilesPage: React.FC = () => {
 
       {/* Profiles Grid */}
       {profiles.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-lg shadow">
           <BuildingOfficeIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum perfil configurado</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
             Crie um perfil de empresa para começar a usar automações.
           </p>
           <div className="mt-6">
@@ -102,7 +102,7 @@ const CompanyProfilesPage: React.FC = () => {
           {profiles.map((profile) => (
             <div
               key={profile.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow"
+              className="bg-white dark:bg-zinc-900 rounded-lg shadow hover:shadow-md transition-shadow"
             >
               <div className="p-6">
                 <div className="flex items-center justify-between">
@@ -114,7 +114,7 @@ const CompanyProfilesPage: React.FC = () => {
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                         {profile.company_name}
                       </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-gray-500 dark:text-zinc-400">
                         {profile.account_phone}
                       </p>
                     </div>
@@ -129,12 +129,12 @@ const CompanyProfilesPage: React.FC = () => {
                 </div>
 
                 <div className="mt-4 space-y-2">
-                  <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center text-sm text-gray-500 dark:text-zinc-400">
                     <span className="font-medium mr-2">Tipo:</span>
                     {businessTypeLabels[profile.business_type] || profile.business_type}
                   </div>
                   {profile.website_url && (
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 truncate">
+                    <div className="flex items-center text-sm text-gray-500 dark:text-zinc-400 truncate">
                       <span className="font-medium mr-2">Site:</span>
                       <a
                         href={profile.website_url}
@@ -175,14 +175,14 @@ const CompanyProfilesPage: React.FC = () => {
                   <div className="flex space-x-2">
                     <Link
                       to={`/automation/companies/${profile.id}`}
-                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
+                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
                     >
                       <Cog6ToothIcon className="h-4 w-4 mr-1" />
                       Configurar
                     </Link>
                     <Link
                       to={`/automation/companies/${profile.id}/stats`}
-                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
+                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
                     >
                       <ChartBarIcon className="h-4 w-4 mr-1" />
                       Stats
@@ -190,7 +190,7 @@ const CompanyProfilesPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleRegenerateApiKey(profile.id)}
-                    className="inline-flex items-center px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 dark:hover:text-gray-300"
+                    className="inline-flex items-center px-3 py-1.5 text-sm text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 dark:hover:text-zinc-300"
                     title="Gerar nova API key"
                   >
                     <KeyIcon className="h-4 w-4" />
@@ -204,26 +204,26 @@ const CompanyProfilesPage: React.FC = () => {
 
       {/* Pagination */}
       {totalCount > 20 && (
-        <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 sm:px-6 rounded-lg shadow">
+        <div className="flex items-center justify-between border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-3 sm:px-6 rounded-lg shadow">
           <div className="flex flex-1 justify-between sm:hidden">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
+              className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
             >
               Anterior
             </button>
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page * 20 >= totalCount}
-              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
+              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
             >
               Próximo
             </button>
           </div>
           <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+              <p className="text-sm text-gray-700 dark:text-zinc-300">
                 Mostrando <span className="font-medium">{(page - 1) * 20 + 1}</span> a{' '}
                 <span className="font-medium">{Math.min(page * 20, totalCount)}</span> de{' '}
                 <span className="font-medium">{totalCount}</span> resultados
@@ -233,14 +233,14 @@ const CompanyProfilesPage: React.FC = () => {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
+                className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
               >
                 Anterior
               </button>
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={page * 20 >= totalCount}
-                className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900 disabled:opacity-50"
+                className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
               >
                 Próximo
               </button>

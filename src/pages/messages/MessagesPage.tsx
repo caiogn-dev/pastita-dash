@@ -120,7 +120,7 @@ export const MessagesPage: React.FC = () => {
           <p className="font-medium text-gray-900 dark:text-white">
             {msg.direction === 'inbound' ? msg.from_number : msg.to_number}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{msg.account_name}</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">{msg.account_name}</p>
         </div>
       ),
     },
@@ -139,7 +139,7 @@ export const MessagesPage: React.FC = () => {
       key: 'type',
       header: 'Tipo',
       render: (msg: Message) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">{msg.message_type}</span>
+        <span className="text-sm text-gray-600 dark:text-zinc-400 capitalize">{msg.message_type}</span>
       ),
     },
     {
@@ -151,7 +151,7 @@ export const MessagesPage: React.FC = () => {
       key: 'created_at',
       header: 'Data',
       render: (msg: Message) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-gray-600 dark:text-zinc-400">
           {format(new Date(msg.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
         </span>
       ),
@@ -172,7 +172,7 @@ export const MessagesPage: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               Nenhuma conta selecionada
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
+            <p className="text-gray-500 dark:text-zinc-400 text-center max-w-md">
               Selecione uma conta WhatsApp no menu superior para visualizar e gerenciar suas conversas.
             </p>
           </Card>
@@ -198,7 +198,7 @@ export const MessagesPage: React.FC = () => {
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                   viewMode === 'chat'
                     ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <ChatBubbleLeftRightIcon className="w-4 h-4" />
@@ -209,7 +209,7 @@ export const MessagesPage: React.FC = () => {
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                   viewMode === 'table'
                     ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <TableCellsIcon className="w-4 h-4" />
@@ -232,7 +232,7 @@ export const MessagesPage: React.FC = () => {
 
       <div className="flex-1 p-6 overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+          <label className="text-sm font-medium text-gray-600 dark:text-zinc-300">
             Conta WhatsApp:
           </label>
           <select
@@ -241,7 +241,7 @@ export const MessagesPage: React.FC = () => {
               const account = accounts.find((a) => a.id === e.target.value);
               setSelectedAccount(account || null);
             }}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#722F37] focus:border-[#722F37]"
+            className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#722F37] focus:border-[#722F37]"
           >
             <option value="">Todas as contas</option>
             {accounts.map((account) => (
@@ -273,7 +273,7 @@ export const MessagesPage: React.FC = () => {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && loadMessages()}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                 </div>
@@ -283,7 +283,7 @@ export const MessagesPage: React.FC = () => {
                   <select
                     value={filter}
                     onChange={(e) => setFilter(e.target.value as MessageFilter)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="all">Todas</option>
                     <option value="inbound">Recebidas</option>
@@ -296,14 +296,14 @@ export const MessagesPage: React.FC = () => {
                     type="date"
                     value={dateRange.start}
                     onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                   <span className="text-gray-500">até</span>
                   <input
                     type="date"
                     value={dateRange.end}
                     onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
                 
@@ -333,7 +333,7 @@ export const MessagesPage: React.FC = () => {
             </Card>
             
             
-            <div className="text-sm text-gray-500 dark:text-gray-400 text-center">
+            <div className="text-sm text-gray-500 dark:text-zinc-400 text-center">
               {messages.length} mensagem(ns) encontrada(s)
             </div>
           </div>

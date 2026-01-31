@@ -48,7 +48,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon: Icon,
   <Card className="p-6">
     <div className="flex items-start justify-between">
       <div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+        <p className="text-sm text-gray-500 dark:text-zinc-400">{title}</p>
         <p className={`text-3xl font-bold ${color} mt-1`}>{value}</p>
         {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
         {trend !== undefined && (
@@ -112,10 +112,10 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button
             onClick={onPreview}
-            className="p-2 bg-white dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:bg-gray-700"
+            className="p-2 bg-white dark:bg-zinc-900 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-700"
             title="Visualizar"
           >
-            <EyeIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <EyeIcon className="w-5 h-5 text-gray-700 dark:text-zinc-300" />
           </button>
           <button
             onClick={onUse}
@@ -135,13 +135,13 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
           </span>
         </div>
         <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{template.name}</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{template.subject}</p>
+        <p className="text-sm text-gray-500 dark:text-zinc-400 line-clamp-1">{template.subject}</p>
         
         {/* Variables */}
         {template.variables.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
             {template.variables.slice(0, 3).map((v) => (
-              <span key={v} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+              <span key={v} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400 px-1.5 py-0.5 rounded">
                 {`{{${v}}}`}
               </span>
             ))}
@@ -170,14 +170,14 @@ interface QuickActionProps {
 const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon: Icon, color, onClick }) => (
   <button
     onClick={onClick}
-    className="flex items-start gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 hover:shadow-md transition-all text-left w-full"
+    className="flex items-start gap-4 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 hover:border-primary-300 hover:shadow-md transition-all text-left w-full"
   >
     <div className={`p-3 rounded-xl ${color}`}>
       <Icon className="w-6 h-6 text-white" />
     </div>
     <div>
       <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
+      <p className="text-sm text-gray-500 dark:text-zinc-400">{description}</p>
     </div>
   </button>
 );
@@ -246,7 +246,7 @@ export const MarketingPage: React.FC = () => {
       <div className="p-6 text-center">
         <MegaphoneIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-4">Selecione uma loja para acessar o marketing.</p>
+        <p className="text-gray-500 dark:text-zinc-400 mb-4">Selecione uma loja para acessar o marketing.</p>
         <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
       </div>
     );
@@ -262,7 +262,7 @@ export const MarketingPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Marketing</h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-500 dark:text-zinc-400">
             {storeName ? `Campanhas e promoções de ${storeName}` : 'Gerencie suas campanhas de marketing'}
           </p>
         </div>
@@ -380,13 +380,13 @@ export const MarketingPage: React.FC = () => {
             {campaigns.map((campaign) => (
               <div 
                 key={campaign.id} 
-                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-800 p-4 hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => navigate('/marketing/email')}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-900 dark:text-white truncate">{campaign.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{campaign.subject}</p>
+                    <p className="text-sm text-gray-500 dark:text-zinc-400 truncate">{campaign.subject}</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -400,7 +400,7 @@ export const MarketingPage: React.FC = () => {
                        campaign.status === 'sending' ? 'Enviando' :
                        campaign.status}
                     </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{campaign.emails_sent || 0} enviados</span>
+                    <span className="text-sm text-gray-500 dark:text-zinc-400">{campaign.emails_sent || 0} enviados</span>
                   </div>
                 </div>
               </div>
@@ -409,7 +409,7 @@ export const MarketingPage: React.FC = () => {
         ) : (
           <Card className="p-8 text-center">
             <MegaphoneIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 dark:text-gray-400 mb-4">Nenhuma campanha criada ainda</p>
+            <p className="text-gray-500 dark:text-zinc-400 mb-4">Nenhuma campanha criada ainda</p>
             <Button onClick={() => navigate('/marketing/email/new')}>
               <PlusIcon className="w-5 h-5 mr-2" />
               Criar Primeira Campanha
@@ -427,9 +427,9 @@ export const MarketingPage: React.FC = () => {
       >
         {previewTemplate && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-black rounded-lg">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Assunto:</p>
+                <p className="text-sm text-gray-500 dark:text-zinc-400">Assunto:</p>
                 <p className="font-medium">{previewTemplate.subject}</p>
               </div>
               <Button onClick={() => {

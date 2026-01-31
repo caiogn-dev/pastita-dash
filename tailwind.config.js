@@ -41,17 +41,40 @@ export default {
         background: {
           DEFAULT: '#ffffff',
           light: '#ffffff',
-          dark: '#0f172a',
+          dark: '#000000', // PRETO PURO, não slate
         },
         surface: {
           DEFAULT: '#f8fafc',
           light: '#f8fafc',
-          dark: '#1e293b',
+          dark: '#0a0a0a', // Preto suave, não slate
         },
         foreground: {
           DEFAULT: '#111827',
           light: '#111827',
-          dark: '#f8fafc',
+          dark: '#fafafa', // Branco suave, não slate
+        },
+        // ============================================
+        // DARK MODE COLORS - Preto Puro
+        // ============================================
+        dark: {
+          bg: {
+            primary: '#000000',
+            secondary: '#0a0a0a',
+            tertiary: '#141414',
+            elevated: '#1a1a1a',
+            hover: '#262626',
+          },
+          border: {
+            DEFAULT: '#27272a',
+            light: '#3f3f46',
+            focus: '#52525b',
+          },
+          text: {
+            primary: '#ffffff',
+            secondary: '#a1a1aa',
+            tertiary: '#71717a',
+            muted: '#52525b',
+          },
         },
         // ============================================
         // AGRIÃO BRAND - Verde Agrião (Secondary)

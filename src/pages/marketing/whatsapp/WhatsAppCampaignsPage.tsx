@@ -173,7 +173,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { className: string; label: string; icon: React.ReactNode }> = {
       draft: { 
-        className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300', 
+        className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-zinc-300', 
         label: 'Rascunho', 
         icon: null 
       },
@@ -205,7 +205,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     };
 
     const config = statusConfig[status] || { 
-      className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300', 
+      className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-zinc-300', 
       label: status, 
       icon: null 
     };
@@ -232,7 +232,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Campanhas WhatsApp</h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-500 dark:text-zinc-400">
             Gerencie suas campanhas de mensagens em massa
           </p>
         </div>
@@ -249,7 +249,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             Nenhuma campanha criada
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-gray-500 dark:text-zinc-400 mb-6">
             Crie sua primeira campanha de WhatsApp para alcançar seus clientes
           </p>
           <Button onClick={() => navigate('/marketing/whatsapp/new')}>
@@ -270,7 +270,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
                     {getStatusBadge(campaign.status)}
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-zinc-400">
                     <span>{campaign.total_recipients} destinatários</span>
                     <span>•</span>
                     <span>{campaign.messages_sent} enviadas</span>
@@ -428,7 +428,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_recipients}</p>
                 </div>
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">

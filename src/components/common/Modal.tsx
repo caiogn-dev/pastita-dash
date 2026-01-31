@@ -53,7 +53,7 @@ export const Modal: React.FC<ModalProps> = ({
               leaveTo="opacity-0 scale-95"
             >
               <Dialog.Panel
-                className={`w-full ${sizes[size]} transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all`}
+                className={`w-full ${sizes[size]} transform overflow-hidden rounded-2xl bg-white dark:bg-zinc-900 p-6 text-left align-middle shadow-xl transition-all`}
               >
                 {(title || showCloseButton) && (
                   <div className="flex items-center justify-between mb-4">
@@ -114,11 +114,11 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <p className="text-gray-600 dark:text-gray-300 mb-6">{message}</p>
+      <p className="text-gray-600 dark:text-zinc-300 mb-6">{message}</p>
       <div className="flex justify-end gap-3">
         <button
           type="button"
-          className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-zinc-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
           onClick={onClose}
           disabled={isLoading}
         >

@@ -36,7 +36,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black py-12 px-4 sm:px-6 lg:px-8 transition-colors">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <img 
@@ -45,10 +45,10 @@ export const LoginPage: React.FC = () => {
             className="w-24 h-24 mx-auto mb-4"
           />
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Pastita</h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Dashboard de Gerenciamento</p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-zinc-400">Dashboard de Gerenciamento</p>
         </div>
 
-        <form className="mt-8 space-y-6 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6 bg-white dark:bg-zinc-900 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <Input
               label="Usuário"
@@ -73,7 +73,7 @@ export const LoginPage: React.FC = () => {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-center text-sm text-gray-500 dark:text-zinc-400">
           Plataforma de gestão para restaurantes
         </p>
       </div>
