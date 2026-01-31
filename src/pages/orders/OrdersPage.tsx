@@ -15,7 +15,6 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
 import { 
   Card, 
   Button, 

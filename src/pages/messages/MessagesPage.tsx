@@ -3,7 +3,6 @@ import { PaperAirplaneIcon, TableCellsIcon, ChatBubbleLeftRightIcon, MagnifyingG
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
 import { Card, Button, Input, Textarea, Select, Modal, PageLoading, StatusBadge, Table } from '../../components/common';
 import { ChatWindow } from '../../components/chat';
 import { whatsappService, getErrorMessage } from '../../services';

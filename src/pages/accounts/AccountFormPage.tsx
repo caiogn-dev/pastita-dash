@@ -3,7 +3,6 @@ import logger from '../../services/logger';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
 import { Card, Button, Input, Select, PageLoading } from '../../components/common';
 import { whatsappService, langflowService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';

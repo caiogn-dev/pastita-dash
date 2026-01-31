@@ -15,6 +15,14 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   XMarkIcon,
+  CurrencyDollarIcon,
+  BuildingOfficeIcon,
+  UserCircleIcon,
+  ClockIcon,
+  MegaphoneIcon,
+  BuildingStorefrontIcon,
+  TicketIcon,
+  CpuChipIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -37,8 +45,6 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-// Menu organizado por se????es l??gicas
-
 export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { logout, user } = useAuthStore();
   const { store } = useStore();
@@ -57,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       items: [
         { name: 'Dashboard', href: '/', icon: HomeIcon },
         { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon, badge: 'Kanban' },
+        { name: 'Pagamentos', href: '/payments', icon: CurrencyDollarIcon },
         {
           name: 'WhatsApp',
           href: '/accounts',
@@ -64,30 +71,48 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           children: [
             { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
             { name: 'Mensagens', href: '/messages', icon: InboxIcon },
+            { name: 'Contas', href: '/accounts', icon: DevicePhoneMobileIcon },
           ],
         },
       ],
     },
     {
-      title: 'Gest„o',
+      title: 'Gestao',
       items: [
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
+        { name: 'Cupons', href: storeHref('coupons'), icon: TicketIcon },
         { name: 'Clientes', href: '/marketing/subscribers', icon: UserGroupIcon },
-        { name: 'RelatÛrios', href: '/reports', icon: DocumentChartBarIcon },
+        { name: 'Relatorios', href: '/reports', icon: DocumentChartBarIcon },
+      ],
+    },
+    {
+      title: 'Automacao',
+      items: [
+        { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
+        { name: 'Mensagens Auto', href: '/automation/companies/1/messages', icon: ChatBubbleLeftRightIcon },
+        { name: 'Sessoes', href: '/automation/sessions', icon: UserCircleIcon },
+        { name: 'Agendadas', href: '/automation/scheduled', icon: ClockIcon },
+        { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
+      ],
+    },
+    {
+      title: 'Marketing',
+      items: [
+        { name: 'Campanhas', href: '/marketing/campaigns', icon: MegaphoneIcon },
+        { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
       ],
     },
     {
       title: 'Sistema',
       items: [
-        { name: 'ConfiguraÁıes', href: storeHref('settings'), icon: Cog6ToothIcon },
-        { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
+        { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
+        { name: 'Langflow', href: '/langflow', icon: CpuChipIcon },
+        { name: 'Configuracoes', href: '/settings', icon: Cog6ToothIcon },
       ],
     },
   ]), [storeHref]);
 
-  // Dynamic brand info based on selected store
   const brandInfo = useMemo(() => {
-    // Default Pastita branding with local SVG logo
     const defaultBrand = {
       name: 'Pastita',
       logo: '/pastita-logo.svg',
@@ -98,13 +123,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
     if (!store) return defaultBrand;
 
-    // Check if it's Agri√£o based on store name or slug
     const isAgriao = store.name?.toLowerCase().includes('agriao') || 
                      store.slug?.toLowerCase().includes('agriao');
 
     if (isAgriao) {
       return {
-        name: store.name || 'Agri√£o',
+        name: store.name || 'Agriao',
         logo: store.logo_url || null,
         primaryColor: '#4A5D23',
         secondaryColor: '#6B8E23',
@@ -112,7 +136,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       };
     }
 
-    // For Pastita stores, use local SVG logo
     const isPastita = store.name?.toLowerCase().includes('pastita') || 
                       store.slug?.toLowerCase().includes('pastita');
 
@@ -125,7 +148,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     };
   }, [store]);
 
-  // Apply theme based on store
   useEffect(() => {
     const isAgriao = store?.name?.toLowerCase().includes('agriao') || 
                      store?.slug?.toLowerCase().includes('agriao');
@@ -226,7 +248,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-black border-r border-gray-200 dark:border-zinc-800 w-64 transition-colors">
-      {/* Dynamic Logo based on selected store */}
       <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-zinc-800">
         <div className="flex items-center gap-3">
           {brandInfo.logo ? (
@@ -265,7 +286,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         )}
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {navigationSections.map((section, index) => (
           <div key={section.title} className={index > 0 ? 'mt-6' : ''}>
@@ -279,7 +299,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         ))}
       </nav>
 
-      {/* User section */}
       <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -290,7 +309,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {user?.first_name || user?.username || 'Usu†rio'}
+                {user?.first_name || user?.username || 'Usuario'}
               </p>
               <p className="text-xs text-gray-500 dark:text-zinc-400 truncate max-w-[120px]">{user?.email}</p>
             </div>

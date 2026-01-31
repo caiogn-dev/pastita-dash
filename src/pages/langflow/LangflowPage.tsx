@@ -4,7 +4,6 @@ import { PlusIcon, PlayIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
 import { Card, Button, Table, StatusBadge, Modal, Input, Textarea, Select, PageLoading } from '../../components/common';
 import { langflowService, getErrorMessage } from '../../services';
 import { LangflowFlow, LangflowSession, LangflowLog } from '../../types';

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
 import { Card, Button, Input, Loading } from '../../components/common';
 import { authService, getErrorMessage, notificationsService } from '../../services';
 import { NotificationPreference } from '../../services/notifications';
