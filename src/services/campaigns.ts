@@ -182,14 +182,14 @@ export const campaignsService = {
     return response.data;
   },
 
-  // Scheduled Messages
+  // Scheduled Messages - Using automation endpoint instead of marketing/scheduled (404)
   getScheduledMessages: async (params?: Record<string, string>): Promise<PaginatedResponse<ScheduledMessage>> => {
-    const response = await api.get<PaginatedResponse<ScheduledMessage>>('/marketing/scheduled/', { params });
+    const response = await api.get<PaginatedResponse<ScheduledMessage>>('/automation/scheduled-messages/', { params });
     return response.data;
   },
 
   getScheduledMessage: async (id: string): Promise<ScheduledMessage> => {
-    const response = await api.get<ScheduledMessage>(`/marketing/scheduled/${id}/`);
+    const response = await api.get<ScheduledMessage>(`/automation/scheduled-messages/${id}/`);
     return response.data;
   },
 
@@ -207,17 +207,17 @@ export const campaignsService = {
     recurrence_rule?: string;
     metadata?: Record<string, unknown>;
   }): Promise<ScheduledMessage> => {
-    const response = await api.post<ScheduledMessage>('/marketing/scheduled/', data);
+    const response = await api.post<ScheduledMessage>('/automation/scheduled-messages/', data);
     return response.data;
   },
 
   updateScheduledMessage: async (id: string, data: Partial<ScheduledMessage>): Promise<ScheduledMessage> => {
-    const response = await api.patch<ScheduledMessage>(`/marketing/scheduled/${id}/`, data);
+    const response = await api.patch<ScheduledMessage>(`/automation/scheduled-messages/${id}/`, data);
     return response.data;
   },
 
   cancelScheduledMessage: async (id: string): Promise<ScheduledMessage> => {
-    const response = await api.post<ScheduledMessage>(`/marketing/scheduled/${id}/cancel/`);
+    const response = await api.post<ScheduledMessage>(`/automation/scheduled-messages/${id}/cancel/`);
     return response.data;
   },
 
@@ -231,7 +231,7 @@ export const campaignsService = {
   }> => {
     const params: Record<string, string> = {};
     if (accountId) params.account_id = accountId;
-    const response = await api.get('/marketing/scheduled/stats/', { params });
+    const response = await api.get('/automation/scheduled-messages/stats/', { params });
     return response.data;
   },
 
