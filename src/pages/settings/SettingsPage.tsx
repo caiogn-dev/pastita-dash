@@ -4,6 +4,7 @@ import { Card, Button, Input, Loading } from '../../components/common';
 import { authService, getErrorMessage, notificationsService } from '../../services';
 import { NotificationPreference } from '../../services/notifications';
 import { useAuthStore } from '../../stores/authStore';
+import { PageHeader } from '../../components/layout';
 
 type NotificationSection = {
   id: string;
@@ -212,7 +213,7 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div>
-      <Header title="Configurações" subtitle="Gerencie suas preferências e segurança" />
+      <PageHeader title="Configurações" subtitle="Gerencie suas preferências e segurança" />
 
       <div className="p-6 space-y-6">
         {/* User Info */}

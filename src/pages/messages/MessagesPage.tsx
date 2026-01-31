@@ -8,6 +8,7 @@ import { ChatWindow } from '../../components/chat';
 import { whatsappService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { Conversation, Message } from '../../types';
+import { PageHeader } from '../../components/layout';
 
 type ViewMode = 'chat' | 'table';
 type MessageFilter = 'all' | 'inbound' | 'outbound';
@@ -161,7 +162,7 @@ export const MessagesPage: React.FC = () => {
   if (!selectedAccount) {
     return (
       <div>
-        <Header
+        <PageHeader
           title="Mensagens"
           subtitle="Selecione uma conta WhatsApp"
         />
@@ -182,7 +183,7 @@ export const MessagesPage: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <Header
+      <PageHeader
         title="Mensagens"
         subtitle={selectedConversation 
           ? `Conversa com ${selectedConversation.contact_name || selectedConversation.phone_number}`

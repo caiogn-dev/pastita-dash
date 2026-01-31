@@ -8,6 +8,7 @@ import { useAccountStore } from '../../stores/accountStore';
 import { WhatsAppAccount } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { PageHeader } from '../../components/layout';
 
 export const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -158,7 +159,7 @@ export const AccountsPage: React.FC = () => {
 
   return (
     <div>
-      <Header
+      <PageHeader
         title="Contas WhatsApp"
         subtitle={`${accounts.length} conta(s) cadastrada(s)`}
         actions={

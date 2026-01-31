@@ -7,6 +7,7 @@ import { Card, Button, Input, Select, PageLoading } from '../../components/commo
 import { whatsappService, langflowService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { WhatsAppAccount, LangflowFlow } from '../../types';
+import { PageHeader } from '../../components/layout';
 
 export const AccountFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -117,7 +118,7 @@ export const AccountFormPage: React.FC = () => {
 
   return (
     <div>
-      <Header
+      <PageHeader
         title={isEditing ? 'Editar Conta' : 'Nova Conta'}
         subtitle={isEditing ? formData.name : 'Cadastre uma nova conta WhatsApp Business'}
         actions={

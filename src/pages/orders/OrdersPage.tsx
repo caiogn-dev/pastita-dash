@@ -30,6 +30,7 @@ import { OrdersKanban, ORDER_STATUSES } from '../../components/orders/OrdersKanb
 import { exportService, getErrorMessage, ordersService } from '../../services';
 import { useStore, useOrdersWebSocket, useNotificationSound } from '../../hooks';
 import { Order } from '../../types';
+import { PageHeader } from '../../components/layout';
 
 type ViewMode = 'kanban' | 'table';
 type OrderStatus = Order['status'];
@@ -553,7 +554,7 @@ export const OrdersPage: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <Header
+      <PageHeader
         title="Pedidos"
         subtitle={`${filteredOrders.length} pedido(s)${storeName ? ` - ${storeName}` : ''}`}
         actions={

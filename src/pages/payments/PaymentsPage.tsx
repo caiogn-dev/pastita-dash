@@ -30,6 +30,7 @@ import { ordersService } from '../../services';
 import { Order } from '../../types';
 import logger from '../../services/logger';
 import { useStore } from '../../hooks';
+import { PageHeader } from '../../components/layout';
 
 // Payment status options based on StoreOrder.PaymentStatus
 const PAYMENT_STATUS_OPTIONS = [
@@ -322,7 +323,7 @@ export const PaymentsPage: React.FC = () => {
 
   return (
     <div>
-      <Header
+      <PageHeader
         title="Pagamentos"
         subtitle={`${orders.length} pedido(s) | ${formatMoney(stats.totalRevenue)} recebido`}
       />

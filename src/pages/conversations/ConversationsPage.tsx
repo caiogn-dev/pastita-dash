@@ -32,6 +32,7 @@ import { conversationsService, ordersService, exportService, getErrorMessage } f
 import { useAccountStore } from '../../stores/accountStore';
 import { useStore } from '../../hooks';
 import { Conversation, ConversationNote, Order } from '../../types';
+import { PageHeader } from '../../components/layout';
 
 export const ConversationsPage: React.FC = () => {
   const { selectedAccount } = useAccountStore();
@@ -437,7 +438,7 @@ export const ConversationsPage: React.FC = () => {
 
   return (
     <div>
-      <Header
+      <PageHeader
         title="Conversas"
         subtitle={`${filteredConversations.length} de ${conversations.length} conversa(s)`}
         actions={

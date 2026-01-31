@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, Table, StatusBadge, Modal, Input, Textarea, Select, PageLoading } from '../../components/common';
 import { langflowService, getErrorMessage } from '../../services';
 import { LangflowFlow, LangflowSession, LangflowLog } from '../../types';
+import { PageHeader } from '../../components/layout';
 
 export const LangflowPage: React.FC = () => {
   const navigate = useNavigate();
@@ -282,7 +283,7 @@ export const LangflowPage: React.FC = () => {
 
   return (
     <div>
-      <Header
+      <PageHeader
         title="Langflow (LLM)"
         subtitle={`${flows.length} flow(s) | ${sessions.length} sessão(ões)`}
         actions={

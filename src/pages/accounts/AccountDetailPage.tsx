@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, StatusBadge, Modal, Input, PageLoading, StatCard } from '../../components/common';
 import { whatsappService, getErrorMessage } from '../../services';
 import { WhatsAppAccount, MessageTemplate } from '../../types';
+import { PageHeader } from '../../components/layout';
 
 export const AccountDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -129,7 +130,7 @@ export const AccountDetailPage: React.FC = () => {
 
   return (
     <div>
-      <Header
+      <PageHeader
         title={account.name}
         subtitle={account.display_phone_number || account.phone_number}
         actions={
