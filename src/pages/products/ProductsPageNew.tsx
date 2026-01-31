@@ -36,7 +36,7 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import { useStore } from '../../hooks';
+import { useStore, useStoreResolver } from '../../hooks';
 import storesApi, {
   StoreProduct as Product,
   StoreProductInput as ProductInput,
@@ -1087,7 +1087,11 @@ export const ProductsPageNew: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
   
-  const storeId = routeStoreId || contextStoreId;
+  // Resolve store ID from route param (can be slug or UUID)
+  const { storeId: resolvedStoreId, isLoading: isResolving, error: resolveError } = useStoreResolver(routeStoreId);
+  
+  // Use resolved storeId if available, otherwise use context
+  const storeId = resolvedStoreId || contextStoreId;
 
   // State
   const [products, setProducts] = useState<Product[]>([]);
@@ -1110,8 +1114,16 @@ export const ProductsPageNew: React.FC = () => {
 
   // Load data
   const loadData = useCallback(async () => {
+    // Wait for store resolution
+    if (isResolving) {
+      return;
+    }
+    
     if (!storeId) {
       setLoading(false);
+      if (resolveError) {
+        toast.error(resolveError);
+      }
       return;
     }
 
@@ -1139,7 +1151,7 @@ export const ProductsPageNew: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [storeId, search, filterCategory, filterType, filterStatus]);
+  }, [storeId, search, filterCategory, filterType, filterStatus, isResolving, resolveError]);
 
   useEffect(() => {
     loadData();
@@ -1223,7 +1235,7 @@ export const ProductsPageNew: React.FC = () => {
     );
   }
 
-  if (loading && products.length === 0) {
+  if (isResolving || (loading && products.length === 0)) {
     return <Loading />;
   }
 
