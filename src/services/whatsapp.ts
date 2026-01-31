@@ -137,8 +137,8 @@ export const whatsappService = {
   },
 
   // Conversation History
-  getConversationHistory: async (accountId: string, phoneNumber: string, limit: number = 100): Promise<Message[]> => {
-    const response = await api.get<Message[]>('/whatsapp/messages/', {
+  getConversationHistory: async (accountId: string, phoneNumber: string, limit: number = 100): Promise<PaginatedResponse<Message>> => {
+    const response = await api.get<PaginatedResponse<Message>>('/whatsapp/messages/', {
       params: {
         account: accountId,
         phone_number: phoneNumber,

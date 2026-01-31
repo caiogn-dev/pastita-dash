@@ -115,13 +115,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     
     setIsLoadingMessages(true);
     try {
-      const history = await whatsappService.getConversationHistory(
+      const response = await whatsappService.getConversationHistory(
         accountId,
         selectedConversation.phone_number,
         100
       );
       // Reverse to show oldest first
-      setMessages(history.reverse());
+      setMessages((response.results || []).reverse());
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {

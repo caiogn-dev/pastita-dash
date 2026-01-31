@@ -160,7 +160,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         items: [
           { name: 'Langflow', href: '/langflow', icon: CpuChipIcon },
           { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
-          { name: 'Mensagens Auto', href: '/automation/companies/1/messages', icon: ChatBubbleLeftRightIcon },
           { name: 'Sessoes', href: '/automation/sessions', icon: UserCircleIcon },
           { name: 'Agendadas', href: '/automation/scheduled', icon: ClockIcon },
           { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },

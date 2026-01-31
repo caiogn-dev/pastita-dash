@@ -235,14 +235,14 @@ export const campaignsService = {
     return response.data;
   },
 
-  // Contact Lists
+  // Contact Lists - Using subscribers endpoint instead of contacts (which doesn't exist)
   getContactLists: async (params?: Record<string, string>): Promise<PaginatedResponse<ContactList>> => {
-    const response = await api.get<PaginatedResponse<ContactList>>('/marketing/contacts/', { params });
+    const response = await api.get<PaginatedResponse<ContactList>>('/marketing/subscribers/', { params });
     return response.data;
   },
 
   getContactList: async (id: string): Promise<ContactList> => {
-    const response = await api.get<ContactList>(`/marketing/contacts/${id}/`);
+    const response = await api.get<ContactList>(`/marketing/subscribers/${id}/`);
     return response.data;
   },
 
@@ -252,17 +252,17 @@ export const campaignsService = {
     description?: string;
     contacts?: Array<{ phone: string; name?: string; variables?: Record<string, unknown> }>;
   }): Promise<ContactList> => {
-    const response = await api.post<ContactList>('/marketing/contacts/', data);
+    const response = await api.post<ContactList>('/marketing/subscribers/', data);
     return response.data;
   },
 
   updateContactList: async (id: string, data: Partial<ContactList>): Promise<ContactList> => {
-    const response = await api.patch<ContactList>(`/marketing/contacts/${id}/`, data);
+    const response = await api.patch<ContactList>(`/marketing/subscribers/${id}/`, data);
     return response.data;
   },
 
   deleteContactList: async (id: string): Promise<void> => {
-    await api.delete(`/marketing/contacts/${id}/`);
+    await api.delete(`/marketing/subscribers/${id}/`);
   },
 
   importContactsFromCSV: async (data: {
