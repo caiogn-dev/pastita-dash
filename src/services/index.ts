@@ -80,94 +80,11 @@ export {
 export { exportService } from './export';
 
 // =============================================================================
-// LEGACY API (Deprecated - use storeApi instead)
+// LEGACY API (REMOVED)
 // =============================================================================
 
-// @deprecated Use storeApi instead - these exports are for backwards compatibility
-export type {
-  Produto,
-  Molho,
-  Carne,
-  Rondelli,
-  Combo,
-  ComboItem,
-  Pedido,
-  PedidoItem,
-  PedidoEndereco,
-  Category as LegacyCategory,
-  DashboardStats as LegacyDashboardStats,
-  MolhoInput,
-  CarneInput,
-  RondelliInput,
-  ComboInput,
-  PastitaStats,
-  Catalogo,
-} from './pastitaApi';
-export {
-  // Products
-  getProducts,
-  getProduct,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getProdutos,
-  getProduto,
-  createProduto,
-  updateProduto,
-  deleteProduto,
-  // Molhos
-  getMolhos,
-  getMolho,
-  createMolho,
-  updateMolho,
-  deleteMolho,
-  toggleMolhoActive,
-  // Carnes
-  getCarnes,
-  getCarne,
-  createCarne,
-  updateCarne,
-  deleteCarne,
-  toggleCarneActive,
-  // Rondellis
-  getRondellis,
-  getRondellisClassicos,
-  getRondellisGourmet,
-  getRondelli,
-  createRondelli,
-  updateRondelli,
-  deleteRondelli,
-  toggleRondelliActive,
-  // Combos
-  getCombos,
-  getCombosDestaques,
-  getCombo,
-  createCombo,
-  updateCombo,
-  deleteCombo,
-  toggleComboActive,
-  toggleComboDestaque,
-  // Orders
-  getPedidos,
-  getPedido,
-  getStatusPedido,
-  updatePedidoStatus,
-  getWhatsAppConfirmacao,
-  // Categories
-  getCategories,
-  getCategory,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  // Dashboard
-  getDashboardStats,
-  getPastitaStats,
-  getCatalog,
-  getCatalogo,
-  // Toggle
-  toggleProductActive,
-  toggleProductFeatured,
-} from './pastitaApi';
+// NOTA: pastitaApi foi completamente removido.
+// Use storesApi para todas as operações de store/produtos/pedidos.
 
 // =============================================================================
 // CATALOG & UNIFIED API

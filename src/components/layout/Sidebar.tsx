@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   HomeIcon,
@@ -28,7 +28,6 @@ import {
   EnvelopeIcon,
   ChartPieIcon,
   PuzzlePieceIcon,
-  BellIcon,
   WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
@@ -40,7 +39,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   children?: NavItem[];
   badge?: string;
-  section?: string;
+  requiresStore?: boolean;
 }
 
 interface NavSection {
@@ -54,138 +53,128 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { logout, user } = useAuthStore();
-  const { store } = useStore();
+  const { store, storeSlug, isStoreSelected } = useStore();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-  const storeKey = store?.slug || store?.id || null;
-  const storeRoot = storeKey ? `/stores/${storeKey}` : '/stores';
-  const storeHref = useMemo(() => {
-    return (path: string) => (storeKey ? `${storeRoot}/${path}` : '/stores');
-  }, [storeKey, storeRoot]);
-
-  const navigationSections: NavSection[] = useMemo(() => [
-    {
-      title: 'Operacional',
-      items: [
-        { name: 'Dashboard', href: '/', icon: HomeIcon },
-        { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon, badge: 'Kanban' },
-        { name: 'Pagamentos', href: '/payments', icon: CurrencyDollarIcon },
-        {
-          name: 'WhatsApp',
-          href: '/accounts',
-          icon: DevicePhoneMobileIcon,
-          children: [
-            { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
-            { name: 'Mensagens', href: '/messages', icon: InboxIcon },
-            { name: 'Contas', href: '/accounts', icon: DevicePhoneMobileIcon },
-            { name: 'Diagnostico', href: '/whatsapp/diagnostics', icon: WrenchScrewdriverIcon },
-          ],
-        },
-        {
-          name: 'Instagram',
-          href: '/instagram',
-          icon: CameraIcon,
-          children: [
-            { name: 'Contas', href: '/instagram/accounts', icon: CameraIcon },
-            { name: 'Inbox', href: '/instagram/inbox', icon: InboxIcon },
-          ],
-        },
-      ],
-    },
-    {
-      title: 'Gestao',
-      items: [
-        { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
-        { name: 'Cupons', href: storeHref('coupons'), icon: TicketIcon },
-        { name: 'Clientes', href: '/marketing/subscribers', icon: UserGroupIcon },
-        { name: 'Entrega', href: storeHref('delivery'), icon: TruckIcon },
-        { name: 'Relatorios', href: '/reports', icon: DocumentChartBarIcon },
-      ],
-    },
-    {
-      title: 'Marketing',
-      items: [
-        {
-          name: 'Campanhas',
-          href: '/marketing',
-          icon: MegaphoneIcon,
-          children: [
-            { name: 'Dashboard', href: '/marketing', icon: ChartPieIcon },
-            { name: 'Email', href: '/marketing/email', icon: EnvelopeIcon },
-            { name: 'WhatsApp', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
-            { name: 'Automacoes', href: '/marketing/automations', icon: PuzzlePieceIcon },
-          ],
-        },
-        { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
-      ],
-    },
-    {
-      title: 'Automacao',
-      items: [
-        { name: 'Langflow', href: '/langflow', icon: CpuChipIcon },
-        { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
-        { name: 'Mensagens Auto', href: '/automation/companies/1/messages', icon: ChatBubbleLeftRightIcon },
-        { name: 'Sessoes', href: '/automation/sessions', icon: UserCircleIcon },
-        { name: 'Agendadas', href: '/automation/scheduled', icon: ClockIcon },
-        { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
-      ],
-    },
-    {
-      title: 'Sistema',
-      items: [
-        { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
-        { name: 'Configuracoes', href: '/settings', icon: Cog6ToothIcon },
-      ],
-    },
-  ], [storeHref]);
-
-  const brandInfo = useMemo(() => {
-    const defaultBrand = {
-      name: 'Pastita',
-      logo: '/pastita-logo.svg',
-      primaryColor: '#722F37',
-      secondaryColor: '#8B3A42',
-      initial: 'P',
-    };
-
-    if (!store) return defaultBrand;
-
-    const isAgriao = store.name?.toLowerCase().includes('agriao') || 
-                     store.slug?.toLowerCase().includes('agriao');
-
-    if (isAgriao) {
-      return {
-        name: store.name || 'Agriao',
-        logo: store.logo_url || null,
-        primaryColor: '#4A5D23',
-        secondaryColor: '#6B8E23',
-        initial: 'A',
-      };
+  // Build store-based URLs
+  const getStoreUrl = (path: string): string => {
+    if (!isStoreSelected || !storeSlug) {
+      return '/stores';
     }
+    return `/stores/${storeSlug}/${path}`;
+  };
 
-    const isPastita = store.name?.toLowerCase().includes('pastita') || 
-                      store.slug?.toLowerCase().includes('pastita');
+  const navigationSections: NavSection[] = useMemo(() => {
+    const hasStore = isStoreSelected && storeSlug;
 
-    return {
-      name: store.name || 'Pastita',
-      logo: isPastita ? '/pastita-logo.svg' : (store.logo_url || null),
-      primaryColor: store.primary_color || '#722F37',
-      secondaryColor: store.secondary_color || '#8B3A42',
-      initial: store.name?.[0]?.toUpperCase() || 'P',
-    };
-  }, [store]);
-
-  useEffect(() => {
-    const isAgriao = store?.name?.toLowerCase().includes('agriao') || 
-                     store?.slug?.toLowerCase().includes('agriao');
-    
-    if (isAgriao) {
-      document.documentElement.setAttribute('data-theme', 'agriao');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-  }, [store]);
+    return [
+      {
+        title: 'Operacional',
+        items: [
+          { name: 'Dashboard', href: '/', icon: HomeIcon },
+          { 
+            name: 'Pedidos', 
+            href: hasStore ? getStoreUrl('orders') : '/stores', 
+            icon: ShoppingCartIcon, 
+            badge: 'Kanban',
+            requiresStore: true 
+          },
+          { 
+            name: 'Pagamentos', 
+            href: hasStore ? getStoreUrl('payments') : '/stores', 
+            icon: CurrencyDollarIcon,
+            requiresStore: true 
+          },
+          {
+            name: 'WhatsApp',
+            href: '/accounts',
+            icon: DevicePhoneMobileIcon,
+            children: [
+              { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
+              { name: 'Mensagens', href: '/messages', icon: InboxIcon },
+              { name: 'Contas', href: '/accounts', icon: DevicePhoneMobileIcon },
+              { name: 'Diagnostico', href: '/whatsapp/diagnostics', icon: WrenchScrewdriverIcon },
+            ],
+          },
+          {
+            name: 'Instagram',
+            href: '/instagram',
+            icon: CameraIcon,
+            children: [
+              { name: 'Contas', href: '/instagram/accounts', icon: CameraIcon },
+              { name: 'Inbox', href: '/instagram/inbox', icon: InboxIcon },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Gestao',
+        items: [
+          { 
+            name: 'Produtos', 
+            href: hasStore ? getStoreUrl('products') : '/stores', 
+            icon: Squares2X2Icon,
+            requiresStore: true 
+          },
+          { 
+            name: 'Cupons', 
+            href: hasStore ? getStoreUrl('coupons') : '/stores', 
+            icon: TicketIcon,
+            requiresStore: true 
+          },
+          { 
+            name: 'Entrega', 
+            href: hasStore ? getStoreUrl('delivery') : '/stores', 
+            icon: TruckIcon,
+            requiresStore: true 
+          },
+          { name: 'Clientes', href: '/marketing/subscribers', icon: UserGroupIcon },
+          { 
+            name: 'Relatorios', 
+            href: hasStore ? getStoreUrl('analytics') : '/reports', 
+            icon: DocumentChartBarIcon,
+            requiresStore: true 
+          },
+        ],
+      },
+      {
+        title: 'Marketing',
+        items: [
+          {
+            name: 'Campanhas',
+            href: '/marketing',
+            icon: MegaphoneIcon,
+            children: [
+              { name: 'Dashboard', href: '/marketing', icon: ChartPieIcon },
+              { name: 'Email', href: '/marketing/email', icon: EnvelopeIcon },
+              { name: 'WhatsApp', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
+              { name: 'Automacoes', href: '/marketing/automations', icon: PuzzlePieceIcon },
+            ],
+          },
+          { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
+        ],
+      },
+      {
+        title: 'Automacao',
+        items: [
+          { name: 'Langflow', href: '/langflow', icon: CpuChipIcon },
+          { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
+          { name: 'Mensagens Auto', href: '/automation/companies/1/messages', icon: ChatBubbleLeftRightIcon },
+          { name: 'Sessoes', href: '/automation/sessions', icon: UserCircleIcon },
+          { name: 'Agendadas', href: '/automation/scheduled', icon: ClockIcon },
+          { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
+        ],
+      },
+      {
+        title: 'Sistema',
+        items: [
+          { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
+          { name: 'Configuracoes', href: '/settings', icon: Cog6ToothIcon },
+        ],
+      },
+    ];
+  }, [isStoreSelected, storeSlug]);
 
   const handleLogout = () => {
     logout();
@@ -278,30 +267,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     <div className="flex flex-col h-full bg-white dark:bg-black border-r border-gray-200 dark:border-zinc-800 w-64 transition-colors">
       <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-zinc-800">
         <div className="flex items-center gap-3">
-          {brandInfo.logo ? (
-            <img 
-              src={brandInfo.logo} 
-              alt={brandInfo.name}
-              className="w-10 h-10 rounded-xl object-cover shadow-sm"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-          ) : null}
           <div 
-            className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 ${brandInfo.logo ? 'hidden' : ''}`}
-            style={{ 
-              background: `linear-gradient(135deg, ${brandInfo.primaryColor} 0%, ${brandInfo.secondaryColor} 100%)` 
-            }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-gradient-to-br from-primary-600 to-primary-700"
           >
-            <span className="text-white font-bold text-lg">{brandInfo.initial}</span>
+            <span className="text-white font-bold text-lg">{store?.name?.[0] || 'P'}</span>
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-gray-900 dark:text-white text-lg leading-tight truncate max-w-[120px]">
-              {brandInfo.name}
+              {store?.name || 'Pastita'}
             </span>
-            <span className="text-xs text-gray-500 dark:text-zinc-400">Dashboard</span>
+            <span className="text-xs text-gray-500 dark:text-zinc-400">
+              {isStoreSelected ? 'Loja ativa' : 'Selecione uma loja'}
+            </span>
           </div>
         </div>
         {onClose && (

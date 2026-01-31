@@ -21,7 +21,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { Header } from '../../components/layout';
+import { PageHeader } from '../../components/layout';
 import { Card, StatCard, PageLoading, Loading, Select } from '../../components/common';
 import { dashboardService } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
@@ -212,7 +212,7 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div>
-      <Header
+      <PageHeader
         title="Dashboard"
         subtitle={`Última atualização: ${overview?.timestamp ? format(new Date(overview.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : '-'}`}
       />

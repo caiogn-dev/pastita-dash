@@ -69,8 +69,18 @@ export const autoMessageApi = {
     page?: number;
     page_size?: number;
   }): Promise<PaginatedResponse<AutoMessage>> => {
-    const response = await api.get('/automation/messages/', { params });
-    return response.data;
+    try {
+      const response = await api.get('/automation/messages/', { params });
+      return response.data;
+    } catch (error: any) {
+      // Se o endpoint retornar 500, pode ser que não exista mais
+      // ou mudou. Retornar array vazio para não quebrar a UI.
+      if (error.response?.status === 500) {
+        console.warn('Endpoint /automation/messages/ retornou 500. Pode estar desativado ou mudado.');
+        return { results: [], count: 0, next: null, previous: null };
+      }
+      throw error;
+    }
   },
 
   get: async (id: string): Promise<AutoMessage> => {
