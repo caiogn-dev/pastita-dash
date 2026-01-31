@@ -284,13 +284,17 @@ export interface Payment {
   gateway: string | null;
   payment_id: string;
   external_id: string;
+  external_reference?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded' | 'partially_refunded';
+  status_display?: string;
   payment_method: string;
+  payment_method_display?: string;
   amount: number;
   currency: string;
   fee: number;
   net_amount: number;
   refunded_amount: number;
+  refundable_amount?: number;
   payer_email: string;
   payer_name: string;
   payer_document: string;
@@ -298,8 +302,10 @@ export interface Payment {
   qr_code: string;
   qr_code_base64: string;
   barcode: string;
+  ticket_url?: string;
   expires_at: string | null;
   paid_at: string | null;
+  refunded_at: string | null;
   gateway_response: Record<string, unknown>;
   metadata: Record<string, unknown>;
   error_code: string;
@@ -307,14 +313,27 @@ export interface Payment {
   created_at: string;
   updated_at: string;
   is_active: boolean;
+  // Related data (populated in some responses)
+  order_number?: string;
+  store_name?: string;
+  gateway_name?: string;
 }
 
 export interface PaymentGateway {
   id: string;
+  store: string;
+  store_name?: string;
   name: string;
   gateway_type: 'stripe' | 'mercadopago' | 'pagseguro' | 'pix' | 'custom';
+  gateway_type_display?: string;
   is_enabled: boolean;
   is_sandbox: boolean;
+  is_default: boolean;
+  api_key?: string;
+  api_secret?: string;
+  access_token?: string;
+  public_key?: string;
+  webhook_secret?: string;
   endpoint_url: string;
   webhook_url: string;
   configuration: Record<string, unknown>;
