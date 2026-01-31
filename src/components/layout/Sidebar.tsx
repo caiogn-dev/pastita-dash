@@ -23,6 +23,13 @@ import {
   BuildingStorefrontIcon,
   TicketIcon,
   CpuChipIcon,
+  CameraIcon,
+  TruckIcon,
+  EnvelopeIcon,
+  ChartPieIcon,
+  PuzzlePieceIcon,
+  BellIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -57,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     return (path: string) => (storeKey ? `${storeRoot}/${path}` : '/stores');
   }, [storeKey, storeRoot]);
 
-  const navigationSections: NavSection[] = useMemo(() => ([
+  const navigationSections: NavSection[] = useMemo(() => [
     {
       title: 'Operacional',
       items: [
@@ -72,6 +79,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
             { name: 'Mensagens', href: '/messages', icon: InboxIcon },
             { name: 'Contas', href: '/accounts', icon: DevicePhoneMobileIcon },
+            { name: 'Diagnostico', href: '/whatsapp/diagnostics', icon: WrenchScrewdriverIcon },
+          ],
+        },
+        {
+          name: 'Instagram',
+          href: '/instagram',
+          icon: CameraIcon,
+          children: [
+            { name: 'Contas', href: '/instagram/accounts', icon: CameraIcon },
+            { name: 'Inbox', href: '/instagram/inbox', icon: InboxIcon },
           ],
         },
       ],
@@ -82,12 +99,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
         { name: 'Cupons', href: storeHref('coupons'), icon: TicketIcon },
         { name: 'Clientes', href: '/marketing/subscribers', icon: UserGroupIcon },
+        { name: 'Entrega', href: storeHref('delivery'), icon: TruckIcon },
         { name: 'Relatorios', href: '/reports', icon: DocumentChartBarIcon },
+      ],
+    },
+    {
+      title: 'Marketing',
+      items: [
+        {
+          name: 'Campanhas',
+          href: '/marketing',
+          icon: MegaphoneIcon,
+          children: [
+            { name: 'Dashboard', href: '/marketing', icon: ChartPieIcon },
+            { name: 'Email', href: '/marketing/email', icon: EnvelopeIcon },
+            { name: 'WhatsApp', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
+            { name: 'Automacoes', href: '/marketing/automations', icon: PuzzlePieceIcon },
+          ],
+        },
+        { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
       ],
     },
     {
       title: 'Automacao',
       items: [
+        { name: 'Langflow', href: '/langflow', icon: CpuChipIcon },
         { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
         { name: 'Mensagens Auto', href: '/automation/companies/1/messages', icon: ChatBubbleLeftRightIcon },
         { name: 'Sessoes', href: '/automation/sessions', icon: UserCircleIcon },
@@ -96,21 +132,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       ],
     },
     {
-      title: 'Marketing',
-      items: [
-        { name: 'Campanhas', href: '/marketing/campaigns', icon: MegaphoneIcon },
-        { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
-      ],
-    },
-    {
       title: 'Sistema',
       items: [
         { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
-        { name: 'Langflow', href: '/langflow', icon: CpuChipIcon },
         { name: 'Configuracoes', href: '/settings', icon: Cog6ToothIcon },
       ],
     },
-  ]), [storeHref]);
+  ], [storeHref]);
 
   const brandInfo = useMemo(() => {
     const defaultBrand = {
