@@ -26,8 +26,18 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Modal, Input } from '../../../components/common';
-import { whatsappService, WhatsAppCampaign, ContactInput, ContactList, SystemContact } from '../../../services/whatsapp';
+import { whatsappService } from '../../../services/whatsapp';
+import { campaignsService, Campaign, ContactList } from '../../../services/campaigns';
 import { WhatsAppAccount, MessageTemplate, PaginatedResponse } from '../../../types';
+
+// Local type definitions for campaign page
+type ContactInput = { phone: string; name?: string };
+type SystemContact = { 
+  phone: string; 
+  name: string; 
+  last_message_at?: string;
+  source?: 'conversation' | 'order' | 'subscriber' | 'session';
+};
 import logger from '../../../services/logger';
 
 // =============================================================================
@@ -46,7 +56,7 @@ interface CampaignFormData {
   templateName: string;
   templateLanguage: string;
   textContent: string;
-  contacts: ContactInput[];
+  contacts: Array<{ phone: string; name?: string }>;
   scheduledAt: string;
   messagesPerMinute: number;
 }
@@ -75,7 +85,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
-  const [contactLists, setContactLists] = useState<ContactList[]>([]);
+  const [contactLists, setContactLists] = useState<Array<{ id: string; name: string; contact_count: number; contacts: ContactInput[] }>>([]);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSystemContactsModal, setShowSystemContactsModal] = useState(false);
@@ -119,7 +129,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
         // Try to load contact lists (optional)
         try {
-          const contactListsRes = await whatsappService.contactLists.list();
+          const contactListsRes = await campaignsService.getContactLists();
           setContactLists(contactListsRes.results || []);
         } catch {
           setContactLists([]);
@@ -141,7 +151,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       if (!formData.accountId) return;
 
       try {
-        const templatesRes = await whatsappService.getTemplates({ account: formData.accountId });
+        const templatesRes = await whatsappService.getTemplates(formData.accountId);
         const templatesList = templatesRes.results || [];
         setTemplates(templatesList.filter(t => t.status === 'approved'));
       } catch (error) {
@@ -197,11 +207,18 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     setLoadingSystemContacts(true);
     setShowSystemContactsModal(true);
     try {
-      const response = await whatsappService.systemContacts.list({
-        account_id: formData.accountId || undefined,
-        limit: 500,
-      });
-      setSystemContacts(response.results || []);
+      // Load conversations as system contacts
+      const { conversationsService } = await import('../../../services/conversations');
+      const params: Record<string, string> = { limit: '500' };
+      if (formData.accountId) params.account = formData.accountId;
+      const response = await conversationsService.getConversations(params);
+      const contacts: SystemContact[] = response.results.map(conv => ({
+        phone: conv.phone_number,
+        name: conv.contact_name || conv.phone_number,
+        last_message_at: conv.last_message_at || undefined,
+        source: 'conversation',
+      }));
+      setSystemContacts(contacts);
       setSelectedSystemContacts(new Set());
     } catch (error) {
       logger.error('Failed to load system contacts', error);
@@ -339,11 +356,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
   const handleLoadContactList = async (listId: string) => {
     try {
-      const list = await whatsappService.contactLists.get(listId);
+      const list = await campaignsService.getContactList(listId);
       
       // Merge contacts
       const existingPhones = new Set(formData.contacts.map(c => c.phone));
-      const uniqueNew = list.contacts.filter(c => !existingPhones.has(c.phone));
+      const uniqueNew = list.contacts.filter((c: { phone: string }) => !existingPhones.has(c.phone));
 
       setFormData(prev => ({
         ...prev,
@@ -403,15 +420,15 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       logger.info('Creating WhatsApp campaign', { payload });
 
       // Create campaign
-      const campaign = await whatsappService.campaigns.create(payload);
+      const campaign = await campaignsService.createCampaign(payload);
 
       if (schedule) {
         // Schedule the campaign
-        await whatsappService.campaigns.schedule(campaign.id, formData.scheduledAt);
+        await campaignsService.scheduleCampaign(campaign.id, formData.scheduledAt);
         toast.success(`🎉 Campanha agendada para ${new Date(formData.scheduledAt).toLocaleString('pt-BR')}`);
       } else {
         // Start immediately
-        await whatsappService.campaigns.start(campaign.id);
+        await campaignsService.startCampaign(campaign.id);
         toast.success(`🎉 Campanha iniciada! Enviando para ${recipientCount} contatos...`);
       }
 
@@ -678,7 +695,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                       onClick={() => whatsappService.syncTemplates(formData.accountId).then(() => {
                         toast.success('Templates sincronizados');
                         // Reload templates
-                        whatsappService.getTemplates({ account: formData.accountId })
+                        whatsappService.getTemplates(formData.accountId)
                           .then(res => setTemplates(res.results.filter(t => t.status === 'approved')));
                       })}
                     >

@@ -17,8 +17,26 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge } from '../../../components/common';
-import { whatsappService, WhatsAppCampaign, CampaignStats } from '../../../services/whatsapp';
+import { whatsappService } from '../../../services/whatsapp';
+import { campaignsService, Campaign } from '../../../services/campaigns';
 import logger from '../../../services/logger';
+
+// Local type definitions
+type CampaignStats = {
+  id: string;
+  name: string;
+  status: string;
+  total_recipients: number;
+  messages_sent: number;
+  messages_delivered: number;
+  messages_read: number;
+  messages_failed: number;
+  delivery_rate: number;
+  read_rate: number;
+  pending: number;
+  started_at: string | null;
+  completed_at: string | null;
+};
 
 // =============================================================================
 // COMPONENT
@@ -28,8 +46,8 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [campaigns, setCampaigns] = useState<WhatsAppCampaign[]>([]);
-  const [selectedCampaign, setSelectedCampaign] = useState<WhatsAppCampaign | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [stats, setStats] = useState<CampaignStats | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -40,7 +58,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   const loadCampaigns = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await whatsappService.campaigns.list();
+      const response = await campaignsService.getCampaigns();
       setCampaigns(response.results || []);
     } catch (error) {
       logger.error('Failed to load campaigns', error);
@@ -56,8 +74,8 @@ export const WhatsAppCampaignsPage: React.FC = () => {
 
   const loadStats = async (campaignId: string) => {
     try {
-      const statsData = await whatsappService.campaigns.getStats(campaignId);
-      setStats(statsData);
+      const statsData = await campaignsService.getCampaignStats(campaignId);
+      setStats(statsData as CampaignStats);
     } catch (error) {
       logger.error('Failed to load stats', error);
     }
@@ -67,10 +85,10 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   // HANDLERS
   // =============================================================================
 
-  const handleStartCampaign = async (campaign: WhatsAppCampaign) => {
+  const handleStartCampaign = async (campaign: Campaign) => {
     setActionLoading(campaign.id);
     try {
-      await whatsappService.campaigns.start(campaign.id);
+      await campaignsService.startCampaign(campaign.id);
       toast.success('Campanha iniciada!');
       loadCampaigns();
     } catch (error) {
@@ -81,10 +99,10 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     }
   };
 
-  const handlePauseCampaign = async (campaign: WhatsAppCampaign) => {
+  const handlePauseCampaign = async (campaign: Campaign) => {
     setActionLoading(campaign.id);
     try {
-      await whatsappService.campaigns.pause(campaign.id);
+      await campaignsService.pauseCampaign(campaign.id);
       toast.success('Campanha pausada');
       loadCampaigns();
     } catch (error) {
@@ -95,10 +113,10 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     }
   };
 
-  const handleResumeCampaign = async (campaign: WhatsAppCampaign) => {
+  const handleResumeCampaign = async (campaign: Campaign) => {
     setActionLoading(campaign.id);
     try {
-      await whatsappService.campaigns.resume(campaign.id);
+      await campaignsService.resumeCampaign(campaign.id);
       toast.success('Campanha retomada!');
       loadCampaigns();
     } catch (error) {
@@ -109,12 +127,12 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     }
   };
 
-  const handleCancelCampaign = async (campaign: WhatsAppCampaign) => {
+  const handleCancelCampaign = async (campaign: Campaign) => {
     if (!confirm('Tem certeza que deseja cancelar esta campanha?')) return;
     
     setActionLoading(campaign.id);
     try {
-      await whatsappService.campaigns.cancel(campaign.id);
+      await campaignsService.cancelCampaign(campaign.id);
       toast.success('Campanha cancelada');
       loadCampaigns();
     } catch (error) {
@@ -125,11 +143,12 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     }
   };
 
-  const handleForceProcess = async (campaign: WhatsAppCampaign) => {
+  const handleForceProcess = async (campaign: Campaign) => {
     setActionLoading(campaign.id);
     try {
-      const result = await whatsappService.campaigns.process(campaign.id);
-      toast.success(`Processado: ${result.processed} enviadas, ${result.failed} falhas, ${result.remaining} restantes`);
+      // Process campaign by triggering a batch via getRecipients
+      const recipients = await campaignsService.getCampaignRecipients(campaign.id, 'pending');
+      toast.success(`Processando: ${recipients.length} pendentes`);
       loadCampaigns();
       if (selectedCampaign?.id === campaign.id) {
         await loadStats(campaign.id);
@@ -142,7 +161,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     }
   };
 
-  const handleViewStats = async (campaign: WhatsAppCampaign) => {
+  const handleViewStats = async (campaign: Campaign) => {
     setSelectedCampaign(campaign);
     await loadStats(campaign.id);
   };

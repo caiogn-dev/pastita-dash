@@ -44,7 +44,7 @@ export const AccountDetailPage: React.FC = () => {
       setAccount(accountData);
 
       // Load templates
-      const templatesResponse = await whatsappService.getTemplates({ account: id });
+      const templatesResponse = await whatsappService.getTemplates(id);
       setTemplates(templatesResponse.results);
 
       // Load business profile

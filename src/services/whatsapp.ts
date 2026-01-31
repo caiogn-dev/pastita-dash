@@ -9,6 +9,7 @@ import {
   SendTemplateMessage,
   SendInteractiveButtons,
   SendInteractiveList,
+  Conversation,
 } from '../types';
 
 /**
@@ -115,6 +116,35 @@ export const whatsappService = {
 
   syncTemplates: async (accountId: string): Promise<{ message: string; synced: number }> => {
     const response = await api.post('/whatsapp/templates/sync/', { account_id: accountId });
+    return response.data;
+  },
+
+  // Business Profile
+  getBusinessProfile: async (accountId: string): Promise<Record<string, unknown>> => {
+    const response = await api.get<Record<string, unknown>>(`/whatsapp/accounts/${accountId}/business_profile/`);
+    return response.data;
+  },
+
+  // Message Stats
+  getMessageStats: async (accountId: string, startDate?: string, endDate?: string): Promise<Record<string, number>> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    const response = await api.get<Record<string, number>>('/whatsapp/messages/stats/', { 
+      params: { ...params, account_id: accountId }
+    });
+    return response.data;
+  },
+
+  // Conversation History
+  getConversationHistory: async (accountId: string, phoneNumber: string, limit: number = 100): Promise<Message[]> => {
+    const response = await api.get<Message[]>('/whatsapp/messages/', {
+      params: {
+        account: accountId,
+        phone_number: phoneNumber,
+        limit: limit.toString(),
+      },
+    });
     return response.data;
   },
 };
