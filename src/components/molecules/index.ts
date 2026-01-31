@@ -14,3 +14,6 @@ export type { ModalProps } from './Modal';
 
 export { Toast, ToastContainer } from './Toast';
 export type { ToastType, ToastProps, ToastContainerProps } from './Toast';
+
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';

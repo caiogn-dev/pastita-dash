@@ -4,6 +4,10 @@ export { useTheme } from './useTheme';
 // Toast hook
 export { useToast } from './useToast';
 
+// Utility hooks
+export { useDebounce, useDebouncedCallback } from './useDebounce';
+export { useLocalStorage } from './useLocalStorage';
+
 // WebSocket hooks
 export {
   useNotificationWebSocket,
