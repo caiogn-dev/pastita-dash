@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { PaperAirplaneIcon, TableCellsIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import React, { useEffect, useState, useCallback } from 'react';
+import { PaperAirplaneIcon, TableCellsIcon, ChatBubbleLeftRightIcon, MagnifyingGlassIcon, ArrowPathIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Header } from '../../components/layout';
-import { Card, Button, Input, Textarea, Select, Modal, PageLoading } from '../../components/common';
+import { Card, Button, Input, Textarea, Select, Modal, PageLoading, StatusBadge, Table } from '../../components/common';
 import { ChatWindow } from '../../components/chat';
 import { whatsappService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
-import { Conversation } from '../../types';
+import { Conversation, Message } from '../../types';
 
 type ViewMode = 'chat' | 'table';
+type MessageFilter = 'all' | 'inbound' | 'outbound';
 
 export const MessagesPage: React.FC = () => {
   const { accounts, selectedAccount, setSelectedAccount } = useAccountStore();
@@ -22,6 +25,45 @@ export const MessagesPage: React.FC = () => {
     text: '',
     type: 'text',
   });
+  
+  // Table view states
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<MessageFilter>('all');
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+
+  const loadMessages = useCallback(async () => {
+    if (!selectedAccount) return;
+    setIsLoadingMessages(true);
+    try {
+      const params: Record<string, string> = {};
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
+      if (filter !== 'all') {
+        params.direction = filter;
+      }
+      if (dateRange.start) {
+        params.created_after = dateRange.start;
+      }
+      if (dateRange.end) {
+        params.created_before = dateRange.end;
+      }
+      const response = await whatsappService.getMessages(selectedAccount.id, params);
+      setMessages(response.results || []);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  }, [selectedAccount, searchQuery, filter, dateRange]);
+
+  useEffect(() => {
+    if (viewMode === 'table') {
+      loadMessages();
+    }
+  }, [viewMode, loadMessages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +77,9 @@ export const MessagesPage: React.FC = () => {
       toast.success('Mensagem enviada com sucesso!');
       setSendModal(false);
       setMessageForm({ account_id: '', to: '', text: '', type: 'text' });
+      if (viewMode === 'table') {
+        loadMessages();
+      }
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -51,6 +96,67 @@ export const MessagesPage: React.FC = () => {
       setSelectedAccount(accounts[0]);
     }
   }, [accounts, selectedAccount, setSelectedAccount]);
+
+  // Table columns configuration
+  const messageColumns = [
+    {
+      key: 'direction',
+      header: 'Direção',
+      render: (msg: Message) => (
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+          msg.direction === 'inbound' 
+            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' 
+            : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+        }`}>
+          {msg.direction === 'inbound' ? '← Recebida' : '→ Enviada'}
+        </span>
+      ),
+    },
+    {
+      key: 'contact',
+      header: 'Contato',
+      render: (msg: Message) => (
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">
+            {msg.direction === 'inbound' ? msg.from_number : msg.to_number}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{msg.account_name}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'content',
+      header: 'Conteúdo',
+      render: (msg: Message) => (
+        <div className="max-w-md">
+          <p className="text-sm text-gray-900 dark:text-white truncate">
+            {msg.text_body || `[${msg.message_type}]`}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'Tipo',
+      render: (msg: Message) => (
+        <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">{msg.message_type}</span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (msg: Message) => <StatusBadge status={msg.status} />,
+    },
+    {
+      key: 'created_at',
+      header: 'Data',
+      render: (msg: Message) => (
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {format(new Date(msg.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+        </span>
+      ),
+    },
+  ];
 
   // Show loading if no account selected
   if (!selectedAccount) {
@@ -154,19 +260,83 @@ export const MessagesPage: React.FC = () => {
             />
           </div>
         ) : (
-          <Card className="flex flex-col items-center justify-center py-12">
-            <TableCellsIcon className="w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Visualização em Tabela
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-4">
-              A visualização em tabela está disponível para exportação e análise de dados.
-              Use o modo Chat para interagir com seus clientes em tempo real.
-            </p>
-            <Button variant="secondary" onClick={() => setViewMode('chat')}>
-              Voltar para Chat
-            </Button>
-          </Card>
+          <div className="space-y-4">
+            {/* Filters Bar */}
+            <Card className="p-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar mensagens..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && loadMessages()}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <FunnelIcon className="w-5 h-5 text-gray-400" />
+                  <select
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value as MessageFilter)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">Todas</option>
+                    <option value="inbound">Recebidas</option>
+                    <option value="outbound">Enviadas</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                  <span className="text-gray-500">até</span>
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                
+                <Button
+                  variant="secondary"
+                  leftIcon={<ArrowPathIcon className={`w-4 h-4 ${isLoadingMessages ? 'animate-spin' : ''}`} />}
+                  onClick={loadMessages}
+                  isLoading={isLoadingMessages}
+                >
+                  Atualizar
+                </Button>
+              </div>
+            </Card>
+            
+            {/* Messages Table */}
+            <Card noPadding>
+              {isLoadingMessages ? (
+                <PageLoading />
+              ) : (
+                <Table
+                  columns={messageColumns}
+                  data={messages}
+                  keyExtractor={(msg) => msg.id}
+                  emptyMessage="Nenhuma mensagem encontrada"
+                />
+              )}
+            </Card>
+            
+            
+            <div className="text-sm text-gray-500 dark:text-gray-400 text-center">
+              {messages.length} mensagem(ns) encontrada(s)
+            </div>
+          </div>
         )}
       </div>
 

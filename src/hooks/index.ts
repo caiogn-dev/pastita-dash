@@ -4,7 +4,7 @@ export {
   useDashboardWebSocket,
   useChatWebSocket,
 } from './useWebSocket';
-// Note: useAutomationWS has been removed - use useWS from WebSocketContext instead
+export { useAutomationWS } from './useAutomationWS';
 export { useOrdersWebSocket } from './useOrdersWebSocket';
 export { useWhatsAppWS } from './useWhatsAppWS';
 export type {

@@ -997,3 +997,49 @@ export interface CreateProduct {
   sku: string;
   is_active?: boolean;
 }
+
+// Payment types
+export interface Payment {
+  id: string;
+  order: string;
+  gateway: string | null;
+  payment_id: string;
+  external_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded' | 'partially_refunded';
+  payment_method: string;
+  amount: number;
+  currency: string;
+  fee: number;
+  net_amount: number;
+  refunded_amount: number;
+  payer_email: string;
+  payer_name: string;
+  payer_document: string;
+  payment_url: string;
+  qr_code: string;
+  qr_code_base64: string;
+  barcode: string;
+  expires_at: string | null;
+  paid_at: string | null;
+  gateway_response: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  error_code: string;
+  error_message: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
+
+export interface PaymentGateway {
+  id: string;
+  name: string;
+  gateway_type: 'stripe' | 'mercadopago' | 'pagseguro' | 'pix' | 'custom';
+  is_enabled: boolean;
+  is_sandbox: boolean;
+  endpoint_url: string;
+  webhook_url: string;
+  configuration: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}

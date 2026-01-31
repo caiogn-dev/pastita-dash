@@ -20,13 +20,14 @@ import {
   HomeIcon,
   XMarkIcon,
   PrinterIcon,
+  ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, PageLoading } from '../../components/common';
-import { ordersService, getErrorMessage } from '../../services';
-import { Order } from '../../types';
+import { ordersService, paymentsService, getErrorMessage } from '../../services';
+import { Order, Payment } from '../../types';
 import { useOrderPrint } from '../../components/orders/OrderPrint';
 import { useStore } from '../../hooks';
 
@@ -176,6 +177,7 @@ export const OrderDetailPageNew: React.FC = () => {
   const ordersRoute = storeRouteBase ? `/stores/${storeRouteBase}/orders` : '/stores';
   
   const [order, setOrder] = useState<Order | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -188,8 +190,12 @@ export const OrderDetailPageNew: React.FC = () => {
     if (!id) return;
     setIsLoading(true);
     try {
-      const orderData = await ordersService.getOrder(id);
+      const [orderData, paymentsData] = await Promise.all([
+        ordersService.getOrder(id),
+        paymentsService.getByOrder(id).catch(() => []),
+      ]);
       setOrder(orderData);
+      setPayments(paymentsData);
     } catch (error) {
       toast.error(getErrorMessage(error));
       navigate(ordersRoute);
@@ -482,35 +488,62 @@ export const OrderDetailPageNew: React.FC = () => {
             {/* Payment */}
             <Card className="p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pagamento</h2>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">M?todo</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {paymentMethodLabel[order.payment_method || ''] || order.payment_method || '-'}
-                  </span>
+              {payments.length > 0 ? (
+                <div className="space-y-3">
+                  {payments.map((payment) => (
+                    <div key={payment.id} className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {payment.payment_method === 'pix' ? '💠 PIX' : 
+                           payment.payment_method === 'credit_card' ? '💳 Cartão' :
+                           payment.payment_method === 'cash' ? '💵 Dinheiro' :
+                           payment.payment_method}
+                        </span>
+                        <span className={`text-sm font-medium ${
+                          ['paid', 'approved', 'completed'].includes(payment.status) 
+                            ? 'text-green-600' 
+                            : 'text-yellow-600'
+                        }`}>
+                          {['paid', 'approved', 'completed'].includes(payment.status) ? '✓ Pago' : '⏳ Pendente'}
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                        {formatMoney(payment.amount)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Status</span>
-                  <span className={`text-sm font-semibold ${paymentStatus === 'paid' ? 'text-green-600' : paymentStatus === 'failed' ? 'text-red-600' : 'text-yellow-600'}`}>
-                    {paymentStatusLabel[paymentStatus] || paymentStatus}
-                  </span>
-                </div>
-                {order.pix_code && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400 break-all bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">PIX:</span> {order.pix_code}
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Método</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {paymentMethodLabel[order.payment_method || ''] || order.payment_method || '-'}
+                    </span>
                   </div>
-                )}
-                {paymentLink && (
-                  <a
-                    href={paymentLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center justify-center w-full px-4 py-2 rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
-                  >
-                    Abrir link de pagamento
-                  </a>
-                )}
-              </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Status</span>
+                    <span className={`text-sm font-semibold ${paymentStatus === 'paid' ? 'text-green-600' : paymentStatus === 'failed' ? 'text-red-600' : 'text-yellow-600'}`}>
+                      {paymentStatusLabel[paymentStatus] || paymentStatus}
+                    </span>
+                  </div>
+                  {order.pix_code && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 break-all bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">PIX:</span> {order.pix_code}
+                    </div>
+                  )}
+                  {paymentLink && (
+                    <a
+                      href={paymentLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center w-full px-4 py-2 rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
+                    >
+                      Abrir link de pagamento
+                    </a>
+                  )}
+                </div>
+              )}
             </Card>
 
             {/* Actions */}

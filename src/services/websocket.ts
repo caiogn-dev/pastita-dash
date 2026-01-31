@@ -1,9 +1,7 @@
 /**
- * WebSocket utilities
- * 
- * NOTE: The old WebSocket service stubs have been removed.
- * Use WebSocketContext for managing WebSocket connections.
- * This file now only exports utility functions.
+ * WebSocket service
+ * Use WebSocketContext for singleton connection
+ * This file exports utility functions and stubs for backwards compatibility
  */
 
 /**
@@ -18,3 +16,17 @@ export const getWebSocketUrl = (path: string): string => {
   const proto = wsHost.includes('railway') || wsHost.includes('vercel') || location.protocol === 'https:' ? 'wss' : 'ws';
   return `${proto}://${wsHost}${path}`;
 };
+
+// Stub functions for backwards compatibility - do nothing
+export const initializeWebSockets = (_token: string): void => {
+  // No-op: WebSocket is now managed by WebSocketContext
+};
+
+export const disconnectWebSockets = (): void => {
+  // No-op: WebSocket is now managed by WebSocketContext
+};
+
+// Stub objects for backwards compatibility
+export const notificationWS = { connect: () => {}, disconnect: () => {}, on: () => () => {}, isConnected: () => false };
+export const chatWS = { connect: () => {}, disconnect: () => {}, on: () => () => {}, isConnected: () => false };
+export const dashboardWS = { connect: () => {}, disconnect: () => {}, on: () => () => {}, isConnected: () => false };
