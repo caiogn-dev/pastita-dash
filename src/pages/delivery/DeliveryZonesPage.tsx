@@ -20,7 +20,7 @@ import {
   DeliveryZoneStats,
   StoreLocation,
 } from '../../services/delivery';
-import { useStore } from '../../hooks';
+import { useStore, useStoreResolver } from '../../hooks';
 
 const formatKm = (value?: number | string | null) => {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
@@ -83,9 +83,12 @@ export const DeliveryZonesPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
   
-  // Use route storeId if available, otherwise use context
-  const storeId = routeStoreId || contextStoreId;
-  const settingsPath = storeId ? `/stores/${storeId}/settings` : '/settings';
+  // Resolve store ID from route param (can be slug or UUID)
+  const { storeId: resolvedStoreId, isLoading: isResolving, error: resolveError } = useStoreResolver(routeStoreId);
+  
+  // Use resolved storeId if available, otherwise use context
+  const storeId = resolvedStoreId || contextStoreId;
+  const settingsPath = storeId ? `/stores/${routeStoreId || contextStoreId}/settings` : '/settings';
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
@@ -128,8 +131,16 @@ export const DeliveryZonesPage: React.FC = () => {
   }, [storeLocation]);
 
   const loadData = useCallback(async () => {
+    // Wait for store resolution
+    if (isResolving) {
+      return;
+    }
+    
     if (!storeId) {
       setLoading(false);
+      if (resolveError) {
+        setError(resolveError);
+      }
       return;
     }
 
@@ -156,7 +167,7 @@ export const DeliveryZonesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive, storeId]);
+  }, [search, filterActive, storeId, isResolving, resolveError]);
 
   useEffect(() => {
     loadData();
@@ -255,7 +266,7 @@ export const DeliveryZonesPage: React.FC = () => {
     }
   };
 
-  if (loading && zones.length === 0) {
+  if (isResolving || (loading && zones.length === 0)) {
     return <Loading />;
   }
 

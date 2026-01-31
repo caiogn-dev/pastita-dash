@@ -12,14 +12,17 @@ import {
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
-import { useStore } from '../../hooks';
+import { useStore, useStoreResolver } from '../../hooks';
 
 export const CouponsPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
   
-  // Use route storeId if available, otherwise use context
-  const storeId = routeStoreId || contextStoreId;
+  // Resolve store ID from route param (can be slug or UUID)
+  const { storeId: resolvedStoreId, isLoading: isResolving, error: resolveError } = useStoreResolver(routeStoreId);
+  
+  // Use resolved storeId if available, otherwise use context
+  const storeId = resolvedStoreId || contextStoreId;
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [stats, setStats] = useState<CouponStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,8 +56,16 @@ export const CouponsPage: React.FC = () => {
   const [formData, setFormData] = useState<CreateCoupon>(getInitialFormData());
 
   const loadCoupons = useCallback(async () => {
+    // Wait for store resolution
+    if (isResolving) {
+      return;
+    }
+    
     if (!storeId) {
       setLoading(false);
+      if (resolveError) {
+        setError(resolveError);
+      }
       return;
     }
     
@@ -78,7 +89,7 @@ export const CouponsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive, filterType, storeId]);
+  }, [search, filterActive, filterType, storeId, isResolving, resolveError]);
 
   // Reload when store changes
   useEffect(() => {
@@ -198,7 +209,7 @@ export const CouponsPage: React.FC = () => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  if (loading && coupons.length === 0) {
+  if (isResolving || (loading && coupons.length === 0)) {
     return <Loading />;
   }
 

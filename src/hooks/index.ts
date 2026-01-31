@@ -40,3 +40,6 @@ export {
   getStoreIdWithFallback 
 } from './useStore';
 export type { UseStoreReturn } from './useStore';
+
+// Store resolver hook
+export { useStoreResolver, useResolvedStoreId } from './useStoreResolver';
