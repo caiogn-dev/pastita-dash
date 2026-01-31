@@ -9,3 +9,6 @@ export type { BadgeProps } from './Badge';
 
 export { Skeleton, SkeletonText, SkeletonCard, SkeletonAvatar, SkeletonTable } from './Skeleton';
 export type { SkeletonProps } from './Skeleton';
+
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
