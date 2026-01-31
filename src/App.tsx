@@ -29,6 +29,7 @@ const ProductsPage = lazy(() => import('./pages/products/ProductsPageNew').then(
 // Automation Pages
 const CompanyProfilesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CompanyProfilesPage })));
 const CompanyProfileDetailPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CompanyProfileDetailPage })));
+const CompanyProfileCreatePage = lazy(() => import('./pages/automation').then(m => ({ default: m.CompanyProfileCreatePage })));
 const AutoMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutoMessagesPage })));
 const CustomerSessionsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CustomerSessionsPage })));
 const AutomationLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutomationLogsPage })));
@@ -130,7 +131,7 @@ const AppContent: React.FC = () => {
         
         {/* Automation Routes */}
         <Route path="automation/companies" element={<Suspense fallback={<FullPageLoading />}><CompanyProfilesPage /></Suspense>} />
-        <Route path="automation/companies/new" element={<Suspense fallback={<FullPageLoading />}><CompanyProfileDetailPage /></Suspense>} />
+        <Route path="automation/companies/new" element={<Suspense fallback={<FullPageLoading />}><CompanyProfileCreatePage /></Suspense>} />
         <Route path="automation/companies/:id" element={<Suspense fallback={<FullPageLoading />}><CompanyProfileDetailPage /></Suspense>} />
         <Route path="automation/companies/:companyId/messages" element={<Suspense fallback={<FullPageLoading />}><AutoMessagesPage /></Suspense>} />
         <Route path="automation/sessions" element={<Suspense fallback={<FullPageLoading />}><CustomerSessionsPage /></Suspense>} />

@@ -1,5 +1,6 @@
 export { default as CompanyProfilesPage } from './CompanyProfilesPage';
 export { default as CompanyProfileDetailPage } from './CompanyProfileDetailPage';
+export { default as CompanyProfileCreatePage } from './CompanyProfileCreatePage';
 export { default as AutoMessagesPage } from './AutoMessagesPage';
 export { default as CustomerSessionsPage } from './CustomerSessionsPage';
 export { default as AutomationLogsPage } from './AutomationLogsPage';
