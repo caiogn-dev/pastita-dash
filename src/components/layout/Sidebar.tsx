@@ -6,15 +6,25 @@ import {
   ChatBubbleLeftRightIcon,
   InboxIcon,
   ShoppingCartIcon,
-  Squares2X2Icon,
-  UserGroupIcon,
-  DocumentChartBarIcon,
+  CreditCardIcon,
+  CpuChipIcon,
   Cog6ToothIcon,
-  DocumentTextIcon,
   ArrowRightOnRectangleIcon,
+  BoltIcon,
+  BuildingOfficeIcon,
+  UserGroupIcon,
+  DocumentTextIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ClockIcon,
+  DocumentChartBarIcon,
+  TagIcon,
+  Squares2X2Icon,
   XMarkIcon,
+  BuildingStorefrontIcon,
+  PresentationChartLineIcon,
+  MegaphoneIcon,
+  EnvelopeIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -37,8 +47,6 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-// Menu organizado por se????es l??gicas
-
 export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { logout, user } = useAuthStore();
   const { store } = useStore();
@@ -51,39 +59,78 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     return (path: string) => (storeKey ? `${storeRoot}/${path}` : '/stores');
   }, [storeKey, storeRoot]);
 
-  const navigationSections: NavSection[] = useMemo(() => ([
+  // Menu organizado por seções lógicas
+  const navigationSections: NavSection[] = useMemo(() => [
     {
-      title: 'Operacional',
+      title: 'Principal',
       items: [
         { name: 'Dashboard', href: '/', icon: HomeIcon },
         { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon, badge: 'Kanban' },
-        {
-          name: 'WhatsApp',
-          href: '/accounts',
-          icon: DevicePhoneMobileIcon,
-          children: [
-            { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
-            { name: 'Mensagens', href: '/messages', icon: InboxIcon },
-          ],
-        },
-      ],
+      ]
     },
     {
-      title: 'Gest�o',
+      title: 'Catálogo',
       items: [
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
-        { name: 'Clientes', href: '/marketing/subscribers', icon: UserGroupIcon },
-        { name: 'Relat�rios', href: '/reports', icon: DocumentChartBarIcon },
-      ],
+        { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
+      ]
     },
     {
-      title: 'Sistema',
+      title: 'Marketing',
       items: [
-        { name: 'Configura��es', href: storeHref('settings'), icon: Cog6ToothIcon },
-        { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
-      ],
+        { name: 'Campanhas', href: '/marketing', icon: MegaphoneIcon },
+        { name: 'Email Marketing', href: '/marketing/email', icon: EnvelopeIcon },
+        { name: 'Automações', href: '/marketing/automations', icon: BoltIcon },
+        { name: 'Contatos', href: '/marketing/subscribers', icon: UserGroupIcon },
+        { name: 'WhatsApp Marketing', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
+      ]
     },
-  ]), [storeHref]);
+    {
+      title: 'Comunicação',
+      items: [
+        { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
+        { name: 'Mensagens', href: '/messages', icon: InboxIcon },
+        { name: 'Contas WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
+        { 
+          name: 'Instagram', 
+          href: '/instagram', 
+          icon: ChatBubbleLeftRightIcon,
+          badge: 'Novo',
+          children: [
+            { name: 'Contas', href: '/instagram/accounts', icon: DevicePhoneMobileIcon },
+            { name: 'Inbox DM', href: '/instagram/inbox', icon: InboxIcon },
+          ]
+        },
+      ]
+    },
+    {
+      title: 'Automação & IA',
+      items: [
+        { name: 'Langflow (IA)', href: '/langflow', icon: CpuChipIcon },
+        { 
+          name: 'Automação', 
+          href: '/automation/companies', 
+          icon: BoltIcon,
+          children: [
+            { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
+            { name: 'Sessões', href: '/automation/sessions', icon: UserGroupIcon },
+            { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
+            { name: 'Relatórios', href: '/automation/reports', icon: DocumentChartBarIcon },
+            { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
+          ]
+        },
+      ]
+    },
+    {
+      title: 'Administração',
+      items: [
+        { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
+        { name: 'Relatórios', href: storeHref('analytics'), icon: PresentationChartLineIcon },
+        { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
+        { name: 'Configurações', href: storeHref('settings'), icon: Cog6ToothIcon },
+      ]
+    },
+  ], [storeHref]);
 
   // Dynamic brand info based on selected store
   const brandInfo = useMemo(() => {
@@ -182,11 +229,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
               <item.icon className="w-5 h-5 mr-3" />
               {item.name}
             </div>
-            {isExpanded ? (
-              <ChevronDownIcon className="w-4 h-4" />
-            ) : (
-              <ChevronRightIcon className="w-4 h-4" />
-            )}
+            <div className="flex items-center gap-1">
+              {item.badge && (
+                <span className="text-xs bg-primary-100 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded">
+                  {item.badge}
+                </span>
+              )}
+              {isExpanded ? (
+                <ChevronDownIcon className="w-4 h-4" />
+              ) : (
+                <ChevronRightIcon className="w-4 h-4" />
+              )}
+            </div>
           </button>
           {isExpanded && (
             <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-zinc-800 pl-2">
@@ -290,7 +344,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {user?.first_name || user?.username || 'Usu�rio'}
+                {user?.first_name || user?.username || 'Usuário'}
               </p>
               <p className="text-xs text-gray-500 dark:text-zinc-400 truncate max-w-[120px]">{user?.email}</p>
             </div>
