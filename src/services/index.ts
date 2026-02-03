@@ -61,6 +61,7 @@ export { productsService } from './products';
 // =============================================================================
 
 export { default as langflowService } from './langflow';
+export { default as agentsService } from './agents';
 export { auditService } from './audit';
 export {
   companyProfileApi,
