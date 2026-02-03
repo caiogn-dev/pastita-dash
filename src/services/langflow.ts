@@ -165,7 +165,7 @@ const langflowService = {
 
   // Process Message (Playground)
   processMessage: async (data: ProcessMessageRequest): Promise<ProcessMessageResponse> => {
-    const response = await api.post<ProcessMessageResponse>('/langflow/process/', data);
+    const response = await api.post<ProcessMessageResponse>('/langflow/flows/process/', data);
     return response.data;
   },
 
