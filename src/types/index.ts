@@ -70,6 +70,9 @@ export interface Message {
   media_id: string;
   media_url: string;
   media_mime_type: string;
+  media_type?: string;
+  file_name?: string;
+  file_size?: number;
   template_name: string;
   template_language: string;
   context_message_id: string;
@@ -143,6 +146,8 @@ export interface Conversation {
   context: Record<string, unknown>;
   tags: string[];
   last_message_at: string | null;
+  last_message_preview?: string;
+  unread_count?: number;
   last_customer_message_at: string | null;
   last_agent_message_at: string | null;
   closed_at: string | null;

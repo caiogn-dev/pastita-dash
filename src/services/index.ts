@@ -60,7 +60,7 @@ export { productsService } from './products';
 // AUTOMATION & AI
 // =============================================================================
 
-export { langflowService } from './langflow';
+export { default as langflowService } from './langflow';
 export { auditService } from './audit';
 export {
   companyProfileApi,

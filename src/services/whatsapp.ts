@@ -147,6 +147,29 @@ export const whatsappService = {
     });
     return response.data;
   },
+
+  // Send Media Message
+  sendMediaMessage: async (data: {
+    account_id: string;
+    to: string;
+    file: File;
+    caption?: string;
+  }): Promise<Message> => {
+    const formData = new FormData();
+    formData.append('account_id', data.account_id);
+    formData.append('to', data.to);
+    formData.append('file', data.file);
+    if (data.caption) {
+      formData.append('caption', data.caption);
+    }
+
+    const response = await api.post<Message>('/whatsapp/messages/send_media/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 export default whatsappService;

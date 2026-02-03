@@ -50,6 +50,7 @@ const NewCampaignPage = lazy(() => import('./pages/marketing/email').then(m => (
 const CampaignsListPage = lazy(() => import('./pages/marketing/email').then(m => ({ default: m.CampaignsListPage })));
 const NewWhatsAppCampaignPage = lazy(() => import('./pages/marketing/whatsapp').then(m => ({ default: m.NewWhatsAppCampaignPage })));
 const WhatsAppCampaignsPage = lazy(() => import('./pages/marketing/whatsapp').then(m => ({ default: m.WhatsAppCampaignsPage })));
+const WhatsAppTemplatesPage = lazy(() => import('./pages/marketing/whatsapp/WhatsAppTemplatesPage').then(m => ({ default: m.default })));
 const AutomationsPage = lazy(() => import('./pages/marketing/AutomationsPage').then(m => ({ default: m.default })));
 
 // Instagram Pages
@@ -160,6 +161,7 @@ const AppContent: React.FC = () => {
         <Route path="marketing/email/templates" element={<Suspense fallback={<FullPageLoading />}><MarketingPage /></Suspense>} />
         <Route path="marketing/whatsapp" element={<Suspense fallback={<FullPageLoading />}><WhatsAppCampaignsPage /></Suspense>} />
         <Route path="marketing/whatsapp/new" element={<Suspense fallback={<FullPageLoading />}><NewWhatsAppCampaignPage /></Suspense>} />
+        <Route path="marketing/whatsapp/templates" element={<Suspense fallback={<FullPageLoading />}><WhatsAppTemplatesPage /></Suspense>} />
         
         {/* Instagram Routes */}
         <Route path="instagram" element={<Suspense fallback={<FullPageLoading />}><InstagramAccounts /></Suspense>} />

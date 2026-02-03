@@ -1,6 +1,9 @@
 export { Button } from './Button';
 export { Input, Textarea, Select } from './Input';
 export { Card, StatCard } from './Card';
+export { Tabs } from './Tabs';
+export { Switch } from './Switch';
+export { EmptyState } from './EmptyState';
 export { 
   Badge, 
   StatusBadge, 

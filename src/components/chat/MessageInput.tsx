@@ -1,45 +1,51 @@
 /**
- * MessageInput - Chat message input with send button
+ * MessageInput - Input de mensagens moderno
  * 
  * Features:
- * - Auto-expanding textarea
- * - Send on Enter (Shift+Enter for new line)
- * - Typing indicator support
- * - Emoji picker (optional)
- * - Attachment button (optional)
+ * - Auto-resize textarea
+ * - Botões de anexo (imagem, documento)
+ * - Preview de arquivos selecionados
+ * - Send on Enter
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   PaperAirplaneIcon,
   PaperClipIcon,
+  PhotoIcon,
+  DocumentIcon,
+  XMarkIcon,
   FaceSmileIcon,
 } from '@heroicons/react/24/outline';
 
 export interface MessageInputProps {
   onSend: (text: string) => void;
   onTyping?: (isTyping: boolean) => void;
+  onFileSelect?: (file: File) => void;
   placeholder?: string;
   disabled?: boolean;
   isLoading?: boolean;
   showAttachment?: boolean;
-  showEmoji?: boolean;
   onAttachmentClick?: () => void;
   maxLength?: number;
+  selectedFile?: File | null;
+  onClearFile?: () => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
   onSend,
   onTyping,
+  onFileSelect,
   placeholder = 'Digite uma mensagem...',
   disabled = false,
   isLoading = false,
-  showAttachment = false,
-  showEmoji = false,
-  onAttachmentClick,
+  showAttachment = true,
   maxLength = 4096,
+  selectedFile,
+  onClearFile,
 }) => {
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<number | undefined>(undefined);
   const wasTypingRef = useRef(false);
 
@@ -48,7 +54,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
     }
   }, []);
 
@@ -60,25 +66,21 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const handleTyping = useCallback(() => {
     if (!onTyping) return;
 
-    // Clear existing timeout
     if (typingTimeoutRef.current) {
       window.clearTimeout(typingTimeoutRef.current);
     }
 
-    // Send typing start if not already typing
     if (!wasTypingRef.current) {
       wasTypingRef.current = true;
       onTyping(true);
     }
 
-    // Set timeout to stop typing indicator
     typingTimeoutRef.current = window.setTimeout(() => {
       wasTypingRef.current = false;
       onTyping(false);
     }, 2000);
   }, [onTyping]);
 
-  // Cleanup typing timeout on unmount
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
@@ -100,11 +102,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
   const handleSend = () => {
     const trimmedText = text.trim();
-    if (trimmedText && !disabled && !isLoading) {
+    if ((trimmedText || selectedFile) && !disabled && !isLoading) {
       onSend(trimmedText);
       setText('');
       
-      // Stop typing indicator
       if (typingTimeoutRef.current) {
         window.clearTimeout(typingTimeoutRef.current);
       }
@@ -113,7 +114,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         onTyping(false);
       }
 
-      // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
@@ -121,32 +121,85 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Send on Enter (without Shift)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const canSend = text.trim().length > 0 && !disabled && !isLoading;
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onFileSelect) {
+      onFileSelect(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const canSend = (text.trim().length > 0 || selectedFile) && !disabled && !isLoading;
+
+  // Preview do arquivo selecionado
+  const renderFilePreview = () => {
+    if (!selectedFile) return null;
+
+    const isImage = selectedFile.type.startsWith('image/');
+
+    return (
+      <div className="flex items-center gap-3 p-3 mx-4 mb-2 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
+        {isImage ? (
+          <PhotoIcon className="w-8 h-8 text-violet-500" />
+        ) : (
+          <DocumentIcon className="w-8 h-8 text-blue-500" />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+            {selectedFile.name}
+          </p>
+          <p className="text-xs text-gray-500">
+            {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+          </p>
+        </div>
+        <button
+          onClick={onClearFile}
+          className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+        >
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+    );
+  };
 
   return (
-    <div className="border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
-      <div className="flex items-end gap-2">
-        {/* Attachment button */}
+    <div className="bg-white dark:bg-zinc-900">
+      {/* Preview de arquivo */}
+      {renderFilePreview()}
+
+      {/* Input area */}
+      <div className="flex items-end gap-2 p-3">
+        {/* Botões de anexo */}
         {showAttachment && (
-          <button
-            type="button"
-            onClick={onAttachmentClick}
-            disabled={disabled}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 disabled:opacity-50 transition-colors"
-            title="Anexar arquivo"
-          >
-            <PaperClipIcon className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled}
+              className="p-2.5 text-gray-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-full disabled:opacity-50 transition-colors"
+              title="Anexar arquivo"
+            >
+              <PaperClipIcon className="w-5 h-5" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
         )}
 
-        {/* Text input */}
+        {/* Textarea */}
         <div className="flex-1 relative">
           <textarea
             ref={textareaRef}
@@ -156,37 +209,36 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
-            className={`
-              w-full resize-none rounded-2xl border border-gray-300 dark:border-zinc-700
-              bg-gray-50 dark:bg-gray-700 px-4 py-3 pr-12
+            className="
+              w-full resize-none rounded-full border border-gray-300 dark:border-zinc-600
+              bg-white dark:bg-zinc-800 px-4 py-3 pr-12
               text-sm text-gray-900 dark:text-white
               placeholder-gray-400 dark:placeholder-zinc-500
-              focus:ring-2 focus:ring-primary-500 focus:border-transparent
+              focus:ring-2 focus:ring-violet-500 focus:border-transparent
               disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all
-            `}
-            style={{ maxHeight: '150px' }}
+              transition-all min-h-[44px] max-h-[120px]
+            "
           />
           
-          {/* Character count (shown when near limit) */}
+          {/* Character count */}
           {text.length > maxLength * 0.8 && (
-            <span className={`absolute right-14 bottom-3 text-xs ${text.length >= maxLength ? 'text-red-500' : 'text-gray-400'}`}>
+            <span className={`absolute right-4 bottom-3 text-xs ${
+              text.length >= maxLength ? 'text-red-500' : 'text-gray-400'
+            }`}>
               {text.length}/{maxLength}
             </span>
           )}
         </div>
 
         {/* Emoji button */}
-        {showEmoji && (
-          <button
-            type="button"
-            disabled={disabled}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 disabled:opacity-50 transition-colors"
-            title="Emoji"
-          >
-            <FaceSmileIcon className="w-6 h-6" />
-          </button>
-        )}
+        <button
+          type="button"
+          disabled={disabled}
+          className="p-2.5 text-gray-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-full disabled:opacity-50 transition-colors hidden sm:block"
+          title="Emoji"
+        >
+          <FaceSmileIcon className="w-5 h-5" />
+        </button>
 
         {/* Send button */}
         <button
@@ -196,11 +248,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           className={`
             p-3 rounded-full transition-all
             ${canSend
-              ? 'bg-primary-500 text-white hover:bg-primary-600 shadow-md hover:shadow-lg'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+              ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-md hover:shadow-lg transform hover:scale-105'
+              : 'bg-gray-200 dark:bg-zinc-700 text-gray-400 cursor-not-allowed'
             }
           `}
-          title="Enviar mensagem"
+          title="Enviar"
         >
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -210,9 +262,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </button>
       </div>
 
-      {/* Hint text */}
-      <p className="text-xs text-gray-400 mt-2 text-center">
-        Pressione Enter para enviar, Shift+Enter para nova linha
+      {/* Hint */}
+      <p className="text-[10px] text-gray-400 pb-2 px-4 text-center hidden sm:block">
+        Enter para enviar • Shift+Enter para nova linha
       </p>
     </div>
   );
