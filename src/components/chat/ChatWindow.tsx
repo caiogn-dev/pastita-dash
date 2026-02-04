@@ -163,15 +163,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // Handlers WebSocket
   function handleMessageReceived(event: any) {
     const newMessage = event.message;
+    const messageConversationId = event.conversation_id;
     
-    if (selectedConversation && event.conversation_id === selectedConversation.id) {
+    console.log('[ChatWindow] Message received:', {
+      messageConversationId,
+      selectedConversationId: selectedConversation?.id,
+      match: messageConversationId === selectedConversation?.id
+    });
+    
+    // CRÍTICO: Só adicionar mensagens da conversa atualmente selecionada
+    if (selectedConversation && messageConversationId === selectedConversation.id) {
       setMessages(prev => {
+        // Verificar duplicatas por ID ou whatsapp_message_id
         const isDuplicate = prev.some(m => 
           m.id === newMessage.id || 
           (m.whatsapp_message_id && m.whatsapp_message_id === newMessage.whatsapp_message_id)
         );
         
-        if (isDuplicate) return prev;
+        if (isDuplicate) {
+          console.log('[ChatWindow] Duplicate message ignored:', newMessage.id);
+          return prev;
+        }
+        
+        console.log('[ChatWindow] Adding message to chat:', newMessage.id);
         return [...prev, newMessage as Message];
       });
     }
@@ -315,13 +329,28 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     loadConversations();
   }, [loadConversations]);
 
+  // Referência para a conversa anterior (para unsubscribe)
+  const previousConversationRef = useRef<string | null>(null);
+
   useEffect(() => {
+    // Unsubscribe da conversa anterior PRIMEIRO
+    if (previousConversationRef.current && previousConversationRef.current !== selectedConversation?.id) {
+      unsubscribeFromConversation(previousConversationRef.current);
+    }
+    
+    // LIMPAR MENSAGENS IMEDIATAMENTE ao trocar de conversa
+    setMessages([]);
+    
     if (selectedConversation) {
-      loadMessages();
+      // Atualizar referência
+      previousConversationRef.current = selectedConversation.id;
+      
+      // Subscribe e carregar mensagens da nova conversa
       subscribeToConversation(selectedConversation.id);
+      loadMessages();
       onConversationSelect?.(selectedConversation);
     } else {
-      setMessages([]);
+      previousConversationRef.current = null;
       onConversationSelect?.(null);
     }
 
@@ -330,7 +359,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         unsubscribeFromConversation(selectedConversation.id);
       }
     };
-  }, [selectedConversation, loadMessages, subscribeToConversation, unsubscribeFromConversation, onConversationSelect]);
+  }, [selectedConversation?.id]); // Apenas reage a mudança de ID
 
   // Agrupar mensagens por data
   const groupedMessages = messages.reduce((groups, message) => {
