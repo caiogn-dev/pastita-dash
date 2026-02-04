@@ -86,14 +86,14 @@ export interface PaginatedResponse<T> {
 }
 
 export const campaignsService = {
-  // Campaigns
+  // Campaigns (WhatsApp) - usando /campaigns/ endpoint
   getCampaigns: async (params?: Record<string, string>): Promise<PaginatedResponse<Campaign>> => {
-    const response = await api.get<PaginatedResponse<Campaign>>('/marketing/campaigns/', { params });
+    const response = await api.get<PaginatedResponse<Campaign>>('/campaigns/campaigns/', { params });
     return response.data;
   },
 
   getCampaign: async (id: string): Promise<Campaign> => {
-    const response = await api.get<Campaign>(`/marketing/campaigns/${id}/`);
+    const response = await api.get<Campaign>(`/campaigns/campaigns/${id}/`);
     return response.data;
   },
 
@@ -108,43 +108,43 @@ export const campaignsService = {
     contact_list?: Array<{ phone: string; name?: string; variables?: Record<string, unknown> }>;
     scheduled_at?: string;
   }): Promise<Campaign> => {
-    const response = await api.post<Campaign>('/marketing/campaigns/', data);
+    const response = await api.post<Campaign>('/campaigns/campaigns/', data);
     return response.data;
   },
 
   updateCampaign: async (id: string, data: Partial<Campaign>): Promise<Campaign> => {
-    const response = await api.patch<Campaign>(`/marketing/campaigns/${id}/`, data);
+    const response = await api.patch<Campaign>(`/campaigns/campaigns/${id}/`, data);
     return response.data;
   },
 
   deleteCampaign: async (id: string): Promise<void> => {
-    await api.delete(`/marketing/campaigns/${id}/`);
+    await api.delete(`/campaigns/campaigns/${id}/`);
   },
 
   scheduleCampaign: async (id: string, scheduledAt: string): Promise<Campaign> => {
-    const response = await api.post<Campaign>(`/marketing/campaigns/${id}/schedule/`, {
+    const response = await api.post<Campaign>(`/campaigns/campaigns/${id}/schedule/`, {
       scheduled_at: scheduledAt,
     });
     return response.data;
   },
 
   startCampaign: async (id: string): Promise<Campaign> => {
-    const response = await api.post<Campaign>(`/marketing/campaigns/${id}/start/`);
+    const response = await api.post<Campaign>(`/campaigns/campaigns/${id}/start/`);
     return response.data;
   },
 
   pauseCampaign: async (id: string): Promise<Campaign> => {
-    const response = await api.post<Campaign>(`/marketing/campaigns/${id}/pause/`);
+    const response = await api.post<Campaign>(`/campaigns/campaigns/${id}/pause/`);
     return response.data;
   },
 
   resumeCampaign: async (id: string): Promise<Campaign> => {
-    const response = await api.post<Campaign>(`/marketing/campaigns/${id}/resume/`);
+    const response = await api.post<Campaign>(`/campaigns/campaigns/${id}/resume/`);
     return response.data;
   },
 
   cancelCampaign: async (id: string): Promise<Campaign> => {
-    const response = await api.post<Campaign>(`/marketing/campaigns/${id}/cancel/`);
+    const response = await api.post<Campaign>(`/campaigns/campaigns/${id}/cancel/`);
     return response.data;
   },
 
@@ -163,14 +163,14 @@ export const campaignsService = {
     started_at: string | null;
     completed_at: string | null;
   }> => {
-    const response = await api.get(`/marketing/campaigns/${id}/stats/`);
+    const response = await api.get(`/campaigns/campaigns/${id}/stats/`);
     return response.data;
   },
 
   getCampaignRecipients: async (id: string, status?: string): Promise<CampaignRecipient[]> => {
     const params: Record<string, string> = {};
     if (status) params.status = status;
-    const response = await api.get<CampaignRecipient[]>(`/marketing/campaigns/${id}/recipients/`, { params });
+    const response = await api.get<CampaignRecipient[]>(`/campaigns/campaigns/${id}/recipients/`, { params });
     return response.data;
   },
 
@@ -178,18 +178,18 @@ export const campaignsService = {
     id: string,
     contacts: Array<{ phone: string; name?: string; variables?: Record<string, unknown> }>
   ): Promise<{ added: number }> => {
-    const response = await api.post(`/marketing/campaigns/${id}/add_recipients/`, { contacts });
+    const response = await api.post(`/campaigns/campaigns/${id}/add_recipients/`, { contacts });
     return response.data;
   },
 
-  // Scheduled Messages
+  // Scheduled Messages (WhatsApp) - usando /campaigns/scheduled/ endpoint
   getScheduledMessages: async (params?: Record<string, string>): Promise<PaginatedResponse<ScheduledMessage>> => {
-    const response = await api.get<PaginatedResponse<ScheduledMessage>>('/marketing/scheduled/', { params });
+    const response = await api.get<PaginatedResponse<ScheduledMessage>>('/campaigns/scheduled/', { params });
     return response.data;
   },
 
   getScheduledMessage: async (id: string): Promise<ScheduledMessage> => {
-    const response = await api.get<ScheduledMessage>(`/marketing/scheduled/${id}/`);
+    const response = await api.get<ScheduledMessage>(`/campaigns/scheduled/${id}/`);
     return response.data;
   },
 
@@ -207,17 +207,17 @@ export const campaignsService = {
     recurrence_rule?: string;
     metadata?: Record<string, unknown>;
   }): Promise<ScheduledMessage> => {
-    const response = await api.post<ScheduledMessage>('/marketing/scheduled/', data);
+    const response = await api.post<ScheduledMessage>('/campaigns/scheduled/', data);
     return response.data;
   },
 
   updateScheduledMessage: async (id: string, data: Partial<ScheduledMessage>): Promise<ScheduledMessage> => {
-    const response = await api.patch<ScheduledMessage>(`/marketing/scheduled/${id}/`, data);
+    const response = await api.patch<ScheduledMessage>(`/campaigns/scheduled/${id}/`, data);
     return response.data;
   },
 
   cancelScheduledMessage: async (id: string): Promise<ScheduledMessage> => {
-    const response = await api.post<ScheduledMessage>(`/marketing/scheduled/${id}/cancel/`);
+    const response = await api.post<ScheduledMessage>(`/campaigns/scheduled/${id}/cancel/`);
     return response.data;
   },
 
@@ -231,18 +231,18 @@ export const campaignsService = {
   }> => {
     const params: Record<string, string> = {};
     if (accountId) params.account_id = accountId;
-    const response = await api.get('/marketing/scheduled/stats/', { params });
+    const response = await api.get('/campaigns/scheduled/stats/', { params });
     return response.data;
   },
 
-  // Contact Lists
+  // Contact Lists (WhatsApp) - usando /campaigns/contacts/ endpoint
   getContactLists: async (params?: Record<string, string>): Promise<PaginatedResponse<ContactList>> => {
-    const response = await api.get<PaginatedResponse<ContactList>>('/marketing/contacts/', { params });
+    const response = await api.get<PaginatedResponse<ContactList>>('/campaigns/contacts/', { params });
     return response.data;
   },
 
   getContactList: async (id: string): Promise<ContactList> => {
-    const response = await api.get<ContactList>(`/marketing/contacts/${id}/`);
+    const response = await api.get<ContactList>(`/campaigns/contacts/${id}/`);
     return response.data;
   },
 
@@ -252,17 +252,17 @@ export const campaignsService = {
     description?: string;
     contacts?: Array<{ phone: string; name?: string; variables?: Record<string, unknown> }>;
   }): Promise<ContactList> => {
-    const response = await api.post<ContactList>('/marketing/contacts/', data);
+    const response = await api.post<ContactList>('/campaigns/contacts/', data);
     return response.data;
   },
 
   updateContactList: async (id: string, data: Partial<ContactList>): Promise<ContactList> => {
-    const response = await api.patch<ContactList>(`/marketing/contacts/${id}/`, data);
+    const response = await api.patch<ContactList>(`/campaigns/contacts/${id}/`, data);
     return response.data;
   },
 
   deleteContactList: async (id: string): Promise<void> => {
-    await api.delete(`/marketing/contacts/${id}/`);
+    await api.delete(`/campaigns/contacts/${id}/`);
   },
 
   importContactsFromCSV: async (data: {
@@ -270,7 +270,7 @@ export const campaignsService = {
     name: string;
     csv_content: string;
   }): Promise<ContactList> => {
-    const response = await api.post<ContactList>('/marketing/contacts/import_csv/', data);
+    const response = await api.post<ContactList>('/campaigns/contacts/import_csv/', data);
     return response.data;
   },
 };

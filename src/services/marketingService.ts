@@ -487,32 +487,32 @@ export const emailTemplatesApi = {
   },
 
   async get(id: string): Promise<EmailTemplate> {
-    const response = await api.get<EmailTemplate>(`${BASE_URL}/email-templates/${id}/`);
+    const response = await api.get<EmailTemplate>(`${BASE_URL}/templates/${id}/`);
     return response.data;
   },
 
   async create(data: EmailTemplateInput): Promise<EmailTemplate> {
     const payload = { ...data, slug: data.slug || generateSlug(data.name) };
-    const response = await api.post<EmailTemplate>(`${BASE_URL}/email-templates/`, payload);
+    const response = await api.post<EmailTemplate>(`${BASE_URL}/templates/`, payload);
     return response.data;
   },
 
   async update(id: string, data: Partial<EmailTemplateInput>): Promise<EmailTemplate> {
-    const response = await api.patch<EmailTemplate>(`${BASE_URL}/email-templates/${id}/`, data);
+    const response = await api.patch<EmailTemplate>(`${BASE_URL}/templates/${id}/`, data);
     return response.data;
   },
 
   async delete(id: string): Promise<void> {
-    await api.delete(`${BASE_URL}/email-templates/${id}/`);
+    await api.delete(`${BASE_URL}/templates/${id}/`);
   },
 
   async preview(id: string, variables: Record<string, string>): Promise<string> {
-    const response = await api.post<{ html: string }>(`${BASE_URL}/email-templates/${id}/preview/`, { variables });
+    const response = await api.post<{ html: string }>(`${BASE_URL}/templates/${id}/preview/`, { variables });
     return response.data.html;
   },
 
   async sendTest(id: string, email: string, variables: Record<string, string>): Promise<void> {
-    await api.post(`${BASE_URL}/email-templates/${id}/send-test/`, { email, variables });
+    await api.post(`${BASE_URL}/templates/${id}/send-test/`, { email, variables });
   },
 };
 
@@ -607,38 +607,38 @@ export const emailCampaignsApi = {
 };
 
 // =============================================================================
-// WHATSAPP CAMPAIGNS API
+// WHATSAPP CAMPAIGNS API (usa /campaigns/ endpoint)
 // =============================================================================
 
 export const whatsappCampaignsApi = {
   async list(storeId: string): Promise<PaginatedResponse<WhatsAppCampaign>> {
-    const response = await api.get<PaginatedResponse<WhatsAppCampaign>>(`${BASE_URL}/whatsapp-campaigns/`, {
+    const response = await api.get<PaginatedResponse<WhatsAppCampaign>>('/campaigns/campaigns/', {
       params: { store: storeId }
     });
     return response.data;
   },
 
   async get(id: string): Promise<WhatsAppCampaign> {
-    const response = await api.get<WhatsAppCampaign>(`${BASE_URL}/whatsapp-campaigns/${id}/`);
+    const response = await api.get<WhatsAppCampaign>(`/campaigns/campaigns/${id}/`);
     return response.data;
   },
 
   async create(data: WhatsAppCampaignInput): Promise<WhatsAppCampaign> {
-    const response = await api.post<WhatsAppCampaign>(`${BASE_URL}/whatsapp-campaigns/`, data);
+    const response = await api.post<WhatsAppCampaign>('/campaigns/campaigns/', data);
     return response.data;
   },
 
   async update(id: string, data: Partial<WhatsAppCampaignInput>): Promise<WhatsAppCampaign> {
-    const response = await api.patch<WhatsAppCampaign>(`${BASE_URL}/whatsapp-campaigns/${id}/`, data);
+    const response = await api.patch<WhatsAppCampaign>(`/campaigns/campaigns/${id}/`, data);
     return response.data;
   },
 
   async delete(id: string): Promise<void> {
-    await api.delete(`${BASE_URL}/whatsapp-campaigns/${id}/`);
+    await api.delete(`/campaigns/campaigns/${id}/`);
   },
 
   async send(id: string): Promise<void> {
-    await api.post(`${BASE_URL}/whatsapp-campaigns/${id}/send/`);
+    await api.post(`/campaigns/campaigns/${id}/start/`);
   },
 };
 
