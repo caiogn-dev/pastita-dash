@@ -6,3 +6,10 @@ export {
   useSelectedStoreSlug, 
   useHasSelectedStore 
 } from './storeContextStore';
+export {
+  useChatStore,
+  useConversations,
+  useSelectedConversationId,
+  useTotalUnreadCount,
+  useWsConnected,
+} from './chatStore';

@@ -7,6 +7,7 @@ import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
 import { whatsappService } from './services';
 import { WebSocketProvider } from './context/WebSocketContext';
+import { WhatsAppWsProvider } from './context/WhatsAppWsContext';
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -189,7 +190,7 @@ const AppContent: React.FC = () => {
   );
 };
 
-// Main App with WebSocket Provider (singleton)
+// Main App with WebSocket Providers (singleton)
 const App: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   
@@ -199,7 +200,9 @@ const App: React.FC = () => {
   
   return (
     <WebSocketProvider>
-      <AppContent />
+      <WhatsAppWsProvider dashboardMode={true}>
+        <AppContent />
+      </WhatsAppWsProvider>
     </WebSocketProvider>
   );
 };

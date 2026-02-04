@@ -29,6 +29,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
+import { useTotalUnreadCount, useWsConnected } from '../../stores/chatStore';
 
 interface NavItem {
   name: string;
@@ -53,6 +54,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { store } = useStore();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const totalUnreadCount = useTotalUnreadCount();
+  const wsConnected = useWsConnected();
 
   const storeKey = store?.slug || store?.id || null;
   const storeRoot = storeKey ? `/stores/${storeKey}` : '/stores';
@@ -89,7 +92,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     {
       title: 'Comunicação',
       items: [
-        { name: 'Conversas', href: '/conversations', icon: ChatBubbleLeftRightIcon },
+        { 
+          name: 'Conversas', 
+          href: '/conversations', 
+          icon: ChatBubbleLeftRightIcon,
+          badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
+        },
         { name: 'Mensagens', href: '/messages', icon: InboxIcon },
         { name: 'Contas WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
         { 
