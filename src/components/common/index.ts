@@ -5,6 +5,22 @@ export { Tabs } from './Tabs';
 export { Switch } from './Switch';
 export { EmptyState } from './EmptyState';
 export { 
+  Skeleton,
+  SkeletonText,
+  SkeletonAvatar,
+  SkeletonButton,
+  SkeletonCard,
+  SkeletonTable,
+  SkeletonTableRow,
+  SkeletonList,
+  SkeletonStats,
+  SkeletonChart,
+  SkeletonProduct,
+  SkeletonProductGrid,
+  SkeletonChat,
+  SkeletonForm,
+} from './Skeleton';
+export { 
   Badge, 
   StatusBadge, 
   OrderStatusBadge, 
