@@ -365,7 +365,10 @@ export const AgentDetailPage: React.FC = () => {
       {activeTab === 'edit' && (
         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
           <AgentForm
-            agent={agent}
+            agent={{
+              ...agent,
+              accounts: agent.accounts?.map(a => a.id) || []
+            }}
             onSubmit={handleUpdate}
             onCancel={() => setActiveTab('overview')}
             isLoading={isSaving}

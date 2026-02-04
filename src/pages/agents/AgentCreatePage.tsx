@@ -20,7 +20,7 @@ export const AgentCreatePage: React.FC = () => {
     const loadAccounts = async () => {
       try {
         const response = await whatsappService.getAccounts();
-        setWhatsappAccounts(response.data?.results || response.data || []);
+        setWhatsappAccounts(response.results || []);
       } catch (error) {
         console.error('Erro ao carregar contas WhatsApp:', error);
       }

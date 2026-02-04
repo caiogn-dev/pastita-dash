@@ -8,7 +8,7 @@ import { Card, Button, Input, Select, PageLoading } from '../../components/commo
 import { whatsappService, agentsService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { WhatsAppAccount } from '../../types';
-import { Agent } from '../../types/agents';
+import { Agent } from '../../services/agents';
 
 export const AccountFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -41,8 +41,8 @@ export const AccountFormPage: React.FC = () => {
 
   const loadAgents = async () => {
     try {
-      const response = await agentsService.getAgents();
-      setAgents(response.results.filter(a => a.status === 'active'));
+      const agents = await agentsService.getAgents();
+      setAgents(agents.filter((a: Agent) => a.status === 'active'));
     } catch (error) {
       logger.error('Error loading agents:', error);
     }
