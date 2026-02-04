@@ -57,10 +57,9 @@ export { deliveryService } from './delivery';
 export { productsService } from './products';
 
 // =============================================================================
-// AUTOMATION & AI
+// AUTOMATION & AI AGENTS
 // =============================================================================
 
-export { default as langflowService } from './langflow';
 export { default as agentsService } from './agents';
 export { auditService } from './audit';
 export {

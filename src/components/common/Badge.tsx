@@ -158,7 +158,7 @@ export const StatusBadge: React.FC<{ status: string; showDot?: boolean; size?: B
     completed: { variant: 'success', label: 'Concluído' },
     partially_refunded: { variant: 'warning', label: 'Reembolso Parcial' },
     
-    // Langflow statuses
+    // AI Agent statuses
     testing: { variant: 'warning', label: 'Testando' },
     success: { variant: 'success', label: 'Sucesso' },
     error: { variant: 'danger', label: 'Erro' },

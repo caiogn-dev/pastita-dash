@@ -19,8 +19,13 @@ const ConversationsPage = lazy(() => import('./pages/conversations/Conversations
 const OrdersPage = lazy(() => import('./pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPageNew').then(m => ({ default: m.OrderDetailPageNew })));
 const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
-const LangflowPage = lazy(() => import('./pages/langflow/LangflowPage').then(m => ({ default: m.LangflowPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+
+// Agents Pages (Langchain AI)
+const AgentsPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentsPage })));
+const AgentDetailPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentDetailPage })));
+const AgentCreatePage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentCreatePage })));
+const AgentTestPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentTestPage })));
 
 // E-commerce Pages
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
@@ -122,8 +127,14 @@ const AppContent: React.FC = () => {
         <Route path="conversations" element={<Suspense fallback={<FullPageLoading />}><ConversationsPage /></Suspense>} />
         {/* Store-scoped routes for orders and payments */}
         
-        {/* E-commerce Routes */}
-        <Route path="langflow" element={<Suspense fallback={<FullPageLoading />}><LangflowPage /></Suspense>} />
+        {/* AI Agents Routes (Langchain) */}
+        <Route path="agents" element={<Suspense fallback={<FullPageLoading />}><AgentsPage /></Suspense>} />
+        <Route path="agents/new" element={<Suspense fallback={<FullPageLoading />}><AgentCreatePage /></Suspense>} />
+        <Route path="agents/:id" element={<Suspense fallback={<FullPageLoading />}><AgentDetailPage /></Suspense>} />
+        <Route path="agents/:id/test" element={<Suspense fallback={<FullPageLoading />}><AgentTestPage /></Suspense>} />
+        <Route path="agents/:id/conversations" element={<Suspense fallback={<FullPageLoading />}><AgentDetailPage /></Suspense>} />
+        
+        {/* Settings */}
         <Route path="settings" element={<Suspense fallback={<FullPageLoading />}><SettingsPage /></Suspense>} />
         
         {/* Automation Routes */}

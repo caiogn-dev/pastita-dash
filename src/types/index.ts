@@ -29,7 +29,8 @@ export interface WhatsAppAccount {
   display_phone_number: string;
   status: 'active' | 'inactive' | 'suspended' | 'pending';
   token_version: number;
-  default_langflow_flow_id: string | null;
+  default_agent: string | null;
+  default_agent_name: string | null;
   auto_response_enabled: boolean;
   human_handoff_enabled: boolean;
   metadata: Record<string, unknown>;
@@ -49,7 +50,7 @@ export interface CreateWhatsAppAccount {
   webhook_verify_token?: string;
   auto_response_enabled?: boolean;
   human_handoff_enabled?: boolean;
-  default_langflow_flow_id?: string;
+  default_agent?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -83,7 +84,7 @@ export interface Message {
   error_code: string;
   error_message: string;
   metadata: Record<string, unknown>;
-  processed_by_langflow: boolean;
+  processed_by_agent: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -141,8 +142,9 @@ export interface Conversation {
   mode: 'auto' | 'human' | 'hybrid';
   status: 'open' | 'closed' | 'pending' | 'resolved';
   assigned_agent: number | null;
-  langflow_flow_id: string | null;
-  langflow_session_id: string;
+  ai_agent: string | null;
+  ai_agent_name: string | null;
+  agent_session_id: string;
   context: Record<string, unknown>;
   tags: string[];
   last_message_at: string | null;
@@ -347,55 +349,10 @@ export interface PaymentGateway {
   is_active: boolean;
 }
 
-// Langflow types
-export interface LangflowFlow {
-  id: string;
-  name: string;
-  description: string;
-  flow_id: string;
-  endpoint_url: string;
-  status: 'active' | 'inactive' | 'testing';
-  input_type: string;
-  output_type: string;
-  tweaks: Record<string, unknown>;
-  default_context: Record<string, unknown>;
-  timeout_seconds: number;
-  max_retries: number;
-  accounts: string[];
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
-}
-
-export interface LangflowSession {
-  id: string;
-  flow: string;
-  conversation: string | null;
-  session_id: string;
-  context: Record<string, unknown>;
-  history: Array<{ role: string; content: string }>;
-  last_interaction_at: string;
-  interaction_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface LangflowLog {
-  id: string;
-  flow: string;
-  session: string | null;
-  input_message: string;
-  output_message: string;
-  status: 'success' | 'error' | 'timeout';
-  request_payload: Record<string, unknown>;
-  response_payload: Record<string, unknown>;
-  duration_ms: number | null;
-  error_message: string;
-  created_at: string;
-}
+// NOTE: Langflow types removed - use types from src/types/agents.ts for AI Agents
 
 export interface ProcessMessageRequest {
-  flow_id: string;
+  agent_id: string;
   message: string;
   context?: Record<string, unknown>;
   session_id?: string;
@@ -405,7 +362,7 @@ export interface ProcessMessageRequest {
 export interface ProcessMessageResponse {
   response: string;
   session_id: string;
-  flow_id: string;
+  agent_id: string;
   raw_response: Record<string, unknown>;
 }
 
@@ -439,9 +396,9 @@ export interface DashboardOverview {
     pending: number;
     completed_today: number;
   };
-  langflow: {
+  agents: {
     interactions_today: number;
-    avg_duration_ms: number;
+    avg_response_time_ms: number;
     success_rate: number;
   };
   timestamp: string;
@@ -546,8 +503,8 @@ export interface CompanyProfile {
   delivery_notification_enabled: boolean;
   external_api_key: string;
   webhook_secret: string;
-  use_langflow: boolean;
-  langflow_flow_id: string | null;
+  use_ai_agent: boolean;
+  default_agent: string | null;
   settings: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -581,8 +538,8 @@ export interface UpdateCompanyProfile {
   payment_confirmation_enabled?: boolean;
   order_status_notification_enabled?: boolean;
   delivery_notification_enabled?: boolean;
-  use_langflow?: boolean;
-  langflow_flow_id?: string | null;
+  use_ai_agent?: boolean;
+  default_agent?: string | null;
   settings?: Record<string, unknown>;
 }
 

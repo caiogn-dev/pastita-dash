@@ -58,8 +58,8 @@ const CompanyProfileDetailPage: React.FC = () => {
         payment_confirmation_enabled: data.payment_confirmation_enabled,
         order_status_notification_enabled: data.order_status_notification_enabled,
         delivery_notification_enabled: data.delivery_notification_enabled,
-        use_langflow: data.use_langflow,
-        langflow_flow_id: data.langflow_flow_id,
+        use_ai_agent: data.use_ai_agent,
+        default_agent: data.default_agent,
       });
       setBusinessHours(data.business_hours || {});
     } catch (error) {
@@ -465,34 +465,37 @@ const CompanyProfileDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Langflow Integration */}
+        {/* AI Agent Integration */}
         <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Integração Langflow</h2>
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Integração Agente IA</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Usar Langflow</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Usar Langflow para respostas avançadas com IA</p>
+                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Usar Agente IA</label>
+                <p className="text-sm text-gray-500 dark:text-zinc-400">Usar Agente IA (Langchain) para respostas avançadas</p>
               </div>
               <input
                 type="checkbox"
-                checked={formData.use_langflow || false}
-                onChange={(e) => setFormData({ ...formData, use_langflow: e.target.checked })}
+                checked={formData.use_ai_agent || false}
+                onChange={(e) => setFormData({ ...formData, use_ai_agent: e.target.checked })}
                 className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
               />
             </div>
-            {formData.use_langflow && (
+            {formData.use_ai_agent && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
-                  ID do Flow
+                  ID do Agente
                 </label>
                 <input
                   type="text"
-                  value={formData.langflow_flow_id || ''}
-                  onChange={(e) => setFormData({ ...formData, langflow_flow_id: e.target.value || null })}
-                  placeholder="UUID do flow no Langflow"
+                  value={formData.default_agent || ''}
+                  onChange={(e) => setFormData({ ...formData, default_agent: e.target.value || null })}
+                  placeholder="UUID do Agente IA"
                   className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
                 />
+                <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+                  <Link to="/agents" className="text-green-600 hover:text-green-700">Gerenciar Agentes IA →</Link>
+                </p>
               </div>
             )}
           </div>

@@ -241,8 +241,8 @@ export const DashboardPage: React.FC = () => {
             icon={<CurrencyDollarIcon className="w-5 h-5 md:w-6 md:h-6" />}
           />
           <StatCard
-            title="Interações LLM"
-            value={overview?.langflow.interactions_today || 0}
+            title="Interações IA"
+            value={overview?.agents?.interactions_today || 0}
             icon={<CpuChipIcon className="w-5 h-5 md:w-6 md:h-6" />}
           />
           <StatCard
@@ -447,25 +447,25 @@ export const DashboardPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* Langflow Stats */}
-          <Card title="Estatísticas Langflow">
+          {/* AI Agent Stats */}
+          <Card title="Estatísticas Agentes IA">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-zinc-400">Interações Hoje</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {overview?.langflow.interactions_today || 0}
+                  {overview?.agents?.interactions_today || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-zinc-400">Tempo Médio</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {overview?.langflow.avg_duration_ms || 0}ms
+                  {overview?.agents?.avg_response_time_ms || 0}ms
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-zinc-400">Taxa de Sucesso</span>
                 <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                  {overview?.langflow.success_rate || 0}%
+                  {overview?.agents?.success_rate || 0}%
                 </span>
               </div>
             </div>

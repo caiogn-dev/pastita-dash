@@ -25,6 +25,7 @@ import {
   PresentationChartLineIcon,
   MegaphoneIcon,
   EnvelopeIcon,
+  PlusCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -106,7 +107,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     {
       title: 'Automação & IA',
       items: [
-        { name: 'Langflow (IA)', href: '/langflow', icon: CpuChipIcon },
+        { 
+          name: 'Agentes IA', 
+          href: '/agents', 
+          icon: CpuChipIcon,
+          badge: 'Novo',
+          children: [
+            { name: 'Todos Agentes', href: '/agents', icon: CpuChipIcon },
+            { name: 'Criar Agente', href: '/agents/new', icon: PlusCircleIcon },
+          ]
+        },
         { 
           name: 'Automação', 
           href: '/automation/companies', 

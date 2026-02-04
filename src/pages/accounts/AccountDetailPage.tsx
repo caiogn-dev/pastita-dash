@@ -256,10 +256,10 @@ export const AccountDetailPage: React.FC = () => {
                   <p>{format(new Date(account.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
                 </div>
               </div>
-              {account.default_langflow_flow_id && (
+              {account.default_agent && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">Flow Langflow Padrão</p>
-                  <p className="font-mono text-sm">{account.default_langflow_flow_id}</p>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Agente IA Padrão</p>
+                  <p className="font-medium">{account.default_agent_name || account.default_agent}</p>
                 </div>
               )}
             </div>

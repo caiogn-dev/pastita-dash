@@ -164,9 +164,9 @@ const CompanyProfilesPage: React.FC = () => {
                       PIX
                     </span>
                   )}
-                  {profile.use_langflow && (
+                  {profile.use_ai_agent && (
                     <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-indigo-100 text-indigo-800">
-                      Langflow
+                      Agente IA
                     </span>
                   )}
                 </div>

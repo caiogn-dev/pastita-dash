@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import logger from '../../services/logger';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Header } from '../../components/layout';
 import { Card, Button, Input, Select, PageLoading } from '../../components/common';
-import { whatsappService, langflowService, getErrorMessage } from '../../services';
+import { whatsappService, agentsService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
-import { WhatsAppAccount, LangflowFlow } from '../../types';
+import { WhatsAppAccount } from '../../types';
+import { Agent } from '../../types/agents';
 
 export const AccountFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export const AccountFormPage: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [flows, setFlows] = useState<LangflowFlow[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     phone_number_id: '',
@@ -28,22 +29,22 @@ export const AccountFormPage: React.FC = () => {
     webhook_verify_token: '',
     auto_response_enabled: true,
     human_handoff_enabled: true,
-    default_langflow_flow_id: '',
+    default_agent: '',
   });
 
   useEffect(() => {
-    loadFlows();
+    loadAgents();
     if (isEditing) {
       loadAccount();
     }
   }, [id]);
 
-  const loadFlows = async () => {
+  const loadAgents = async () => {
     try {
-      const response = await langflowService.getFlows();
-      setFlows(response.results);
+      const response = await agentsService.getAgents();
+      setAgents(response.results.filter(a => a.status === 'active'));
     } catch (error) {
-      logger.error('Error loading flows:', error);
+      logger.error('Error loading agents:', error);
     }
   };
 
@@ -61,7 +62,7 @@ export const AccountFormPage: React.FC = () => {
         webhook_verify_token: '',
         auto_response_enabled: account.auto_response_enabled,
         human_handoff_enabled: account.human_handoff_enabled,
-        default_langflow_flow_id: account.default_langflow_flow_id || '',
+        default_agent: account.default_agent || '',
       });
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -81,7 +82,7 @@ export const AccountFormPage: React.FC = () => {
         display_phone_number: formData.display_phone_number,
         auto_response_enabled: formData.auto_response_enabled,
         human_handoff_enabled: formData.human_handoff_enabled,
-        default_langflow_flow_id: formData.default_langflow_flow_id || null,
+        default_agent: formData.default_agent || null,
       };
 
       if (!isEditing) {
@@ -201,18 +202,21 @@ export const AccountFormPage: React.FC = () => {
             <Card title="Automação">
               <div className="space-y-4">
                 <Select
-                  label="Flow Langflow Padrão"
-                  value={formData.default_langflow_flow_id}
-                  onChange={(e) => setFormData({ ...formData, default_langflow_flow_id: e.target.value })}
+                  label="Agente IA Padrão"
+                  value={formData.default_agent}
+                  onChange={(e) => setFormData({ ...formData, default_agent: e.target.value })}
                   options={[
                     { value: '', label: 'Nenhum' },
-                    ...flows.map((flow) => ({ value: flow.id, label: flow.name })),
+                    ...agents.map((agent) => ({ value: agent.id, label: agent.name })),
                   ]}
                 />
+                <p className="text-xs text-gray-500 dark:text-zinc-400">
+                  <Link to="/agents" className="text-green-600 hover:text-green-700">Gerenciar Agentes IA →</Link>
+                </p>
                 <div className="flex items-center justify-between py-2">
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">Resposta Automática</p>
-                    <p className="text-sm text-gray-500 dark:text-zinc-400">Processar mensagens com Langflow automaticamente</p>
+                    <p className="text-sm text-gray-500 dark:text-zinc-400">Processar mensagens com Agente IA automaticamente</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
