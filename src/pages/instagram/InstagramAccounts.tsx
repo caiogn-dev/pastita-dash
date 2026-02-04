@@ -221,14 +221,10 @@ export default function InstagramAccounts() {
   };
 
   const handleConnectInstagram = () => {
-    // Redirect to Instagram OAuth
-    const clientId = '955411496814093';
-    const redirectUri = encodeURIComponent('https://web-production-3e83a.up.railway.app/api/v1/instagram/oauth/callback/');
-    const scope = encodeURIComponent('instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish');
-    
-    const authUrl = `https://www.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
-    
-    window.location.href = authUrl;
+    // Redirect to Instagram OAuth via backend endpoint
+    // Using short URI: /ig/start which handles all OAuth params
+    const backendUrl = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://backend.pastita.com.br';
+    window.location.href = `${backendUrl}/ig/start`;
   };
 
   if (loading) {
