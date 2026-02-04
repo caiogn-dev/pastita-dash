@@ -117,9 +117,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     
     setIsLoadingConversations(true);
     try {
+      console.log('[ChatWindow] Loading conversations for accountId:', accountId);
       const response = await conversationsService.getConversations({ account: accountId });
+      console.log('[ChatWindow] Conversations response:', response);
       setConversations(response.results || []);
     } catch (error) {
+      console.error('[ChatWindow] Error loading conversations:', error);
       toast.error(getErrorMessage(error));
     } finally {
       setIsLoadingConversations(false);
