@@ -11,8 +11,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
-import { Card, Button, StatusBadge, Modal, Input, PageLoading, StatCard } from '../../components/common';
+import { Card, Button, StatusBadge, Modal, Input, PageLoading, StatCard, PageTitle } from '../../components/common';
 import { whatsappService, getErrorMessage } from '../../services';
 import { WhatsAppAccount, MessageTemplate } from '../../types';
 
@@ -129,8 +128,8 @@ export const AccountDetailPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <Header
+    <div className="p-6 space-y-6">
+      <PageTitle
         title={account.name}
         subtitle={account.display_phone_number || account.phone_number}
         actions={
@@ -152,7 +151,6 @@ export const AccountDetailPage: React.FC = () => {
         }
       />
 
-      <div className="p-6 space-y-6">
         {/* Status and Actions */}
         <Card>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -356,7 +354,6 @@ export const AccountDetailPage: React.FC = () => {
             </pre>
           </Card>
         )}
-      </div>
 
       {/* Rotate Token Modal */}
       <Modal

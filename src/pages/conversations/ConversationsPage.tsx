@@ -14,7 +14,6 @@ import {
   ArrowPathIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
-import { Header } from '../../components/layout';
 import { 
   Card, 
   Button, 
@@ -26,6 +25,7 @@ import {
   Input,
   PageLoading,
   StatusTabs,
+  PageTitle,
   CONVERSATION_STATUS_CONFIG,
   CONVERSATION_MODE_CONFIG,
 } from '../../components/common';
@@ -437,8 +437,8 @@ export const ConversationsPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <Header
+    <div className="p-6 space-y-6">
+      <PageTitle
         title="Conversas"
         subtitle={`${filteredConversations.length} de ${conversations.length} conversa(s)`}
         actions={
@@ -461,7 +461,6 @@ export const ConversationsPage: React.FC = () => {
         }
       />
 
-      <div className="p-6 space-y-6">
         {/* Status Tabs */}
         <StatusTabs
           tabs={statusTabs}
@@ -580,7 +579,6 @@ export const ConversationsPage: React.FC = () => {
             }
           />
         </Card>
-      </div>
 
       {/* Notes Modal */}
       <Modal

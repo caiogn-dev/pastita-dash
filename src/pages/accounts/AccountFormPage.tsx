@@ -3,8 +3,7 @@ import logger from '../../services/logger';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
-import { Card, Button, Input, Select, PageLoading } from '../../components/common';
+import { Card, Button, Input, Select, PageLoading, PageTitle } from '../../components/common';
 import { whatsappService, agentsService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { WhatsAppAccount } from '../../types';
@@ -118,8 +117,8 @@ export const AccountFormPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <Header
+    <div className="p-6">
+      <PageTitle
         title={isEditing ? 'Editar Conta' : 'Nova Conta'}
         subtitle={isEditing ? formData.name : 'Cadastre uma nova conta WhatsApp Business'}
         actions={
@@ -129,8 +128,7 @@ export const AccountFormPage: React.FC = () => {
         }
       />
 
-      <div className="p-6">
-        <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Basic Info */}
             <Card title="Informações Básicas">
@@ -259,7 +257,6 @@ export const AccountFormPage: React.FC = () => {
             </Card>
           </div>
         </form>
-      </div>
     </div>
   );
 };

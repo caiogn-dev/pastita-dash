@@ -15,7 +15,6 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
 import { 
   Card, 
   Button, 
@@ -26,6 +25,7 @@ import {
   Select, 
   PageLoading,
   OrderStatusTabs,
+  PageTitle,
 } from '../../components/common';
 import { OrdersKanban, ORDER_STATUSES } from '../../components/orders/OrdersKanban';
 import { exportService, getErrorMessage, ordersService } from '../../services';
@@ -553,8 +553,8 @@ export const OrdersPage: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <Header
+    <div className="h-full flex flex-col p-4 md:p-6">
+      <PageTitle
         title="Pedidos"
         subtitle={`${filteredOrders.length} pedido(s)${storeName ? ` - ${storeName}` : ''}`}
         actions={
@@ -656,7 +656,7 @@ export const OrdersPage: React.FC = () => {
         }
       />
 
-      <div className="flex-1 p-4 md:p-6 space-y-4 overflow-hidden">
+      <div className="flex-1 space-y-4 overflow-hidden">
         {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">

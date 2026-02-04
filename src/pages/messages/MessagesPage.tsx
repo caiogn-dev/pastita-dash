@@ -3,8 +3,7 @@ import { PaperAirplaneIcon, TableCellsIcon, ChatBubbleLeftRightIcon, MagnifyingG
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
-import { Card, Button, Input, Textarea, Select, Modal, PageLoading, StatusBadge, Table } from '../../components/common';
+import { Card, Button, Input, Textarea, Select, Modal, PageLoading, StatusBadge, Table, PageTitle } from '../../components/common';
 import { ChatWindow } from '../../components/chat';
 import { whatsappService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
@@ -161,13 +160,12 @@ export const MessagesPage: React.FC = () => {
   // Show loading if no account selected
   if (!selectedAccount) {
     return (
-      <div>
-        <Header
+      <div className="p-6">
+        <PageTitle
           title="Mensagens"
           subtitle="Selecione uma conta WhatsApp"
         />
-        <div className="p-6">
-          <Card className="flex flex-col items-center justify-center py-12">
+        <Card className="flex flex-col items-center justify-center py-12">
             <ChatBubbleLeftRightIcon className="w-16 h-16 text-gray-300 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               Nenhuma conta selecionada
@@ -176,14 +174,13 @@ export const MessagesPage: React.FC = () => {
               Selecione uma conta WhatsApp no menu superior para visualizar e gerenciar suas conversas.
             </p>
           </Card>
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <Header
+    <div className="h-full flex flex-col p-6">
+      <PageTitle
         title="Mensagens"
         subtitle={selectedConversation 
           ? `Conversa com ${selectedConversation.contact_name || selectedConversation.phone_number}`
@@ -230,7 +227,7 @@ export const MessagesPage: React.FC = () => {
         }
       />
 
-      <div className="flex-1 p-6 overflow-hidden">
+      <div className="flex-1 overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <label className="text-sm font-medium text-gray-600 dark:text-zinc-300">
             Conta WhatsApp:

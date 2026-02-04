@@ -19,13 +19,13 @@ import {
   LinkIcon,
   ClipboardIcon,
 } from '@heroicons/react/24/outline';
-import { Header } from '../../components/layout';
 import {
   Card,
   Button,
   Table,
   PageLoading,
   StatusFilter,
+  PageTitle,
 } from '../../components/common';
 import { ordersService } from '../../services';
 import { Order } from '../../types';
@@ -322,13 +322,12 @@ export const PaymentsPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <Header
+    <div className="p-6 space-y-6">
+      <PageTitle
         title="Pagamentos"
         subtitle={`${orders.length} pedido(s) | ${formatMoney(stats.totalRevenue)} recebido`}
       />
 
-      <div className="p-6 space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="p-4">
@@ -411,7 +410,6 @@ export const PaymentsPage: React.FC = () => {
             emptyMessage="Nenhum pagamento encontrado"
           />
         </Card>
-      </div>
     </div>
   );
 };

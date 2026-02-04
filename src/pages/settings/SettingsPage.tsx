@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
-import { Card, Button, Input, Loading } from '../../components/common';
+import { Card, Button, Input, Loading, PageTitle } from '../../components/common';
 import { authService, getErrorMessage, notificationsService } from '../../services';
 import { NotificationPreference } from '../../services/notifications';
 import { useAuthStore } from '../../stores/authStore';
@@ -212,166 +211,164 @@ export const SettingsPage: React.FC = () => {
   ];
 
   return (
-    <div>
-      <Header title="Configurações" subtitle="Gerencie suas preferências e segurança" />
+    <div className="p-6 space-y-6">
+      <PageTitle title="Configurações" subtitle="Gerencie suas preferências e segurança" />
 
-      <div className="p-6 space-y-6">
-        {/* User Info */}
-        <Card title="Informações do Usuário">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Usuário</label>
-              <p className="text-gray-900 dark:text-white">{user?.username}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Email</label>
-              <p className="text-gray-900 dark:text-white">{user?.email || '-'}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Nome</label>
-              <p className="text-gray-900 dark:text-white">{user?.first_name || '-'} {user?.last_name || ''}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Tipo</label>
-              <p className="text-gray-900 dark:text-white">
-                {user?.is_superuser ? 'Superusuário' : user?.is_staff ? 'Staff' : 'Usuário'}
-              </p>
-            </div>
+      {/* User Info */}
+      <Card title="Informações do Usuário">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Usuário</label>
+            <p className="text-gray-900 dark:text-white">{user?.username}</p>
           </div>
-        </Card>
+          <div>
+            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Email</label>
+            <p className="text-gray-900 dark:text-white">{user?.email || '-'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Nome</label>
+            <p className="text-gray-900 dark:text-white">{user?.first_name || '-'} {user?.last_name || ''}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Tipo</label>
+            <p className="text-gray-900 dark:text-white">
+              {user?.is_superuser ? 'Superusuário' : user?.is_staff ? 'Staff' : 'Usuário'}
+            </p>
+          </div>
+        </div>
+      </Card>
 
-        {/* Change Password */}
-        <Card title="Alterar Senha">
-          <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
-            <Input
-              label="Senha Atual"
-              type="password"
-              required
-              value={passwordForm.oldPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
-            />
-            <Input
-              label="Nova Senha"
-              type="password"
-              required
-              value={passwordForm.newPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-              helperText="Mínimo de 8 caracteres"
-            />
-            <Input
-              label="Confirmar Nova Senha"
-              type="password"
-              required
-              value={passwordForm.confirmPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-            />
-            <Button type="submit" isLoading={isChangingPassword}>
-              Alterar Senha
-            </Button>
-          </form>
-        </Card>
+      {/* Change Password */}
+      <Card title="Alterar Senha">
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+          <Input
+            label="Senha Atual"
+            type="password"
+            required
+            value={passwordForm.oldPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+          />
+          <Input
+            label="Nova Senha"
+            type="password"
+            required
+            value={passwordForm.newPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+            helperText="Mínimo de 8 caracteres"
+          />
+          <Input
+            label="Confirmar Nova Senha"
+            type="password"
+            required
+            value={passwordForm.confirmPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+          />
+          <Button type="submit" isLoading={isChangingPassword}>
+            Alterar Senha
+          </Button>
+        </form>
+      </Card>
 
-        {/* Notification Preferences */}
-        <Card
-          title="Preferências de Notificação"
-          subtitle="Defina onde deseja receber alertas do sistema"
-          actions={
-            <Button
-              onClick={handleSavePreferences}
-              isLoading={isSavingPreferences}
-              disabled={!preferences}
-            >
-              Salvar preferências
-            </Button>
-          }
-        >
-          {isLoadingPreferences ? (
-            <div className="py-10">
-              <Loading size="lg" />
-              <p className="mt-3 text-center text-sm text-gray-500 dark:text-zinc-400">
-                Carregando preferências...
-              </p>
-            </div>
-          ) : !preferences ? (
-            <div className="text-sm text-red-500">
-              Não foi possível carregar as preferências de notificação.
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {notificationSections.map((section) => {
-                const isSectionEnabled = preferences[section.enabledKey];
+      {/* Notification Preferences */}
+      <Card
+        title="Preferências de Notificação"
+        subtitle="Defina onde deseja receber alertas do sistema"
+        actions={
+          <Button
+            onClick={handleSavePreferences}
+            isLoading={isSavingPreferences}
+            disabled={!preferences}
+          >
+            Salvar preferências
+          </Button>
+        }
+      >
+        {isLoadingPreferences ? (
+          <div className="py-10">
+            <Loading size="lg" />
+            <p className="mt-3 text-center text-sm text-gray-500 dark:text-zinc-400">
+              Carregando preferências...
+            </p>
+          </div>
+        ) : !preferences ? (
+          <div className="text-sm text-red-500">
+            Não foi possível carregar as preferências de notificação.
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {notificationSections.map((section) => {
+              const isSectionEnabled = preferences[section.enabledKey];
 
-                return (
-                  <div key={section.id} className="rounded-lg border border-gray-100 p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{section.title}</p>
-                        <p className="text-sm text-gray-500 dark:text-zinc-400">{section.description}</p>
-                      </div>
-                      <Toggle
-                        label={`Ativar ${section.title}`}
-                        checked={isSectionEnabled}
-                        onChange={(value) => handlePreferenceChange(section.enabledKey, value)}
-                      />
+              return (
+                <div key={section.id} className="rounded-lg border border-gray-100 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{section.title}</p>
+                      <p className="text-sm text-gray-500 dark:text-zinc-400">{section.description}</p>
                     </div>
-                    {section.options.length > 0 && (
-                      <div className="mt-4 space-y-3">
-                        {section.options.map((option) => (
-                          <div key={option.key} className="flex items-center justify-between gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{option.label}</p>
-                              <p className="text-xs text-gray-500 dark:text-zinc-400">{option.description}</p>
-                            </div>
-                            <Toggle
-                              label={`${section.title} - ${option.label}`}
-                              checked={Boolean(preferences[option.key])}
-                              onChange={(value) => handlePreferenceChange(option.key, value)}
-                              disabled={!isSectionEnabled}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <Toggle
+                      label={`Ativar ${section.title}`}
+                      checked={isSectionEnabled}
+                      onChange={(value) => handlePreferenceChange(section.enabledKey, value)}
+                    />
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
+                  {section.options.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      {section.options.map((option) => (
+                        <div key={option.key} className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{option.label}</p>
+                            <p className="text-xs text-gray-500 dark:text-zinc-400">{option.description}</p>
+                          </div>
+                          <Toggle
+                            label={`${section.title} - ${option.label}`}
+                            checked={Boolean(preferences[option.key])}
+                            onChange={(value) => handlePreferenceChange(option.key, value)}
+                            disabled={!isSectionEnabled}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
 
-        {/* API Info */}
-        <Card title="Informações da API">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Base URL</label>
-              <p className="text-gray-900 dark:text-white font-mono text-sm">
-                {import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Documentação</label>
-              <div className="flex gap-4 mt-1">
-                <a
-                  href={`${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}/api/docs/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700"
-                >
-                  Swagger UI
-                </a>
-                <a
-                  href={`${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}/api/redoc/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700"
-                >
-                  ReDoc
-                </a>
-              </div>
+      {/* API Info */}
+      <Card title="Informações da API">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Base URL</label>
+            <p className="text-gray-900 dark:text-white font-mono text-sm">
+              {import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Documentação</label>
+            <div className="flex gap-4 mt-1">
+              <a
+                href={`${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}/api/docs/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-700"
+              >
+                Swagger UI
+              </a>
+              <a
+                href={`${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}/api/redoc/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-700"
+              >
+                ReDoc
+              </a>
             </div>
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 };

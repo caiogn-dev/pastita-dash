@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Header } from '../../components/layout';
-import { Card, Button, Table, StatusBadge, ConfirmModal, PageLoading } from '../../components/common';
+import { Card, Button, Table, StatusBadge, ConfirmModal, PageLoading, PageTitle } from '../../components/common';
 import { whatsappService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { WhatsAppAccount } from '../../types';
@@ -158,8 +157,8 @@ export const AccountsPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <Header
+    <div className="p-6">
+      <PageTitle
         title="Contas WhatsApp"
         subtitle={`${accounts.length} conta(s) cadastrada(s)`}
         actions={
@@ -172,17 +171,15 @@ export const AccountsPage: React.FC = () => {
         }
       />
 
-      <div className="p-6">
-        <Card noPadding>
-          <Table
-            columns={columns}
-            data={accounts}
-            keyExtractor={(account) => account.id}
-            onRowClick={(account) => navigate(`/accounts/${account.id}`)}
-            emptyMessage="Nenhuma conta cadastrada"
-          />
-        </Card>
-      </div>
+      <Card noPadding>
+        <Table
+          columns={columns}
+          data={accounts}
+          keyExtractor={(account) => account.id}
+          onRowClick={(account) => navigate(`/accounts/${account.id}`)}
+          emptyMessage="Nenhuma conta cadastrada"
+        />
+      </Card>
 
       <ConfirmModal
         isOpen={deleteModal.isOpen}
