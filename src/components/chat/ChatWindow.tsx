@@ -129,26 +129,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [accountId]);
 
-  // Carregar mensagens - CORREÇÃO DO ERRO REVERSE
+  // Carregar mensagens
   const loadMessages = useCallback(async () => {
     if (!selectedConversation || !accountId) return;
     
     setIsLoadingMessages(true);
     try {
+      console.log('[ChatWindow] Loading messages for:', selectedConversation.phone_number);
       const history = await whatsappService.getConversationHistory(
         accountId,
         selectedConversation.phone_number,
         100
       );
       
-      // CORREÇÃO: Verificar se history é array antes de usar reverse
+      console.log('[ChatWindow] Messages loaded:', history.length);
+      
+      // Messages come ordered by -created_at (newest first), reverse for chat display (oldest first)
       if (Array.isArray(history)) {
         setMessages([...history].reverse());
       } else {
+        console.warn('[ChatWindow] History não é um array:', history);
         setMessages([]);
-        console.warn('History não é um array:', history);
       }
     } catch (error) {
+      console.error('[ChatWindow] Error loading messages:', error);
       toast.error(getErrorMessage(error));
       setMessages([]);
     } finally {

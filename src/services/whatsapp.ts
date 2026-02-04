@@ -138,14 +138,19 @@ export const whatsappService = {
 
   // Conversation History
   getConversationHistory: async (accountId: string, phoneNumber: string, limit: number = 100): Promise<Message[]> => {
-    const response = await api.get<Message[]>('/whatsapp/messages/', {
+    const response = await api.get<PaginatedResponse<Message> | Message[]>('/whatsapp/messages/', {
       params: {
         account: accountId,
         phone_number: phoneNumber,
         limit: limit.toString(),
+        ordering: '-created_at',
       },
     });
-    return response.data;
+    // Handle both paginated and array responses
+    if (response.data && 'results' in response.data) {
+      return response.data.results || [];
+    }
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   // Send Media Message
