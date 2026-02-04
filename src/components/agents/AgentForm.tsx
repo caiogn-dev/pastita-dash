@@ -36,9 +36,9 @@ interface AgentFormProps {
 
 const providerConfigs = {
   kimi: {
-    name: 'Kimi (Moonshot)',
-    models: ['kimi-coder', 'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
-    defaultBaseUrl: 'https://api.kimi.com/coding/v1',
+    name: 'Moonshot AI',
+    models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+    defaultBaseUrl: 'https://api.moonshot.cn/v1',
   },
   openai: {
     name: 'OpenAI',
@@ -63,7 +63,7 @@ const defaultValues = {
   provider: 'kimi' as const,
   model_name: 'kimi-coder',
   api_key: '',
-  base_url: 'https://api.kimi.com/coding/v1',
+  base_url: 'https://api.moonshot.cn/v1',
   temperature: 0.7,
   max_tokens: 1000,
   timeout: 30,

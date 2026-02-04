@@ -197,7 +197,7 @@ export const PROVIDER_CONFIGS: ProviderConfig[] = [
     description: 'Kimi AI - Modelo de código chinês avançado',
     defaultModel: 'kimi-coder',
     models: ['kimi-coder', 'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
-    defaultBaseUrl: 'https://api.kimi.com/coding/v1',
+    defaultBaseUrl: 'https://api.moonshot.cn/v1',
     requiresApiKey: true,
   },
   {
@@ -242,7 +242,7 @@ export function getProviderConfig(providerId: AgentProvider): ProviderConfig | u
 export const DEFAULT_AGENT_VALUES: Partial<AgentCreateInput> = {
   provider: 'kimi',
   model_name: 'kimi-coder',
-  base_url: 'https://api.kimi.com/coding/v1',
+  base_url: 'https://api.moonshot.cn/v1',
   temperature: 0.7,
   max_tokens: 1000,
   timeout: 30,
