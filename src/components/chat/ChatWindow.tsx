@@ -146,10 +146,25 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       
       // Messages come ordered by -created_at (newest first), reverse for chat display (oldest first)
       if (Array.isArray(history)) {
-        setMessages([...history].reverse());
+        // Sort by created_at ascending (oldest first)
+        const sortedMessages = [...history].sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+        setMessages(sortedMessages);
       } else {
         console.warn('[ChatWindow] History não é um array:', history);
         setMessages([]);
+      }
+
+      // Mark conversation as read after loading messages
+      if (selectedConversation.unread_count && selectedConversation.unread_count > 0) {
+        try {
+          const updated = await conversationsService.markAsRead(selectedConversation.id);
+          setSelectedConversation(updated);
+          setConversations(prev => prev.map(c => c.id === updated.id ? updated : c));
+        } catch (error) {
+          console.error('[ChatWindow] Error marking as read:', error);
+        }
       }
     } catch (error) {
       console.error('[ChatWindow] Error loading messages:', error);
@@ -168,7 +183,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     console.log('[ChatWindow] Message received:', {
       messageConversationId,
       selectedConversationId: selectedConversation?.id,
-      match: messageConversationId === selectedConversation?.id
+      match: messageConversationId === selectedConversation?.id,
+      direction: newMessage.direction
     });
     
     // CRÍTICO: Só adicionar mensagens da conversa atualmente selecionada
@@ -186,22 +202,40 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
         
         console.log('[ChatWindow] Adding message to chat:', newMessage.id);
-        return [...prev, newMessage as Message];
+        // Add and re-sort to ensure correct order
+        const updated = [...prev, newMessage as Message];
+        return updated.sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
       });
+
+      // If receiving inbound message while this conversation is open, mark as read immediately
+      if (newMessage.direction === 'inbound') {
+        conversationsService.markAsRead(selectedConversation.id).catch(err => {
+          console.error('[ChatWindow] Error marking as read:', err);
+        });
+      }
     }
 
+    // Update conversations list
     setConversations(prev => {
       const updated = prev.map(conv => {
         if (conv.id === event.conversation_id) {
+          const isSelectedConv = selectedConversation?.id === conv.id;
           return {
             ...conv,
             last_message_at: newMessage.created_at,
             last_message_preview: newMessage.text_body?.substring(0, 50) || 'Mídia',
+            // Don't increment unread if this conversation is currently open and it's an inbound message
+            unread_count: (isSelectedConv && newMessage.direction === 'inbound') 
+              ? 0 
+              : (newMessage.direction === 'inbound' ? (conv.unread_count || 0) + 1 : conv.unread_count),
           };
         }
         return conv;
       });
       
+      // Sort by last message time (most recent first)
       return [...updated].sort((a, b) => {
         const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
         const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
@@ -209,9 +243,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       });
     });
 
+    // Show toast only if message is not from the currently open conversation
     if (!selectedConversation || event.conversation_id !== selectedConversation.id) {
-      const contactName = event.contact?.name || newMessage.from_number;
-      toast(`Nova mensagem de ${contactName}`, { icon: '💬' });
+      if (newMessage.direction === 'inbound') {
+        const contactName = event.contact?.name || newMessage.from_number;
+        toast(`Nova mensagem de ${contactName}`, { icon: '💬' });
+      }
     }
   }
 
@@ -261,7 +298,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         text,
       });
       
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        // Check for duplicates
+        const isDuplicate = prev.some(m => m.id === message.id);
+        if (isDuplicate) return prev;
+        
+        // Add and sort
+        const updated = [...prev, message];
+        return updated.sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -289,7 +336,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         caption: '',
       });
       
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        // Check for duplicates
+        const isDuplicate = prev.some(m => m.id === message.id);
+        if (isDuplicate) return prev;
+        
+        // Add and sort
+        const updated = [...prev, message];
+        return updated.sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
       toast.success('Arquivo enviado!');
     } catch (error) {
       toast.error(getErrorMessage(error));

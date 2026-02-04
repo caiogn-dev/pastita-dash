@@ -80,4 +80,9 @@ export const conversationsService = {
     const response = await api.get('/conversations/stats/', { params: { account_id: accountId } });
     return response.data;
   },
+
+  markAsRead: async (id: string): Promise<Conversation> => {
+    const response = await api.post<Conversation>(`/conversations/${id}/mark_as_read/`);
+    return response.data;
+  },
 };
