@@ -122,7 +122,7 @@ export const WhatsAppChatPage: React.FC = () => {
             >
               {accounts.map((account) => (
                 <option key={account.id} value={account.id}>
-                  {account.phone_number} - {account.display_name || 'WhatsApp Business'}
+                  {account.phone_number} - {account.name || 'WhatsApp Business'}
                 </option>
               ))}
             </select>
@@ -135,7 +135,7 @@ export const WhatsAppChatPage: React.FC = () => {
         <div className="flex-1 overflow-hidden">
           <ChatWindow
             accountId={selectedAccount.id}
-            accountName={selectedAccount.display_name || selectedAccount.phone_number}
+            accountName={selectedAccount.name || selectedAccount.phone_number}
           />
         </div>
       ) : (
