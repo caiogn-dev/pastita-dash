@@ -86,8 +86,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           icon: ChatBubbleLeftRightIcon,
           badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
         },
-        { name: 'WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
-        { name: 'Instagram', href: '/instagram', icon: ChatBubbleLeftRightIcon },
+        { 
+          name: 'WhatsApp', 
+          href: '/whatsapp/chat', 
+          icon: DevicePhoneMobileIcon,
+          children: [
+            { name: 'Chat', href: '/whatsapp/chat', icon: ChatBubbleLeftRightIcon },
+            { name: 'Contas', href: '/accounts', icon: DevicePhoneMobileIcon },
+            { name: 'Diagnóstico', href: '/whatsapp/diagnostics', icon: DocumentTextIcon },
+          ]
+        },
+        { 
+          name: 'Instagram', 
+          href: '/instagram/inbox', 
+          icon: ChatBubbleLeftRightIcon,
+          children: [
+            { name: 'Mensagens', href: '/instagram/inbox', icon: InboxIcon },
+            { name: 'Contas', href: '/instagram/accounts', icon: UserGroupIcon },
+          ]
+        },
         { name: 'Marketing', href: '/marketing', icon: MegaphoneIcon },
       ]
     },

@@ -65,6 +65,7 @@ const InstagramInbox = lazy(() => import('./pages/instagram').then(m => ({ defau
 
 // WhatsApp Pages
 const WebhookDiagnosticsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WebhookDiagnosticsPage })));
+const WhatsAppChatPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WhatsAppChatPage })));
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -180,7 +181,8 @@ const AppContent: React.FC = () => {
         <Route path="instagram/accounts" element={<Suspense fallback={<FullPageLoading />}><InstagramAccounts /></Suspense>} />
         <Route path="instagram/inbox" element={<Suspense fallback={<FullPageLoading />}><InstagramInbox /></Suspense>} />
         
-        {/* WhatsApp Diagnostics */}
+        {/* WhatsApp Routes */}
+        <Route path="whatsapp/chat" element={<Suspense fallback={<FullPageLoading />}><WhatsAppChatPage /></Suspense>} />
         <Route path="whatsapp/diagnostics" element={<Suspense fallback={<FullPageLoading />}><WebhookDiagnosticsPage /></Suspense>} />
       </Route>
 

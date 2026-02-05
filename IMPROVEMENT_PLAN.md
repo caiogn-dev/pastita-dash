@@ -10,55 +10,41 @@
 - Componentes atômicos bem estruturados (atoms, molecules, organisms)
 - WebSocket para real-time
 - Zustand para state management
+- **NOVO**: Componentes UI modernos (Toast, Dropdown, Glass Morphism)
+- **NOVO**: Sidebar com submenus para WhatsApp e Instagram
+- **NOVO**: Typography fluida responsiva
 
 ### ⚠️ Problemas Identificados
 
-#### 1. **Duplicação de Componentes**
-| Localização | Problema |
-|-------------|----------|
-| `components/atoms/Button.tsx` + `components/common/Button.tsx` | Dois componentes Button |
-| `components/atoms/Input.tsx` + `components/common/Input.tsx` | Dois componentes Input |
-| `components/molecules/Card.tsx` + `components/common/Card.tsx` | Dois componentes Card |
-| `components/molecules/Modal.tsx` + `components/common/Modal.tsx` | Dois componentes Modal |
+#### 1. **Duplicação de Componentes** ✅ PARCIALMENTE RESOLVIDO
+| Localização | Problema | Status |
+|-------------|----------|--------|
+| `components/atoms/Button.tsx` + `components/common/Button.tsx` | Dois componentes Button | `/ui/button.tsx` criado |
+| `components/atoms/Input.tsx` + `components/common/Input.tsx` | Dois componentes Input | `/ui/input.tsx` criado |
+| `components/molecules/Card.tsx` + `components/common/Card.tsx` | Dois componentes Card | `/ui/card.tsx` criado |
+| `components/molecules/Modal.tsx` + `components/common/Modal.tsx` | Dois componentes Modal | `/ui/modal.tsx` criado |
 
-**Solução**: Consolidar em `components/ui/` seguindo padrão shadcn/ui
+**Próximo passo**: Migrar imports das páginas para usar `/ui`
 
-#### 2. **Sidebar com Menu Muito Longo**
-- 6 seções com muitos itens
-- Difícil navegação em mobile
-- Alguns links não funcionais (Marketing subitems)
+#### 2. **Sidebar com Menu Muito Longo** ✅ RESOLVIDO
+- ✅ Reorganizado em 4 seções principais
+- ✅ Submenus colapsáveis para WhatsApp e Instagram
+- ✅ Barra de busca no menu
 
-**Solução**: 
-- Reorganizar em 4 seções principais
-- Implementar "quick actions" colapsáveis
-- Adicionar barra de busca no menu
+#### 3. **Falta de Animações Modernas** 🔄 EM PROGRESSO
+- ✅ CSS animations básicas implementadas
+- ⏳ Framer Motion pendente instalação
+- ⏳ Page transitions pendente
 
-#### 3. **Falta de Animações Modernas**
-- Transições básicas
-- Sem micro-interações
-- Loading states simples
+#### 4. **Responsividade Inconsistente** ✅ RESOLVIDO
+- ✅ Typography fluida com clamp()
+- ✅ Spacing system responsivo
+- ✅ Glass morphism adaptativo
 
-**Solução**: Implementar Framer Motion para:
-- Page transitions
-- Stagger animations em listas
-- Skeleton loading aprimorado
-- Hover effects sofisticados
-
-#### 4. **Responsividade Inconsistente**
-- Alguns componentes quebram em mobile
-- Grid gaps inconsistentes
-- Font sizes não escaláveis
-
-**Solução**: 
-- Container queries
-- Clamp() para typography
-- Padding/margin consistente
-
-#### 5. **API Services Fragmentados**
+#### 5. **API Services Fragmentados** ✅ PARCIALMENTE RESOLVIDO
 - ~~`pastitaApi.ts` (REMOVIDO)~~ ✅
 - ~~`unifiedApi.ts` (REMOVIDO)~~ ✅
 - `storeApi.ts` (MANTIDO - único padrão)
-- Ainda existem services redundantes
 
 ---
 
@@ -203,35 +189,125 @@ src/
 
 ## 🎯 Checklist de Implementação
 
-### Imediato (Esta Sprint)
+### ✅ Completado (Sprint Atual)
 - [x] Remover `pastitaApi.ts` e `unifiedApi.ts`
-- [ ] Criar componentes base em `/ui`
-- [ ] Adicionar Framer Motion
-- [ ] Refinar Sidebar
-- [ ] Melhorar responsividade do Dashboard
+- [x] Criar componentes base em `/ui` (Button, Card, Input, Modal, Badge, Skeleton, Toast, Dropdown)
+- [x] Refinar Sidebar com submenus para WhatsApp e Instagram
+- [x] Melhorar responsividade com Typography fluida (clamp())
+- [x] Adicionar Glass Morphism CSS moderno
+- [x] Criar página dedicada WhatsApp Chat (`/whatsapp/chat`)
 
-### Próxima Sprint
+### 🔄 Em Progresso (Próxima Sprint)
+- [ ] Adicionar Framer Motion para animações
+- [ ] Implementar page transitions com AnimatePresence
 - [ ] Migrar todos os componentes para `/ui`
-- [ ] Implementar page transitions
 - [ ] Adicionar skeleton loading em todas páginas
-- [ ] Otimizar bundle size
+- [ ] Virtual scrolling para listas de pedidos/produtos
 
-### Futuro
-- [ ] PWA com offline support
-- [ ] i18n (português/inglês)
-- [ ] Temas customizáveis por store
+### 📋 Backlog (Próximas Sprints)
+
+#### Sprint 3 - Sistema de Notificações
+- [ ] **NotificationCenter**: Componente de central de notificações
+- [ ] **Push Notifications**: Integração com Web Push API
+- [ ] **Sound Alerts**: Sons customizáveis por tipo de evento
+- [ ] **Badge Counter**: Indicador no header com contagem
+
+#### Sprint 4 - Analytics Avançado
+- [ ] **Dashboard Interativo**: Gráficos com drill-down (Recharts)
+- [ ] **Filtros Avançados**: Período customizável, comparação MoM/YoY
+- [ ] **Export Reports**: PDF e Excel com react-pdf e xlsx
+- [ ] **KPIs em Tempo Real**: Métricas atualizadas via WebSocket
+
+#### Sprint 5 - Kanban de Pedidos
+- [ ] **Drag & Drop**: Arrastar pedidos entre colunas de status
+- [ ] **Timeline View**: Visualização da jornada do pedido
+- [ ] **Print Labels**: Impressão de etiquetas/comandas
+- [ ] **Bulk Actions**: Ações em lote (marcar como entregue, etc.)
+
+#### Sprint 6 - PWA & Performance
+- [ ] **Service Worker**: Cache offline para dados críticos
+- [ ] **Install Prompt**: Banner de instalação customizado
+- [ ] **Background Sync**: Sincronização quando voltar online
+- [ ] **Bundle Optimization**: Code splitting por feature
+
+#### Sprint 7 - Integração com IA
+- [ ] **Smart Replies**: Sugestões de respostas automáticas
+- [ ] **Sentiment Analysis**: Análise de sentimento em conversas
+- [ ] **Demand Forecast**: Previsão de demanda de produtos
+- [ ] **Chatbot Builder**: Interface visual para criar fluxos
+
+### 🚀 Futuro (Roadmap)
+- [ ] **i18n**: Suporte a português/inglês/espanhol
+- [ ] **White-label**: Temas customizáveis por store
+- [ ] **Mobile App**: React Native com código compartilhado
+- [ ] **Marketplace**: Integração com iFood/Rappi
+- [ ] **Loyalty Program**: Sistema de pontos e recompensas
+
+---
+
+## 🆕 Novas Features Planejadas
+
+### 1. 📱 Sistema de Notificações em Tempo Real
+```
+components/notifications/
+├── NotificationCenter.tsx    # Central de notificações
+├── NotificationItem.tsx      # Item individual
+├── NotificationBell.tsx      # Ícone com badge no header
+├── useNotifications.ts       # Hook para gerenciar notificações
+└── notificationStore.ts      # Zustand store
+```
+
+**Tipos de Notificações:**
+- 🛒 Novo pedido recebido
+- 💬 Nova mensagem WhatsApp/Instagram
+- 💳 Pagamento confirmado
+- 🚚 Pedido saiu para entrega
+- ⚠️ Estoque baixo
+- 🤖 Ação do agente IA
+
+### 2. 📊 Dashboard Analytics v2
+```tsx
+// Componentes planejados
+<AnalyticsDashboard>
+  <MetricCard metric="revenue" comparison="mom" />
+  <SalesChart period="7d" groupBy="day" />
+  <TopProducts limit={10} />
+  <CustomerRetention />
+  <HeatmapOrders /> // Pedidos por hora/dia
+</AnalyticsDashboard>
+```
+
+### 3. 🎯 Kanban de Pedidos Avançado
+```tsx
+// Estados do Kanban
+const orderStages = [
+  { id: 'pending', label: 'Pendentes', color: 'yellow' },
+  { id: 'confirmed', label: 'Confirmados', color: 'blue' },
+  { id: 'preparing', label: 'Preparando', color: 'orange' },
+  { id: 'ready', label: 'Pronto', color: 'green' },
+  { id: 'delivering', label: 'Em Entrega', color: 'purple' },
+  { id: 'delivered', label: 'Entregue', color: 'gray' },
+];
+```
+
+### 4. 🤖 Integração com Agentes IA
+- Painel de conversas gerenciadas por IA
+- Métricas de performance do agente
+- Treinamento com exemplos de conversas
+- Handoff para humano configurável
 
 ---
 
 ## 📊 Métricas de Sucesso
 
-| Métrica | Atual | Meta |
-|---------|-------|------|
-| Lighthouse Performance | ~70 | 90+ |
-| First Contentful Paint | ~2s | <1s |
-| Time to Interactive | ~3s | <2s |
-| Bundle Size (gzip) | ~400KB | <250KB |
-| Component Reusability | 60% | 90% |
+| Métrica | Atual | Meta Sprint 3 | Meta Final |
+|---------|-------|---------------|------------|
+| Lighthouse Performance | ~70 | 85 | 95+ |
+| First Contentful Paint | ~2s | 1.2s | <0.8s |
+| Time to Interactive | ~3s | 2s | <1.5s |
+| Bundle Size (gzip) | ~400KB | 300KB | <200KB |
+| Component Reusability | 60% | 80% | 95% |
+| Test Coverage | 0% | 50% | 80% |
 
 ---
 
@@ -242,3 +318,5 @@ src/
 - [Stripe Dashboard](https://dashboard.stripe.com) - Data visualization
 - [Notion](https://notion.so) - Sidebar navigation
 - [Raycast](https://raycast.com) - Micro-interactions
+- [Cal.com](https://cal.com) - Scheduling UI
+- [Dub.co](https://dub.co) - Analytics dashboard

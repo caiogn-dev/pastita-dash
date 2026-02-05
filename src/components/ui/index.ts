@@ -2,7 +2,7 @@
  * UI Components - Modern, accessible, and animated
  * 
  * Usage:
- * import { Button, Card, Input, Badge, Modal, Skeleton } from '@/components/ui';
+ * import { Button, Card, Input, Badge, Modal, Skeleton, Toast, Dropdown } from '@/components/ui';
  */
 
 // Button
@@ -62,3 +62,21 @@ export {
   type SkeletonProps,
   type SkeletonAvatarProps,
 } from './skeleton';
+
+// Toast
+export {
+  Toast,
+  ToastContainer,
+  type ToastProps,
+  type ToastVariant,
+  type ToastContainerProps,
+} from './toast';
+
+// Dropdown
+export {
+  Dropdown,
+  DropdownButton,
+  type DropdownProps,
+  type DropdownItem,
+  type DropdownButtonProps,
+} from './dropdown';
