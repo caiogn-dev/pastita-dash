@@ -8,7 +8,7 @@ export { dashboardService } from './dashboard';
 export { default as logger } from './logger';
 
 // =============================================================================
-// STORE API (Multi-tenant) - NEW ARCHITECTURE
+// STORE API (Multi-tenant) - PRIMARY API
 // =============================================================================
 
 export { 
@@ -25,9 +25,11 @@ export {
   type DeliveryAddress,
   type Coupon,
   type DeliveryZone,
-  type DashboardStats as StoreDashboardStats,
+  type DashboardStats,
   type ApiParams,
   type PaginatedResponse,
+  type ProductType,
+  type CustomField,
 } from './storeApi';
 
 // =============================================================================
@@ -80,98 +82,7 @@ export {
 export { exportService } from './export';
 
 // =============================================================================
-// LEGACY API (Deprecated - use storeApi instead)
-// =============================================================================
-
-// @deprecated Use storeApi instead - these exports are for backwards compatibility
-export type {
-  Produto,
-  Molho,
-  Carne,
-  Rondelli,
-  Combo,
-  ComboItem,
-  Pedido,
-  PedidoItem,
-  PedidoEndereco,
-  Category as LegacyCategory,
-  DashboardStats as LegacyDashboardStats,
-  MolhoInput,
-  CarneInput,
-  RondelliInput,
-  ComboInput,
-  PastitaStats,
-  Catalogo,
-} from './pastitaApi';
-export {
-  // Products
-  getProducts,
-  getProduct,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getProdutos,
-  getProduto,
-  createProduto,
-  updateProduto,
-  deleteProduto,
-  // Molhos
-  getMolhos,
-  getMolho,
-  createMolho,
-  updateMolho,
-  deleteMolho,
-  toggleMolhoActive,
-  // Carnes
-  getCarnes,
-  getCarne,
-  createCarne,
-  updateCarne,
-  deleteCarne,
-  toggleCarneActive,
-  // Rondellis
-  getRondellis,
-  getRondellisClassicos,
-  getRondellisGourmet,
-  getRondelli,
-  createRondelli,
-  updateRondelli,
-  deleteRondelli,
-  toggleRondelliActive,
-  // Combos
-  getCombos,
-  getCombosDestaques,
-  getCombo,
-  createCombo,
-  updateCombo,
-  deleteCombo,
-  toggleComboActive,
-  toggleComboDestaque,
-  // Orders
-  getPedidos,
-  getPedido,
-  getStatusPedido,
-  updatePedidoStatus,
-  getWhatsAppConfirmacao,
-  // Categories
-  getCategories,
-  getCategory,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  // Dashboard
-  getDashboardStats,
-  getPastitaStats,
-  getCatalog,
-  getCatalogo,
-  // Toggle
-  toggleProductActive,
-  toggleProductFeatured,
-} from './pastitaApi';
-
-// =============================================================================
-// CATALOG & UNIFIED API
+// CATALOG SERVICE
 // =============================================================================
 
 export { catalogService } from './catalogService';
-export { unifiedApi } from './unifiedApi';
