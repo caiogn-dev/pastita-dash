@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   HomeIcon,
@@ -26,10 +26,12 @@ import {
   MegaphoneIcon,
   EnvelopeIcon,
   PlusCircleIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
 import { useTotalUnreadCount, useWsConnected } from '../../stores/chatStore';
+import { cn } from '../../utils/cn';
 
 interface NavItem {
   name: string;
@@ -54,6 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { store } = useStore();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const totalUnreadCount = useTotalUnreadCount();
   const wsConnected = useWsConnected();
 
@@ -63,30 +66,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     return (path: string) => (storeKey ? `${storeRoot}/${path}` : '/stores');
   }, [storeKey, storeRoot]);
 
-  // Menu organizado por seções lógicas
+  // Menu reorganizado em 4 seções principais (mais clean)
   const navigationSections: NavSection[] = useMemo(() => [
     {
       title: 'Principal',
       items: [
         { name: 'Dashboard', href: '/', icon: HomeIcon },
-        { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon, badge: 'Kanban' },
-      ]
-    },
-    {
-      title: 'Catálogo',
-      items: [
+        { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon },
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
         { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
-      ]
-    },
-    {
-      title: 'Marketing',
-      items: [
-        { name: 'Campanhas', href: '/marketing', icon: MegaphoneIcon },
-        { name: 'Email Marketing', href: '/marketing/email', icon: EnvelopeIcon },
-        { name: 'Automações', href: '/marketing/automations', icon: BoltIcon },
-        { name: 'Contatos', href: '/marketing/subscribers', icon: UserGroupIcon },
-        { name: 'WhatsApp Marketing', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
       ]
     },
     {
@@ -98,57 +86,59 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           icon: ChatBubbleLeftRightIcon,
           badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
         },
-        { name: 'Mensagens', href: '/messages', icon: InboxIcon },
-        { name: 'Contas WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
-        { 
-          name: 'Instagram', 
-          href: '/instagram', 
-          icon: ChatBubbleLeftRightIcon,
-          badge: 'Novo',
-          children: [
-            { name: 'Contas', href: '/instagram/accounts', icon: DevicePhoneMobileIcon },
-            { name: 'Inbox DM', href: '/instagram/inbox', icon: InboxIcon },
-          ]
-        },
+        { name: 'WhatsApp', href: '/accounts', icon: DevicePhoneMobileIcon },
+        { name: 'Instagram', href: '/instagram', icon: ChatBubbleLeftRightIcon },
+        { name: 'Marketing', href: '/marketing', icon: MegaphoneIcon },
       ]
     },
     {
-      title: 'Automação & IA',
+      title: 'Automação',
       items: [
         { 
           name: 'Agentes IA', 
           href: '/agents', 
           icon: CpuChipIcon,
-          badge: 'Novo',
-          children: [
-            { name: 'Todos Agentes', href: '/agents', icon: CpuChipIcon },
-            { name: 'Criar Agente', href: '/agents/new', icon: PlusCircleIcon },
-          ]
+          badge: 'IA',
         },
         { 
-          name: 'Automação', 
+          name: 'Fluxos', 
           href: '/automation/companies', 
           icon: BoltIcon,
           children: [
             { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
             { name: 'Sessões', href: '/automation/sessions', icon: UserGroupIcon },
             { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
-            { name: 'Relatórios', href: '/automation/reports', icon: DocumentChartBarIcon },
-            { name: 'Logs', href: '/automation/logs', icon: DocumentTextIcon },
           ]
         },
+        { name: 'Relatórios', href: '/automation/reports', icon: DocumentChartBarIcon },
       ]
     },
     {
-      title: 'Administração',
+      title: 'Configurações',
       items: [
         { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
-        { name: 'Relatórios', href: storeHref('analytics'), icon: PresentationChartLineIcon },
+        { name: 'Analytics', href: storeHref('analytics'), icon: PresentationChartLineIcon },
         { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
-        { name: 'Configurações', href: storeHref('settings'), icon: Cog6ToothIcon },
+        { name: 'Ajustes', href: storeHref('settings'), icon: Cog6ToothIcon },
       ]
     },
-  ], [storeHref]);
+  ], [storeHref, totalUnreadCount]);
+  
+  // Filter items by search
+  const filteredSections = useMemo(() => {
+    if (!searchQuery.trim()) return navigationSections;
+    
+    const query = searchQuery.toLowerCase();
+    return navigationSections
+      .map(section => ({
+        ...section,
+        items: section.items.filter(item => 
+          item.name.toLowerCase().includes(query) ||
+          item.children?.some(child => child.name.toLowerCase().includes(query))
+        )
+      }))
+      .filter(section => section.items.length > 0);
+  }, [navigationSections, searchQuery]);
 
   // Dynamic brand info based on selected store
   const brandInfo = useMemo(() => {
@@ -337,18 +327,54 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         )}
       </div>
 
+      {/* Quick Search */}
+      <div className="px-3 py-2">
+        <div className="relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-zinc-500" />
+          <input
+            type="text"
+            placeholder="Buscar menu..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={cn(
+              'w-full pl-9 pr-3 py-2 text-sm',
+              'bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800',
+              'rounded-lg placeholder-gray-400 dark:placeholder-zinc-500',
+              'text-gray-900 dark:text-zinc-100',
+              'focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500',
+              'transition-all duration-200'
+            )}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300"
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        {navigationSections.map((section, index) => (
-          <div key={section.title} className={index > 0 ? 'mt-6' : ''}>
-            <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+      <nav className="flex-1 px-3 py-2 overflow-y-auto smooth-scroll">
+        {filteredSections.map((section, index) => (
+          <div key={section.title} className={cn('animate-fade-up', index > 0 ? 'mt-5' : '')}>
+            <h3 className="px-3 mb-2 text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">
               {section.title}
             </h3>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {section.items.map((item) => renderNavItem(item))}
             </div>
           </div>
         ))}
+        {filteredSections.length === 0 && searchQuery && (
+          <div className="px-3 py-8 text-center">
+            <p className="text-sm text-gray-500 dark:text-zinc-400">
+              Nenhum item encontrado
+            </p>
+          </div>
+        )}
       </nav>
 
       {/* User section */}
