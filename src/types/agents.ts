@@ -195,9 +195,9 @@ export const PROVIDER_CONFIGS: ProviderConfig[] = [
     id: 'kimi',
     name: 'Kimi (Moonshot)',
     description: 'Kimi AI - Modelo de código chinês avançado',
-    defaultModel: 'kimi-coder',
-    models: ['kimi-coder', 'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
-    defaultBaseUrl: 'https://api.moonshot.cn/v1',
+    defaultModel: 'kimi-for-coding',
+    models: ['kimi-for-coding', 'kimi-k2', 'kimi-k2.5'],
+    defaultBaseUrl: 'https://api.kimi.com/coding/',
     requiresApiKey: true,
   },
   {
@@ -241,10 +241,10 @@ export function getProviderConfig(providerId: AgentProvider): ProviderConfig | u
  */
 export const DEFAULT_AGENT_VALUES: Partial<AgentCreateInput> = {
   provider: 'kimi',
-  model_name: 'kimi-coder',
-  base_url: 'https://api.moonshot.cn/v1',
+  model_name: 'kimi-for-coding',
+  base_url: 'https://api.kimi.com/coding/',
   temperature: 0.7,
-  max_tokens: 1000,
+  max_tokens: 32768,
   timeout: 30,
   system_prompt: 'Você é um assistente virtual útil da Pastita, uma loja de massas artesanais. Ajude os clientes com informações sobre produtos, pedidos e dúvidas gerais.',
   context_prompt: '',
