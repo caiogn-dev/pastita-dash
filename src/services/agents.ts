@@ -1,40 +1,30 @@
 import api from './api';
 
 // Provider configurations - synced with backend
-// IMPORTANT: defaultBaseUrl is DEPRECATED - use fetchProviderConfig() to get base URLs from backend
-// This ensures the frontend always uses the correct URLs configured on the server
 export const PROVIDER_CONFIGS = {
   kimi: {
     name: 'Kimi (Moonshot)',
-    models: ['kimi-for-coding', 'kimi-k2', 'kimi-k2.5'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
-    defaultBaseUrl: 'https://api.kimi.com/coding/',
+    models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+    defaultBaseUrl: 'https://api.moonshot.cn/v1',
     requiresApiKey: true,
-    apiStyle: 'anthropic', // Backend uses ChatAnthropic for Kimi
   },
   openai: {
     name: 'OpenAI',
     models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'https://api.openai.com/v1',
     requiresApiKey: true,
-    apiStyle: 'openai',
   },
   anthropic: {
     name: 'Anthropic',
     models: ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'https://api.anthropic.com/v1',
     requiresApiKey: true,
-    apiStyle: 'anthropic',
   },
   ollama: {
     name: 'Ollama (Local)',
     models: ['llama3', 'mistral', 'codellama', 'mixtral'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'http://localhost:11434/v1',
     requiresApiKey: false,
-    apiStyle: 'openai',
   },
 } as const;
 
@@ -126,14 +116,12 @@ export interface AgentMessage {
 }
 
 // Default values for new agent - synced with backend
-// Using Kimi Coding API with Anthropic style
-// NOTE: base_url is loaded from backend via getProviderConfig() to avoid hardcoding
 export const DEFAULT_AGENT_VALUES: Partial<CreateAgentData> = {
   provider: 'kimi',
-  model_name: 'kimi-for-coding',
-  // base_url is loaded from backend - do not hardcode
+  model_name: 'moonshot-v1-8k',
+  base_url: 'https://api.moonshot.cn/v1',
   temperature: 0.7,
-  max_tokens: 32768, // Max for kimi-for-coding
+  max_tokens: 8000,
   timeout: 30,
   system_prompt: 'Você é o assistente virtual da Pastita, uma loja de massas artesanais.\n\nSuas responsabilidades:\n- Responder dúvidas sobre o cardápio e produtos\n- Ajudar clientes a fazer pedidos\n- Informar sobre horário de funcionamento e entregas\n- Ser sempre educado, prestativo e gentil\n\nSe não souber responder algo específico, direcione o cliente para falar com um atendente humano.',
   context_prompt: '',
@@ -141,35 +129,6 @@ export const DEFAULT_AGENT_VALUES: Partial<CreateAgentData> = {
   use_memory: true,
   memory_ttl: 3600,
   accounts: [],
-};
-
-// Backend provider config cache
-let backendProviderConfig: Record<string, { base_url: string; model_name: string; api_style: string }> | null = null;
-
-// Fetch provider config from backend (includes correct base URLs)
-export const fetchProviderConfig = async (): Promise<Record<string, { base_url: string; model_name: string; api_style: string }>> => {
-  try {
-    const response = await api.get('/agents/agents/provider_config/');
-    backendProviderConfig = response.data;
-    return response.data;
-  } catch (error) {
-    console.error('[AgentService] Failed to fetch provider config:', error);
-    // Return empty object - caller should handle fallback
-    return {};
-  }
-};
-
-// Get provider config (from cache or fetch)
-export const getBackendProviderConfig = async (provider: AgentProvider): Promise<{ base_url: string; model_name: string; api_style: string } | null> => {
-  if (!backendProviderConfig) {
-    await fetchProviderConfig();
-  }
-  return backendProviderConfig?.[provider] || null;
-};
-
-// Clear provider config cache (call when needed)
-export const clearProviderConfigCache = (): void => {
-  backendProviderConfig = null;
 };
 
 // Error handling helper
@@ -212,7 +171,7 @@ const handleApiError = (error: unknown): never => {
     } else if (status === 404) {
       message = 'Agente não encontrado ou endpoint indisponível';
     } else if (status === 500) {
-      message = 'Erro interno no servidor. Verifique os logs do backend.';
+      message = 'Erro interno no servidor. Verifique se a API Key está configurada corretamente no backend.';
     } else if (axiosError.message) {
       message = axiosError.message;
     }
@@ -354,4 +313,4 @@ const agentsService = {
 };
 
 export default agentsService;
-export { AgentServiceError, fetchProviderConfig, getBackendProviderConfig, clearProviderConfigCache };
+export { AgentServiceError };

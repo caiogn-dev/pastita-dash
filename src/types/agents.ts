@@ -3,11 +3,11 @@
  * Replaces Langflow types with native Langchain implementation
  */
 
-// Agent Provider types
-export type AgentProvider = 'kimi' | 'openai' | 'anthropic' | 'ollama';
+// Import from services to avoid duplication
+import { AgentProvider, AgentStatus, ProcessMessageRequest, ProcessMessageResponse } from '../services/agents';
 
-// Agent Status types
-export type AgentStatus = 'active' | 'inactive' | 'draft';
+// Re-export from services
+export type { AgentProvider, AgentStatus, ProcessMessageRequest, ProcessMessageResponse };
 
 // Message role types
 export type MessageRole = 'user' | 'assistant' | 'system';
@@ -64,13 +64,14 @@ export interface AgentListItem {
 
 /**
  * Agent creation/update payload
+ * Note: api_key is handled by backend, not sent from frontend
  */
 export interface AgentCreateInput {
   name: string;
   description?: string;
   provider: AgentProvider;
   model_name: string;
-  api_key?: string;
+  // api_key is NOT included - managed by backend
   base_url?: string;
   temperature?: number;
   max_tokens?: number;
@@ -124,26 +125,6 @@ export interface AgentStats {
 }
 
 /**
- * Request to process a message through an agent
- */
-export interface ProcessMessageRequest {
-  message: string;
-  session_id?: string;
-  phone_number?: string;
-  context?: Record<string, unknown>;
-}
-
-/**
- * Response from processing a message
- */
-export interface ProcessMessageResponse {
-  response: string;
-  session_id: string;
-  tokens_used?: number;
-  response_time_ms?: number;
-}
-
-/**
  * Conversation history from Redis memory
  */
 export interface ConversationHistory {
@@ -174,81 +155,6 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-/**
- * Provider configuration options
- */
-export interface ProviderConfig {
-  id: AgentProvider;
-  name: string;
-  description: string;
-  defaultModel: string;
-  models: string[];
-  defaultBaseUrl?: string;
-  requiresApiKey: boolean;
-}
-
-/**
- * Available provider configurations
- */
-export const PROVIDER_CONFIGS: ProviderConfig[] = [
-  {
-    id: 'kimi',
-    name: 'Kimi (Moonshot)',
-    description: 'Kimi AI - Modelo de código chinês avançado',
-    defaultModel: 'kimi-for-coding',
-    models: ['kimi-for-coding', 'kimi-k2', 'kimi-k2.5'],
-    defaultBaseUrl: 'https://api.kimi.com/coding/',
-    requiresApiKey: true,
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    description: 'GPT-4, GPT-3.5 e outros modelos da OpenAI',
-    defaultModel: 'gpt-4-turbo-preview',
-    models: ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k'],
-    defaultBaseUrl: 'https://api.openai.com/v1',
-    requiresApiKey: true,
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    description: 'Claude 3 e outros modelos da Anthropic',
-    defaultModel: 'claude-3-opus-20240229',
-    models: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
-    defaultBaseUrl: 'https://api.anthropic.com/v1',
-    requiresApiKey: true,
-  },
-  {
-    id: 'ollama',
-    name: 'Ollama (Local)',
-    description: 'Modelos locais via Ollama',
-    defaultModel: 'llama2',
-    models: ['llama2', 'mistral', 'codellama', 'mixtral'],
-    defaultBaseUrl: 'http://localhost:11434/v1',
-    requiresApiKey: false,
-  },
-];
-
-/**
- * Get provider config by ID
- */
-export function getProviderConfig(providerId: AgentProvider): ProviderConfig | undefined {
-  return PROVIDER_CONFIGS.find(p => p.id === providerId);
-}
-
-/**
- * Default values for new agent
- */
-export const DEFAULT_AGENT_VALUES: Partial<AgentCreateInput> = {
-  provider: 'kimi',
-  model_name: 'kimi-for-coding',
-  base_url: 'https://api.kimi.com/coding/',
-  temperature: 0.7,
-  max_tokens: 32768,
-  timeout: 30,
-  system_prompt: 'Você é um assistente virtual útil da Pastita, uma loja de massas artesanais. Ajude os clientes com informações sobre produtos, pedidos e dúvidas gerais.',
-  context_prompt: '',
-  status: 'draft',
-  use_memory: true,
-  memory_ttl: 3600,
-};
+// Note: PROVIDER_CONFIGS and DEFAULT_AGENT_VALUES are now in services/agents.ts
+// to avoid duplication. Import them from there:
+// import { PROVIDER_CONFIGS, DEFAULT_AGENT_VALUES } from '../services/agents';
