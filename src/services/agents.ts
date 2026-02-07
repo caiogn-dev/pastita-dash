@@ -1,11 +1,13 @@
 import api from './api';
 
 // Provider configurations - synced with backend
-// IMPORTANT: Kimi uses Anthropic API style (not OpenAI)
+// IMPORTANT: defaultBaseUrl is DEPRECATED - use fetchProviderConfig() to get base URLs from backend
+// This ensures the frontend always uses the correct URLs configured on the server
 export const PROVIDER_CONFIGS = {
   kimi: {
     name: 'Kimi (Moonshot)',
     models: ['kimi-for-coding', 'kimi-k2', 'kimi-k2.5'],
+    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'https://api.kimi.com/coding/',
     requiresApiKey: true,
     apiStyle: 'anthropic', // Backend uses ChatAnthropic for Kimi
@@ -13,6 +15,7 @@ export const PROVIDER_CONFIGS = {
   openai: {
     name: 'OpenAI',
     models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'https://api.openai.com/v1',
     requiresApiKey: true,
     apiStyle: 'openai',
@@ -20,6 +23,7 @@ export const PROVIDER_CONFIGS = {
   anthropic: {
     name: 'Anthropic',
     models: ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'],
+    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'https://api.anthropic.com/v1',
     requiresApiKey: true,
     apiStyle: 'anthropic',
@@ -27,6 +31,7 @@ export const PROVIDER_CONFIGS = {
   ollama: {
     name: 'Ollama (Local)',
     models: ['llama3', 'mistral', 'codellama', 'mixtral'],
+    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'http://localhost:11434/v1',
     requiresApiKey: false,
     apiStyle: 'openai',
@@ -122,10 +127,11 @@ export interface AgentMessage {
 
 // Default values for new agent - synced with backend
 // Using Kimi Coding API with Anthropic style
+// NOTE: base_url is loaded from backend via getProviderConfig() to avoid hardcoding
 export const DEFAULT_AGENT_VALUES: Partial<CreateAgentData> = {
   provider: 'kimi',
   model_name: 'kimi-for-coding',
-  base_url: 'https://api.kimi.com/coding/',
+  // base_url is loaded from backend - do not hardcode
   temperature: 0.7,
   max_tokens: 32768, // Max for kimi-for-coding
   timeout: 30,
@@ -135,6 +141,35 @@ export const DEFAULT_AGENT_VALUES: Partial<CreateAgentData> = {
   use_memory: true,
   memory_ttl: 3600,
   accounts: [],
+};
+
+// Backend provider config cache
+let backendProviderConfig: Record<string, { base_url: string; model_name: string; api_style: string }> | null = null;
+
+// Fetch provider config from backend (includes correct base URLs)
+export const fetchProviderConfig = async (): Promise<Record<string, { base_url: string; model_name: string; api_style: string }>> => {
+  try {
+    const response = await api.get('/agents/agents/provider_config/');
+    backendProviderConfig = response.data;
+    return response.data;
+  } catch (error) {
+    console.error('[AgentService] Failed to fetch provider config:', error);
+    // Return empty object - caller should handle fallback
+    return {};
+  }
+};
+
+// Get provider config (from cache or fetch)
+export const getBackendProviderConfig = async (provider: AgentProvider): Promise<{ base_url: string; model_name: string; api_style: string } | null> => {
+  if (!backendProviderConfig) {
+    await fetchProviderConfig();
+  }
+  return backendProviderConfig?.[provider] || null;
+};
+
+// Clear provider config cache (call when needed)
+export const clearProviderConfigCache = (): void => {
+  backendProviderConfig = null;
 };
 
 // Error handling helper

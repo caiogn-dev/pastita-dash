@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   XMarkIcon,
   InformationCircleIcon,
@@ -11,7 +11,8 @@ import agentsService, {
   PROVIDER_CONFIGS, 
   DEFAULT_AGENT_VALUES, 
   AgentProvider,
-  CreateAgentData 
+  CreateAgentData,
+  getBackendProviderConfig,
 } from '../../services/agents';
 
 interface AgentFormProps {
@@ -50,8 +51,20 @@ export const AgentForm: React.FC<AgentFormProps> = ({
   const [activeTab, setActiveTab] = useState<Tab>('basic');
   const [formData, setFormData] = useState(agent || DEFAULT_AGENT_VALUES);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [backendBaseUrl, setBackendBaseUrl] = useState<string>('');
 
   const isEditing = Boolean(agent?.id);
+
+  // Fetch backend provider config on mount
+  useEffect(() => {
+    const loadBackendConfig = async () => {
+      const config = await getBackendProviderConfig(formData.provider || 'kimi');
+      if (config?.base_url) {
+        setBackendBaseUrl(config.base_url);
+      }
+    };
+    loadBackendConfig();
+  }, [formData.provider]);
 
   useEffect(() => {
     if (agent) {
@@ -59,15 +72,24 @@ export const AgentForm: React.FC<AgentFormProps> = ({
     }
   }, [agent]);
 
-  const handleProviderChange = (provider: AgentProvider) => {
+  const handleProviderChange = useCallback(async (provider: AgentProvider) => {
     const config = PROVIDER_CONFIGS[provider];
+    
+    // Fetch base URL from backend
+    const backendConfig = await getBackendProviderConfig(provider);
+    const baseUrl = backendConfig?.base_url || '';
+    
     setFormData(prev => ({
       ...prev,
       provider,
       model_name: config.models[0],
-      base_url: config.defaultBaseUrl,
+      base_url: baseUrl,
     }));
-  };
+    
+    if (baseUrl) {
+      setBackendBaseUrl(baseUrl);
+    }
+  }, []);
 
   const handleChange = (field: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -286,25 +308,28 @@ export const AgentForm: React.FC<AgentFormProps> = ({
               )}
             </div>
 
-            {/* Base URL */}
+            {/* Base URL - Loaded from Backend */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Base URL
+                <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-normal">
+                  (carregado do backend)
+                </span>
               </label>
               <input
                 type="url"
-                value={formData.base_url || ''}
-                onChange={e => handleChange('base_url', e.target.value)}
-                placeholder={currentProvider.defaultBaseUrl}
+                value={formData.base_url || backendBaseUrl || ''}
+                readOnly
                 className={cn(
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white placeholder-zinc-400",
-                  "border-zinc-200 dark:border-zinc-700"
+                  "bg-zinc-100 dark:bg-zinc-800",
+                  "text-zinc-600 dark:text-zinc-400",
+                  "border-zinc-200 dark:border-zinc-700",
+                  "cursor-not-allowed"
                 )}
               />
               <p className="mt-1 text-xs text-zinc-500">
-                URL padrão: {currentProvider.defaultBaseUrl}
+                Esta URL é configurada automaticamente pelo backend para garantir compatibilidade com a API Anthropic.
               </p>
             </div>
 

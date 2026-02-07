@@ -110,7 +110,7 @@ export const AgentDetailPage: React.FC = () => {
         status: 'draft',
         use_memory: agent.use_memory,
         memory_ttl: agent.memory_ttl,
-        api_key: '', // User needs to provide
+        // api_key is handled by backend, not sent from frontend
       });
       navigate(`/agents/${newAgent.id}`);
     } catch (error) {
