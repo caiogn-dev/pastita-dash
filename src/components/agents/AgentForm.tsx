@@ -1,22 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   XMarkIcon,
   InformationCircleIcon,
   CpuChipIcon,
-  Cog6ToothIcon,
   ChatBubbleBottomCenterTextIcon,
   LinkIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
+import agentsService, { 
+  PROVIDER_CONFIGS, 
+  DEFAULT_AGENT_VALUES, 
+  AgentProvider,
+  CreateAgentData,
+  getBackendProviderConfig,
+} from '../../services/agents';
 
 interface AgentFormProps {
   agent?: {
     id?: string;
     name: string;
     description: string;
-    provider: 'kimi' | 'openai' | 'anthropic' | 'ollama';
+    provider: AgentProvider;
     model_name: string;
-    api_key?: string;
     base_url?: string;
     temperature: number;
     max_tokens: number;
@@ -29,53 +34,10 @@ interface AgentFormProps {
     accounts?: string[];
   };
   whatsappAccounts?: Array<{ id: string; name: string; phone_number: string }>;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: CreateAgentData) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
-
-// CONFIGURAÇÃO ATUALIZADA DOS PROVIDERS E MODELOS
-const providerConfigs = {
-  kimi: {
-    name: 'Kimi (Moonshot)',
-    models: ['kimi-for-coding', 'kimi-k2', 'kimi-k2.5'],
-    defaultBaseUrl: 'https://api.kimi.com/coding/',
-  },
-  openai: {
-    name: 'OpenAI',
-    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    defaultBaseUrl: 'https://api.openai.com/v1',
-  },
-  anthropic: {
-    name: 'Anthropic',
-    models: ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'],
-    defaultBaseUrl: 'https://api.anthropic.com/v1',
-  },
-  ollama: {
-    name: 'Ollama (Local)',
-    models: ['llama3', 'mistral', 'codellama', 'mixtral'],
-    defaultBaseUrl: 'http://localhost:11434/v1',
-  },
-};
-
-// VALORES PADRÃO ATUALIZADOS PARA KIMI
-const defaultValues = {
-  name: '',
-  description: '',
-  provider: 'kimi' as const,
-  model_name: 'kimi-for-coding',
-  api_key: '',
-  base_url: 'https://api.kimi.com/coding/',
-  temperature: 0.7,
-  max_tokens: 32768,  // Max tokens para kimi-for-coding
-  timeout: 30,
-  system_prompt: 'Você é o assistente virtual da Pastita, uma loja de massas artesanais.\n\nSuas responsabilidades:\n- Responder dúvidas sobre o cardápio e produtos\n- Ajudar clientes a fazer pedidos\n- Informar sobre horário de funcionamento e entregas\n- Ser sempre educado, prestativo e gentil\n\nSe não souber responder algo específico, direcione o cliente para falar com um atendente humano.',
-  context_prompt: '',
-  status: 'draft' as const,
-  use_memory: true,
-  memory_ttl: 3600,
-  accounts: [] as string[],
-};
 
 type Tab = 'basic' | 'model' | 'prompts' | 'accounts';
 
@@ -87,28 +49,49 @@ export const AgentForm: React.FC<AgentFormProps> = ({
   isLoading = false,
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>('basic');
-  const [formData, setFormData] = useState(agent || defaultValues);
+  const [formData, setFormData] = useState(agent || DEFAULT_AGENT_VALUES);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [backendBaseUrl, setBackendBaseUrl] = useState<string>('');
 
   const isEditing = Boolean(agent?.id);
 
+  // Fetch backend provider config on mount
+  useEffect(() => {
+    const loadBackendConfig = async () => {
+      const config = await getBackendProviderConfig(formData.provider || 'kimi');
+      if (config?.base_url) {
+        setBackendBaseUrl(config.base_url);
+      }
+    };
+    loadBackendConfig();
+  }, [formData.provider]);
+
   useEffect(() => {
     if (agent) {
-      setFormData({ ...defaultValues, ...agent });
+      setFormData({ ...DEFAULT_AGENT_VALUES, ...agent });
     }
   }, [agent]);
 
-  const handleProviderChange = (provider: keyof typeof providerConfigs) => {
-    const config = providerConfigs[provider];
+  const handleProviderChange = useCallback(async (provider: AgentProvider) => {
+    const config = PROVIDER_CONFIGS[provider];
+    
+    // Fetch base URL from backend
+    const backendConfig = await getBackendProviderConfig(provider);
+    const baseUrl = backendConfig?.base_url || '';
+    
     setFormData(prev => ({
       ...prev,
       provider,
       model_name: config.models[0],
-      base_url: config.defaultBaseUrl,
+      base_url: baseUrl,
     }));
-  };
+    
+    if (baseUrl) {
+      setBackendBaseUrl(baseUrl);
+    }
+  }, []);
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -118,14 +101,11 @@ export const AgentForm: React.FC<AgentFormProps> = ({
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       newErrors.name = 'Nome é obrigatório';
     }
-    if (!formData.system_prompt.trim()) {
+    if (!formData.system_prompt?.trim()) {
       newErrors.system_prompt = 'System prompt é obrigatório';
-    }
-    if (formData.provider !== 'ollama' && !formData.api_key && !isEditing) {
-      newErrors.api_key = 'API Key é obrigatória';
     }
     
     setErrors(newErrors);
@@ -135,11 +115,23 @@ export const AgentForm: React.FC<AgentFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      // Remove api_key if not provided (for edits)
-      const submitData = { ...formData };
-      if (!submitData.api_key) {
-        delete submitData.api_key;
-      }
+      // Prepare data for submission (api_key is handled by backend)
+      const submitData: CreateAgentData = {
+        name: formData.name || '',
+        description: formData.description,
+        provider: formData.provider || 'kimi',
+        model_name: formData.model_name || '',
+        base_url: formData.base_url,
+        temperature: formData.temperature,
+        max_tokens: formData.max_tokens,
+        timeout: formData.timeout,
+        system_prompt: formData.system_prompt,
+        context_prompt: formData.context_prompt,
+        status: formData.status,
+        use_memory: formData.use_memory,
+        memory_ttl: formData.memory_ttl,
+        accounts: formData.accounts,
+      };
       onSubmit(submitData);
     }
   };
@@ -150,6 +142,8 @@ export const AgentForm: React.FC<AgentFormProps> = ({
     { id: 'prompts' as Tab, label: 'Prompts', icon: ChatBubbleBottomCenterTextIcon },
     { id: 'accounts' as Tab, label: 'Contas', icon: LinkIcon },
   ];
+
+  const currentProvider = PROVIDER_CONFIGS[formData.provider || 'kimi'];
 
   return (
     <form onSubmit={handleSubmit} className="h-full flex flex-col">
@@ -199,7 +193,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
               </label>
               <input
                 type="text"
-                value={formData.name}
+                value={formData.name || ''}
                 onChange={e => handleChange('name', e.target.value)}
                 placeholder="Ex: Assistente de Vendas"
                 className={cn(
@@ -220,7 +214,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 Descrição
               </label>
               <textarea
-                value={formData.description}
+                value={formData.description || ''}
                 onChange={e => handleChange('description', e.target.value)}
                 placeholder="Descreva a função deste agente..."
                 rows={3}
@@ -239,7 +233,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 Status
               </label>
               <select
-                value={formData.status}
+                value={formData.status || 'draft'}
                 onChange={e => handleChange('status', e.target.value)}
                 className={cn(
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
@@ -265,11 +259,11 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 Provedor *
               </label>
               <div className="grid grid-cols-2 gap-3">
-                {Object.entries(providerConfigs).map(([key, config]) => (
+                {Object.entries(PROVIDER_CONFIGS).map(([key, config]) => (
                   <button
                     key={key}
                     type="button"
-                    onClick={() => handleProviderChange(key as keyof typeof providerConfigs)}
+                    onClick={() => handleProviderChange(key as AgentProvider)}
                     className={cn(
                       "px-4 py-3 rounded-lg border-2 text-left transition-all",
                       formData.provider === key
@@ -294,7 +288,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 Modelo
               </label>
               <select
-                value={formData.model_name}
+                value={formData.model_name || ''}
                 onChange={e => handleChange('model_name', e.target.value)}
                 className={cn(
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
@@ -303,53 +297,50 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   "border-zinc-200 dark:border-zinc-700 focus:ring-primary-500"
                 )}
               >
-                {providerConfigs[formData.provider].models.map(model => (
+                {currentProvider.models.map(model => (
                   <option key={model} value={model}>{model}</option>
                 ))}
               </select>
-            </div>
-
-            {/* API Key */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                API Key {formData.provider !== 'ollama' && '*'}
-              </label>
-              <input
-                type="password"
-                value={formData.api_key}
-                onChange={e => handleChange('api_key', e.target.value)}
-                placeholder={isEditing ? '••••••••••••••••' : 'sk-...'}
-                className={cn(
-                  "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white placeholder-zinc-400",
-                  errors.api_key
-                    ? "border-red-300 dark:border-red-600"
-                    : "border-zinc-200 dark:border-zinc-700"
-                )}
-              />
-              {errors.api_key && <p className="mt-1 text-sm text-red-500">{errors.api_key}</p>}
-              {isEditing && (
-                <p className="mt-1 text-xs text-zinc-500">Deixe vazio para manter a chave atual</p>
+              {formData.provider === 'kimi' && (
+                <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                  ℹ️ Kimi usa API no estilo Anthropic (backend gerencia)
+                </p>
               )}
             </div>
 
-            {/* Base URL */}
+            {/* Base URL - Loaded from Backend */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Base URL
+                <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-normal">
+                  (carregado do backend)
+                </span>
               </label>
               <input
                 type="url"
-                value={formData.base_url}
-                onChange={e => handleChange('base_url', e.target.value)}
+                value={formData.base_url || backendBaseUrl || ''}
+                readOnly
                 className={cn(
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white placeholder-zinc-400",
-                  "border-zinc-200 dark:border-zinc-700"
+                  "bg-zinc-100 dark:bg-zinc-800",
+                  "text-zinc-600 dark:text-zinc-400",
+                  "border-zinc-200 dark:border-zinc-700",
+                  "cursor-not-allowed"
                 )}
               />
+              <p className="mt-1 text-xs text-zinc-500">
+                Esta URL é configurada automaticamente pelo backend para garantir compatibilidade com a API Anthropic.
+              </p>
+            </div>
+
+            {/* API Key Notice */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                <strong>Nota:</strong> A API Key é configurada no backend pelo administrador do sistema. 
+                {currentProvider.requiresApiKey 
+                  ? 'Entre em contato com o suporte para configurar a API Key.' 
+                  : 'Este provedor não requer API Key.'}
+              </p>
             </div>
 
             {/* Temperature & Max Tokens */}
@@ -363,7 +354,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   min="0"
                   max="1"
                   step="0.1"
-                  value={formData.temperature}
+                  value={formData.temperature || 0.7}
                   onChange={e => handleChange('temperature', parseFloat(e.target.value))}
                   className="w-full accent-primary-500"
                 />
@@ -382,7 +373,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   min="100"
                   max="128000"
                   step="100"
-                  value={formData.max_tokens}
+                  value={formData.max_tokens || 32768}
                   onChange={e => handleChange('max_tokens', parseInt(e.target.value))}
                   className={cn(
                     "w-full px-4 py-2.5 rounded-lg border transition-colors",
@@ -391,6 +382,9 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                     "border-zinc-200 dark:border-zinc-700"
                   )}
                 />
+                {formData.model_name === 'kimi-for-coding' && (
+                  <p className="mt-1 text-xs text-zinc-500">Máx: 32768 para kimi-for-coding</p>
+                )}
               </div>
             </div>
 
@@ -404,7 +398,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   type="number"
                   min="5"
                   max="120"
-                  value={formData.timeout}
+                  value={formData.timeout || 30}
                   onChange={e => handleChange('timeout', parseInt(e.target.value))}
                   className={cn(
                     "w-full px-4 py-2.5 rounded-lg border transition-colors",
@@ -424,7 +418,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   min="60"
                   max="86400"
                   step="60"
-                  value={formData.memory_ttl}
+                  value={formData.memory_ttl || 3600}
                   onChange={e => handleChange('memory_ttl', parseInt(e.target.value))}
                   disabled={!formData.use_memory}
                   className={cn(
@@ -477,7 +471,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 Define a personalidade e comportamento base do agente
               </p>
               <textarea
-                value={formData.system_prompt}
+                value={formData.system_prompt || ''}
                 onChange={e => handleChange('system_prompt', e.target.value)}
                 placeholder="Você é um assistente..."
                 rows={8}
@@ -502,7 +496,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 Informações adicionais sobre o negócio, produtos, políticas, etc.
               </p>
               <textarea
-                value={formData.context_prompt}
+                value={formData.context_prompt || ''}
                 onChange={e => handleChange('context_prompt', e.target.value)}
                 placeholder="Informações sobre o cardápio, horários de funcionamento..."
                 rows={8}
@@ -522,7 +516,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
               </div>
               <pre className="text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap font-mono">
                 {formData.system_prompt}
-                {formData.context_prompt && `\n\n${formData.context_prompt}`}
+                {formData.context_prompt ? `\n\n${formData.context_prompt}` : ''}
               </pre>
             </div>
           </div>
