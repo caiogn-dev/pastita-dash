@@ -279,6 +279,11 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   <option key={model} value={model}>{model}</option>
                 ))}
               </select>
+              {formData.provider === 'kimi' && (
+                <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                  ℹ️ Kimi usa API no estilo Anthropic (backend gerencia)
+                </p>
+              )}
             </div>
 
             {/* Base URL */}
@@ -343,7 +348,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   min="100"
                   max="128000"
                   step="100"
-                  value={formData.max_tokens || 8000}
+                  value={formData.max_tokens || 32768}
                   onChange={e => handleChange('max_tokens', parseInt(e.target.value))}
                   className={cn(
                     "w-full px-4 py-2.5 rounded-lg border transition-colors",
@@ -352,6 +357,9 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                     "border-zinc-200 dark:border-zinc-700"
                   )}
                 />
+                {formData.model_name === 'kimi-for-coding' && (
+                  <p className="mt-1 text-xs text-zinc-500">Máx: 32768 para kimi-for-coding</p>
+                )}
               </div>
             </div>
 

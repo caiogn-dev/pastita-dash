@@ -1,30 +1,35 @@
 import api from './api';
 
 // Provider configurations - synced with backend
+// IMPORTANT: Kimi uses Anthropic API style (not OpenAI)
 export const PROVIDER_CONFIGS = {
   kimi: {
     name: 'Kimi (Moonshot)',
-    models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
-    defaultBaseUrl: 'https://api.moonshot.cn/v1',
+    models: ['kimi-for-coding', 'kimi-k2', 'kimi-k2.5'],
+    defaultBaseUrl: 'https://api.kimi.com/coding/',
     requiresApiKey: true,
+    apiStyle: 'anthropic', // Backend uses ChatAnthropic for Kimi
   },
   openai: {
     name: 'OpenAI',
     models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
     defaultBaseUrl: 'https://api.openai.com/v1',
     requiresApiKey: true,
+    apiStyle: 'openai',
   },
   anthropic: {
     name: 'Anthropic',
     models: ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'],
     defaultBaseUrl: 'https://api.anthropic.com/v1',
     requiresApiKey: true,
+    apiStyle: 'anthropic',
   },
   ollama: {
     name: 'Ollama (Local)',
     models: ['llama3', 'mistral', 'codellama', 'mixtral'],
     defaultBaseUrl: 'http://localhost:11434/v1',
     requiresApiKey: false,
+    apiStyle: 'openai',
   },
 } as const;
 
@@ -116,12 +121,13 @@ export interface AgentMessage {
 }
 
 // Default values for new agent - synced with backend
+// Using Kimi Coding API with Anthropic style
 export const DEFAULT_AGENT_VALUES: Partial<CreateAgentData> = {
   provider: 'kimi',
-  model_name: 'moonshot-v1-8k',
-  base_url: 'https://api.moonshot.cn/v1',
+  model_name: 'kimi-for-coding',
+  base_url: 'https://api.kimi.com/coding/',
   temperature: 0.7,
-  max_tokens: 8000,
+  max_tokens: 32768, // Max for kimi-for-coding
   timeout: 30,
   system_prompt: 'Você é o assistente virtual da Pastita, uma loja de massas artesanais.\n\nSuas responsabilidades:\n- Responder dúvidas sobre o cardápio e produtos\n- Ajudar clientes a fazer pedidos\n- Informar sobre horário de funcionamento e entregas\n- Ser sempre educado, prestativo e gentil\n\nSe não souber responder algo específico, direcione o cliente para falar com um atendente humano.',
   context_prompt: '',
@@ -171,7 +177,7 @@ const handleApiError = (error: unknown): never => {
     } else if (status === 404) {
       message = 'Agente não encontrado ou endpoint indisponível';
     } else if (status === 500) {
-      message = 'Erro interno no servidor. Verifique se a API Key está configurada corretamente no backend.';
+      message = 'Erro interno no servidor. Verifique os logs do backend.';
     } else if (axiosError.message) {
       message = axiosError.message;
     }
