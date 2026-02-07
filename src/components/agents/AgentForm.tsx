@@ -34,40 +34,42 @@ interface AgentFormProps {
   isLoading?: boolean;
 }
 
+// CONFIGURAÇÃO ATUALIZADA DOS PROVIDERS E MODELOS
 const providerConfigs = {
   kimi: {
-    name: 'Moonshot AI',
-    models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
-    defaultBaseUrl: 'https://api.moonshot.cn/v1',
+    name: 'Kimi (Moonshot)',
+    models: ['kimi-for-coding', 'kimi-k2', 'kimi-k2.5'],
+    defaultBaseUrl: 'https://api.kimi.com/coding/',
   },
   openai: {
     name: 'OpenAI',
-    models: ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k'],
+    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
     defaultBaseUrl: 'https://api.openai.com/v1',
   },
   anthropic: {
     name: 'Anthropic',
-    models: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
+    models: ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'],
     defaultBaseUrl: 'https://api.anthropic.com/v1',
   },
   ollama: {
     name: 'Ollama (Local)',
-    models: ['llama2', 'mistral', 'codellama', 'mixtral'],
+    models: ['llama3', 'mistral', 'codellama', 'mixtral'],
     defaultBaseUrl: 'http://localhost:11434/v1',
   },
 };
 
+// VALORES PADRÃO ATUALIZADOS PARA KIMI
 const defaultValues = {
   name: '',
   description: '',
   provider: 'kimi' as const,
-  model_name: 'kimi-coder',
+  model_name: 'kimi-for-coding',
   api_key: '',
-  base_url: 'https://api.moonshot.cn/v1',
+  base_url: 'https://api.kimi.com/coding/',
   temperature: 0.7,
-  max_tokens: 1000,
+  max_tokens: 32768,  // Max tokens para kimi-for-coding
   timeout: 30,
-  system_prompt: 'Você é um assistente virtual útil da Pastita, uma loja de massas artesanais. Ajude os clientes com informações sobre produtos, pedidos e dúvidas gerais.',
+  system_prompt: 'Você é o assistente virtual da Pastita, uma loja de massas artesanais.\n\nSuas responsabilidades:\n- Responder dúvidas sobre o cardápio e produtos\n- Ajudar clientes a fazer pedidos\n- Informar sobre horário de funcionamento e entregas\n- Ser sempre educado, prestativo e gentil\n\nSe não souber responder algo específico, direcione o cliente para falar com um atendente humano.',
   context_prompt: '',
   status: 'draft' as const,
   use_memory: true,
@@ -378,7 +380,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 <input
                   type="number"
                   min="100"
-                  max="8000"
+                  max="128000"
                   step="100"
                   value={formData.max_tokens}
                   onChange={e => handleChange('max_tokens', parseInt(e.target.value))}
