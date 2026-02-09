@@ -24,7 +24,7 @@ import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../../components/common';
 import { useStore } from '../../../hooks';
-import api from '../../../services/api';
+import api from '@/services/api';
 
 interface EmailCampaign {
   id: string;

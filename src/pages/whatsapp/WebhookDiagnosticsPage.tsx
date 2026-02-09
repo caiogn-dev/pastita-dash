@@ -17,8 +17,8 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge } from '../../components/common';
-import api from '../../services/api';
-import logger from '../../services/logger';
+import api from '@/services/api';
+import logger from '@/services/logger';
 
 interface DiagnosticsData {
   status: string;
