@@ -1,2 +1,4 @@
-export { default as InstagramAccounts } from './InstagramAccounts';
-export { default as InstagramInbox } from './InstagramInbox';
+// Instagram Pages
+export { InstagramAccountsPage } from './InstagramAccountsPage';
+export { InstagramDashboardPage } from './InstagramDashboardPage';
+export { InstagramInbox } from './InstagramInbox';

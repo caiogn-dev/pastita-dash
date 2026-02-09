@@ -102,23 +102,26 @@ export type {
 } from './messenger';
 
 // =============================================================================
-// INSTAGRAM PLATFORM (Posts, Stories, Reels, Shopping, Live)
+// INSTAGRAM PLATFORM (Complete - Posts, Stories, Reels, Shopping, Live, Direct)
 // =============================================================================
 
-export { default as instagramService } from './instagram';
+export {
+  instagramAccountApi,
+  instagramMediaApi,
+  instagramShoppingApi,
+  instagramLiveApi,
+  instagramScheduledPostApi,
+  instagramDirectApi,
+} from './instagram';
+
 export type {
   InstagramAccount,
-  InstagramAccountStatus,
-  CreateInstagramAccount,
-  InstagramAccountStats,
-  InstagramConversation,
-  InstagramMessage,
   InstagramMedia,
-  InstagramStory,
-  InstagramReel,
+  InstagramInsight,
   InstagramCatalog,
   InstagramProduct,
   InstagramLive,
+  InstagramScheduledPost,
 } from './instagram';
 
 // =============================================================================
