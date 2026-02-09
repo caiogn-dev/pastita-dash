@@ -159,12 +159,15 @@ const ContactItem: React.FC<{
 };
 
 export const ContactList: React.FC<ContactListProps> = ({
-  contacts,
+  contacts: rawContacts,
   selectedContactId,
   onSelectContact,
   isLoading = false,
   emptyMessage = 'Nenhuma conversa encontrada',
 }) => {
+  // Garantir que contacts sempre seja um array
+  const contacts = rawContacts || [];
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [modeFilter, setModeFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
