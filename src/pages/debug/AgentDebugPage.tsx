@@ -11,7 +11,7 @@ import {
   Chip,
   Divider,
 } from '@mui/material';
-import api from '../services/api';
+import api from '@/services/api';
 
 interface DebugResult {
   timestamp: string;
