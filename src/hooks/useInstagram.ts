@@ -15,7 +15,7 @@ export const useInstagramAccounts = () => {
     setIsLoading(true);
     try {
       const res = await instagramService.getAccounts();
-      setAccounts(res.data);
+      setAccounts(res.data?.results || []);
     } catch (err) {
       setError(err as Error);
     } finally {
@@ -65,7 +65,7 @@ export const useInstagramMedia = (accountId: string) => {
     setIsLoading(true);
     try {
       const res = await instagramService.getMedia(accountId);
-      setMedia(res.data);
+      setMedia(res.data?.results || []);
     } finally {
       setIsLoading(false);
     }
