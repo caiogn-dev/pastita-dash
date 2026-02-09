@@ -381,6 +381,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // NOVO: Scroll imediato ao carregar mensagens (sem animação)
+  useEffect(() => {
+    if (!isLoadingMessages && messages.length > 0) {
+      // Scroll imediato para o bottom na primeira carga
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    }
+  }, [isLoadingMessages, messages.length]);
+
   // Carregar inicial
   useEffect(() => {
     loadConversations();

@@ -30,6 +30,7 @@ export interface Contact {
   mode?: 'auto' | 'human' | 'hybrid';
   isTyping?: boolean;
   isOnline?: boolean;
+  profilePictureUrl?: string; // NOVO: URL da foto de perfil
 }
 
 export interface ContactListProps {
@@ -40,7 +41,27 @@ export interface ContactListProps {
   emptyMessage?: string;
 }
 
-const ContactAvatar: React.FC<{ name: string; phoneNumber: string }> = ({ name, phoneNumber }) => {
+const ContactAvatar: React.FC<{ 
+  name: string; 
+  phoneNumber: string;
+  profilePictureUrl?: string;
+}> = ({ name, phoneNumber, profilePictureUrl }) => {
+  // NOVO: Se tem foto de perfil, mostra ela
+  if (profilePictureUrl) {
+    return (
+      <img
+        src={profilePictureUrl}
+        alt={name || 'Contato'}
+        className="w-12 h-12 rounded-full object-cover"
+        onError={(e) => {
+          // Se imagem falhar, esconde e mostra iniciais
+          (e.target as HTMLImageElement).style.display = 'none';
+        }}
+      />
+    );
+  }
+  
+  // Comportamento existente: mostra iniciais
   const initials = name
     ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : phoneNumber.slice(-2);
@@ -90,7 +111,11 @@ const ContactItem: React.FC<{
     >
       {/* Avatar */}
       <div className="relative flex-shrink-0">
-        <ContactAvatar name={contact.contactName} phoneNumber={contact.phoneNumber} />
+        <ContactAvatar 
+          name={contact.contactName} 
+          phoneNumber={contact.phoneNumber}
+          profilePictureUrl={contact.profilePictureUrl} // NOVO
+        />
         {contact.unreadCount && contact.unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
             {contact.unreadCount > 9 ? '9+' : contact.unreadCount}
