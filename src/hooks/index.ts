@@ -40,3 +40,22 @@ export {
   getStoreIdWithFallback 
 } from './useStore';
 export type { UseStoreReturn } from './useStore';
+
+// =============================================================================
+// MESSENGER PLATFORM
+// =============================================================================
+
+export { default as useMessenger } from './useMessenger';
+export { default as useMessengerWS } from './useMessengerWS';
+
+// =============================================================================
+// INSTAGRAM PLATFORM
+// =============================================================================
+
+export { default as useInstagram } from './useInstagram';
+
+// =============================================================================
+// HANDOVER PROTOCOL
+// =============================================================================
+
+export { default as useHandover } from './useHandover';
