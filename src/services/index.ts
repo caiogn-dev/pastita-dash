@@ -86,3 +86,27 @@ export { exportService } from './export';
 // =============================================================================
 
 export { catalogService } from './catalogService';
+
+// =============================================================================
+// MESSENGER PLATFORM
+// =============================================================================
+
+export { default as messengerService } from './messenger';
+
+// =============================================================================
+// INSTAGRAM PLATFORM (Posts, Stories, Reels, Shopping, Live)
+// =============================================================================
+
+export { default as instagramService } from './instagram';
+
+// =============================================================================
+// HANDOVER PROTOCOL (Bot ↔ Human Transfer)
+// =============================================================================
+
+export { default as handoverService } from './handover';
+
+// =============================================================================
+// CONVERSIONS API (Facebook, Google, TikTok Pixel Events)
+// =============================================================================
+
+export { default as conversionsService } from './conversions';
