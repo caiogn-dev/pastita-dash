@@ -46,7 +46,7 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
   const [isConnecting, setIsConnecting] = useState(false);
   
   // Reconnection logic refs
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const lastConnectTimeRef = useRef(0);
   const intentionalCloseRef = useRef(false);

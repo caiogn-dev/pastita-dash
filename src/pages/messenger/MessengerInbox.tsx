@@ -17,43 +17,32 @@ import {
   CircularProgress,
   InputAdornment,
   Paper,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Tooltip,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
-import InstagramIcon from '@mui/icons-material/Instagram';
+import MessengerIcon from '@mui/icons-material/Chat'; // Using Chat as Messenger icon
 import SendIcon from '@mui/icons-material/Send';
 import SearchIcon from '@mui/icons-material/Search';
-import ImageIcon from '@mui/icons-material/Image';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import CircleIcon from '@mui/icons-material/Circle';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import DoneIcon from '@mui/icons-material/Done';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import PersonIcon from '@mui/icons-material/Person';
 import {
-  instagramService,
-  InstagramAccount,
-  InstagramConversation,
-  InstagramMessage,
-} from '../../services/instagram';
+  messengerService,
+  MessengerAccount,
+  MessengerConversation,
+  MessengerMessage,
+} from '../../services/messenger';
 
-const messageStatusIcon: Record<string, React.ReactNode> = {
-  pending: <AccessTimeIcon fontSize="inherit" sx={{ color: 'text.disabled' }} />,
-  sent: <DoneIcon fontSize="inherit" sx={{ color: 'text.disabled' }} />,
-  delivered: <DoneAllIcon fontSize="inherit" sx={{ color: 'text.disabled' }} />,
-  seen: <DoneAllIcon fontSize="inherit" sx={{ color: 'primary.main' }} />,
-  failed: <CircleIcon fontSize="inherit" sx={{ color: 'error.main' }} />,
-};
-
-export default function InstagramInbox() {
-  const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
+export default function MessengerInbox() {
+  const [accounts, setAccounts] = useState<MessengerAccount[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
-  const [conversations, setConversations] = useState<InstagramConversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<InstagramConversation | null>(null);
-  const [messages, setMessages] = useState<InstagramMessage[]>([]);
+  const [conversations, setConversations] = useState<MessengerConversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<MessengerConversation | null>(null);
+  const [messages, setMessages] = useState<MessengerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -88,16 +77,15 @@ export default function InstagramInbox() {
 
   const loadAccounts = async () => {
     try {
-      const response = await instagramService.getAccounts();
-      // PaginatedResponse: response.data.results
-      const results = response.data?.results || [];
+      const response = await messengerService.getAccounts();
+      const results = response.data || [];
       setAccounts(results);
       if (results.length > 0) {
         setSelectedAccountId(results[0].id);
       }
     } catch (err) {
       console.error('Error loading accounts:', err);
-      setError('Erro ao carregar contas');
+      setError('Erro ao carregar contas do Messenger');
     } finally {
       setLoading(false);
     }
@@ -108,11 +96,8 @@ export default function InstagramInbox() {
     
     try {
       setLoading(true);
-      const response = await instagramService.getConversations({
-        account_id: selectedAccountId,
-      });
-      // PaginatedResponse: response.data.results
-      setConversations(response.data?.results || []);
+      const response = await messengerService.getConversations(selectedAccountId);
+      setConversations(response.data || []);
       setError(null);
     } catch (err) {
       console.error('Error loading conversations:', err);
@@ -127,16 +112,14 @@ export default function InstagramInbox() {
     
     try {
       setLoadingMessages(true);
-      const response = await instagramService.getMessages({
-        conversation_id: selectedConversation.id,
-      });
-      // PaginatedResponse: response.data.results
-      const results = response.data?.results || [];
-      setMessages(results.reverse());
+      const response = await messengerService.getMessages(selectedConversation.id);
+      setMessages(response.data || []);
       
-      // Mark as seen - usa sender_id (quem enviou a última mensagem)
-      if (selectedAccountId && selectedConversation.participant_id) {
-        await instagramService.markSeen(selectedAccountId, selectedConversation.participant_id);
+      // Mark as read
+      try {
+        await messengerService.markAsRead(selectedConversation.id);
+      } catch {
+        // Silently ignore
       }
     } catch (err) {
       console.error('Error loading messages:', err);
@@ -146,26 +129,15 @@ export default function InstagramInbox() {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !selectedAccountId) return;
+    if (!newMessage.trim() || !selectedConversation) return;
 
     try {
       setSending(true);
-      
-      // Typing indicator (best effort - não falha se der erro)
-      try {
-        await instagramService.sendTyping(selectedAccountId, selectedConversation.participant_id);
-      } catch {
-        // Silently ignore typing errors
-      }
-      
-      // Send message
-      const response = await instagramService.sendMessage({
-        account_id: selectedAccountId,
-        recipient_id: selectedConversation.participant_id,
-        text: newMessage.trim(),
+      const response = await messengerService.sendMessage(selectedConversation.id, {
+        content: newMessage.trim(),
+        message_type: 'text',
       });
       
-      // Adiciona mensagem enviada à lista
       const sentMessage = response.data;
       if (sentMessage) {
         setMessages((prev) => [...prev, sentMessage]);
@@ -179,13 +151,19 @@ export default function InstagramInbox() {
     }
   };
 
+  const handleHandover = async (target: 'bot' | 'human') => {
+    if (!selectedConversation) return;
+    
+    // TODO: Implement handover API call when backend supports it
+    console.log(`Transferring conversation ${selectedConversation.id} to ${target}`);
+  };
+
   const filteredConversations = conversations.filter((conv) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
-      conv.participant_username?.toLowerCase().includes(query) ||
-      conv.participant_name?.toLowerCase().includes(query) ||
-      conv.last_message_preview?.toLowerCase().includes(query)
+      conv.sender_name?.toLowerCase().includes(query) ||
+      conv.last_message?.toLowerCase().includes(query)
     );
   });
 
@@ -206,10 +184,15 @@ export default function InstagramInbox() {
     }
   };
 
-  // Helper para pegar o ícone de status com fallback
-  const getStatusIcon = (status: string | undefined) => {
-    if (!status) return null;
-    return messageStatusIcon[status] || null;
+  const getHandoverIcon = (status: string) => {
+    switch (status) {
+      case 'bot':
+        return <SmartToyIcon fontSize="small" color="primary" />;
+      case 'human':
+        return <PersonIcon fontSize="small" color="success" />;
+      default:
+        return <SmartToyIcon fontSize="small" color="disabled" />;
+    }
   };
 
   return (
@@ -219,9 +202,9 @@ export default function InstagramInbox() {
         {/* Header */}
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Box display="flex" alignItems="center" gap={2} mb={2}>
-            <InstagramIcon sx={{ color: '#E4405F', fontSize: 28 }} />
+            <MessengerIcon sx={{ color: '#0084FF', fontSize: 28 }} />
             <Typography variant="h6" fontWeight="bold">
-              Instagram DM
+              Messenger
             </Typography>
             <Box flex={1} />
             <Tooltip title="Atualizar">
@@ -234,18 +217,15 @@ export default function InstagramInbox() {
           {/* Account Selector */}
           {accounts.length > 1 && (
             <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-              <InputLabel>Conta</InputLabel>
+              <InputLabel>Página</InputLabel>
               <Select
                 value={selectedAccountId}
-                label="Conta"
+                label="Página"
                 onChange={(e) => setSelectedAccountId(e.target.value)}
               >
                 {accounts.map((account) => (
                   <MenuItem key={account.id} value={account.id}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Avatar src={account.profile_picture_url} sx={{ width: 24, height: 24 }} />
-                      @{account.username}
-                    </Box>
+                    {account.page_name}
                   </MenuItem>
                 ))}
               </Select>
@@ -277,7 +257,7 @@ export default function InstagramInbox() {
             </Box>
           ) : filteredConversations.length === 0 ? (
             <Box textAlign="center" py={4} px={2}>
-              <InstagramIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+              <MessengerIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
               <Typography color="text.secondary">
                 {searchQuery ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
               </Typography>
@@ -296,8 +276,8 @@ export default function InstagramInbox() {
                       color="error"
                       overlap="circular"
                     >
-                      <Avatar src={conv.participant_profile_pic}>
-                        {conv.participant_username?.[0]?.toUpperCase() || 'U'}
+                      <Avatar>
+                        {conv.sender_name?.[0]?.toUpperCase() || 'U'}
                       </Avatar>
                     </Badge>
                   </ListItemAvatar>
@@ -309,11 +289,14 @@ export default function InstagramInbox() {
                           fontWeight={conv.unread_count > 0 ? 'bold' : 'normal'}
                           noWrap
                         >
-                          @{conv.participant_username || conv.participant_id}
+                          {conv.sender_name || 'Usuário'}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatTime(conv.last_message_at)}
-                        </Typography>
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          {getHandoverIcon(conv.handover_status)}
+                          <Typography variant="caption" color="text.secondary">
+                            {formatTime(conv.last_message_at)}
+                          </Typography>
+                        </Box>
                       </Box>
                     }
                     secondary={
@@ -323,7 +306,7 @@ export default function InstagramInbox() {
                         fontWeight={conv.unread_count > 0 ? 500 : 400}
                         noWrap
                       >
-                        {conv.last_message_preview || 'Nenhuma mensagem'}
+                        {conv.last_message || 'Nenhuma mensagem'}
                       </Typography>
                     }
                   />
@@ -346,7 +329,7 @@ export default function InstagramInbox() {
             flex={1}
             color="text.secondary"
           >
-            <InstagramIcon sx={{ fontSize: 80, color: '#E4405F', opacity: 0.5, mb: 2 }} />
+            <MessengerIcon sx={{ fontSize: 80, color: '#0084FF', opacity: 0.5, mb: 2 }} />
             <Typography variant="h6">Selecione uma conversa</Typography>
             <Typography variant="body2">
               Escolha uma conversa da lista para ver as mensagens
@@ -365,25 +348,37 @@ export default function InstagramInbox() {
                 gap: 2,
               }}
             >
-              <Avatar
-                src={selectedConversation.participant_profile_pic}
-                sx={{ width: 48, height: 48 }}
-              >
-                {selectedConversation.participant_username?.[0]?.toUpperCase()}
+              <Avatar sx={{ width: 48, height: 48 }}>
+                {selectedConversation.sender_name?.[0]?.toUpperCase()}
               </Avatar>
               <Box flex={1}>
                 <Typography variant="subtitle1" fontWeight="bold">
-                  {selectedConversation.participant_name || `@${selectedConversation.participant_username}`}
+                  {selectedConversation.sender_name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  @{selectedConversation.participant_username || selectedConversation.participant_id}
+                  {selectedConversation.handover_status === 'bot' ? 'Modo Bot' : 'Atendimento Humano'}
                 </Typography>
               </Box>
-              <Chip
-                label={selectedConversation.status === 'active' ? 'Ativo' : 'Fechado'}
-                color={selectedConversation.status === 'active' ? 'success' : 'default'}
-                size="small"
-              />
+              
+              {/* Handover Controls */}
+              <Box display="flex" gap={1}>
+                <Chip
+                  icon={<SmartToyIcon />}
+                  label="Bot"
+                  color={selectedConversation.handover_status === 'bot' ? 'primary' : 'default'}
+                  size="small"
+                  onClick={() => handleHandover('bot')}
+                  sx={{ cursor: 'pointer' }}
+                />
+                <Chip
+                  icon={<PersonIcon />}
+                  label="Humano"
+                  color={selectedConversation.handover_status === 'human' ? 'success' : 'default'}
+                  size="small"
+                  onClick={() => handleHandover('human')}
+                  sx={{ cursor: 'pointer' }}
+                />
+              </Box>
             </Box>
 
             {/* Messages Area */}
@@ -414,64 +409,52 @@ export default function InstagramInbox() {
                     key={msg.id}
                     sx={{
                       display: 'flex',
-                      justifyContent: msg.direction === 'outbound' ? 'flex-end' : 'flex-start',
+                      justifyContent: msg.is_from_bot ? 'flex-end' : 'flex-start',
                     }}
                   >
                     <Paper
                       sx={{
                         p: 1.5,
                         maxWidth: '70%',
-                        bgcolor: msg.direction === 'outbound' ? 'primary.main' : 'white',
-                        color: msg.direction === 'outbound' ? 'white' : 'text.primary',
+                        bgcolor: msg.is_from_bot ? 'primary.main' : 'white',
+                        color: msg.is_from_bot ? 'white' : 'text.primary',
                         borderRadius: 2,
-                        borderTopRightRadius: msg.direction === 'outbound' ? 0 : 2,
-                        borderTopLeftRadius: msg.direction === 'inbound' ? 0 : 2,
+                        borderTopRightRadius: msg.is_from_bot ? 0 : 2,
+                        borderTopLeftRadius: msg.is_from_bot ? 2 : 0,
                       }}
                     >
-                      {msg.media_url && (
+                      {msg.attachments && msg.attachments.length > 0 && (
                         <Box mb={1}>
-                          {msg.message_type === 'image' ? (
-                            <img
-                              src={msg.media_url}
-                              alt="Imagem"
-                              style={{ maxWidth: '100%', borderRadius: 8 }}
-                            />
-                          ) : msg.message_type === 'video' ? (
-                            <video
-                              src={msg.media_url}
-                              controls
-                              style={{ maxWidth: '100%', borderRadius: 8 }}
-                            />
-                          ) : (
-                            <Chip icon={<ImageIcon />} label={msg.message_type} size="small" />
-                          )}
+                          {msg.attachments.map((att, idx) => (
+                            <Box key={idx}>
+                              {att.type === 'image' ? (
+                                <img
+                                  src={att.url}
+                                  alt="Attachment"
+                                  style={{ maxWidth: '100%', borderRadius: 8 }}
+                                />
+                              ) : (
+                                <Chip label={att.name || att.type} size="small" />
+                              )}
+                            </Box>
+                          ))}
                         </Box>
                       )}
-                      {msg.text_content && (
-                        <Typography variant="body2">{msg.text_content}</Typography>
+                      {msg.content && (
+                        <Typography variant="body2">{msg.content}</Typography>
                       )}
-                      <Box
-                        display="flex"
-                        justifyContent="flex-end"
-                        alignItems="center"
-                        gap={0.5}
-                        mt={0.5}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          opacity: 0.7,
+                          fontSize: '0.65rem',
+                          display: 'block',
+                          textAlign: 'right',
+                          mt: 0.5,
+                        }}
                       >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            opacity: 0.7,
-                            fontSize: '0.65rem',
-                          }}
-                        >
-                          {formatTime(msg.created_at)}
-                        </Typography>
-                        {msg.direction === 'outbound' && (
-                          <Box sx={{ fontSize: '0.8rem', display: 'flex' }}>
-                            {getStatusIcon(msg.status)}
-                          </Box>
-                        )}
-                      </Box>
+                        {formatTime(msg.created_at)}
+                      </Typography>
                     </Paper>
                   </Box>
                 ))

@@ -119,13 +119,13 @@ export default function InstagramAccounts() {
     try {
       setLoading(true);
       const response = await instagramService.getAccounts();
-      setAccounts(response.results || []);
+      setAccounts(response.data?.results || []);
       
       // Load stats for each account
-      const statsPromises = (response.results || []).map(async (account) => {
+      const statsPromises = (response.data?.results || []).map(async (account: InstagramAccount) => {
         try {
-          const accountStats = await instagramService.getAccountStats(account.id);
-          return { id: account.id, stats: accountStats };
+          const statsRes = await instagramService.getAccountStats(account.id);
+          return { id: account.id, stats: statsRes.data };
         } catch {
           return { id: account.id, stats: null };
         }
@@ -210,7 +210,7 @@ export default function InstagramAccounts() {
     try {
       setSyncing(account.id);
       const result = await instagramService.syncConversations(account.id);
-      setSuccess(`Sincronizado: ${result.synced} conversas encontradas`);
+      setSuccess(`Sincronizado: ${result.data?.count || 0} conversas encontradas`);
       loadAccounts();
     } catch (err) {
       console.error('Error syncing conversations:', err);
@@ -393,7 +393,7 @@ export default function InstagramAccounts() {
                     {/* Info */}
                     <Box mb={2}>
                       <Typography variant="caption" color="text.secondary" display="block">
-                        Seguidores: {account.followers_count.toLocaleString()}
+                        Seguidores: {account.followers_count?.toLocaleString() || 'N/A'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" display="block">
                         Token: {account.masked_token}

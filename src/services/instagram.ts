@@ -1,11 +1,15 @@
 import api from './api';
 
 // Instagram Account Types
+export type InstagramAccountStatus = 'active' | 'inactive' | 'pending' | 'suspended' | 'expired';
+
 export interface InstagramAccount {
   id: string;
   instagram_id: string;
   username: string;
+  name?: string;
   account_type: 'business' | 'creator';
+  status: InstagramAccountStatus;
   is_active: boolean;
   access_token?: string;
   token_expires_at?: string;
@@ -15,8 +19,82 @@ export interface InstagramAccount {
   profile_picture_url?: string;
   biography?: string;
   website?: string;
+  messaging_enabled?: boolean;
+  auto_response_enabled?: boolean;
+  masked_token?: string;
+  active_conversations?: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateInstagramAccount {
+  instagram_id: string;
+  username: string;
+  name?: string;
+  access_token: string;
+  account_type: 'business' | 'creator';
+  messaging_enabled?: boolean;
+  auto_response_enabled?: boolean;
+  webhook_verify_token?: string;
+  // Legacy fields for compatibility
+  instagram_account_id?: string;
+  instagram_user_id?: string;
+  facebook_page_id?: string;
+  app_id?: string;
+  app_secret?: string;
+}
+
+export interface InstagramAccountStats {
+  total_conversations: number;
+  active_conversations: number;
+  total_messages: number;
+  unread_messages: number;
+  last_message_at?: string;
+}
+
+// Paginated Response
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+// Instagram Conversation - ALINHADO COM BACKEND
+export interface InstagramConversation {
+  id: string;
+  account: string;
+  instagram_user_id: string;
+  username: string;
+  participant_id: string;
+  participant_username: string;
+  participant_name?: string;
+  participant_profile_pic?: string;
+  profile_picture_url?: string;
+  last_message?: string;
+  last_message_preview?: string;
+  last_message_at?: string;
+  unread_count: number;
+  status: 'active' | 'archived' | 'blocked';
+  created_at: string;
+  updated_at: string;
+}
+
+// Instagram Message - ALINHADO COM BACKEND
+export interface InstagramMessage {
+  id: string;
+  conversation: string;
+  sender_id: string;
+  sender_username: string;
+  content: string;
+  text_content?: string;
+  message_type: 'text' | 'image' | 'video' | 'audio' | 'story_reply' | 'share';
+  direction: 'inbound' | 'outbound';
+  status: 'pending' | 'sent' | 'delivered' | 'seen' | 'failed';
+  media_url?: string;
+  reactions?: Array<{ emoji: string; user_id: string }>;
+  created_at: string;
+  is_from_me: boolean;
 }
 
 // Media Types (Posts, Stories, Reels)
@@ -192,19 +270,15 @@ export interface InstagramComment {
   created_at: string;
 }
 
-// Instagram Service
+// Instagram Service - ALINHADO COM BACKEND REAL
 export const instagramService = {
   // Accounts
-  getAccounts: () => api.get<InstagramAccount[]>('/instagram/accounts/'),
+  getAccounts: () => api.get<PaginatedResponse<InstagramAccount>>('/instagram/accounts/'),
   
   getAccount: (id: string) => api.get<InstagramAccount>(`/instagram/accounts/${id}/`),
   
-  createAccount: (data: {
-    instagram_id: string;
-    username: string;
-    account_type: 'business' | 'creator';
-    access_token?: string;
-  }) => api.post<InstagramAccount>('/instagram/accounts/', data),
+  createAccount: (data: CreateInstagramAccount) => 
+    api.post<InstagramAccount>('/instagram/accounts/', data),
   
   updateAccount: (id: string, data: Partial<InstagramAccount>) =>
     api.patch<InstagramAccount>(`/instagram/accounts/${id}/`, data),
@@ -222,7 +296,7 @@ export const instagramService = {
   
   // Media (Posts)
   getMedia: (accountId: string, params?: { media_type?: MediaType; status?: MediaStatus }) =>
-    api.get<InstagramMedia[]>('/instagram/media/', { params: { account: accountId, ...params } }),
+    api.get<PaginatedResponse<InstagramMedia>>('/instagram/media/', { params: { account: accountId, ...params } }),
   
   getMediaItem: (id: string) => api.get<InstagramMedia>(`/instagram/media/${id}/`),
   
@@ -263,7 +337,7 @@ export const instagramService = {
   
   // Stories
   getStories: (accountId: string, params?: { status?: MediaStatus }) =>
-    api.get<InstagramStory[]>('/instagram/stories/', { params: { account: accountId, ...params } }),
+    api.get<PaginatedResponse<InstagramStory>>('/instagram/stories/', { params: { account: accountId, ...params } }),
   
   getStory: (id: string) => api.get<InstagramStory>(`/instagram/stories/${id}/`),
   
@@ -281,7 +355,7 @@ export const instagramService = {
   
   // Reels
   getReels: (accountId: string, params?: { status?: MediaStatus }) =>
-    api.get<InstagramReel[]>('/instagram/reels/', { params: { account: accountId, ...params } }),
+    api.get<PaginatedResponse<InstagramReel>>('/instagram/reels/', { params: { account: accountId, ...params } }),
   
   getReel: (id: string) => api.get<InstagramReel>(`/instagram/reels/${id}/`),
   
@@ -304,7 +378,7 @@ export const instagramService = {
   
   // Comments
   getComments: (mediaId: string) =>
-    api.get<InstagramComment[]>(`/instagram/media/${mediaId}/comments/`),
+    api.get<PaginatedResponse<InstagramComment>>(`/instagram/media/${mediaId}/comments/`),
   
   replyToComment: (mediaId: string, commentId: string, text: string) =>
     api.post(`/instagram/media/${mediaId}/comments/${commentId}/reply/`, { text }),
@@ -317,7 +391,7 @@ export const instagramService = {
   
   // Shopping - Catalogs
   getCatalogs: (accountId: string) =>
-    api.get<InstagramCatalog[]>('/instagram/catalogs/', { params: { account: accountId } }),
+    api.get<PaginatedResponse<InstagramCatalog>>('/instagram/catalogs/', { params: { account: accountId } }),
   
   getCatalog: (id: string) => api.get<InstagramCatalog>(`/instagram/catalogs/${id}/`),
   
@@ -337,7 +411,7 @@ export const instagramService = {
   
   // Shopping - Products
   getProducts: (catalogId: string, params?: { search?: string }) =>
-    api.get<InstagramProduct[]>('/instagram/products/', { params: { catalog: catalogId, ...params } }),
+    api.get<PaginatedResponse<InstagramProduct>>('/instagram/products/', { params: { catalog: catalogId, ...params } }),
   
   getProduct: (id: string) => api.get<InstagramProduct>(`/instagram/products/${id}/`),
   
@@ -359,7 +433,7 @@ export const instagramService = {
   
   // Live Streaming
   getLives: (accountId: string, params?: { status?: LiveStatus }) =>
-    api.get<InstagramLive[]>('/instagram/live/', { params: { account: accountId, ...params } }),
+    api.get<PaginatedResponse<InstagramLive>>('/instagram/live/', { params: { account: accountId, ...params } }),
   
   getLive: (id: string) => api.get<InstagramLive>(`/instagram/live/${id}/`),
   
@@ -391,10 +465,47 @@ export const instagramService = {
   
   // Scheduler
   getScheduledPosts: (accountId: string) =>
-    api.get<InstagramMedia[]>('/instagram/scheduled/', { params: { account: accountId } }),
+    api.get<PaginatedResponse<InstagramMedia>>('/instagram/scheduled/', { params: { account: accountId } }),
   
   cancelScheduledPost: (id: string) =>
     api.post(`/instagram/media/${id}/cancel-schedule/`),
+  
+  // === MESSAGING/DM ENDPOINTS ===
+  
+  // Conversations - CORRIGIDO: usa account_id como query param
+  getConversations: (params: { account_id: string }) =>
+    api.get<PaginatedResponse<InstagramConversation>>('/instagram/conversations/', { params }),
+  
+  // Messages - CORRIGIDO: usa conversation_id como query param
+  getMessages: (params: { conversation_id: string }) =>
+    api.get<PaginatedResponse<InstagramMessage>>('/instagram/messages/', { params }),
+  
+  // Send Message - CORRIGIDO: endpoint e payload alinhados
+  sendMessage: (data: {
+    account_id: string;
+    recipient_id: string;
+    text: string;
+    message_type?: string;
+  }) => api.post<InstagramMessage>('/instagram/send-message/', data),
+  
+  // Typing Indicator - CORRIGIDO: Graph API format
+  sendTyping: (accountId: string, recipientId: string) =>
+    api.post('/instagram/typing/', { account_id: accountId, recipient_id: recipientId }),
+  
+  // Mark as Seen - CORRIGIDO: Graph API format
+  markSeen: (accountId: string, senderId: string) =>
+    api.post('/instagram/mark-seen/', { account_id: accountId, sender_id: senderId }),
+  
+  // Account Stats
+  getAccountStats: (id: string) =>
+    api.get<InstagramAccountStats>(`/instagram/accounts/${id}/stats/`),
+  
+  // Legacy/Compatibility methods
+  syncProfile: (id: string) =>
+    api.post<{ synced: boolean }>(`/instagram/accounts/${id}/sync-profile/`),
+  
+  syncConversations: (id: string) =>
+    api.post<{ synced: boolean; count?: number }>(`/instagram/accounts/${id}/sync-conversations/`),
 };
 
 export default instagramService;

@@ -1,335 +1,271 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, useEffect } from 'react';
 import { messengerService, MessengerAccount, MessengerConversation, MessengerMessage, MessengerProfile, BroadcastMessage, SponsoredMessage } from '../services/messenger';
 import toast from 'react-hot-toast';
 
-// Query keys
-const MESSENGER_KEYS = {
-  accounts: ['messenger', 'accounts'] as const,
-  account: (id: string) => ['messenger', 'accounts', id] as const,
-  conversations: (accountId?: string) => ['messenger', 'conversations', accountId] as const,
-  conversation: (id: string) => ['messenger', 'conversations', id] as const,
-  messages: (conversationId: string) => ['messenger', 'messages', conversationId] as const,
-  profile: (accountId: string) => ['messenger', 'profile', accountId] as const,
-  broadcasts: (accountId?: string) => ['messenger', 'broadcasts', accountId] as const,
-  sponsored: (accountId?: string) => ['messenger', 'sponsored', accountId] as const,
-};
+// ============================================
+// ACCOUNTS
+// ============================================
 
-// Accounts Hooks
 export const useMessengerAccounts = () => {
-  return useQuery({
-    queryKey: MESSENGER_KEYS.accounts,
-    queryFn: () => messengerService.getAccounts(),
-    select: (res) => res.data,
-  });
+  const [accounts, setAccounts] = useState<MessengerAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchAccounts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await messengerService.getAccounts();
+      setAccounts(res.data);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  return { accounts, isLoading, error, refetch: fetchAccounts };
 };
 
 export const useMessengerAccount = (id: string) => {
-  return useQuery({
-    queryKey: MESSENGER_KEYS.account(id),
-    queryFn: () => messengerService.getAccount(id),
-    select: (res) => res.data,
-    enabled: !!id,
-  });
+  const [account, setAccount] = useState<MessengerAccount | null>(null);
+  const [isLoading, setIsLoading] = useState(!!id);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchAccount = useCallback(async () => {
+    if (!id) return;
+    setIsLoading(true);
+    try {
+      const res = await messengerService.getAccount(id);
+      setAccount(res.data);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchAccount();
+  }, [fetchAccount]);
+
+  return { account, isLoading, error, refetch: fetchAccount };
 };
 
 export const useCreateMessengerAccount = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (data: Parameters<typeof messengerService.createAccount>[0]) =>
-      messengerService.createAccount(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.accounts });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const createAccount = useCallback(async (data: Parameters<typeof messengerService.createAccount>[0]) => {
+    setIsLoading(true);
+    try {
+      const res = await messengerService.createAccount(data);
       toast.success('Conta Messenger criada com sucesso!');
-    },
-    onError: () => toast.error('Erro ao criar conta Messenger'),
-  });
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao criar conta Messenger');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { createAccount, isLoading };
 };
 
 export const useUpdateMessengerAccount = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<MessengerAccount> }) =>
-      messengerService.updateAccount(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.accounts });
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.account(id) });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const updateAccount = useCallback(async (id: string, data: Partial<MessengerAccount>) => {
+    setIsLoading(true);
+    try {
+      const res = await messengerService.updateAccount(id, data);
       toast.success('Conta atualizada!');
-    },
-    onError: () => toast.error('Erro ao atualizar conta'),
-  });
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao atualizar conta');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { updateAccount, isLoading };
 };
 
 export const useDeleteMessengerAccount = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: string) => messengerService.deleteAccount(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.accounts });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const deleteAccount = useCallback(async (id: string) => {
+    setIsLoading(true);
+    try {
+      await messengerService.deleteAccount(id);
       toast.success('Conta removida!');
-    },
-    onError: () => toast.error('Erro ao remover conta'),
-  });
+    } catch (err) {
+      toast.error('Erro ao remover conta');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { deleteAccount, isLoading };
 };
 
-export const useVerifyMessengerWebhook = () => {
-  return useMutation({
-    mutationFn: (id: string) => messengerService.verifyWebhook(id),
-    onSuccess: () => toast.success('Webhook verificado!'),
-    onError: () => toast.error('Falha na verificação do webhook'),
-  });
-};
+// ============================================
+// CONVERSATIONS
+// ============================================
 
-// Conversations Hooks
 export const useMessengerConversations = (accountId?: string) => {
-  return useQuery({
-    queryKey: MESSENGER_KEYS.conversations(accountId),
-    queryFn: () => messengerService.getConversations(accountId),
-    select: (res) => res.data,
-    enabled: accountId ? true : true, // Always fetch, filtered on backend
-  });
+  const [conversations, setConversations] = useState<MessengerConversation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchConversations = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await messengerService.getConversations(accountId);
+      setConversations(res.data);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accountId]);
+
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  return { conversations, isLoading, error, refetch: fetchConversations };
 };
 
 export const useMessengerConversation = (id: string) => {
-  return useQuery({
-    queryKey: MESSENGER_KEYS.conversation(id),
-    queryFn: () => messengerService.getConversation(id),
-    select: (res) => res.data,
-    enabled: !!id,
-  });
+  const [conversation, setConversation] = useState<MessengerConversation | null>(null);
+  const [isLoading, setIsLoading] = useState(!!id);
+
+  const fetchConversation = useCallback(async () => {
+    if (!id) return;
+    setIsLoading(true);
+    try {
+      const res = await messengerService.getConversation(id);
+      setConversation(res.data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchConversation();
+  }, [fetchConversation]);
+
+  return { conversation, isLoading, refetch: fetchConversation };
 };
 
-export const useMarkConversationAsRead = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (conversationId: string) =>
-      messengerService.markAsRead(conversationId),
-    onSuccess: (_, conversationId) => {
-      queryClient.invalidateQueries({
-        queryKey: MESSENGER_KEYS.conversation(conversationId),
-      });
-    },
-  });
+// ============================================
+// MESSAGES
+// ============================================
+
+export const useMessengerMessages = (conversationId: string) => {
+  const [messages, setMessages] = useState<MessengerMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(!!conversationId);
+
+  const fetchMessages = useCallback(async () => {
+    if (!conversationId) return;
+    setIsLoading(true);
+    try {
+      const res = await messengerService.getMessages(conversationId);
+      setMessages(res.data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [conversationId]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
+
+  const sendMessage = useCallback(async (data: { content: string; message_type?: string }) => {
+    if (!conversationId) return;
+    try {
+      const res = await messengerService.sendMessage(conversationId, data);
+      await fetchMessages();
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao enviar mensagem');
+      throw err;
+    }
+  }, [conversationId, fetchMessages]);
+
+  return { messages, isLoading, refetch: fetchMessages, sendMessage };
 };
 
-// Messages Hooks
-export const useMessengerMessages = (conversationId: string, params?: { limit?: number; offset?: number }) => {
-  return useQuery({
-    queryKey: [...MESSENGER_KEYS.messages(conversationId), params],
-    queryFn: () => messengerService.getMessages(conversationId, params),
-    select: (res) => res.data,
-    enabled: !!conversationId,
-  });
-};
+// ============================================
+// BROADCAST
+// ============================================
 
-export const useSendMessengerMessage = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({
-      conversationId,
-      data,
-    }: {
-      conversationId: string;
-      data: Parameters<typeof messengerService.sendMessage>[1];
-    }) => messengerService.sendMessage(conversationId, data),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({
-        queryKey: MESSENGER_KEYS.messages(conversationId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: MESSENGER_KEYS.conversations(),
-      });
-    },
-    onError: () => toast.error('Erro ao enviar mensagem'),
-  });
-};
-
-// Profile Hooks
-export const useMessengerProfile = (accountId: string) => {
-  return useQuery({
-    queryKey: MESSENGER_KEYS.profile(accountId),
-    queryFn: () => messengerService.getProfile(accountId),
-    select: (res) => res.data,
-    enabled: !!accountId,
-  });
-};
-
-export const useUpdateMessengerProfile = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ accountId, data }: { accountId: string; data: MessengerProfile }) =>
-      messengerService.updateProfile(accountId, data),
-    onSuccess: (_, { accountId }) => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.profile(accountId) });
-      toast.success('Perfil atualizado!');
-    },
-    onError: () => toast.error('Erro ao atualizar perfil'),
-  });
-};
-
-// Broadcast Hooks
 export const useMessengerBroadcasts = (accountId?: string) => {
-  return useQuery({
-    queryKey: MESSENGER_KEYS.broadcasts(accountId),
-    queryFn: () => messengerService.getBroadcasts(accountId),
-    select: (res) => res.data,
-  });
-};
+  const [broadcasts, setBroadcasts] = useState<BroadcastMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export const useCreateBroadcast = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (data: Partial<BroadcastMessage>) =>
-      messengerService.createBroadcast(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.broadcasts() });
+  const fetchBroadcasts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await messengerService.getBroadcasts(accountId);
+      setBroadcasts(res.data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accountId]);
+
+  useEffect(() => {
+    fetchBroadcasts();
+  }, [fetchBroadcasts]);
+
+  const createBroadcast = useCallback(async (data: Partial<BroadcastMessage>) => {
+    try {
+      const res = await messengerService.createBroadcast(data);
+      await fetchBroadcasts();
       toast.success('Broadcast criado!');
-    },
-    onError: () => toast.error('Erro ao criar broadcast'),
-  });
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao criar broadcast');
+      throw err;
+    }
+  }, [fetchBroadcasts]);
+
+  return { broadcasts, isLoading, refetch: fetchBroadcasts, createBroadcast };
 };
 
-export const useUpdateBroadcast = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<BroadcastMessage> }) =>
-      messengerService.updateBroadcast(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.broadcasts() });
-      toast.success('Broadcast atualizado!');
-    },
-  });
-};
+// ============================================
+// SPONSORED
+// ============================================
 
-export const useDeleteBroadcast = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: string) => messengerService.deleteBroadcast(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.broadcasts() });
-      toast.success('Broadcast removido!');
-    },
-  });
-};
+export const useMessengerSponsored = (accountId?: string) => {
+  const [messages, setMessages] = useState<SponsoredMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export const useScheduleBroadcast = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, scheduledAt }: { id: string; scheduledAt: string }) =>
-      messengerService.scheduleBroadcast(id, scheduledAt),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.broadcasts() });
-      toast.success('Broadcast agendado!');
-    },
-  });
-};
+  const fetchSponsored = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await messengerService.getSponsoredMessages(accountId);
+      setMessages(res.data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accountId]);
 
-export const useSendBroadcast = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: string) => messengerService.sendBroadcast(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.broadcasts() });
-      toast.success('Broadcast enviado!');
-    },
-  });
-};
+  useEffect(() => {
+    fetchSponsored();
+  }, [fetchSponsored]);
 
-export const useCancelBroadcast = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: string) => messengerService.cancelBroadcast(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.broadcasts() });
-      toast.success('Broadcast cancelado!');
-    },
-  });
-};
-
-// Sponsored Message Hooks
-export const useMessengerSponsoredMessages = (accountId?: string) => {
-  return useQuery({
-    queryKey: MESSENGER_KEYS.sponsored(accountId),
-    queryFn: () => messengerService.getSponsoredMessages(accountId),
-    select: (res) => res.data,
-  });
-};
-
-export const useCreateSponsoredMessage = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (data: Partial<SponsoredMessage>) =>
-      messengerService.createSponsoredMessage(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.sponsored() });
-      toast.success('Mensagem patrocinada criada!');
-    },
-  });
-};
-
-export const useUpdateSponsoredMessage = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<SponsoredMessage> }) =>
-      messengerService.updateSponsoredMessage(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.sponsored() });
-    },
-  });
-};
-
-export const useDeleteSponsoredMessage = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: string) => messengerService.deleteSponsoredMessage(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.sponsored() });
-      toast.success('Removido!');
-    },
-  });
-};
-
-export const usePublishSponsoredMessage = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: string) => messengerService.publishSponsoredMessage(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.sponsored() });
-      toast.success('Publicado!');
-    },
-  });
-};
-
-export const usePauseSponsoredMessage = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: string) => messengerService.pauseSponsoredMessage(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MESSENGER_KEYS.sponsored() });
-      toast.success('Pausado!');
-    },
-  });
+  return { sponsoredMessages: messages, isLoading, refetch: fetchSponsored };
 };
 
 export default {
   useMessengerAccounts,
   useMessengerConversations,
   useMessengerMessages,
-  useSendMessengerMessage,
 };

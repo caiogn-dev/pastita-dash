@@ -27,6 +27,7 @@ import {
   EnvelopeIcon,
   PlusCircleIcon,
   MagnifyingGlassIcon,
+  ChatBubbleBottomCenterTextIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -103,6 +104,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           children: [
             { name: 'Mensagens', href: '/instagram/inbox', icon: InboxIcon },
             { name: 'Contas', href: '/instagram/accounts', icon: UserGroupIcon },
+          ]
+        },
+        { 
+          name: 'Messenger', 
+          href: '/messenger/inbox', 
+          icon: ChatBubbleBottomCenterTextIcon,
+          children: [
+            { name: 'Mensagens', href: '/messenger/inbox', icon: InboxIcon },
+            { name: 'Contas', href: '/messenger/accounts', icon: UserGroupIcon },
           ]
         },
         { name: 'Marketing', href: '/marketing', icon: MegaphoneIcon },

@@ -1,222 +1,188 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { handoverService, HandoverStatus, HandoverRequest, HandoverHistory, HumanAgent, HandoverConfig } from '../services/handover';
+import { useState, useCallback, useEffect } from 'react';
+import { handoverService, HandoverStatus, HandoverRequest, HumanAgent, HandoverConfig } from '../services/handover';
 import toast from 'react-hot-toast';
-
-// Query keys
-const HANDOVER_KEYS = {
-  status: (conversationId: string) => ['handover', 'status', conversationId] as const,
-  history: (conversationId: string) => ['handover', 'history', conversationId] as const,
-  pendingRequests: (params?: Record<string, any>) => ['handover', 'requests', 'pending', params] as const,
-  activeConversations: (params?: Record<string, any>) => ['handover', 'conversations', 'active', params] as const,
-  availableAgents: (storeId?: string) => ['handover', 'agents', 'available', storeId] as const,
-  agents: (params?: Record<string, any>) => ['handover', 'agents', params] as const,
-  config: (storeId: string) => ['handover', 'config', storeId] as const,
-  stats: (params?: Record<string, any>) => ['handover', 'stats', params] as const,
-};
 
 // ============================================
 // STATUS
 // ============================================
 
 export const useHandoverStatus = (conversationId: string) => {
-  return useQuery({
-    queryKey: HANDOVER_KEYS.status(conversationId),
-    queryFn: () => handoverService.getStatus(conversationId),
-    select: (res) => res.data,
-    enabled: !!conversationId,
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
+  const [status, setStatus] = useState<HandoverStatus | null>(null);
+  const [isLoading, setIsLoading] = useState(!!conversationId);
+
+  const fetchStatus = useCallback(async () => {
+    if (!conversationId) return;
+    setIsLoading(true);
+    try {
+      const res = await handoverService.getStatus(conversationId);
+      setStatus(res.data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [conversationId]);
+
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000); // Poll every 30s
+    return () => clearInterval(interval);
+  }, [fetchStatus]);
+
+  return { status, isLoading, refetch: fetchStatus };
 };
 
 // ============================================
-// HANDOVER REQUESTS
+// REQUEST HANDOVER
 // ============================================
 
 export const useRequestHandover = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({
-      conversationId,
-      data,
-    }: {
-      conversationId: string;
-      data: Parameters<typeof handoverService.requestHandover>[1];
-    }) => handoverService.requestHandover(conversationId, data),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.pendingRequests() });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const requestHandover = useCallback(async (
+    conversationId: string,
+    data?: { reason?: string; priority?: 'low' | 'medium' | 'high' | 'urgent' }
+  ) => {
+    setIsLoading(true);
+    try {
+      const res = await handoverService.requestHandover(conversationId, data);
       toast.success('Solicitação enviada! Aguardando aprovação...');
-    },
-    onError: () => toast.error('Erro ao solicitar handover'),
-  });
-};
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao solicitar handover');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-export const useApproveHandoverRequest = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({
-      conversationId,
-      requestId,
-      data,
-    }: {
-      conversationId: string;
-      requestId: string;
-      data?: Parameters<typeof handoverService.approveRequest>[2];
-    }) => handoverService.approveRequest(conversationId, requestId, data),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.pendingRequests() });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.activeConversations() });
-      toast.success('Handover aprovado!');
-    },
-    onError: () => toast.error('Erro ao aprovar'),
-  });
-};
-
-export const useRejectHandoverRequest = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({
-      conversationId,
-      requestId,
-      data,
-    }: {
-      conversationId: string;
-      requestId: string;
-      data?: Parameters<typeof handoverService.rejectRequest>[2];
-    }) => handoverService.rejectRequest(conversationId, requestId, data),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.pendingRequests() });
-      toast.success('Solicitação rejeitada');
-    },
-    onError: () => toast.error('Erro ao rejeitar'),
-  });
+  return { requestHandover, isLoading };
 };
 
 // ============================================
-// TRANSFER OPERATIONS
+// TRANSFER
 // ============================================
 
 export const useTransferToHuman = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({
-      conversationId,
-      data,
-    }: {
-      conversationId: string;
-      data?: Parameters<typeof handoverService.transferToHuman>[1];
-    }) => handoverService.transferToHuman(conversationId, data),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.activeConversations() });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const transferToHuman = useCallback(async (
+    conversationId: string,
+    data?: { agent_id?: string; reason?: string }
+  ) => {
+    setIsLoading(true);
+    try {
+      const res = await handoverService.transferToHuman(conversationId, data);
       toast.success('Conversa transferida para atendente humano!');
-    },
-    onError: () => toast.error('Erro ao transferir'),
-  });
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao transferir');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { transferToHuman, isLoading };
 };
 
 export const useTransferToBot = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({
-      conversationId,
-      data,
-    }: {
-      conversationId: string;
-      data?: Parameters<typeof handoverService.transferToBot>[1];
-    }) => handoverService.transferToBot(conversationId, data),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.activeConversations() });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const transferToBot = useCallback(async (conversationId: string, data?: { reason?: string }) => {
+    setIsLoading(true);
+    try {
+      const res = await handoverService.transferToBot(conversationId, data);
       toast.success('Conversa retornada para o bot!');
-    },
-    onError: () => toast.error('Erro ao retornar para bot'),
-  });
-};
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao retornar para bot');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-export const useExtendHandover = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({
-      conversationId,
-      data,
-    }: {
-      conversationId: string;
-      data: Parameters<typeof handoverService.extendHandover>[1];
-    }) => handoverService.extendHandover(conversationId, data),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      toast.success('Tempo estendido!');
-    },
-    onError: () => toast.error('Erro ao estender'),
-  });
-};
-
-export const useForceReturnToBot = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({
-      conversationId,
-      data,
-    }: {
-      conversationId: string;
-      data?: Parameters<typeof handoverService.forceReturnToBot>[1];
-    }) => handoverService.forceReturnToBot(conversationId, data),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.activeConversations() });
-      toast.success('Retornado ao bot forçadamente!');
-    },
-    onError: () => toast.error('Erro ao forçar retorno'),
-  });
+  return { transferToBot, isLoading };
 };
 
 // ============================================
 // PENDING REQUESTS
 // ============================================
 
-export const usePendingHandoverRequests = (params?: { store?: string; platform?: string }) => {
-  return useQuery({
-    queryKey: HANDOVER_KEYS.pendingRequests(params),
-    queryFn: () => handoverService.getPendingRequests(params),
-    select: (res) => res.data,
-    refetchInterval: 10000, // Refetch every 10 seconds for real-time updates
-  });
+export const usePendingHandoverRequests = () => {
+  const [requests, setRequests] = useState<HandoverRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchRequests = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await handoverService.getPendingRequests();
+      setRequests(res.data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRequests();
+    const interval = setInterval(fetchRequests, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, [fetchRequests]);
+
+  const approveRequest = useCallback(async (
+    conversationId: string,
+    requestId: string,
+    data?: { agent_id?: string }
+  ) => {
+    try {
+      const res = await handoverService.approveRequest(conversationId, requestId, data);
+      await fetchRequests();
+      toast.success('Handover aprovado!');
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao aprovar');
+      throw err;
+    }
+  }, [fetchRequests]);
+
+  const rejectRequest = useCallback(async (conversationId: string, requestId: string) => {
+    try {
+      await handoverService.rejectRequest(conversationId, requestId);
+      await fetchRequests();
+      toast.success('Solicitação rejeitada');
+    } catch (err) {
+      toast.error('Erro ao rejeitar');
+      throw err;
+    }
+  }, [fetchRequests]);
+
+  return { requests, isLoading, refetch: fetchRequests, approveRequest, rejectRequest };
 };
 
 // ============================================
 // ACTIVE CONVERSATIONS
 // ============================================
 
-export const useActiveHumanConversations = (params?: { agent_id?: string; store?: string; platform?: string }) => {
-  return useQuery({
-    queryKey: HANDOVER_KEYS.activeConversations(params),
-    queryFn: () => handoverService.getActiveHumanConversations(params),
-    select: (res) => res.data,
-    refetchInterval: 15000, // Refetch every 15 seconds
-  });
-};
+export const useActiveHumanConversations = () => {
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-// ============================================
-// HISTORY
-// ============================================
+  const fetchConversations = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await handoverService.getActiveHumanConversations();
+      setConversations(res.data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-export const useHandoverHistory = (conversationId: string) => {
-  return useQuery({
-    queryKey: HANDOVER_KEYS.history(conversationId),
-    queryFn: () => handoverService.getHistory(conversationId),
-    select: (res) => res.data,
-    enabled: !!conversationId,
-  });
+  useEffect(() => {
+    fetchConversations();
+    const interval = setInterval(fetchConversations, 15000);
+    return () => clearInterval(interval);
+  }, [fetchConversations]);
+
+  return { conversations, isLoading, refetch: fetchConversations };
 };
 
 // ============================================
@@ -224,132 +190,84 @@ export const useHandoverHistory = (conversationId: string) => {
 // ============================================
 
 export const useAvailableAgents = (storeId?: string) => {
-  return useQuery({
-    queryKey: HANDOVER_KEYS.availableAgents(storeId),
-    queryFn: () => handoverService.getAvailableAgents(storeId),
-    select: (res) => res.data,
-    refetchInterval: 30000,
-  });
-};
+  const [agents, setAgents] = useState<HumanAgent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export const useAgents = (params?: { store?: string; is_active?: boolean }) => {
-  return useQuery({
-    queryKey: HANDOVER_KEYS.agents(params),
-    queryFn: () => handoverService.getAgents(params),
-    select: (res) => res.data,
-  });
+  const fetchAgents = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await handoverService.getAvailableAgents(storeId);
+      setAgents(res.data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [storeId]);
+
+  useEffect(() => {
+    fetchAgents();
+    const interval = setInterval(fetchAgents, 30000);
+    return () => clearInterval(interval);
+  }, [fetchAgents]);
+
+  return { agents, isLoading, refetch: fetchAgents };
 };
 
 export const useAssignAgent = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ conversationId, agentId }: { conversationId: string; agentId: string }) =>
-      handoverService.assignAgent(conversationId, agentId),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.activeConversations() });
-      toast.success('Agente atribuído!');
-    },
-    onError: () => toast.error('Erro ao atribuir agente'),
-  });
-};
+  const [isLoading, setIsLoading] = useState(false);
 
-export const useUnassignAgent = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (conversationId: string) => handoverService.unassignAgent(conversationId),
-    onSuccess: (_, conversationId) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.activeConversations() });
-      toast.success('Agente removido!');
-    },
-  });
+  const assignAgent = useCallback(async (conversationId: string, agentId: string) => {
+    setIsLoading(true);
+    try {
+      const res = await handoverService.assignAgent(conversationId, agentId);
+      toast.success('Agente atribuído!');
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao atribuir agente');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { assignAgent, isLoading };
 };
 
 // ============================================
-// CONFIGURATION
+// CONFIG
 // ============================================
 
 export const useHandoverConfig = (storeId: string) => {
-  return useQuery({
-    queryKey: HANDOVER_KEYS.config(storeId),
-    queryFn: () => handoverService.getConfig(storeId),
-    select: (res) => res.data,
-    enabled: !!storeId,
-  });
-};
+  const [config, setConfig] = useState<HandoverConfig | null>(null);
+  const [isLoading, setIsLoading] = useState(!!storeId);
 
-export const useUpdateHandoverConfig = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ storeId, data }: { storeId: string; data: Partial<HandoverConfig> }) =>
-      handoverService.updateConfig(storeId, data),
-    onSuccess: (_, { storeId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.config(storeId) });
+  const fetchConfig = useCallback(async () => {
+    if (!storeId) return;
+    setIsLoading(true);
+    try {
+      const res = await handoverService.getConfig(storeId);
+      setConfig(res.data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [storeId]);
+
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
+
+  const updateConfig = useCallback(async (data: Partial<HandoverConfig>) => {
+    try {
+      const res = await handoverService.updateConfig(storeId, data);
+      setConfig(res.data);
       toast.success('Configuração atualizada!');
-    },
-    onError: () => toast.error('Erro ao atualizar configuração'),
-  });
-};
+      return res.data;
+    } catch (err) {
+      toast.error('Erro ao atualizar configuração');
+      throw err;
+    }
+  }, [storeId]);
 
-// ============================================
-// STATS
-// ============================================
-
-export const useHandoverStats = (params?: { store?: string; since?: string; until?: string; group_by?: 'day' | 'week' | 'month' }) => {
-  return useQuery({
-    queryKey: HANDOVER_KEYS.stats(params),
-    queryFn: () => handoverService.getStats(params),
-    select: (res) => res.data,
-  });
-};
-
-// ============================================
-// ADDITIONAL ACTIONS
-// ============================================
-
-export const useMarkConversationResolved = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({
-      conversationId,
-      data,
-    }: {
-      conversationId: string;
-      data?: Parameters<typeof handoverService.markResolved>[1];
-    }) => handoverService.markResolved(conversationId, data),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.activeConversations() });
-      toast.success('Conversa marcada como resolvida!');
-    },
-    onError: () => toast.error('Erro ao marcar como resolvida'),
-  });
-};
-
-export const useTakeOverConversation = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (conversationId: string) => handoverService.takeOver(conversationId),
-    onSuccess: (_, conversationId) => {
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.status(conversationId) });
-      queryClient.invalidateQueries({ queryKey: HANDOVER_KEYS.activeConversations() });
-      toast.success('Você assumiu esta conversa!');
-    },
-    onError: () => toast.error('Erro ao assumir conversa'),
-  });
-};
-
-export const useSendTypingIndicator = () => {
-  return useMutation({
-    mutationFn: ({ conversationId, isTyping }: { conversationId: string; isTyping: boolean }) =>
-      handoverService.sendTypingIndicator(conversationId, isTyping),
-  });
+  return { config, isLoading, refetch: fetchConfig, updateConfig };
 };
 
 export default {
@@ -358,6 +276,5 @@ export default {
   useTransferToHuman,
   useTransferToBot,
   usePendingHandoverRequests,
-  useActiveHumanConversations,
   useAvailableAgents,
 };
