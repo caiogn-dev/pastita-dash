@@ -297,6 +297,76 @@ export const instagramDirectApi = {
     api.post(`/instagram/conversations/${conversationId}/mark_as_read/`),
 };
 
+// ============================================================================
+// LEGACY SERVICE (for backward compatibility with hooks)
+// ============================================================================
+
+export const instagramService = {
+  // Accounts
+  getAccounts: () => instagramAccountApi.list(),
+  getAccount: (id: string) => instagramAccountApi.get(id),
+  createAccount: (data: Partial<InstagramAccount>) => instagramAccountApi.create(data),
+  updateAccount: (id: string, data: Partial<InstagramAccount>) => instagramAccountApi.update(id, data),
+  deleteAccount: (id: string) => instagramAccountApi.delete(id),
+  syncAccount: (id: string) => instagramAccountApi.sync(id),
+  
+  // Media
+  getMedia: (accountId: string) => instagramMediaApi.list({ account: accountId }),
+  createPost: (data: { account: string; caption?: string; media_urls: string[]; tags?: string[] }) => 
+    instagramMediaApi.create(data as Partial<InstagramMedia>),
+  createCarousel: (data: { account: string; caption?: string; media_urls: string[]; tags?: string[] }) =>
+    instagramMediaApi.create({ ...data, media_type: 'CAROUSEL_ALBUM' } as Partial<InstagramMedia>),
+  
+  // Stories
+  getStories: (accountId: string) => instagramMediaApi.getStories(),
+  createStory: (data: { account: string; media_url: string; caption?: string }) =>
+    instagramMediaApi.create({ ...data, media_type: 'STORY' } as Partial<InstagramMedia>),
+  
+  // Reels
+  getReels: (accountId: string) => instagramMediaApi.getReels(),
+  createReel: (data: { account: string; video_url: string; caption?: string; cover_url?: string }) =>
+    instagramMediaApi.create({ ...data, media_type: 'REELS' } as Partial<InstagramMedia>),
+  
+  // Catalogs
+  getCatalogs: (accountId: string) => instagramShoppingApi.getCatalogs(accountId),
+  
+  // Products
+  getProducts: (catalogId: string) => instagramShoppingApi.getProducts(catalogId),
+  createProduct: (data: { catalog: string; name: string; price: number; currency: string; image_url: string; description?: string }) =>
+    api.post<InstagramProduct>('/instagram/shopping/products/', data),
+  
+  // Lives
+  getLives: (accountId: string) => instagramLiveApi.list(accountId),
+  createLive: (data: { account: string; title?: string; description?: string; scheduled_start?: string }) =>
+    instagramLiveApi.create(data.account, data),
+};
+
+// Type aliases for backward compatibility
+export type InstagramStory = InstagramMedia;
+export type InstagramReel = InstagramMedia;
+export type CreateInstagramAccount = Partial<InstagramAccount>;
+export type InstagramAccountStats = { 
+  total_accounts: number;
+  active_accounts: number;
+  total_followers: number;
+  total_posts: number;
+};
+export type InstagramConversation = {
+  id: string;
+  account: string;
+  participant_id: string;
+  participant_username: string;
+  last_message_at?: string;
+  unread_count: number;
+};
+export type InstagramMessage = {
+  id: string;
+  conversation: string;
+  content: string;
+  direction: 'inbound' | 'outbound';
+  sent_at: string;
+};
+
 // Export all
 export default {
   accounts: instagramAccountApi,

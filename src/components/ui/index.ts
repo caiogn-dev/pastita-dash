@@ -80,3 +80,27 @@ export {
   type DropdownItem,
   type DropdownButtonProps,
 } from './dropdown';
+
+// Dialog (Modal wrapper)
+export {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  type DialogProps,
+} from './dialog';
+
+// Label
+export {
+  Label,
+  type LabelProps,
+} from './label';
+
+// Alert
+export {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  type AlertProps,
+} from './alert';

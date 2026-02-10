@@ -7,6 +7,8 @@ export { useToast } from './useToast';
 // Utility hooks
 export { useDebounce, useDebouncedCallback } from './useDebounce';
 export { useLocalStorage } from './useLocalStorage';
+export { useFetch } from './useFetch';
+export type { UseFetchResult } from './useFetch';
 
 // WebSocket hooks
 export {
