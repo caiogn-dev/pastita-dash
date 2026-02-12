@@ -1,68 +1,47 @@
-/**
- * Card Component - Modern card with glass morphism and hover effects
- * Design inspired by Linear and Vercel
- */
-import React, { forwardRef } from 'react';
+/** * Card Component - Modern card with CVA variants and glass morphism * Design inspired by Linear and Vercel */ import React, { forwardRef } from 'react'; import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../utils/cn';
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'glass' | 'bordered' | 'elevated';
-  hover?: boolean;
-  padding?: 'none' | 'sm' | 'md' | 'lg';
-}
+// CVA Configuration for card variants
+const cardVariants = cva(
+  // Base styles
+  'rounded-xl transition-all duration-300 ease-out',
+  {
+    variants: {
+      variant: {
+        default: 'bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 shadow-sm',
+        glass: 'bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl backdrop-saturate-150 border border-white/20 dark:border-zinc-700/50 shadow-glass',
+        bordered: 'bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700',
+        elevated: 'bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 shadow-lg shadow-gray-200/50 dark:shadow-black/20',
+      },
+      padding: {
+        none: '',
+        sm: 'p-3',
+        md: 'p-4 md:p-6',
+        lg: 'p-6 md:p-8',
+      },
+      hover: {
+        true: 'hover:shadow-lg hover:-translate-y-1 hover:border-gray-200 dark:hover:border-zinc-700 cursor-pointer',
+        false: '',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      padding: 'md',
+      hover: false,
+    },
+  }
+);
 
-const variants = {
-  default: `
-    bg-white dark:bg-zinc-900 
-    border border-gray-100 dark:border-zinc-800
-    shadow-sm
-  `,
-  glass: `
-    bg-white/70 dark:bg-zinc-900/70 
-    backdrop-blur-xl backdrop-saturate-150
-    border border-white/20 dark:border-zinc-700/50
-    shadow-glass
-  `,
-  bordered: `
-    bg-white dark:bg-zinc-900 
-    border-2 border-gray-200 dark:border-zinc-700
-  `,
-  elevated: `
-    bg-white dark:bg-zinc-900 
-    border border-gray-100 dark:border-zinc-800
-    shadow-lg shadow-gray-200/50 dark:shadow-black/20
-  `,
-};
-
-const paddings = {
-  none: '',
-  sm: 'p-3',
-  md: 'p-4 md:p-6',
-  lg: 'p-6 md:p-8',
-};
+export interface CardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardVariants> {}
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  (
-    {
-      className,
-      variant = 'default',
-      hover = false,
-      padding = 'md',
-      children,
-      ...props
-    },
-    ref
-  ) => {
+  ({ className, variant, padding, hover, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
-        className={cn(
-          'rounded-xl transition-all duration-300 ease-out',
-          variants[variant],
-          paddings[padding],
-          hover && 'hover:shadow-lg hover:-translate-y-1 hover:border-gray-200 dark:hover:border-zinc-700 cursor-pointer',
-          className
-        )}
+        className={cn(cardVariants({ variant, padding, hover }), className)}
         {...props}
       >
         {children}
@@ -73,7 +52,11 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
 
 Card.displayName = 'Card';
 
-// Card Header
+// Card Header with CVA
+const cardHeaderVariants = cva(
+  'flex items-start justify-between gap-4 pb-4 border-b border-gray-100 dark:border-zinc-800 mb-4'
+);
+
 export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   subtitle?: string;
@@ -83,14 +66,7 @@ export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ className, title, subtitle, action, children, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={cn(
-          'flex items-start justify-between gap-4 pb-4 border-b border-gray-100 dark:border-zinc-800 mb-4',
-          className
-        )}
-        {...props}
-      >
+      <div ref={ref} className={cn(cardHeaderVariants(), className)} {...props}>
         {(title || subtitle) && (
           <div className="space-y-1">
             {title && (
@@ -124,22 +100,32 @@ export const CardContent = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLD
 CardContent.displayName = 'CardContent';
 
 // Card Footer
+const cardFooterVariants = cva(
+  'flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-zinc-800 mt-4'
+);
+
 export const CardFooter = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        'flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-zinc-800 mt-4',
-        className
-      )}
-      {...props}
-    />
+    <div ref={ref} className={cn(cardFooterVariants(), className)} {...props} />
   )
 );
 
 CardFooter.displayName = 'CardFooter';
 
-// Stat Card - For dashboard metrics
+// Stat Card - For dashboard metrics with improved CVA
+const trendIndicatorVariants = cva('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium', {
+  variants: {
+    changeType: {
+      positive: 'text-success-600 bg-success-50 dark:text-success-400 dark:bg-success-900/30',
+      negative: 'text-error-600 bg-error-50 dark:text-error-400 dark:bg-error-900/30',
+      neutral: 'text-gray-600 bg-gray-100 dark:text-zinc-400 dark:bg-zinc-800',
+    },
+  },
+  defaultVariants: {
+    changeType: 'neutral',
+  },
+});
+
 export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string;
   value: string | number;
@@ -150,36 +136,24 @@ export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
   loading?: boolean;
 }
 
+const TrendUpIcon = () => (
+  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+  </svg>
+);
+
+const TrendDownIcon = () => (
+  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+  </svg>
+);
+
 export const StatCard = forwardRef<HTMLDivElement, StatCardProps>(
   (
-    {
-      className,
-      title,
-      value,
-      change,
-      changeType = 'neutral',
-      icon,
-      trend,
-      loading = false,
-      ...props
-    },
+    { className, title, value, change, changeType = 'neutral', icon, trend, loading = false, ...props },
     ref
   ) => {
-    const changeColors = {
-      positive: 'text-success-600 bg-success-50 dark:text-success-400 dark:bg-success-900/30',
-      negative: 'text-error-600 bg-error-50 dark:text-error-400 dark:bg-error-900/30',
-      neutral: 'text-gray-600 bg-gray-100 dark:text-zinc-400 dark:bg-zinc-800',
-    };
-
-    const TrendIcon = trend === 'up' ? (
-      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-      </svg>
-    ) : trend === 'down' ? (
-      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-      </svg>
-    ) : null;
+    const TrendIcon = trend === 'up' ? TrendUpIcon : trend === 'down' ? TrendDownIcon : null;
 
     if (loading) {
       return (
@@ -196,15 +170,7 @@ export const StatCard = forwardRef<HTMLDivElement, StatCardProps>(
     }
 
     return (
-      <Card
-        ref={ref}
-        hover
-        className={cn(
-          'group',
-          className
-        )}
-        {...props}
-      >
+      <Card ref={ref} hover className={cn('group', className)} {...props}>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1">
             <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-zinc-400 truncate">
@@ -214,13 +180,8 @@ export const StatCard = forwardRef<HTMLDivElement, StatCardProps>(
               {value}
             </p>
             {change && (
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-                  changeColors[changeType]
-                )}
-              >
-                {TrendIcon}
+              <span className={cn(trendIndicatorVariants({ changeType }))}>
+                <TrendIcon />
                 {change}
               </span>
             )}
@@ -237,5 +198,9 @@ export const StatCard = forwardRef<HTMLDivElement, StatCardProps>(
 );
 
 StatCard.displayName = 'StatCard';
+
+// Utility exports
+export { cardVariants, cardHeaderVariants, cardFooterVariants, trendIndicatorVariants };
+export type { VariantProps };
 
 export default Card;
