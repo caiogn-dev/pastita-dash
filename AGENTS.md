@@ -137,9 +137,33 @@ const effectiveOrders = useMemo(() => {
 
 ## 📡 WebSocket
 
-- Conexão única global via `WebSocketContext`
-- Eventos: `order_created`, `order_status_changed`, `payment_received`
-- Reconexão automática com backoff
+### WhatsAppWsContext (`src/context/WhatsAppWsContext.tsx`)
+- Conexão única global para WhatsApp
+- URL: `wss://api.domain.com/ws/whatsapp/dashboard/?token={auth_token}`
+- Ping/pong keepalive a cada 30 segundos
+- Reconexão com exponential backoff (1s → 30s max)
+
+### Eventos WebSocket
+- `message_received` - Nova mensagem recebida
+- `message_sent` - Confirmação de envio
+- `status_updated` - Status de mensagem alterado
+- `conversation_updated` - Conversa atualizada
+- `order_created`, `order_status_changed`, `payment_received` - Eventos de pedidos
+
+### Correção de Reconexão Rápida
+Problema: WebSocket abria e fechava rapidamente em loop.
+Solução: Usar refs para controlar estado de conexão:
+```typescript
+const hasConnected = useRef(false);
+const prevAccountId = useRef<string | null>(null);
+
+useEffect(() => {
+  if (token && !hasConnected.current) {
+    hasConnected.current = true;
+    connect();
+  }
+}, [token]); // Só depende do token
+```
 
 ## 🛠️ Comandos Úteis
 

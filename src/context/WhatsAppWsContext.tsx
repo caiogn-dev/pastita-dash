@@ -371,20 +371,35 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
   }, []);
   
   // Connect on mount, cleanup on unmount
+  // Use a ref to track if we've initiated connection to prevent double connections
+  const hasConnected = useRef(false);
+  
   useEffect(() => {
-    if (token) {
+    if (token && !hasConnected.current) {
+      hasConnected.current = true;
       connect();
     }
     
-    return cleanup;
-  }, [token, connect, cleanup]);
+    return () => {
+      hasConnected.current = false;
+      cleanup();
+    };
+  }, [token]); // Only depend on token, not on connect/cleanup to avoid reconnection loops
   
   // Reconnect when account changes (in non-dashboard mode)
+  // Use a ref to track the previous account to avoid unnecessary reconnections
+  const prevAccountId = useRef<string | null>(null);
+  
   useEffect(() => {
     if (!dashboardMode && selectedAccount && token) {
-      reconnect();
+      const newAccountId = selectedAccount.id;
+      // Only reconnect if the account actually changed
+      if (prevAccountId.current && prevAccountId.current !== newAccountId) {
+        reconnect();
+      }
+      prevAccountId.current = newAccountId;
     }
-  }, [dashboardMode, selectedAccount, token, reconnect]);
+  }, [dashboardMode, selectedAccount?.id, token]); // Use selectedAccount.id instead of whole object
   
   const value: WhatsAppWsContextValue = {
     isConnected,
