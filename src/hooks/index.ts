@@ -10,13 +10,28 @@ export { useLocalStorage } from './useLocalStorage';
 export { useFetch } from './useFetch';
 export type { UseFetchResult } from './useFetch';
 
-// WebSocket hooks
+// WebSocket hooks (legacy - use useRealtime for new code)
 export {
   useNotificationWebSocket,
   useDashboardWebSocket,
   useChatWebSocket,
 } from './useWebSocket';
 export { useAutomationWS } from './useAutomationWS';
+
+// Realtime hooks with fallback (WebSocket → SSE → Polling)
+export {
+  useRealtime,
+  useRealtimeContext,
+  useOrderEvents,
+  useConnectionStatus,
+  ConnectionIndicator,
+  RealtimeProvider,
+} from './useRealtime.tsx';
+export type { 
+  TransportType, 
+  ConnectionStatus, 
+  RealtimeConnection 
+} from './useRealtime.tsx';
 export { useOrdersWebSocket } from './useOrdersWebSocket';
 export { useWhatsAppWS } from './useWhatsAppWS';
 export type {

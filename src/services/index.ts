@@ -49,6 +49,22 @@ export {
   disconnectWebSockets,
 } from './websocket';
 
+// Realtime service with fallback (WebSocket → SSE → Polling)
+export {
+  RealtimeConnection,
+  createRealtimeConnection,
+  getGlobalConnection,
+  setGlobalConnection,
+  detectTransportCapabilities,
+  isTransportSupported,
+  getWebSocketUrl as getRealtimeUrl,
+} from './realtime';
+export type { 
+  TransportType, 
+  ConnectionStatus,
+  TransportCapabilities,
+} from './realtime';
+
 // =============================================================================
 // BUSINESS SERVICES
 // =============================================================================
