@@ -181,7 +181,7 @@ export const StatCard = forwardRef<HTMLDivElement, StatCardProps>(
             </p>
             {change && (
               <span className={cn(trendIndicatorVariants({ changeType }))}>
-                <TrendIcon />
+                {TrendIcon && <TrendIcon />}
                 {change}
               </span>
             )}

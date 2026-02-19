@@ -21,7 +21,7 @@ const pageVariants = {
     y: 0,
     transition: {
       duration: 0.3,
-      ease: [0.25, 0.1, 0.25, 1.0], // Custom easing
+      ease: [0.25, 0.1, 0.25, 1.0] as const,
     },
   },
   exit: {
@@ -29,7 +29,7 @@ const pageVariants = {
     y: -20,
     transition: {
       duration: 0.2,
-      ease: 'easeIn',
+      ease: 'easeIn' as const,
     },
   },
 };
@@ -79,7 +79,7 @@ const itemVariants = {
     x: 0,
     transition: {
       duration: 0.3,
-      ease: 'easeOut',
+      ease: 'easeOut' as const,
     },
   },
 };
