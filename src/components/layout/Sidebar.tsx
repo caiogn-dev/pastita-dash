@@ -149,9 +149,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           icon: CpuChipIcon,
           badge: 'Novo',
         },
-        { 
-          name: 'Automação', 
-          href: '/automation/companies', 
+        {
+          name: 'Automação',
+          href: '/automation/companies',
           icon: BoltIcon,
           children: [
             { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
@@ -159,6 +159,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
             { name: 'Logs', href: '/automation/logs', icon: DocumentChartBarIcon },
             { name: 'Relatórios', href: '/automation/reports', icon: DocumentChartBarIcon },
+          ]
+        },
+        {
+          name: 'Intenções (Novo)',
+          href: '/automation/intents',
+          icon: SparklesIcon,
+          badge: 'Novo',
+          children: [
+            { name: 'Estatísticas', href: '/automation/intents', icon: PresentationChartLineIcon },
+            { name: 'Logs de Intenções', href: '/automation/intents/logs', icon: DocumentChartBarIcon },
           ]
         },
       ]

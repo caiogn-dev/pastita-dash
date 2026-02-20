@@ -41,6 +41,10 @@ const AutomationLogsPage = lazy(() => import('./pages/automation').then(m => ({ 
 const ScheduledMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ScheduledMessagesPage })));
 const ReportsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ReportsPage })));
 
+// Intent Detection Pages (Novo Sistema)
+const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentStatsPage })));
+const IntentLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentLogsPage })));
+
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
 
@@ -158,6 +162,11 @@ const AppContent: React.FC = () => {
         <Route path="automation/logs" element={<Suspense fallback={<FullPageLoading />}><AutomationLogsPage /></Suspense>} />
         <Route path="automation/scheduled" element={<Suspense fallback={<FullPageLoading />}><ScheduledMessagesPage /></Suspense>} />
         <Route path="automation/reports" element={<Suspense fallback={<FullPageLoading />}><ReportsPage /></Suspense>} />
+
+        {/* Intent Detection Routes (Novo Sistema) */}
+        <Route path="automation/intents" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
+        <Route path="automation/intents/stats" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
+        <Route path="automation/intents/logs" element={<Suspense fallback={<FullPageLoading />}><IntentLogsPage /></Suspense>} />
         
         {/* Analytics/Reports Routes */}
         <Route path="analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />

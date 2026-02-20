@@ -90,6 +90,7 @@ export {
   businessTypeLabels,
   sessionStatusLabels,
   messageVariables,
+  intentTypeLabels,
 } from './automation';
 export {
   scheduledMessagesService,
@@ -97,6 +98,12 @@ export {
   generatedReportsService,
 } from './scheduling';
 export { exportService } from './export';
+
+// Intent Detection & Automation Dashboard
+export {
+  intentService,
+  automationDashboardService,
+} from './intents';
 
 // =============================================================================
 // CATALOG SERVICE
