@@ -1,13 +1,11 @@
 import React from 'react';
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, NodeProps } from 'reactflow';
 
-interface EndNodeProps {
-  data: {
-    content?: string;
-  };
+interface EndNodeData {
+  content?: string;
 }
 
-export const EndNode: React.FC<EndNodeProps> = ({ data }) => {
+export const EndNode: React.FC<NodeProps<EndNodeData>> = ({ data }) => {
   return (
     <div className="bg-red-500 text-white rounded-full shadow-lg min-w-[120px] text-center">
       <Handle type="target" position={Position.Top} className="!bg-red-600" />

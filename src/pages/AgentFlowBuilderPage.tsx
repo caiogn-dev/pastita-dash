@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FlowCanvas } from '../../components/FlowBuilder';
+import { FlowCanvas } from '../../components/FlowBuilder/index';
 import { ArrowLeft, Plus } from 'lucide-react';
 
 export const AgentFlowBuilderPage: React.FC = () => {

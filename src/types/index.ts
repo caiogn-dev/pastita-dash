@@ -43,9 +43,15 @@ export interface WhatsAppAccount {
   phone_number_id: string;
   app_id: string;
   business_account_id: string;
+  waba_id?: string;
   status: 'active' | 'inactive' | 'pending' | 'error';
   webhook_url: string;
   token_version?: number;
+  auto_response_enabled?: boolean;
+  human_handoff_enabled?: boolean;
+  default_agent?: string;
+  default_agent_name?: string;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -65,11 +71,14 @@ export interface Message {
   direction: 'inbound' | 'outbound';
   message_type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'template' | 'interactive' | 'location' | 'contacts';
   text_body?: string;
+  content?: string;
   media_url?: string;
   media_caption?: string;
   media_mime_type?: string;
+  media_type?: string;
   media_sha256?: string;
   media_filename?: string;
+  file_name?: string;
   status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed' | 'received';
   timestamp: string;
   sent_at?: string;
@@ -96,7 +105,8 @@ export interface MessageTemplate {
 
 export interface SendTextMessage {
   to: string;
-  body: string;
+  body?: string;
+  text?: string;
   preview_url?: boolean;
   account_id?: string;
 }
@@ -151,6 +161,7 @@ export interface Conversation {
   contact_name?: string;
   account: string;
   status: 'active' | 'archived' | 'blocked' | 'spam';
+  mode?: string;
   last_message_at?: string;
   last_message_preview?: string;
   unread_count: number;

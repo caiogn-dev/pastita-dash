@@ -17,7 +17,7 @@ import { StartNode, MessageNode, EndNode } from './nodes';
 import { NodePalette } from './NodePalette';
 import { NodeConfigPanel } from './NodeConfigPanel';
 
-const nodeTypes = {
+const nodeTypes: Record<string, React.FC<import('reactflow').NodeProps>> = {
   start: StartNode,
   message: MessageNode,
   end: EndNode,

@@ -1,15 +1,12 @@
 import React from 'react';
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, NodeProps } from 'reactflow';
 
-interface MessageNodeProps {
-  data: {
-    content?: string;
-    buttons?: Array<{ id: string; title: string }>;
-  };
-  selected?: boolean;
+interface MessageNodeData {
+  content?: string;
+  buttons?: Array<{ id: string; title: string }>;
 }
 
-export const MessageNode: React.FC<MessageNodeProps> = ({ data, selected }) => {
+export const MessageNode: React.FC<NodeProps<MessageNodeData>> = ({ data, selected }) => {
   return (
     <div 
       className={`bg-white rounded-lg shadow-lg min-w-[250px] max-w-[300px] transition-all ${
