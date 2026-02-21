@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FlowCanvas } from '@/components/FlowBuilder/FlowCanvas';
 import { ArrowLeft, Plus } from 'lucide-react';
+import { companyProfileApi } from '@/services/automation';
 
 export const AgentFlowBuilderPage: React.FC = () => {
   const { flowId } = useParams<{ flowId?: string }>();
@@ -13,10 +14,9 @@ export const AgentFlowBuilderPage: React.FC = () => {
     // Pega store_id do usuário logado ou da URL
     const fetchStore = async () => {
       try {
-        const response = await fetch('/api/v1/stores/my-store/');
-        if (response.ok) {
-          const data = await response.json();
-          setStoreId(data.id);
+        const response = await companyProfileApi.list({ page_size: 1 });
+        if (response.results && response.results.length > 0) {
+          setStoreId(response.results[0].id);
         }
       } catch (error) {
         console.error('Erro ao carregar loja:', error);
