@@ -292,8 +292,8 @@ export interface DashboardOverview {
   conversion_rate: number;
   timestamp?: string;
   messages?: number | { today: number; by_status: Record<string, number> };
-  conversations?: number | { active: number; new: number; resolved: number };
-  orders?: number | { today: number; revenue_today: number };
+  conversations?: number | { active: number; new: number; resolved: number; by_mode?: Record<string, number> };
+  orders?: number | { today: number; revenue_today: number; revenue_month?: number };
   agents?: number;
   accounts?: number | { active: number; total: number };
   payments?: {
@@ -311,6 +311,8 @@ export interface DashboardOverview {
     customers_change: number;
   };
   interactions_today?: number;
+  avg_response_time_ms?: number;
+  success_rate?: number;
 }
 
 export interface DashboardActivity {
@@ -715,6 +717,7 @@ export interface CreateScheduledMessage {
   template_name?: string;
   scheduled_for: string;
   scheduled_at?: string;
+  timezone?: string;
   notes?: string;
   metadata?: Record<string, unknown>;
 }
@@ -761,7 +764,7 @@ export interface CreateReportSchedule {
   description?: string;
   report_type: string;
   frequency: 'daily' | 'weekly' | 'monthly';
-  email_recipients: string[];
+  email_recipients?: string[];
   recipients?: string[];
   store?: string;
   day_of_week?: number;
@@ -807,6 +810,7 @@ export interface ExportParams {
   store?: string;
   status?: string;
   mode?: string;
+  account_id?: string;
   filters?: Record<string, unknown>;
   fields?: string[];
 }
