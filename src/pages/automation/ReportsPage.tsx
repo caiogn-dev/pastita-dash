@@ -207,8 +207,8 @@ export default function ReportsPage() {
 
       await generatedReportsService.generate({
         report_type: generateData.report_type as any,
-        period_start: generateData.period_start || undefined,
-        period_end: generateData.period_end || undefined,
+        period_start: generateData.period_start || '',
+        period_end: generateData.period_end || '',
         account_id: generateData.account_id || undefined,
         company_id: generateData.company_id || undefined,
         recipients,
