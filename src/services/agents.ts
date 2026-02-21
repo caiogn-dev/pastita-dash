@@ -94,7 +94,7 @@ export interface ProcessMessageRequest {
 }
 
 export interface ProcessMessageResponse {
-  response: string;
+  response: string | object;
   session_id: string;
   tokens_used?: number;
   response_time_ms?: number;

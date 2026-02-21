@@ -138,10 +138,15 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
       setSessionId(response.session_id);
       setConnectionStatus('connected');
       
+      // Garantir que content seja sempre string
+      const responseContent = typeof response.response === 'string' 
+        ? response.response 
+        : JSON.stringify(response.response);
+      
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        content: response.response,
+        content: responseContent,
         timestamp: new Date(),
         tokens_used: response.tokens_used,
         response_time_ms: response.response_time_ms,
