@@ -27,9 +27,14 @@ export const AgentFlowsListPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setFlows(data.results || []);
+      } else {
+        // API ainda não implementada - usar mock
+        setFlows([]);
       }
     } catch (error) {
       console.error('Erro ao carregar fluxos:', error);
+      // API não disponível - usar mock vazio
+      setFlows([]);
     } finally {
       setIsLoading(false);
     }

@@ -17,9 +17,14 @@ export const AgentFlowBuilderPage: React.FC = () => {
         const response = await companyProfileApi.list({ page_size: 1 });
         if (response.results && response.results.length > 0) {
           setStoreId(response.results[0].id);
+        } else {
+          // Sem loja configurada - usar mock para permitir teste
+          setStoreId('mock-store');
         }
       } catch (error) {
         console.error('Erro ao carregar loja:', error);
+        // API falhou - usar mock para permitir teste
+        setStoreId('mock-store');
       } finally {
         setIsLoading(false);
       }
