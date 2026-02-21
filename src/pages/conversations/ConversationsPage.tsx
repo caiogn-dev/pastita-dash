@@ -93,7 +93,8 @@ export const ConversationsPage: React.FC = () => {
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     conversations.forEach((conv) => {
-      counts[conv.status] = (counts[conv.status] || 0) + 1;
+      const status = conv.status || 'unknown';
+      counts[status] = (counts[status] || 0) + 1;
     });
     return counts;
   }, [conversations]);
@@ -102,7 +103,8 @@ export const ConversationsPage: React.FC = () => {
   const modeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     conversations.forEach((conv) => {
-      counts[conv.mode] = (counts[conv.mode] || 0) + 1;
+      const mode = conv.mode || 'unknown';
+      counts[mode] = (counts[mode] || 0) + 1;
     });
     return counts;
   }, [conversations]);

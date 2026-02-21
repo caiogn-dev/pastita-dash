@@ -220,17 +220,17 @@ export const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
         <StatCard
           title="Mensagens Hoje"
-          value={overview?.messages && typeof overview.messages === 'object' ? overview.messages.today || 0 : (overview?.messages || 0)}
+          value={Number(overview?.messages && typeof overview.messages === 'object' ? overview.messages.today || 0 : (overview?.messages || 0))}
           icon={<InboxIcon className="w-5 h-5 md:w-6 md:h-6" />}
         />
         <StatCard
           title="Conversas Ativas"
-          value={overview?.conversations && typeof overview.conversations === 'object' ? overview.conversations.active || 0 : (overview?.conversations || 0)}
+          value={Number(overview?.conversations && typeof overview.conversations === 'object' ? overview.conversations.active || 0 : (overview?.conversations || 0))}
           icon={<ChatBubbleLeftRightIcon className="w-5 h-5 md:w-6 md:h-6" />}
         />
         <StatCard
           title="Pedidos Hoje"
-          value={overview?.orders && typeof overview.orders === 'object' ? overview.orders.today || 0 : (overview?.orders || 0)}
+          value={Number(overview?.orders && typeof overview.orders === 'object' ? overview.orders.today || 0 : (overview?.orders || 0))}
           icon={<ShoppingCartIcon className="w-5 h-5 md:w-6 md:h-6" />}
         />
         <StatCard
@@ -240,12 +240,12 @@ export const DashboardPage: React.FC = () => {
         />
         <StatCard
           title="Interações IA"
-          value={overview?.agents && typeof overview.agents === 'object' ? (overview.agents as Record<string, number>).interactions_today || 0 : (overview?.agents || 0)}
+          value={Number(overview?.agents && typeof overview.agents === 'object' ? (overview.agents as Record<string, number>).interactions_today || 0 : (overview?.agents || 0))}
           icon={<CpuChipIcon className="w-5 h-5 md:w-6 md:h-6" />}
         />
         <StatCard
           title="Contas Ativas"
-          value={overview?.accounts && typeof overview.accounts === 'object' ? (overview.accounts as Record<string, number>).active || 0 : (overview?.accounts || 0)}
+          value={Number(overview?.accounts && typeof overview.accounts === 'object' ? (overview.accounts as Record<string, number>).active || 0 : (overview?.accounts || 0))}
           icon={<UserGroupIcon className="w-5 h-5 md:w-6 md:h-6" />}
         />
       </div>
