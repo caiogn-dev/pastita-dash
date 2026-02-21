@@ -50,13 +50,6 @@ const ReportsPage = lazy(() => import('./pages/automation').then(m => ({ default
 const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentStatsPage })));
 const IntentLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentLogsPage })));
 
-<<<<<<< HEAD
-=======
-// Flow Builder Pages (Novo Sistema Visual)
-const AgentFlowsListPage = lazy(() => import('./pages/AgentFlowsListPage').then(m => ({ default: m.AgentFlowsListPage })));
-const AgentFlowBuilderPage = lazy(() => import('./pages/AgentFlowBuilderPage').then(m => ({ default: m.AgentFlowBuilderPage })));
-
->>>>>>> c3d8926600269b4664a3eec0696f26db788057e5
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
 

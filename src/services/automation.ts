@@ -317,3 +317,101 @@ export const intentTypeLabels: Record<string, string> = {
   unknown: 'Desconhecido',
   human_handoff: 'Transferir para Humano',
 };
+
+// =============================================================================
+// AGENT FLOW API - Flow Builder (Stub para build passar)
+// =============================================================================
+
+export interface AgentFlow {
+  id: string;
+  name: string;
+  description: string;
+  store: string;
+  store_name?: string;
+  store_slug?: string;
+  flow_json: {
+    nodes: Array<{
+      id: string;
+      type: string;
+      position: { x: number; y: number };
+      data: Record<string, unknown>;
+    }>;
+    edges: Array<{
+      id: string;
+      source: string;
+      target: string;
+    }>;
+    viewport?: {
+      x: number;
+      y: number;
+      zoom: number;
+    };
+  };
+  is_active: boolean;
+  is_default: boolean;
+  version: string;
+  total_executions: number;
+  success_rate: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAgentFlow {
+  name: string;
+  description?: string;
+  store: string;
+  flow_json?: AgentFlow['flow_json'];
+  is_active?: boolean;
+  is_default?: boolean;
+  version?: string;
+}
+
+export interface UpdateAgentFlow {
+  name?: string;
+  description?: string;
+  flow_json?: AgentFlow['flow_json'];
+  is_active?: boolean;
+  is_default?: boolean;
+  version?: string;
+}
+
+export const agentFlowApi = {
+  list: async (params?: {
+    store_id?: string;
+    store_slug?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<AgentFlow>> => {
+    const response = await api.get('/automation/flows/', { params });
+    return response.data;
+  },
+
+  get: async (id: string): Promise<AgentFlow> => {
+    const response = await api.get(`/automation/flows/${id}/`);
+    return response.data;
+  },
+
+  create: async (data: CreateAgentFlow): Promise<AgentFlow> => {
+    const response = await api.post('/automation/flows/', data);
+    return response.data;
+  },
+
+  update: async (id: string, data: UpdateAgentFlow): Promise<AgentFlow> => {
+    const response = await api.put(`/automation/flows/${id}/`, data);
+    return response.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/automation/flows/${id}/`);
+  },
+
+  duplicate: async (id: string): Promise<AgentFlow> => {
+    const response = await api.post(`/automation/flows/${id}/duplicate/`);
+    return response.data;
+  },
+
+  setDefault: async (id: string): Promise<{ status: string }> => {
+    const response = await api.post(`/automation/flows/${id}/set_default/`);
+    return response.data;
+  },
+};
