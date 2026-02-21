@@ -555,6 +555,17 @@ export interface CreateAutoMessage {
   is_active: boolean;
 }
 
+export type SessionStatus =
+  | 'active'
+  | 'cart_created'
+  | 'cart_abandoned'
+  | 'checkout'
+  | 'payment_pending'
+  | 'payment_confirmed'
+  | 'order_placed'
+  | 'completed'
+  | 'expired';
+
 export interface CustomerSession {
   id: string;
   conversation: string;
@@ -563,6 +574,22 @@ export interface CustomerSession {
   expires_at: string;
   created_at: string;
   updated_at: string;
+  // Additional fields
+  status: SessionStatus;
+  customer_name?: string;
+  phone_number?: string;
+  customer_email?: string;
+  company_name?: string;
+  cart_items_count?: number;
+  cart_total?: number;
+  cart_created_at?: string;
+  pix_code?: string;
+  pix_expires_at?: string;
+  notifications_sent?: Array<{ type: string; sent_at: string }>;
+  session_id?: string;
+  external_customer_id?: string;
+  external_order_id?: string;
+  last_activity_at?: string;
 }
 
 export interface AutomationLog {
@@ -658,13 +685,16 @@ export interface InteractiveMessage {
 export interface ScheduledMessage {
   id: string;
   account: string;
+  account_name?: string;
   to_number: string;
   contact_name?: string;
   message_type: 'text' | 'template' | 'image' | 'document' | 'interactive';
   message_text?: string;
   template_name?: string;
   scheduled_for: string;
+  scheduled_at?: string;
   status: 'pending' | 'processing' | 'sent' | 'failed' | 'cancelled';
+  status_display?: string;
   sent_at?: string;
   error_message?: string;
   metadata?: Record<string, unknown>;
@@ -674,12 +704,15 @@ export interface ScheduledMessage {
 
 export interface CreateScheduledMessage {
   account: string;
+  account_id?: string;
   to_number: string;
   contact_name?: string;
   message_type: 'text' | 'template' | 'image' | 'document' | 'interactive';
   message_text?: string;
   template_name?: string;
   scheduled_for: string;
+  scheduled_at?: string;
+  notes?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -689,37 +722,67 @@ export interface ScheduledMessageStats {
   total_failed: number;
   total_pending: number;
   delivery_rate: number;
+  // Additional fields
+  total?: number;
+  pending?: number;
+  sent?: number;
+  failed?: number;
+  cancelled?: number;
+  scheduled_today?: number;
+  sent_today?: number;
 }
 
 export interface ReportSchedule {
   id: string;
   name: string;
+  description?: string;
   report_type: string;
   frequency: 'daily' | 'weekly' | 'monthly';
   email_recipients: string[];
+  recipients?: string[];
   is_active: boolean;
+  status?: 'active' | 'paused' | 'disabled';
+  status_display?: string;
+  day_of_week?: number;
+  day_of_month?: number;
+  hour?: number;
   last_sent_at?: string;
   next_scheduled_at?: string;
+  next_run_at?: string;
+  last_error?: string;
   created_at: string;
 }
 
 export interface CreateReportSchedule {
   name: string;
+  description?: string;
   report_type: string;
   frequency: 'daily' | 'weekly' | 'monthly';
   email_recipients: string[];
+  recipients?: string[];
   store?: string;
+  day_of_week?: number;
+  day_of_month?: number;
+  hour?: number;
+  start_date?: string;
+  end_date?: string;
+  filters?: Record<string, unknown>;
+  export_format?: 'csv' | 'xlsx';
 }
 
 export interface GeneratedReport {
   id: string;
+  name?: string;
   schedule?: string;
   report_type: string;
+  file_format?: string;
   period_start: string;
   period_end: string;
   file_url: string;
   file_size: number;
   status: 'generating' | 'completed' | 'failed';
+  status_display?: string;
+  records_count?: number;
   created_at: string;
 }
 

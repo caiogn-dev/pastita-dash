@@ -280,9 +280,9 @@ const AutomationLogsPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        actionTypeColors[log.action_type] || 'bg-gray-100 text-gray-800'
+                        actionTypeColors[log.action_type || ''] || 'bg-gray-100 text-gray-800'
                       }`}>
-                        {actionTypeLabels[log.action_type] || log.action_type}
+                        {actionTypeLabels[log.action_type || ''] || log.action_type || '-'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
@@ -365,9 +365,9 @@ const AutomationLogsPage: React.FC = () => {
                     Detalhes do Log
                   </h3>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    actionTypeColors[selectedLog.action_type] || 'bg-gray-100 text-gray-800'
+                    actionTypeColors[selectedLog.action_type || ''] || 'bg-gray-100 text-gray-800'
                   }`}>
-                    {actionTypeLabels[selectedLog.action_type] || selectedLog.action_type}
+                    {actionTypeLabels[selectedLog.action_type || ''] || selectedLog.action_type || '-'}
                   </span>
                 </div>
               </div>

@@ -73,7 +73,7 @@ const MediaPreview: React.FC<{
   type: string;
   url?: string;
   fileName?: string;
-  content?: Record<string, unknown>;
+  content?: string | Record<string, unknown>;
   onClick?: () => void;
 }> = ({ type, url, fileName, content, onClick }) => {
   // Imagem

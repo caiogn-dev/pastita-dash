@@ -285,7 +285,7 @@ const AutoMessagesPage: React.FC = () => {
                           }`}>
                             {message.is_active ? 'Ativo' : 'Inativo'}
                           </span>
-                          {message.delay_seconds > 0 && (
+                          {message.delay_seconds && message.delay_seconds > 0 && (
                             <span className="text-xs text-gray-500 dark:text-zinc-400">
                               Delay: {message.delay_seconds}s
                             </span>
