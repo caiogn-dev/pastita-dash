@@ -27,6 +27,10 @@ export interface User {
 
 export interface LoginResponse {
   user: User;
+  user_id?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
   token: string;
   refresh: string;
 }
@@ -333,13 +337,19 @@ export interface DashboardCharts {
 export interface AutoMessage {
   id: string;
   account: string;
+  company_id?: string;
   name: string;
   event_type: AutoMessageEventType;
-  delay_minutes: number;
+  delay_minutes?: number;
+  delay_seconds?: number;
+  priority?: number;
   message_text: string;
   message_type: 'text' | 'template' | 'interactive';
   template_name?: string;
   interactive_data?: unknown;
+  media_url?: string;
+  media_type?: string;
+  buttons?: Array<{ id: string; title: string }>;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -481,13 +491,19 @@ export interface AutomationStats {
 
 export interface CreateAutoMessage {
   account: string;
+  company_id?: string;
   name: string;
   event_type: AutoMessageEventType;
-  delay_minutes: number;
+  delay_minutes?: number;
+  delay_seconds?: number;
+  priority?: number;
   message_text: string;
   message_type: 'text' | 'template' | 'interactive';
   template_name?: string;
   interactive_data?: unknown;
+  media_url?: string;
+  media_type?: string;
+  buttons?: Array<{ id: string; title: string }>;
   is_active: boolean;
 }
 

@@ -1,3 +1,4 @@
+import { FlowCanvas } from './FlowCanvas';
 export { FlowCanvas } from './FlowCanvas';
 export { NodePalette } from './NodePalette';
 export { NodeConfigPanel } from './NodeConfigPanel';
