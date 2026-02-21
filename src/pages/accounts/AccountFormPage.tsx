@@ -64,7 +64,7 @@ export const AccountFormPage: React.FC = () => {
       const account = await whatsappService.getAccount(id!);
       setFormData({
         name: account.name,
-        phone_number_id: account.phone_number_id,
+        phone_number_id: account.phone_number_id || '',
         waba_id: account.waba_id || '',
         phone_number: account.phone_number,
         display_phone_number: account.display_phone_number || '',

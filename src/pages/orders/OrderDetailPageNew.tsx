@@ -43,7 +43,7 @@ const parseAddress = (addr: string | Record<string, unknown> | undefined): Recor
       return { address: addr };
     }
   }
-  return addr;
+  return addr as Record<string, string>;
 };
 import { useOrderPrint } from '../../components/orders/OrderPrint';
 import { useStore } from '../../hooks';
