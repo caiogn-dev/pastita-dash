@@ -355,15 +355,34 @@ export interface AutoMessage {
   updated_at: string;
 }
 
+export type BusinessHours = Record<string, { open: boolean; start?: string; end?: string }>;
+
 export interface UpdateCompanyProfile {
   name?: string;
+  company_name?: string;
   description?: string;
   phone?: string;
   email?: string;
   address?: string;
   welcome_message?: string;
-  business_hours?: Record<string, { open: string; close: string }>;
+  business_hours?: BusinessHours;
   is_active?: boolean;
+  // Additional automation fields
+  business_type?: string;
+  website_url?: string;
+  menu_url?: string;
+  order_url?: string;
+  auto_reply_enabled?: boolean;
+  welcome_message_enabled?: boolean;
+  menu_auto_send?: boolean;
+  abandoned_cart_notification?: boolean;
+  abandoned_cart_delay_minutes?: number;
+  pix_notification_enabled?: boolean;
+  payment_confirmation_enabled?: boolean;
+  order_status_notification_enabled?: boolean;
+  delivery_notification_enabled?: boolean;
+  use_ai_agent?: boolean;
+  default_agent?: string | null;
 }
 
 export interface AutomationSettings {
@@ -404,10 +423,31 @@ export interface CompanyProfile {
   email?: string;
   address?: string;
   welcome_message?: string;
-  business_hours?: Record<string, { open: string; close: string }>;
+  business_hours?: BusinessHours;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Account and API fields
+  account_phone?: string;
+  external_api_key?: string;
+  webhook_secret?: string;
+  // Business info
+  business_type?: string;
+  website_url?: string;
+  menu_url?: string;
+  order_url?: string;
+  // Automation settings
+  auto_reply_enabled?: boolean;
+  welcome_message_enabled?: boolean;
+  menu_auto_send?: boolean;
+  abandoned_cart_notification?: boolean;
+  abandoned_cart_delay_minutes?: number;
+  pix_notification_enabled?: boolean;
+  payment_confirmation_enabled?: boolean;
+  order_status_notification_enabled?: boolean;
+  delivery_notification_enabled?: boolean;
+  use_ai_agent?: boolean;
+  default_agent?: string;
 }
 
 export interface CreateCompanyProfile {
@@ -418,7 +458,7 @@ export interface CreateCompanyProfile {
   email?: string;
   address?: string;
   welcome_message?: string;
-  business_hours?: Record<string, { open: string; close: string }>;
+  business_hours?: BusinessHours;
 }
 
 export type AutoMessageEventType =
@@ -488,6 +528,13 @@ export interface AutomationStats {
     paid_after_reminder: number;
     conversion_rate: number;
   };
+  // Additional fields for log stats
+  total?: number;
+  today?: number;
+  this_week?: number;
+  error_rate?: number;
+  by_action_type?: Array<{ action_type: string; count: number }>;
+  by_day?: Array<{ date: string; count: number }>;
 }
 
 export interface CreateAutoMessage {
@@ -524,7 +571,7 @@ export interface AutomationLog {
   company_name?: string;
   conversation: string;
   event_type: AutoMessageEventType;
-  action_type?: string;
+  action_type: string;
   status: 'pending' | 'sent' | 'failed' | 'cancelled';
   scheduled_for?: string;
   sent_at?: string;
