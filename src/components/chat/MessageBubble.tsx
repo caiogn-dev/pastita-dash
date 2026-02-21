@@ -147,7 +147,8 @@ const MediaPreview: React.FC<{
 
   // Localização
   if (type === 'location') {
-    const location = content?.location as { latitude?: number; longitude?: number; name?: string } | undefined;
+    const contentObj = typeof content === 'string' ? {} : content;
+    const location = contentObj?.location as { latitude?: number; longitude?: number; name?: string } | undefined;
     const mapsUrl = location?.latitude && location?.longitude
       ? `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
       : '#';

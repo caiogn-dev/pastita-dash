@@ -422,10 +422,10 @@ export const DashboardPage: React.FC = () => {
       {/* Messages by Status */}
       <Card title="Mensagens por Status">
         <div className="space-y-3">
-          {Object.entries(overview?.messages.by_status || {}).map(([status, count]) => (
+          {overview?.messages && typeof overview.messages === 'object' && Object.entries(overview.messages.by_status || {}).map(([status, count]) => (
             <div key={status} className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-zinc-400 capitalize">{status}</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{count as number}</span>
             </div>
           ))}
         </div>
@@ -434,12 +434,12 @@ export const DashboardPage: React.FC = () => {
       {/* Conversations by Mode */}
       <Card title="Conversas por Modo">
         <div className="space-y-3">
-          {Object.entries(overview?.conversations.by_mode || {}).map(([mode, count]) => (
+          {overview?.conversations && typeof overview.conversations === 'object' && Object.entries(overview.conversations.by_mode || {}).map(([mode, count]) => (
             <div key={mode} className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-zinc-400 capitalize">
                 {mode === 'auto' ? 'Automático' : mode === 'human' ? 'Humano' : 'Híbrido'}
               </span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{count as number}</span>
             </div>
           ))}
         </div>
@@ -451,19 +451,19 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-zinc-400">Interações Hoje</span>
             <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {overview?.agents?.interactions_today || 0}
+              {overview?.agents && typeof overview.agents === 'object' ? (overview.agents as Record<string, number>).interactions_today || 0 : 0}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-zinc-400">Tempo Médio</span>
             <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {overview?.agents?.avg_response_time_ms || 0}ms
+              {overview?.agents && typeof overview.agents === 'object' ? (overview.agents as Record<string, number>).avg_response_time_ms || 0 : 0}ms
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-zinc-400">Taxa de Sucesso</span>
             <span className="text-sm font-medium text-green-600 dark:text-green-400">
-              {overview?.agents?.success_rate || 0}%
+              {overview?.agents && typeof overview.agents === 'object' ? (overview.agents as Record<string, number>).success_rate || 0 : 0}%
             </span>
           </div>
         </div>
@@ -476,13 +476,13 @@ export const DashboardPage: React.FC = () => {
         <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-100 dark:border-green-800">
           <p className="text-sm text-green-600 dark:text-green-400 font-medium">Receita Hoje</p>
           <p className="text-2xl font-bold text-green-700 dark:text-green-300 mt-1">
-            R$ {(overview?.orders.revenue_today || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            R$ {overview?.orders && typeof overview.orders === 'object' ? ((overview.orders as Record<string, number>).revenue_today || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
           </p>
         </div>
         <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
           <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Receita do Mês</p>
           <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">
-            R$ {(overview?.orders.revenue_month || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            R$ {overview?.orders && typeof overview.orders === 'object' ? ((overview.orders as Record<string, number>).revenue_month || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
           </p>
         </div>
         <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg border border-yellow-100 dark:border-yellow-800">

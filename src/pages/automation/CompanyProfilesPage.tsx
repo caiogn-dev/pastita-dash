@@ -131,7 +131,7 @@ const CompanyProfilesPage: React.FC = () => {
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center text-sm text-gray-500 dark:text-zinc-400">
                     <span className="font-medium mr-2">Tipo:</span>
-                    {businessTypeLabels[profile.business_type] || profile.business_type}
+                    {businessTypeLabels[profile.business_type || ''] || profile.business_type || '-'}
                   </div>
                   {profile.website_url && (
                     <div className="flex items-center text-sm text-gray-500 dark:text-zinc-400 truncate">

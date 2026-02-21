@@ -328,9 +328,9 @@ export interface DashboardCharts {
   orders_by_status: Record<string, number>;
   top_products: Array<{ name: string; quantity: number; revenue: number }>;
   revenue_by_payment_method: Record<string, number>;
-  orders_per_day?: Array<{ date: string; count: number }>;
-  conversations_per_day?: Array<{ date: string; count: number }>;
-  messages_per_day?: Array<{ date: string; count: number; incoming?: number; outgoing?: number }>;
+  orders_per_day?: Array<{ date: string; count: number; revenue?: number }>;
+  conversations_per_day?: Array<{ date: string; count: number; new?: number; resolved?: number }>;
+  messages_per_day?: Array<{ date: string; count: number; incoming?: number; outgoing?: number; inbound?: number; outbound?: number }>;
   message_types?: Record<string, number>;
   order_statuses?: Record<string, number>;
 }
