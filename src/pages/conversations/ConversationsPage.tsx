@@ -291,7 +291,7 @@ export const ConversationsPage: React.FC = () => {
       render: (conv: Conversation) => (
         <div className="flex flex-col gap-1">
           <ConversationStatusBadge status={conv.status} />
-          <ConversationModeBadge mode={conv.mode || 'auto'} />
+          <ConversationModeBadge mode={conv.mode ?? 'auto'} />
         </div>
       ),
     },
@@ -643,7 +643,7 @@ export const ConversationsPage: React.FC = () => {
               </div>
               <div className="flex flex-col gap-2">
                 <ConversationStatusBadge status={detailConversation.status} size="md" />
-                <ConversationModeBadge mode={detailConversation.mode || 'auto'} size="md" />
+                <ConversationModeBadge mode={detailConversation.mode ?? 'auto'} size="md" />
               </div>
             </div>
 

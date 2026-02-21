@@ -794,8 +794,11 @@ export interface GeneratedReport {
 
 export interface GenerateReportRequest {
   report_type: string;
-  period_start: string;
-  period_end: string;
+  period_start?: string;
+  period_end?: string;
+  account_id?: string;
+  company_id?: string;
+  recipients?: string[];
   store?: string;
   format?: 'pdf' | 'csv' | 'xlsx';
 }

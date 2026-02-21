@@ -212,7 +212,7 @@ export default function ReportsPage() {
         account_id: generateData.account_id || undefined,
         company_id: generateData.company_id || undefined,
         recipients,
-        export_format: generateData.export_format as any,
+        format: generateData.export_format as any,
       });
       toast.success('Relatório sendo gerado...');
       setIsGenerateModalOpen(false);
