@@ -30,10 +30,12 @@ const AutoMessagesPage: React.FC = () => {
   const [testResult, setTestResult] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CreateAutoMessage>({
+    account: '',
     company_id: companyId || '',
     event_type: 'welcome',
     name: '',
     message_text: '',
+    message_type: 'text',
     is_active: true,
     delay_seconds: 0,
     priority: 100,
@@ -84,10 +86,12 @@ const AutoMessagesPage: React.FC = () => {
   const handleEdit = (message: AutoMessage) => {
     setEditingMessage(message);
     setFormData({
+      account: message.account,
       company_id: companyId || '',
       event_type: message.event_type,
       name: message.name,
       message_text: message.message_text,
+      message_type: message.message_type,
       media_url: message.media_url || undefined,
       media_type: message.media_type || undefined,
       buttons: message.buttons,
@@ -150,10 +154,12 @@ const AutoMessagesPage: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
+      account: '',
       company_id: companyId || '',
       event_type: 'welcome',
       name: '',
       message_text: '',
+      message_type: 'text',
       is_active: true,
       delay_seconds: 0,
       priority: 100,
@@ -279,7 +285,7 @@ const AutoMessagesPage: React.FC = () => {
                           }`}>
                             {message.is_active ? 'Ativo' : 'Inativo'}
                           </span>
-                          {message.delay_seconds > 0 && (
+                          {message.delay_seconds && message.delay_seconds > 0 && (
                             <span className="text-xs text-gray-500 dark:text-zinc-400">
                               Delay: {message.delay_seconds}s
                             </span>

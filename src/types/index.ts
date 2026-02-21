@@ -1,149 +1,5 @@
-
-
 // ============================================
-// AUTO MESSAGE EVENT TYPES
-// ============================================
-
-export type AutoMessageEventType =
-  | 'welcome' | 'menu' | 'business_hours' | 'out_of_hours' | 'faq'
-  | 'cart_created' | 'cart_abandoned' | 'cart_reminder' | 'cart_reminder_30' | 'cart_reminder_2h' | 'cart_reminder_24h'
-  | 'pix_generated' | 'pix_reminder' | 'pix_expired' | 'payment_confirmed' | 'payment_failed' | 'payment_reminder_1' | 'payment_reminder_2'
-  | 'order_received' | 'order_confirmed' | 'order_preparing' | 'order_ready' | 'order_shipped' | 'order_out_for_delivery' | 'order_delivered' | 'order_cancelled'
-  | 'feedback_request' | 'feedback_received' | 'human_handoff' | 'human_assigned' | 'custom';
-
-// ============================================
-// WHATSAPP ACCOUNT TYPES
-// ============================================
-
-export interface WhatsAppAccount {
-  id: string;
-  name: string;
-  phone_number: string;
-  display_phone_number?: string;
-  phone_number_id?: string;
-  business_account_id?: string;
-  status: 'active' | 'inactive' | 'pending' | 'error';
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateWhatsAppAccount {
-  name: string;
-  phone_number: string;
-}
-
-// ============================================
-// USER TYPES
-// ============================================
-
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  first_name: string;
-  last_name: string;
-  is_active: boolean;
-  is_staff: boolean;
-  is_superuser: boolean;
-  date_joined: string;
-}
-
-export interface LoginResponse {
-  access: string;
-  refresh: string;
-  user: User;
-}
-
-// ============================================
-// MESSAGE TYPES
-// ============================================
-
-export interface Message {
-  id: string;
-  message_id: string;
-  conversation_id: string;
-  account_id?: string;
-  phone_number: string;
-  from_number?: string;
-  to_number?: string;
-  text?: string;
-  text_body?: string;
-  message_type: 'text' | 'image' | 'document' | 'audio' | 'video' | 'template' | 'interactive';
-  media_url?: string;
-  caption?: string;
-  timestamp: string;
-  created_at: string;
-  direction: 'inbound' | 'outbound';
-  status: 'sent' | 'delivered' | 'read' | 'failed' | 'pending';
-  whatsapp_message_id?: string;
-  delivered_at?: string;
-  read_at?: string;
-  account_name?: string;
-}
-
-export interface Conversation {
-  id: string;
-  phone_number: string;
-  contact_name: string;
-  last_message?: string;
-  last_message_at?: string;
-  unread_count: number;
-  status: 'open' | 'closed' | 'pending';
-  mode: 'auto' | 'manual' | 'hybrid' | 'human';
-  tags: string[];
-  created_at: string;
-}
-
-// ============================================
-// WHATSAPP MESSAGE TEMPLATES
-// ============================================
-
-export interface MessageTemplate {
-  id: string;
-  name: string;
-  category: string;
-  language: string;
-  status: 'approved' | 'pending' | 'rejected';
-  components: Array<{
-    type: string;
-    text?: string;
-    format?: string;
-    example?: unknown;
-  }>;
-}
-
-export interface SendTextMessage {
-  to: string;
-  text: string;
-  account_id?: string;
-}
-
-export interface SendTemplateMessage {
-  to: string;
-  template_name: string;
-  language: string;
-  components?: unknown[];
-}
-
-export interface SendInteractiveButtons {
-  to: string;
-  body: string;
-  buttons: Array<{ id: string; title: string }>;
-}
-
-export interface SendInteractiveList {
-  to: string;
-  body: string;
-  button: string;
-  sections: Array<{
-    title: string;
-    rows: Array<{ id: string; title: string; description?: string }>;
-  }>;
-}
-
-// ============================================
-// PAGINATION
+// CORE TYPES
 // ============================================
 
 export interface PaginatedResponse<T> {
@@ -154,155 +10,638 @@ export interface PaginatedResponse<T> {
 }
 
 // ============================================
-// COMPANY PROFILE TYPES
+// USER & AUTH TYPES
 // ============================================
 
-export interface CompanyProfile {
+export interface User {
   id: string;
-  company_name: string;
-  business_type: string;
-  description?: string;
-  phone_number: string;
+  username?: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  is_staff: boolean;
+  is_superuser?: boolean;
+  date_joined: string;
+}
+
+export interface LoginResponse {
+  user: User;
+  user_id?: string;
   email?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  website_url?: string;
-  menu_url?: string;
-  auto_reply_enabled: boolean;
-  welcome_message_enabled: boolean;
-  use_ai_agent: boolean;
-  default_agent_id?: string;
+  first_name?: string;
+  last_name?: string;
+  token: string;
+  refresh: string;
+}
+
+// ============================================
+// WHATSAPP TYPES
+// ============================================
+
+export interface WhatsAppAccount {
+  id: string;
+  name: string;
+  phone_number: string;
+  display_phone_number?: string;
+  phone_number_id?: string;
+  app_id?: string;
+  business_account_id?: string;
+  waba_id?: string;
+  status: 'active' | 'inactive' | 'pending' | 'error';
+  webhook_url?: string;
+  token_version?: number;
+  auto_response_enabled?: boolean;
+  human_handoff_enabled?: boolean;
+  default_agent?: string;
+  default_agent_name?: string;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
 
+export interface CreateWhatsAppAccount {
+  name: string;
+  phone_number: string;
+  app_id?: string;
+  business_account_id?: string;
+}
+
+export interface Message {
+  id: string;
+  whatsapp_message_id?: string;
+  message_id?: string;
+  from_number: string;
+  to_number: string;
+  direction: 'inbound' | 'outbound';
+  message_type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'template' | 'interactive' | 'location' | 'contacts';
+  text_body?: string;
+  content?: string;
+  text?: string;
+  media_url?: string;
+  media_caption?: string;
+  media_mime_type?: string;
+  media_type?: string;
+  media_sha256?: string;
+  media_filename?: string;
+  file_name?: string;
+  caption?: string;
+  status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed' | 'received';
+  timestamp: string;
+  sent_at?: string;
+  delivered_at?: string;
+  read_at?: string;
+  error_message?: string;
+  webhook_event?: string;
+  conversation_id?: string;
+  account: string;
+  account_name?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  language: string;
+  category: string;
+  components: unknown[];
+  status: string;
+  account: string;
+}
+
+export interface SendTextMessage {
+  to: string;
+  body?: string;
+  text?: string;
+  preview_url?: boolean;
+  account_id?: string;
+}
+
+export interface SendTemplateMessage {
+  to: string;
+  template_name: string;
+  language_code: string;
+  components?: unknown[];
+}
+
+export interface InteractiveButton {
+  id: string;
+  title: string;
+}
+
+export interface InteractiveListRow {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+export interface InteractiveListSection {
+  title: string;
+  rows: InteractiveListRow[];
+}
+
+export interface SendInteractiveButtons {
+  to: string;
+  body: string;
+  buttons: InteractiveButton[];
+  header?: { type: 'text' | 'image' | 'video' | 'document'; text?: string; url?: string };
+  footer?: string;
+}
+
+export interface SendInteractiveList {
+  to: string;
+  body: string;
+  button: string;
+  sections: InteractiveListSection[];
+  header?: { type: 'text'; text: string };
+  footer?: string;
+}
+
 // ============================================
-// CUSTOMER SESSION TYPES
+// CONVERSATION TYPES
 // ============================================
 
-export interface CustomerSession {
+export interface Conversation {
   id: string;
-  company_id: string;
   phone_number: string;
-  customer_name?: string;
-  customer_email?: string;
-  session_id: string;
-  status: 'active' | 'cart_created' | 'cart_abandoned' | 'checkout' | 'payment_pending' | 'payment_confirmed' | 'order_placed' | 'completed' | 'expired';
-  cart_data?: {
-    items: Array<{
-      quantity: number;
-      name: string;
-      total: number;
-    }>;
-    total: number;
-  };
-  cart_total: number;
-  cart_items_count: number;
-  pix_code?: string;
-  pix_expires_at?: string;
-  order_id?: string;
-  external_order_id?: string;
-  last_activity_at: string;
+  contact_name?: string;
+  account: string;
+  status: 'active' | 'archived' | 'blocked' | 'spam' | 'open' | 'pending';
+  mode?: 'auto' | 'manual' | 'hybrid' | 'human' | string;
+  last_message_at?: string;
+  last_message_preview?: string;
+  last_message?: string;
+  unread_count: number;
+  labels: string[];
+  tags?: string[];
+  assigned_to?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConversationNote {
+  id: string;
+  conversation: string;
+  content: string;
+  created_by: User;
   created_at: string;
 }
 
 // ============================================
-// AUTO MESSAGE TYPES
+// ORDER TYPES
 // ============================================
+
+export interface OrderItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  total_price?: number;
+  options?: Record<string, unknown>;
+}
+
+export interface OrderEvent {
+  id: string;
+  order_id: string;
+  event_type: string;
+  description: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface Order {
+  id: string;
+  order_number: string;
+  store: string;
+  store_id?: string;
+  store_name?: string;
+  source?: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email?: string;
+  delivery_address?: string;
+  shipping_address?: Record<string, unknown>;
+  delivery_instructions?: string;
+  items: OrderItem[];
+  items_count?: number;
+  subtotal: number;
+  tax: number;
+  delivery_fee: number;
+  shipping_cost?: number;
+  discount: number;
+  total: number;
+  status: 'pending' | 'processing' | 'confirmed' | 'preparing' | 'ready' | 'shipped' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'completed' | 'refunded' | 'failed' | 'paid';
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card' | string;
+  pix_code?: string;
+  pix_qr_code?: string;
+  pix_ticket_url?: string;
+  payment_url?: string;
+  payment_link?: string;
+  init_point?: string;
+  access_token?: string;
+  payment_preference_id?: string;
+  tracking_code?: string;
+  notes?: string;
+  paid_at?: string;
+  created_at: string;
+  updated_at: string;
+  events?: OrderEvent[];
+}
+
+export interface CreateOrder {
+  store?: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email?: string;
+  delivery_address?: string;
+  items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
+  payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card';
+  notes?: string;
+}
+
+// ============================================
+// PAYMENT TYPES
+// ============================================
+
+export interface Payment {
+  id: string;
+  order: string;
+  gateway: string;
+  external_id: string;
+  amount: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
+  payment_method: string;
+  paid_at?: string;
+  refunded_at?: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentGateway {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  config: Record<string, unknown>;
+}
+
+// ============================================
+// DASHBOARD TYPES
+// ============================================
+
+export interface DashboardOverview {
+  total_revenue?: number;
+  total_orders?: number;
+  total_customers?: number;
+  conversion_rate?: number;
+  timestamp?: string;
+  messages?: number | { today: number; by_status: Record<string, number> };
+  conversations?: number | { active: number; new: number; resolved: number; by_mode?: Record<string, number> };
+  orders?: number | { today: number; revenue_today: number; revenue_month?: number };
+  agents?: number;
+  accounts?: number | { active: number; total: number };
+  payments?: {
+    total?: number;
+    pix?: number;
+    credit_card?: number;
+    debit_card?: number;
+    cash?: number;
+    pending?: number;
+    completed_today?: number;
+  };
+  period_comparison?: {
+    revenue_change: number;
+    orders_change: number;
+    customers_change: number;
+  };
+  interactions_today?: number;
+  avg_response_time_ms?: number;
+  success_rate?: number;
+}
+
+export interface DashboardActivity {
+  id: string;
+  type: string;
+  description: string;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface DashboardCharts {
+  sales_over_time?: Array<{ date: string; amount: number; orders: number; revenue?: number; new?: number; resolved?: number }>;
+  orders_by_status?: Record<string, number>;
+  top_products?: Array<{ name: string; quantity: number; revenue: number }>;
+  revenue_by_payment_method?: Record<string, number>;
+  orders_per_day?: Array<{ date: string; count: number; revenue?: number }>;
+  conversations_per_day?: Array<{ date: string; count: number; new?: number; resolved?: number }>;
+  messages_per_day?: Array<{ date: string; count: number; incoming?: number; outgoing?: number; inbound?: number; outbound?: number }>;
+  message_types?: Record<string, number>;
+  order_statuses?: Record<string, number>;
+  messages_by_day?: Array<{ date: string; count: number; inbound?: number; outbound?: number }>;
+}
+
+// ============================================
+// AUTOMATION TYPES
+// ============================================
+
+export type AutoMessageEventType =
+  // Welcome & General
+  | 'welcome'
+  | 'menu'
+  | 'business_hours'
+  | 'out_of_hours'
+  | 'faq'
+  // Cart
+  | 'cart_created'
+  | 'cart_abandoned'
+  | 'cart_reminder'
+  | 'cart_reminder_30'
+  | 'cart_reminder_2h'
+  | 'cart_reminder_24h'
+  // Payment
+  | 'pix_generated'
+  | 'pix_reminder'
+  | 'pix_expired'
+  | 'payment_reminder_1'
+  | 'payment_reminder_2'
+  | 'payment_confirmed'
+  | 'payment_failed'
+  // Order Status
+  | 'order_received'
+  | 'order_confirmed'
+  | 'order_preparing'
+  | 'order_ready'
+  | 'order_shipped'
+  | 'order_out_for_delivery'
+  | 'order_delivered'
+  | 'order_cancelled'
+  // Feedback & Support
+  | 'feedback_request'
+  | 'feedback_received'
+  | 'human_handoff'
+  | 'human_assigned'
+  // Custom
+  | 'custom';
 
 export interface AutoMessage {
   id: string;
-  company_id: string;
-  event_type: AutoMessageEventType;
+  account?: string;
+  company_id?: string;
   name: string;
+  event_type: AutoMessageEventType;
+  delay_minutes?: number;
+  delay_seconds?: number;
+  priority?: number;
   message_text: string;
+  message_type: 'text' | 'template' | 'interactive';
+  template_name?: string;
+  interactive_data?: unknown;
   media_url?: string;
-  media_type?: 'image' | 'document' | 'video';
+  media_type?: string;
   buttons?: Array<{ id: string; title: string }>;
   is_active: boolean;
-  delay_seconds: number;
-  priority: number;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateAutoMessage {
-  event_type: AutoMessageEventType;
+  account?: string;
+  company_id?: string;
   name: string;
-  message_text: string;
-  media_url?: string;
-  media_type?: 'image' | 'document' | 'video';
-  buttons?: Array<{ id: string; title: string }>;
-  is_active?: boolean;
+  event_type: AutoMessageEventType;
+  delay_minutes?: number;
   delay_seconds?: number;
   priority?: number;
+  message_text: string;
+  message_type?: 'text' | 'template' | 'interactive';
+  template_name?: string;
+  interactive_data?: unknown;
+  media_url?: string;
+  media_type?: string;
+  buttons?: Array<{ id: string; title: string }>;
+  is_active?: boolean;
 }
 
-export interface CreateCompanyProfile {
-  company_name: string;
-  business_type?: string;
+export type BusinessHours = Record<string, { open: boolean; start?: string; end?: string }>;
+
+export interface CompanyProfile {
+  id: string;
+  name: string;
+  company_name?: string;
+  slug?: string;
   description?: string;
+  phone?: string;
   phone_number?: string;
   email?: string;
   address?: string;
-  city?: string;
-  state?: string;
+  welcome_message?: string;
+  business_hours?: BusinessHours;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // Account and API fields
+  account_phone?: string;
+  external_api_key?: string;
+  webhook_secret?: string;
+  // Business info
+  business_type?: string;
   website_url?: string;
   menu_url?: string;
+  order_url?: string;
+  // Automation settings
   auto_reply_enabled?: boolean;
   welcome_message_enabled?: boolean;
+  menu_auto_send?: boolean;
+  abandoned_cart_notification?: boolean;
+  abandoned_cart_delay_minutes?: number;
+  pix_notification_enabled?: boolean;
+  payment_confirmation_enabled?: boolean;
+  order_status_notification_enabled?: boolean;
+  delivery_notification_enabled?: boolean;
   use_ai_agent?: boolean;
+  default_agent?: string;
   default_agent_id?: string;
 }
 
-export interface UpdateCompanyProfile extends Partial<CreateCompanyProfile> {}
-
-// ============================================
-// SCHEDULING & REPORTS
-// ============================================
-
-export interface ReportSchedule {
-  id: string;
+export interface CreateCompanyProfile {
   name: string;
-  report_type: string;
-  frequency: 'daily' | 'weekly' | 'monthly';
-  status: 'active' | 'paused' | 'disabled';
-  recipients: string[];
-  last_run_at?: string;
-  next_run_at?: string;
+  company_name?: string;
+  slug?: string;
+  description?: string;
+  phone?: string;
+  phone_number?: string;
+  email?: string;
+  address?: string;
+  welcome_message?: string;
+  business_hours?: BusinessHours;
 }
 
-export interface GeneratedReport {
+export interface UpdateCompanyProfile {
+  name?: string;
+  company_name?: string;
+  description?: string;
+  phone?: string;
+  phone_number?: string;
+  email?: string;
+  address?: string;
+  welcome_message?: string;
+  business_hours?: BusinessHours;
+  is_active?: boolean;
+  business_type?: string;
+  website_url?: string;
+  menu_url?: string;
+  order_url?: string;
+  auto_reply_enabled?: boolean;
+  welcome_message_enabled?: boolean;
+  menu_auto_send?: boolean;
+  abandoned_cart_notification?: boolean;
+  abandoned_cart_delay_minutes?: number;
+  pix_notification_enabled?: boolean;
+  payment_confirmation_enabled?: boolean;
+  order_status_notification_enabled?: boolean;
+  delivery_notification_enabled?: boolean;
+  use_ai_agent?: boolean;
+  default_agent?: string | null;
+  default_agent_id?: string;
+}
+
+export interface AutomationStats {
+  period?: { start: string; end: string };
+  summary?: {
+    total_messages_sent: number;
+    total_automations_triggered: number;
+    conversion_rate: number;
+    revenue_from_automations: number;
+  };
+  by_event_type?: Partial<Record<AutoMessageEventType, {
+    sent: number;
+    delivered: number;
+    read: number;
+    converted: number;
+    conversion_rate: number;
+  }>>;
+  cart_recovery?: {
+    abandoned_carts: number;
+    reminders_sent: number;
+    recovered: number;
+    recovery_rate: number;
+    revenue_recovered: number;
+  };
+  payment_reminders?: {
+    pending_payments: number;
+    reminders_sent: number;
+    paid_after_reminder: number;
+    conversion_rate: number;
+  };
+  // Additional fields for log stats
+  total?: number;
+  today?: number;
+  this_week?: number;
+  error_rate?: number;
+  by_action_type?: Array<{ action_type: string; count: number }>;
+  by_day?: Array<{ date: string; count: number }>;
+}
+
+export type SessionStatus =
+  | 'active'
+  | 'cart_created'
+  | 'cart_abandoned'
+  | 'checkout'
+  | 'payment_pending'
+  | 'payment_confirmed'
+  | 'order_placed'
+  | 'completed'
+  | 'expired';
+
+export interface CustomerSession {
   id: string;
-  name: string;
-  report_type: string;
-  status: 'generating' | 'completed' | 'failed';
-  file_path?: string;
-  file_size: number;
-  period_start: string;
-  period_end: string;
+  conversation?: string;
+  session_key?: string;
+  data?: Record<string, unknown>;
+  expires_at?: string;
+  created_at: string;
+  updated_at: string;
+  // Additional fields
+  status: SessionStatus;
+  customer_name?: string;
+  phone_number?: string;
+  customer_email?: string;
+  company_name?: string;
+  cart_items_count?: number;
+  cart_total?: number;
+  cart_created_at?: string;
+  pix_code?: string;
+  pix_expires_at?: string;
+  notifications_sent?: Array<{ type: string; sent_at: string }>;
+  session_id?: string;
+  external_customer_id?: string;
+  external_order_id?: string;
+  last_activity_at?: string;
+}
+
+export interface AutomationLog {
+  id: string;
+  auto_message?: string;
+  company_name?: string;
+  conversation?: string;
+  event_type?: AutoMessageEventType;
+  action_type: string;
+  status: 'pending' | 'sent' | 'failed' | 'cancelled';
+  scheduled_for?: string;
+  sent_at?: string;
+  phone_number?: string;
+  description?: string;
+  is_error?: boolean;
+  request_data?: Record<string, unknown>;
+  response_data?: Record<string, unknown>;
+  error_message?: string;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 
-export interface GenerateReportRequest {
-  report_type: string;
-  period_start: string;
-  period_end: string;
-  format: 'csv' | 'xlsx';
+export interface CompanyProfileStats {
+  total_conversations?: number;
+  total_messages?: number;
+  total_orders?: number;
+  total_revenue?: number;
+  avg_response_time?: number;
+  satisfaction_score?: number;
 }
 
 // ============================================
-// INTENT DETECTION TYPES (NOVO SISTEMA)
+// INTENT DETECTION TYPES
 // ============================================
 
 export type IntentType =
-  | 'greeting' | 'price_check' | 'business_hours' | 'delivery_info'
-  | 'menu_request' | 'track_order' | 'payment_status' | 'location'
-  | 'contact' | 'faq' | 'create_order' | 'cancel_order'
-  | 'modify_order' | 'confirm_payment' | 'request_pix' | 'add_to_cart'
-  | 'product_inquiry' | 'customization' | 'comparison' | 'recommendation'
-  | 'complaint' | 'general_question' | 'unknown' | 'human_handoff';
+  | 'greeting'
+  | 'price_check'
+  | 'business_hours'
+  | 'delivery_info'
+  | 'menu_request'
+  | 'track_order'
+  | 'payment_status'
+  | 'location'
+  | 'contact'
+  | 'faq'
+  | 'create_order'
+  | 'cancel_order'
+  | 'modify_order'
+  | 'confirm_payment'
+  | 'request_pix'
+  | 'add_to_cart'
+  | 'product_inquiry'
+  | 'customization'
+  | 'comparison'
+  | 'recommendation'
+  | 'complaint'
+  | 'general_question'
+  | 'unknown'
+  | 'human_handoff';
 
 export interface IntentDetectionResult {
   intent: IntentType;
@@ -314,7 +653,7 @@ export interface IntentDetectionResult {
 
 export interface IntentStats {
   total_detected: number;
-  by_type: Record<IntentType, number>;
+  by_type: Partial<Record<IntentType, number>>;
   by_method: { regex: number; llm: number };
   avg_response_time_ms: number;
   top_intents: Array<{ intent: IntentType; count: number }>;
@@ -341,137 +680,135 @@ export interface IntentLog {
 // INTERACTIVE MESSAGE TYPES
 // ============================================
 
-export interface InteractiveButton {
-  id: string;
-  title: string;
-}
-
-export interface InteractiveListRow {
-  id: string;
-  title: string;
-  description?: string;
-}
-
-export interface InteractiveListSection {
-  title: string;
-  rows: InteractiveListRow[];
-}
-
 export interface InteractiveMessage {
   type: 'buttons' | 'list';
   body: string;
   buttons?: InteractiveButton[];
-  button?: string;  // Texto do botão para abrir lista
+  button?: string;
   sections?: InteractiveListSection[];
 }
 
 // ============================================
-// AUTOMATION LOG TYPES
+// SCHEDULING TYPES
 // ============================================
 
-export interface AutomationLog {
+export interface ScheduledMessage {
   id: string;
-  company_id: string;
-  session_id?: string;
-  action_type: 'message_received' | 'message_sent' | 'webhook_received' | 'session_created' | 'session_updated' | 'notification_sent' | 'error';
-  description: string;
-  phone_number?: string;
-  event_type?: string;
-  request_data?: Record<string, unknown>;
-  response_data?: Record<string, unknown>;
-  is_error: boolean;
+  account?: string;
+  account_id?: string;
+  account_name?: string;
+  to_number: string;
+  contact_name?: string;
+  message_type: 'text' | 'template' | 'image' | 'document' | 'interactive';
+  message_text?: string;
+  template_name?: string;
+  scheduled_for?: string;
+  scheduled_at?: string;
+  status: 'pending' | 'processing' | 'sent' | 'failed' | 'cancelled';
+  status_display?: string;
+  sent_at?: string;
   error_message?: string;
-  created_at: string;
-}
-
-export interface AutomationLogStats {
-  total_logs: number;
-  by_action_type: Record<string, number>;
-  errors_count: number;
-  period: { start: string; end: string };
-}
-
-export interface CompanyProfileStats {
-  total_companies: number;
-  active_companies: number;
-  with_ai_enabled: number;
-  with_store_linked: number;
-  by_business_type: Record<string, number>;
-}
-
-// ============================================
-// CONVERSATION NOTE TYPES
-// ============================================
-
-export interface ConversationNote {
-  id: string;
-  conversation_id: string;
-  content: string;
-  created_by: string;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
 
-// ============================================
-// DASHBOARD TYPES
-// ============================================
-
-export interface DashboardOverview {
-  total_conversations: number;
-  total_messages: number;
-  total_orders: number;
-  total_revenue: number;
-  active_conversations: number;
-  pending_orders: number;
-  timestamp?: string;
-  orders: {
-    revenue_today?: number;
-    revenue_month?: number;
-    count?: number;
-    today?: number;
-  };
-  payments: {
-    pending?: number;
-    completed_today?: number;
-  };
-  customers?: number;
-  products?: number;
-  agents: {
-    interactions_today?: number;
-    avg_response_time_ms?: number;
-    success_rate?: number;
-  };
-  accounts: {
-    active?: number;
-  };
-  messages: {
-    by_status?: Record<string, number>;
-    today?: number;
-  };
-  conversations: {
-    by_mode?: Record<string, number>;
-    active?: number;
-  };
-}
-
-export interface DashboardActivity {
-  id: string;
-  type: 'message' | 'order' | 'payment' | 'system';
-  description: string;
-  timestamp: string;
+export interface CreateScheduledMessage {
+  account?: string;
+  account_id?: string;
+  to_number: string;
+  contact_name?: string;
+  message_type: 'text' | 'template' | 'image' | 'document' | 'interactive';
+  message_text?: string;
+  template_name?: string;
+  scheduled_for: string;
+  scheduled_at?: string;
+  timezone?: string;
+  notes?: string;
   metadata?: Record<string, unknown>;
 }
 
-export interface DashboardCharts {
-  messages_by_day: Array<{ date: string; count: number; inbound?: number; outbound?: number }>;
-  messages_per_day?: Array<{ date: string; count: number; new?: number; resolved?: number; inbound?: number; outbound?: number }>;
-  orders_by_day: Array<{ date: string; count: number; revenue: number }>;
-  orders_per_day?: Array<{ date: string; count: number; revenue: number }>;
-  top_products: Array<{ name: string; sales: number }>;
-  conversion_funnel: Array<{ stage: string; count: number }>;
-  order_statuses?: Record<string, number>;
-  conversations_per_day?: Array<{ date: string; count: number; new?: number; resolved?: number }>;
-  message_types?: Record<string, number>;
+export interface ScheduledMessageStats {
+  total_scheduled?: number;
+  total_sent?: number;
+  total_failed?: number;
+  total_pending?: number;
+  delivery_rate?: number;
+  total?: number;
+  pending?: number;
+  sent?: number;
+  failed?: number;
+  cancelled?: number;
+  scheduled_today?: number;
+  sent_today?: number;
+  by_status?: Record<string, number>;
+  upcoming_count?: number;
+}
+
+export interface ReportSchedule {
+  id: string;
+  name: string;
+  description?: string;
+  report_type: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  email_recipients?: string[];
+  recipients?: string[];
+  is_active: boolean;
+  status?: 'active' | 'paused' | 'disabled';
+  status_display?: string;
+  day_of_week?: number;
+  day_of_month?: number;
+  hour?: number;
+  last_sent_at?: string;
+  next_scheduled_at?: string;
+  next_run_at?: string;
+  last_error?: string;
+  created_at: string;
+}
+
+export interface CreateReportSchedule {
+  name: string;
+  description?: string;
+  report_type: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  email_recipients?: string[];
+  recipients?: string[];
+  store?: string;
+  day_of_week?: number;
+  day_of_month?: number;
+  hour?: number;
+  start_date?: string;
+  end_date?: string;
+  filters?: Record<string, unknown>;
+  export_format?: 'csv' | 'xlsx';
+}
+
+export interface GeneratedReport {
+  id: string;
+  name?: string;
+  schedule?: string;
+  report_type: string;
+  file_format?: string;
+  period_start: string;
+  period_end: string;
+  file_url: string;
+  file_size: number;
+  status: 'generating' | 'completed' | 'failed';
+  status_display?: string;
+  records_count?: number;
+  created_at: string;
+}
+
+export interface GenerateReportRequest {
+  report_type: string;
+  period_start?: string;
+  period_end?: string;
+  account_id?: string;
+  company_id?: string;
+  recipients?: string[];
+  store?: string;
+  format?: 'pdf' | 'csv' | 'xlsx';
+  export_format?: 'csv' | 'xlsx';
 }
 
 // ============================================
@@ -479,230 +816,41 @@ export interface DashboardCharts {
 // ============================================
 
 export interface ExportParams {
-  format?: 'csv' | 'xlsx' | 'pdf';
-  entity?: 'conversations' | 'messages' | 'orders' | 'customers';
+  model?: string;
+  entity?: string;
+  format?: 'csv' | 'json' | 'xlsx' | 'pdf';
   store?: string;
   status?: string;
   mode?: string;
+  account_id?: string;
   filters?: Record<string, unknown>;
+  fields?: string[];
   date_from?: string;
   date_to?: string;
-  fields?: string[];
 }
+
+// Alias for backward compatibility
+export type AutomationLogStats = AutomationStats;
 
 // ============================================
-// ORDER TYPES
+// AUTOMATION SETTINGS
 // ============================================
-
-export interface OrderItem {
-  id: string;
-  product_id: string;
-  product_name: string;
-  quantity: number;
-  unit_price: number;
-  subtotal: number;
-  total_price?: number;
-  options?: Record<string, unknown>;
-}
-
-export interface Order {
-  id: string;
-  order_number: string;
-  store_id: string;
-  store_name?: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'paid' | 'preparing' | 'ready' | 'shipped' | 'out_for_delivery' | 'delivered' | 'completed' | 'cancelled' | 'refunded' | 'failed';
-  payment_status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
-  delivery_method: 'delivery' | 'pickup' | 'digital';
-  subtotal: number;
-  discount: number;
-  tax: number;
-  delivery_fee: number;
-  shipping_cost?: number;
-  total: number;
-  items: OrderItem[];
-  items_count?: number;
-  source?: string;
-  delivery_address?: Record<string, unknown>;
-  shipping_address?: Record<string, unknown>;
-  tracking_code?: string;
-  notes?: string;
-  pix_code?: string;
-  pix_qr_code?: string;
-  pix_ticket_url?: string;
-  payment_method?: string;
-  payment_preference_id?: string;
-  payment_url?: string;
-  payment_link?: string;
-  access_token?: string;
-  init_point?: string;
-  paid_at?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface OrderEvent {
-  id: string;
-  order_id: string;
-  event_type: string;
-  description: string;
-  metadata?: Record<string, unknown>;
-  created_at: string;
-}
-
-export interface CreateOrder {
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  items: Array<{
-    product_id: string;
-    quantity: number;
-    options?: Record<string, unknown>;
-  }>;
-  delivery_method?: 'delivery' | 'pickup';
-  delivery_address?: Record<string, unknown>;
-  notes?: string;
-}
-
-// ============================================
-// PAYMENT TYPES
-// ============================================
-
-export interface PaymentGateway {
-  id: string;
-  name: string;
-  provider: string;
-  is_active: boolean;
-  config?: Record<string, unknown>;
-}
-
-export interface Payment {
-  id: string;
-  order_id: string;
-  gateway_id: string;
-  amount: number;
-  currency: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
-  payment_method?: string;
-  payment_id?: string;
-  pix_code?: string;
-  pix_qr_code?: string;
-  paid_at?: string;
-  created_at: string;
-}
-
-// ============================================
-// SCHEDULED MESSAGE TYPES
-// ============================================
-
-export interface ScheduledMessage {
-  id: string;
-  account_id: string;
-  account_name?: string;
-  to_number: string;
-  contact_name?: string;
-  message_type: 'text' | 'template' | 'image' | 'document' | 'interactive';
-  message_text?: string;
-  template_name?: string;
-  media_url?: string;
-  buttons?: Array<{ id: string; title: string }>;
-  scheduled_at: string;
-  timezone: string;
-  status: 'pending' | 'processing' | 'sent' | 'failed' | 'cancelled';
-  status_display?: string;
-  sent_at?: string;
-  error_message?: string;
-  notes?: string;
-  created_at: string;
-}
-
-export interface CreateScheduledMessage {
-  account_id?: string;
-  to_number: string;
-  contact_name?: string;
-  message_type: 'text' | 'template' | 'image' | 'document' | 'interactive';
-  message_text?: string;
-  template_name?: string;
-  template_components?: unknown[];
-  media_url?: string;
-  buttons?: Array<{ id: string; title: string }>;
-  scheduled_at: string;
-  timezone?: string;
-  notes?: string;
-}
-
-export interface ScheduledMessageStats {
-  total_scheduled: number;
-  pending: number;
-  sent: number;
-  failed: number;
-  sent_today?: number;
-  by_status: Record<string, number>;
-  upcoming_count: number;
-}
-
-export interface CreateReportSchedule {
-  name: string;
-  report_type: string;
-  frequency: 'daily' | 'weekly' | 'monthly';
-  recipients: string[];
-  day_of_week?: number;
-  day_of_month?: number;
-  hour?: number;
-  timezone?: string;
-}
-
-// ============================================
-// AUTOMATION DASHBOARD TYPES
-// ============================================
-
-export interface AutomationStats {
-  period: { start: string; end: string };
-  summary: {
-    total_messages_sent: number;
-    total_automations_triggered: number;
-    conversion_rate: number;
-    revenue_from_automations: number;
-  };
-  by_event_type: Record<AutoMessageEventType, {
-    sent: number;
-    delivered: number;
-    read: number;
-    converted: number;
-    conversion_rate: number;
-  }>;
-  cart_recovery: {
-    abandoned_carts: number;
-    reminders_sent: number;
-    recovered: number;
-    recovery_rate: number;
-    revenue_recovered: number;
-  };
-  payment_reminders: {
-    pending_payments: number;
-    reminders_sent: number;
-    paid_after_reminder: number;
-    conversion_rate: number;
-  };
-}
 
 export interface AutomationSettings {
-  cart_recovery: {
+  cart_recovery?: {
     enabled: boolean;
     reminder_30min: boolean;
     reminder_2h: boolean;
     reminder_24h: boolean;
     discount_code?: string;
   };
-  payment_reminders: {
+  payment_reminders?: {
     enabled: boolean;
     reminder_30min: boolean;
     reminder_2h: boolean;
     auto_cancel_after_24h: boolean;
   };
-  order_notifications: {
+  order_notifications?: {
     enabled: boolean;
     on_confirmed: boolean;
     on_preparing: boolean;
@@ -710,7 +858,7 @@ export interface AutomationSettings {
     on_out_for_delivery: boolean;
     on_delivered: boolean;
   };
-  feedback_request: {
+  feedback_request?: {
     enabled: boolean;
     delay_minutes: number;
   };

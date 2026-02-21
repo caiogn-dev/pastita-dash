@@ -54,13 +54,13 @@ export const AccountFormPage: React.FC = () => {
       setFormData({
         name: account.name,
         phone_number_id: account.phone_number_id,
-        waba_id: account.waba_id,
+        waba_id: account.waba_id || '',
         phone_number: account.phone_number,
-        display_phone_number: account.display_phone_number,
+        display_phone_number: account.display_phone_number || '',
         access_token: '',
         webhook_verify_token: '',
-        auto_response_enabled: account.auto_response_enabled,
-        human_handoff_enabled: account.human_handoff_enabled,
+        auto_response_enabled: account.auto_response_enabled ?? true,
+        human_handoff_enabled: account.human_handoff_enabled ?? true,
         default_agent: account.default_agent || '',
       });
     } catch (error) {

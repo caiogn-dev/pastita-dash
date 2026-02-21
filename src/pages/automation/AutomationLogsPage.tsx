@@ -280,9 +280,9 @@ const AutomationLogsPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        actionTypeColors[log.action_type] || 'bg-gray-100 text-gray-800'
+                        actionTypeColors[log.action_type || ''] || 'bg-gray-100 text-gray-800'
                       }`}>
-                        {actionTypeLabels[log.action_type] || log.action_type}
+                        {actionTypeLabels[log.action_type || ''] || log.action_type || '-'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
@@ -365,9 +365,9 @@ const AutomationLogsPage: React.FC = () => {
                     Detalhes do Log
                   </h3>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    actionTypeColors[selectedLog.action_type] || 'bg-gray-100 text-gray-800'
+                    actionTypeColors[selectedLog.action_type || ''] || 'bg-gray-100 text-gray-800'
                   }`}>
-                    {actionTypeLabels[selectedLog.action_type] || selectedLog.action_type}
+                    {actionTypeLabels[selectedLog.action_type || ''] || selectedLog.action_type || '-'}
                   </span>
                 </div>
               </div>
@@ -403,7 +403,7 @@ const AutomationLogsPage: React.FC = () => {
                   </div>
                 )}
 
-                {Object.keys(selectedLog.request_data).length > 0 && (
+                {selectedLog.request_data && Object.keys(selectedLog.request_data || {}).length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Dados da Requisição</label>
                     <pre className="bg-gray-50 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
@@ -412,7 +412,7 @@ const AutomationLogsPage: React.FC = () => {
                   </div>
                 )}
 
-                {Object.keys(selectedLog.response_data).length > 0 && (
+                {selectedLog.response_data && Object.keys(selectedLog.response_data || {}).length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Dados da Resposta</label>
                     <pre className="bg-gray-50 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
@@ -470,7 +470,7 @@ const AutomationLogsPage: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Por Tipo de Ação</h4>
                   <div className="space-y-2">
-                    {stats.by_action_type.map((item) => (
+                    {stats.by_action_type?.map((item) => (
                       <div key={item.action_type} className="flex items-center justify-between">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           actionTypeColors[item.action_type] || 'bg-gray-100 text-gray-800'
@@ -487,13 +487,13 @@ const AutomationLogsPage: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Últimos 7 Dias</h4>
                   <div className="space-y-2">
-                    {stats.by_day.map((item) => (
+                    {stats.by_day?.map((item) => (
                       <div key={item.date} className="flex items-center justify-between">
                         <span className="text-sm text-gray-500 dark:text-zinc-400">{item.date}</span>
                         <div className="flex items-center">
                           <div
                             className="h-2 bg-green-500 rounded"
-                            style={{ width: `${Math.max(4, (item.count / Math.max(...stats.by_day.map(d => d.count))) * 100)}px` }}
+                            style={{ width: `${Math.max(4, (item.count / Math.max(...(stats.by_day?.map(d => d.count) || [1]))) * 100)}px` }}
                           />
                           <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">{item.count}</span>
                         </div>

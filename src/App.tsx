@@ -29,6 +29,10 @@ const AgentCreatePage = lazy(() => import('./pages/agents').then(m => ({ default
 const AgentTestPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentTestPage })));
 const UnifiedOrchestratorTest = lazy(() => import('./pages/agents').then(m => ({ default: m.UnifiedOrchestratorTest })));
 
+// Flow Builder Pages (Novo Sistema Visual)
+const AgentFlowsListPage = lazy(() => import('./pages/AgentFlowsListPage').then(m => ({ default: m.AgentFlowsListPage })));
+const AgentFlowBuilderPage = lazy(() => import('./pages/AgentFlowBuilderPage').then(m => ({ default: m.AgentFlowBuilderPage })));
+
 // E-commerce Pages
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
 const ProductsPage = lazy(() => import('./pages/products/ProductsPageNew').then(m => ({ default: m.ProductsPageNew })));
@@ -46,6 +50,13 @@ const ReportsPage = lazy(() => import('./pages/automation').then(m => ({ default
 const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentStatsPage })));
 const IntentLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentLogsPage })));
 
+<<<<<<< HEAD
+=======
+// Flow Builder Pages (Novo Sistema Visual)
+const AgentFlowsListPage = lazy(() => import('./pages/AgentFlowsListPage').then(m => ({ default: m.AgentFlowsListPage })));
+const AgentFlowBuilderPage = lazy(() => import('./pages/AgentFlowBuilderPage').then(m => ({ default: m.AgentFlowBuilderPage })));
+
+>>>>>>> c3d8926600269b4664a3eec0696f26db788057e5
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
 
@@ -171,6 +182,11 @@ const AppContent: React.FC = () => {
         <Route path="automation/intents" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
         <Route path="automation/intents/stats" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
         <Route path="automation/intents/logs" element={<Suspense fallback={<FullPageLoading />}><IntentLogsPage /></Suspense>} />
+        
+        {/* Flow Builder Routes (Novo Sistema Visual) */}
+        <Route path="agents/flows" element={<Suspense fallback={<FullPageLoading />}><AgentFlowsListPage /></Suspense>} />
+        <Route path="agents/flows/new" element={<Suspense fallback={<FullPageLoading />}><AgentFlowBuilderPage /></Suspense>} />
+        <Route path="agents/flows/:flowId" element={<Suspense fallback={<FullPageLoading />}><AgentFlowBuilderPage /></Suspense>} />
         
         {/* Analytics/Reports Routes */}
         <Route path="analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />

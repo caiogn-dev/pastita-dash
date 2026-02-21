@@ -28,6 +28,23 @@ import toast from 'react-hot-toast';
 import { Card, Button, Modal, PageLoading } from '../../components/common';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import { Order, Payment } from '../../types';
+
+// Helper para parsear endereço (string JSON ou objeto)
+const parseAddress = (addr: string | Record<string, string> | undefined): Record<string, string> => {
+  if (!addr) return {};
+  if (typeof addr === 'string') {
+    try {
+      const parsed = JSON.parse(addr);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed as Record<string, string>;
+      }
+      return { address: addr };
+    } catch {
+      return { address: addr };
+    }
+  }
+  return addr;
+};
 import { useOrderPrint } from '../../components/orders/OrderPrint';
 import { useStore } from '../../hooks';
 
@@ -268,7 +285,7 @@ export const OrderDetailPageNew: React.FC = () => {
   }
 
   const statusColors = STATUS_COLORS[order.status.toLowerCase()] || STATUS_COLORS.pending;
-  const address = order.delivery_address || order.shipping_address;
+  const address = parseAddress(order.delivery_address || order.shipping_address);
   const paymentStatus = order.payment_status || 'pending';
   const paymentStatusLabel: Record<string, string> = {
     pending: 'Pendente',
@@ -467,18 +484,18 @@ export const OrderDetailPageNew: React.FC = () => {
                   <MapPinIcon className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div className="text-gray-700 dark:text-zinc-300">
                     <p className="font-medium">
-                      {(address as Record<string, string>).street || (address as Record<string, string>).address}
-                      {(address as Record<string, string>).number && `, ${(address as Record<string, string>).number}`}
+                      {address.street || address.address}
+                      {address.number && `, ${address.number}`}
                     </p>
-                    {(address as Record<string, string>).complement && (
-                      <p className="text-sm text-gray-500 dark:text-zinc-400">{(address as Record<string, string>).complement}</p>
+                    {address.complement && (
+                      <p className="text-sm text-gray-500 dark:text-zinc-400">{address.complement}</p>
                     )}
                     <p className="text-sm">
-                      {(address as Record<string, string>).neighborhood && `${(address as Record<string, string>).neighborhood}, `}
-                      {(address as Record<string, string>).city} - {(address as Record<string, string>).state}
+                      {address.neighborhood && `${address.neighborhood}, `}
+                      {address.city} - {address.state}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-zinc-400">
-                      CEP: {(address as Record<string, string>).zip_code || (address as Record<string, string>).cep}
+                      CEP: {address.zip_code || address.cep}
                     </p>
                   </div>
                 </div>

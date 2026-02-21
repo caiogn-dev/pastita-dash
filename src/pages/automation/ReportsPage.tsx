@@ -207,12 +207,12 @@ export default function ReportsPage() {
 
       await generatedReportsService.generate({
         report_type: generateData.report_type as any,
-        period_start: generateData.period_start || undefined,
-        period_end: generateData.period_end || undefined,
+        period_start: generateData.period_start || '',
+        period_end: generateData.period_end || '',
         account_id: generateData.account_id || undefined,
         company_id: generateData.company_id || undefined,
         recipients,
-        export_format: generateData.export_format as any,
+        format: generateData.export_format as any,
       });
       toast.success('Relatório sendo gerado...');
       setIsGenerateModalOpen(false);
@@ -229,7 +229,7 @@ export default function ReportsPage() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${report.name}.${report.file_format}`);
+      link.setAttribute('download', `${report.name || 'report'}.${report.file_format || 'pdf'}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -324,7 +324,7 @@ export default function ReportsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{schedule.name}</h3>
-                    <Badge variant={statusVariants[schedule.status]}>
+                    <Badge variant={statusVariants[schedule.status || 'disabled']}>
                       {schedule.status_display}
                     </Badge>
                   </div>
@@ -340,13 +340,13 @@ export default function ReportsPage() {
                       <ClockIcon className="h-4 w-4 mr-1" />
                       {frequencyLabels[schedule.frequency]}
                       {schedule.frequency === 'weekly' &&
-                        ` (${dayOfWeekLabels[schedule.day_of_week]})`}
+                        ` (${dayOfWeekLabels[schedule.day_of_week || 0]})`}
                       {schedule.frequency === 'monthly' && ` (Dia ${schedule.day_of_month})`}
                       {` às ${schedule.hour}:00`}
                     </span>
                     <span className="flex items-center">
                       <EnvelopeIcon className="h-4 w-4 mr-1" />
-                      {schedule.recipients.length} destinatário(s)
+                      {(schedule.recipients || []).length} destinatário(s)
                     </span>
                   </div>
                   {schedule.next_run_at && (
@@ -445,7 +445,7 @@ export default function ReportsPage() {
                       <Badge variant={statusVariants[report.status]}>{report.status_display}</Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {report.records_count.toLocaleString()}
+                      {report.records_count?.toLocaleString() || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
                       {formatFileSize(report.file_size)}

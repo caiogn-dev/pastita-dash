@@ -8,7 +8,7 @@ import {
   CustomerSession,
   AutomationLog,
   CompanyProfileStats,
-  AutomationLogStats,
+  AutomationStats,
   PaginatedResponse,
   AutoMessageEventType,
 } from '../types';
@@ -195,7 +195,7 @@ export const automationLogApi = {
     return response.data;
   },
 
-  getStats: async (params?: { company_id?: string }): Promise<AutomationLogStats> => {
+  getStats: async (params?: { company_id?: string }): Promise<AutomationStats> => {
     const response = await api.get('/automation/logs/stats/', { params });
     return response.data;
   },

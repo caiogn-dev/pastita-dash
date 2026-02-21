@@ -282,13 +282,13 @@ const CustomerSessionsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {session.cart_items_count > 0 ? (
+                      {(session.cart_items_count || 0) > 0 ? (
                         <div>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {formatCurrency(session.cart_total)}
+                            {formatCurrency(session.cart_total || 0)}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-zinc-400">
-                            {session.cart_items_count} {session.cart_items_count === 1 ? 'item' : 'itens'}
+                            {session.cart_items_count} {(session.cart_items_count || 0) === 1 ? 'item' : 'itens'}
                           </div>
                         </div>
                       ) : (
@@ -296,7 +296,7 @@ const CustomerSessionsPage: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
-                      {formatDate(session.last_activity_at)}
+                      {session.last_activity_at ? formatDate(session.last_activity_at) : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
@@ -423,16 +423,16 @@ const CustomerSessionsPage: React.FC = () => {
                 </div>
 
                 {/* Cart Info */}
-                {selectedSession.cart_items_count > 0 && (
+                {(selectedSession.cart_items_count || 0) > 0 && (
                   <div className="border-t pt-4">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Carrinho</h4>
                     <div className="bg-gray-50 dark:bg-black rounded-lg p-4">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-500 dark:text-zinc-400">
-                          {selectedSession.cart_items_count} {selectedSession.cart_items_count === 1 ? 'item' : 'itens'}
+                          {selectedSession.cart_items_count} {(selectedSession.cart_items_count || 0) === 1 ? 'item' : 'itens'}
                         </span>
                         <span className="text-lg font-medium text-gray-900 dark:text-white">
-                          {formatCurrency(selectedSession.cart_total)}
+                          {formatCurrency(selectedSession.cart_total || 0)}
                         </span>
                       </div>
                       {selectedSession.cart_created_at && (
@@ -463,11 +463,11 @@ const CustomerSessionsPage: React.FC = () => {
                 )}
 
                 {/* Notifications */}
-                {selectedSession.notifications_sent.length > 0 && (
+                {(selectedSession.notifications_sent || []).length > 0 && (
                   <div className="border-t pt-4">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Notificações Enviadas</h4>
                     <ul className="space-y-2">
-                      {selectedSession.notifications_sent.map((notification, index) => (
+                      {(selectedSession.notifications_sent || []).map((notification, index) => (
                         <li key={index} className="flex items-center justify-between text-sm">
                           <span className="text-gray-600 dark:text-zinc-400">{notification.type}</span>
                           <span className="text-gray-400">{formatDate(notification.sent_at)}</span>

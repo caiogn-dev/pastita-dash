@@ -54,12 +54,12 @@ export default function ScheduledMessagesPage() {
     status: '',
   });
   const [formData, setFormData] = useState<CreateScheduledMessage>({
-    account_id: '',
+    account: '',
     to_number: '',
     contact_name: '',
     message_type: 'text',
     message_text: '',
-    scheduled_at: '',
+    scheduled_for: '',
     timezone: 'America/Sao_Paulo',
     notes: '',
   });
@@ -88,7 +88,7 @@ export default function ScheduledMessagesPage() {
   }, [fetchData]);
 
   const handleCreate = async () => {
-    if (!formData.account_id || !formData.to_number || !formData.scheduled_at) {
+    if (!formData.account || !formData.to_number || !formData.scheduled_for) {
       toast.error('Preencha os campos obrigatórios');
       return;
     }
@@ -98,12 +98,12 @@ export default function ScheduledMessagesPage() {
       toast.success('Mensagem agendada com sucesso');
       setIsModalOpen(false);
       setFormData({
-        account_id: '',
+        account: '',
         to_number: '',
         contact_name: '',
         message_type: 'text',
         message_text: '',
-        scheduled_at: '',
+        scheduled_for: '',
         timezone: 'America/Sao_Paulo',
         notes: '',
       });
@@ -145,7 +145,7 @@ export default function ScheduledMessagesPage() {
 
   const openRescheduleModal = (message: ScheduledMessage) => {
     setSelectedMessage(message);
-    setNewScheduledAt(message.scheduled_at.slice(0, 16));
+    setNewScheduledAt(message.scheduled_at?.slice(0, 16) || '');
     setIsRescheduleModalOpen(true);
   };
 
@@ -278,9 +278,9 @@ export default function ScheduledMessagesPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900 dark:text-white">
                       <CalendarIcon className="h-4 w-4 mr-1 text-gray-400" />
-                      {format(parseISO(message.scheduled_at), "dd/MM/yyyy 'às' HH:mm", {
+                      {message.scheduled_at ? format(parseISO(message.scheduled_at), "dd/MM/yyyy 'às' HH:mm", {
                         locale: ptBR,
-                      })}
+                      }) : '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -347,8 +347,8 @@ export default function ScheduledMessagesPage() {
             <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Conta WhatsApp *</label>
             <select
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              value={formData.account_id}
-              onChange={(e) => setFormData({ ...formData, account_id: e.target.value })}
+              value={formData.account}
+              onChange={(e) => setFormData({ ...formData, account: e.target.value })}
             >
               <option value="">Selecione uma conta</option>
               {accounts.map((account) => (
@@ -406,8 +406,8 @@ export default function ScheduledMessagesPage() {
             <input
               type="datetime-local"
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              value={formData.scheduled_at}
-              onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
+              value={formData.scheduled_for}
+              onChange={(e) => setFormData({ ...formData, scheduled_for: e.target.value })}
             />
           </div>
 

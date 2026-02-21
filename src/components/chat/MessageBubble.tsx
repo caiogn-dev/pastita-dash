@@ -29,8 +29,8 @@ export interface MessageBubbleProps {
   direction: 'inbound' | 'outbound';
   messageType: string;
   status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
-  textBody: string;
-  content?: Record<string, unknown>;
+  textBody?: string;
+  content?: string | Record<string, unknown>;
   mediaUrl?: string;
   mediaType?: string;
   fileName?: string;
@@ -73,7 +73,7 @@ const MediaPreview: React.FC<{
   type: string;
   url?: string;
   fileName?: string;
-  content?: Record<string, unknown>;
+  content?: string | Record<string, unknown>;
   onClick?: () => void;
 }> = ({ type, url, fileName, content, onClick }) => {
   // Imagem
@@ -147,7 +147,8 @@ const MediaPreview: React.FC<{
 
   // Localização
   if (type === 'location') {
-    const location = content?.location as { latitude?: number; longitude?: number; name?: string } | undefined;
+    const contentObj = typeof content === 'string' ? {} : content;
+    const location = contentObj?.location as { latitude?: number; longitude?: number; name?: string } | undefined;
     const mapsUrl = location?.latitude && location?.longitude
       ? `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
       : '#';
