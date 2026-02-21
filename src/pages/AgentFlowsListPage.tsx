@@ -1,20 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Play, Trash2, Copy } from 'lucide-react';
-
-interface Flow {
-  id: string;
-  name: string;
-  description: string;
-  is_default: boolean;
-  is_active: boolean;
-  total_executions: number;
-  created_at: string;
-}
+import { agentFlowApi, AgentFlow } from '../services/automation';
 
 export const AgentFlowsListPage: React.FC = () => {
   const navigate = useNavigate();
-  const [flows, setFlows] = useState<Flow[]>([]);
+  const [flows, setFlows] = useState<AgentFlow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,17 +14,10 @@ export const AgentFlowsListPage: React.FC = () => {
 
   const fetchFlows = async () => {
     try {
-      const response = await fetch('/api/v1/automation/flows/');
-      if (response.ok) {
-        const data = await response.json();
-        setFlows(data.results || []);
-      } else {
-        // API ainda não implementada - usar mock
-        setFlows([]);
-      }
+      const response = await agentFlowApi.list();
+      setFlows(response.results || []);
     } catch (error) {
       console.error('Erro ao carregar fluxos:', error);
-      // API não disponível - usar mock vazio
       setFlows([]);
     } finally {
       setIsLoading(false);
@@ -44,33 +28,17 @@ export const AgentFlowsListPage: React.FC = () => {
     if (!confirm('Tem certeza que deseja excluir este fluxo?')) return;
 
     try {
-      const response = await fetch(`/api/v1/automation/flows/${id}/`, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRFToken': getCsrfToken(),
-        },
-      });
-
-      if (response.ok) {
-        setFlows(flows.filter((f) => f.id !== id));
-      }
+      await agentFlowApi.delete(id);
+      setFlows(flows.filter((f) => f.id !== id));
     } catch (error) {
       console.error('Erro ao excluir:', error);
     }
   };
 
-  const duplicateFlow = async (flow: Flow) => {
+  const duplicateFlow = async (flow: AgentFlow) => {
     try {
-      const response = await fetch(`/api/v1/automation/flows/${flow.id}/duplicate/`, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': getCsrfToken(),
-        },
-      });
-
-      if (response.ok) {
-        fetchFlows();
-      }
+      await agentFlowApi.duplicate(flow.id);
+      fetchFlows();
     } catch (error) {
       console.error('Erro ao duplicar:', error);
     }
@@ -188,8 +156,3 @@ export const AgentFlowsListPage: React.FC = () => {
     </div>
   );
 };
-
-function getCsrfToken(): string {
-  const match = document.cookie.match(/csrftoken=([^;]+)/);
-  return match ? match[1] : '';
-}
