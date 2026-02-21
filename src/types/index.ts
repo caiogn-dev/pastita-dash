@@ -15,11 +15,13 @@ export interface PaginatedResponse<T> {
 
 export interface User {
   id: string;
+  username?: string;
   email: string;
   first_name: string;
   last_name: string;
   is_active: boolean;
   is_staff: boolean;
+  is_superuser?: boolean;
   date_joined: string;
 }
 
@@ -37,11 +39,13 @@ export interface WhatsAppAccount {
   id: string;
   name: string;
   phone_number: string;
+  display_phone_number?: string;
   phone_number_id: string;
   app_id: string;
   business_account_id: string;
   status: 'active' | 'inactive' | 'pending' | 'error';
   webhook_url: string;
+  token_version?: number;
   created_at: string;
   updated_at: string;
 }
@@ -75,6 +79,7 @@ export interface Message {
   webhook_event?: string;
   conversation_id?: string;
   account: string;
+  account_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -93,6 +98,7 @@ export interface SendTextMessage {
   to: string;
   body: string;
   preview_url?: boolean;
+  account_id?: string;
 }
 
 export interface SendTemplateMessage {
@@ -173,6 +179,7 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  total_price?: number;
 }
 
 export interface OrderEvent {
@@ -188,21 +195,32 @@ export interface Order {
   id: string;
   order_number: string;
   store: string;
+  store_name?: string;
+  source?: string;
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
   delivery_address: string;
+  shipping_address?: string;
   delivery_instructions?: string;
   items: OrderItem[];
   items_count: number;
   subtotal: number;
   tax: number;
   delivery_fee: number;
+  shipping_cost?: number;
   discount: number;
   total: number;
-  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
+  status: 'pending' | 'processing' | 'confirmed' | 'preparing' | 'ready' | 'shipped' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'completed' | 'refunded' | 'failed' | 'paid';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
   payment_method: 'pix' | 'cash' | 'credit_card' | 'debit_card';
+  pix_code?: string;
+  pix_ticket_url?: string;
+  payment_url?: string;
+  payment_link?: string;
+  init_point?: string;
+  access_token?: string;
+  payment_preference_id?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -256,6 +274,21 @@ export interface DashboardOverview {
   total_orders: number;
   total_customers: number;
   conversion_rate: number;
+  timestamp?: string;
+  messages?: number;
+  conversations?: number;
+  orders?: number;
+  agents?: number;
+  accounts?: number;
+  payments?: {
+    total: number;
+    pix: number;
+    credit_card: number;
+    debit_card: number;
+    cash: number;
+    pending?: number;
+    completed_today?: number;
+  };
   period_comparison: {
     revenue_change: number;
     orders_change: number;
@@ -276,6 +309,10 @@ export interface DashboardCharts {
   orders_by_status: Record<string, number>;
   top_products: Array<{ name: string; quantity: number; revenue: number }>;
   revenue_by_payment_method: Record<string, number>;
+  orders_per_day?: Array<{ date: string; count: number }>;
+  conversations_per_day?: Array<{ date: string; count: number }>;
+  message_types?: Record<string, number>;
+  order_statuses?: Record<string, number>;
 }
 
 // ============================================
@@ -334,6 +371,32 @@ export interface AutomationSettings {
     enabled: boolean;
     delay_minutes: number;
   };
+}
+
+export interface CompanyProfile {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  welcome_message?: string;
+  business_hours?: Record<string, { open: string; close: string }>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCompanyProfile {
+  name: string;
+  slug?: string;
+  description?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  welcome_message?: string;
+  business_hours?: Record<string, { open: string; close: string }>;
 }
 
 export type AutoMessageEventType =
@@ -594,6 +657,7 @@ export interface ExportParams {
   model?: string;
   format?: 'csv' | 'json' | 'xlsx';
   store?: string;
+  status?: string;
   filters?: Record<string, unknown>;
   fields?: string[];
 }
