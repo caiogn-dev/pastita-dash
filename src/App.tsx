@@ -45,6 +45,10 @@ const ReportsPage = lazy(() => import('./pages/automation').then(m => ({ default
 const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentStatsPage })));
 const IntentLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentLogsPage })));
 
+// Flow Builder Pages (Novo Sistema Visual)
+const AgentFlowsListPage = lazy(() => import('./pages/AgentFlowsListPage').then(m => ({ default: m.AgentFlowsListPage })));
+const AgentFlowBuilderPage = lazy(() => import('./pages/AgentFlowBuilderPage').then(m => ({ default: m.AgentFlowBuilderPage })));
+
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
 
@@ -167,6 +171,11 @@ const AppContent: React.FC = () => {
         <Route path="automation/intents" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
         <Route path="automation/intents/stats" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
         <Route path="automation/intents/logs" element={<Suspense fallback={<FullPageLoading />}><IntentLogsPage /></Suspense>} />
+        
+        {/* Flow Builder Routes (Novo Sistema Visual) */}
+        <Route path="agents/flows" element={<Suspense fallback={<FullPageLoading />}><AgentFlowsListPage /></Suspense>} />
+        <Route path="agents/flows/new" element={<Suspense fallback={<FullPageLoading />}><AgentFlowBuilderPage /></Suspense>} />
+        <Route path="agents/flows/:flowId" element={<Suspense fallback={<FullPageLoading />}><AgentFlowBuilderPage /></Suspense>} />
         
         {/* Analytics/Reports Routes */}
         <Route path="analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
