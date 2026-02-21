@@ -10,6 +10,12 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     cors: true,
+    hmr: {
+      // Configurar HMR para não usar localhost:8081
+      host: 'dash.pastita.com.br',
+      port: 443,
+      protocol: 'wss',
+    },
   },
   resolve: {
     alias: {

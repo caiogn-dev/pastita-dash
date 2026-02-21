@@ -140,10 +140,15 @@ export const UnifiedOrchestratorTest: React.FC = () => {
         enable_handlers: true,
       });
 
+      // Garantir que content seja sempre string
+      const content = typeof response.content === 'string' 
+        ? response.content 
+        : JSON.stringify(response.content);
+
       const assistantMessage: TestMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        content: response.content,
+        content: content,
         timestamp: new Date(),
         source: response.source as any,
         buttons: response.buttons,
