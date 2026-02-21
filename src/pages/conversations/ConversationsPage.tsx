@@ -126,7 +126,7 @@ export const ConversationsPage: React.FC = () => {
       result = result.filter((conv) =>
         conv.contact_name?.toLowerCase().includes(query) ||
         conv.phone_number.includes(query) ||
-        conv.tags.some(tag => tag.toLowerCase().includes(query))
+        (conv.tags || []).some(tag => tag.toLowerCase().includes(query))
       );
     }
     
@@ -334,7 +334,7 @@ export const ConversationsPage: React.FC = () => {
       header: 'Tags',
       render: (conv: Conversation) => (
         <div className="flex flex-wrap gap-1">
-          {conv.tags.length === 0 ? (
+          {!conv.tags || conv.tags.length === 0 ? (
             <span className="text-sm text-gray-400">-</span>
           ) : (
             <>
@@ -643,7 +643,7 @@ export const ConversationsPage: React.FC = () => {
               </div>
               <div className="flex flex-col gap-2">
                 <ConversationStatusBadge status={detailConversation.status} size="md" />
-                <ConversationModeBadge mode={detailConversation.mode} size="md" />
+                <ConversationModeBadge mode={detailConversation.mode || 'auto'} size="md" />
               </div>
             </div>
 
@@ -654,7 +654,7 @@ export const ConversationsPage: React.FC = () => {
                 Tags
               </h4>
               <div className="flex flex-wrap gap-2">
-                {detailConversation.tags.map((tag) => (
+                {detailConversation.tags?.map((tag) => (
                   <span
                     key={tag}
                     className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-zinc-300 text-sm rounded-full flex items-center gap-2"
