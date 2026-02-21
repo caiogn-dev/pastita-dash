@@ -351,6 +351,49 @@ const agentsService = {
   
   // Utility to get default base URL for provider
   getDefaultBaseUrl: (provider: AgentProvider) => PROVIDER_CONFIGS[provider].defaultBaseUrl,
+
+  // NOVO: Processar mensagem com sistema unificado (templates → handlers → agent)
+  processUnified: async (
+    accountId: string,
+    data: {
+      message: string;
+      phone_number: string;
+      use_llm?: boolean;
+      enable_templates?: boolean;
+      enable_handlers?: boolean;
+    }
+  ): Promise<{
+    content: string;
+    source: 'template' | 'handler' | 'agent' | 'fallback';
+    buttons?: Array<{ id: string; title: string }>;
+    metadata?: Record<string, unknown>;
+  }> => {
+    try {
+      const response = await api.post('/automation/unified/process/', {
+        account_id: accountId,
+        ...data,
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // NOVO: Obter estatísticas do sistema unificado
+  getUnifiedStats: async (accountId: string): Promise<{
+    templates_used: number;
+    handlers_used: number;
+    agent_used: number;
+    fallbacks: number;
+    session_context: Record<string, unknown>;
+  }> => {
+    try {
+      const response = await api.get(`/automation/unified/stats/?account_id=${accountId}`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
 };
 
 export default agentsService;
