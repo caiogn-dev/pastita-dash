@@ -29,8 +29,8 @@ export interface MessageBubbleProps {
   direction: 'inbound' | 'outbound';
   messageType: string;
   status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
-  textBody: string;
-  content?: Record<string, unknown>;
+  textBody?: string;
+  content?: string | Record<string, unknown>;
   mediaUrl?: string;
   mediaType?: string;
   fileName?: string;

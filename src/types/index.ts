@@ -397,6 +397,7 @@ export interface AutomationSettings {
 export interface CompanyProfile {
   id: string;
   name: string;
+  company_name?: string;
   slug: string;
   description?: string;
   phone?: string;
