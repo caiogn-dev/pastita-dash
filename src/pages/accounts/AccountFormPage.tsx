@@ -76,8 +76,8 @@ export const AccountFormPage: React.FC = () => {
 
     try {
       if (isEditing) {
-        await whatsappService.updateAccount(id!, formData);
-        updateAccount({ id, ...formData });
+        const updatedAccount = await whatsappService.updateAccount(id!, formData);
+        updateAccount(updatedAccount);
         toast.success('Conta atualizada com sucesso!');
       } else {
         const newAccount = await whatsappService.createAccount(formData);
@@ -101,7 +101,6 @@ export const AccountFormPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <PageTitle
           title={isEditing ? 'Editar Conta' : 'Nova Conta'}
-          description={isEditing ? 'Atualize as informações da conta WhatsApp' : 'Adicione uma nova conta WhatsApp Business'}
         />
         <Link
           to="/accounts"
