@@ -30,7 +30,7 @@ import { ordersService, paymentsService, getErrorMessage } from '../../services'
 import { Order, Payment } from '../../types';
 
 // Helper para parsear endereço (string JSON ou objeto)
-const parseAddress = (addr: string | Record<string, string> | undefined): Record<string, string> => {
+const parseAddress = (addr: string | Record<string, unknown> | undefined): Record<string, string> => {
   if (!addr) return {};
   if (typeof addr === 'string') {
     try {

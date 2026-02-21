@@ -18,7 +18,18 @@ export const AccountFormPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    phone_number_id: string;
+    waba_id: string;
+    phone_number: string;
+    display_phone_number: string;
+    access_token: string;
+    webhook_verify_token: string;
+    auto_response_enabled: boolean;
+    human_handoff_enabled: boolean;
+    default_agent: string | undefined;
+  }>({
     name: '',
     phone_number_id: '',
     waba_id: '',
