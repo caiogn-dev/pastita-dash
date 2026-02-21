@@ -488,13 +488,13 @@ export const DashboardPage: React.FC = () => {
         <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg border border-yellow-100 dark:border-yellow-800">
           <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Pagamentos Pendentes</p>
           <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mt-1">
-            {overview?.payments?.pending || 0}
+            {(overview?.payments?.pending) ?? 0}
           </p>
         </div>
         <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-100 dark:border-purple-800">
           <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Pagamentos Hoje</p>
           <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 mt-1">
-            {overview?.payments?.completed_today || 0}
+            {overview?.payments?.completed_today ?? 0}
           </p>
         </div>
       </div>

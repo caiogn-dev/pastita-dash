@@ -801,6 +801,7 @@ export interface GenerateReportRequest {
   recipients?: string[];
   store?: string;
   format?: 'pdf' | 'csv' | 'xlsx';
+  export_format?: 'csv' | 'xlsx';
 }
 
 // ============================================

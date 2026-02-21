@@ -34,7 +34,11 @@ const parseAddress = (addr: string | Record<string, string> | undefined): Record
   if (!addr) return {};
   if (typeof addr === 'string') {
     try {
-      return JSON.parse(addr) as Record<string, string>;
+      const parsed = JSON.parse(addr);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed as Record<string, string>;
+      }
+      return { address: addr };
     } catch {
       return { address: addr };
     }
