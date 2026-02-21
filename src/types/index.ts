@@ -521,11 +521,18 @@ export interface CustomerSession {
 export interface AutomationLog {
   id: string;
   auto_message?: string;
+  company_name?: string;
   conversation: string;
   event_type: AutoMessageEventType;
+  action_type?: string;
   status: 'pending' | 'sent' | 'failed' | 'cancelled';
   scheduled_for?: string;
   sent_at?: string;
+  phone_number?: string;
+  description?: string;
+  is_error?: boolean;
+  request_data?: Record<string, unknown>;
+  response_data?: Record<string, unknown>;
   error_message?: string;
   metadata?: Record<string, unknown>;
   created_at: string;
