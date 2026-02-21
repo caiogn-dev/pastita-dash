@@ -403,7 +403,7 @@ const AutomationLogsPage: React.FC = () => {
                   </div>
                 )}
 
-                {Object.keys(selectedLog.request_data).length > 0 && (
+                {selectedLog.request_data && Object.keys(selectedLog.request_data).length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Dados da Requisição</label>
                     <pre className="bg-gray-50 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
@@ -412,7 +412,7 @@ const AutomationLogsPage: React.FC = () => {
                   </div>
                 )}
 
-                {Object.keys(selectedLog.response_data).length > 0 && (
+                {selectedLog.response_data && Object.keys(selectedLog.response_data).length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Dados da Resposta</label>
                     <pre className="bg-gray-50 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">

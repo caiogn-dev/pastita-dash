@@ -164,12 +164,13 @@ export interface Conversation {
   phone_number: string;
   contact_name?: string;
   account: string;
-  status: 'active' | 'archived' | 'blocked' | 'spam';
+  status: 'active' | 'archived' | 'blocked' | 'spam' | 'open' | 'pending';
   mode?: string;
   last_message_at?: string;
   last_message_preview?: string;
   unread_count: number;
   labels: string[];
+  tags?: string[];
   assigned_to?: string;
   created_at: string;
   updated_at: string;
@@ -290,11 +291,11 @@ export interface DashboardOverview {
   total_customers: number;
   conversion_rate: number;
   timestamp?: string;
-  messages?: number;
-  conversations?: number;
-  orders?: number;
+  messages?: number | { today: number; by_status: Record<string, number> };
+  conversations?: number | { active: number; new: number; resolved: number };
+  orders?: number | { today: number; revenue_today: number };
   agents?: number;
-  accounts?: number;
+  accounts?: number | { active: number; total: number };
   payments?: {
     total: number;
     pix: number;
@@ -309,6 +310,7 @@ export interface DashboardOverview {
     orders_change: number;
     customers_change: number;
   };
+  interactions_today?: number;
 }
 
 export interface DashboardActivity {
@@ -320,12 +322,13 @@ export interface DashboardActivity {
 }
 
 export interface DashboardCharts {
-  sales_over_time: Array<{ date: string; amount: number; orders: number }>;
+  sales_over_time: Array<{ date: string; amount: number; orders: number; revenue?: number; new?: number; resolved?: number }>;
   orders_by_status: Record<string, number>;
   top_products: Array<{ name: string; quantity: number; revenue: number }>;
   revenue_by_payment_method: Record<string, number>;
   orders_per_day?: Array<{ date: string; count: number }>;
   conversations_per_day?: Array<{ date: string; count: number }>;
+  messages_per_day?: Array<{ date: string; count: number; incoming?: number; outgoing?: number }>;
   message_types?: Record<string, number>;
   order_statuses?: Record<string, number>;
 }
@@ -803,6 +806,7 @@ export interface ExportParams {
   format?: 'csv' | 'json' | 'xlsx';
   store?: string;
   status?: string;
+  mode?: string;
   filters?: Record<string, unknown>;
   fields?: string[];
 }
