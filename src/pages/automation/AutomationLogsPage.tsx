@@ -9,8 +9,8 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import {
-  automationLogApi,
-  companyProfileApi,
+  automationLogService,
+  companyProfileService,
 } from '../../services/automation';
 import { AutomationLog, CompanyProfile, AutomationLogStats } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
@@ -65,7 +65,7 @@ const AutomationLogsPage: React.FC = () => {
 
   const loadCompanies = async () => {
     try {
-      const response = await companyProfileApi.list({ page_size: 100 });
+      const response = await companyProfileService.list({ page_size: 100 });
       setCompanies(response.results);
     } catch (error) {
       logger.error('Error loading companies:', error);
@@ -81,7 +81,7 @@ const AutomationLogsPage: React.FC = () => {
       if (filters.is_error) params.is_error = filters.is_error === 'true';
       if (filters.phone_number) params.phone_number = filters.phone_number;
 
-      const response = await automationLogApi.list(params);
+      const response = await automationLogService.list(params);
       setLogs(response.results);
       setTotalCount(response.count);
     } catch (error) {
@@ -93,7 +93,7 @@ const AutomationLogsPage: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const statsData = await automationLogApi.getStats(
+      const statsData = await automationLogService.getStats(
         filters.company_id ? { company_id: filters.company_id } : undefined
       );
       setStats(statsData);

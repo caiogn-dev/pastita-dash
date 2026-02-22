@@ -20,7 +20,7 @@ import {
   reportSchedulesService,
   generatedReportsService,
 } from '../../services/scheduling';
-import { whatsappService, companyProfileApi } from '../../services';
+import { whatsappService, companyProfileService } from '../../services';
 import {
   ReportSchedule,
   CreateReportSchedule,
@@ -104,7 +104,7 @@ export default function ReportsPage() {
         reportSchedulesService.list(),
         generatedReportsService.list(),
         whatsappService.getAccounts(),
-        companyProfileApi.list(),
+        companyProfileService.list(),
       ]);
       setSchedules(schedulesRes.results);
       setReports(reportsRes.results);

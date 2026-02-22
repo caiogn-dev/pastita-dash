@@ -1,4 +1,6 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import logger from './services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout';
@@ -221,20 +223,35 @@ const AppContent: React.FC = () => {
   );
 };
 
+// Create Query Client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 // Main App with WebSocket Providers (singleton)
 const App: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   
-  if (!isAuthenticated) {
-    return <AppContent />;
-  }
-  
-  return (
+  const appContent = !isAuthenticated ? <AppContent /> : (
     <WebSocketProvider>
       <WhatsAppWsProvider dashboardMode={true}>
         <AppContent />
       </WhatsAppWsProvider>
     </WebSocketProvider>
+  );
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      {appContent}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 };
 

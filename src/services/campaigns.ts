@@ -41,30 +41,6 @@ export interface CampaignRecipient {
   variables: Record<string, unknown>;
 }
 
-export interface ScheduledMessage {
-  id: string;
-  account: string;
-  to_number: string;
-  contact_name: string;
-  message_type: string;
-  content: Record<string, unknown>;
-  template: string | null;
-  template_variables: Record<string, unknown>;
-  scheduled_at: string;
-  timezone: string;
-  status: 'scheduled' | 'processing' | 'sent' | 'failed' | 'cancelled';
-  message_id: string;
-  whatsapp_message_id: string;
-  sent_at: string | null;
-  error_code: string;
-  error_message: string;
-  is_recurring: boolean;
-  recurrence_rule: string;
-  next_occurrence: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface ContactList {
   id: string;
   account: string;
@@ -182,59 +158,6 @@ export const campaignsService = {
     return response.data;
   },
 
-  // Scheduled Messages (WhatsApp) - usando /campaigns/scheduled/ endpoint
-  getScheduledMessages: async (params?: Record<string, string>): Promise<PaginatedResponse<ScheduledMessage>> => {
-    const response = await api.get<PaginatedResponse<ScheduledMessage>>('/campaigns/scheduled/', { params });
-    return response.data;
-  },
-
-  getScheduledMessage: async (id: string): Promise<ScheduledMessage> => {
-    const response = await api.get<ScheduledMessage>(`/campaigns/scheduled/${id}/`);
-    return response.data;
-  },
-
-  createScheduledMessage: async (data: {
-    account_id: string;
-    to_number: string;
-    contact_name?: string;
-    message_type?: string;
-    content?: Record<string, unknown>;
-    template_id?: string;
-    template_variables?: Record<string, unknown>;
-    scheduled_at: string;
-    timezone?: string;
-    is_recurring?: boolean;
-    recurrence_rule?: string;
-    metadata?: Record<string, unknown>;
-  }): Promise<ScheduledMessage> => {
-    const response = await api.post<ScheduledMessage>('/campaigns/scheduled/', data);
-    return response.data;
-  },
-
-  updateScheduledMessage: async (id: string, data: Partial<ScheduledMessage>): Promise<ScheduledMessage> => {
-    const response = await api.patch<ScheduledMessage>(`/campaigns/scheduled/${id}/`, data);
-    return response.data;
-  },
-
-  cancelScheduledMessage: async (id: string): Promise<ScheduledMessage> => {
-    const response = await api.post<ScheduledMessage>(`/campaigns/scheduled/${id}/cancel/`);
-    return response.data;
-  },
-
-  getScheduledMessagesStats: async (accountId?: string): Promise<{
-    total: number;
-    scheduled: number;
-    sent: number;
-    failed: number;
-    cancelled: number;
-    recurring: number;
-  }> => {
-    const params: Record<string, string> = {};
-    if (accountId) params.account_id = accountId;
-    const response = await api.get('/campaigns/scheduled/stats/', { params });
-    return response.data;
-  },
-
   // Contact Lists (WhatsApp) - usando /campaigns/contacts/ endpoint
   getContactLists: async (params?: Record<string, string>): Promise<PaginatedResponse<ContactList>> => {
     const response = await api.get<PaginatedResponse<ContactList>>('/campaigns/contacts/', { params });
@@ -274,3 +197,6 @@ export const campaignsService = {
     return response.data;
   },
 };
+
+// NOTE: Scheduled messages moved to automation service
+// Use automation.scheduledMessagesService for scheduled message operations

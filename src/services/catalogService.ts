@@ -1,5 +1,5 @@
 /**
- * @deprecated This module is deprecated. Use storeApi.ts instead.
+ * @deprecated This module is deprecated. Use storeService.ts instead.
  * 
  * Catalog Service (LEGACY)
  * 
@@ -9,9 +9,9 @@
  * - Product Types (with custom fields)
  * 
  * MIGRATION GUIDE:
- * - Import from './storeApi' instead of './catalogService'
- * - Use storeApi.getProducts() instead of catalogService.getProducts()
- * - Use storeApi.getCategories() instead of catalogService.getCategories()
+ * - Import from './storeService' instead of './catalogService'
+ * - Use storeService.getProducts() instead of catalogService.getProducts()
+ * - Use storeService.getCategories() instead of catalogService.getCategories()
  * 
  * This file will be removed in a future version.
  */
@@ -21,7 +21,7 @@ import logger from './logger';
 // Log deprecation warning in development
 if (import.meta.env.DEV) {
   console.warn(
-    '[DEPRECATED] catalogService.ts is deprecated. Please migrate to storeApi.ts. ' +
+    '[DEPRECATED] catalogService.ts is deprecated. Please migrate to storeService.ts. ' +
     'See the migration guide in the file header.'
   );
 }

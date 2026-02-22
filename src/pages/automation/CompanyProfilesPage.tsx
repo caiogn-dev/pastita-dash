@@ -8,7 +8,7 @@ import {
   ChartBarIcon,
   KeyIcon,
 } from '@heroicons/react/24/outline';
-import { companyProfileApi, businessTypeLabels } from '../../services/automation';
+import { companyProfileService, businessTypeLabels } from '../../services/automation';
 import { CompanyProfile } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
@@ -26,7 +26,7 @@ const CompanyProfilesPage: React.FC = () => {
   const loadProfiles = async () => {
     try {
       setLoading(true);
-      const response = await companyProfileApi.list({ page, page_size: 20 });
+      const response = await companyProfileService.list({ page, page_size: 20 });
       setProfiles(response.results);
       setTotalCount(response.count);
     } catch (error) {
@@ -42,7 +42,7 @@ const CompanyProfilesPage: React.FC = () => {
       return;
     }
     try {
-      const result = await companyProfileApi.regenerateApiKey(id);
+      const result = await companyProfileService.regenerateApiKey(id);
       toast.success('Nova API key gerada!');
       navigator.clipboard.writeText(result.api_key);
       toast.success('API key copiada para a área de transferência');

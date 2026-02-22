@@ -9,8 +9,8 @@ import {
   ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import {
-  autoMessageApi,
-  companyProfileApi,
+  autoMessageService,
+  companyProfileService,
   eventTypeLabels,
   messageVariables,
 } from '../../services/automation';
@@ -52,8 +52,8 @@ const AutoMessagesPage: React.FC = () => {
     try {
       setLoading(true);
       const [companyData, messagesData] = await Promise.all([
-        companyProfileApi.get(companyId!),
-        autoMessageApi.list({ company_id: companyId }),
+        companyProfileService.get(companyId!),
+        autoMessageService.list({ company_id: companyId }),
       ]);
       setCompany(companyData);
       setMessages(messagesData.results);
@@ -68,10 +68,10 @@ const AutoMessagesPage: React.FC = () => {
     e.preventDefault();
     try {
       if (editingMessage) {
-        await autoMessageApi.update(editingMessage.id, formData);
+        await autoMessageService.update(editingMessage.id, formData);
         toast.success('Mensagem atualizada!');
       } else {
-        await autoMessageApi.create(formData);
+        await autoMessageService.create(formData);
         toast.success('Mensagem criada!');
       }
       setShowModal(false);
@@ -105,7 +105,7 @@ const AutoMessagesPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta mensagem?')) return;
     try {
-      await autoMessageApi.delete(id);
+      await autoMessageService.delete(id);
       toast.success('Mensagem excluída!');
       loadData();
     } catch (error) {
@@ -115,7 +115,7 @@ const AutoMessagesPage: React.FC = () => {
 
   const handleToggleActive = async (message: AutoMessage) => {
     try {
-      await autoMessageApi.update(message.id, { is_active: !message.is_active });
+      await autoMessageService.update(message.id, { is_active: !message.is_active });
       toast.success(message.is_active ? 'Mensagem desativada' : 'Mensagem ativada');
       loadData();
     } catch (error) {
@@ -126,7 +126,7 @@ const AutoMessagesPage: React.FC = () => {
   const handleTest = async () => {
     if (!testModal || !testPhone) return;
     try {
-      const result = await autoMessageApi.test(testModal.id, {
+      const result = await autoMessageService.test(testModal.id, {
         phone_number: testPhone,
         send: false,
       });
@@ -139,7 +139,7 @@ const AutoMessagesPage: React.FC = () => {
   const handleSendTest = async () => {
     if (!testModal || !testPhone) return;
     try {
-      await autoMessageApi.test(testModal.id, {
+      await autoMessageService.test(testModal.id, {
         phone_number: testPhone,
         send: true,
       });

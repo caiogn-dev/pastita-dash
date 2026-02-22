@@ -36,6 +36,7 @@ import {
   MessengerConversation,
   MessengerMessage,
 } from '../../services/messenger';
+import { handoverService } from '../../services/handover';
 
 export default function MessengerInbox() {
   const [accounts, setAccounts] = useState<MessengerAccount[]>([]);
@@ -154,8 +155,27 @@ export default function MessengerInbox() {
   const handleHandover = async (target: 'bot' | 'human') => {
     if (!selectedConversation) return;
     
-    // TODO: Implement handover API call when backend supports it
-    console.log(`Transferring conversation ${selectedConversation.id} to ${target}`);
+    try {
+      if (target === 'human') {
+        await handoverService.transferToHuman(selectedConversation.id, {
+          reason: 'Transferência manual pelo operador',
+        });
+      } else {
+        await handoverService.transferToBot(selectedConversation.id, 'Transferência manual de volta para bot');
+      }
+      
+      // Update conversation status locally
+      setSelectedConversation({
+        ...selectedConversation,
+        handover_status: target,
+      });
+      
+      // Refresh conversations list
+      loadConversations();
+    } catch (err) {
+      console.error('Error transferring conversation:', err);
+      setError(`Erro ao transferir conversa para ${target === 'human' ? 'atendimento humano' : 'bot'}`);
+    }
   };
 
   const filteredConversations = conversations.filter((conv) => {

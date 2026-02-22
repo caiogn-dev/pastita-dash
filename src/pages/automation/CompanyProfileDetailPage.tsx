@@ -7,7 +7,7 @@ import {
   KeyIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import { companyProfileApi, businessTypeLabels } from '../../services/automation';
+import { companyProfileService, businessTypeLabels } from '../../services/automation';
 import { CompanyProfile, UpdateCompanyProfile, BusinessHours } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
@@ -40,7 +40,7 @@ const CompanyProfileDetailPage: React.FC = () => {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const data = await companyProfileApi.get(id!);
+      const data = await companyProfileService.get(id!);
       setProfile(data);
       setFormData({
         company_name: data.company_name || '',
@@ -74,7 +74,7 @@ const CompanyProfileDetailPage: React.FC = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      await companyProfileApi.update(id!, {
+      await companyProfileService.update(id!, {
         ...formData,
         business_hours: businessHours,
       });
@@ -92,7 +92,7 @@ const CompanyProfileDetailPage: React.FC = () => {
       return;
     }
     try {
-      await companyProfileApi.delete(id!);
+      await companyProfileService.delete(id!);
       toast.success('Perfil excluído com sucesso');
       navigate('/automation/companies');
     } catch (error) {
@@ -110,7 +110,7 @@ const CompanyProfileDetailPage: React.FC = () => {
   const handleRegenerateApiKey = async () => {
     if (!confirm('Tem certeza? A chave atual será invalidada.')) return;
     try {
-      const result = await companyProfileApi.regenerateApiKey(id!);
+      const result = await companyProfileService.regenerateApiKey(id!);
       toast.success('Nova API key gerada!');
       navigator.clipboard.writeText(result.api_key);
       loadProfile();

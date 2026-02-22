@@ -12,8 +12,8 @@ import {
   BellIcon,
 } from '@heroicons/react/24/outline';
 import {
-  customerSessionApi,
-  companyProfileApi,
+  customerSessionService,
+  companyProfileService,
   sessionStatusLabels,
 } from '../../services/automation';
 import { CustomerSession, CompanyProfile, SessionStatus } from '../../types';
@@ -58,7 +58,7 @@ const CustomerSessionsPage: React.FC = () => {
 
   const loadCompanies = async () => {
     try {
-      const response = await companyProfileApi.list({ page_size: 100 });
+      const response = await companyProfileService.list({ page_size: 100 });
       setCompanies(response.results);
     } catch (error) {
       logger.error('Error loading companies:', error);
@@ -73,7 +73,7 @@ const CustomerSessionsPage: React.FC = () => {
       if (filters.status) params.status = filters.status;
       if (filters.phone_number) params.phone_number = filters.phone_number;
 
-      const response = await customerSessionApi.list(params);
+      const response = await customerSessionService.list(params);
       setSessions(response.results);
       setTotalCount(response.count);
     } catch (error) {
@@ -85,7 +85,7 @@ const CustomerSessionsPage: React.FC = () => {
 
   const handleSendNotification = async (sessionId: string, eventType: string) => {
     try {
-      await customerSessionApi.sendNotification(sessionId, { event_type: eventType as any });
+      await customerSessionService.sendNotification(sessionId, { event_type: eventType as any });
       toast.success('Notificação enviada!');
       loadSessions();
     } catch (error) {

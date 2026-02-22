@@ -645,7 +645,7 @@ class StoreApiClient {
 // SINGLETON EXPORT
 // =============================================================================
 
-export const storeApi = new StoreApiClient();
+export const storeService = new StoreApiClient();
 
 // =============================================================================
 // REACT HOOK FOR STORE-AWARE API
@@ -665,51 +665,51 @@ export function useStoreApi() {
     storeName: selectedStore?.name || 'Loja',
     
     // Products
-    getProducts: (params?: ApiParams) => storeApi.getProducts(params, selectedStore?.slug),
-    getProduct: (id: number) => storeApi.getProduct(id, selectedStore?.slug),
-    createProduct: (data: Partial<Product>) => storeApi.createProduct(data, selectedStore?.slug),
-    updateProduct: storeApi.updateProduct.bind(storeApi),
-    deleteProduct: storeApi.deleteProduct.bind(storeApi),
+    getProducts: (params?: ApiParams) => storeService.getProducts(params, selectedStore?.slug),
+    getProduct: (id: number) => storeService.getProduct(id, selectedStore?.slug),
+    createProduct: (data: Partial<Product>) => storeService.createProduct(data, selectedStore?.slug),
+    updateProduct: storeService.updateProduct.bind(storeService),
+    deleteProduct: storeService.deleteProduct.bind(storeService),
     
     // Categories
-    getCategories: (params?: ApiParams) => storeApi.getCategories(params, selectedStore?.slug),
-    getCategory: storeApi.getCategory.bind(storeApi),
-    createCategory: (data: Partial<Category>) => storeApi.createCategory(data, selectedStore?.slug),
-    updateCategory: storeApi.updateCategory.bind(storeApi),
-    deleteCategory: storeApi.deleteCategory.bind(storeApi),
+    getCategories: (params?: ApiParams) => storeService.getCategories(params, selectedStore?.slug),
+    getCategory: storeService.getCategory.bind(storeService),
+    createCategory: (data: Partial<Category>) => storeService.createCategory(data, selectedStore?.slug),
+    updateCategory: storeService.updateCategory.bind(storeService),
+    deleteCategory: storeService.deleteCategory.bind(storeService),
     
     // Orders
-    getOrders: (params?: ApiParams) => storeApi.getOrders(params, selectedStore?.slug),
-    getOrder: storeApi.getOrder.bind(storeApi),
-    updateOrderStatus: storeApi.updateOrderStatus.bind(storeApi),
-    getOrderPaymentStatus: storeApi.getOrderPaymentStatus.bind(storeApi),
+    getOrders: (params?: ApiParams) => storeService.getOrders(params, selectedStore?.slug),
+    getOrder: storeService.getOrder.bind(storeService),
+    updateOrderStatus: storeService.updateOrderStatus.bind(storeService),
+    getOrderPaymentStatus: storeService.getOrderPaymentStatus.bind(storeService),
     
     // Coupons
-    getCoupons: (params?: ApiParams) => storeApi.getCoupons(params, selectedStore?.slug),
-    getCoupon: storeApi.getCoupon.bind(storeApi),
-    createCoupon: (data: Partial<Coupon>) => storeApi.createCoupon(data, selectedStore?.slug),
-    updateCoupon: storeApi.updateCoupon.bind(storeApi),
-    deleteCoupon: storeApi.deleteCoupon.bind(storeApi),
-    validateCoupon: (code: string) => storeApi.validateCoupon(code, selectedStore?.slug),
+    getCoupons: (params?: ApiParams) => storeService.getCoupons(params, selectedStore?.slug),
+    getCoupon: storeService.getCoupon.bind(storeService),
+    createCoupon: (data: Partial<Coupon>) => storeService.createCoupon(data, selectedStore?.slug),
+    updateCoupon: storeService.updateCoupon.bind(storeService),
+    deleteCoupon: storeService.deleteCoupon.bind(storeService),
+    validateCoupon: (code: string) => storeService.validateCoupon(code, selectedStore?.slug),
     
     // Delivery Zones
-    getDeliveryZones: (params?: ApiParams) => storeApi.getDeliveryZones(params, selectedStore?.slug),
-    getDeliveryZone: storeApi.getDeliveryZone.bind(storeApi),
-    createDeliveryZone: (data: Partial<DeliveryZone>) => storeApi.createDeliveryZone(data, selectedStore?.slug),
-    updateDeliveryZone: storeApi.updateDeliveryZone.bind(storeApi),
-    deleteDeliveryZone: storeApi.deleteDeliveryZone.bind(storeApi),
+    getDeliveryZones: (params?: ApiParams) => storeService.getDeliveryZones(params, selectedStore?.slug),
+    getDeliveryZone: storeService.getDeliveryZone.bind(storeService),
+    createDeliveryZone: (data: Partial<DeliveryZone>) => storeService.createDeliveryZone(data, selectedStore?.slug),
+    updateDeliveryZone: storeService.updateDeliveryZone.bind(storeService),
+    deleteDeliveryZone: storeService.deleteDeliveryZone.bind(storeService),
     
     // Product Types
-    getProductTypes: (params?: ApiParams) => storeApi.getProductTypes(params, selectedStore?.slug),
-    getProductType: (id: string) => storeApi.getProductType(id, selectedStore?.slug),
-    createProductType: (data: Partial<ProductType>) => storeApi.createProductType(data, selectedStore?.slug),
-    updateProductType: storeApi.updateProductType.bind(storeApi),
-    deleteProductType: storeApi.deleteProductType.bind(storeApi),
+    getProductTypes: (params?: ApiParams) => storeService.getProductTypes(params, selectedStore?.slug),
+    getProductType: (id: string) => storeService.getProductType(id, selectedStore?.slug),
+    createProductType: (data: Partial<ProductType>) => storeService.createProductType(data, selectedStore?.slug),
+    updateProductType: storeService.updateProductType.bind(storeService),
+    deleteProductType: storeService.deleteProductType.bind(storeService),
     
     // Dashboard
-    getDashboardStats: () => storeApi.getDashboardStats(selectedStore?.slug),
-    getCatalog: () => storeApi.getCatalog(selectedStore?.slug),
+    getDashboardStats: () => storeService.getDashboardStats(selectedStore?.slug),
+    getCatalog: () => storeService.getCatalog(selectedStore?.slug),
   }), [selectedStore]);
 }
 
-export default storeApi;
+export default storeService;

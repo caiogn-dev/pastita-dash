@@ -21,7 +21,7 @@ import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, Button, Loading, Modal, Badge, StatCard } from '@/components/common';
-import { instagramAccountApi, InstagramAccount } from '@/services';
+import { instagramAccountService, InstagramAccount } from '@/services';
 import { useFetch } from '@/hooks';
 
 export const InstagramAccountsPage: React.FC = () => {
@@ -30,13 +30,13 @@ export const InstagramAccountsPage: React.FC = () => {
   const [deleteAccount, setDeleteAccount] = useState<InstagramAccount | null>(null);
   const [showConnectModal, setShowConnectModal] = useState(false);
 
-  const fetchAccounts = useCallback(() => instagramAccountApi.list(), []);
+  const fetchAccounts = useCallback(() => instagramAccountService.list(), []);
   const { data: accounts, loading, error, refresh } = useFetch(fetchAccounts);
 
   const handleSync = async (account: InstagramAccount) => {
     setIsSyncing(account.id);
     try {
-      await instagramAccountApi.sync(account.id);
+      await instagramAccountService.sync(account.id);
       toast.success(`Conta @${account.username} sincronizada!`);
       refresh();
     } catch (err) {
@@ -49,7 +49,7 @@ export const InstagramAccountsPage: React.FC = () => {
   const handleDelete = async () => {
     if (!deleteAccount) return;
     try {
-      await instagramAccountApi.delete(deleteAccount.id);
+      await instagramAccountService.delete(deleteAccount.id);
       toast.success('Conta removida com sucesso');
       refresh();
     } catch (err) {

@@ -13,7 +13,7 @@ export { default as logger } from './logger';
 // =============================================================================
 
 export { 
-  storeApi, 
+  storeService,
   useStoreApi,
   getActiveStoreSlug,
   type Product,
@@ -82,10 +82,10 @@ export { productsService } from './products';
 export { default as agentsService } from './agents';
 export { auditService } from './audit';
 export {
-  companyProfileApi,
-  autoMessageApi,
-  customerSessionApi,
-  automationLogApi,
+  companyProfileService,
+  autoMessageService,
+  customerSessionService,
+  automationLogService,
   eventTypeLabels,
   businessTypeLabels,
   sessionStatusLabels,
@@ -130,12 +130,12 @@ export type {
 // =============================================================================
 
 export {
-  instagramAccountApi,
-  instagramMediaApi,
-  instagramShoppingApi,
-  instagramLiveApi,
-  instagramScheduledPostApi,
-  instagramDirectApi,
+  instagramAccountService,
+  instagramMediaService,
+  instagramShoppingService,
+  instagramLiveService,
+  instagramScheduledPostService,
+  instagramDirectService,
 } from './instagram';
 
 export type {

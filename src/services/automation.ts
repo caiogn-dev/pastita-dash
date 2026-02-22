@@ -14,7 +14,7 @@ import {
 } from '../types';
 
 // Company Profile API
-export const companyProfileApi = {
+export const companyProfileService = {
   list: async (params?: {
     account_id?: string;
     business_type?: string;
@@ -61,7 +61,7 @@ export const companyProfileApi = {
 };
 
 // Auto Message API
-export const autoMessageApi = {
+export const autoMessageService = {
   list: async (params?: {
     company_id?: string;
     event_type?: AutoMessageEventType;
@@ -127,7 +127,7 @@ export const autoMessageApi = {
 };
 
 // Customer Session API
-export const customerSessionApi = {
+export const customerSessionService = {
   list: async (params?: {
     company_id?: string;
     status?: string;
@@ -175,7 +175,7 @@ export const customerSessionApi = {
 };
 
 // Automation Log API
-export const automationLogApi = {
+export const automationLogService = {
   list: async (params?: {
     company_id?: string;
     action_type?: string;
@@ -375,7 +375,7 @@ export interface UpdateAgentFlow {
   version?: string;
 }
 
-export const agentFlowApi = {
+export const agentFlowService = {
   list: async (params?: {
     store_id?: string;
     store_slug?: string;

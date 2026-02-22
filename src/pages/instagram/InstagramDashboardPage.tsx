@@ -30,8 +30,8 @@ import {
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Tabs, StatCard, Badge } from '@/components/common';
 import { 
-  instagramAccountApi, 
-  instagramMediaApi, 
+  instagramAccountService, 
+  instagramMediaService, 
   InstagramAccount, 
   InstagramMedia 
 } from '@/services';
@@ -52,7 +52,7 @@ export const InstagramDashboardPage: React.FC = () => {
     data: account, 
     loading: accountLoading 
   } = useFetch(
-    () => instagramAccountApi.get(accountId!),
+    () => instagramAccountService.get(accountId!),
     { enabled: !!accountId }
   );
 
@@ -61,11 +61,11 @@ export const InstagramDashboardPage: React.FC = () => {
     if (!accountId) return [];
     switch (activeTab) {
       case 'feed':
-        return instagramMediaApi.getFeed();
+        return instagramMediaService.getFeed();
       case 'stories':
-        return instagramMediaApi.getStories();
+        return instagramMediaService.getStories();
       case 'reels':
-        return instagramMediaApi.getReels();
+        return instagramMediaService.getReels();
       default:
         return [];
     }
@@ -401,7 +401,7 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
   const [days, setDays] = useState(30);
   
   const { data: insights, loading } = useFetch(
-    () => instagramAccountApi.getInsights(accountId, days),
+    () => instagramAccountService.getInsights(accountId, days),
     { deps: [accountId, days] }
   );
 
