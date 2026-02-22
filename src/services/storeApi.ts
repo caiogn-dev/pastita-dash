@@ -573,7 +573,7 @@ class StoreApiClient {
   async getCatalog(storeSlug?: string): Promise<{ categories: Category[]; products: Product[] }> {
     const store = resolveStore(storeSlug);
     try {
-      const response = await api.get(`${this.baseUrl}/s/${store}/catalog/`);
+      const response = await api.get(`${this.baseUrl}/${store}/catalog/`);
       return response.data;
     } catch (error) {
       logger.error('Failed to fetch catalog', { store, error });
@@ -588,7 +588,7 @@ class StoreApiClient {
   async getProductTypes(params: ApiParams = {}, storeSlug?: string): Promise<ProductType[]> {
     const store = resolveStore(storeSlug);
     try {
-      const response = await api.get(`${this.baseUrl}/s/${store}/product-types/`, { params });
+      const response = await api.get(`${this.baseUrl}/${store}/product-types/`, { params });
       return response.data.results || response.data;
     } catch (error) {
       logger.error('Failed to fetch product types', { store, error });
@@ -599,7 +599,7 @@ class StoreApiClient {
   async getProductType(id: string, storeSlug?: string): Promise<ProductType> {
     const store = resolveStore(storeSlug);
     try {
-      const response = await api.get(`${this.baseUrl}/s/${store}/product-types/${id}/`);
+      const response = await api.get(`${this.baseUrl}/${store}/product-types/${id}/`);
       return response.data;
     } catch (error) {
       logger.error('Failed to fetch product type', { id, error });
@@ -610,7 +610,7 @@ class StoreApiClient {
   async createProductType(data: Partial<ProductType>, storeSlug?: string): Promise<ProductType> {
     const store = resolveStore(storeSlug);
     try {
-      const response = await api.post(`${this.baseUrl}/s/${store}/product-types/`, data);
+      const response = await api.post(`${this.baseUrl}/${store}/product-types/`, data);
       logger.info('Product type created', { id: response.data.id });
       return response.data;
     } catch (error) {
