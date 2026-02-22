@@ -4,17 +4,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/',
-  // Desabilitar HMR ws em produção
   server: {
     host: '0.0.0.0',
-    port: 12001,
+    port: 3010,
     strictPort: true,
     allowedHosts: true,
     cors: true,
     hmr: {
-      // Configurar HMR para não usar localhost:8081
       host: '0.0.0.0',
-      port: 12001,
+      port: 3010,
     },
   },
   resolve: {
