@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
+  ArrowPathIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
   ChevronLeftIcon,
@@ -148,7 +149,7 @@ export const IntentLogsPage: React.FC = () => {
             {/* Method Filter */}
             <select
               value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value as 'regex' | 'llm' | 'handler' | 'automessage' | 'fallback' | 'none' | '')}
+              onChange={(e) => setMethodFilter(e.target.value as 'regex' | 'llm' | 'none' | '')}
               className={cn(
                 'px-4 py-2 rounded-lg border text-sm',
                 'border-zinc-300 dark:border-zinc-600',
@@ -158,10 +159,7 @@ export const IntentLogsPage: React.FC = () => {
             >
               <option value="">Todos os métodos</option>
               <option value="regex">⚡ Regex</option>
-              <option value="handler">🔧 Handler</option>
-              <option value="automessage">📄 AutoMessage</option>
               <option value="llm">🤖 LLM (IA)</option>
-              <option value="fallback">↩️ Fallback</option>
               <option value="none">❌ Nenhum</option>
             </select>
           </div>
