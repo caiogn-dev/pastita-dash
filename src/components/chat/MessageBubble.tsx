@@ -1,33 +1,36 @@
 /**
- * MessageBubble - Balão de mensagem do chat
- * 
- * Melhorias:
- * - Player de áudio funcional inline
- * - Download de documentos corrigido
- * - Preview de mídia melhorado
- * - Melhor responsividade
+ * MessageBubble - Balão de mensagem com Chakra UI
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
+  Box,
+  Flex,
+  Text,
+  HStack,
+  VStack,
+  IconButton,
+  Avatar,
+  Badge,
+  useColorModeValue,
+  Tooltip,
+  Progress,
+  Image,
+  Link,
+  Spinner,
+} from '@chakra-ui/react';
+import {
   CheckIcon,
-  ClockIcon,
-  ExclamationCircleIcon,
-  PhotoIcon,
-  DocumentIcon,
-  MapPinIcon,
-  UserIcon,
-  ShoppingCartIcon,
-  PlayIcon,
-  PauseIcon,
-  ArrowDownTrayIcon,
-  SpeakerWaveIcon,
-  SpeakerXMarkIcon,
-  FilmIcon,
-  MusicalNoteIcon,
-} from '@heroicons/react/24/outline';
-import { CheckIcon as CheckIconSolid } from '@heroicons/react/24/solid';
+  TimeIcon,
+  WarningIcon,
+  DownloadIcon,
+  ViewIcon,
+  ChatIcon,
+  PhoneIcon,
+  EmailIcon,
+  LinkIcon,
+} from '@chakra-ui/icons';
 
 export interface MessageBubbleProps {
   id: string;
@@ -45,31 +48,51 @@ export interface MessageBubbleProps {
   deliveredAt?: string;
   readAt?: string;
   errorMessage?: string;
-  onMediaClick?: (url: string, type: string, fileName?: string) => void;
+  onMediaClick?: (url: string, type: string, fileName?: string, mimeType?: string) => void;
 }
 
 const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
+  const color = useColorModeValue('gray.400', 'gray.500');
+  const readColor = useColorModeValue('blue.500', 'blue.400');
+  const errorColor = useColorModeValue('red.500', 'red.400');
+
   switch (status) {
     case 'pending':
-      return <ClockIcon className="w-3.5 h-3.5 text-gray-400" title="Pendente" />;
+      return (
+        <Tooltip label="Pendente">
+          <TimeIcon boxSize={3} color={color} />
+        </Tooltip>
+      );
     case 'sent':
-      return <CheckIcon className="w-3.5 h-3.5 text-gray-400" title="Enviado" />;
+      return (
+        <Tooltip label="Enviado">
+          <CheckIcon boxSize={3} color={color} />
+        </Tooltip>
+      );
     case 'delivered':
       return (
-        <div className="flex -space-x-1" title="Entregue">
-          <CheckIcon className="w-3.5 h-3.5 text-gray-400" />
-          <CheckIcon className="w-3.5 h-3.5 text-gray-400" />
-        </div>
+        <Tooltip label="Entregue">
+          <HStack spacing={0}>
+            <CheckIcon boxSize={3} color={color} />
+            <CheckIcon boxSize={3} color={color} ml="-6px" />
+          </HStack>
+        </Tooltip>
       );
     case 'read':
       return (
-        <div className="flex -space-x-1" title="Lido">
-          <CheckIconSolid className="w-3.5 h-3.5 text-blue-500" />
-          <CheckIconSolid className="w-3.5 h-3.5 text-blue-500" />
-        </div>
+        <Tooltip label="Lido">
+          <HStack spacing={0}>
+            <CheckIcon boxSize={3} color={readColor} />
+            <CheckIcon boxSize={3} color={readColor} ml="-6px" />
+          </HStack>
+        </Tooltip>
       );
     case 'failed':
-      return <ExclamationCircleIcon className="w-3.5 h-3.5 text-red-500" title="Falhou" />;
+      return (
+        <Tooltip label="Falhou">
+          <WarningIcon boxSize={3} color={errorColor} />
+        </Tooltip>
+      );
     default:
       return null;
   }
@@ -80,9 +103,33 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const bgColor = useColorModeValue('gray.100', 'gray.700');
+  const progressColor = useColorModeValue('green.500', 'green.400');
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleLoaded = () => {
+      setDuration(audio.duration);
+      setIsLoading(false);
+    };
+
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleEnded = () => setIsPlaying(false);
+
+    audio.addEventListener('loadedmetadata', handleLoaded);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('loadedmetadata', handleLoaded);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, []);
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -91,251 +138,62 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
       } else {
         audioRef.current.play();
       }
-    }
-  };
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
-    }
-  };
-
-  const toggleMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+      setIsPlaying(!isPlaying);
     }
   };
 
   const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const progress = duration ? (currentTime / duration) * 100 : 0;
+
   return (
-    <div className="w-[280px] bg-gray-100 dark:bg-zinc-800 rounded-lg p-3 mb-2">
-      <audio
-        ref={audioRef}
-        src={url}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => setIsPlaying(false)}
-      />
-
-      <div className="flex items-center gap-2 mb-2">
-        <button
+    <Box w="250px" p={3} bg={bgColor} borderRadius="lg">
+      <audio ref={audioRef} src={url} preload="metadata" />
+      
+      <HStack spacing={3}>
+        <IconButton
+          aria-label={isPlaying ? 'Pausar' : 'Tocar'}
+          icon={isLoading ? <Spinner size="sm" /> : isPlaying ? <Text>⏸</Text> : <Text>▶</Text>}
+          size="sm"
+          colorScheme="green"
           onClick={togglePlay}
-          className="w-10 h-10 bg-violet-600 hover:bg-violet-700 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-        >
-          {isPlaying ? (
-            <PauseIcon className="w-5 h-5" />
-          ) : (
-            <PlayIcon className="w-5 h-5 ml-0.5" />
-          )}
-        </button>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <MusicalNoteIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <span className="text-xs text-gray-600 dark:text-gray-300 truncate">
-              {fileName || 'Áudio'}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-
-        <button
-          onClick={toggleMute}
-          className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-        >
-          {isMuted ? (
-            <SpeakerXMarkIcon className="w-4 h-4" />
-          ) : (
-            <SpeakerWaveIcon className="w-4 h-4" />
-          )}
-        </button>
-      </div>
-
-      <input
-        type="range"
-        min={0}
-        max={duration || 100}
-        value={currentTime}
-        onChange={handleSeek}
-        className="w-full h-1.5 bg-gray-300 dark:bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-violet-600"
-      />
-    </div>
+          isDisabled={isLoading}
+          borderRadius="full"
+        />
+        
+        <VStack spacing={1} flex={1} align="stretch">
+          <Progress 
+            value={progress} 
+            size="xs" 
+            colorScheme="green" 
+            borderRadius="full"
+          />
+          <HStack justify="space-between">
+            <Text fontSize="xs" color="gray.500">
+              {formatTime(currentTime)}
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              {formatTime(duration)}
+            </Text>
+          </HStack>
+        </VStack>
+      </HStack>
+      
+      {fileName && (
+        <Text fontSize="xs" color="gray.500" mt={2} noOfLines={1}>
+          {fileName}
+        </Text>
+      )}
+    </Box>
   );
 };
 
-const MediaPreview: React.FC<{
-  type: string;
-  url?: string;
-  fileName?: string;
-  content?: string | Record<string, unknown>;
-  onClick?: () => void;
-}> = ({ type, url, fileName, content, onClick }) => {
-  // Imagem
-  if ((type === 'image' || type === 'sticker') && url) {
-    return (
-      <div 
-        className="relative group cursor-pointer mb-2 overflow-hidden rounded-lg"
-        onClick={onClick}
-      >
-        <img
-          src={url}
-          alt="Imagem"
-          className="max-w-[280px] max-h-[200px] object-cover rounded-lg hover:opacity-90 transition-opacity"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-          <PhotoIcon className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-      </div>
-    );
-  }
-
-  // Vídeo
-  if (type === 'video' && url) {
-    return (
-      <div 
-        className="relative group cursor-pointer mb-2 overflow-hidden rounded-lg"
-        onClick={onClick}
-      >
-        <video
-          src={url}
-          className="max-w-[280px] max-h-[200px] object-cover rounded-lg"
-          preload="metadata"
-        />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-          <div className="w-12 h-12 bg-white/80 rounded-full flex items-center justify-center">
-            <FilmIcon className="w-6 h-6 text-gray-800" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Áudio - Usar player customizado
-  if (type === 'audio' && url) {
-    return <AudioPlayer url={url} fileName={fileName} />;
-  }
-
-  // Documento
-  if (type === 'document') {
-    return (
-      <div 
-        className="flex items-center gap-3 p-3 bg-gray-100/50 dark:bg-black/20 rounded-lg mb-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-black/30 transition-colors max-w-[280px]"
-        onClick={onClick}
-      >
-        <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-          <DocumentIcon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
-            {fileName || 'Documento'}
-          </p>
-          <p className="text-xs text-gray-500">Clique para baixar</p>
-        </div>
-        <ArrowDownTrayIcon className="w-4 h-4 text-gray-400" />
-      </div>
-    );
-  }
-
-  // Localização
-  if (type === 'location') {
-    const contentObj = typeof content === 'string' ? {} : content;
-    const location = contentObj?.location as { latitude?: number; longitude?: number; name?: string } | undefined;
-    const mapsUrl = location?.latitude && location?.longitude
-      ? `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
-      : '#';
-    
-    return (
-      <a
-        href={mapsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg mb-2 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors max-w-[280px]"
-      >
-        <MapPinIcon className="w-8 h-8 text-red-500 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-            {location?.name || 'Localização'}
-          </p>
-          <p className="text-xs text-red-600 dark:text-red-400">Abrir no Maps</p>
-        </div>
-      </a>
-    );
-  }
-
-  // Contato
-  if (type === 'contacts') {
-    interface ContactPhone {
-      phone?: string;
-    }
-    interface ContactName {
-      formatted_name?: string;
-    }
-    interface ContactItem {
-      name?: ContactName;
-      phones?: ContactPhone[];
-    }
-    interface ContactsContent {
-      contacts?: ContactItem[];
-    }
-    const contentData = content as ContactsContent | undefined;
-    const contact = contentData?.contacts?.[0];
-    return (
-      <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg mb-2 max-w-[280px]">
-        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-          <UserIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-            {contact?.name?.formatted_name || 'Contato'}
-          </p>
-          {contact?.phones?.[0]?.phone && (
-            <p className="text-xs text-gray-500">{contact.phones[0].phone}</p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Pedido
-  if (type === 'order') {
-    return (
-      <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg mb-2 max-w-[280px]">
-        <ShoppingCartIcon className="w-8 h-8 text-green-500" />
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Pedido</span>
-      </div>
-    );
-  }
-
-  return null;
-};
-
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
+  id,
   direction,
   messageType,
   status,
@@ -344,62 +202,229 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   mediaUrl,
   mediaType,
   fileName,
+  mimeType,
   createdAt,
+  sentAt,
+  deliveredAt,
+  readAt,
   errorMessage,
   onMediaClick,
 }) => {
-  const isOutbound = direction === 'outbound';
-  const hasMedia = ['image', 'video', 'audio', 'document', 'sticker', 'location', 'contacts', 'order'].includes(messageType);
+  const isInbound = direction === 'inbound';
+  const bgColor = useColorModeValue(
+    isInbound ? 'white' : 'green.100',
+    isInbound ? 'gray.700' : 'green.700'
+  );
+  const textColor = useColorModeValue(
+    isInbound ? 'gray.800' : 'gray.800',
+    isInbound ? 'white' : 'white'
+  );
+  const timestampColor = useColorModeValue('gray.500', 'gray.400');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+
+  const renderContent = () => {
+    switch (messageType) {
+      case 'audio':
+        return mediaUrl ? (
+          <AudioPlayer url={mediaUrl} fileName={fileName} />
+        ) : (
+          <Text>🎵 Áudio</Text>
+        );
+
+      case 'image':
+        return mediaUrl ? (
+          <Box 
+            position="relative" 
+            cursor="pointer"
+            onClick={() => onMediaClick?.(mediaUrl, 'image', fileName, mimeType)}
+            borderRadius="lg"
+            overflow="hidden"
+          >
+            <Image
+              src={mediaUrl}
+              alt={fileName || 'Imagem'}
+              maxW="300px"
+              maxH="300px"
+              objectFit="cover"
+              fallback={<Spinner />}
+            />
+            <Box
+              position="absolute"
+              top={2}
+              right={2}
+              bg="blackAlpha.600"
+              p={1}
+              borderRadius="md"
+            >
+              <ViewIcon color="white" boxSize={4} />
+            </Box>
+          </Box>
+        ) : (
+          <Text>📷 Imagem</Text>
+        );
+
+      case 'video':
+        return mediaUrl ? (
+          <Box 
+            position="relative" 
+            cursor="pointer"
+            onClick={() => onMediaClick?.(mediaUrl, 'video', fileName, mimeType)}
+            borderRadius="lg"
+            overflow="hidden"
+            bg="black"
+          >
+            <Box w="300px" h="200px" display="flex" alignItems="center" justifyContent="center">
+              <Text fontSize="4xl">🎬</Text>
+            </Box>
+            <Box
+              position="absolute"
+              top="50%"
+              left="50%"
+              transform="translate(-50%, -50%)"
+              bg="whiteAlpha.800"
+              p={3}
+              borderRadius="full"
+            >
+              <Text fontSize="2xl">▶</Text>
+            </Box>
+          </Box>
+        ) : (
+          <Text>🎬 Vídeo</Text>
+        );
+
+      case 'document':
+        return (
+          <HStack 
+            p={3} 
+            bg={useColorModeValue('gray.100', 'gray.600')} 
+            borderRadius="lg"
+            spacing={3}
+          >
+            <Text fontSize="2xl">📄</Text>
+            <VStack align="start" spacing={0} flex={1}>
+              <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
+                {fileName || 'Documento'}
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                {mimeType || 'Arquivo'}
+              </Text>
+            </VStack>
+            {mediaUrl && (
+              <IconButton
+                as={Link}
+                href={mediaUrl}
+                download
+                aria-label="Download"
+                icon={<DownloadIcon />}
+                size="sm"
+                variant="ghost"
+              />
+            )}
+          </HStack>
+        );
+
+      case 'location':
+        const location = typeof content === 'object' ? content : {};
+        return (
+          <VStack align="start" spacing={2}>
+            <Text>📍 Localização</Text>
+            {location?.latitude && location?.longitude && (
+              <Link
+                href={`https://maps.google.com/?q=${location.latitude},${location.longitude}`}
+                isExternal
+                color="blue.500"
+                fontSize="sm"
+              >
+                Ver no mapa ↗
+              </Link>
+            )}
+          </VStack>
+        );
+
+      case 'contacts':
+        const contacts = typeof content === 'object' ? (content?.contacts || []) : [];
+        return (
+          <VStack align="start" spacing={2}>
+            <Text>👤 {contacts.length} contato(s)</Text>
+            {contacts.map((contact: any, idx: number) => (
+              <Box key={idx} p={2} bg={useColorModeValue('gray.100', 'gray.600')} borderRadius="md" w="full">
+                <Text fontSize="sm" fontWeight="medium">
+                  {contact.name?.formatted_name || 'Contato'}
+                </Text>
+                {contact.phones?.map((phone: any, pidx: number) => (
+                  <HStack key={pidx} spacing={1}>
+                    <PhoneIcon boxSize={3} />
+                    <Text fontSize="xs">{phone.phone}</Text>
+                  </HStack>
+                ))}
+              </Box>
+            ))}
+          </VStack>
+        );
+
+      case 'order':
+        const order = typeof content === 'object' ? content : {};
+        const items = order?.order?.product_items || [];
+        return (
+          <VStack align="start" spacing={2}>
+            <Badge colorScheme="green">🛒 Pedido</Badge>
+            <Text fontSize="sm">{items.length} item(s)</Text>
+          </VStack>
+        );
+
+      default:
+        return textBody ? (
+          <Text whiteSpace="pre-wrap" wordBreak="break-word">
+            {textBody}
+          </Text>
+        ) : (
+          <Text fontStyle="italic" color="gray.500">
+            Mensagem não disponível
+          </Text>
+        );
+    }
+  };
 
   return (
-    <div className={`flex ${isOutbound ? 'justify-end' : 'justify-start'} mb-3`}>
-      <div
-        className={`
-          max-w-[85%] sm:max-w-[75%] rounded-2xl shadow-sm
-          ${isOutbound
-            ? 'bg-[#dcf8c6] dark:bg-emerald-800/80 text-gray-800 dark:text-white rounded-br-sm'
-            : 'bg-white dark:bg-zinc-800 text-gray-800 dark:text-white rounded-bl-sm'
-          }
-        `}
+    <Flex
+      w="full"
+      justify={isInbound ? 'flex-start' : 'flex-end'}
+      py={1}
+    >
+      <HStack 
+        align="end" 
+        spacing={2}
+        maxW={{ base: '85%', md: '70%' }}
       >
-        {/* Mídia */}
-        {hasMedia && (
-          <div className="p-1">
-            <MediaPreview
-              type={messageType}
-              url={mediaUrl}
-              fileName={fileName}
-              content={content}
-              onClick={() => mediaUrl && onMediaClick?.(mediaUrl, mediaType || messageType, fileName)}
-            />
-          </div>
+        {isInbound && (
+          <Avatar size="xs" bg="gray.400" icon={<ChatIcon />} />
         )}
-
-        {/* Texto */}
-        {textBody && (
-          <div className="px-3 pb-1">
-            <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-              {textBody}
-            </p>
-          </div>
-        )}
-
-        {/* Erro */}
-        {status === 'failed' && errorMessage && (
-          <p className="px-3 text-xs text-red-500 mt-1">{errorMessage}</p>
-        )}
-
-        {/* Timestamp e Status */}
-        <div className={`flex items-center justify-end gap-1 px-3 pb-1.5 pt-1 ${
-          isOutbound ? 'text-gray-500 dark:text-gray-300' : 'text-gray-400'
-        }`}>
-          <span className="text-[11px]">
-            {format(new Date(createdAt), 'HH:mm', { locale: ptBR })}
-          </span>
-          {isOutbound && <StatusIndicator status={status} />}
-        </div>
-      </div>
-    </div>
+        
+        <Box
+          bg={bgColor}
+          color={textColor}
+          px={4}
+          py={2}
+          borderRadius="2xl"
+          borderBottomLeftRadius={isInbound ? '4px' : '2xl'}
+          borderBottomRightRadius={isInbound ? '2xl' : '4px'}
+          boxShadow="sm"
+          border="1px"
+          borderColor={isInbound ? borderColor : 'transparent'}
+        >
+          <VStack align="stretch" spacing={2}>
+            {renderContent()}
+            
+            <HStack justify="flex-end" spacing={1}>
+              <Text fontSize="xs" color={timestampColor}>
+                {format(new Date(createdAt), 'HH:mm', { locale: ptBR })}
+              </Text>
+              {!isInbound && <StatusIndicator status={status} />}
+            </HStack>
+          </VStack>
+        </Box>
+      </HStack>
+    </Flex>
   );
 };
 
