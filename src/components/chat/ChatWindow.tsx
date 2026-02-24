@@ -9,7 +9,8 @@ import {
   Flex,
   Text,
   IconButton,
-  Avatar,
+  AvatarRoot,
+  AvatarFallback,
   Badge,
   Spinner,
   Input,
@@ -21,7 +22,7 @@ import { ContactList, Contact } from './ContactList';
 import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { MediaViewer } from './MediaViewer';
-import { useWhatsAppWS } from '../../hooks/useWhatsAppWS';
+import { useWhatsAppWS, WhatsAppMessage } from '../../hooks/useWhatsAppWS';
 import { conversationsService } from '../../services';
 import { Message, Conversation } from '../../types';
 
@@ -124,22 +125,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }
 
-  async function handleNewMessage(newMessage: Message) {
+  async function handleNewMessage(newMessage: WhatsAppMessage) {
     if (!selectedConversation) return;
     
     const messageConversationId = newMessage.conversation_id;
     
     if (messageConversationId === selectedConversation.id) {
+      const typedMessage: Message = {
+        ...newMessage,
+        timestamp: newMessage.created_at,
+        account: accountId,
+        updated_at: newMessage.created_at,
+      } as Message;
+      
       setMessages(prev => {
         const isDuplicate = prev.some(m => 
-          m.id === newMessage.id || 
-          (m.whatsapp_message_id && m.whatsapp_message_id === newMessage.whatsapp_message_id)
+          m.id === typedMessage.id || 
+          (m.whatsapp_message_id && m.whatsapp_message_id === typedMessage.whatsapp_message_id)
         );
         if (isDuplicate) return prev;
-        return [...prev, newMessage];
+        return [...prev, typedMessage];
       });
       
-      if (newMessage.direction === 'inbound' && selectedConversation.unread_count > 0) {
+      if (typedMessage.direction === 'inbound' && selectedConversation.unread_count > 0) {
         conversationsService.markAsRead(selectedConversation.id).catch(console.error);
       }
     }
@@ -213,6 +221,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         from_number: '',
         to_number: selectedConversation.phone_number,
         created_at: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
+        account: accountId,
+        updated_at: new Date().toISOString(),
       };
       
       setMessages(prev => [...prev, tempMessage]);
@@ -322,11 +333,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 >←</IconButton>
               )}
               
-              <Avatar 
-                size="md" 
-                name={selectedContact?.contactName || selectedContact?.phoneNumber}
-                bg="green.500"
-              />
+              <AvatarRoot size="md">
+                <AvatarFallback name={selectedContact?.contactName || selectedContact?.phoneNumber} />
+              </AvatarRoot>
               
               <Stack gap={0} align="flex-start" flex={1}>
                 <Text fontWeight="semibold" fontSize="lg">
