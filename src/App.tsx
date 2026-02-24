@@ -1,8 +1,6 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
-import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import theme from './theme';
 import logger from './services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout';
@@ -12,6 +10,7 @@ import { useAccountStore } from './stores/accountStore';
 import { whatsappService, setAuthToken } from './services';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { WhatsAppWsProvider } from './context/WhatsAppWsContext';
+import './App.css';
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -100,7 +99,6 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const initialize = async () => {
-      // Ensure axios has the Authorization header from persisted token
       if (token) {
         setAuthToken(token as string);
       }
@@ -146,7 +144,6 @@ const AppContent: React.FC = () => {
         <Route path="accounts/:id/edit" element={<Suspense fallback={<FullPageLoading />}><AccountFormPage /></Suspense>} />
         <Route path="messages" element={<Suspense fallback={<FullPageLoading />}><MessagesPage /></Suspense>} />
         <Route path="conversations" element={<Suspense fallback={<FullPageLoading />}><ConversationsPage /></Suspense>} />
-        {/* Store-scoped routes for orders and payments */}
         
         {/* AI Agents Routes (Langchain) */}
         <Route path="agents" element={<Suspense fallback={<FullPageLoading />}><AgentsPage /></Suspense>} />
@@ -154,8 +151,6 @@ const AppContent: React.FC = () => {
         <Route path="agents/:id" element={<Suspense fallback={<FullPageLoading />}><AgentDetailPage /></Suspense>} />
         <Route path="agents/:id/test" element={<Suspense fallback={<FullPageLoading />}><AgentTestPage /></Suspense>} />
         <Route path="agents/:id/conversations" element={<Suspense fallback={<FullPageLoading />}><AgentDetailPage /></Suspense>} />
-        
-        {/* Unified Orchestrator Test */}
         <Route path="agents/test/orchestrator" element={<Suspense fallback={<FullPageLoading />}><UnifiedOrchestratorTest /></Suspense>} />
         
         {/* Settings */}
@@ -171,7 +166,7 @@ const AppContent: React.FC = () => {
         <Route path="automation/scheduled" element={<Suspense fallback={<FullPageLoading />}><ScheduledMessagesPage /></Suspense>} />
         <Route path="automation/reports" element={<Suspense fallback={<FullPageLoading />}><ReportsPage /></Suspense>} />
 
-        {/* Intent Detection Routes (Novo Sistema) */}
+        {/* Intent Detection Routes */}
         <Route path="automation/intents" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
         <Route path="automation/intents/stats" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
         <Route path="automation/intents/logs" element={<Suspense fallback={<FullPageLoading />}><IntentLogsPage /></Suspense>} />
@@ -229,15 +224,15 @@ const AppContent: React.FC = () => {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       retry: 2,
       refetchOnWindowFocus: false,
     },
   },
 });
 
-// Main App with WebSocket Providers (singleton)
+// Main App with WebSocket Providers
 const App: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   
@@ -250,12 +245,12 @@ const App: React.FC = () => {
   );
   
   return (
-    <ChakraProvider value={theme}>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <div className="app">
         {appContent}
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </ChakraProvider>
+      </div>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 };
 
