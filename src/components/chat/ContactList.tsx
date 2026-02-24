@@ -1,5 +1,5 @@
 /**
- * ContactList - Lista de contatos com Chakra UI
+ * ContactList - Lista de contatos com Chakra UI v3
  */
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -11,10 +11,8 @@ import {
   Text,
   Avatar,
   Badge,
-  useColorModeValue,
   Spinner,
   Flex,
-  Tooltip,
 } from '@chakra-ui/react';
 
 export interface Contact {
@@ -49,11 +47,9 @@ const ModeBadge: React.FC<{ mode?: string }> = ({ mode }) => {
   const config = configs[mode || 'auto'];
   
   return (
-    <Tooltip label={`Modo: ${mode || 'auto'}`}>
-      <Badge colorScheme={config.color} variant="subtle" fontSize="xs">
-        {config.label}
-      </Badge>
-    </Tooltip>
+    <Badge colorScheme={config.color} variant="subtle" fontSize="xs">
+      {config.label}
+    </Badge>
   );
 };
 
@@ -64,11 +60,6 @@ export const ContactList: React.FC<ContactListProps> = ({
   loading,
   typingContacts,
 }) => {
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const hoverBg = useColorModeValue('gray.100', 'gray.700');
-  const selectedBg = useColorModeValue('green.50', 'green.900');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-
   if (loading) {
     return (
       <Flex justify="center" align="center" py={8}>
@@ -79,17 +70,15 @@ export const ContactList: React.FC<ContactListProps> = ({
 
   if (contacts.length === 0) {
     return (
-      <VStack py={8} spacing={4} align="center">
+      <VStack py={8} gap={4} align="center">
         <Text fontSize="4xl">💬</Text>
-        <Text color="gray.500" textAlign="center">
-          Nenhuma conversa ainda
-        </Text>
+        <Text color="gray.500" textAlign="center">Nenhuma conversa ainda</Text>
       </VStack>
     );
   }
 
   return (
-    <VStack spacing={0} align="stretch">
+    <VStack gap={0} align="stretch">
       {contacts.map((contact) => {
         const isSelected = contact.id === selectedId;
         const isTyping = typingContacts?.has(contact.phoneNumber);
@@ -102,14 +91,14 @@ export const ContactList: React.FC<ContactListProps> = ({
             onClick={() => onSelect(contact)}
             w="full"
             p={3}
-            bg={isSelected ? selectedBg : bgColor}
-            _hover={{ bg: isSelected ? selectedBg : hoverBg }}
+            bg={isSelected ? 'green.50' : 'white'}
+            _hover={{ bg: isSelected ? 'green.50' : 'gray.50' }}
             borderBottom="1px"
-            borderColor={borderColor}
+            borderColor="gray.100"
             transition="all 0.2s"
             textAlign="left"
           >
-            <HStack spacing={3} align="start">
+            <HStack gap={3} align="flex-start">
               <Avatar
                 size="md"
                 name={displayName}
@@ -117,12 +106,12 @@ export const ContactList: React.FC<ContactListProps> = ({
                 bg={isSelected ? 'green.500' : 'gray.400'}
               />
               
-              <VStack spacing={1} align="start" flex={1} minW={0}>
+              <VStack gap={1} align="flex-start" flex={1} minW={0}>
                 <HStack w="full" justify="space-between">
                   <Text 
                     fontWeight={contact.unreadCount ? 'bold' : 'semibold'}
                     fontSize="sm"
-                    noOfLines={1}
+                    truncate
                     flex={1}
                   >
                     {displayName}
@@ -142,13 +131,13 @@ export const ContactList: React.FC<ContactListProps> = ({
                   <Text 
                     fontSize="sm" 
                     color={isTyping ? 'green.500' : 'gray.500'}
-                    noOfLines={1}
+                    truncate
                     flex={1}
                   >
                     {isTyping ? 'digitando...' : contact.lastMessagePreview}
                   </Text>
                   
-                  <HStack spacing={1}>
+                  <HStack gap={1}>
                     <ModeBadge mode={contact.mode} />
                     
                     {!!contact.unreadCount && (

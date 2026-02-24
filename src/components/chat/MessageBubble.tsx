@@ -1,5 +1,5 @@
 /**
- * MessageBubble - Balão de mensagem com Chakra UI
+ * MessageBubble - Balão de mensagem com Chakra UI v3
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -13,23 +13,17 @@ import {
   IconButton,
   Avatar,
   Badge,
-  useColorModeValue,
-  Tooltip,
-  Progress,
   Image,
   Link,
   Spinner,
+  Progress,
 } from '@chakra-ui/react';
 import {
-  CheckIcon,
-  TimeIcon,
-  WarningIcon,
-  DownloadIcon,
-  ViewIcon,
-  ChatIcon,
-  PhoneIcon,
-  EmailIcon,
-  LinkIcon,
+  Check,
+  Time,
+  Warning,
+  Download,
+  View,
 } from '@chakra-ui/icons';
 
 export interface MessageBubbleProps {
@@ -48,51 +42,31 @@ export interface MessageBubbleProps {
   deliveredAt?: string;
   readAt?: string;
   errorMessage?: string;
-  onMediaClick?: (url: string, type: string, fileName?: string, mimeType?: string) => void;
+  onMediaClick?: (url: string, type: string, fileName?: string) => void;
 }
 
 const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
-  const color = useColorModeValue('gray.400', 'gray.500');
-  const readColor = useColorModeValue('blue.500', 'blue.400');
-  const errorColor = useColorModeValue('red.500', 'red.400');
-
   switch (status) {
     case 'pending':
-      return (
-        <Tooltip label="Pendente">
-          <TimeIcon boxSize={3} color={color} />
-        </Tooltip>
-      );
+      return <Time boxSize={3} color="gray.400" />;
     case 'sent':
-      return (
-        <Tooltip label="Enviado">
-          <CheckIcon boxSize={3} color={color} />
-        </Tooltip>
-      );
+      return <Check boxSize={3} color="gray.400" />;
     case 'delivered':
       return (
-        <Tooltip label="Entregue">
-          <HStack spacing={0}>
-            <CheckIcon boxSize={3} color={color} />
-            <CheckIcon boxSize={3} color={color} ml="-6px" />
-          </HStack>
-        </Tooltip>
+        <HStack gap={0}>
+          <Check boxSize={3} color="gray.400" />
+          <Check boxSize={3} color="gray.400" ml="-6px" />
+        </HStack>
       );
     case 'read':
       return (
-        <Tooltip label="Lido">
-          <HStack spacing={0}>
-            <CheckIcon boxSize={3} color={readColor} />
-            <CheckIcon boxSize={3} color={readColor} ml="-6px" />
-          </HStack>
-        </Tooltip>
+        <HStack gap={0}>
+          <Check boxSize={3} color="blue.500" />
+          <Check boxSize={3} color="blue.500" ml="-6px" />
+        </HStack>
       );
     case 'failed':
-      return (
-        <Tooltip label="Falhou">
-          <WarningIcon boxSize={3} color={errorColor} />
-        </Tooltip>
-      );
+      return <Warning boxSize={3} color="red.500" />;
     default:
       return null;
   }
@@ -105,8 +79,6 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const bgColor = useColorModeValue('gray.100', 'gray.700');
-  const progressColor = useColorModeValue('green.500', 'green.400');
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -151,42 +123,32 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
   const progress = duration ? (currentTime / duration) * 100 : 0;
 
   return (
-    <Box w="250px" p={3} bg={bgColor} borderRadius="lg">
+    <Box w="250px" p={3} bg="gray.100" borderRadius="lg">
       <audio ref={audioRef} src={url} preload="metadata" />
       
-      <HStack spacing={3}>
+      <HStack gap={3}>
         <IconButton
           aria-label={isPlaying ? 'Pausar' : 'Tocar'}
-          icon={isLoading ? <Spinner size="sm" /> : isPlaying ? <Text>⏸</Text> : <Text>▶</Text>}
+          onClick={togglePlay}
+          disabled={isLoading}
           size="sm"
           colorScheme="green"
-          onClick={togglePlay}
-          isDisabled={isLoading}
           borderRadius="full"
-        />
+        >
+          {isLoading ? <Spinner size="sm" /> : isPlaying ? '⏸' : '▶'}
+        </IconButton>
         
-        <VStack spacing={1} flex={1} align="stretch">
-          <Progress 
-            value={progress} 
-            size="xs" 
-            colorScheme="green" 
-            borderRadius="full"
-          />
+        <VStack gap={1} flex={1} align="stretch">
+          <Progress value={progress} size="xs" colorScheme="green" borderRadius="full" />
           <HStack justify="space-between">
-            <Text fontSize="xs" color="gray.500">
-              {formatTime(currentTime)}
-            </Text>
-            <Text fontSize="xs" color="gray.500">
-              {formatTime(duration)}
-            </Text>
+            <Text fontSize="xs" color="gray.500">{formatTime(currentTime)}</Text>
+            <Text fontSize="xs" color="gray.500">{formatTime(duration)}</Text>
           </HStack>
         </VStack>
       </HStack>
       
       {fileName && (
-        <Text fontSize="xs" color="gray.500" mt={2} noOfLines={1}>
-          {fileName}
-        </Text>
+        <Text fontSize="xs" color="gray.500" mt={2} truncate>{fileName}</Text>
       )}
     </Box>
   );
@@ -211,16 +173,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   onMediaClick,
 }) => {
   const isInbound = direction === 'inbound';
-  const bgColor = useColorModeValue(
-    isInbound ? 'white' : 'green.100',
-    isInbound ? 'gray.700' : 'green.700'
-  );
-  const textColor = useColorModeValue(
-    isInbound ? 'gray.800' : 'gray.800',
-    isInbound ? 'white' : 'white'
-  );
-  const timestampColor = useColorModeValue('gray.500', 'gray.400');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const bgColor = isInbound ? 'white' : 'green.100';
+  const textColor = 'gray.800';
 
   const renderContent = () => {
     switch (messageType) {
@@ -236,7 +190,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <Box 
             position="relative" 
             cursor="pointer"
-            onClick={() => onMediaClick?.(mediaUrl, 'image', fileName, mimeType)}
+            onClick={() => onMediaClick?.(mediaUrl, 'image', fileName)}
             borderRadius="lg"
             overflow="hidden"
           >
@@ -248,16 +202,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               objectFit="cover"
               fallback={<Spinner />}
             />
-            <Box
-              position="absolute"
-              top={2}
-              right={2}
-              bg="blackAlpha.600"
-              p={1}
-              borderRadius="md"
-            >
-              <ViewIcon color="white" boxSize={4} />
-            </Box>
           </Box>
         ) : (
           <Text>📷 Imagem</Text>
@@ -268,7 +212,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <Box 
             position="relative" 
             cursor="pointer"
-            onClick={() => onMediaClick?.(mediaUrl, 'video', fileName, mimeType)}
+            onClick={() => onMediaClick?.(mediaUrl, 'video', fileName)}
             borderRadius="lg"
             overflow="hidden"
             bg="black"
@@ -296,18 +240,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         return (
           <HStack 
             p={3} 
-            bg={useColorModeValue('gray.100', 'gray.600')} 
+            bg="gray.100"
             borderRadius="lg"
-            spacing={3}
+            gap={3}
           >
             <Text fontSize="2xl">📄</Text>
-            <VStack align="start" spacing={0} flex={1}>
-              <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
-                {fileName || 'Documento'}
-              </Text>
-              <Text fontSize="xs" color="gray.500">
-                {mimeType || 'Arquivo'}
-              </Text>
+            <VStack align="flex-start" gap={0} flex={1}>
+              <Text fontSize="sm" fontWeight="medium" truncate>{fileName || 'Documento'}</Text>
+              <Text fontSize="xs" color="gray.500">{mimeType || 'Arquivo'}</Text>
             </VStack>
             {mediaUrl && (
               <IconButton
@@ -315,10 +255,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 href={mediaUrl}
                 download
                 aria-label="Download"
-                icon={<DownloadIcon />}
                 size="sm"
                 variant="ghost"
-              />
+              >
+                <Download />
+              </IconButton>
             )}
           </HStack>
         );
@@ -326,12 +267,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       case 'location':
         const location = typeof content === 'object' ? content : {};
         return (
-          <VStack align="start" spacing={2}>
+          <VStack align="flex-start" gap={2}>
             <Text>📍 Localização</Text>
             {location?.latitude && location?.longitude && (
               <Link
                 href={`https://maps.google.com/?q=${location.latitude},${location.longitude}`}
-                isExternal
+                target="_blank"
                 color="blue.500"
                 fontSize="sm"
               >
@@ -344,19 +285,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       case 'contacts':
         const contacts = typeof content === 'object' ? (content?.contacts || []) : [];
         return (
-          <VStack align="start" spacing={2}>
+          <VStack align="flex-start" gap={2}>
             <Text>👤 {contacts.length} contato(s)</Text>
             {contacts.map((contact: any, idx: number) => (
-              <Box key={idx} p={2} bg={useColorModeValue('gray.100', 'gray.600')} borderRadius="md" w="full">
-                <Text fontSize="sm" fontWeight="medium">
-                  {contact.name?.formatted_name || 'Contato'}
-                </Text>
-                {contact.phones?.map((phone: any, pidx: number) => (
-                  <HStack key={pidx} spacing={1}>
-                    <PhoneIcon boxSize={3} />
-                    <Text fontSize="xs">{phone.phone}</Text>
-                  </HStack>
-                ))}
+              <Box key={idx} p={2} bg="gray.100" borderRadius="md" w="full">
+                <Text fontSize="sm" fontWeight="medium">{contact.name?.formatted_name || 'Contato'}</Text>
               </Box>
             ))}
           </VStack>
@@ -366,7 +299,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         const order = typeof content === 'object' ? content : {};
         const items = order?.order?.product_items || [];
         return (
-          <VStack align="start" spacing={2}>
+          <VStack align="flex-start" gap={2}>
             <Badge colorScheme="green">🛒 Pedido</Badge>
             <Text fontSize="sm">{items.length} item(s)</Text>
           </VStack>
@@ -374,13 +307,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
       default:
         return textBody ? (
-          <Text whiteSpace="pre-wrap" wordBreak="break-word">
-            {textBody}
-          </Text>
+          <Text whiteSpace="pre-wrap" wordBreak="break-word">{textBody}</Text>
         ) : (
-          <Text fontStyle="italic" color="gray.500">
-            Mensagem não disponível
-          </Text>
+          <Text fontStyle="italic" color="gray.500">Mensagem não disponível</Text>
         );
     }
   };
@@ -392,12 +321,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       py={1}
     >
       <HStack 
-        align="end" 
-        spacing={2}
+        align="flex-end" 
+        gap={2}
         maxW={{ base: '85%', md: '70%' }}
       >
         {isInbound && (
-          <Avatar size="xs" bg="gray.400" icon={<ChatIcon />} />
+          <Avatar size="xs" bg="gray.400" />
         )}
         
         <Box
@@ -409,14 +338,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           borderBottomLeftRadius={isInbound ? '4px' : '2xl'}
           borderBottomRightRadius={isInbound ? '2xl' : '4px'}
           boxShadow="sm"
-          border="1px"
-          borderColor={isInbound ? borderColor : 'transparent'}
         >
-          <VStack align="stretch" spacing={2}>
+          <VStack align="stretch" gap={2}>
             {renderContent()}
             
-            <HStack justify="flex-end" spacing={1}>
-              <Text fontSize="xs" color={timestampColor}>
+            <HStack justify="flex-end" gap={1}>
+              <Text fontSize="xs" color="gray.500">
                 {format(new Date(createdAt), 'HH:mm', { locale: ptBR })}
               </Text>
               {!isInbound && <StatusIndicator status={status} />}

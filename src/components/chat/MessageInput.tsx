@@ -1,21 +1,18 @@
 /**
- * MessageInput - Input de mensagens com Chakra UI
+ * MessageInput - Input de mensagens com Chakra UI v3
  */
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Box,
   HStack,
   Input,
   IconButton,
-  Tooltip,
-  useColorModeValue,
   Badge,
   Text,
   Flex,
 } from '@chakra-ui/react';
 import {
-  AttachmentIcon,
-  ChatIcon,
+  Attachment,
 } from '@chakra-ui/icons';
 
 export interface MessageInputProps {
@@ -26,7 +23,6 @@ export interface MessageInputProps {
   disabled?: boolean;
   isLoading?: boolean;
   showAttachment?: boolean;
-  onAttachmentClick?: () => void;
   maxLength?: number;
   selectedFile?: File | null;
   onClearFile?: () => void;
@@ -49,9 +45,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const wasTypingRef = useRef(false);
-
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
 
   // Auto-focus
   useEffect(() => {
@@ -82,7 +75,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     onSend(trimmedText);
     setText('');
     
-    // Clear typing indicator
     clearTimeout(typingTimeoutRef.current);
     wasTypingRef.current = false;
     onTyping?.(false);
@@ -102,7 +94,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     if (file) {
       onFileSelect?.(file);
     }
-    // Reset input
     e.target.value = '';
   };
 
@@ -116,31 +107,28 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         <Flex 
           mb={2} 
           p={2} 
-          bg={useColorModeValue('blue.50', 'blue.900')} 
+          bg="blue.50"
           borderRadius="md"
           align="center"
           justify="space-between"
         >
           <HStack>
             <Text>📎</Text>
-            <Text fontSize="sm" noOfLines={1}>
-              {selectedFile.name}
-            </Text>
-            <Text fontSize="xs" color="gray.500">
-              ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-            </Text>
+            <Text fontSize="sm" truncate>{selectedFile.name}</Text>
+            <Text fontSize="xs" color="gray.500">({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</Text>
           </HStack>
           <IconButton
             aria-label="Remover arquivo"
-            icon={<Text>✕</Text>}
+            onClick={onClearFile}
             size="xs"
             variant="ghost"
-            onClick={onClearFile}
-          />
+          >
+            ✕
+          </IconButton>
         </Flex>
       )}
 
-      <HStack spacing={2} align="center">
+      <HStack gap={2} align="center">
         {/* File attachment */}
         {showAttachment && (
           <>
@@ -151,15 +139,14 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               style={{ display: 'none' }}
               accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
             />
-            <Tooltip label="Anexar arquivo">
-              <IconButton
-                aria-label="Anexar arquivo"
-                icon={<AttachmentIcon />}
-                variant="ghost"
-                onClick={() => fileInputRef.current?.click()}
-                isDisabled={disabled || isLoading}
-              />
-            </Tooltip>
+            <IconButton
+              aria-label="Anexar arquivo"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled || isLoading}
+              variant="ghost"
+            >
+              <Attachment />
+            </IconButton>
           </>
         )}
 
@@ -174,11 +161,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            isDisabled={disabled || isLoading}
-            bg={bgColor}
-            borderColor={borderColor}
+            disabled={disabled || isLoading}
             borderRadius="full"
-            pr={12}
+            pr={isNearLimit ? 16 : 4}
             maxLength={maxLength}
           />
           
@@ -186,7 +171,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           {isNearLimit && (
             <Badge
               position="absolute"
-              right={14}
+              right={3}
               top="50%"
               transform="translateY(-50%)"
               colorScheme={charCount >= maxLength ? 'red' : 'orange'}
@@ -198,17 +183,16 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </Box>
 
         {/* Send button */}
-        <Tooltip label="Enviar">
-          <IconButton
-            aria-label="Enviar mensagem"
-            icon={isLoading ? <Text>⏳</Text> : <Text>➤</Text>}
-            colorScheme="green"
-            onClick={handleSend}
-            isDisabled={!text.trim() || disabled || isLoading}
-            borderRadius="full"
-            isLoading={isLoading}
-          />
-        </Tooltip>
+        <IconButton
+          aria-label="Enviar mensagem"
+          onClick={handleSend}
+          disabled={!text.trim() || disabled || isLoading}
+          colorScheme="green"
+          borderRadius="full"
+          loading={isLoading}
+        >
+          ➤
+        </IconButton>
       </HStack>
     </Box>
   );

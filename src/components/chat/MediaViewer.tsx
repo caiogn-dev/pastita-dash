@@ -1,14 +1,14 @@
 /**
- * MediaViewer - Visualizador de mídia com Chakra UI
+ * MediaViewer - Visualizador de mídia com Chakra UI v3
  */
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
+  Dialog,
+  DialogBackdrop,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
   IconButton,
   HStack,
   VStack,
@@ -16,15 +16,12 @@ import {
   Box,
   Image,
   Spinner,
-  useColorModeValue,
-  Tooltip,
   Link,
-  Progress,
   Flex,
 } from '@chakra-ui/react';
 import {
-  CloseIcon,
-  DownloadIcon,
+  Close,
+  Download,
 } from '@chakra-ui/icons';
 
 export interface MediaViewerProps {
@@ -50,8 +47,6 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const bgColor = useColorModeValue('blackAlpha.800', 'blackAlpha.900');
-
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = url;
@@ -70,6 +65,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
               <Spinner size="xl" color="white" />
             </Flex>
           )}
+          
           <Image
             src={url}
             alt={fileName || 'Imagem'}
@@ -102,26 +98,20 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
 
     if (isAudio) {
       return (
-        <VStack spacing={4} p={8} bg="whiteAlpha.100" borderRadius="xl">
+        <VStack gap={4} p={8} bg="whiteAlpha.100" borderRadius="xl">
           <Text fontSize="6xl">🎵</Text>
           <audio src={url} controls style={{ width: '300px' }} />
-          {fileName && (
-            <Text color="white" fontSize="sm">{fileName}</Text>
-          )}
+          {fileName && <Text color="white" fontSize="sm">{fileName}</Text>}
         </VStack>
       );
     }
 
     if (isDocument) {
       return (
-        <VStack spacing={4} p={8} bg="whiteAlpha.100" borderRadius="xl">
+        <VStack gap={4} p={8} bg="whiteAlpha.100" borderRadius="xl">
           <Text fontSize="6xl">📄</Text>
-          <Text color="white" fontSize="lg" fontWeight="bold">
-            {fileName || 'Documento'}
-          </Text>
-          {mimeType && (
-            <Text color="gray.400" fontSize="sm">{mimeType}</Text>
-          )}
+          <Text color="white" fontSize="lg" fontWeight="bold">{fileName || 'Documento'}</Text>
+          {mimeType && <Text color="gray.400" fontSize="sm">{mimeType}</Text>}
           <Link
             href={url}
             download
@@ -136,7 +126,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
     }
 
     return (
-      <VStack spacing={4}>
+      <VStack gap={4}>
         <Text fontSize="6xl">📎</Text>
         <Text color="white">Tipo de arquivo não suportado</Text>
       </VStack>
@@ -144,33 +134,33 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   };
 
   return (
-    <Modal isOpen={true} onClose={onClose} size="full" isCentered>
-      <ModalOverlay bg={bgColor} />
+    <Dialog open={true} onClose={onClose} size="full">
+      <DialogBackdrop bg="blackAlpha.800" />
       
-      <ModalContent bg="transparent" boxShadow="none">
-        <ModalHeader display="flex" justifyContent="flex-end" p={4}>
-          <HStack spacing={2}>
-            <Tooltip label="Baixar">
-              <IconButton
-                aria-label="Baixar"
-                icon={<DownloadIcon />}
-                colorScheme="whiteAlpha"
-                onClick={handleDownload}
-              />
-            </Tooltip>
+      <DialogContent bg="transparent" boxShadow="none">
+        <DialogHeader display="flex" justifyContent="flex-end" p={4}>
+          <HStack gap={2}>
+            <IconButton
+              aria-label="Baixar"
+              onClick={handleDownload}
+              variant="ghost"
+              colorScheme="whiteAlpha"
+            >
+              <Download />
+            </IconButton>
             
-            <Tooltip label="Fechar">
-              <IconButton
-                aria-label="Fechar"
-                icon={<CloseIcon />}
-                colorScheme="whiteAlpha"
-                onClick={onClose}
-              />
-            </Tooltip>
+            <IconButton
+              aria-label="Fechar"
+              onClick={onClose}
+              variant="ghost"
+              colorScheme="whiteAlpha"
+            >
+              <Close />
+            </IconButton>
           </HStack>
-        </ModalHeader>
+        </DialogHeader>
 
-        <ModalBody 
+        <DialogBody 
           display="flex" 
           justifyContent="center" 
           alignItems="center"
@@ -181,17 +171,15 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
           ) : (
             renderContent()
           )}
-        </ModalBody>
+        </DialogBody>
 
         {fileName && (
-          <ModalFooter justifyContent="center">
-            <Text color="whiteAlpha.800" fontSize="sm">
-              {fileName}
-            </Text>
-          </ModalFooter>
+          <DialogFooter justifyContent="center">
+            <Text color="whiteAlpha.800" fontSize="sm">{fileName}</Text>
+          </DialogFooter>
         )}
-      </ModalContent>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 
