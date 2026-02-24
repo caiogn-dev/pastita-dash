@@ -1,5 +1,5 @@
 import api from './api';
-import { Conversation, ConversationNote, PaginatedResponse } from '../types';
+import { Conversation, ConversationNote, PaginatedResponse, Message } from '../types';
 
 export const conversationsService = {
   getConversations: async (params?: Record<string, string>): Promise<PaginatedResponse<Conversation>> => {
@@ -9,6 +9,11 @@ export const conversationsService = {
 
   getConversation: async (id: string): Promise<Conversation> => {
     const response = await api.get<Conversation>(`/conversations/${id}/`);
+    return response.data;
+  },
+
+  getMessages: async (conversationId: string): Promise<Message[]> => {
+    const response = await api.get<Message[]>(`/conversations/${conversationId}/messages/`);
     return response.data;
   },
 

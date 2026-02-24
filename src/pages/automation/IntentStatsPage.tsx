@@ -32,7 +32,7 @@ export const IntentStatsPage: React.FC = () => {
       setLoading(true);
       const endDate = format(new Date(), 'yyyy-MM-dd');
       const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
-      const data = await intentService.getStats({ companyId, startDate, endDate });
+      const data = await intentService.getStats({ company_id: companyId, start_date: startDate, end_date: endDate });
       setStats(data);
     } catch (err) {
       setError('Erro ao carregar estatísticas');
@@ -49,7 +49,7 @@ export const IntentStatsPage: React.FC = () => {
     return <div className="stats-error">{error}</div>;
   }
 
-  const totalIntents = stats?.total || 0;
+  const totalIntents = stats?.total_detected || 0;
 
   return (
     <div className="intent-stats-page">
