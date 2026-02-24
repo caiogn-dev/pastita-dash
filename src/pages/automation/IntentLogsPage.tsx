@@ -1,26 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  ArrowPathIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
+  Container,
+  Heading,
+  Text,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Badge,
+  HStack,
+  VStack,
+  Input,
+  Select,
+  Button,
+  IconButton,
+  useColorModeValue,
+  Spinner,
+  Alert,
+  AlertIcon,
+  Card,
+  CardBody,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Code,
+  Box,
+  Flex,
+  InputGroup,
+  InputLeftElement,
+} from '@chakra-ui/react';
+import {
+  SearchIcon,
+  RepeatIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  BoltIcon,
-  CpuChipIcon,
-  ClockIcon,
-  ExclamationCircleIcon,
-} from '@heroicons/react/24/outline';
+  ViewIcon,
+} from '@chakra-ui/icons';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { toast } from 'react-hot-toast';
-import { cn } from '../../utils/cn';
-import { Loading } from '../../components/common/Loading';
-import { IntentBadge } from '../../components/messages';
 import { intentService, intentTypeLabels } from '../../services';
 import type { IntentLog, IntentType } from '../../types';
 
 const ITEMS_PER_PAGE = 20;
+
+const methodColors: Record<string, string> = {
+  regex: 'green',
+  llm: 'purple',
+  handler: 'blue',
+  fallback: 'orange',
+};
 
 export const IntentLogsPage: React.FC = () => {
   const { companyId } = useParams<{ companyId: string }>();
@@ -34,7 +69,9 @@ export const IntentLogsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [intentFilter, setIntentFilter] = useState<IntentType | ''>('');
   const [methodFilter, setMethodFilter] = useState<'regex' | 'llm' | ''>('');
-  const [showFilters, setShowFilters] = useState(false);
+
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   const loadLogs = async () => {
     try {
@@ -48,7 +85,7 @@ export const IntentLogsPage: React.FC = () => {
       setLogs(response.results);
       setTotalCount(response.count);
     } catch (error) {
-      toast.error('Erro ao carregar logs');
+      console.error('Erro ao carregar logs:', error);
     } finally {
       setLoading(false);
     }
@@ -72,310 +109,233 @@ export const IntentLogsPage: React.FC = () => {
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
-            Logs de Intenções
-          </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-            Histórico de detecção de intenções
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium',
-              'border-zinc-300 dark:border-zinc-600',
-              'bg-white dark:bg-zinc-800',
-              'text-zinc-700 dark:text-zinc-300',
-              'hover:bg-zinc-50 dark:hover:bg-zinc-700',
-              showFilters && 'bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-700'
-            )}
-          >
-            <FunnelIcon className="w-4 h-4" />
-            Filtros
-          </button>
-          <button
+    <Container maxW="container.xl" py={8}>
+      <VStack spacing={6} align="stretch">
+        {/* Header */}
+        <HStack justify="space-between" wrap="wrap" gap={4}>
+          <VStack align="start" spacing={1}>
+            <Heading size="lg">Logs de Intenções</Heading>
+            <Text color="gray.500">Histórico de detecção de intenções</Text>
+          </VStack>
+          
+          <Button
+            leftIcon={<RepeatIcon />}
             onClick={loadLogs}
-            className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            colorScheme="green"
+            variant="outline"
           >
-            <ArrowPathIcon className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+            Atualizar
+          </Button>
+        </HStack>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm mb-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Buscar mensagem, telefone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={cn(
-                  'w-full pl-10 pr-4 py-2 rounded-lg border text-sm',
-                  'border-zinc-300 dark:border-zinc-600',
-                  'bg-white dark:bg-zinc-800',
-                  'text-zinc-900 dark:text-white',
-                  'focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                )}
-              />
-            </div>
+        {/* Filters */}
+        <Card bg={bgColor} borderColor={borderColor} borderWidth={1}>
+          <CardBody>
+            <HStack spacing={4} wrap="wrap">
+              <InputGroup maxW="300px">
+                <InputLeftElement pointerEvents="none">
+                  <SearchIcon color="gray.400" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Buscar mensagem, telefone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </InputGroup>
 
-            {/* Intent Filter */}
-            <select
-              value={intentFilter}
-              onChange={(e) => setIntentFilter(e.target.value as IntentType | '')}
-              className={cn(
-                'px-4 py-2 rounded-lg border text-sm',
-                'border-zinc-300 dark:border-zinc-600',
-                'bg-white dark:bg-zinc-800',
-                'text-zinc-900 dark:text-white'
-              )}
-            >
-              <option value="">Todas as intenções</option>
-              {Object.entries(intentTypeLabels).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-
-            {/* Method Filter */}
-            <select
-              value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value as 'regex' | 'llm' | '')}
-              className={cn(
-                'px-4 py-2 rounded-lg border text-sm',
-                'border-zinc-300 dark:border-zinc-600',
-                'bg-white dark:bg-zinc-800',
-                'text-zinc-900 dark:text-white'
-              )}
-            >
-              <option value="">Todos os métodos</option>
-              <option value="regex">⚡ Regex</option>
-              <option value="llm">🤖 LLM (IA)</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {/* Logs Table */}
-      {loading ? (
-        <div className="flex items-center justify-center h-96">
-          <Loading size="lg" />
-        </div>
-      ) : filteredLogs.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-zinc-800 rounded-xl">
-          <p className="text-zinc-500 dark:text-zinc-400">
-            Nenhum log encontrado para os filtros selecionados.
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-zinc-50 dark:bg-zinc-700/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                    Horário
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                    Telefone
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                    Mensagem
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                    Intenção
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                    Método
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                    Tempo
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                {filteredLogs.map((log) => (
-                  <tr
-                    key={log.id}
-                    onClick={() => setSelectedLog(log)}
-                    className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 cursor-pointer transition-colors"
-                  >
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
-                      {format(new Date(log.created_at), 'dd/MM HH:mm:ss', { locale: ptBR })}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400 font-mono">
-                      {log.phone_number}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-zinc-900 dark:text-white max-w-xs truncate">
-                      {log.message_text}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <IntentBadge
-                        intent={log.intent_type}
-                        size="sm"
-                        showLabel
-                      />
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {log.method === 'regex' && (
-                        <span className="inline-flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-                          <BoltIcon className="w-4 h-4" />
-                          Regex
-                        </span>
-                      )}
-                      {log.method === 'llm' && (
-                        <span className="inline-flex items-center gap-1 text-sm text-purple-600 dark:text-purple-400">
-                          <CpuChipIcon className="w-4 h-4" />
-                          LLM
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
-                      <span className="inline-flex items-center gap-1">
-                        <ClockIcon className="w-4 h-4" />
-                        {log.processing_time_ms}ms
-                      </span>
-                    </td>
-                  </tr>
+              <Select 
+                placeholder="Todas intenções"
+                value={intentFilter}
+                onChange={(e) => {
+                  setIntentFilter(e.target.value as IntentType);
+                  setCurrentPage(1);
+                }}
+                w="200px"
+              >
+                {Object.entries(intentTypeLabels).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </Select>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-200 dark:border-zinc-700">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} de {totalCount}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-lg border border-zinc-300 dark:border-zinc-600 disabled:opacity-50"
+              <Select
+                placeholder="Todos métodos"
+                value={methodFilter}
+                onChange={(e) => {
+                  setMethodFilter(e.target.value as 'regex' | 'llm');
+                  setCurrentPage(1);
+                }}
+                w="200px"
               >
-                <ChevronLeftIcon className="w-5 h-5" />
-              </button>
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                Página {currentPage} de {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-lg border border-zinc-300 dark:border-zinc-600 disabled:opacity-50"
-              >
-                <ChevronRightIcon className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <option value="regex">Regex/Handler</option>
+                <option value="llm">LLM/IA</option>
+              </Select>
+            </HStack>
+          </CardBody>
+        </Card>
+
+        {/* Table */}
+        <Card bg={bgColor} borderColor={borderColor} borderWidth={1} overflow="hidden">
+          <CardBody p={0}>
+            {loading ? (
+              <Flex justify="center" align="center" py={8}>
+                <Spinner size="xl" color="green.500" />
+              </Flex>
+            ) : filteredLogs.length === 0 ? (
+              <Flex justify="center" align="center" py={8} direction="column" gap={4}>
+                <Text fontSize="4xl">📋</Text>
+                <Text color="gray.500">Nenhum log encontrado</Text>
+              </Flex>
+            ) : (
+              <Table variant="simple">
+                <Thead bg={useColorModeValue('gray.50', 'gray.700')}>
+                  <Tr>
+                    <Th>Data/Hora</Th>
+                    <Th>Telefone</Th>
+                    <Th>Mensagem</Th>
+                    <Th>Intenção</Th>
+                    <Th>Método</Th>
+                    <Th>Ações</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {filteredLogs.map((log) => (
+                    <Tr key={log.id} _hover={{ bg: useColorModeValue('gray.50', 'gray.700') }}>
+                      <Td>
+                        {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                      </Td>
+                      <Td>
+                        <Text fontFamily="mono" fontSize="sm">
+                          {log.phone_number}
+                        </Text>
+                      </Td>
+                      <Td maxW="300px">
+                        <Text noOfLines={2} fontSize="sm">
+                          {log.message_text}
+                        </Text>
+                      </Td>
+                      <Td>
+                        <Badge colorScheme="blue">
+                          {intentTypeLabels[log.intent_type as IntentType] || log.intent_type}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <Badge colorScheme={methodColors[log.method] || 'gray'}>
+                          {log.method?.toUpperCase()}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <IconButton
+                          aria-label="Ver detalhes"
+                          icon={<ViewIcon />}
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setSelectedLog(log)}
+                        />
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Pagination */}
+        <HStack justify="space-between">
+          <Text color="gray.500" fontSize="sm">
+            Mostrando {filteredLogs.length} de {totalCount} registros
+          </Text>
+          
+          <HStack>
+            <IconButton
+              aria-label="Página anterior"
+              icon={<ChevronLeftIcon />}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              isDisabled={currentPage === 1}
+            />
+            
+            <Text fontSize="sm">
+              Página {currentPage} de {totalPages}
+            </Text>
+            
+            <IconButton
+              aria-label="Próxima página"
+              icon={<ChevronRightIcon />}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              isDisabled={currentPage >= totalPages}
+            />
+          </HStack>
+        </HStack>
+      </VStack>
 
       {/* Detail Modal */}
-      {selectedLog && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedLog(null)}
-        >
-          <div
-            className="bg-white dark:bg-zinc-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
-                  Detalhes do Log
-                </h2>
-                <button
-                  onClick={() => setSelectedLog(null)}
-                  className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                    Mensagem Recebida
-                  </label>
-                  <p className="mt-1 p-3 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg text-zinc-900 dark:text-white">
+      <Modal isOpen={!!selectedLog} onClose={() => setSelectedLog(null)} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Detalhes do Log</ModalHeader>
+          <ModalCloseButton />
+          
+          <ModalBody>
+            {selectedLog && (
+              <VStack spacing={4} align="stretch">
+                <HStack>
+                  <Text fontWeight="bold" w="120px">Data/Hora:</Text>
+                  <Text>
+                    {format(new Date(selectedLog.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}
+                  </Text>
+                </HStack>
+                
+                <HStack>
+                  <Text fontWeight="bold" w="120px">Telefone:</Text>
+                  <Text fontFamily="mono">{selectedLog.phone_number}</Text>
+                </HStack>
+                
+                <HStack>
+                  <Text fontWeight="bold" w="120px">Intenção:</Text>
+                  <Badge colorScheme="blue">
+                    {intentTypeLabels[selectedLog.intent_type as IntentType] || selectedLog.intent_type}
+                  </Badge>
+                </HStack>
+                
+                <HStack>
+                  <Text fontWeight="bold" w="120px">Método:</Text>
+                  <Badge colorScheme={methodColors[selectedLog.method] || 'gray'}>
+                    {selectedLog.method?.toUpperCase()}
+                  </Badge>
+                </HStack>
+                
+                <Box>
+                  <Text fontWeight="bold" mb={2}>Mensagem:</Text>
+                  <Code p={3} borderRadius="md" w="full" display="block">
                     {selectedLog.message_text}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                      Intenção Detectada
-                    </label>
-                    <div className="mt-1">
-                      <IntentBadge
-                        intent={selectedLog.intent_type}
-                        method={selectedLog.method}
-                        confidence={selectedLog.confidence}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                      Handler Utilizado
-                    </label>
-                    <p className="mt-1 text-sm text-zinc-900 dark:text-white">
+                  </Code>
+                </Box>
+                
+                {selectedLog.handler_used && (
+                  <Box>
+                    <Text fontWeight="bold" mb={2}>Handler:</Text>
+                    <Code p={3} borderRadius="md" w="full" display="block">
                       {selectedLog.handler_used}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                    Resposta Enviada
-                  </label>
-                  <p className="mt-1 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm text-zinc-900 dark:text-white whitespace-pre-wrap">
-                    {selectedLog.response_text}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                      Telefone
-                    </label>
-                    <p className="text-sm text-zinc-900 dark:text-white font-mono">
-                      {selectedLog.phone_number}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                      Tempo de Processamento
-                    </label>
-                    <p className="text-sm text-zinc-900 dark:text-white">
-                      {selectedLog.processing_time_ms}ms
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                      Horário
-                    </label>
-                    <p className="text-sm text-zinc-900 dark:text-white">
-                      {format(new Date(selectedLog.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+                    </Code>
+                  </Box>
+                )}
+                
+                {selectedLog.confidence && (
+                  <HStack>
+                    <Text fontWeight="bold" w="120px">Confiança:</Text>
+                    <Text>{(selectedLog.confidence * 100).toFixed(1)}%</Text>
+                  </HStack>
+                )}
+              </VStack>
+            )}
+          </ModalBody>
+          
+          <ModalFooter>
+            <Button onClick={() => setSelectedLog(null)}>Fechar</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Container>
   );
 };
 
