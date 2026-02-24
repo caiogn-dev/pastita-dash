@@ -1,0 +1,92 @@
+.media-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.media-viewer-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.media-viewer-header {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+}
+
+.viewer-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.viewer-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.media-viewer-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.viewer-image {
+  max-width: 80vw;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+.viewer-video {
+  max-width: 80vw;
+  max-height: 70vh;
+}
+
+.viewer-audio {
+  text-align: center;
+  color: white;
+}
+
+.audio-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.audio-name {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.viewer-document {
+  text-align: center;
+  color: white;
+  padding: 48px;
+}
+
+.doc-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.doc-name {
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.doc-download {
+  color: #4caf50;
+  text-decoration: none;
+}
