@@ -9,6 +9,9 @@ import {
   BoltIcon,
   CpuChipIcon,
   ClockIcon,
+  CogIcon,
+  DocumentTextIcon,
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -32,7 +35,7 @@ export const IntentLogsPage: React.FC = () => {
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [intentFilter, setIntentFilter] = useState<IntentType | ''>('');
-  const [methodFilter, setMethodFilter] = useState<'regex' | 'llm' | ''>('');
+  const [methodFilter, setMethodFilter] = useState<'regex' | 'llm' | 'handler' | 'automessage' | 'fallback' | 'none' | ''>('');
   const [showFilters, setShowFilters] = useState(false);
 
   const loadLogs = async () => {
@@ -148,7 +151,7 @@ export const IntentLogsPage: React.FC = () => {
             {/* Method Filter */}
             <select
               value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value as 'regex' | 'llm' | '')}
+              onChange={(e) => setMethodFilter(e.target.value as 'regex' | 'llm' | 'handler' | 'automessage' | 'fallback' | 'none' | '')}
               className={cn(
                 'px-4 py-2 rounded-lg border text-sm',
                 'border-zinc-300 dark:border-zinc-600',
@@ -157,8 +160,12 @@ export const IntentLogsPage: React.FC = () => {
               )}
             >
               <option value="">Todos os métodos</option>
-              <option value="regex">⚡ Regex (rápido)</option>
+              <option value="regex">⚡ Regex</option>
+              <option value="handler">🔧 Handler</option>
+              <option value="automessage">📄 AutoMessage</option>
               <option value="llm">🤖 LLM (IA)</option>
+              <option value="fallback">↩️ Fallback</option>
+              <option value="none">❌ Nenhum</option>
             </select>
           </div>
         </div>
@@ -231,10 +238,34 @@ export const IntentLogsPage: React.FC = () => {
                           Regex
                         </span>
                       )}
+                      {log.method === 'handler' && (
+                        <span className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400">
+                          <CogIcon className="w-4 h-4" />
+                          Handler
+                        </span>
+                      )}
+                      {log.method === 'automessage' && (
+                        <span className="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400">
+                          <DocumentTextIcon className="w-4 h-4" />
+                          AutoMessage
+                        </span>
+                      )}
                       {log.method === 'llm' && (
                         <span className="inline-flex items-center gap-1 text-sm text-purple-600 dark:text-purple-400">
                           <CpuChipIcon className="w-4 h-4" />
                           LLM
+                        </span>
+                      )}
+                      {log.method === 'fallback' && (
+                        <span className="inline-flex items-center gap-1 text-sm text-orange-600 dark:text-orange-400">
+                          <ArrowPathIcon className="w-4 h-4" />
+                          Fallback
+                        </span>
+                      )}
+                      {log.method === 'none' && (
+                        <span className="inline-flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">
+                          <ExclamationCircleIcon className="w-4 h-4" />
+                          Nenhum
                         </span>
                       )}
                     </td>

@@ -6,9 +6,10 @@ import {
   BoltIcon,
   CpuChipIcon,
   CheckCircleIcon,
-  ShoppingCartIcon,
-  CreditCardIcon,
   ChatBubbleLeftRightIcon,
+  CogIcon,
+  DocumentTextIcon,
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { DateRange } from 'react-date-range';
 import { ptBR } from 'date-fns/locale';
@@ -29,6 +30,7 @@ interface StatCardProps {
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
   className?: string;
+  color?: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'yellow';
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -39,35 +41,77 @@ const StatCard: React.FC<StatCardProps> = ({
   trend,
   trendValue,
   className,
-}) => (
-  <div className={cn('bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm', className)}>
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{title}</p>
-        <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mt-2">{value}</h3>
-        {subtitle && (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{subtitle}</p>
-        )}
-        {trend && trendValue && (
-          <div className={cn(
-            'flex items-center gap-1 mt-2 text-sm',
-            trend === 'up' && 'text-green-600 dark:text-green-400',
-            trend === 'down' && 'text-red-600 dark:text-red-400',
-            trend === 'neutral' && 'text-zinc-500 dark:text-zinc-400'
-          )}>
-            {trend === 'up' && '↑'}
-            {trend === 'down' && '↓'}
-            {trend === 'neutral' && '→'}
-            <span>{trendValue}</span>
-          </div>
-        )}
-      </div>
-      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-        {icon}
+  color = 'blue',
+}) => {
+  const colorClasses = {
+    blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600',
+    green: 'bg-green-50 dark:bg-green-900/20 text-green-600',
+    purple: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600',
+    orange: 'bg-orange-50 dark:bg-orange-900/20 text-orange-600',
+    red: 'bg-red-50 dark:bg-red-900/20 text-red-600',
+    yellow: 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600',
+  };
+
+  return (
+    <div className={cn('bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm', className)}>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{title}</p>
+          <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mt-2">{value}</h3>
+          {subtitle && (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{subtitle}</p>
+          )}
+          {trend && trendValue && (
+            <div className={cn(
+              'flex items-center gap-1 mt-2 text-sm',
+              trend === 'up' && 'text-green-600 dark:text-green-400',
+              trend === 'down' && 'text-red-600 dark:text-red-400',
+              trend === 'neutral' && 'text-zinc-500 dark:text-zinc-400'
+            )}>
+              {trend === 'up' && '↑'}
+              {trend === 'down' && '↓'}
+              {trend === 'neutral' && '→'}
+              <span>{trendValue}</span>
+            </div>
+          )}
+        </div>
+        <div className={cn('p-3 rounded-lg', colorClasses[color])}>
+          {icon}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+// Labels para métodos de detecção
+const methodLabels: Record<string, string> = {
+  regex: 'Regex/Handler',
+  llm: 'LLM/IA',
+  none: 'Nenhum',
+  handler: 'Handler',
+  automessage: 'AutoMessage',
+  fallback: 'Fallback',
+};
+
+// Cores para métodos
+const methodColors: Record<string, 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'yellow'> = {
+  regex: 'green',
+  handler: 'green',
+  llm: 'purple',
+  automessage: 'blue',
+  none: 'red',
+  fallback: 'orange',
+};
+
+// Ícones para métodos
+const methodIcons: Record<string, React.ReactNode> = {
+  regex: <BoltIcon className="w-6 h-6" />,
+  handler: <CogIcon className="w-6 h-6" />,
+  llm: <CpuChipIcon className="w-6 h-6" />,
+  automessage: <DocumentTextIcon className="w-6 h-6" />,
+  none: <ExclamationCircleIcon className="w-6 h-6" />,
+  fallback: <ExclamationCircleIcon className="w-6 h-6" />,
+};
 
 export const IntentStatsPage: React.FC = () => {
   const { companyId } = useParams<{ companyId: string }>();
@@ -120,13 +164,15 @@ export const IntentStatsPage: React.FC = () => {
     );
   }
 
-  // Calcula porcentagens
-  const regexPercentage = stats.total_detected > 0
-    ? ((stats.by_method.regex / stats.total_detected) * 100).toFixed(1)
-    : '0';
-  const llmPercentage = stats.total_detected > 0
-    ? ((stats.by_method.llm / stats.total_detected) * 100).toFixed(1)
-    : '0';
+  // Calcula porcentagens para todos os métodos
+  const methodStats = stats.by_method || {};
+  const methodPercentages = Object.entries(methodStats).map(([method, count]) => ({
+    method,
+    count: count as number,
+    percentage: stats.total_detected > 0
+      ? (((count as number) / stats.total_detected) * 100).toFixed(1)
+      : '0',
+  })).sort((a, b) => b.count - a.count);
 
   // Top intenções
   const topIntents = stats.top_intents || [];
@@ -183,36 +229,55 @@ export const IntentStatsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - Total e Tempo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total de Intenções"
           value={stats.total_detected.toLocaleString()}
           subtitle="Mensagens processadas"
-          icon={<ChatBubbleLeftRightIcon className="w-6 h-6 text-blue-600" />}
-        />
-        <StatCard
-          title="Detecção Regex"
-          value={`${regexPercentage}%`}
-          subtitle={`${stats.by_method.regex.toLocaleString()} mensagens`}
-          icon={<BoltIcon className="w-6 h-6 text-green-600" />}
-          trend="up"
-          trendValue="Rápido e gratuito"
-        />
-        <StatCard
-          title="Detecção LLM"
-          value={`${llmPercentage}%`}
-          subtitle={`${stats.by_method.llm.toLocaleString()} mensagens`}
-          icon={<CpuChipIcon className="w-6 h-6 text-purple-600" />}
-          trend={parseFloat(llmPercentage) > 30 ? 'down' : 'up'}
-          trendValue="Fallback para casos complexos"
+          icon={<ChatBubbleLeftRightIcon className="w-6 h-6" />}
+          color="blue"
         />
         <StatCard
           title="Tempo Médio"
           value={`${(stats.avg_response_time_ms / 1000).toFixed(2)}s`}
           subtitle="Tempo de resposta"
-          icon={<ChartBarIcon className="w-6 h-6 text-orange-600" />}
+          icon={<ChartBarIcon className="w-6 h-6" />}
+          color="orange"
         />
+        <StatCard
+          title="Intenções Únicas"
+          value={Object.keys(stats.by_type || {}).length}
+          subtitle="Tipos detectados"
+          icon={<CheckCircleIcon className="w-6 h-6" />}
+          color="green"
+        />
+        <StatCard
+          title="Métodos Usados"
+          value={Object.keys(methodStats).length}
+          subtitle="Fontes de resposta"
+          icon={<CogIcon className="w-6 h-6" />}
+          color="purple"
+        />
+      </div>
+
+      {/* Methods Grid - Todos os métodos */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+          Métodos de Detecção
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {methodPercentages.map(({ method, count, percentage }) => (
+            <StatCard
+              key={method}
+              title={methodLabels[method] || method}
+              value={`${percentage}%`}
+              subtitle={`${count.toLocaleString()} mensagens`}
+              icon={methodIcons[method] || <BoltIcon className="w-6 h-6" />}
+              color={methodColors[method] || 'blue'}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Charts Row */}
@@ -223,16 +288,16 @@ export const IntentStatsPage: React.FC = () => {
             Intenções por Tipo
           </h3>
           <div className="space-y-3">
-            {Object.entries(stats.by_type)
+            {Object.entries(stats.by_type || {})
               .sort(([,a], [,b]) => (b as number) - (a as number))
               .slice(0, 10)
               .map(([intent, count]) => {
                 const percentage = stats.total_detected > 0
-                  ? ((count as number) / stats.total_detected * 100).toFixed(1)
+                  ? (((count as number) / stats.total_detected) * 100).toFixed(1)
                   : '0';
                 return (
                   <div key={intent} className="flex items-center gap-4">
-                    <div className="w-32 text-sm text-zinc-600 dark:text-zinc-400 truncate">
+                    <div className="w-40 text-sm text-zinc-600 dark:text-zinc-400 truncate">
                       {intentTypeLabels[intent] || intent}
                     </div>
                     <div className="flex-1">
@@ -243,7 +308,7 @@ export const IntentStatsPage: React.FC = () => {
                         />
                       </div>
                     </div>
-                    <div className="w-20 text-right text-sm text-zinc-600 dark:text-zinc-400">
+                    <div className="w-24 text-right text-sm text-zinc-600 dark:text-zinc-400">
                       {count as number} ({percentage}%)
                     </div>
                   </div>
@@ -298,35 +363,63 @@ export const IntentStatsPage: React.FC = () => {
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
           Comparação de Métodos
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
-            <div className="flex items-center gap-3 mb-2">
-              <BoltIcon className="w-6 h-6 text-green-600" />
-              <h4 className="font-semibold text-green-900 dark:text-green-100">Regex (Pattern Matching)</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {methodPercentages.map(({ method, count, percentage }) => (
+            <div 
+              key={method}
+              className={cn(
+                'p-4 rounded-lg',
+                method === 'regex' || method === 'handler' ? 'bg-green-50 dark:bg-green-900/20' :
+                method === 'llm' ? 'bg-purple-50 dark:bg-purple-900/20' :
+                method === 'automessage' ? 'bg-blue-50 dark:bg-blue-900/20' :
+                'bg-zinc-50 dark:bg-zinc-800'
+              )}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className={cn(
+                  'p-2 rounded-lg',
+                  method === 'regex' || method === 'handler' ? 'bg-green-100 text-green-600' :
+                  method === 'llm' ? 'bg-purple-100 text-purple-600' :
+                  method === 'automessage' ? 'bg-blue-100 text-blue-600' :
+                  'bg-zinc-100 text-zinc-600'
+                )}>
+                  {methodIcons[method] || <BoltIcon className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h4 className={cn(
+                    'font-semibold',
+                    method === 'regex' || method === 'handler' ? 'text-green-900 dark:text-green-100' :
+                    method === 'llm' ? 'text-purple-900 dark:text-purple-100' :
+                    method === 'automessage' ? 'text-blue-900 dark:text-blue-100' :
+                    'text-zinc-900 dark:text-zinc-100'
+                  )}>
+                    {methodLabels[method] || method}
+                  </h4>
+                  <p className={cn(
+                    'text-sm',
+                    method === 'regex' || method === 'handler' ? 'text-green-600 dark:text-green-400' :
+                    method === 'llm' ? 'text-purple-600 dark:text-purple-400' :
+                    method === 'automessage' ? 'text-blue-600 dark:text-blue-400' :
+                    'text-zinc-600 dark:text-zinc-400'
+                  )}>
+                    {percentage}% ({count} mensagens)
+                  </p>
+                </div>
+              </div>
+              <p className={cn(
+                'text-sm mt-2',
+                method === 'regex' || method === 'handler' ? 'text-green-700 dark:text-green-300' :
+                method === 'llm' ? 'text-purple-700 dark:text-purple-300' :
+                method === 'automessage' ? 'text-blue-700 dark:text-blue-300' :
+                'text-zinc-700 dark:text-zinc-300'
+              )}>
+                {method === 'regex' || method === 'handler' ? 'Detecção rápida baseada em padrões predefinidos. Sem custo de API.' :
+                 method === 'llm' ? 'Detecção avançada usando Inteligência Artificial. Usado como fallback.' :
+                 method === 'automessage' ? 'Respostas automáticas configuradas para eventos específicos.' :
+                 'Método de detecção alternativo.'}
+              </p>
             </div>
-            <p className="text-sm text-green-700 dark:text-green-300 mb-2">
-              Detecção rápida baseada em padrões predefinidos. Sem custo de API.
-            </p>
-            <ul className="text-sm text-green-600 dark:text-green-400 space-y-1">
-              <li>• Velocidade: ~50ms</li>
-              <li>• Custo: Gratuito</li>
-              <li>• Cobertura: 80% dos casos</li>
-            </ul>
-          </div>
-          <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20">
-            <div className="flex items-center gap-3 mb-2">
-              <CpuChipIcon className="w-6 h-6 text-purple-600" />
-              <h4 className="font-semibold text-purple-900 dark:text-purple-100">LLM (Inteligência Artificial)</h4>
-            </div>
-            <p className="text-sm text-purple-700 dark:text-purple-300 mb-2">
-              Detecção avançada usando IA. Usado como fallback para casos complexos.
-            </p>
-            <ul className="text-sm text-purple-600 dark:text-purple-400 space-y-1">
-              <li>• Velocidade: ~2000ms</li>
-              <li>• Custo: Pago por chamada</li>
-              <li>• Cobertura: Casos complexos</li>
-            </ul>
-          </div>
+          ))}
         </div>
       </div>
     </div>

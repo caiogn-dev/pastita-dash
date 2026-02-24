@@ -471,11 +471,13 @@ export class RealtimeConnection {
       }
       case 'sse': {
         const httpProto = this.isSecure() ? 'https' : 'http';
-        return `${httpProto}://${wsHost}/api/sse/stores/${storeSlug}/events/?token=${token}`;
+        // Use the correct SSE endpoint
+        return `${httpProto}://${wsHost}/api/sse/orders/?token=${token}&store_id=${storeSlug}`;
       }
       case 'polling': {
         const httpProto = this.isSecure() ? 'https' : 'http';
-        return `${httpProto}://${wsHost}/api/polling/stores/${storeSlug}/events/?token=${token}`;
+        // Use the correct polling endpoint (orders API)
+        return `${httpProto}://${wsHost}/api/v1/stores/${storeSlug}/orders/?token=${token}`;
       }
     }
   }

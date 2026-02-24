@@ -1,12 +1,11 @@
 /**
- * ChatWindow - Interface de Chat WhatsApp Moderna
+ * ChatWindow - Interface de Chat WhatsApp Moderna e Responsiva
  * 
- * Features:
- * - Correção do erro reverse()
- * - Upload de imagens/documentos
- * - Visualização de mídia com modal
- * - Interface responsiva
- * - Preview de anexos
+ * Melhorias:
+ * - Layout maior e mais espaçoso
+ * - Melhor responsividade
+ * - Suporte completo a mídia
+ * - Interface moderna
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
@@ -27,6 +26,8 @@ import {
   MagnifyingGlassIcon,
   PhoneIcon,
   EllipsisVerticalIcon,
+  Bars3Icon,
+  ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
 
 import { ContactList, Contact } from './ContactList';
@@ -54,6 +55,7 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   mediaUrl: msg.media_url,
   mediaType: msg.media_type,
   fileName: msg.file_name,
+  mimeType: msg.media_mime_type,
   createdAt: msg.created_at,
   sentAt: msg.sent_at ?? undefined,
   deliveredAt: msg.delivered_at ?? undefined,
@@ -86,11 +88,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; fileName?: string } | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; fileName?: string; mimeType?: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Detectar mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+      if (window.innerWidth < 1024) {
+        setShowSidebar(false);
+      } else {
+        setShowSidebar(true);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // WebSocket
   const {
@@ -144,9 +164,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       
       console.log('[ChatWindow] Messages loaded:', history.length);
       
-      // Messages come ordered by -created_at (newest first), reverse for chat display (oldest first)
       if (Array.isArray(history)) {
-        // Sort by created_at ascending (oldest first)
         const sortedMessages = [...history].sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
@@ -156,7 +174,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         setMessages([]);
       }
 
-      // Mark conversation as read after loading messages
       if (selectedConversation.unread_count && selectedConversation.unread_count > 0) {
         try {
           const updated = await conversationsService.markAsRead(selectedConversation.id);
@@ -187,10 +204,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       direction: newMessage.direction
     });
     
-    // CRÍTICO: Só adicionar mensagens da conversa atualmente selecionada
     if (selectedConversation && messageConversationId === selectedConversation.id) {
       setMessages(prev => {
-        // Verificar duplicatas por ID ou whatsapp_message_id
         const isDuplicate = prev.some(m => 
           m.id === newMessage.id || 
           (m.whatsapp_message_id && m.whatsapp_message_id === newMessage.whatsapp_message_id)
@@ -202,14 +217,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
         
         console.log('[ChatWindow] Adding message to chat:', newMessage.id);
-        // Add and re-sort to ensure correct order
         const updated = [...prev, newMessage as Message];
         return updated.sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
       });
 
-      // If receiving inbound message while this conversation is open, mark as read immediately
       if (newMessage.direction === 'inbound') {
         conversationsService.markAsRead(selectedConversation.id).catch(err => {
           console.error('[ChatWindow] Error marking as read:', err);
@@ -217,7 +230,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       }
     }
 
-    // Update conversations list
     setConversations(prev => {
       const updated = prev.map(conv => {
         if (conv.id === event.conversation_id) {
@@ -226,7 +238,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             ...conv,
             last_message_at: newMessage.created_at,
             last_message_preview: newMessage.text_body?.substring(0, 50) || 'Mídia',
-            // Don't increment unread if this conversation is currently open and it's an inbound message
             unread_count: (isSelectedConv && newMessage.direction === 'inbound') 
               ? 0 
               : (newMessage.direction === 'inbound' ? (conv.unread_count || 0) + 1 : conv.unread_count),
@@ -235,7 +246,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         return conv;
       });
       
-      // Sort by last message time (most recent first)
       return [...updated].sort((a, b) => {
         const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
         const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
@@ -243,7 +253,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       });
     });
 
-    // Show toast only if message is not from the currently open conversation
     if (!selectedConversation || event.conversation_id !== selectedConversation.id) {
       if (newMessage.direction === 'inbound') {
         const contactName = event.contact?.name || newMessage.from_number;
@@ -299,11 +308,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       });
       
       setMessages(prev => {
-        // Check for duplicates
         const isDuplicate = prev.some(m => m.id === message.id);
         if (isDuplicate) return prev;
         
-        // Add and sort
         const updated = [...prev, message];
         return updated.sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -321,7 +328,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const file = e.target.files?.[0];
     if (!file || !selectedConversation || !accountId) return;
 
-    // Validar tamanho (16MB max)
     if (file.size > 16 * 1024 * 1024) {
       toast.error('Arquivo muito grande. Máximo 16MB.');
       return;
@@ -337,11 +343,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       });
       
       setMessages(prev => {
-        // Check for duplicates
         const isDuplicate = prev.some(m => m.id === message.id);
         if (isDuplicate) return prev;
         
-        // Add and sort
         const updated = [...prev, message];
         return updated.sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -376,15 +380,28 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  // Selecionar conversa (com suporte mobile)
+  const handleSelectConversation = (contact: Contact) => {
+    const conversation = conversations.find(c => c.id === contact.id);
+    setSelectedConversation(conversation || null);
+    if (isMobile) {
+      setShowSidebar(false);
+    }
+  };
+
+  // Voltar para lista (mobile)
+  const handleBackToList = () => {
+    setSelectedConversation(null);
+    setShowSidebar(true);
+  };
+
   // Scroll automático
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // NOVO: Scroll imediato ao carregar mensagens (sem animação)
   useEffect(() => {
     if (!isLoadingMessages && messages.length > 0) {
-      // Scroll imediato para o bottom na primeira carga
       messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
     }
   }, [isLoadingMessages, messages.length]);
@@ -394,23 +411,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     loadConversations();
   }, [loadConversations]);
 
-  // Referência para a conversa anterior (para unsubscribe)
   const previousConversationRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Unsubscribe da conversa anterior PRIMEIRO
     if (previousConversationRef.current && previousConversationRef.current !== selectedConversation?.id) {
       unsubscribeFromConversation(previousConversationRef.current);
     }
     
-    // LIMPAR MENSAGENS IMEDIATAMENTE ao trocar de conversa
     setMessages([]);
     
     if (selectedConversation) {
-      // Atualizar referência
       previousConversationRef.current = selectedConversation.id;
-      
-      // Subscribe e carregar mensagens da nova conversa
       subscribeToConversation(selectedConversation.id);
       loadMessages();
       onConversationSelect?.(selectedConversation);
@@ -424,7 +435,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         unsubscribeFromConversation(selectedConversation.id);
       }
     };
-  }, [selectedConversation?.id]); // Apenas reage a mudança de ID
+  }, [selectedConversation?.id]);
 
   // Agrupar mensagens por data
   const groupedMessages = messages.reduce((groups, message) => {
@@ -442,62 +453,67 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }));
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-gray-100 dark:bg-zinc-950 rounded-xl overflow-hidden shadow-2xl">
+    <div className="flex h-[calc(100vh-5rem)] min-h-[600px] bg-gray-100 dark:bg-zinc-950 rounded-2xl overflow-hidden shadow-2xl border border-gray-200 dark:border-zinc-800">
       {/* Sidebar de Contatos */}
-      <div className={`${showSidebar ? 'w-80' : 'w-0'} transition-all duration-300 flex-shrink-0 border-r border-gray-200 dark:border-zinc-800`}>
+      <div 
+        className={`
+          ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${isMobile ? 'absolute inset-0 z-20 w-full' : 'w-80 lg:w-96'}
+          transition-transform duration-300 ease-in-out
+          flex-shrink-0 border-r border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900
+        `}
+      >
         <ContactList
           contacts={contacts}
           selectedContactId={selectedConversation?.id}
-          onSelectContact={(contact) => {
-            const conversation = conversations.find(c => c.id === contact.id);
-            setSelectedConversation(conversation || null);
-          }}
+          onSelectContact={handleSelectConversation}
           isLoading={isLoadingConversations}
           emptyMessage="Nenhuma conversa encontrada"
         />
       </div>
 
       {/* Área do Chat */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-zinc-900">
+      <div className="flex-1 flex flex-col bg-[#f0f2f5] dark:bg-zinc-950 min-w-0">
         {!selectedConversation ? (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8">
-            <div className="w-32 h-32 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-6">
-              <ChatBubbleLeftRightIcon className="w-16 h-16 text-gray-300" />
+            <div className="w-32 h-32 bg-gray-200 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-6">
+              <ChatBubbleLeftRightIcon className="w-16 h-16 text-gray-300 dark:text-zinc-600" />
             </div>
             <h3 className="text-xl font-medium text-gray-600 dark:text-gray-300 mb-2">
               Selecione uma conversa
             </h3>
-            <p className="text-sm text-center max-w-md">
-              Escolha uma conversa da lista ao lado para começar a interagir com seus clientes
+            <p className="text-sm text-center max-w-md text-gray-500 dark:text-gray-400">
+              Escolha uma conversa da lista para começar a interagir com seus clientes
             </p>
           </div>
         ) : (
           <>
             {/* Header do Chat */}
             <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowSidebar(!showSidebar)}
-                  className="lg:hidden p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  <MagnifyingGlassIcon className="w-5 h-5" />
-                </button>
-                
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+              <div className="flex items-center gap-3 min-w-0">
+                {isMobile && (
+                  <button
+                    onClick={handleBackToList}
+                    className="p-2 -ml-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 lg:hidden"
+                  >
+                    <ChevronLeftIcon className="w-6 h-6" />
+                  </button>
+                )}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
                   {selectedConversation.contact_name?.[0]?.toUpperCase() || 
                    selectedConversation.phone_number.slice(-2)}
                 </div>
                 
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                     {selectedConversation.contact_name || selectedConversation.phone_number}
                   </h3>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-500 dark:text-zinc-400">
+                    <span className="text-gray-500 dark:text-zinc-400 truncate">
                       {selectedConversation.phone_number}
                     </span>
                     {typingContacts.has(selectedConversation.id) && (
-                      <span className="text-violet-500 text-xs animate-pulse">
+                      <span className="text-violet-500 text-xs animate-pulse flex-shrink-0">
                         digitando...
                       </span>
                     )}
@@ -505,15 +521,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {/* Status Conexão */}
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
+                <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
                   isConnected 
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
                     : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                 }`}>
                   <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                  {isConnected ? 'Online' : 'Offline'}
+                  <span className="hidden md:inline">{isConnected ? 'Online' : 'Offline'}</span>
                 </div>
 
                 {/* Modo Toggle */}
@@ -526,9 +542,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   }`}
                 >
                   {selectedConversation.mode === 'human' ? (
-                    <><UserIcon className="w-4 h-4" /> Humano</>
+                    <><UserIcon className="w-4 h-4" /> <span className="hidden sm:inline">Humano</span></>
                   ) : (
-                    <><CpuChipIcon className="w-4 h-4" /> Auto</>
+                    <><CpuChipIcon className="w-4 h-4" /> <span className="hidden sm:inline">Auto</span></>
                   )}
                 </button>
 
@@ -547,20 +563,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {/* Erro de Conexão */}
             {connectionError && (
               <div className="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 flex items-center gap-2 text-yellow-700 dark:text-yellow-400 text-sm">
-                <ExclamationTriangleIcon className="w-4 h-4" />
-                {connectionError}
+                <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{connectionError}</span>
               </div>
             )}
 
             {/* Mensagens */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f0f2f5] dark:bg-zinc-950">
+            <div 
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto p-4 space-y-4"
+            >
               {isLoadingMessages ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500" />
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-500" />
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <ChatBubbleLeftRightIcon className="w-16 h-16 mb-4 opacity-50" />
+                  <ChatBubbleLeftRightIcon className="w-20 h-20 mb-4 opacity-30" />
                   <p className="text-lg font-medium">Nenhuma mensagem ainda</p>
                   <p className="text-sm">Envie a primeira mensagem!</p>
                 </div>
@@ -586,10 +605,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             </div>
 
             {/* Input de Mensagem */}
-            <div className="bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800">
-              {/* Preview de Upload */}
+            <div className="bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 p-3 sm:p-4">
               {isUploading && (
-                <div className="px-4 py-2 bg-violet-50 dark:bg-violet-900/20 flex items-center gap-2 text-violet-700 dark:text-violet-400">
+                <div className="px-4 py-2 bg-violet-50 dark:bg-violet-900/20 flex items-center gap-2 text-violet-700 dark:text-violet-400 mb-2 rounded-lg">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-violet-500" />
                   <span className="text-sm">Enviando arquivo...</span>
                 </div>
@@ -604,7 +622,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 onAttachmentClick={() => fileInputRef.current?.click()}
               />
               
-              {/* Input de arquivo oculto */}
               <input
                 ref={fileInputRef}
                 type="file"

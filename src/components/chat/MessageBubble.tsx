@@ -1,13 +1,13 @@
 /**
  * MessageBubble - Balão de mensagem do chat
  * 
- * Suporta:
- * - Texto, imagem, vídeo, áudio, documento
- * - Status de entrega
- * - Preview de mídia clicável
- * - Download de documentos
+ * Melhorias:
+ * - Player de áudio funcional inline
+ * - Download de documentos corrigido
+ * - Preview de mídia melhorado
+ * - Melhor responsividade
  */
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -20,7 +20,12 @@ import {
   UserIcon,
   ShoppingCartIcon,
   PlayIcon,
+  PauseIcon,
   ArrowDownTrayIcon,
+  SpeakerWaveIcon,
+  SpeakerXMarkIcon,
+  FilmIcon,
+  MusicalNoteIcon,
 } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckIconSolid } from '@heroicons/react/24/solid';
 
@@ -34,6 +39,7 @@ export interface MessageBubbleProps {
   mediaUrl?: string;
   mediaType?: string;
   fileName?: string;
+  mimeType?: string;
   createdAt: string;
   sentAt?: string;
   deliveredAt?: string;
@@ -69,6 +75,119 @@ const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
   }
 };
 
+// Componente de player de áudio inline
+const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileName }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="w-[280px] bg-gray-100 dark:bg-zinc-800 rounded-lg p-3 mb-2">
+      <audio
+        ref={audioRef}
+        src={url}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+      />
+
+      <div className="flex items-center gap-2 mb-2">
+        <button
+          onClick={togglePlay}
+          className="w-10 h-10 bg-violet-600 hover:bg-violet-700 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+        >
+          {isPlaying ? (
+            <PauseIcon className="w-5 h-5" />
+          ) : (
+            <PlayIcon className="w-5 h-5 ml-0.5" />
+          )}
+        </button>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <MusicalNoteIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <span className="text-xs text-gray-600 dark:text-gray-300 truncate">
+              {fileName || 'Áudio'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+
+        <button
+          onClick={toggleMute}
+          className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          {isMuted ? (
+            <SpeakerXMarkIcon className="w-4 h-4" />
+          ) : (
+            <SpeakerWaveIcon className="w-4 h-4" />
+          )}
+        </button>
+      </div>
+
+      <input
+        type="range"
+        min={0}
+        max={duration || 100}
+        value={currentTime}
+        onChange={handleSeek}
+        className="w-full h-1.5 bg-gray-300 dark:bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-violet-600"
+      />
+    </div>
+  );
+};
+
 const MediaPreview: React.FC<{
   type: string;
   url?: string;
@@ -87,6 +206,7 @@ const MediaPreview: React.FC<{
           src={url}
           alt="Imagem"
           className="max-w-[280px] max-h-[200px] object-cover rounded-lg hover:opacity-90 transition-opacity"
+          loading="lazy"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
           <PhotoIcon className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -105,23 +225,20 @@ const MediaPreview: React.FC<{
         <video
           src={url}
           className="max-w-[280px] max-h-[200px] object-cover rounded-lg"
+          preload="metadata"
         />
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
           <div className="w-12 h-12 bg-white/80 rounded-full flex items-center justify-center">
-            <PlayIcon className="w-6 h-6 text-gray-800 ml-1" />
+            <FilmIcon className="w-6 h-6 text-gray-800" />
           </div>
         </div>
       </div>
     );
   }
 
-  // Áudio
+  // Áudio - Usar player customizado
   if (type === 'audio' && url) {
-    return (
-      <div className="w-[260px] mb-2">
-        <audio src={url} controls className="w-full h-10" />
-      </div>
-    );
+    return <AudioPlayer url={url} fileName={fileName} />;
   }
 
   // Documento
@@ -173,7 +290,20 @@ const MediaPreview: React.FC<{
 
   // Contato
   if (type === 'contacts') {
-    const contentData = content as { contacts?: Array<{ name?: { formatted_name?: string }; phones?: Array<{ phone?: string }> }> } | undefined;
+    interface ContactPhone {
+      phone?: string;
+    }
+    interface ContactName {
+      formatted_name?: string;
+    }
+    interface ContactItem {
+      name?: ContactName;
+      phones?: ContactPhone[];
+    }
+    interface ContactsContent {
+      contacts?: ContactItem[];
+    }
+    const contentData = content as ContactsContent | undefined;
     const contact = contentData?.contacts?.[0];
     return (
       <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg mb-2 max-w-[280px]">
@@ -225,7 +355,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     <div className={`flex ${isOutbound ? 'justify-end' : 'justify-start'} mb-3`}>
       <div
         className={`
-          max-w-[80%] sm:max-w-[70%] rounded-2xl shadow-sm
+          max-w-[85%] sm:max-w-[75%] rounded-2xl shadow-sm
           ${isOutbound
             ? 'bg-[#dcf8c6] dark:bg-emerald-800/80 text-gray-800 dark:text-white rounded-br-sm'
             : 'bg-white dark:bg-zinc-800 text-gray-800 dark:text-white rounded-bl-sm'
