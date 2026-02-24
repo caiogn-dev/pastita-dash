@@ -19,8 +19,8 @@ import {
   SpeakerXMarkIcon,
   PlayIcon,
   PauseIcon,
-  ZoomInIcon,
-  ZoomOutIcon,
+  MagnifyingGlassPlusIcon,
+  MagnifyingGlassMinusIcon,
   ArrowsPointingOutIcon,
 } from '@heroicons/react/24/outline';
 
@@ -219,7 +219,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
                 className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                 title="Diminuir zoom"
               >
-                <ZoomOutIcon className="w-5 h-5" />
+                <MagnifyingGlassMinusIcon className="w-5 h-5" />
               </button>
               <span className="text-white/80 text-sm min-w-[50px] text-center">
                 {Math.round(zoom * 100)}%
@@ -229,7 +229,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
                 className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                 title="Aumentar zoom"
               >
-                <ZoomInIcon className="w-5 h-5" />
+                <MagnifyingGlassPlusIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleResetZoom(); }}
