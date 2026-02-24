@@ -33,7 +33,7 @@ export const IntentLogsPage: React.FC = () => {
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [intentFilter, setIntentFilter] = useState<IntentType | ''>('');
-  const [methodFilter, setMethodFilter] = useState<'regex' | 'llm' | 'none' | ''>('');
+  const [methodFilter, setMethodFilter] = useState<'regex' | 'llm' | ''>('');
   const [showFilters, setShowFilters] = useState(false);
 
   const loadLogs = async () => {
@@ -149,7 +149,7 @@ export const IntentLogsPage: React.FC = () => {
             {/* Method Filter */}
             <select
               value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value as 'regex' | 'llm' | 'none' | '')}
+              onChange={(e) => setMethodFilter(e.target.value as 'regex' | 'llm' | '')}
               className={cn(
                 'px-4 py-2 rounded-lg border text-sm',
                 'border-zinc-300 dark:border-zinc-600',
@@ -160,7 +160,6 @@ export const IntentLogsPage: React.FC = () => {
               <option value="">Todos os métodos</option>
               <option value="regex">⚡ Regex</option>
               <option value="llm">🤖 LLM (IA)</option>
-              <option value="none">❌ Nenhum</option>
             </select>
           </div>
         </div>
@@ -237,12 +236,6 @@ export const IntentLogsPage: React.FC = () => {
                         <span className="inline-flex items-center gap-1 text-sm text-purple-600 dark:text-purple-400">
                           <CpuChipIcon className="w-4 h-4" />
                           LLM
-                        </span>
-                      )}
-                      {log.method === 'none' && (
-                        <span className="inline-flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">
-                          <ExclamationCircleIcon className="w-4 h-4" />
-                          Nenhum
                         </span>
                       )}
                     </td>
