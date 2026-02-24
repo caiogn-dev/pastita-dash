@@ -19,13 +19,14 @@ import api from '../services/api';
 export interface WhatsAppMessage {
   id: string;
   whatsapp_message_id: string;
+  conversation_id?: string;
   direction: 'inbound' | 'outbound';
   message_type: string;
   status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
   from_number: string;
   to_number: string;
   text_body: string;
-  content: Record<string, unknown>;
+  content: Record<string, unknown> | string;
   media_id?: string;
   media_url?: string;
   created_at: string;

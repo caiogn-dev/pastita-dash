@@ -131,12 +131,26 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const messageConversationId = newMessage.conversation_id;
     
     if (messageConversationId === selectedConversation.id) {
-      const typedMessage: Message = {
-        ...newMessage,
+      const typedMessage = {
+        id: newMessage.id,
+        whatsapp_message_id: newMessage.whatsapp_message_id,
+        conversation_id: newMessage.conversation_id,
+        direction: newMessage.direction,
+        message_type: newMessage.message_type,
+        status: newMessage.status,
+        from_number: newMessage.from_number,
+        to_number: newMessage.to_number,
+        text_body: newMessage.text_body,
+        content: typeof newMessage.content === 'string' ? newMessage.content : JSON.stringify(newMessage.content),
+        media_url: newMessage.media_url,
+        media_mime_type: undefined,
         timestamp: newMessage.created_at,
         account: accountId,
+        created_at: newMessage.created_at,
         updated_at: newMessage.created_at,
-      } as Message;
+        delivered_at: newMessage.delivered_at,
+        read_at: newMessage.read_at,
+      } as unknown as Message;
       
       setMessages(prev => {
         const isDuplicate = prev.some(m => 
