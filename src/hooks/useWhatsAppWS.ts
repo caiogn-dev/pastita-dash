@@ -382,7 +382,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     };
   }, [connect, enabled, accountId, dashboardMode]);
 
-  const returnValue: UseWhatsAppWSReturn = {
+  const returnValue = {
     isConnected,
     connectionError,
     subscribeToConversation,
@@ -391,7 +391,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     sendMessage,
   };
 
-  return returnValue;
+  return returnValue as UseWhatsAppWSReturn;
 }
 
 export default useWhatsAppWS;
