@@ -347,8 +347,8 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
 
   // Send message via API
   const sendMessage = useCallback(async (phoneNumber: string, text: string) => {
-    await api.post('/whatsapp/send-message/', {
-      phone_number: phoneNumber,
+    await api.post('/whatsapp/messages/send_text/', {
+      to: phoneNumber,
       text: text,
     });
   }, []);
