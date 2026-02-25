@@ -1,8 +1,34 @@
+/**
+ * AccountsPage - Página de contas WhatsApp com Chakra UI v3
+ */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import {
+  Box,
+  Flex,
+  Heading,
+  Text,
+  Stack,
+  Table,
+  Badge,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Skeleton,
+  useDisclosure,
+} from '@chakra-ui/react';
+import {
+  PlusIcon,
+  ArrowPathIcon,
+  EllipsisVerticalIcon,
+  TrashIcon,
+  PowerIcon,
+  ChartBarIcon,
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Table, StatusBadge, ConfirmModal, PageLoading, PageTitle } from '../../components/common';
+import { Card, Button } from '../../components/common';
 import { whatsappService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { WhatsAppAccount } from '../../types';
@@ -12,10 +38,8 @@ import { ptBR } from 'date-fns/locale';
 export const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
   const { accounts, setAccounts, setLoading, isLoading, updateAccount, removeAccount } = useAccountStore();
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; account: WhatsAppAccount | null }>({
-    isOpen: false,
-    account: null,
-  });
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedAccount, setSelectedAccount] = useState<WhatsAppAccount | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -56,13 +80,13 @@ export const AccountsPage: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!deleteModal.account) return;
+    if (!selectedAccount) return;
     setIsDeleting(true);
     try {
-      await whatsappService.deleteAccount(deleteModal.account.id);
-      removeAccount(deleteModal.account.id);
+      await whatsappService.deleteAccount(selectedAccount.id);
+      removeAccount(selectedAccount.id);
       toast.success('Conta removida com sucesso!');
-      setDeleteModal({ isOpen: false, account: null });
+      onClose();
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -70,126 +94,183 @@ export const AccountsPage: React.FC = () => {
     }
   };
 
-  const columns = [
-    {
-      key: 'name',
-      header: 'Nome',
-      render: (account: WhatsAppAccount) => (
-        <div>
-          <p className="font-medium text-gray-900 dark:text-white">{account.name}</p>
-          <p className="text-sm text-gray-500 dark:text-zinc-400">{account.display_phone_number || account.phone_number}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'phone_number_id',
-      header: 'Phone Number ID',
-      render: (account: WhatsAppAccount) => (
-        <span className="text-sm font-mono text-gray-600 dark:text-zinc-400">{account.phone_number_id}</span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (account: WhatsAppAccount) => <StatusBadge status={account.status} />,
-    },
-    {
-      key: 'auto_response',
-      header: 'Resposta Auto',
-      render: (account: WhatsAppAccount) => (
-        <span className={`text-sm ${account.auto_response_enabled ? 'text-green-600' : 'text-gray-400'}`}>
-          {account.auto_response_enabled ? 'Ativada' : 'Desativada'}
-        </span>
-      ),
-    },
-    {
-      key: 'created_at',
-      header: 'Criado em',
-      render: (account: WhatsAppAccount) => (
-        <span className="text-sm text-gray-600 dark:text-zinc-400">
-          {format(new Date(account.created_at), "dd/MM/yyyy", { locale: ptBR })}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Ações',
-      render: (account: WhatsAppAccount) => (
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleStatus(account);
-            }}
-          >
-            {account.status === 'active' ? 'Desativar' : 'Ativar'}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSyncTemplates(account);
-            }}
-            leftIcon={<ArrowPathIcon className="w-4 h-4" />}
-          >
-            Sync
-          </Button>
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteModal({ isOpen: true, account });
-            }}
-          >
-            Excluir
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
-  if (isLoading) {
-    return <PageLoading />;
-  }
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'success';
+      case 'inactive': return 'gray';
+      case 'pending': return 'warning';
+      case 'error': return 'danger';
+      default: return 'gray';
+    }
+  };
 
   return (
-    <div className="p-6">
-      <PageTitle
-        title="Contas WhatsApp"
-        subtitle={`${accounts.length} conta(s) cadastrada(s)`}
-        actions={
+    <Box p={6}>
+      <Stack gap={6}>
+        {/* Header */}
+        <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
+          <Stack gap={1}>
+            <Heading size="lg" color="fg.primary">Contas WhatsApp</Heading>
+            <Text color="fg.muted">{accounts.length} conta(s) cadastrada(s)</Text>
+          </Stack>
+          
           <Button
             leftIcon={<PlusIcon className="w-5 h-5" />}
             onClick={() => navigate('/accounts/new')}
           >
             Nova Conta
           </Button>
-        }
-      />
+        </Flex>
 
-      <Card noPadding>
-        <Table
-          columns={columns}
-          data={accounts}
-          keyExtractor={(account) => account.id}
-          onRowClick={(account) => navigate(`/accounts/${account.id}`)}
-          emptyMessage="Nenhuma conta cadastrada"
-        />
-      </Card>
+        {/* Table */}
+        <Card noPadding>
+          {isLoading ? (
+            <Stack p={4} gap={3}>
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} height="60px" />
+              ))}
+            </Stack>
+          ) : accounts.length === 0 ? (
+            <Box p={8} textAlign="center">
+              <Text color="fg.muted">Nenhuma conta cadastrada</Text>
+              <Button 
+                mt={4} 
+                onClick={() => navigate('/accounts/new')}
+                leftIcon={<PlusIcon className="w-4 h-4" />}
+              >
+                Adicionar Conta
+              </Button>
+            </Box>
+          ) : (
+            <Box overflowX="auto">
+              <Table.Root variant="line">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeader>Nome</Table.ColumnHeader>
+                    <Table.ColumnHeader>Phone ID</Table.ColumnHeader>
+                    <Table.ColumnHeader>Status</Table.ColumnHeader>
+                    <Table.ColumnHeader>Auto Resposta</Table.ColumnHeader>
+                    <Table.ColumnHeader>Criado em</Table.ColumnHeader>
+                    <Table.ColumnHeader width="100px">Ações</Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {accounts.map((account) => (
+                    <Table.Row 
+                      key={account.id}
+                      cursor="pointer"
+                      onClick={() => navigate(`/accounts/${account.id}`)}
+                      _hover={{ bg: 'bg.hover' }}
+                    >
+                      <Table.Cell>
+                        <Stack gap={0.5}>
+                          <Text fontWeight="medium" color="fg.primary">
+                            {account.name}
+                          </Text>
+                          <Text fontSize="sm" color="fg.muted">
+                            {account.display_phone_number || account.phone_number}
+                          </Text>
+                        </Stack>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text fontFamily="mono" fontSize="sm" color="fg.muted">
+                          {account.phone_number_id}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Badge colorPalette={getStatusColor(account.status)}>
+                          {account.status}
+                        </Badge>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text 
+                          fontSize="sm" 
+                          color={account.auto_response_enabled ? 'success.500' : 'fg.muted'}
+                        >
+                          {account.auto_response_enabled ? 'Ativada' : 'Desativada'}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text fontSize="sm" color="fg.muted">
+                          {format(new Date(account.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell onClick={(e) => e.stopPropagation()}>
+                        <Menu>
+                          <MenuButton
+                            as={IconButton}
+                            variant="ghost"
+                            size="sm"
+                            icon={<EllipsisVerticalIcon className="w-5 h-5" />}
+                          />
+                          <MenuList>
+                            <MenuItem
+                              icon={<PowerIcon className="w-4 h-4" />}
+                              onClick={() => handleToggleStatus(account)}
+                            >
+                              {account.status === 'active' ? 'Desativar' : 'Ativar'}
+                            </MenuItem>
+                            <MenuItem
+                              icon={<ArrowPathIcon className="w-4 h-4" />}
+                              onClick={() => handleSyncTemplates(account)}
+                            >
+                              Sincronizar Templates
+                            </MenuItem>
+                            <MenuItem
+                              icon={<ChartBarIcon className="w-4 h-4" />}
+                              onClick={() => navigate(`/accounts/${account.id}`)}
+                            >
+                              Ver Detalhes
+                            </MenuItem>
+                            <MenuItem
+                              icon={<TrashIcon className="w-4 h-4" />}
+                              color="danger.500"
+                              onClick={() => {
+                                setSelectedAccount(account);
+                                onOpen();
+                              }}
+                            >
+                              Excluir
+                            </MenuItem>
+                          </MenuList>
+                        </Menu>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            </Box>
+          )}
+        </Card>
+      </Stack>
 
-      <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, account: null })}
-        onConfirm={handleDelete}
+      {/* Delete Modal */}
+      <Card
         title="Excluir Conta"
-        message={`Tem certeza que deseja excluir a conta "${deleteModal.account?.name}"? Esta ação não pode ser desfeita.`}
-        confirmText="Excluir"
-        isLoading={isDeleting}
-      />
-    </div>
+        isOpen={isOpen}
+        onClose={onClose}
+      >
+        <Stack p={4} gap={4}>
+          <Text>
+            Tem certeza que deseja excluir a conta "{selectedAccount?.name}"? 
+            Esta ação não pode ser desfeita.
+          </Text>
+          <Flex justify="flex-end" gap={3}>
+            <Button variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button 
+              colorPalette="danger" 
+              onClick={handleDelete}
+              isLoading={isDeleting}
+            >
+              Excluir
+            </Button>
+          </Flex>
+        </Stack>
+      </Card>
+    </Box>
   );
 };
+
+export default AccountsPage;
