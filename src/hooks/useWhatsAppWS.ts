@@ -128,6 +128,7 @@ interface UseWhatsAppWSReturn {
   sendMessage: (phoneNumber: string, text: string) => Promise<void>;
 }
 
+// Export the type for external use
 export type { UseWhatsAppWSReturn };
 
 export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWSReturn {
