@@ -80,17 +80,33 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const togglePlay = () => {
-    if (audioRef.current) {
+  // Verificar se a URL é válida
+  const isValidUrl = url && (url.startsWith('http') || url.startsWith('https'));
+
+  useEffect(() => {
+    if (!isValidUrl) {
+      setError('URL de áudio inválida');
+      setIsLoading(false);
+    }
+  }, [isValidUrl]);
+
+  const togglePlay = async () => {
+    if (!audioRef.current || !isValidUrl) return;
+    
+    try {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play();
+        await audioRef.current.play();
       }
+    } catch (err) {
+      console.error('Erro ao reproduzir áudio:', err);
+      setError('Não foi possível reproduzir o áudio. Formo não suportado.');
     }
   };
 
@@ -103,7 +119,34 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration);
+      setIsLoading(false);
+      setError(null);
     }
+  };
+
+  const handleError = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+    const audio = e.currentTarget;
+    let errorMsg = 'Erro ao carregar áudio';
+    
+    if (audio.error) {
+      switch (audio.error.code) {
+        case MediaError.MEDIA_ERR_ABORTED:
+          errorMsg = 'Reprodução abortada';
+          break;
+        case MediaError.MEDIA_ERR_NETWORK:
+          errorMsg = 'Erro de rede ao carregar áudio';
+          break;
+        case MediaError.MEDIA_ERR_DECODE:
+          errorMsg = 'Formato de áudio não suportado';
+          break;
+        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          errorMsg = 'Tipo de arquivo não suportado';
+          break;
+      }
+    }
+    
+    setError(errorMsg);
+    setIsLoading(false);
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,10 +165,22 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
   };
 
   const formatTime = (time: number) => {
+    if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
+
+  if (!isValidUrl) {
+    return (
+      <div className="w-[280px] bg-gray-100 dark:bg-zinc-800 rounded-lg p-3 mb-2">
+        <div className="flex items-center gap-2 text-gray-500">
+          <MusicalNoteIcon className="w-5 h-5" />
+          <span className="text-sm">Áudio não disponível</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-[280px] bg-gray-100 dark:bg-zinc-800 rounded-lg p-3 mb-2">
@@ -134,56 +189,71 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
         src={url}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onError={handleError}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onEnded={() => setIsPlaying(false)}
+        preload="metadata"
+        crossOrigin="anonymous"
       />
 
-      <div className="flex items-center gap-2 mb-2">
-        <button
-          onClick={togglePlay}
-          className="w-10 h-10 bg-violet-600 hover:bg-violet-700 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-        >
-          {isPlaying ? (
-            <PauseIcon className="w-5 h-5" />
-          ) : (
-            <PlayIcon className="w-5 h-5 ml-0.5" />
-          )}
-        </button>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <MusicalNoteIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <span className="text-xs text-gray-600 dark:text-gray-300 truncate">
-              {fileName || 'Áudio'}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
+      {error ? (
+        <div className="flex items-center gap-2 text-amber-600 text-sm">
+          <SpeakerXMarkIcon className="w-5 h-5 flex-shrink-0" />
+          <span>{error}</span>
         </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              onClick={togglePlay}
+              disabled={isLoading}
+              className="w-10 h-10 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+            >
+              {isPlaying ? (
+                <PauseIcon className="w-5 h-5" />
+              ) : (
+                <PlayIcon className="w-5 h-5 ml-0.5" />
+              )}
+            </button>
 
-        <button
-          onClick={toggleMute}
-          className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-        >
-          {isMuted ? (
-            <SpeakerXMarkIcon className="w-4 h-4" />
-          ) : (
-            <SpeakerWaveIcon className="w-4 h-4" />
-          )}
-        </button>
-      </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <MusicalNoteIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span className="text-xs text-gray-600 dark:text-gray-300 truncate">
+                  {fileName || 'Áudio'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
 
-      <input
-        type="range"
-        min={0}
-        max={duration || 100}
-        value={currentTime}
-        onChange={handleSeek}
-        className="w-full h-1.5 bg-gray-300 dark:bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-violet-600"
-      />
+            <button
+              onClick={toggleMute}
+              disabled={isLoading}
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
+            >
+              {isMuted ? (
+                <SpeakerXMarkIcon className="w-4 h-4" />
+              ) : (
+                <SpeakerWaveIcon className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+
+          <input
+            type="range"
+            min={0}
+            max={duration || 100}
+            value={currentTime}
+            onChange={handleSeek}
+            disabled={isLoading || !duration}
+            className="w-full h-1.5 bg-gray-300 dark:bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-violet-600 disabled:opacity-50"
+          />
+        </>
+      )}
     </div>
   );
 };
@@ -248,86 +318,78 @@ const MediaPreview: React.FC<{
         className="flex items-center gap-3 p-3 bg-gray-100/50 dark:bg-black/20 rounded-lg mb-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-black/30 transition-colors max-w-[280px]"
         onClick={onClick}
       >
-        <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-          <DocumentIcon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+          <DocumentIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
             {fileName || 'Documento'}
           </p>
-          <p className="text-xs text-gray-500">Clique para baixar</p>
+          <p className="text-xs text-gray-500 dark:text-zinc-400">
+            Clique para baixar
+          </p>
         </div>
-        <ArrowDownTrayIcon className="w-4 h-4 text-gray-400" />
+        <ArrowDownTrayIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
       </div>
     );
   }
 
   // Localização
   if (type === 'location') {
-    const contentObj = typeof content === 'string' ? {} : content;
-    const location = contentObj?.location as { latitude?: number; longitude?: number; name?: string } | undefined;
-    const mapsUrl = location?.latitude && location?.longitude
-      ? `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
-      : '#';
-    
+    const location = typeof content === 'string' ? JSON.parse(content) : content;
     return (
-      <a
-        href={mapsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg mb-2 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors max-w-[280px]"
-      >
-        <MapPinIcon className="w-8 h-8 text-red-500 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-            {location?.name || 'Localização'}
-          </p>
-          <p className="text-xs text-red-600 dark:text-red-400">Abrir no Maps</p>
-        </div>
-      </a>
-    );
-  }
-
-  // Contato
-  if (type === 'contacts') {
-    interface ContactPhone {
-      phone?: string;
-    }
-    interface ContactName {
-      formatted_name?: string;
-    }
-    interface ContactItem {
-      name?: ContactName;
-      phones?: ContactPhone[];
-    }
-    interface ContactsContent {
-      contacts?: ContactItem[];
-    }
-    const contentData = content as ContactsContent | undefined;
-    const contact = contentData?.contacts?.[0];
-    return (
-      <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg mb-2 max-w-[280px]">
-        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-          <UserIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg mb-2 max-w-[280px]">
+        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+          <MapPinIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-            {contact?.name?.formatted_name || 'Contato'}
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            Localização
           </p>
-          {contact?.phones?.[0]?.phone && (
-            <p className="text-xs text-gray-500">{contact.phones[0].phone}</p>
+          {location?.latitude && location?.longitude && (
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
+              {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+            </p>
           )}
         </div>
       </div>
     );
   }
 
-  // Pedido
+  // Contatos
+  if (type === 'contacts') {
+    return (
+      <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg mb-2 max-w-[280px]">
+        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+          <UserIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            Contato
+          </p>
+          <p className="text-xs text-gray-500 dark:text-zinc-400">
+            {typeof content === 'string' ? content : JSON.stringify(content)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Pedido/Compra
   if (type === 'order') {
     return (
-      <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg mb-2 max-w-[280px]">
-        <ShoppingCartIcon className="w-8 h-8 text-green-500" />
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Pedido</span>
+      <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg mb-2 max-w-[280px]">
+        <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+          <ShoppingCartIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            Pedido
+          </p>
+          <p className="text-xs text-gray-500 dark:text-zinc-400">
+            {typeof content === 'string' ? content : JSON.stringify(content)}
+          </p>
+        </div>
       </div>
     );
   }
@@ -336,6 +398,7 @@ const MediaPreview: React.FC<{
 };
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
+  id,
   direction,
   messageType,
   status,
@@ -344,60 +407,74 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   mediaUrl,
   mediaType,
   fileName,
+  mimeType,
   createdAt,
+  sentAt,
+  deliveredAt,
+  readAt,
   errorMessage,
   onMediaClick,
 }) => {
-  const isOutbound = direction === 'outbound';
-  const hasMedia = ['image', 'video', 'audio', 'document', 'sticker', 'location', 'contacts', 'order'].includes(messageType);
+  const isInbound = direction === 'inbound';
+  const hasMedia = mediaUrl && ['image', 'video', 'audio', 'document'].includes(messageType);
 
   return (
-    <div className={`flex ${isOutbound ? 'justify-end' : 'justify-start'} mb-3`}>
+    <div
+      className={`flex ${isInbound ? 'justify-start' : 'justify-end'} mb-4`}
+    >
       <div
-        className={`
-          max-w-[85%] sm:max-w-[75%] rounded-2xl shadow-sm
-          ${isOutbound
-            ? 'bg-[#dcf8c6] dark:bg-emerald-800/80 text-gray-800 dark:text-white rounded-br-sm'
-            : 'bg-white dark:bg-zinc-800 text-gray-800 dark:text-white rounded-bl-sm'
-          }
-        `}
+        className={`max-w-[70%] ${
+          isInbound
+            ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white'
+            : 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-900 dark:text-white'
+        } rounded-lg shadow-sm`}
       >
         {/* Mídia */}
         {hasMedia && (
-          <div className="p-1">
-            <MediaPreview
-              type={messageType}
-              url={mediaUrl}
-              fileName={fileName}
-              content={content}
-              onClick={() => mediaUrl && onMediaClick?.(mediaUrl, mediaType || messageType, fileName)}
-            />
-          </div>
+          <MediaPreview
+            type={messageType}
+            url={mediaUrl}
+            fileName={fileName}
+            content={content}
+            onClick={() => onMediaClick?.(mediaUrl!, messageType, fileName)}
+          />
         )}
 
         {/* Texto */}
         {textBody && (
-          <div className="px-3 pb-1">
-            <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-              {textBody}
-            </p>
+          <div className="px-3 py-2">
+            <p className="text-sm whitespace-pre-wrap break-words">{textBody}</p>
           </div>
         )}
 
-        {/* Erro */}
-        {status === 'failed' && errorMessage && (
-          <p className="px-3 text-xs text-red-500 mt-1">{errorMessage}</p>
+        {/* Conteúdo especial (botões, listas, etc) */}
+        {content && messageType === 'interactive' && (
+          <div className="px-3 py-2 border-t border-gray-100 dark:border-zinc-700">
+            <pre className="text-xs text-gray-600 dark:text-zinc-400 overflow-x-auto">
+              {typeof content === 'string' ? content : JSON.stringify(content, null, 2)}
+            </pre>
+          </div>
         )}
 
-        {/* Timestamp e Status */}
-        <div className={`flex items-center justify-end gap-1 px-3 pb-1.5 pt-1 ${
-          isOutbound ? 'text-gray-500 dark:text-gray-300' : 'text-gray-400'
-        }`}>
-          <span className="text-[11px]">
+        {/* Footer com timestamp e status */}
+        <div className="flex items-center justify-end gap-1 px-3 pb-2">
+          <span className="text-[10px] text-gray-400">
             {format(new Date(createdAt), 'HH:mm', { locale: ptBR })}
           </span>
-          {isOutbound && <StatusIndicator status={status} />}
+          
+          {!isInbound && (
+            <span className="ml-1">
+              <StatusIndicator status={status} />
+            </span>
+          )}
         </div>
+
+        {/* Erro */}
+        {errorMessage && (
+          <div className="px-3 pb-2">
+            <p className="text-xs text-red-500">{errorMessage}</p>
+          </div>
+        )}
       </div>
     </div>
   );
