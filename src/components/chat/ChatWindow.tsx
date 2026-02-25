@@ -90,7 +90,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         timestamp: msg.created_at,
         account: accountId,
         updated_at: msg.created_at,
-      } as Message;
+      } as unknown as Message;
       handleNewMessage(convertedMsg);
     },
     onStatusUpdated: handleStatusUpdated,
