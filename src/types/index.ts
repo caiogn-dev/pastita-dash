@@ -820,7 +820,8 @@ export interface ExportParams {
   entity?: string;
   format?: 'csv' | 'json' | 'xlsx' | 'pdf';
   store?: string;
-  status?: string;
+  store_id?: string;
+  status?: string | undefined;
   mode?: string;
   account_id?: string;
   filters?: Record<string, unknown>;

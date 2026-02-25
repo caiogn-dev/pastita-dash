@@ -11,7 +11,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Card, Button, StatusBadge, Modal, Input, PageLoading, StatCard, PageTitle } from '../../components/common';
+import { Card, Button, StatusBadge, Modal, Input, PageLoading, PageTitle } from '../../components/common';
 import { whatsappService, getErrorMessage } from '../../services';
 import { WhatsAppAccount, MessageTemplate } from '../../types';
 
@@ -193,26 +193,50 @@ export const AccountDetailPage: React.FC = () => {
         {/* Stats */}
         {messageStats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <StatCard
-              title="Mensagens Enviadas"
-              value={(messageStats as Record<string, number>).sent || 0}
-              icon={<ChartBarIcon className="w-6 h-6" />}
-            />
-            <StatCard
-              title="Mensagens Entregues"
-              value={(messageStats as Record<string, number>).delivered || 0}
-              icon={<CheckCircleIcon className="w-6 h-6" />}
-            />
-            <StatCard
-              title="Mensagens Lidas"
-              value={(messageStats as Record<string, number>).read || 0}
-              icon={<CheckCircleIcon className="w-6 h-6" />}
-            />
-            <StatCard
-              title="Mensagens Falhas"
-              value={(messageStats as Record<string, number>).failed || 0}
-              icon={<XCircleIcon className="w-6 h-6" />}
-            />
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                  <ChartBarIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Mensagens Enviadas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{(messageStats as Record<string, number>).sent || 0}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                  <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Mensagens Entregues</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{(messageStats as Record<string, number>).delivered || 0}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                  <CheckCircleIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Mensagens Lidas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{(messageStats as Record<string, number>).read || 0}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
+                  <XCircleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Mensagens Falhas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{(messageStats as Record<string, number>).failed || 0}</p>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
 

@@ -3,7 +3,7 @@ import logger from '../../services/logger';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Input, Select, PageLoading, PageTitle } from '../../components/common';
+import { Card, Button, Input, PageLoading, PageTitle } from '../../components/common';
 import { whatsappService, agentsService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { Agent } from '../../services/agents';
@@ -173,18 +173,23 @@ export const AccountFormPage: React.FC = () => {
               </>
             )}
 
-            <Select
-              label="Agente Padrão"
-              value={formData.default_agent}
-              onChange={(e) => setFormData({ ...formData, default_agent: e.target.value })}
-              options={[
-                { value: '', label: 'Nenhum' },
-                ...agents.map((agent) => ({
-                  value: agent.id,
-                  label: agent.name,
-                })),
-              ]}
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                Agente Padrão
+              </label>
+              <select
+                value={formData.default_agent}
+                onChange={(e) => setFormData({ ...formData, default_agent: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              >
+                <option value="">Nenhum</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex items-center gap-6">

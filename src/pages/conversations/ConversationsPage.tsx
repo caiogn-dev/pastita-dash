@@ -375,7 +375,7 @@ export const ConversationsPage: React.FC = () => {
             variant={conv.mode === 'human' ? 'secondary' : 'primary'}
             leftIcon={conv.mode === 'human' ? <CpuChipIcon className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
             onClick={(e) => {
-              e.stopPropagation();
+              e?.stopPropagation();
               handleSwitchMode(conv, conv.mode === 'human' ? 'auto' : 'human');
             }}
           >
@@ -385,7 +385,7 @@ export const ConversationsPage: React.FC = () => {
             size="sm"
             variant="ghost"
             onClick={(e) => {
-              e.stopPropagation();
+              e?.stopPropagation();
               loadNotes(conv);
             }}
           >
@@ -398,7 +398,7 @@ export const ConversationsPage: React.FC = () => {
                 variant="ghost"
                 leftIcon={<CheckCircleIcon className="w-4 h-4" />}
                 onClick={(e) => {
-                  e.stopPropagation();
+                  e?.stopPropagation();
                   handleResolveConversation(conv);
                 }}
               >
@@ -409,7 +409,7 @@ export const ConversationsPage: React.FC = () => {
                 variant="secondary"
                 leftIcon={<XCircleIcon className="w-4 h-4" />}
                 onClick={(e) => {
-                  e.stopPropagation();
+                  e?.stopPropagation();
                   handleCloseConversation(conv);
                 }}
               >
@@ -422,7 +422,7 @@ export const ConversationsPage: React.FC = () => {
               variant="ghost"
               leftIcon={<ArrowPathIcon className="w-4 h-4" />}
               onClick={(e) => {
-                e.stopPropagation();
+                e?.stopPropagation();
                 handleReopenConversation(conv);
               }}
             >
@@ -642,8 +642,8 @@ export const ConversationsPage: React.FC = () => {
                 <p className="text-gray-600 dark:text-zinc-400">{detailConversation.phone_number}</p>
               </div>
               <div className="flex flex-col gap-2">
-                <ConversationStatusBadge status={detailConversation.status} size="md" />
-                <ConversationModeBadge mode={detailConversation.mode ?? 'auto'} size="md" />
+                <ConversationStatusBadge status={detailConversation.status} />
+                <ConversationModeBadge mode={detailConversation.mode ?? 'auto'} />
               </div>
             </div>
 

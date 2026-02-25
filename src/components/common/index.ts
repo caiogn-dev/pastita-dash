@@ -45,10 +45,6 @@ export {
 
 // Re-export do Chakra UI para componentes que não temos wrappers
 export { 
-  Textarea, 
-  Select,
+  Textarea,
   Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
 } from '@chakra-ui/react';

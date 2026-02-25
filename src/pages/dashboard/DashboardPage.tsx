@@ -162,9 +162,9 @@ export const DashboardPage: React.FC = () => {
     datasets: [
       {
         data: [
-          overview?.messages?.delivered || 0,
-          overview?.messages?.read || 0,
-          overview?.messages?.failed || 0,
+          (overview?.messages as { delivered?: number } | undefined)?.delivered || 0,
+          (overview?.messages as { read?: number } | undefined)?.read || 0,
+          (overview?.messages as { failed?: number } | undefined)?.failed || 0,
         ],
         backgroundColor: ['#22c55e', '#0ea5e9', '#ef4444'],
         borderWidth: 0,
@@ -208,17 +208,18 @@ export const DashboardPage: React.FC = () => {
             </Text>
           </Stack>
           
-          <Select
-            value={chartRangeDays}
-            onChange={(e) => setChartRangeDays(Number(e.target.value))}
-            width="200px"
-          >
-            {chartRangeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
+          <select
+              value={chartRangeDays}
+              onChange={(e) => setChartRangeDays(Number(e.target.value))}
+              className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
+              style={{ width: '200px' }}
+            >
+              {chartRangeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
         </Flex>
 
         {/* Stats Grid */}
@@ -232,7 +233,7 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <StatCard
                 title="Mensagens Hoje"
-                value={overview?.messages?.today || 0}
+                value={(overview?.messages as { today?: number } | undefined)?.today || 0}
                 subtitle="Total de mensagens"
                 icon={ChatBubbleLeftRightIcon}
                 colorPalette="brand"
@@ -246,7 +247,7 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <StatCard
                 title="Pedidos"
-                value={overview?.orders?.today || 0}
+                value={(overview?.orders as { today?: number } | undefined)?.today || 0}
                 subtitle="Pedidos hoje"
                 icon={ShoppingCartIcon}
                 colorPalette="accent"
@@ -260,7 +261,7 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <StatCard
                 title="Receita"
-                value={`R$ ${(overview?.orders?.revenue_today || 0).toFixed(2)}`}
+                value={`R$ ${((overview?.orders as { revenue_today?: number } | undefined)?.revenue_today || 0).toFixed(2)}`}
                 subtitle="Receita de hoje"
                 icon={CurrencyDollarIcon}
                 colorPalette="success"
@@ -274,7 +275,7 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <StatCard
                 title="Conversas"
-                value={overview?.conversations?.active || 0}
+                value={(overview?.conversations as { active?: number } | undefined)?.active || 0}
                 subtitle="Conversas ativas"
                 icon={UsersIcon}
                 colorPalette="warning"

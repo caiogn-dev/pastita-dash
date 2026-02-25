@@ -215,7 +215,6 @@ export const AccountsPage: React.FC = () => {
                                       variant="ghost"
                                       leftIcon={<PowerIcon className="w-4 h-4" />}
                                       onClick={() => handleToggleStatus(account)}
-                                      justifyContent="flex-start"
                                     >
                                       {account.status === 'active' ? 'Desativar' : 'Ativar'}
                                     </Button>
@@ -223,7 +222,6 @@ export const AccountsPage: React.FC = () => {
                                       variant="ghost"
                                       leftIcon={<ArrowPathIcon className="w-4 h-4" />}
                                       onClick={() => handleSyncTemplates(account)}
-                                      justifyContent="flex-start"
                                     >
                                       Sincronizar Templates
                                     </Button>
@@ -231,7 +229,6 @@ export const AccountsPage: React.FC = () => {
                                       variant="ghost"
                                       leftIcon={<ChartBarIcon className="w-4 h-4" />}
                                       onClick={() => navigate(`/accounts/${account.id}`)}
-                                      justifyContent="flex-start"
                                     >
                                       Ver Detalhes
                                     </Button>
@@ -243,7 +240,6 @@ export const AccountsPage: React.FC = () => {
                                         setSelectedAccount(account);
                                         setIsDeleteOpen(true);
                                       }}
-                                      justifyContent="flex-start"
                                     >
                                       Excluir
                                     </Button>

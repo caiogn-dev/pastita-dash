@@ -301,7 +301,7 @@ export const PaymentsPage: React.FC = () => {
             <Button
               size="sm"
               onClick={(e) => {
-                e.stopPropagation();
+                e?.stopPropagation();
                 handleConfirmPayment(order);
               }}
             >

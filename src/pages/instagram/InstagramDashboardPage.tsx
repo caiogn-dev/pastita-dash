@@ -424,26 +424,50 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          title="Alcance"
-          value={insights?.reduce((sum, i) => sum + i.reach, 0).toLocaleString('pt-BR') || '0'}
-          icon={<EyeIcon className="w-5 h-5" />}
-        />
-        <StatCard
-          title="Impressões"
-          value={insights?.reduce((sum, i) => sum + i.impressions, 0).toLocaleString('pt-BR') || '0'}
-          icon={<ChartBarIcon className="w-5 h-5" />}
-        />
-        <StatCard
-          title="Engajamento"
-          value={insights?.reduce((sum, i) => sum + i.engagement, 0).toLocaleString('pt-BR') || '0'}
-          icon={<HeartIcon className="w-5 h-5" />}
-        />
-        <StatCard
-          title="Novos Seguidores"
-          value={insights?.reduce((sum, i) => sum + i.followers_gained, 0).toLocaleString('pt-BR') || '0'}
-          icon={<ShareIcon className="w-5 h-5" />}
-        />
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/40 rounded-lg">
+                  <EyeIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Alcance</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{insights?.reduce((sum, i) => sum + i.reach, 0).toLocaleString('pt-BR') || '0'}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                  <ChartBarIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Impressões</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{insights?.reduce((sum, i) => sum + i.impressions, 0).toLocaleString('pt-BR') || '0'}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
+                  <HeartIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Engajamento</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{insights?.reduce((sum, i) => sum + i.engagement, 0).toLocaleString('pt-BR') || '0'}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                  <ShareIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Novos Seguidores</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{insights?.reduce((sum, i) => sum + i.followers_gained, 0).toLocaleString('pt-BR') || '0'}</p>
+                </div>
+              </div>
+            </Card>
       </div>
 
       {/* Chart placeholder - would use Chart.js in real implementation */}

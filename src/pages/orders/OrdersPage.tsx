@@ -18,11 +18,12 @@ import {
   Skeleton,
   Tabs,
   Table,
+  InputGroup,
 } from '@chakra-ui/react';
-import { 
-  MagnifyingGlassIcon, 
-  TruckIcon, 
-  CreditCardIcon, 
+import {
+  MagnifyingGlassIcon,
+  TruckIcon,
+  CreditCardIcon,
   XMarkIcon,
   Squares2X2Icon,
   ListBulletIcon,
@@ -36,17 +37,17 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { 
-  Card, 
-  Button, 
-  OrderStatusBadge, 
-  Input, 
+import {
+  Card,
+  Button,
+  OrderStatusBadge,
+  Input,
   PageLoading,
   PageTitle,
 } from '../../components/common';
 import { OrdersKanban, ORDER_STATUSES } from '../../components/orders/OrdersKanban';
 import { exportService, getErrorMessage, ordersService } from '../../services';
-import { useStore, useOrdersWebSocket, useNotificationSound } from '../../hooks';
+import { useStore, useNotificationSound } from '../../hooks';
 import { Order } from '../../types';
 
 type ViewMode = 'kanban' | 'table';
@@ -54,8 +55,8 @@ type OrderStatus = Order['status'];
 type PaymentStatus = NonNullable<Order['payment_status']>;
 
 const ORDER_STATUS_VALUES: OrderStatus[] = [
-  'pending', 'processing', 'confirmed', 'paid', 'preparing', 
-  'ready', 'shipped', 'out_for_delivery', 'delivered', 
+  'pending', 'processing', 'confirmed', 'paid', 'preparing',
+  'ready', 'shipped', 'out_for_delivery', 'delivered',
   'completed', 'cancelled', 'refunded', 'failed',
 ];
 
@@ -90,9 +91,9 @@ export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, storeSlug, storeName, stores } = useStore();
-  
+
   const effectiveStoreId = routeStoreId || storeSlug || contextStoreId;
-  
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
@@ -103,34 +104,16 @@ export const OrdersPage: React.FC = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
-  
-  const { playNotification } = useNotificationSound();
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // WebSocket para atualizações em tempo real
-  useOrdersWebSocket({
-    storeId: effectiveStoreId,
-    onOrderUpdate: (updatedOrder) => {
-      setOrders(prev => 
-        prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o)
-      );
-      playNotification();
-    },
-    onNewOrder: (newOrder) => {
-      setOrders(prev => [newOrder, ...prev]);
-      playNotification();
-      toast.success(`Novo pedido #${newOrder.order_number}!`);
-    },
-    onConnect: () => setWsConnected(true),
-    onDisconnect: () => setWsConnected(false),
-  });
+  const { playNotificationSound } = useNotificationSound();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Carrega pedidos
   const loadOrders = useCallback(async () => {
     if (!effectiveStoreId) return;
     setLoading(true);
     try {
-      const response = await ordersService.getOrders(effectiveStoreId);
+      const response = await ordersService.getOrders({ store: effectiveStoreId });
       setOrders(response.results || []);
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -146,13 +129,13 @@ export const OrdersPage: React.FC = () => {
   // Filtra pedidos
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const matchesSearch = !searchQuery || 
+      const matchesSearch = !searchQuery ||
         order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customer_phone?.includes(searchQuery);
-      
+
       const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-      
+
       return matchesSearch && matchesStatus;
     });
   }, [orders, searchQuery, statusFilter]);
@@ -170,8 +153,8 @@ export const OrdersPage: React.FC = () => {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      await exportService.exportOrders({ 
-        store_id: effectiveStoreId,
+      await exportService.exportOrders({
+        store: effectiveStoreId || undefined,
         status: statusFilter === 'all' ? undefined : statusFilter,
       });
       toast.success('Exportação iniciada!');
@@ -183,13 +166,11 @@ export const OrdersPage: React.FC = () => {
   };
 
   // Atualizar status do pedido
-  const handleUpdateOrder = async (data: Partial<Order>) => {
-    if (!selectedOrder) return;
+  const handleUpdateOrder = async (orderId: string, newStatus: OrderStatus) => {
     setIsUpdating(true);
     try {
-      await ordersService.updateOrder(selectedOrder.id, data);
+      await ordersService.updateOrder(orderId, { status: newStatus });
       toast.success('Pedido atualizado!');
-      setIsUpdateModalOpen(false);
       loadOrders();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -199,7 +180,14 @@ export const OrdersPage: React.FC = () => {
   };
 
   if (loading) {
-    return <PageLoading message="Carregando pedidos..." />;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full border-b-2 border-primary-500 h-12 w-12 mx-auto"></div>
+          <p className="mt-4 text-gray-500 dark:text-zinc-400">Carregando pedidos...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -210,7 +198,7 @@ export const OrdersPage: React.FC = () => {
           <Stack gap={1}>
             <Flex align="center" gap={3}>
               <Heading size="xl" color="fg.primary">Pedidos</Heading>
-              <Badge 
+              <Badge
                 colorPalette={wsConnected ? 'success' : 'gray'}
                 size="sm"
                 borderRadius="full"
@@ -226,7 +214,7 @@ export const OrdersPage: React.FC = () => {
               {storeName && ` • ${storeName}`}
             </Text>
           </Stack>
-          
+
           <Flex gap={3}>
             <Button
               variant="outline"
@@ -237,7 +225,7 @@ export const OrdersPage: React.FC = () => {
             >
               Exportar
             </Button>
-            
+
             <Button
               leftIcon={<PlusIcon className="w-4 h-4" />}
               onClick={() => navigate('/orders/new')}
@@ -253,15 +241,16 @@ export const OrdersPage: React.FC = () => {
           <Flex gap={4} align="center" wrap="wrap">
             {/* Busca */}
             <Flex flex={1} minW="300px">
-              <ChakraInput
-                ref={searchInputRef}
-                placeholder="Buscar por número, cliente ou telefone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                leftElement={<MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />}
-              />
+              <InputGroup flex={1} startElement={<MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />}>
+                <ChakraInput
+                  ref={searchInputRef}
+                  placeholder="Buscar por número, cliente ou telefone..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </InputGroup>
             </Flex>
-            
+
             {/* Toggle View */}
             <Flex bg="bg.secondary" p={1} borderRadius="md">
               <IconButton
@@ -281,14 +270,14 @@ export const OrdersPage: React.FC = () => {
                 <Squares2X2Icon className="w-4 h-4" />
               </IconButton>
             </Flex>
-            
+
             {/* Refresh */}
             <IconButton
               aria-label="Atualizar"
               variant="ghost"
               size="sm"
               onClick={loadOrders}
-              isLoading={loading}
+              loading={loading}
             >
               <ArrowPathIcon className="w-4 h-4" />
             </IconButton>
@@ -296,9 +285,14 @@ export const OrdersPage: React.FC = () => {
         </Card>
 
         {/* Tabs de Status */}
-        <Tabs.Root 
-          value={statusFilter} 
-          onValueChange={(v) => setStatusFilter(v as OrderStatus | 'all')}
+        <Tabs.Root
+          value={statusFilter}
+          onValueChange={(details) => {
+            const v = (details as { value: string }).value;
+            if (isOrderStatus(v) || v === 'all') {
+              setStatusFilter(v as OrderStatus | 'all');
+            }
+          }}
         >
           <Tabs.List>
             <Tabs.Trigger value="all">
@@ -333,7 +327,7 @@ export const OrdersPage: React.FC = () => {
                 </Table.Header>
                 <Table.Body>
                   {filteredOrders.map((order) => (
-                    <Table.Row 
+                    <Table.Row
                       key={order.id}
                       cursor="pointer"
                       onClick={() => navigate(`/orders/${order.id}`)}
@@ -361,10 +355,10 @@ export const OrdersPage: React.FC = () => {
                         <OrderStatusBadge status={order.status} />
                       </Table.Cell>
                       <Table.Cell>
-                        <Badge 
-                          variant="subtle" 
+                        <Badge
+                          variant="subtle"
                           colorPalette={
-                            order.payment_status === 'paid' ? 'success' : 
+                            order.payment_status === 'paid' ? 'success' :
                             order.payment_status === 'pending' ? 'warning' : 'gray'
                           }
                         >
@@ -401,10 +395,10 @@ export const OrdersPage: React.FC = () => {
             </Box>
           </Card>
         ) : (
-          <OrdersKanban 
+          <OrdersKanban
             orders={filteredOrders}
             onOrderClick={(order) => navigate(`/orders/${order.id}`)}
-            onOrderUpdate={handleUpdateOrder}
+            onStatusChange={handleUpdateOrder}
           />
         )}
       </Stack>

@@ -20,7 +20,7 @@ import {
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Card, Button, Loading, Modal, Badge, StatCard } from '@/components/common';
+import { Card, Button, Loading, Modal, Badge } from '@/components/common';
 import { instagramAccountService, InstagramAccount } from '@/services';
 import { useFetch } from '@/hooks';
 
@@ -118,26 +118,50 @@ export const InstagramAccountsPage: React.FC = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard
-          title="Contas Conectadas"
-          value={activeAccounts.length}
-          icon={<CameraIcon className="w-5 h-5" />}
-        />
-        <StatCard
-          title="Total de Seguidores"
-          value={totalFollowers.toLocaleString('pt-BR')}
-          icon={<ChartBarIcon className="w-5 h-5" />}
-        />
-        <StatCard
-          title="Contas Verificadas"
-          value={activeAccounts.filter(a => a.is_verified).length}
-          icon={<CheckCircleIcon className="w-5 h-5 text-blue-500" />}
-        />
-        <StatCard
-          title="Mídias Totais"
-          value={activeAccounts.reduce((sum, a) => sum + a.media_count, 0).toLocaleString('pt-BR')}
-          icon={<EyeIcon className="w-5 h-5" />}
-        />
+        <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                  <CameraIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Contas Conectadas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeAccounts.length}</p>
+                </div>
+              </div>
+            </Card>
+        <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                  <ChartBarIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Total de Seguidores</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalFollowers.toLocaleString('pt-BR')}</p>
+                </div>
+              </div>
+            </Card>
+        <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                  <CheckCircleIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Contas Verificadas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeAccounts.filter(a => a.is_verified).length}</p>
+                </div>
+              </div>
+            </Card>
+        <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/40 rounded-lg">
+                  <EyeIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Mídias Totais</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeAccounts.reduce((sum, a) => sum + a.media_count, 0).toLocaleString('pt-BR')}</p>
+                </div>
+              </div>
+            </Card>
       </div>
 
       {/* Accounts List */}

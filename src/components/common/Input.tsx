@@ -22,6 +22,9 @@ export interface InputProps {
   leftElement?: React.ReactNode;
   rightElement?: React.ReactNode;
   className?: string;
+  min?: string | number;
+  max?: string | number;
+  step?: string | number;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -41,6 +44,9 @@ export const Input: React.FC<InputProps> = ({
   leftElement,
   rightElement,
   className,
+  min,
+  max,
+  step,
 }) => {
   const finalRequired = isRequired || required;
   const finalDisabled = isDisabled || disabled;
@@ -67,6 +73,9 @@ export const Input: React.FC<InputProps> = ({
         size={size}
         disabled={finalDisabled}
         readOnly={isReadOnly}
+        min={min}
+        max={max}
+        step={step}
         borderColor={error ? 'danger.500' : 'border.primary'}
         _focus={{
           borderColor: 'brand.500',
