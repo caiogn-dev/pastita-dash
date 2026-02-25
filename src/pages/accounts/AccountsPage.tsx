@@ -12,12 +12,9 @@ import {
   Table,
   Badge,
   IconButton,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
   Skeleton,
-  useDisclosure,
+  Dialog,
+  Portal,
 } from '@chakra-ui/react';
 import {
   PlusIcon,
@@ -38,7 +35,7 @@ import { ptBR } from 'date-fns/locale';
 export const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
   const { accounts, setAccounts, setLoading, isLoading, updateAccount, removeAccount } = useAccountStore();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<WhatsAppAccount | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -86,7 +83,7 @@ export const AccountsPage: React.FC = () => {
       await whatsappService.deleteAccount(selectedAccount.id);
       removeAccount(selectedAccount.id);
       toast.success('Conta removida com sucesso!');
-      onClose();
+      setIsDeleteOpen(false);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -196,44 +193,66 @@ export const AccountsPage: React.FC = () => {
                         </Text>
                       </Table.Cell>
                       <Table.Cell onClick={(e) => e.stopPropagation()}>
-                        <Menu>
-                          <MenuButton
-                            as={IconButton}
-                            variant="ghost"
-                            size="sm"
-                            icon={<EllipsisVerticalIcon className="w-5 h-5" />}
-                          />
-                          <MenuList>
-                            <MenuItem
-                              icon={<PowerIcon className="w-4 h-4" />}
-                              onClick={() => handleToggleStatus(account)}
+                        <Dialog.Root>
+                          <Dialog.Trigger asChild>
+                            <IconButton
+                              variant="ghost"
+                              size="sm"
+                              aria-label="Ações"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {account.status === 'active' ? 'Desativar' : 'Ativar'}
-                            </MenuItem>
-                            <MenuItem
-                              icon={<ArrowPathIcon className="w-4 h-4" />}
-                              onClick={() => handleSyncTemplates(account)}
-                            >
-                              Sincronizar Templates
-                            </MenuItem>
-                            <MenuItem
-                              icon={<ChartBarIcon className="w-4 h-4" />}
-                              onClick={() => navigate(`/accounts/${account.id}`)}
-                            >
-                              Ver Detalhes
-                            </MenuItem>
-                            <MenuItem
-                              icon={<TrashIcon className="w-4 h-4" />}
-                              color="danger.500"
-                              onClick={() => {
-                                setSelectedAccount(account);
-                                onOpen();
-                              }}
-                            >
-                              Excluir
-                            </MenuItem>
-                          </MenuList>
-                        </Menu>
+                              <EllipsisVerticalIcon className="w-5 h-5" />
+                            </IconButton>
+                          </Dialog.Trigger>
+                          <Portal>
+                            <Dialog.Backdrop />
+                            <Dialog.Positioner>
+                              <Dialog.Content>
+                                <Dialog.Header>Ações</Dialog.Header>
+                                <Dialog.Body>
+                                  <Stack gap={2}>
+                                    <Button
+                                      variant="ghost"
+                                      leftIcon={<PowerIcon className="w-4 h-4" />}
+                                      onClick={() => handleToggleStatus(account)}
+                                      justifyContent="flex-start"
+                                    >
+                                      {account.status === 'active' ? 'Desativar' : 'Ativar'}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      leftIcon={<ArrowPathIcon className="w-4 h-4" />}
+                                      onClick={() => handleSyncTemplates(account)}
+                                      justifyContent="flex-start"
+                                    >
+                                      Sincronizar Templates
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      leftIcon={<ChartBarIcon className="w-4 h-4" />}
+                                      onClick={() => navigate(`/accounts/${account.id}`)}
+                                      justifyContent="flex-start"
+                                    >
+                                      Ver Detalhes
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      colorPalette="danger"
+                                      leftIcon={<TrashIcon className="w-4 h-4" />}
+                                      onClick={() => {
+                                        setSelectedAccount(account);
+                                        setIsDeleteOpen(true);
+                                      }}
+                                      justifyContent="flex-start"
+                                    >
+                                      Excluir
+                                    </Button>
+                                  </Stack>
+                                </Dialog.Body>
+                              </Dialog.Content>
+                            </Dialog.Positioner>
+                          </Portal>
+                        </Dialog.Root>
                       </Table.Cell>
                     </Table.Row>
                   ))}
@@ -245,30 +264,34 @@ export const AccountsPage: React.FC = () => {
       </Stack>
 
       {/* Delete Modal */}
-      <Card
-        title="Excluir Conta"
-        isOpen={isOpen}
-        onClose={onClose}
-      >
-        <Stack p={4} gap={4}>
-          <Text>
-            Tem certeza que deseja excluir a conta "{selectedAccount?.name}"? 
-            Esta ação não pode ser desfeita.
-          </Text>
-          <Flex justify="flex-end" gap={3}>
-            <Button variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button 
-              colorPalette="danger" 
-              onClick={handleDelete}
-              isLoading={isDeleting}
-            >
-              Excluir
-            </Button>
-          </Flex>
-        </Stack>
-      </Card>
+      <Dialog.Root open={isDeleteOpen} onOpenChange={({ open }) => setIsDeleteOpen(open)}>
+        <Portal>
+          <Dialog.Backdrop />
+          <Dialog.Positioner>
+            <Dialog.Content>
+              <Dialog.Header>Excluir Conta</Dialog.Header>
+              <Dialog.Body>
+                <Text>
+                  Tem certeza que deseja excluir a conta "{selectedAccount?.name}"? 
+                  Esta ação não pode ser desfeita.
+                </Text>
+              </Dialog.Body>
+              <Dialog.Footer>
+                <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  colorPalette="danger" 
+                  onClick={handleDelete}
+                  isLoading={isDeleting}
+                >
+                  Excluir
+                </Button>
+              </Dialog.Footer>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Portal>
+      </Dialog.Root>
     </Box>
   );
 };

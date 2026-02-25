@@ -10,10 +10,9 @@ import {
   Text,
   Stack,
   Image,
-  Card,
 } from '@chakra-ui/react';
 import toast from 'react-hot-toast';
-import { Button, Input } from '../../components/common';
+import { Button, Input, Card } from '../../components/common';
 import { authService, getErrorMessage, setAuthToken } from '../../services';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -78,7 +77,7 @@ export const LoginPage: React.FC = () => {
               <Input
                 label="Usuário"
                 type="text"
-                required
+                isRequired
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="Digite seu e-mail"
@@ -87,7 +86,7 @@ export const LoginPage: React.FC = () => {
               <Input
                 label="Senha"
                 type="password"
-                required
+                isRequired
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="Digite sua senha"

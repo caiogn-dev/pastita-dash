@@ -1,5 +1,6 @@
 /**
  * Card - Componente de cartão moderno com Chakra UI v3
+ * Suporta props legados para compatibilidade
  */
 import React from 'react';
 import { Box, Stack } from '@chakra-ui/react';
@@ -9,10 +10,13 @@ export interface CardProps {
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
+  actions?: React.ReactNode;
   noPadding?: boolean;
   variant?: 'default' | 'outline' | 'filled';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -20,6 +24,7 @@ export const Card: React.FC<CardProps> = ({
   title,
   subtitle,
   action,
+  actions,
   noPadding = false,
   variant = 'default',
   size = 'md',
@@ -50,6 +55,7 @@ export const Card: React.FC<CardProps> = ({
 
   const currentVariant = variants[variant];
   const currentSize = sizes[size];
+  const headerAction = action || actions;
 
   return (
     <Box
@@ -60,7 +66,7 @@ export const Card: React.FC<CardProps> = ({
       _hover={{ boxShadow: 'md' }}
       {...currentVariant}
     >
-      {(title || subtitle || action) && (
+      {(title || subtitle || headerAction) && (
         <Stack
           direction="row"
           justify="space-between"
@@ -91,7 +97,7 @@ export const Card: React.FC<CardProps> = ({
                 </Box>
               )}
             </Stack>
-            {action && <Box>{action}</Box>}
+            {headerAction && <Box>{headerAction}</Box>}
         </Stack>
       )}
       
