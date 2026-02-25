@@ -3,7 +3,7 @@
  */
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Heading, Text, Button } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, Stack } from '@chakra-ui/react';
 import { ChatWindow } from '../../components/chat/ChatWindow';
 import { useAccountStore } from '../../stores/accountStore';
 
