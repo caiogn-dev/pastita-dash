@@ -13,18 +13,20 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import api from '../services/api';
 
 // Types
 export interface WhatsAppMessage {
   id: string;
   whatsapp_message_id: string;
+  conversation_id?: string;
   direction: 'inbound' | 'outbound';
   message_type: string;
   status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
   from_number: string;
   to_number: string;
   text_body: string;
-  content: Record<string, unknown>;
+  content: Record<string, unknown> | string;
   media_id?: string;
   media_url?: string;
   created_at: string;
@@ -102,6 +104,7 @@ interface UseWhatsAppWSOptions {
   accountId?: string;
   dashboardMode?: boolean;
   onMessageReceived?: (event: MessageReceivedEvent) => void;
+  onMessage?: (message: WhatsAppMessage) => void;
   onMessageSent?: (event: MessageSentEvent) => void;
   onStatusUpdated?: (event: StatusUpdatedEvent) => void;
   onTyping?: (event: TypingEvent) => void;
@@ -183,6 +186,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
         case 'message_received':
           console.log('[WhatsApp WS] Calling onMessageReceived callback');
           opts.current.onMessageReceived?.(data as MessageReceivedEvent);
+          opts.current.onMessage?.(data.message);
           break;
         case 'message_sent':
           console.log('[WhatsApp WS] Calling onMessageSent callback');
@@ -332,6 +336,14 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     }
   }, []);
 
+  // Send message via API
+  const sendMessage = useCallback(async (phoneNumber: string, text: string) => {
+    await api.post('/whatsapp/send-message/', {
+      phone_number: phoneNumber,
+      text: text,
+    });
+  }, []);
+
   // Connect on mount and when dependencies change
   useEffect(() => {
     if (enabled && (accountId || dashboardMode)) {
@@ -368,6 +380,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     subscribeToConversation,
     unsubscribeFromConversation,
     sendTypingIndicator,
+    sendMessage,
   };
 }
 

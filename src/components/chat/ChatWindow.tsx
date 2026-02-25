@@ -1,11 +1,5 @@
 /**
- * ChatWindow - Interface de Chat WhatsApp com Chakra UI
- * 
- * Melhorias:
- * - Layout desktop maior e mais espaçoso
- * - Chakra UI components
- * - Tema consistente
- * - Responsividade otimizada
+ * ChatWindow - Interface de Chat WhatsApp com Chakra UI v3
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
@@ -13,31 +7,13 @@ import { ptBR } from 'date-fns/locale';
 import {
   Box,
   Flex,
-  VStack,
-  HStack,
   Text,
   IconButton,
-  Avatar,
   Badge,
-  Divider,
-  useColorModeValue,
   Spinner,
-  Tooltip,
   Input,
-  InputGroup,
-  InputLeftElement,
-  Slide,
+  Stack,
 } from '@chakra-ui/react';
-import {
-  ChatIcon,
-  RepeatIcon,
-  PhoneIcon,
-  AttachmentIcon,
-  SearchIcon,
-  ArrowBackIcon,
-  HamburgerIcon,
-  InfoIcon,
-} from '@chakra-ui/icons';
 import toast from 'react-hot-toast';
 
 import { ContactList, Contact } from './ContactList';
@@ -45,7 +21,7 @@ import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { MediaViewer } from './MediaViewer';
 import { useWhatsAppWS } from '../../hooks/useWhatsAppWS';
-import { whatsappService, conversationsService, getErrorMessage } from '../../services';
+import { conversationsService } from '../../services';
 import { Message, Conversation } from '../../types';
 
 export interface ChatWindowProps {
@@ -54,7 +30,6 @@ export interface ChatWindowProps {
   onConversationSelect?: (conversation: Conversation | null) => void;
 }
 
-// Converter mensagem da API para props do bubble
 const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   id: msg.id,
   direction: msg.direction as 'inbound' | 'outbound',
@@ -73,7 +48,6 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   errorMessage: msg.error_message,
 });
 
-// Converter conversa da API para contato
 const conversationToContact = (conv: Conversation): Contact => ({
   id: conv.id,
   phoneNumber: conv.phone_number,
@@ -90,14 +64,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   accountName,
   onConversationSelect,
 }) => {
-  // Theme colors
-  const bgColor = useColorModeValue('gray.50', 'gray.900');
-  const sidebarBg = useColorModeValue('white', 'gray.800');
-  const chatBg = useColorModeValue('gray.100', 'gray.700');
-  const headerBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  
-  // State
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -106,32 +72,25 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isSending, setIsSending] = useState(false);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
   const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; fileName?: string; mimeType?: string } | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  // Detectar mobile
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
       setShowSidebar(!mobile);
     };
-    
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // WebSocket
   const {
     isConnected,
-    connectionStatus,
-    error: wsError,
     sendMessage,
     sendTypingIndicator,
   } = useWhatsAppWS({
@@ -140,7 +99,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     onTyping: handleTyping,
   });
 
-  // Scroll to bottom
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
@@ -149,7 +107,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Load conversations
   useEffect(() => {
     loadConversations();
   }, [accountId]);
@@ -157,7 +114,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   async function loadConversations() {
     try {
       setIsLoadingConversations(true);
-      const response = await conversationsService.getConversations(accountId);
+      const response = await conversationsService.getConversations({ account: accountId });
       setConversations(response.results || []);
     } catch (error) {
       toast.error('Erro ao carregar conversas');
@@ -166,23 +123,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }
 
-  // Handle new message
   async function handleNewMessage(newMessage: Message) {
     if (!selectedConversation) return;
     
-    const messageConversationId = newMessage.conversation;
+    const messageConversationId = newMessage.conversation_id;
     
-    if (typeof messageConversationId === 'string' 
-        ? messageConversationId === selectedConversation.id
-        : messageConversationId?.id === selectedConversation.id) {
-      
+    if (messageConversationId === selectedConversation.id) {
       setMessages(prev => {
         const isDuplicate = prev.some(m => 
           m.id === newMessage.id || 
           (m.whatsapp_message_id && m.whatsapp_message_id === newMessage.whatsapp_message_id)
         );
         if (isDuplicate) return prev;
-        
         return [...prev, newMessage];
       });
       
@@ -194,20 +146,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     loadConversations();
   }
 
-  // Handle typing
-  function handleTyping(data: { phone_number: string; is_typing: boolean }) {
-    setTypingContacts(prev => {
-      const next = new Set(prev);
-      if (data.is_typing) {
-        next.add(data.phone_number);
-      } else {
-        next.delete(data.phone_number);
-      }
-      return next;
-    });
+  function handleTyping(data: { conversation_id: string; is_typing: boolean }) {
+    const conv = conversations.find(c => c.id === data.conversation_id);
+    if (conv) {
+      setTypingContacts(prev => {
+        const next = new Set(prev);
+        if (data.is_typing) {
+          next.add(conv.phone_number);
+        } else {
+          next.delete(conv.phone_number);
+        }
+        return next;
+      });
+    }
   }
 
-  // Select conversation
   async function handleSelectConversation(conversation: Conversation) {
     setSelectedConversation(conversation);
     onConversationSelect?.(conversation);
@@ -240,7 +193,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }
 
-  // Send message
   async function handleSendMessage(text: string) {
     if (!selectedConversation || !text.trim()) return;
     
@@ -251,15 +203,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       const tempMessage: Message = {
         id: `temp-${Date.now()}`,
         whatsapp_message_id: '',
-        conversation: selectedConversation.id,
+        conversation_id: selectedConversation.id,
         direction: 'outbound',
         message_type: 'text',
         status: 'pending',
         text_body: text,
-        content: {},
+        content: '',
         from_number: '',
         to_number: selectedConversation.phone_number,
         created_at: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
+        account: accountId,
+        updated_at: new Date().toISOString(),
       };
       
       setMessages(prev => [...prev, tempMessage]);
@@ -270,7 +225,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }
 
-  // Filter conversations
   const filteredConversations = conversations.filter(conv => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
@@ -290,62 +244,52 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       w="100%"
       maxW="1600px"
       mx="auto"
-      bg={bgColor}
+      bg="gray.50"
       borderRadius="xl"
       overflow="hidden"
       boxShadow="xl"
     >
       {/* Sidebar */}
-      <Slide direction="left" in={showSidebar || !isMobile} style={{ zIndex: 10 }}>
+      {(!isMobile || showSidebar) && (
         <Box
           w={{ base: '100%', md: '380px', lg: '420px' }}
           h="100%"
-          bg={sidebarBg}
-          borderRight="1px"
-          borderColor={borderColor}
-          display={showSidebar || !isMobile ? 'flex' : 'none'}
+          bg="white"
+          borderRight="1px solid"
+          borderColor="gray.200"
+          display="flex"
           flexDirection="column"
         >
           {/* Header */}
-          <VStack spacing={0} p={4} borderBottom="1px" borderColor={borderColor}>
-            <HStack w="100%" justify="space-between">
-              <Text fontSize="xl" fontWeight="bold">
-                Conversas
-              </Text>
-              <HStack>
-                <Tooltip label="Atualizar">
-                  <IconButton
-                    aria-label="Atualizar"
-                    icon={<RepeatIcon />}
-                    size="sm"
-                    variant="ghost"
-                    onClick={loadConversations}
-                    isLoading={isLoadingConversations}
-                  />
-                </Tooltip>
-              </HStack>
-            </HStack>
+          <Stack p={4} borderBottom="1px solid" borderColor="gray.200" gap={3}>
+            <Flex justify="space-between" align="center">
+              <Text fontSize="xl" fontWeight="bold">Conversas</Text>
+              <IconButton
+                aria-label="Atualizar"
+                onClick={loadConversations}
+                loading={isLoadingConversations}
+                size="sm"
+                variant="ghost"
+              >
+                ↻
+              </IconButton>
+            </Flex>
             
-            {/* Search */}
-            <InputGroup size="sm" mt={3}>
-              <InputLeftElement pointerEvents="none">
-                <SearchIcon color="gray.400" />
-              </InputLeftElement>
-              <Input
-                placeholder="Buscar conversa..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                borderRadius="full"
-              />
-            </InputGroup>
-          </VStack>
+            <Input
+              placeholder="Buscar conversa..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              borderRadius="full"
+              size="sm"
+            />
+          </Stack>
 
           {/* Contact List */}
           <Box flex={1} overflowY="auto">
             <ContactList
               contacts={contacts}
               selectedId={selectedContact?.id}
-              onSelect={(contact) => {
+              onSelect={(contact: Contact) => {
                 const conv = conversations.find(c => c.id === contact.id);
                 if (conv) handleSelectConversation(conv);
               }}
@@ -354,82 +298,81 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             />
           </Box>
         </Box>
-      </Slide>
+      )}
 
       {/* Chat Area */}
       <Flex 
         flex={1} 
         flexDirection="column"
-        bg={chatBg}
+        bg="gray.100"
         display={!isMobile || !showSidebar ? 'flex' : 'none'}
       >
         {selectedConversation ? (
           <>
             {/* Chat Header */}
-            <HStack 
+            <Flex 
               p={4} 
-              bg={headerBg} 
-              borderBottom="1px" 
-              borderColor={borderColor}
-              spacing={4}
+              bg="white" 
+              borderBottom="1px solid" 
+              borderColor="gray.200"
+              gap={4}
+              align="center"
             >
               {isMobile && (
                 <IconButton
                   aria-label="Voltar"
-                  icon={<ArrowBackIcon />}
                   variant="ghost"
                   onClick={() => setShowSidebar(true)}
-                />
+                >
+                  ←
+                </IconButton>
               )}
               
-              <Avatar 
-                size="md" 
-                name={selectedContact?.contactName || selectedContact?.phoneNumber}
+              <Box 
+                w="40px" 
+                h="40px" 
+                borderRadius="full" 
                 bg="green.500"
-              />
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                color="white"
+                fontWeight="bold"
+              >
+                {selectedContact?.contactName?.[0] || selectedContact?.phoneNumber?.[0] || '?'}
+              </Box>
               
-              <VStack spacing={0} align="start" flex={1}>
+              <Stack gap={0} align="flex-start" flex={1}>
                 <Text fontWeight="semibold" fontSize="lg">
                   {selectedContact?.contactName || selectedContact?.phoneNumber}
                 </Text>
-                <HStack spacing={2}>
+                <Flex gap={2}>
                   {typingContacts.has(selectedConversation.phone_number) ? (
-                    <Text fontSize="sm" color="green.500">
-                      digitando...
-                    </Text>
+                    <Text fontSize="sm" color="green.500">digitando...</Text>
                   ) : (
                     <Text fontSize="sm" color="gray.500">
-                      {connectionStatus === 'connected' ? 'Online' : 'Offline'}
+                      {isConnected ? 'Online' : 'Offline'}
                     </Text>
                   )}
-                </HStack>
-              </VStack>
+                </Flex>
+              </Stack>
               
-              <HStack spacing={2}>
-                <Tooltip label="Ligar">
-                  <IconButton
-                    aria-label="Ligar"
-                    icon={<PhoneIcon />}
-                    variant="ghost"
-                    colorScheme="green"
-                  />
-                </Tooltip>
-                <Tooltip label="Mais opções">
-                  <IconButton
-                    aria-label="Mais"
-                    icon={<InfoIcon />}
-                    variant="ghost"
-                  />
-                </Tooltip>
-              </HStack>
-            </HStack>
+              <Flex gap={2}>
+                <IconButton aria-label="Ligar" variant="ghost" colorScheme="green">
+                  📞
+                </IconButton>
+                <IconButton aria-label="Mais" variant="ghost">
+                  ℹ
+                </IconButton>
+              </Flex>
+            </Flex>
 
             {/* Messages */}
-            <VStack 
+            <Stack 
               flex={1} 
               overflowY="auto" 
               p={4} 
-              spacing={4}
+              gap={4}
               ref={messagesContainerRef}
             >
               {isLoadingMessages ? (
@@ -438,33 +381,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 </Flex>
               ) : messages.length === 0 ? (
                 <Flex flex={1} align="center" justify="center" direction="column" gap={4}>
-                  <ChatIcon boxSize={16} color="gray.300" />
+                  <Text fontSize="6xl">💬</Text>
                   <Text color="gray.500">Nenhuma mensagem ainda</Text>
-                  <Text fontSize="sm" color="gray.400">
-                    Envie uma mensagem para iniciar a conversa
-                  </Text>
                 </Flex>
               ) : (
                 messages.map((msg) => (
                   <MessageBubble
                     key={msg.id}
                     {...messageToBubbleProps(msg)}
-                    onMediaClick={(url, type, fileName, mimeType) => 
-                      setSelectedMedia({ url, type, fileName, mimeType })
+                    onMediaClick={(url: string, type: string, fileName?: string) => 
+                      setSelectedMedia({ url, type, fileName, mimeType: msg.media_mime_type })
                     }
                   />
                 ))
               )}
               <div ref={messagesEndRef} />
-            </VStack>
+            </Stack>
 
             {/* Input */}
-            <Box p={4} bg={headerBg} borderTop="1px" borderColor={borderColor}>
+            <Box p={4} bg="white" borderTop="1px solid" borderColor="gray.200">
               <MessageInput
                 onSend={handleSendMessage}
                 disabled={!isConnected || isSending}
                 isLoading={isSending}
-                onTyping={() => sendTypingIndicator(selectedConversation.phone_number)}
+                onTyping={() => sendTypingIndicator(selectedConversation.id, true)}
               />
             </Box>
           </>
@@ -481,19 +421,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <Box 
               p={8} 
               borderRadius="full" 
-              bg={useColorModeValue('green.50', 'green.900')}
+              bg="green.50"
             >
-              <ChatIcon boxSize={20} color="green.500" />
+              <Text fontSize="6xl">💬</Text>
             </Box>
             
-            <VStack spacing={2} textAlign="center">
+            <Stack gap={2} textAlign="center">
               <Text fontSize="2xl" fontWeight="bold">
                 {accountName || 'WhatsApp Business'}
               </Text>
               <Text color="gray.500" maxW="400px">
-                Selecione uma conversa ao lado para começar a atender seus clientes
+                Selecione uma conversa ao lado para começar
               </Text>
-            </VStack>
+            </Stack>
             
             {!isConnected && (
               <Badge colorScheme="red" variant="solid" px={4} py={2} borderRadius="full">
