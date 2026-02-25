@@ -128,6 +128,8 @@ interface UseWhatsAppWSReturn {
   sendMessage: (phoneNumber: string, text: string) => Promise<void>;
 }
 
+export type { UseWhatsAppWSReturn };
+
 export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWSReturn {
   const { token } = useAuthStore();
   const ws = useRef<WebSocket | null>(null);
@@ -380,7 +382,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     };
   }, [connect, enabled, accountId, dashboardMode]);
 
-  return {
+  const returnValue: UseWhatsAppWSReturn = {
     isConnected,
     connectionError,
     subscribeToConversation,
@@ -388,6 +390,8 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     sendTypingIndicator,
     sendMessage,
   };
+
+  return returnValue;
 }
 
 export default useWhatsAppWS;
