@@ -30,8 +30,13 @@ export interface WhatsAppMessage {
   media_id?: string;
   media_url?: string;
   created_at: string;
+  sent_at?: string;
   delivered_at?: string;
   read_at?: string;
+  // Campos adicionais para compatibilidade com Message
+  timestamp?: string;
+  account?: string;
+  updated_at?: string;
 }
 
 export interface WhatsAppContact {
@@ -120,6 +125,7 @@ interface UseWhatsAppWSReturn {
   subscribeToConversation: (conversationId: string) => void;
   unsubscribeFromConversation: (conversationId: string) => void;
   sendTypingIndicator: (conversationId: string, isTyping: boolean) => void;
+  sendMessage: (phoneNumber: string, text: string) => Promise<void>;
 }
 
 export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWSReturn {

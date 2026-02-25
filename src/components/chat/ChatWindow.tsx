@@ -78,10 +78,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     subscribeToConversation,
     unsubscribeFromConversation,
     sendTypingIndicator,
+    sendMessage,
   } = useWhatsAppWS({
     accountId,
     enabled: !!accountId,
     onMessageReceived: handleMessageReceived,
+    onMessage: (msg) => {
+      // Converter WhatsAppMessage para Message
+      const convertedMsg: Message = {
+        ...msg,
+        timestamp: msg.created_at,
+        account: accountId,
+        updated_at: msg.created_at,
+      } as Message;
+      handleNewMessage(convertedMsg);
+    },
     onStatusUpdated: handleStatusUpdated,
     onTyping: handleTyping,
     onConversationUpdated: handleConversationUpdated,
@@ -179,6 +190,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!selectedConversation || event.conversation_id !== selectedConversation.id) {
       const contactName = event.contact?.name || newMessage.from_number;
       toast(`Nova mensagem de ${contactName}`, { icon: '💬' });
+    }
+  }
+
+  function handleNewMessage(newMessage: Message) {
+    // Handler para onMessage do hook
+    if (selectedConversation && newMessage.conversation_id === selectedConversation.id) {
+      setMessages(prev => {
+        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) {
+          return prev;
+        }
+        return [...prev, newMessage];
+      });
     }
   }
 
