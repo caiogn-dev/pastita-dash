@@ -1,7 +1,6 @@
 /**
  * ChatWindow - Interface de Chat WhatsApp com Chakra UI v3
- * 
- * Baseado na versão estável original, migrado para Chakra UI v3
+ * Versão melhorada com UX/UI aprimorada
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
@@ -15,6 +14,8 @@ import {
   Badge,
   Spinner,
   Stack,
+  Separator,
+  Avatar,
 } from '@chakra-ui/react';
 
 import { ContactList, Contact } from './ContactList';
@@ -84,7 +85,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     enabled: !!accountId,
     onMessageReceived: handleMessageReceived,
     onMessage: (msg) => {
-      // Converter WhatsAppMessage para Message
       const convertedMsg: Message = {
         ...msg,
         timestamp: msg.created_at,
@@ -194,7 +194,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   function handleNewMessage(newMessage: Message) {
-    // Handler para onMessage do hook
     if (selectedConversation && newMessage.conversation_id === selectedConversation.id) {
       setMessages(prev => {
         if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) {
@@ -314,16 +313,38 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     return groups;
   }, {} as Record<string, Message[]>);
 
+  // Get initials for avatar
+  const getInitials = (name?: string, phone?: string) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return phone?.slice(-2) || '?';
+  };
+
   return (
     <Flex 
-      h="full" 
-      bg="gray.50" 
-      borderRadius="lg" 
-      overflow="hidden" 
-      boxShadow="lg"
+      h="calc(100vh - 64px)"
+      maxH="900px"
+      w="100%"
+      maxW="1400px"
+      mx="auto"
+      bg="bg.subtle"
+      borderRadius="xl"
+      overflow="hidden"
+      boxShadow="xl"
+      borderWidth="1px"
+      borderColor="border.default"
     >
       {/* Contact list sidebar */}
-      <Box w="320px" flexShrink={0}>
+      <Box 
+        w={{ base: '100%', md: '360px' }}
+        h="100%"
+        bg="bg.default"
+        borderRightWidth="1px"
+        borderColor="border.default"
+        display={{ base: selectedConversation ? 'none' : 'flex', md: 'flex' }}
+        flexDirection="column"
+      >
         <ContactList
           contacts={contacts}
           selectedContactId={selectedConversation?.id}
@@ -334,7 +355,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </Box>
 
       {/* Chat area */}
-      <Flex flex={1} flexDirection="column">
+      <Flex 
+        flex={1} 
+        flexDirection="column"
+        bg="bg.muted"
+        display={{ base: selectedConversation ? 'flex' : 'none', md: 'flex' }}
+      >
         {!selectedConversation ? (
           // Empty state
           <Flex 
@@ -342,160 +368,192 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             align="center" 
             justify="center" 
             direction="column"
-            bg="white"
-            color="gray.400"
+            gap={6}
+            p={8}
+            bg="bg.default"
           >
-            <Text fontSize="6xl" mb={4}>💬</Text>
-            <Text fontSize="xl" fontWeight="medium" mb={2}>Selecione uma conversa</Text>
-            <Text fontSize="sm">Escolha uma conversa da lista para começar</Text>
+            <Box 
+              p={8}
+              borderRadius="full"
+              bg="green.50"
+              _dark={{ bg: 'green.900' }}
+            >
+              <Text fontSize="6xl">💬</Text>
+            </Box>
+            
+            <Stack gap={2} textAlign="center">
+              <Text fontSize="2xl" fontWeight="bold">
+                {accountName || 'WhatsApp Business'}
+              </Text>
+              <Text color="fg.muted" maxW="400px">
+                Selecione uma conversa ao lado para começar a atender seus clientes
+              </Text>
+            </Stack>
+            
+            {!isConnected && (
+              <Badge colorPalette="red" variant="solid" size="lg">
+                ⚠️ Desconectado
+              </Badge>
+            )}
           </Flex>
         ) : (
           <>
-            {/* Chat header */}
+            {/* Chat Header */}
             <Flex 
-              align="center" 
-              justify="space-between" 
-              px={4} 
-              py={3} 
-              bg="white"
-              borderBottom="1px solid"
-              borderColor="gray.200"
+              px={4}
+              py={3}
+              bg="bg.default"
+              borderBottomWidth="1px"
+              borderColor="border.default"
+              justify="space-between"
+              align="center"
             >
-              <Flex align="center" gap={3}>
-                <Box 
-                  w="40px" 
-                  h="40px" 
-                  borderRadius="full" 
-                  bg="green.100"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
+              <Flex gap={3} align="center">
+                <Avatar.Root 
+                  size="md"
+                  colorPalette={selectedConversation.mode === 'human' ? 'blue' : 'green'}
                 >
-                  <Text color="green.600" fontWeight="bold">
-                    {selectedConversation.contact_name?.[0] || selectedConversation.phone_number[0]}
-                  </Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="semibold">
+                  <Avatar.Fallback>
+                    {getInitials(
+                      selectedConversation.contact_name,
+                      selectedConversation.phone_number
+                    )}
+                  </Avatar.Fallback>
+                </Avatar.Root>
+                
+                <Stack gap={0} align="flex-start">
+                  <Text fontWeight="semibold" fontSize="md">
                     {selectedConversation.contact_name || selectedConversation.phone_number}
                   </Text>
-                  <Text fontSize="sm" color="gray.500">
-                    {selectedConversation.phone_number}
-                  </Text>
-                </Box>
+                  <Flex gap={2} align="center">
+                    {typingContacts.has(selectedConversation.id) ? (
+                      <Text fontSize="sm" color="green.500" fontWeight="medium">
+                        digitando...
+                      </Text>
+                    ) : (
+                      <Text fontSize="sm" color="fg.muted">
+                        {isConnected ? '🟢 Online' : '🔴 Offline'}
+                      </Text>
+                    )}
+                  </Flex>
+                </Stack>
               </Flex>
 
-              <Flex align="center" gap={2}>
-                {/* Connection status */}
+              <Flex gap={2} align="center">
                 <Badge 
-                  colorScheme={isConnected ? 'green' : 'red'}
+                  colorPalette={selectedConversation.mode === 'human' ? 'blue' : 'green'}
                   variant="subtle"
-                  px={2}
-                  py={1}
-                  borderRadius="full"
+                  size="md"
+                  cursor="pointer"
+                  onClick={handleSwitchMode}
+                  _hover={{ opacity: 0.8 }}
                 >
-                  {isConnected ? 'Online' : 'Offline'}
+                  {selectedConversation.mode === 'human' ? '👤 Humano' : '🤖 Auto'}
                 </Badge>
 
-                {/* Mode toggle */}
-                <IconButton
-                  aria-label="Toggle mode"
-                  onClick={handleSwitchMode}
-                  colorScheme={selectedConversation.mode === 'human' ? 'blue' : 'green'}
-                  size="sm"
-                >
-                  {selectedConversation.mode === 'human' ? '👤' : '🤖'}
-                </IconButton>
-
-                {/* Refresh button */}
                 <IconButton
                   aria-label="Atualizar"
+                  variant="ghost"
+                  size="sm"
                   onClick={loadMessages}
                   loading={isLoadingMessages}
-                  size="sm"
-                  variant="ghost"
                 >
-                  ↻
+                  🔄
                 </IconButton>
               </Flex>
             </Flex>
 
-            {/* Connection error banner */}
+            {/* Connection Error Banner */}
             {connectionError && (
               <Flex 
-                px={4} 
-                py={2} 
+                px={4}
+                py={2}
                 bg="yellow.50"
-                borderBottom="1px solid"
+                _dark={{ bg: 'yellow.900' }}
+                borderBottomWidth="1px"
                 borderColor="yellow.200"
                 align="center"
                 gap={2}
-                color="yellow.700"
-                fontSize="sm"
               >
-                ⚠️ {connectionError}
+                <Text fontSize="sm" color="yellow.700">
+                  ⚠️ {connectionError}
+                </Text>
               </Flex>
             )}
 
-            {/* Messages area */}
-            <Box
+            {/* Messages Area */}
+            <Stack
               ref={messagesContainerRef}
               flex={1}
               overflowY="auto"
               p={4}
-              bg="gray.50"
+              gap={4}
+              bg="bg.muted"
             >
               {isLoadingMessages ? (
-                <Flex align="center" justify="center" h="full">
-                  <Spinner size="lg" color="green.500" />
+                <Flex flex={1} align="center" justify="center">
+                  <Spinner size="xl" color="green.500" />
                 </Flex>
               ) : messages.length === 0 ? (
                 <Flex 
-                  direction="column" 
-                  align="center" 
-                  justify="center" 
-                  h="full"
-                  color="gray.400"
+                  flex={1}
+                  direction="column"
+                  align="center"
+                  justify="center"
+                  gap={4}
+                  color="fg.muted"
                 >
-                  <Text fontSize="5xl" mb={2}>💬</Text>
-                  <Text>Nenhuma mensagem ainda</Text>
-                  <Text fontSize="sm">Envie a primeira mensagem!</Text>
+                  <Text fontSize="5xl">👋</Text>
+                  <Text fontSize="lg">Inicie a conversa</Text>
+                  <Text fontSize="sm" textAlign="center" maxW="300px">
+                    Envie uma mensagem para começar o atendimento
+                  </Text>
                 </Flex>
               ) : (
                 Object.entries(groupedMessages).map(([date, dayMessages]) => (
-                  <Box key={date}>
+                  <Stack key={date} gap={4}>
                     {/* Date separator */}
-                    <Flex align="center" justify="center" my={4}>
-                      <Text 
-                        px={3} 
-                        py={1} 
-                        bg="white" 
-                        borderRadius="full" 
-                        fontSize="xs"
-                        color="gray.500"
-                        boxShadow="sm"
+                    <Flex align="center" justify="center">
+                      <Badge 
+                        variant="subtle" 
+                        size="sm"
+                        borderRadius="full"
+                        px={3}
                       >
                         {format(new Date(date), "d 'de' MMMM", { locale: ptBR })}
-                      </Text>
+                      </Badge>
                     </Flex>
-                    {/* Messages for this date */}
-                    {dayMessages.map((message) => (
-                      <MessageBubble key={message.id} {...messageToBubbleProps(message)} />
-                    ))}
-                  </Box>
+                    
+                    {/* Messages */}
+                    <Stack gap={2}>
+                      {dayMessages.map((message) => (
+                        <MessageBubble 
+                          key={message.id} 
+                          {...messageToBubbleProps(message)} 
+                        />
+                      ))}
+                    </Stack>
+                  </Stack>
                 ))
               )}
               <div ref={messagesEndRef} />
-            </Box>
+            </Stack>
 
-            {/* Message input */}
-            <MessageInput
-              onSend={handleSendMessage}
-              onTyping={handleTypingIndicator}
-              disabled={!isConnected}
-              isLoading={isSending}
-              placeholder={isConnected ? 'Digite uma mensagem...' : 'Conectando...'}
-            />
+            {/* Message Input */}
+            <Box 
+              p={4}
+              bg="bg.default"
+              borderTopWidth="1px"
+              borderColor="border.default"
+            >
+              <MessageInput
+                onSend={handleSendMessage}
+                onTyping={handleTypingIndicator}
+                disabled={!isConnected}
+                isLoading={isSending}
+                placeholder={isConnected ? 'Digite uma mensagem...' : 'Conectando...'}
+              />
+            </Box>
           </>
         )}
       </Flex>
