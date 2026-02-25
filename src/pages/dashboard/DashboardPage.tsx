@@ -1,12 +1,24 @@
+/**
+ * DashboardPage - Página de dashboard moderna com Chakra UI v3
+ */
 import React, { useCallback, useEffect, useState } from 'react';
-import logger from '../../services/logger';
+import {
+  Box,
+  Flex,
+  Grid,
+  GridItem,
+  Heading,
+  Text,
+  Stack,
+  Select,
+  Skeleton,
+  Icon,
+} from '@chakra-ui/react';
 import {
   ChatBubbleLeftRightIcon,
-  InboxIcon,
   ShoppingCartIcon,
   CurrencyDollarIcon,
-  CpuChipIcon,
-  UserGroupIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline';
 import { Line, Doughnut } from 'react-chartjs-2';
 import {
@@ -21,7 +33,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { Card, StatCard, PageLoading, Loading, Select, PageTitle } from '../../components/common';
+import { Card, Button } from '../../components/common';
 import { dashboardService } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { DashboardOverview, DashboardCharts } from '../../types';
@@ -41,6 +53,45 @@ ChartJS.register(
   Filler
 );
 
+// Stat Card Component
+const StatCard: React.FC<{
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: React.ElementType;
+  colorPalette?: 'brand' | 'accent' | 'success' | 'warning' | 'danger';
+}> = ({ title, value, subtitle, icon, colorPalette = 'brand' }) => {
+  const colors = {
+    brand: { bg: 'brand.50', icon: 'brand.500', _dark: { bg: 'brand.900' } },
+    accent: { bg: 'accent.50', icon: 'accent.500', _dark: { bg: 'accent.900' } },
+    success: { bg: 'success.50', icon: 'success.500', _dark: { bg: 'success.900' } },
+    warning: { bg: 'warning.50', icon: 'warning.500', _dark: { bg: 'warning.900' } },
+    danger: { bg: 'danger.50', icon: 'danger.500', _dark: { bg: 'danger.900' } },
+  };
+
+  const color = colors[colorPalette];
+
+  return (
+    <Card variant="filled" size="md">
+      <Flex align="center" gap={4}>
+        <Box
+          p={3}
+          borderRadius="lg"
+          bg={color.bg}
+          _dark={color._dark}
+        >
+          <Icon as={icon} boxSize={6} color={color.icon} />
+        </Box>
+        <Stack gap={0.5}>
+          <Text fontSize="sm" color="fg.muted">{title}</Text>
+          <Heading size="lg" color="fg.primary">{value}</Heading>
+          {subtitle && <Text fontSize="xs" color="fg.muted">{subtitle}</Text>}
+        </Stack>
+      </Flex>
+    </Card>
+  );
+};
+
 export const DashboardPage: React.FC = () => {
   const { selectedAccount } = useAccountStore();
   const [chartRangeDays, setChartRangeDays] = useState(7);
@@ -49,50 +100,27 @@ export const DashboardPage: React.FC = () => {
     () => dashboardService.getOverview(selectedAccount?.id),
     [selectedAccount?.id]
   );
-  const {
-    data: overview,
-    loading: isLoadingOverview,
-    error: overviewError,
-  } = useFetch(fetchOverview);
+  
+  const { data: overview, loading: isLoadingOverview } = useFetch(fetchOverview);
 
   const fetchCharts = useCallback(
     () => dashboardService.getCharts(selectedAccount?.id, chartRangeDays),
     [selectedAccount?.id, chartRangeDays]
   );
-  const {
-    data: charts,
-    loading: isLoadingCharts,
-    error: chartsError,
-  } = useFetch(fetchCharts);
-
-  useEffect(() => {
-    if (overviewError) {
-      logger.error('Error loading dashboard overview', overviewError);
-    }
-  }, [overviewError]);
-
-  useEffect(() => {
-    if (chartsError) {
-      logger.error('Error loading dashboard charts', chartsError);
-    }
-  }, [chartsError]);
-
-  if (isLoadingOverview && !overview) {
-    return <PageLoading />;
-  }
+  
+  const { data: charts, loading: isLoadingCharts } = useFetch(fetchCharts);
 
   const chartRangeOptions = [
-    { value: '7', label: 'Últimos 7 dias' },
-    { value: '14', label: 'Últimos 14 dias' },
-    { value: '30', label: 'Últimos 30 dias' },
-    { value: '90', label: 'Últimos 90 dias' },
+    { value: 7, label: 'Últimos 7 dias' },
+    { value: 14, label: 'Últimos 14 dias' },
+    { value: 30, label: 'Últimos 30 dias' },
+    { value: 90, label: 'Últimos 90 dias' },
   ];
 
-  const chartRangeLabel = chartRangeDays === 1 ? '1 dia' : `${chartRangeDays} dias`;
-  const showChartsLoading = isLoadingCharts && !charts;
-
   const messagesChartData = {
-    labels: charts?.messages_per_day?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
+    labels: charts?.messages_per_day?.map((d) => 
+      format(new Date(d.date), 'dd/MM', { locale: ptBR })
+    ) || [],
     datasets: [
       {
         label: 'Recebidas',
@@ -105,8 +133,8 @@ export const DashboardPage: React.FC = () => {
       {
         label: 'Enviadas',
         data: charts?.messages_per_day?.map((d) => d.outbound) || [],
-        borderColor: '#128C7E',
-        backgroundColor: 'rgba(18, 140, 126, 0.1)',
+        borderColor: '#0ea5e9',
+        backgroundColor: 'rgba(14, 165, 233, 0.1)',
         fill: true,
         tension: 0.4,
       },
@@ -114,391 +142,215 @@ export const DashboardPage: React.FC = () => {
   };
 
   const ordersChartData = {
-    labels: charts?.orders_per_day?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
+    labels: charts?.orders_per_day?.map((d) => 
+      format(new Date(d.date), 'dd/MM', { locale: ptBR })
+    ) || [],
     datasets: [
       {
         label: 'Pedidos',
         data: charts?.orders_per_day?.map((d) => d.count) || [],
-        borderColor: '#722F37', // Marsala
-        backgroundColor: 'rgba(114, 47, 55, 0.15)',
-        fill: true,
-        tension: 0.4,
-        yAxisID: 'y',
-      },
-      {
-        label: 'Receita (R$)',
-        data: charts?.orders_per_day?.map((d) => d.revenue) || [],
-        borderColor: '#8B3A42', // Marsala light
-        backgroundColor: 'rgba(139, 58, 66, 0.12)',
-        fill: true,
-        tension: 0.4,
-        yAxisID: 'y1',
-      },
-    ],
-  };
-
-  const conversationsChartData = {
-    labels: charts?.conversations_per_day?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
-    datasets: [
-      {
-        label: 'Novas',
-        data: charts?.conversations_per_day?.map((d) => d.new) || [],
-        borderColor: '#22C55E',
-        backgroundColor: 'rgba(34, 197, 94, 0.12)',
-        fill: true,
-        tension: 0.4,
-      },
-      {
-        label: 'Resolvidas',
-        data: charts?.conversations_per_day?.map((d) => d.resolved) || [],
-        borderColor: '#14B8A6',
-        backgroundColor: 'rgba(20, 184, 166, 0.12)',
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245, 158, 11, 0.1)',
         fill: true,
         tension: 0.4,
       },
     ],
   };
 
-  const messageTypeLabels = Object.keys(charts?.message_types || {});
-  const messageTypeLabelMap: Record<string, string> = {
-    text: 'Texto',
-    image: 'Imagem',
-    audio: 'Áudio',
-    video: 'Vídeo',
-    document: 'Documento',
-    sticker: 'Sticker',
-    location: 'Localização',
-    contact: 'Contato',
-  };
-
-  const messageTypesData = {
-    labels: messageTypeLabels.map((label) => messageTypeLabelMap[label] || label.replace(/_/g, ' ')),
+  const statusChartData = {
+    labels: ['Entregue', 'Lido', 'Falhou'],
     datasets: [
       {
-        data: messageTypeLabels.map((label) => charts?.message_types?.[label] || 0),
-        backgroundColor: [
-          '#34D399',
-          '#60A5FA',
-          '#FBBF24',
-          '#F472B6',
-          '#A78BFA',
-          '#F97316',
-          '#2DD4BF',
-          '#93C5FD',
+        data: [
+          overview?.messages?.delivered || 0,
+          overview?.messages?.read || 0,
+          overview?.messages?.failed || 0,
         ],
+        backgroundColor: ['#22c55e', '#0ea5e9', '#ef4444'],
+        borderWidth: 0,
       },
     ],
   };
 
-  const orderStatusData = {
-    labels: Object.keys(charts?.order_statuses || {}),
-    datasets: [
-      {
-        data: Object.values(charts?.order_statuses || {}),
-        backgroundColor: [
-          '#FCD34D',
-          '#60A5FA',
-          '#F97316',
-          '#A78BFA',
-          '#34D399',
-          '#F472B6',
-          '#EF4444',
-          '#6B7280',
-        ],
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
       },
-    ],
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)',
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+      },
+    },
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-      <PageTitle
-        title="Dashboard"
-        subtitle={`Última atualização: ${overview?.timestamp ? format(new Date(overview.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : '-'}`}
-      />
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-        <StatCard
-          title="Mensagens Hoje"
-          value={Number(overview?.messages && typeof overview.messages === 'object' ? overview.messages.today || 0 : (overview?.messages || 0))}
-          icon={<InboxIcon className="w-5 h-5 md:w-6 md:h-6" />}
-        />
-        <StatCard
-          title="Conversas Ativas"
-          value={Number(overview?.conversations && typeof overview.conversations === 'object' ? overview.conversations.active || 0 : (overview?.conversations || 0))}
-          icon={<ChatBubbleLeftRightIcon className="w-5 h-5 md:w-6 md:h-6" />}
-        />
-        <StatCard
-          title="Pedidos Hoje"
-          value={Number(overview?.orders && typeof overview.orders === 'object' ? overview.orders.today || 0 : (overview?.orders || 0))}
-          icon={<ShoppingCartIcon className="w-5 h-5 md:w-6 md:h-6" />}
-        />
-        <StatCard
-          title="Receita Hoje"
-          value={`R$ ${overview?.orders && typeof overview.orders === 'object' ? ((overview.orders as Record<string, number>).revenue_today || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}`}
-          icon={<CurrencyDollarIcon className="w-5 h-5 md:w-6 md:h-6" />}
-        />
-        <StatCard
-          title="Interações IA"
-          value={Number(overview?.agents && typeof overview.agents === 'object' ? (overview.agents as Record<string, number>).interactions_today || 0 : (overview?.agents || 0))}
-          icon={<CpuChipIcon className="w-5 h-5 md:w-6 md:h-6" />}
-        />
-        <StatCard
-          title="Contas Ativas"
-          value={Number(overview?.accounts && typeof overview.accounts === 'object' ? (overview.accounts as Record<string, number>).active || 0 : (overview?.accounts || 0))}
-          icon={<UserGroupIcon className="w-5 h-5 md:w-6 md:h-6" />}
-        />
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white dark:text-white">Analytics detalhado</h2>
-          <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 dark:text-zinc-400">
-            Indicadores dos últimos {chartRangeLabel}.
-          </p>
-        </div>
-        <div className="w-full sm:w-64">
+    <Box p={6}>
+      <Stack gap={6}>
+        {/* Header */}
+        <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
+          <Stack gap={1}>
+            <Heading size="xl" color="fg.primary">Dashboard</Heading>
+            <Text color="fg.muted">
+              Visão geral do seu negócio
+              {selectedAccount && ` - ${selectedAccount.name}`}
+            </Text>
+          </Stack>
+          
           <Select
-            label="Período"
-            value={String(chartRangeDays)}
+            value={chartRangeDays}
             onChange={(e) => setChartRangeDays(Number(e.target.value))}
-            options={chartRangeOptions}
-          />
-        </div>
-      </div>
+            width="200px"
+          >
+            {chartRangeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </Flex>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Messages Chart */}
-        <Card title={`Mensagens (${chartRangeLabel})`} className="lg:col-span-2">
-          <div className="h-80">
-            {showChartsLoading ? (
-              <div className="h-full flex items-center justify-center">
-                <Loading size="lg" />
-              </div>
+        {/* Stats Grid */}
+        <Grid
+          templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }}
+          gap={4}
+        >
+          <GridItem>
+            {isLoadingOverview ? (
+              <Skeleton height="100px" borderRadius="lg" />
             ) : (
-              <Line
-                data={messagesChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'top',
-                    },
-                  },
-                  scales: {
-                      y: {
-                        beginAtZero: true,
-                      },
-                    },
-                  }}
-                />
-              )}
-            </div>
-          </Card>
+              <StatCard
+                title="Mensagens Hoje"
+                value={overview?.messages?.today || 0}
+                subtitle="Total de mensagens"
+                icon={ChatBubbleLeftRightIcon}
+                colorPalette="brand"
+              />
+            )}
+          </GridItem>
+          
+          <GridItem>
+            {isLoadingOverview ? (
+              <Skeleton height="100px" borderRadius="lg" />
+            ) : (
+              <StatCard
+                title="Pedidos"
+                value={overview?.orders?.today || 0}
+                subtitle="Pedidos hoje"
+                icon={ShoppingCartIcon}
+                colorPalette="accent"
+              />
+            )}
+          </GridItem>
+          
+          <GridItem>
+            {isLoadingOverview ? (
+              <Skeleton height="100px" borderRadius="lg" />
+            ) : (
+              <StatCard
+                title="Receita"
+                value={`R$ ${(overview?.orders?.revenue_today || 0).toFixed(2)}`}
+                subtitle="Receita de hoje"
+                icon={CurrencyDollarIcon}
+                colorPalette="success"
+              />
+            )}
+          </GridItem>
+          
+          <GridItem>
+            {isLoadingOverview ? (
+              <Skeleton height="100px" borderRadius="lg" />
+            ) : (
+              <StatCard
+                title="Conversas"
+                value={overview?.conversations?.active || 0}
+                subtitle="Conversas ativas"
+                icon={UsersIcon}
+                colorPalette="warning"
+              />
+            )}
+          </GridItem>
+        </Grid>
 
-          {/* Order Status Chart */}
-          <Card title="Status dos Pedidos">
-            <div className="h-80 flex items-center justify-center">
-              {showChartsLoading ? (
-                <Loading size="lg" />
+        {/* Charts */}
+        <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
+          <GridItem>
+            <Card title="Mensagens" subtitle="Recebidas vs Enviadas">
+              {isLoadingCharts ? (
+                <Skeleton height="300px" />
               ) : (
-                <Doughnut
-                  data={orderStatusData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'bottom',
-                      },
-                    },
-                  }}
-            />
-          )}
-        </div>
-      </Card>
-    </div>
-
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card title={`Pedidos e Receita (${chartRangeLabel})`} className="lg:col-span-2">
-        <div className="h-80">
-          {showChartsLoading ? (
-            <div className="h-full flex items-center justify-center">
-              <Loading size="lg" />
-            </div>
-          ) : (
-            <Line
-              data={ordersChartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'top',
-                  },
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    title: {
-                      display: true,
-                      text: 'Pedidos',
-                    },
-                  },
-                  y1: {
-                    beginAtZero: true,
-                    position: 'right',
-                    grid: {
-                      drawOnChartArea: false,
-                    },
-                    ticks: {
-                      callback: (value) =>
-                        `R$ ${Number(value).toLocaleString('pt-BR')}`,
-                    },
-                  },
-                },
-              }}
-            />
-          )}
-        </div>
-      </Card>
-
-      <Card title="Tipos de Mensagem">
-        <div className="h-80 flex items-center justify-center">
-          {showChartsLoading ? (
-            <Loading size="lg" />
-          ) : (
-            <Doughnut
-              data={messageTypesData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'bottom',
-                  },
-                },
-              }}
-            />
-          )}
-        </div>
-      </Card>
-    </div>
-
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card title={`Conversas (${chartRangeLabel})`} className="lg:col-span-3">
-        <div className="h-80">
-          {showChartsLoading ? (
-            <div className="h-full flex items-center justify-center">
-              <Loading size="lg" />
-            </div>
-          ) : (
-            <Line
-              data={conversationsChartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'top',
-                  },
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                  },
-                },
-              }}
-            />
-          )}
-        </div>
-      </Card>
-    </div>
-
-    {/* Details Row */}
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Messages by Status */}
-      <Card title="Mensagens por Status">
-        <div className="space-y-3">
-          {overview?.messages && typeof overview.messages === 'object' && Object.entries(overview.messages.by_status || {}).map(([status, count]) => (
-            <div key={status} className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-zinc-400 capitalize">{status}</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">{count as number}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Conversations by Mode */}
-      <Card title="Conversas por Modo">
-        <div className="space-y-3">
-          {overview?.conversations && typeof overview.conversations === 'object' && Object.entries(overview.conversations.by_mode || {}).map(([mode, count]) => (
-            <div key={mode} className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-zinc-400 capitalize">
-                {mode === 'auto' ? 'Automático' : mode === 'human' ? 'Humano' : 'Híbrido'}
-              </span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">{count as number}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* AI Agent Stats */}
-      <Card title="Estatísticas Agentes IA">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600 dark:text-zinc-400">Interações Hoje</span>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {overview?.agents && typeof overview.agents === 'object' ? (overview.agents as Record<string, number>).interactions_today || 0 : 0}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600 dark:text-zinc-400">Tempo Médio</span>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {overview?.agents && typeof overview.agents === 'object' ? (overview.agents as Record<string, number>).avg_response_time_ms || 0 : 0}ms
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600 dark:text-zinc-400">Taxa de Sucesso</span>
-            <span className="text-sm font-medium text-green-600 dark:text-green-400">
-              {overview?.agents && typeof overview.agents === 'object' ? (overview.agents as Record<string, number>).success_rate || 0 : 0}%
-            </span>
-          </div>
-        </div>
-      </Card>
-    </div>
-
-    {/* Revenue Summary */}
-    <Card title="Resumo Financeiro">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-100 dark:border-green-800">
-          <p className="text-sm text-green-600 dark:text-green-400 font-medium">Receita Hoje</p>
-          <p className="text-2xl font-bold text-green-700 dark:text-green-300 mt-1">
-            R$ {overview?.orders && typeof overview.orders === 'object' ? ((overview.orders as Record<string, number>).revenue_today || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
-          </p>
-        </div>
-        <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
-          <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Receita do Mês</p>
-          <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">
-            R$ {overview?.orders && typeof overview.orders === 'object' ? ((overview.orders as Record<string, number>).revenue_month || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
-          </p>
-        </div>
-        <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg border border-yellow-100 dark:border-yellow-800">
-          <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Pagamentos Pendentes</p>
-          <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mt-1">
-            {(overview?.payments?.pending) ?? 0}
-          </p>
-        </div>
-        <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-100 dark:border-purple-800">
-          <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Pagamentos Hoje</p>
-          <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 mt-1">
-            {overview?.payments?.completed_today ?? 0}
-          </p>
-        </div>
-      </div>
-    </Card>
-  </div>
-);
+                <Box height="300px">
+                  <Line data={messagesChartData} options={chartOptions} />
+                </Box>
+              )}
+            </Card>
+          </GridItem>
+          
+          <GridItem>
+            <Card title="Pedidos" subtitle="Por dia">
+              {isLoadingCharts ? (
+                <Skeleton height="300px" />
+              ) : (
+                <Box height="300px">
+                  <Line data={ordersChartData} options={chartOptions} />
+                </Box>
+              )}
+            </Card>
+          </GridItem>
+          
+          <GridItem>
+            <Card title="Status das Mensagens" subtitle="Distribuição">
+              {isLoadingOverview ? (
+                <Skeleton height="300px" />
+              ) : (
+                <Box height="300px" maxW="300px" mx="auto">
+                  <Doughnut 
+                    data={statusChartData} 
+                    options={{
+                      ...chartOptions,
+                      cutout: '60%',
+                    }} 
+                  />
+                </Box>
+              )}
+            </Card>
+          </GridItem>
+          
+          <GridItem>
+            <Card title="Ações Rápidas">
+              <Stack gap={3}>
+                <Button 
+                  colorPalette="brand" 
+                  leftIcon={<ChatBubbleLeftRightIcon className="w-4 h-4" />}
+                  onClick={() => window.location.href = '/whatsapp/chat'}
+                >
+                  Abrir Chat
+                </Button>
+                <Button 
+                  variant="outline"
+                  leftIcon={<ShoppingCartIcon className="w-4 h-4" />}
+                  onClick={() => window.location.href = '/orders'}
+                >
+                  Ver Pedidos
+                </Button>
+              </Stack>
+            </Card>
+          </GridItem>
+        </Grid>
+      </Stack>
+    </Box>
+  );
 };
+
+export default DashboardPage;

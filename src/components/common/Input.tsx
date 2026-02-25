@@ -1,114 +1,75 @@
+/**
+ * Input - Componente de input moderno com Chakra UI v3
+ */
 import React from 'react';
+import { Input as ChakraInput, Stack, Text } from '@chakra-ui/react';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps {
   label?: string;
+  placeholder?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: 'text' | 'password' | 'email' | 'number' | 'tel' | 'url';
+  size?: 'sm' | 'md' | 'lg';
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
   error?: string;
   helperText?: string;
+  leftElement?: React.ReactNode;
+  rightElement?: React.ReactNode;
+  className?: string;
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
+  placeholder,
+  value,
+  onChange,
+  type = 'text',
+  size = 'md',
+  isDisabled = false,
+  isReadOnly = false,
+  isRequired = false,
   error,
   helperText,
-  className = '',
-  id,
-  ...props
+  leftElement,
+  rightElement,
+  className,
 }) => {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
-
   return (
-    <div className="w-full">
+    <Stack gap={1.5} className={className}>
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+        <Text fontSize="sm" fontWeight="medium" color="fg.primary">
           {label}
-        </label>
+          {isRequired && <Text as="span" color="danger.500"> *</Text>}
+        </Text>
       )}
-      <input
-        id={inputId}
-        className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-          error ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-zinc-700'
-        } ${className}`}
-        {...props}
+      
+      <ChakraInput
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        size={size}
+        disabled={isDisabled}
+        readOnly={isReadOnly}
+        borderColor={error ? 'danger.500' : 'border.primary'}
+        _focus={{
+          borderColor: 'brand.500',
+          boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)',
+        }}
       />
-      {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
-      {helperText && !error && <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">{helperText}</p>}
-    </div>
-  );
-};
-
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-}
-
-export const Textarea: React.FC<TextareaProps> = ({
-  label,
-  error,
-  helperText,
-  className = '',
-  id,
-  ...props
-}) => {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
-
-  return (
-    <div className="w-full">
-      {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          {label}
-        </label>
+      
+      {helperText && !error && (
+        <Text fontSize="xs" color="fg.muted">{helperText}</Text>
       )}
-      <textarea
-        id={inputId}
-        className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors resize-none ${
-          error ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-zinc-700'
-        } ${className}`}
-        {...props}
-      />
-      {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
-      {helperText && !error && <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">{helperText}</p>}
-    </div>
-  );
-};
-
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  error?: string;
-  options: Array<{ value: string; label: string }>;
-}
-
-export const Select: React.FC<SelectProps> = ({
-  label,
-  error,
-  options,
-  className = '',
-  id,
-  ...props
-}) => {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
-
-  return (
-    <div className="w-full">
-      {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          {label}
-        </label>
+      
+      {error && (
+        <Text fontSize="xs" color="danger.500">{error}</Text>
       )}
-      <select
-        id={inputId}
-        className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-          error ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-zinc-700'
-        } ${className}`}
-        {...props}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
-    </div>
+    </Stack>
   );
 };
+
+export default Input;
