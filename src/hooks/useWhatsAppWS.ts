@@ -162,8 +162,8 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     
     const proto = host.includes('railway') || host.includes('vercel') || location.protocol === 'https:' ? 'wss' : 'ws';
     
-    if (dashboardMode) {
-      return `${proto}://${host}/ws/whatsapp/dashboard/?token=${token}`;
+    if (dashboardMode && accountId) {
+      return `${proto}://${host}/ws/whatsapp-dashboard/${accountId}/?token=${token}`;
     }
     
     if (!accountId) return null;

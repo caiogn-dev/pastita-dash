@@ -234,16 +234,16 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
   return (
     <div
       className={`
-        bg-white dark:bg-zinc-900 rounded-lg shadow-sm border-2 p-3 mb-2 cursor-pointer
+        bg-white dark:bg-zinc-900 rounded-xl shadow-md border-2 p-4 mb-3 cursor-pointer
         transition-all duration-300 hover:shadow-md hover:border-primary-300 dark:hover:border-primary-500
         ${isDragging ? 'shadow-lg ring-2 ring-primary-500 scale-105' : ''}
         ${isUpdating ? 'opacity-70 border-primary-300' : ''}
-        ${isSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/30 animate-pulse' : 'border-gray-100 dark:border-zinc-800'}
+        ${isSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/30 animate-pulse' : 'border-gray-200 dark:border-zinc-700'}
       `}
       onClick={() => !isUpdating && onClick?.(order)}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <span className="font-bold text-gray-900 dark:text-white text-sm">
           #{order.order_number}
         </span>
@@ -266,7 +266,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       </div>
 
       {/* Payment Status Badge - NEW */}
-      <div className="mb-2">
+      <div className="mb-3">
         <PaymentBadge 
           paymentStatus={derivedPaymentStatus} 
           paymentMethod={order.payment_method} 
@@ -274,7 +274,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       </div>
 
       {/* Customer */}
-      <div className="flex items-center gap-1.5 mb-2">
+      <div className="flex items-center gap-1.5 mb-3">
         <UserIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
         <span className="text-sm text-gray-700 dark:text-zinc-300 truncate">
           {order.customer_name || 'Cliente'}
@@ -283,7 +283,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
 
       {/* Phone */}
       {order.customer_phone && (
-        <div className="flex items-center gap-1.5 mb-2">
+        <div className="flex items-center gap-1.5 mb-3">
           <PhoneIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
           <span className="text-xs text-gray-500 dark:text-zinc-400">{order.customer_phone}</span>
         </div>
@@ -291,7 +291,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
 
       {/* Delivery Address */}
       {order.delivery_address && (
-        <div className="flex items-start gap-1.5 mb-2">
+        <div className="flex items-start gap-1.5 mb-3">
           <MapPinIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5" />
           <span className="text-xs text-gray-500 dark:text-zinc-400 line-clamp-2">
             {formatAddress(order.delivery_address) || 'Endereço não informado'}
@@ -300,7 +300,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       )}
 
       {/* Items count */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-zinc-700">
         <span className="text-xs text-gray-500 dark:text-zinc-400">
           {getItemsCount(order)} item(ns)
         </span>
@@ -366,7 +366,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
 
       {/* Column Content */}
       <div className={`
-        flex-1 p-3 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[200px]
+        flex-1 p-4 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[200px]
         transition-all duration-300
         ${isOver ? 'bg-primary-50/50 dark:bg-primary-900/20' : ''}
       `}>

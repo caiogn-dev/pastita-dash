@@ -47,7 +47,7 @@ import {
 } from '../../components/common';
 import { OrdersKanban, ORDER_STATUSES } from '../../components/orders/OrdersKanban';
 import { exportService, getErrorMessage, ordersService } from '../../services';
-import { useStore, useNotificationSound } from '../../hooks';
+import { useStore, useNotificationSound, useOrdersWebSocket } from '../../hooks';
 import { Order } from '../../types';
 
 type ViewMode = 'kanban' | 'table';
@@ -103,10 +103,30 @@ export const OrdersPage: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [wsConnected, setWsConnected] = useState(false);
+  const { isConnected: wsConnected } = useOrdersWebSocket({ enabled: !!effectiveStoreId });
 
   const { playNotificationSound } = useNotificationSound();
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // WebSocket para atualizações em tempo real
+  useOrdersWebSocket({
+    enabled: !!effectiveStoreId,
+    onOrderCreated: (data) => {
+      playNotificationSound();
+      toast.success(`Novo pedido #${data.order_number || data.order_id?.slice(0, 8)}`);
+      loadOrders();
+    },
+    onOrderUpdated: (data) => {
+      playNotificationSound();
+      toast(`Pedido atualizado: ${data.status}`);
+      loadOrders();
+    },
+    onPaymentReceived: (data) => {
+      playNotificationSound();
+      toast.success(`Pagamento recebido!`);
+      loadOrders();
+    },
+  });
 
   // Carrega pedidos
   const loadOrders = useCallback(async () => {
@@ -180,14 +200,7 @@ export const OrdersPage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full border-b-2 border-primary-500 h-12 w-12 mx-auto"></div>
-          <p className="mt-4 text-gray-500 dark:text-zinc-400">Carregando pedidos...</p>
-        </div>
-      </div>
-    );
+    return <PageLoading />;
   }
 
   return (

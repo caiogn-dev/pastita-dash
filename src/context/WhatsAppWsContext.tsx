@@ -135,14 +135,9 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
     const protocol = host.includes('localhost') || host.includes('127.0.0.1')
       ? 'ws'
       : 'wss';
-    
-    // Use dashboard mode for multi-account or specific account
-    let endpoint = '/ws/whatsapp/dashboard/';
-    if (!dashboardMode && selectedAccount) {
-      endpoint = `/ws/whatsapp/${selectedAccount.id}/`;
-    }
-    
-    return `${protocol}://${host}${endpoint}?token=${token}`;
+    // WebSocket endpoint: /ws/whatsapp/{account_id}/
+    if (!selectedAccount) return null;
+    return `${protocol}://${host}/ws/whatsapp/${selectedAccount.id}/?token=${token}`;
   }, [token, dashboardMode, selectedAccount]);
   
   // Cleanup function
