@@ -24,11 +24,12 @@ export interface ButtonProps {
   title?: string;
 }
 
-const variantMap: Record<string, 'solid' | 'outline' | 'ghost' | 'link'> = {
+// Mapeia variants legados para novos (Chakra v3 não tem 'link')
+const variantMap: Record<string, 'solid' | 'outline' | 'ghost' | 'plain'> = {
   solid: 'solid',
   outline: 'outline',
   ghost: 'ghost',
-  link: 'link',
+  link: 'plain',  // 'link' vira 'plain' no Chakra v3
   primary: 'solid',
   secondary: 'outline',
   danger: 'solid',
