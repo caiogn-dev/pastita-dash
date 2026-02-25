@@ -18,6 +18,16 @@ export const system = createSystem(defaultConfig, {
         },
       },
     },
+    semanticTokens: {
+      colors: {
+        'bg.subtle': { value: { base: 'gray.50', _dark: 'gray.900' } },
+        'bg.default': { value: { base: 'white', _dark: 'gray.800' } },
+        'bg.muted': { value: { base: 'gray.100', _dark: 'gray.700' } },
+        'fg.default': { value: { base: 'gray.900', _dark: 'gray.100' } },
+        'fg.muted': { value: { base: 'gray.600', _dark: 'gray.400' } },
+        'border.default': { value: { base: 'gray.200', _dark: 'gray.700' } },
+      },
+    },
   },
 });
 
