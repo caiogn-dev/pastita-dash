@@ -26,6 +26,7 @@ import {
   MegaphoneIcon,
   EnvelopeIcon,
   PlusCircleIcon,
+  PlusIcon,
   MagnifyingGlassIcon,
   ChatBubbleBottomCenterTextIcon,
   FolderIcon,
@@ -36,6 +37,7 @@ import {
   QueueListIcon,
   Bars3BottomLeftIcon,
   SwatchIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -150,6 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           badge: 'Novo',
           children: [
             { name: 'Lista de Agentes', href: '/agents', icon: CpuChipIcon },
+            { name: 'Novo Agente', href: '/agents/new', icon: PlusIcon },
             { name: 'Testar Orquestrador', href: '/agents/test/orchestrator', icon: SparklesIcon },
           ]
         },
@@ -191,6 +194,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             { name: 'Configurações', href: storeHref('settings'), icon: Cog6ToothIcon },
             { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
           ]
+        },
+      ]
+    },
+    {
+      title: 'Sistema',
+      items: [
+        { 
+          name: 'Configurações Gerais', 
+          href: '/settings', 
+          icon: Cog6ToothIcon 
+        },
+        { 
+          name: 'Entregas', 
+          href: '/delivery/zones', 
+          icon: TruckIcon 
         },
       ]
     },
