@@ -1,5 +1,17 @@
+/**
+ * LoginPage - Página de login moderna com Chakra UI v3
+ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Flex,
+  Heading,
+  Text,
+  Stack,
+  Image,
+  Card,
+} from '@chakra-ui/react';
 import toast from 'react-hot-toast';
 import { Button, Input } from '../../components/common';
 import { authService, getErrorMessage, setAuthToken } from '../../services';
@@ -20,23 +32,14 @@ export const LoginPage: React.FC = () => {
 
     try {
       const response = await authService.login(formData.email, formData.password);
-      // DEBUG: inspect login response
-      // eslint-disable-next-line no-console
-      console.debug('[LoginPage] login response', response);
-      // Save token in store first so effects/readers observe it
       setAuth(response.token, {
         id: response.user_id,
         email: response.email,
         first_name: response.first_name,
         last_name: response.last_name,
       });
-      // Ensure axios has the header for immediate requests
       setAuthToken(response.token);
-      // Small pause to allow persistence and subscribers to run
       await new Promise((res) => setTimeout(res, 100));
-      // DEBUG: inspect store token after setAuth
-      // eslint-disable-next-line no-console
-      console.debug('[LoginPage] authStore token now=', useAuthStore.getState().token);
       toast.success('Login realizado com sucesso!');
       navigate('/');
     } catch (error) {
@@ -47,47 +50,68 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black py-12 px-4 sm:px-6 lg:px-8 transition-colors">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <img 
-            src="/pastita-logo.svg" 
-            alt="Pastita" 
-            className="w-24 h-24 mx-auto mb-4"
+    <Flex
+      minH="100vh"
+      align="center"
+      justify="center"
+      bg="bg.secondary"
+      p={4}
+    >
+      <Stack gap={8} maxW="md" w="full">
+        {/* Logo e Título */}
+        <Stack align="center" gap={4}>
+          <Image
+            src="/pastita-logo.svg"
+            alt="Pastita"
+            boxSize="96px"
           />
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Pastita</h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-zinc-400">Dashboard de Gerenciamento</p>
-        </div>
+          <Stack gap={1} textAlign="center">
+            <Heading size="2xl" color="fg.primary">Pastita</Heading>
+            <Text color="fg.muted">Dashboard de Gerenciamento</Text>
+          </Stack>
+        </Stack>
 
-        <form className="mt-8 space-y-6 bg-white dark:bg-zinc-900 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <Input
-              label="Usuário"
-              type="text"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="Digite seu e-mail"
-            />
-            <Input
-              label="Senha"
-              type="password"
-              required
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="Digite sua senha"
-            />
-          </div>
+        {/* Formulário */}
+        <Card variant="default" size="lg">
+          <form onSubmit={handleSubmit}>
+            <Stack gap={6}>
+              <Input
+                label="Usuário"
+                type="text"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="Digite seu e-mail"
+              />
+              
+              <Input
+                label="Senha"
+                type="password"
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Digite sua senha"
+              />
 
-          <Button type="submit" className="w-full" isLoading={isLoading}>
-            Entrar
-          </Button>
-        </form>
+              <Button 
+                type="submit" 
+                width="full" 
+                isLoading={isLoading}
+                size="lg"
+              >
+                Entrar
+              </Button>
+            </Stack>
+          </form>
+        </Card>
 
-        <p className="text-center text-sm text-gray-500 dark:text-zinc-400">
+        {/* Footer */}
+        <Text textAlign="center" fontSize="sm" color="fg.muted">
           Plataforma de gestão para restaurantes
-        </p>
-      </div>
-    </div>
+        </Text>
+      </Stack>
+    </Flex>
   );
 };
+
+export default LoginPage;
