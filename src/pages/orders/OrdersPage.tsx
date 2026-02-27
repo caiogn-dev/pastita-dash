@@ -241,7 +241,7 @@ export const OrdersPage: React.FC = () => {
 
             <Button
               leftIcon={<PlusIcon className="w-4 h-4" />}
-              onClick={() => navigate('/orders/new')}
+              onClick={() => navigate(`/stores/${effectiveStoreId || storeSlug || 'default'}/orders/new`)}
               size="sm"
             >
               Novo Pedido
@@ -298,6 +298,7 @@ export const OrdersPage: React.FC = () => {
         </Card>
 
         {/* Tabs de Status */}
+      <Box overflowX="auto" pb={2} css={{ scrollbarWidth: 'thin', '&::-webkit-scrollbar': { height: '6px' } }}>
         <Tabs.Root
           value={statusFilter}
           onValueChange={(details) => {
@@ -307,22 +308,23 @@ export const OrdersPage: React.FC = () => {
             }
           }}
         >
-          <Tabs.List>
-            <Tabs.Trigger value="all">
-              Todos <Badge ml={2} size="sm">{statusCounts.all}</Badge>
+          <Tabs.List display="flex" flexWrap="nowrap" gap={2} minW="max-content" py={1}>
+            <Tabs.Trigger value="all" flexShrink={0}>
+              <Text whiteSpace="nowrap">Todos</Text>
+              <Badge ml={2} size="sm" variant="subtle" borderRadius="full">{statusCounts.all}</Badge>
             </Tabs.Trigger>
             {ORDER_STATUS_VALUES.map(status => (
-              <Tabs.Trigger key={status} value={status}>
-                {STATUS_CONFIG[status]?.label || status}
-                <Badge ml={2} size="sm" colorPalette={STATUS_CONFIG[status]?.color as any}>
+              <Tabs.Trigger key={status} value={status} flexShrink={0}>
+                <Text whiteSpace="nowrap">{STATUS_CONFIG[status]?.label || status}</Text>
+                <Badge ml={2} size="sm" variant="subtle" colorPalette={STATUS_CONFIG[status]?.color as any} borderRadius="full">
                   {statusCounts[status] || 0}
                 </Badge>
               </Tabs.Trigger>
             ))}
           </Tabs.List>
         </Tabs.Root>
-
-        {/* Conteúdo */}
+      </Box>
+{/* Conteúdo */}
         {viewMode === 'table' ? (
           <Card noPadding>
             <Box overflowX="auto">
@@ -343,7 +345,7 @@ export const OrdersPage: React.FC = () => {
                     <Table.Row
                       key={order.id}
                       cursor="pointer"
-                      onClick={() => navigate(`/orders/${order.id}`)}
+                      onClick={() => navigate(`/stores/${effectiveStoreId || storeSlug || 'default'}/orders/${order.id}`)}
                       _hover={{ bg: 'bg.hover' }}
                     >
                       <Table.Cell>
@@ -410,7 +412,7 @@ export const OrdersPage: React.FC = () => {
         ) : (
           <OrdersKanban
             orders={filteredOrders}
-            onOrderClick={(order) => navigate(`/orders/${order.id}`)}
+            onOrderClick={(order) => navigate(`/stores/${effectiveStoreId || storeSlug || 'default'}/orders/${order.id}`)}
             onStatusChange={handleUpdateOrder}
           />
         )}
