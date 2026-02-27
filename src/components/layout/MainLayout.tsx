@@ -12,7 +12,13 @@ export const MainLayout: React.FC = () => {
   const isMobile = useBreakpointValue({ base: true, lg: false });
 
   return (
-    <Flex minH="100vh" bg="bg.secondary" color="fg.primary">
+    <Flex minH="100vh" bg="bg.secondary" color="fg.primary" position="relative">
+      <Box
+        position="fixed"
+        inset={0}
+        pointerEvents="none"
+        background="radial-gradient(circle at top right, rgba(180, 100, 110, 0.12), transparent 55%)"
+      />
       {/* Overlay para mobile */}
       {sidebarOpen && isMobile && (
         <Box
@@ -49,7 +55,7 @@ export const MainLayout: React.FC = () => {
       </Box>
 
       {/* Main Content */}
-      <Flex flex={1} flexDirection="column" overflow="hidden">
+      <Flex flex={1} flexDirection="column" overflow="hidden" zIndex={1}>
         <Header 
           title="Painel Operacional" 
           subtitle="CRM Pastita" 
@@ -59,7 +65,9 @@ export const MainLayout: React.FC = () => {
           as="main" 
           flex={1} 
           overflow="auto"
-          bg="bg.secondary"
+          bg="transparent"
+          px={{ base: 3, md: 5, xl: 7 }}
+          py={{ base: 3, md: 5 }}
         >
           <Outlet />
         </Box>

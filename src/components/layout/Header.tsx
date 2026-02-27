@@ -92,8 +92,9 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-black px-4 md:px-6 py-4 transition-colors">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <header className="sticky top-0 z-20 border-b border-gray-200/80 dark:border-zinc-800 bg-white/85 dark:bg-black/70 backdrop-blur-xl px-4 md:px-6 py-4 transition-colors">
+      <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#722F37]/40 to-transparent" />
         <div className="flex w-full items-start gap-4 md:items-center">
           {onMenuClick && (
             <button
@@ -168,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
                 placeholder="Buscar..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#722F37] focus:ring-2 focus:ring-[#722F37]/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#722F37] focus:ring-2 focus:ring-[#722F37]/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
               />
             </form>
           )}
