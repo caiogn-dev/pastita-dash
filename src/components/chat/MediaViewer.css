@@ -1,3 +1,7 @@
+/* ============================================
+   MEDIA VIEWER - CORRIGIDO
+   ============================================ */
+
 .media-viewer-overlay {
   position: fixed;
   inset: 0;
@@ -13,6 +17,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .media-viewer-header {
@@ -20,6 +25,7 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 16px;
+  flex-shrink: 0;
 }
 
 .viewer-btn {
@@ -31,6 +37,10 @@
   border-radius: 50%;
   cursor: pointer;
   font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
 }
 
 .viewer-btn:hover {
@@ -42,6 +52,8 @@
   align-items: center;
   justify-content: center;
   flex: 1;
+  overflow: hidden;
+  padding: 16px;
 }
 
 .viewer-image {
@@ -55,38 +67,55 @@
   max-height: 70vh;
 }
 
+/* CORRIGIDO: Espacamento adequado para audio */
 .viewer-audio {
   text-align: center;
   color: white;
+  padding: 24px;
 }
 
 .audio-icon {
   font-size: 64px;
   margin-bottom: 16px;
+  line-height: 1;
 }
 
 .audio-name {
   margin-top: 16px;
   font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
 }
 
+/* CORRIGIDO: Espacamento e quebra de palavra para documento */
 .viewer-document {
   text-align: center;
   color: white;
   padding: 48px;
+  max-width: 80vw;
 }
 
 .doc-icon {
   font-size: 64px;
   margin-bottom: 16px;
+  line-height: 1;
 }
 
 .doc-name {
   font-size: 18px;
   margin-bottom: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .doc-download {
   color: #4caf50;
   text-decoration: none;
+  line-height: 1.5;
+}
+
+.doc-download:hover {
+  text-decoration: underline;
 }

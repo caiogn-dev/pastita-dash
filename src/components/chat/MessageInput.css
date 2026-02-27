@@ -1,24 +1,35 @@
+/* ============================================
+   MESSAGE INPUT - CORRIGIDO
+   ============================================ */
+
 .message-input-container {
   display: flex;
   gap: 8px;
   align-items: center;
+  padding: 8px 0;
 }
 
+/* CORRIGIDO: garantir altura minima adequada */
 .message-input {
   flex: 1;
   padding: 12px 16px;
   border: 1px solid #e0e0e0;
   border-radius: 24px;
   font-size: 14px;
+  line-height: 1.5;
   outline: none;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .message-input:focus {
   border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
 .message-input:disabled {
   background: #f5f5f5;
+  cursor: not-allowed;
 }
 
 .send-button {
@@ -33,6 +44,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
 }
 
 .send-button:hover:not(:disabled) {
@@ -42,4 +55,20 @@
 .send-button:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+/* Dark Mode */
+.dark .message-input {
+  background: #1a1a1a;
+  border-color: #27272a;
+  color: #fafafa;
+}
+
+.dark .message-input:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+}
+
+.dark .message-input::placeholder {
+  color: #71717a;
 }

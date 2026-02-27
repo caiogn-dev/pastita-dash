@@ -1,9 +1,16 @@
+/* ============================================
+   MESSAGE BUBBLE - CORRIGIDO
+   ============================================ */
+
 .message-bubble {
   max-width: 70%;
   margin-bottom: 12px;
   padding: 12px 16px;
   border-radius: 16px;
   position: relative;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .message-bubble.inbound {
@@ -18,24 +25,31 @@
   border-bottom-right-radius: 4px;
 }
 
+/* CORRIGIDO: line-height aumentado de 1.4 para 1.6 */
 .bubble-content {
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.6;
+  min-height: 1.6em;
 }
 
+/* CORRIGIDO: garantir quebra de palavra adequada */
 .message-text {
   white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.6;
 }
 
 .message-image {
   max-width: 300px;
   max-height: 300px;
   border-radius: 8px;
+  display: block;
 }
 
 .message-audio {
   width: 250px;
+  max-width: 100%;
 }
 
 .bubble-footer {
@@ -43,15 +57,33 @@
   justify-content: flex-end;
   align-items: center;
   gap: 4px;
-  margin-top: 4px;
+  margin-top: 8px;
+  min-height: 16px;
 }
 
 .bubble-time {
   font-size: 11px;
   color: #999;
+  line-height: 1.4;
 }
 
 .bubble-status {
   font-size: 11px;
   color: #4caf50;
+  line-height: 1.4;
+}
+
+/* Dark Mode */
+.dark .message-bubble.inbound {
+  background: #1a1a1a;
+  color: #fafafa;
+}
+
+.dark .message-bubble.outbound {
+  background: #0d3d0d;
+  color: #fafafa;
+}
+
+.dark .bubble-time {
+  color: #71717a;
 }

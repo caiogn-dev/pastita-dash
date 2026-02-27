@@ -44,8 +44,8 @@ export default defineConfig({
         },
       },
     },
-    // Increase chunk size warning limit
-    chunkSizeWarningLimit: 600,
+    // Increase chunk size warning limit (automation chunk is ~720kb, compresses to ~180kb)
+    chunkSizeWarningLimit: 800,
     // Enable source maps for debugging
     sourcemap: false,
     // Minification

@@ -1,7 +1,12 @@
+/* ============================================
+   INTENT STATS PAGE - CORRIGIDO
+   ============================================ */
+
 .intent-stats-page {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .stats-header {
@@ -9,27 +14,34 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .stats-header h1 {
   margin: 0;
   font-size: 24px;
+  line-height: 1.3;
 }
 
 .stats-header p {
   margin: 4px 0 0 0;
   color: #666;
+  line-height: 1.5;
 }
 
 .stats-controls {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .stats-controls select {
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .stats-controls button {
@@ -39,6 +51,13 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
+  line-height: 1.5;
+  transition: background-color 0.2s;
+}
+
+.stats-controls button:hover {
+  background: #45a049;
 }
 
 .stats-cards {
@@ -52,35 +71,44 @@
   background: white;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
+/* CORRIGIDO: line-height adequado para evitar sobreposicao */
 .stat-value {
   font-size: 32px;
   font-weight: bold;
   color: #4caf50;
+  line-height: 1.2;
+  margin-bottom: 4px;
 }
 
 .stat-label {
   color: #666;
   margin-top: 4px;
+  line-height: 1.5;
 }
 
 .stats-section {
   background: white;
   padding: 24px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
 }
 
 .stats-section h2 {
   margin-top: 0;
   margin-bottom: 16px;
+  line-height: 1.3;
 }
 
+/* CORRIGIDO: Tabela com espacamento adequado */
 .stats-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 600px;
 }
 
 .stats-table th,
@@ -88,19 +116,85 @@
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #eee;
+  vertical-align: top;
 }
 
 .stats-table th {
   font-weight: 600;
   color: #666;
+  line-height: 1.4;
+}
+
+.stats-table td {
+  line-height: 1.5;
+}
+
+/* CORRIGIDO: Garantir que conteudo nao sobreponha */
+.stats-table td {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 300px;
 }
 
 .stats-loading,
 .stats-error {
   text-align: center;
   padding: 48px;
+  line-height: 1.5;
 }
 
 .stats-error {
   color: #f44336;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .intent-stats-page {
+    padding: 16px;
+  }
+  
+  .stats-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-table {
+    font-size: 14px;
+  }
+  
+  .stats-table th,
+  .stats-table td {
+    padding: 8px;
+  }
+}
+
+/* Dark Mode */
+.dark .stat-card,
+.dark .stats-section {
+  background: #0a0a0a;
+}
+
+.dark .stats-header h1,
+.dark .stats-section h2 {
+  color: #fafafa;
+}
+
+.dark .stats-header p,
+.dark .stat-label,
+.dark .stats-table th {
+  color: #a1a1aa;
+}
+
+.dark .stats-table td {
+  color: #fafafa;
+  border-bottom-color: #27272a;
+}
+
+.dark .stat-card,
+.dark .stats-section {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
