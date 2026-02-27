@@ -25,19 +25,12 @@ import {
   PresentationChartLineIcon,
   MegaphoneIcon,
   EnvelopeIcon,
-  PlusCircleIcon,
   PlusIcon,
   MagnifyingGlassIcon,
   ChatBubbleBottomCenterTextIcon,
-  FolderIcon,
   SparklesIcon,
-  ShareIcon,
-  ArchiveBoxIcon,
   ReceiptPercentIcon,
   QueueListIcon,
-  Bars3BottomLeftIcon,
-  SwatchIcon,
-  TruckIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -205,11 +198,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           href: '/settings', 
           icon: Cog6ToothIcon 
         },
-        { 
-          name: 'Entregas', 
-          href: '/delivery/zones', 
-          icon: TruckIcon 
-        },
       ]
     },
   ], [storeHref, totalUnreadCount]);
@@ -300,6 +288,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     );
   };
 
+  useEffect(() => {
+    const activeParents = navigationSections
+      .flatMap((section) => section.items)
+      .filter((item) => item.children?.some((child) => location.pathname.startsWith(child.href)))
+      .map((item) => item.name);
+
+    if (activeParents.length === 0) return;
+    setExpandedItems((prev) => Array.from(new Set([...prev, ...activeParents])));
+  }, [location.pathname, navigationSections]);
+
   const isItemActive = (item: NavItem): boolean => {
     if (location.pathname === item.href) return true;
     if (item.children) {
@@ -378,9 +376,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-black border-r border-gray-200 dark:border-zinc-800 w-64 transition-colors">
+    <div className="flex flex-col h-full bg-white/90 dark:bg-black/90 backdrop-blur-xl border-r border-white/40 dark:border-zinc-800 w-64 transition-colors">
       {/* Dynamic Logo based on selected store */}
-      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-zinc-800">
+      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200/80 dark:border-zinc-800">
         <div className="flex items-center gap-3">
           {brandInfo.logo ? (
             <img 
@@ -418,8 +416,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         )}
       </div>
 
-      {/* Quick Search */}
-      <div className="px-3 py-2">
+      <div className="px-3 py-3 border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 px-3 py-2 mb-3">
+          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Sistema online</span>
+          <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+        </div>
+
+        {/* Quick Search */}
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-zinc-500" />
           <input
