@@ -3,37 +3,29 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Card,
-  Typography,
-  TextField,
+  Heading,
+  Text,
+  Input,
   IconButton,
   Avatar,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemButton,
   Badge,
-  Chip,
-  Divider,
-  CircularProgress,
-  InputAdornment,
-  Paper,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Tooltip,
-  Alert,
-} from '@mui/material';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import SendIcon from '@mui/icons-material/Send';
-import SearchIcon from '@mui/icons-material/Search';
-import ImageIcon from '@mui/icons-material/Image';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import CircleIcon from '@mui/icons-material/Circle';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import DoneIcon from '@mui/icons-material/Done';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
+  Separator,
+  Flex,
+  VStack,
+  HStack,
+  Field,
+} from '@chakra-ui/react';
+import {
+  InstagramLogoIcon,
+  PaperPlaneIcon,
+  MagnifyingGlassIcon,
+  ImageIcon,
+  ReloadIcon,
+  ClockIcon,
+  CheckIcon,
+  CheckCircledIcon,
+  CrossCircledIcon,
+} from '@radix-ui/react-icons';
 import {
   instagramService,
   InstagramAccount,
@@ -42,11 +34,11 @@ import {
 } from '../../services/instagram';
 
 const messageStatusIcon: Record<string, React.ReactNode> = {
-  pending: <AccessTimeIcon fontSize="inherit" sx={{ color: 'text.disabled' }} />,
-  sent: <DoneIcon fontSize="inherit" sx={{ color: 'text.disabled' }} />,
-  delivered: <DoneAllIcon fontSize="inherit" sx={{ color: 'text.disabled' }} />,
-  seen: <DoneAllIcon fontSize="inherit" sx={{ color: 'primary.main' }} />,
-  failed: <CircleIcon fontSize="inherit" sx={{ color: 'error.main' }} />,
+  pending: <ClockIcon />,
+  sent: <CheckIcon />,
+  delivered: <CheckIcon />,
+  seen: <CheckCircledIcon />,
+  failed: <CrossCircledIcon />,
 };
 
 export default function InstagramInbox() {
@@ -214,223 +206,211 @@ export default function InstagramInbox() {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 100px)', gap: 2, p: 2 }}>
+    <Flex h="calc(100vh - 100px)" gap={4} p={4}>
       {/* Sidebar - Conversations List */}
-      <Card sx={{ width: 360, display: 'flex', flexDirection: 'column' }}>
+      <Card.Root w="360px" display="flex" flexDirection="column">
         {/* Header */}
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Box display="flex" alignItems="center" gap={2} mb={2}>
-            <InstagramIcon sx={{ color: '#E4405F', fontSize: 28 }} />
-            <Typography variant="h6" fontWeight="bold">
-              Instagram DM
-            </Typography>
+        <Box p={4} borderBottomWidth={1} borderColor="border">
+          <Flex align="center" gap={3} mb={3}>
+            <Box color="#E4405F"><InstagramLogoIcon width="28" height="28" /></Box>
+            <Heading size="md">Instagram DM</Heading>
             <Box flex={1} />
-            <Tooltip title="Atualizar">
-              <IconButton size="small" onClick={loadConversations}>
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
-          </Box>
+            <IconButton 
+              size="sm" 
+              variant="ghost"
+              onClick={loadConversations}
+              title="Atualizar"
+            >
+              <ReloadIcon />
+            </IconButton>
+          </Flex>
           
           {/* Account Selector */}
           {accounts.length > 1 && (
-            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-              <InputLabel>Conta</InputLabel>
-              <Select
-                value={selectedAccountId}
-                label="Conta"
-                onChange={(e) => setSelectedAccountId(e.target.value)}
+            <Field.Root mb={3}>
+              <Select.Root
+                value={[selectedAccountId]}
+                onValueChange={(e) => setSelectedAccountId(e.value[0])}
               >
-                {accounts.map((account) => (
-                  <MenuItem key={account.id} value={account.id}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Avatar src={account.profile_picture_url} sx={{ width: 24, height: 24 }} />
-                      @{account.username}
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                <Select.HiddenSelect />
+                <Select.Control>
+                  <Select.Trigger>
+                    <Select.ValueText />
+                  </Select.Trigger>
+                </Select.Control>
+                <Select.Positioner>
+                  <Select.Content>
+                    {accounts.map((account) => (
+                      <Select.Item key={account.id} value={account.id}>
+                        <HStack>
+                          <Avatar.Root size="xs">
+                            <Avatar.Image src={account.profile_picture_url} />
+                            <Avatar.Fallback>@{account.username?.[0]}</Avatar.Fallback>
+                          </Avatar.Root>
+                          @{account.username}
+                        </HStack>
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Positioner>
+              </Select.Root>
+            </Field.Root>
           )}
           
           {/* Search */}
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Buscar conversas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <Field.Root>
+            <Input
+              placeholder="Buscar conversas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            >
+              <Input.ElementLeft pointerEvents="none">
+                <MagnifyingGlassIcon />
+              </Input.ElementLeft>
+            </Input>
+          </Field.Root>
         </Box>
 
         {/* Conversations List */}
-        <List sx={{ flex: 1, overflow: 'auto', py: 0 }}>
+        <VStack flex={1} overflow="auto" py={0} align="stretch">
           {loading ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <CircularProgress />
-            </Box>
+            <Flex justify="center" py={8}>
+              <Text>⏳</Text>
+            </Flex>
           ) : filteredConversations.length === 0 ? (
-            <Box textAlign="center" py={4} px={2}>
-              <InstagramIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-              <Typography color="text.secondary">
+            <Box textAlign="center" py={8} px={4}>
+              <Box color="fg.muted" mb={2}><InstagramLogoIcon width="48" height="48" /></Box>
+              <Text color="fg.muted">
                 {searchQuery ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
-              </Typography>
+              </Text>
             </Box>
           ) : (
             filteredConversations.map((conv) => (
               <React.Fragment key={conv.id}>
-                <ListItemButton
-                  selected={selectedConversation?.id === conv.id}
+                <Box
+                  py={3}
+                  px={4}
+                  cursor="pointer"
+                  bg={selectedConversation?.id === conv.id ? 'bg.active' : 'transparent'}
+                  _hover={{ bg: 'bg.hover' }}
                   onClick={() => setSelectedConversation(conv)}
-                  sx={{ py: 1.5 }}
                 >
-                  <ListItemAvatar>
-                    <Badge
-                      badgeContent={conv.unread_count}
-                      color="error"
-                      overlap="circular"
-                    >
-                      <Avatar src={conv.participant_profile_pic}>
-                        {conv.participant_username?.[0]?.toUpperCase() || 'U'}
-                      </Avatar>
-                    </Badge>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography
-                          variant="body2"
+                  <Flex align="center" gap={3}>
+                    <Avatar.Root>
+                      <Avatar.Fallback>{conv.participant_username?.[0]?.toUpperCase() || 'U'}</Avatar.Fallback>
+                      <Avatar.Image src={conv.participant_profile_pic} />
+                    </Avatar.Root>
+                    <Box flex={1} minW={0}>
+                      <Flex justify="space-between" align="center">
+                        <Text 
                           fontWeight={conv.unread_count > 0 ? 'bold' : 'normal'}
-                          noWrap
+                          noOfLines={1}
                         >
                           @{conv.participant_username || conv.participant_id}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        </Text>
+                        <Text fontSize="xs" color="fg.muted">
                           {formatTime(conv.last_message_at)}
-                        </Typography>
-                      </Box>
-                    }
-                    secondary={
-                      <Typography
-                        variant="caption"
-                        color={conv.unread_count > 0 ? 'text.primary' : 'text.secondary'}
+                        </Text>
+                      </Flex>
+                      <Text
+                        fontSize="sm"
+                        color={conv.unread_count > 0 ? 'fg.primary' : 'fg.muted'}
                         fontWeight={conv.unread_count > 0 ? 500 : 400}
-                        noWrap
+                        noOfLines={1}
                       >
                         {conv.last_message_preview || 'Nenhuma mensagem'}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-                <Divider component="li" />
+                      </Text>
+                    </Box>
+                    {conv.unread_count > 0 && (
+                      <Badge colorPalette="red" size="sm">{conv.unread_count}</Badge>
+                    )}
+                  </Flex>
+                </Box>
+                <Separator />
               </React.Fragment>
             ))
           )}
-        </List>
-      </Card>
+        </VStack>
+      </Card.Root>
 
       {/* Main - Chat Area */}
-      <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Card.Root flex={1} display="flex" flexDirection="column">
         {!selectedConversation ? (
-          <Box
-            display="flex"
+          <Flex
             flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
+            align="center"
+            justify="center"
             flex={1}
-            color="text.secondary"
+            color="fg.muted"
           >
-            <InstagramIcon sx={{ fontSize: 80, color: '#E4405F', opacity: 0.5, mb: 2 }} />
-            <Typography variant="h6">Selecione uma conversa</Typography>
-            <Typography variant="body2">
-              Escolha uma conversa da lista para ver as mensagens
-            </Typography>
-          </Box>
+            <Box color="#E4405F" opacity={0.5} mb={4}>
+              <InstagramLogoIcon width="80" height="80" />
+            </Box>
+            <Heading size="md">Selecione uma conversa</Heading>
+            <Text>Escolha uma conversa da lista para ver as mensagens</Text>
+          </Flex>
         ) : (
           <>
             {/* Chat Header */}
-            <Box
-              sx={{
-                p: 2,
-                borderBottom: 1,
-                borderColor: 'divider',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-              }}
+            <Flex
+              p={4}
+              borderBottomWidth={1}
+              borderColor="border"
+              align="center"
+              gap={3}
             >
-              <Avatar
-                src={selectedConversation.participant_profile_pic}
-                sx={{ width: 48, height: 48 }}
-              >
-                {selectedConversation.participant_username?.[0]?.toUpperCase()}
-              </Avatar>
+              <Avatar.Root size="lg">
+                <Avatar.Fallback>{selectedConversation.participant_username?.[0]?.toUpperCase()}</Avatar.Fallback>
+                <Avatar.Image src={selectedConversation.participant_profile_pic} />
+              </Avatar.Root>
               <Box flex={1}>
-                <Typography variant="subtitle1" fontWeight="bold">
+                <Text fontWeight="bold">
                   {selectedConversation.participant_name || `@${selectedConversation.participant_username}`}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
+                </Text>
+                <Text fontSize="sm" color="fg.muted">
                   @{selectedConversation.participant_username || selectedConversation.participant_id}
-                </Typography>
+                </Text>
               </Box>
-              <Chip
-                label={selectedConversation.status === 'active' ? 'Ativo' : 'Fechado'}
-                color={selectedConversation.status === 'active' ? 'success' : 'default'}
-                size="small"
-              />
-            </Box>
+              <Badge colorPalette={selectedConversation.status === 'active' ? 'green' : 'gray'}>
+                {selectedConversation.status === 'active' ? 'Ativo' : 'Fechado'}
+              </Badge>
+            </Flex>
 
             {/* Messages Area */}
-            <Box
-              sx={{
-                flex: 1,
-                overflow: 'auto',
-                p: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                bgcolor: 'grey.50',
-              }}
+            <VStack
+              flex={1}
+              overflow="auto"
+              p={4}
+              gap={2}
+              bg="gray.50"
+              align="stretch"
             >
               {loadingMessages ? (
-                <Box display="flex" justifyContent="center" py={4}>
-                  <CircularProgress />
-                </Box>
+                <Flex justify="center" py={8}>
+                  <Text>⏳</Text>
+                </Flex>
               ) : messages.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <Typography color="text.secondary">
-                    Nenhuma mensagem ainda. Envie a primeira!
-                  </Typography>
+                <Box textAlign="center" py={8}>
+                  <Text color="fg.muted">Nenhuma mensagem ainda. Envie a primeira!</Text>
                 </Box>
               ) : (
                 messages.map((msg) => (
-                  <Box
+                  <Flex
                     key={msg.id}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: msg.direction === 'outbound' ? 'flex-end' : 'flex-start',
-                    }}
+                    justify={msg.direction === 'outbound' ? 'flex-end' : 'flex-start'}
                   >
-                    <Paper
-                      sx={{
-                        p: 1.5,
-                        maxWidth: '70%',
-                        bgcolor: msg.direction === 'outbound' ? 'primary.main' : 'white',
-                        color: msg.direction === 'outbound' ? 'white' : 'text.primary',
-                        borderRadius: 2,
-                        borderTopRightRadius: msg.direction === 'outbound' ? 0 : 2,
-                        borderTopLeftRadius: msg.direction === 'inbound' ? 0 : 2,
-                      }}
+                    <Box
+                      p={3}
+                      maxW="70%"
+                      bg={msg.direction === 'outbound' ? 'blue.500' : 'white'}
+                      color={msg.direction === 'outbound' ? 'white' : 'fg.primary'}
+                      borderRadius="lg"
+                      borderTopRightRadius={msg.direction === 'outbound' ? 0 : 'lg'}
+                      borderTopLeftRadius={msg.direction === 'inbound' ? 0 : 'lg'}
+                      shadow="sm"
                     >
                       {msg.media_url && (
-                        <Box mb={1}>
+                        <Box mb={2}>
                           {msg.message_type === 'image' ? (
                             <img
                               src={msg.media_url}
@@ -444,54 +424,37 @@ export default function InstagramInbox() {
                               style={{ maxWidth: '100%', borderRadius: 8 }}
                             />
                           ) : (
-                            <Chip icon={<ImageIcon />} label={msg.message_type} size="small" />
+                            <Badge><ImageIcon /> {msg.message_type}</Badge>
                           )}
                         </Box>
                       )}
                       {msg.text_content && (
-                        <Typography variant="body2">{msg.text_content}</Typography>
+                        <Text>{msg.text_content}</Text>
                       )}
-                      <Box
-                        display="flex"
-                        justifyContent="flex-end"
-                        alignItems="center"
-                        gap={0.5}
-                        mt={0.5}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            opacity: 0.7,
-                            fontSize: '0.65rem',
-                          }}
-                        >
+                      <Flex justify="flex-end" align="center" gap={1} mt={1}>
+                        <Text fontSize="xs" opacity={0.7}>
                           {formatTime(msg.created_at)}
-                        </Typography>
+                        </Text>
                         {msg.direction === 'outbound' && (
-                          <Box sx={{ fontSize: '0.8rem', display: 'flex' }}>
-                            {getStatusIcon(msg.status)}
-                          </Box>
+                          <Box fontSize="sm">{getStatusIcon(msg.status)}</Box>
                         )}
-                      </Box>
-                    </Paper>
-                  </Box>
+                      </Flex>
+                    </Box>
+                  </Flex>
                 ))
               )}
               <div ref={messagesEndRef} />
-            </Box>
+            </VStack>
 
             {/* Message Input */}
-            <Box
-              sx={{
-                p: 2,
-                borderTop: 1,
-                borderColor: 'divider',
-                display: 'flex',
-                gap: 1,
-              }}
+            <Flex
+              p={4}
+              borderTopWidth={1}
+              borderColor="border"
+              gap={2}
             >
-              <TextField
-                fullWidth
+              <Input
+                flex={1}
                 placeholder="Digite uma mensagem..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
@@ -501,37 +464,33 @@ export default function InstagramInbox() {
                     handleSendMessage();
                   }
                 }}
-                multiline
-                maxRows={4}
-                disabled={sending}
               />
               <IconButton
-                color="primary"
+                colorPalette="blue"
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || sending}
-                sx={{
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'primary.dark' },
-                  '&:disabled': { bgcolor: 'grey.300' },
-                }}
               >
-                {sending ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
+                {sending ? '⏳' : <PaperPlaneIcon />}
               </IconButton>
-            </Box>
+            </Flex>
           </>
         )}
-      </Card>
+      </Card.Root>
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-          onClose={() => setError(null)}
+        <Box
+          position="fixed"
+          bottom={4}
+          right={4}
+          p={3}
+          bg="red.50"
+          color="red.700"
+          borderRadius="md"
+          shadow="lg"
         >
           {error}
-        </Alert>
+        </Box>
       )}
-    </Box>
+    </Flex>
   );
 }

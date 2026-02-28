@@ -6,48 +6,40 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
-  CardContent,
-  Grid,
-  Typography,
+  Heading,
+  Text,
   Button,
-  ButtonGroup,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  TextField,
+  Badge,
+  Separator,
+  Flex,
+  VStack,
+  HStack,
+  Grid,
   Tabs,
-  Tab,
+  Input,
+  Select,
+  createListCollection,
+  Spinner,
+  Icon,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  CircularProgress,
   Alert,
-  IconButton,
-  Tooltip,
-  Divider,
-  LinearProgress,
-  useTheme,
-  alpha
-} from '@mui/material';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import DownloadIcon from '@mui/icons-material/Download';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import PeopleIcon from '@mui/icons-material/People';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import WarningIcon from '@mui/icons-material/Warning';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import StarIcon from '@mui/icons-material/Star';
+} from '@chakra-ui/react';
+import {
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
+  ArrowDownTrayIcon,
+  ArrowPathIcon,
+  CalendarIcon,
+  ShoppingCartIcon,
+  UsersIcon,
+  CubeIcon,
+  CurrencyDollarIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  TruckIcon,
+  StarIcon,
+} from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import {
   LineChart,
   Line,
@@ -89,7 +81,7 @@ interface StatCardProps {
   value: string | number;
   subtitle?: string;
   change?: number;
-  icon: React.ReactNode;
+  icon: React.ElementType;
   color?: string;
   loading?: boolean;
 }
@@ -98,81 +90,68 @@ interface StatCardProps {
 // COMPONENTS
 // =============================================================================
 
+const MotionCard = motion(Card.Root);
+
 const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
   subtitle,
   change,
   icon,
-  color = '#6366f1',
+  color = 'blue.500',
   loading
 }) => {
-  const theme = useTheme();
+  const isPositive = change >= 0;
   
   return (
-    <Card
-      sx={{
-        height: '100%',
-        background: `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(color, 0.05)} 100%)`,
-        border: `1px solid ${alpha(color, 0.2)}`,
-        transition: 'transform 0.2s, box-shadow 0.2s',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: `0 8px 24px ${alpha(color, 0.2)}`
-        }
-      }}
+    <MotionCard
+      whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+      transition={{ duration: 0.2 }}
+      bgGradient={`linear(135deg, ${color}10 0%, ${color}05 100%)`}
+      borderColor={`${color}30`}
+      borderWidth="1px"
     >
-      <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-          <Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {title}
-            </Typography>
+      <Card.Body>
+        <Flex justify="space-between" align="flex-start">
+          <VStack align="flex-start" gap={1}>
+            <Text fontSize="sm" color="fg.muted">{title}</Text>
             {loading ? (
-              <CircularProgress size={24} />
+              <Spinner size="md" color={color} />
             ) : (
-              <Typography variant="h4" fontWeight="bold" color={color}>
-                {value}
-              </Typography>
+              <Heading size="lg" color={color}>{value}</Heading>
             )}
             {subtitle && (
-              <Typography variant="body2" color="text.secondary" mt={0.5}>
-                {subtitle}
-              </Typography>
+              <Text fontSize="xs" color="fg.muted">{subtitle}</Text>
             )}
             {change !== undefined && (
-              <Box display="flex" alignItems="center" mt={1}>
-                {change >= 0 ? (
-                  <TrendingUpIcon sx={{ color: 'success.main', fontSize: 18, mr: 0.5 }} />
-                ) : (
-                  <TrendingDownIcon sx={{ color: 'error.main', fontSize: 18, mr: 0.5 }} />
-                )}
-                <Typography
-                  variant="body2"
-                  color={change >= 0 ? 'success.main' : 'error.main'}
+              <HStack gap={1} mt={1}>
+                <Icon 
+                  as={isPositive ? ArrowTrendingUpIcon : ArrowTrendingDownIcon} 
+                  color={isPositive ? 'green.500' : 'red.500'}
+                  boxSize={4}
+                />
+                <Text
+                  fontSize="sm"
                   fontWeight="medium"
+                  color={isPositive ? 'green.500' : 'red.500'}
                 >
-                  {change >= 0 ? '+' : ''}{change.toFixed(1)}%
-                </Typography>
-                <Typography variant="body2" color="text.secondary" ml={0.5}>
-                  vs ontem
-                </Typography>
-              </Box>
+                  {isPositive ? '+' : ''}{change.toFixed(1)}%
+                </Text>
+                <Text fontSize="xs" color="fg.muted">vs ontem</Text>
+              </HStack>
             )}
-          </Box>
+          </VStack>
           <Box
-            sx={{
-              p: 1.5,
-              borderRadius: 2,
-              bgcolor: alpha(color, 0.15),
-              color: color
-            }}
+            p={3}
+            borderRadius="xl"
+            bg={`${color}15`}
+            color={color}
           >
-            {icon}
+            <Icon as={icon} boxSize={6} />
           </Box>
-        </Box>
-      </CardContent>
-    </Card>
+        </Flex>
+      </Card.Body>
+    </MotionCard>
   );
 };
 
@@ -192,8 +171,6 @@ const formatNumber = (value: number): string => {
 // =============================================================================
 
 const AnalyticsPage: React.FC = () => {
-  const theme = useTheme();
-  
   // State
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
   const [period, setPeriod] = useState<Period>('30d');
@@ -211,6 +188,16 @@ const AnalyticsPage: React.FC = () => {
   // Colors for charts
   const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
   
+  // Period options
+  const periodOptions = createListCollection({
+    items: [
+      { label: '7 dias', value: '7d' },
+      { label: '30 dias', value: '30d' },
+      { label: '90 dias', value: '90d' },
+      { label: '1 ano', value: '1y' },
+    ],
+  });
+
   // Load data
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -255,84 +242,67 @@ const AnalyticsPage: React.FC = () => {
   
   // Render Overview Tab
   const renderOverview = () => (
-    <Box>
+    <VStack gap={6} align="stretch">
       {/* Stats Cards */}
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Faturamento Hoje"
-            value={formatCurrency(dashboardStats?.today.revenue || 0)}
-            change={dashboardStats?.today.revenue_change_percent}
-            icon={<AttachMoneyIcon />}
-            color="#22c55e"
-            loading={loading}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Pedidos Hoje"
-            value={dashboardStats?.today.orders || 0}
-            subtitle={`${dashboardStats?.week.orders || 0} esta semana`}
-            icon={<ShoppingCartIcon />}
-            color="#6366f1"
-            loading={loading}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Pedidos Pendentes"
-            value={dashboardStats?.alerts.pending_orders || 0}
-            subtitle="Aguardando ação"
-            icon={<LocalShippingIcon />}
-            color="#f59e0b"
-            loading={loading}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Estoque Baixo"
-            value={dashboardStats?.alerts.low_stock_products || 0}
-            subtitle="Produtos para repor"
-            icon={<WarningIcon />}
-            color="#ef4444"
-            loading={loading}
-          />
-        </Grid>
+      <Grid templateColumns={{ base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={4}>
+        <StatCard
+          title="Faturamento Hoje"
+          value={formatCurrency(dashboardStats?.today.revenue || 0)}
+          change={dashboardStats?.today.revenue_change_percent}
+          icon={CurrencyDollarIcon}
+          color="green.500"
+          loading={loading}
+        />
+        <StatCard
+          title="Pedidos Hoje"
+          value={dashboardStats?.today.orders || 0}
+          subtitle={`${dashboardStats?.week.orders || 0} esta semana`}
+          icon={ShoppingCartIcon}
+          color="blue.500"
+          loading={loading}
+        />
+        <StatCard
+          title="Pedidos Pendentes"
+          value={dashboardStats?.alerts.pending_orders || 0}
+          subtitle="Aguardando ação"
+          icon={TruckIcon}
+          color="orange.500"
+          loading={loading}
+        />
+        <StatCard
+          title="Estoque Baixo"
+          value={dashboardStats?.alerts.low_stock_products || 0}
+          subtitle="Produtos para repor"
+          icon={ExclamationTriangleIcon}
+          color="red.500"
+          loading={loading}
+        />
       </Grid>
       
       {/* Revenue Chart */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6" fontWeight="bold">
-              Faturamento
-            </Typography>
-            <ButtonGroup size="small">
-              <Button
-                variant={groupBy === 'day' ? 'contained' : 'outlined'}
-                onClick={() => setGroupBy('day')}
-              >
-                Dia
-              </Button>
-              <Button
-                variant={groupBy === 'week' ? 'contained' : 'outlined'}
-                onClick={() => setGroupBy('week')}
-              >
-                Semana
-              </Button>
-              <Button
-                variant={groupBy === 'month' ? 'contained' : 'outlined'}
-                onClick={() => setGroupBy('month')}
-              >
-                Mês
-              </Button>
-            </ButtonGroup>
-          </Box>
-          
+      <Card.Root>
+        <Card.Header>
+          <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
+            <Heading size="md">Faturamento</Heading>
+            <HStack gap={2}>
+              {['day', 'week', 'month'].map((g) => (
+                <Button
+                  key={g}
+                  size="sm"
+                  variant={groupBy === g ? 'solid' : 'outline'}
+                  onClick={() => setGroupBy(g as GroupBy)}
+                >
+                  {g === 'day' ? 'Dia' : g === 'week' ? 'Semana' : 'Mês'}
+                </Button>
+              ))}
+            </HStack>
+          </Flex>
+        </Card.Header>
+        <Card.Body>
           {loading ? (
-            <Box display="flex" justifyContent="center" py={8}>
-              <CircularProgress />
-            </Box>
+            <Flex justify="center" py={16}>
+              <Spinner size="xl" />
+            </Flex>
           ) : (
             <ResponsiveContainer width="100%" height={350}>
               <AreaChart data={revenueReport?.data || []}>
@@ -342,7 +312,7 @@ const AnalyticsPage: React.FC = () => {
                     <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.5)} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="period"
                   tickFormatter={(value) => {
@@ -352,25 +322,28 @@ const AnalyticsPage: React.FC = () => {
                       return value;
                     }
                   }}
-                  stroke={theme.palette.text.secondary}
+                  stroke="#6b7280"
+                  fontSize={12}
                 />
                 <YAxis
                   tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
-                  stroke={theme.palette.text.secondary}
+                  stroke="#6b7280"
+                  fontSize={12}
                 />
                 <RechartsTooltip
                   formatter={(value: number | undefined) => [formatCurrency(value ?? 0), 'Faturamento']}
                   labelFormatter={(label: any) => {
                     try {
-                      return format(parseISO(String(label)), "dd 'de' MMMM", { locale: ptBR }) as any;
+                      return format(parseISO(String(label)), "dd 'de' MMMM", { locale: ptBR });
                     } catch {
-                      return String(label) as any;
+                      return String(label);
                     }
                   }}
                   contentStyle={{
-                    backgroundColor: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 8
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}
                 />
                 <Area
@@ -383,296 +356,319 @@ const AnalyticsPage: React.FC = () => {
               </AreaChart>
             </ResponsiveContainer>
           )}
-        </CardContent>
-      </Card>
+        </Card.Body>
+      </Card.Root>
       
       {/* Two Column Layout */}
-      <Grid container spacing={3}>
+      <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
         {/* Top Products */}
-        <Grid item xs={12} md={6}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6" fontWeight="bold">
-                  Produtos Mais Vendidos
-                </Typography>
-                <Chip label={`Top ${productsReport?.top_products.length || 0}`} size="small" />
-              </Box>
-              
-              {loading ? (
-                <LinearProgress />
-              ) : (
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Produto</TableCell>
-                        <TableCell align="right">Qtd</TableCell>
-                        <TableCell align="right">Receita</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {productsReport?.top_products.slice(0, 5).map((product, index) => (
-                        <TableRow key={product.product_id || index}>
-                          <TableCell>
-                            <Box display="flex" alignItems="center" gap={1}>
-                              {index < 3 && (
-                                <StarIcon sx={{ color: index === 0 ? '#fbbf24' : index === 1 ? '#9ca3af' : '#cd7f32', fontSize: 16 }} />
-                              )}
-                              <Typography variant="body2" noWrap sx={{ maxWidth: 150 }}>
-                                {product.product_name}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell align="right">
-                            <Typography variant="body2" fontWeight="medium">
-                              {product.total_quantity}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="right">
-                            <Typography variant="body2" color="success.main" fontWeight="medium">
-                              {formatCurrency(product.total_revenue)}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card.Root>
+          <Card.Header>
+            <Flex justify="space-between" align="center">
+              <Heading size="md">Produtos Mais Vendidos</Heading>
+              <Badge variant="subtle">Top {productsReport?.top_products.length || 0}</Badge>
+            </Flex>
+          </Card.Header>
+          <Card.Body>
+            {loading ? (
+              <Spinner size="md" />
+            ) : (
+              <Table.Root size="sm">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeader>Produto</Table.ColumnHeader>
+                    <Table.ColumnHeader textAlign="right">Qtd</Table.ColumnHeader>
+                    <Table.ColumnHeader textAlign="right">Receita</Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {productsReport?.top_products.slice(0, 5).map((product, index) => (
+                    <Table.Row key={product.product_id || index}>
+                      <Table.Cell>
+                        <HStack gap={2}>
+                          {index < 3 && (
+                            <Icon 
+                              as={StarIcon} 
+                              color={index === 0 ? 'yellow.400' : index === 1 ? 'gray.400' : 'orange.400'}
+                              boxSize={4}
+                              fill="currentColor"
+                            />
+                          )}
+                          <Text fontSize="sm" noOfLines={1} maxW="150px">
+                            {product.product_name}
+                          </Text>
+                        </HStack>
+                      </Table.Cell>
+                      <Table.Cell textAlign="right">
+                        <Text fontSize="sm" fontWeight="medium">
+                          {product.total_quantity}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell textAlign="right">
+                        <Text fontSize="sm" color="green.500" fontWeight="medium">
+                          {formatCurrency(product.total_revenue)}
+                        </Text>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            )}
+          </Card.Body>
+        </Card.Root>
         
         {/* Customer Stats */}
-        <Grid item xs={12} md={6}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" mb={2}>
-                Clientes
-              </Typography>
-              
-              {loading ? (
-                <LinearProgress />
-              ) : (
-                <Box>
-                  <Grid container spacing={2} mb={3}>
-                    <Grid item xs={6}>
-                      <Box textAlign="center" p={2} bgcolor={alpha('#6366f1', 0.1)} borderRadius={2}>
-                        <Typography variant="h4" fontWeight="bold" color="primary">
-                          {customersReport?.summary.total_customers || 0}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Total de Clientes
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box textAlign="center" p={2} bgcolor={alpha('#22c55e', 0.1)} borderRadius={2}>
-                        <Typography variant="h4" fontWeight="bold" color="success.main">
-                          {customersReport?.summary.retention_rate || 0}%
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Taxa de Retenção
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                  
-                  <Divider sx={{ my: 2 }} />
-                  
-                  <Box display="flex" justifyContent="space-between" mb={1}>
-                    <Typography variant="body2" color="text.secondary">
-                      Novos Clientes
-                    </Typography>
-                    <Typography variant="body2" fontWeight="medium">
-                      {customersReport?.summary.new_customers || 0}
-                    </Typography>
+        <Card.Root>
+          <Card.Header>
+            <Heading size="md">Clientes</Heading>
+          </Card.Header>
+          <Card.Body>
+            {loading ? (
+              <Spinner size="md" />
+            ) : (
+              <VStack gap={4} align="stretch">
+                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                  <Box 
+                    textAlign="center" 
+                    p={4} 
+                    bg="blue.50" 
+                    borderRadius="xl"
+                  >
+                    <Heading size="lg" color="blue.500">
+                      {customersReport?.summary.total_customers || 0}
+                    </Heading>
+                    <Text fontSize="sm" color="fg.muted">Total de Clientes</Text>
                   </Box>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body2" color="text.secondary">
-                      Clientes Recorrentes
-                    </Typography>
-                    <Typography variant="body2" fontWeight="medium">
-                      {customersReport?.summary.returning_customers || 0}
-                    </Typography>
+                  <Box 
+                    textAlign="center" 
+                    p={4} 
+                    bg="green.50" 
+                    borderRadius="xl"
+                  >
+                    <Heading size="lg" color="green.500">
+                      {customersReport?.summary.retention_rate || 0}%
+                    </Heading>
+                    <Text fontSize="sm" color="fg.muted">Taxa de Retenção</Text>
                   </Box>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+                </Grid>
+                
+                <Separator />
+                
+                <Flex justify="space-between">
+                  <Text fontSize="sm" color="fg.muted">Novos Clientes</Text>
+                  <Text fontSize="sm" fontWeight="medium">
+                    {customersReport?.summary.new_customers || 0}
+                  </Text>
+                </Flex>
+                <Flex justify="space-between">
+                  <Text fontSize="sm" color="fg.muted">Clientes Recorrentes</Text>
+                  <Text fontSize="sm" fontWeight="medium">
+                    {customersReport?.summary.returning_customers || 0}
+                  </Text>
+                </Flex>
+              </VStack>
+            )}
+          </Card.Body>
+        </Card.Root>
       </Grid>
-    </Box>
+    </VStack>
   );
   
   // Render Stock Tab
   const renderStock = () => (
-    <Box>
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={4}>
-          <StatCard
-            title="Total de Produtos"
-            value={stockReport?.summary.total_products || 0}
-            icon={<InventoryIcon />}
-            color="#6366f1"
-            loading={loading}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <StatCard
-            title="Estoque Baixo"
-            value={stockReport?.summary.low_stock_count || 0}
-            subtitle={`Limite: ${stockReport?.summary.low_stock_threshold || 10} unidades`}
-            icon={<WarningIcon />}
-            color="#f59e0b"
-            loading={loading}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <StatCard
-            title="Sem Estoque"
-            value={stockReport?.summary.out_of_stock_count || 0}
-            subtitle="Reposição urgente"
-            icon={<WarningIcon />}
-            color="#ef4444"
-            loading={loading}
-          />
-        </Grid>
+    <VStack gap={6} align="stretch">
+      <Grid templateColumns={{ base: '1fr', sm: 'repeat(3, 1fr)' }} gap={4}>
+        <StatCard
+          title="Total de Produtos"
+          value={stockReport?.summary.total_products || 0}
+          icon={CubeIcon}
+          color="blue.500"
+          loading={loading}
+        />
+        <StatCard
+          title="Estoque Baixo"
+          value={stockReport?.summary.low_stock_count || 0}
+          subtitle={`Limite: ${stockReport?.summary.low_stock_threshold || 10} unidades`}
+          icon={ExclamationTriangleIcon}
+          color="orange.500"
+          loading={loading}
+        />
+        <StatCard
+          title="Sem Estoque"
+          value={stockReport?.summary.out_of_stock_count || 0}
+          subtitle="Reposição urgente"
+          icon={ExclamationTriangleIcon}
+          color="red.500"
+          loading={loading}
+        />
       </Grid>
       
-      <Card>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" mb={3}>
-            Produtos com Estoque Baixo
-          </Typography>
-          
+      <Card.Root>
+        <Card.Header>
+          <Heading size="md">Produtos com Estoque Baixo</Heading>
+        </Card.Header>
+        <Card.Body>
           {loading ? (
-            <LinearProgress />
+            <Spinner size="md" />
           ) : stockReport?.low_stock_products.length === 0 ? (
-            <Alert severity="success" icon={<CheckCircleIcon />}>
-              Todos os produtos estão com estoque adequado!
-            </Alert>
+            <Alert.Root status="success" borderRadius="lg">
+              <Alert.Indicator>
+                <Icon as={CheckCircleIcon} />
+              </Alert.Indicator>
+              <Alert.Content>
+                <Alert.Title>Estoque OK!</Alert.Title>
+                <Alert.Description>
+                  Todos os produtos estão com estoque adequado!
+                </Alert.Description>
+              </Alert.Content>
+            </Alert.Root>
           ) : (
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Produto</TableCell>
-                    <TableCell>SKU</TableCell>
-                    <TableCell>Categoria</TableCell>
-                    <TableCell align="right">Estoque</TableCell>
-                    <TableCell align="right">Preço</TableCell>
-                    <TableCell>Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {stockReport?.low_stock_products.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {product.name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">
-                          {product.sku || '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={product.category || 'Sem categoria'} size="small" variant="outlined" />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Chip
-                          label={product.stock_quantity || 0}
-                          size="small"
-                          color={product.stock_quantity === 0 ? 'error' : 'warning'}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2">
-                          {formatCurrency(product.price)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={product.status === 'active' ? 'Ativo' : 'Inativo'}
-                          size="small"
-                          color={product.status === 'active' ? 'success' : 'default'}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Table.Root>
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader>Produto</Table.ColumnHeader>
+                  <Table.ColumnHeader>SKU</Table.ColumnHeader>
+                  <Table.ColumnHeader>Categoria</Table.ColumnHeader>
+                  <Table.ColumnHeader textAlign="right">Estoque</Table.ColumnHeader>
+                  <Table.ColumnHeader textAlign="right">Preço</Table.ColumnHeader>
+                  <Table.ColumnHeader>Status</Table.ColumnHeader>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {stockReport?.low_stock_products.map((product) => (
+                  <Table.Row key={product.id}>
+                    <Table.Cell>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {product.name}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text fontSize="sm" color="fg.muted">
+                        {product.sku || '-'}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge variant="outline" size="sm">
+                        {product.category || 'Sem categoria'}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell textAlign="right">
+                      <Badge
+                        size="sm"
+                        colorPalette={product.stock_quantity === 0 ? 'red' : 'orange'}
+                      >
+                        {product.stock_quantity || 0}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell textAlign="right">
+                      <Text fontSize="sm">{formatCurrency(product.price)}</Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge
+                        size="sm"
+                        colorPalette={product.status === 'active' ? 'green' : 'gray'}
+                      >
+                        {product.status === 'active' ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Root>
           )}
-        </CardContent>
-      </Card>
-    </Box>
+        </Card.Body>
+      </Card.Root>
+    </VStack>
   );
   
   return (
-    <Box p={3}>
+    <Box p={6}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Flex 
+        justify="space-between" 
+        align={{ base: 'flex-start', md: 'center' }} 
+        mb={6}
+        gap={4}
+        direction={{ base: 'column', md: 'row' }}
+      >
         <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Relatórios
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Análise completa do seu negócio
-          </Typography>
+          <Heading size="xl" mb={1}>Relatórios</Heading>
+          <Text color="fg.muted">Análise completa do seu negócio</Text>
         </Box>
         
-        <Box display="flex" gap={2}>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Período</InputLabel>
-            <Select
-              value={period}
-              label="Período"
-              onChange={(e) => setPeriod(e.target.value as Period)}
-            >
-              <MenuItem value="7d">7 dias</MenuItem>
-              <MenuItem value="30d">30 dias</MenuItem>
-              <MenuItem value="90d">90 dias</MenuItem>
-              <MenuItem value="1y">1 ano</MenuItem>
-            </Select>
-          </FormControl>
+        <HStack gap={3} flexWrap="wrap">
+          <Select.Root 
+            collection={periodOptions}
+            value={[period]}
+            onValueChange={(e) => setPeriod(e.value[0] as Period)}
+            size="sm"
+            minW="120px"
+          >
+            <Select.HiddenSelect />
+            <Select.Control>
+              <Select.Trigger>
+                <Select.ValueText placeholder="Período" />
+              </Select.Trigger>
+              <Select.IndicatorGroup>
+                <Select.Indicator />
+              </Select.IndicatorGroup>
+            </Select.Control>
+            <Select.Positioner>
+              <Select.Content>
+                {periodOptions.items.map((item) => (
+                  <Select.Item item={item} key={item.value}>
+                    {item.label}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Positioner>
+          </Select.Root>
           
           <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
+            variant="outline"
             onClick={handleExportOrders}
+            size="sm"
           >
+            <Icon as={ArrowDownTrayIcon} mr={2} />
             Exportar
           </Button>
           
-          <IconButton onClick={loadData} disabled={loading}>
-            <RefreshIcon />
-          </IconButton>
-        </Box>
-      </Box>
+          <Button
+            variant="ghost"
+            onClick={loadData}
+            disabled={loading}
+            size="sm"
+          >
+            <Icon as={ArrowPathIcon} mr={2} />
+            Atualizar
+          </Button>
+        </HStack>
+      </Flex>
       
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <Alert.Root status="error" mb={6} borderRadius="lg">
+          <Alert.Indicator>
+            <Icon as={ExclamationTriangleIcon} />
+          </Alert.Indicator>
+          <Alert.Content>
+            <Alert.Title>Erro</Alert.Title>
+            <Alert.Description>{error}</Alert.Description>
+          </Alert.Content>
+          <Alert.CloseTrigger onClick={() => setError(null)} />
+        </Alert.Root>
       )}
       
       {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onChange={(_, value) => setActiveTab(value)}
-        sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
-      >
-        <Tab label="Visão Geral" value="overview" />
-        <Tab label="Faturamento" value="revenue" />
-        <Tab label="Produtos" value="products" />
-        <Tab label="Estoque" value="stock" />
-        <Tab label="Clientes" value="customers" />
-      </Tabs>
+      <Tabs.Root value={activeTab} onValueChange={(e) => setActiveTab(e.value as TabValue)} mb={6}>
+        <Tabs.List>
+          <Tabs.Trigger value="overview">Visão Geral</Tabs.Trigger>
+          <Tabs.Trigger value="revenue">Faturamento</Tabs.Trigger>
+          <Tabs.Trigger value="products">Produtos</Tabs.Trigger>
+          <Tabs.Trigger value="stock">Estoque</Tabs.Trigger>
+          <Tabs.Trigger value="customers">Clientes</Tabs.Trigger>
+        </Tabs.List>
+      </Tabs.Root>
       
       {/* Tab Content */}
       {activeTab === 'overview' && renderOverview()}

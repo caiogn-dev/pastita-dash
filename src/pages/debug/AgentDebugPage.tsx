@@ -2,15 +2,27 @@ import React, { useState } from 'react';
 import {
   Box,
   Card,
-  CardContent,
-  Typography,
-  TextField,
+  Heading,
+  Text,
   Button,
-  Alert,
-  CircularProgress,
-  Chip,
-  Divider,
-} from '@mui/material';
+  Input,
+  Badge,
+  Separator,
+  Flex,
+  VStack,
+  HStack,
+  Field,
+  Spinner,
+  Icon,
+} from '@chakra-ui/react';
+import {
+  MagnifyingGlassIcon,
+  CpuChipIcon,
+  UserIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import api from '@/services/api';
 
 interface DebugResult {
@@ -43,6 +55,8 @@ interface DebugResult {
   agent_would_respond: boolean;
   recommendation: string;
 }
+
+const MotionCard = motion(Card.Root);
 
 export default function AgentDebugPage() {
   const [conversationId, setConversationId] = useState('');
@@ -83,145 +97,259 @@ export default function AgentDebugPage() {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h4" fontWeight="bold" mb={3}>
-        Diagnóstico do Agente AI
-      </Typography>
+    <Box p={6} maxW="1200px" mx="auto">
+      <MotionCard
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        mb={6}
+      >
+        <Card.Header>
+          <HStack gap={3}>
+            <Box p={2} bg="blue.100" borderRadius="lg" color="blue.600">
+              <Icon as={CpuChipIcon} boxSize={6} />
+            </Box>
+            <Box>
+              <Heading size="lg">Diagnóstico do Agente AI</Heading>
+              <Text color="fg.muted" fontSize="sm">
+                Verifique o status e controle o modo de operação do agente
+              </Text>
+            </Box>
+          </HStack>
+        </Card.Header>
+      </MotionCard>
 
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Verificar Status
-          </Typography>
-          
-          <Box display="flex" gap={2} mb={2}>
-            <TextField
-              fullWidth
-              label="ID da Conversa"
-              value={conversationId}
-              onChange={(e) => setConversationId(e.target.value)}
-              placeholder="cb85ebf4-2d3d-443a-a117-18c2b7122083"
-            />
+      <MotionCard
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        mb={6}
+      >
+        <Card.Header>
+          <Heading size="md">Verificar Status</Heading>
+        </Card.Header>
+        <Card.Body>
+          <Flex gap={4} mb={4} direction={{ base: 'column', sm: 'row' }}>
+            <Field.Root flex={1}>
+              <Field.Label>ID da Conversa</Field.Label>
+              <Input
+                placeholder="Digite o ID da conversa..."
+                value={conversationId}
+                onChange={(e) => setConversationId(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && checkStatus()}
+              />
+            </Field.Root>
             <Button
-              variant="contained"
               onClick={checkStatus}
               disabled={loading || !conversationId.trim()}
+              loading={loading}
+              loadingText="Verificando..."
+              alignSelf={{ base: 'stretch', sm: 'flex-end' }}
+              minW="140px"
             >
-              {loading ? <CircularProgress size={24} /> : 'Verificar'}
+              <Icon as={MagnifyingGlassIcon} mr={2} />
+              Verificar
             </Button>
-          </Box>
+          </Flex>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
+            <Box 
+              p={4} 
+              bg="red.50" 
+              color="red.700" 
+              borderRadius="lg"
+              borderLeft="4px solid"
+              borderLeftColor="red.500"
+            >
+              <HStack gap={2}>
+                <Icon as={ExclamationTriangleIcon} color="red.500" />
+                <Text fontWeight="medium">{error}</Text>
+              </HStack>
+            </Box>
           )}
-        </CardContent>
-      </Card>
+        </Card.Body>
+      </MotionCard>
 
       {result && (
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Resultado do Diagnóstico
-            </Typography>
-
+        <MotionCard
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card.Header>
+            <Heading size="md">Resultado do Diagnóstico</Heading>
+            <Text fontSize="sm" color="fg.muted">
+              {new Date(result.timestamp).toLocaleString('pt-BR')}
+            </Text>
+          </Card.Header>
+          <Card.Body>
             {/* Status Geral */}
-            <Box mb={3}>
-              <Chip
-                label={result.agent_would_respond ? 'AGENTE ESTÁ RESPONDENDO' : 'AGENTE NÃO RESPONDE'}
-                color={result.agent_would_respond ? 'error' : 'success'}
-                sx={{ fontSize: '1rem', py: 1 }}
-              />
-              <Typography variant="body2" color="text.secondary" mt={1}>
-                {result.recommendation}
-              </Typography>
+            <Box 
+              mb={6} 
+              p={6} 
+              borderRadius="xl"
+              bg={result.agent_would_respond ? 'red.50' : 'green.50'}
+              border="2px solid"
+              borderColor={result.agent_would_respond ? 'red.200' : 'green.200'}
+            >
+              <VStack align="center" gap={3}>
+                <Badge 
+                  size="lg" 
+                  colorPalette={result.agent_would_respond ? 'red' : 'green'}
+                  px={4}
+                  py={2}
+                  fontSize="md"
+                  borderRadius="full"
+                >
+                  <HStack gap={2}>
+                    <Icon 
+                      as={result.agent_would_respond ? ExclamationTriangleIcon : CheckCircleIcon} 
+                      boxSize={5} 
+                    />
+                    <span>
+                      {result.agent_would_respond ? 'AGENTE ESTÁ RESPONDENDO' : 'AGENTE NÃO RESPONDE'}
+                    </span>
+                  </HStack>
+                </Badge>
+                <Text color="fg.muted" textAlign="center" maxW="600px">
+                  {result.recommendation}
+                </Text>
+              </VStack>
             </Box>
 
-            <Divider sx={{ my: 2 }} />
+            <Separator mb={6} />
 
             {/* Checks */}
-            <Typography variant="subtitle2" gutterBottom>
-              Verificações:
-            </Typography>
-            <Box display="flex" gap={1} mb={2}>
-              <Chip
-                size="small"
-                label={result.checks.agent_active ? 'Agente Ativo' : 'Agente Inativo'}
-                color={result.checks.agent_active ? 'success' : 'error'}
-              />
-              <Chip
-                size="small"
-                label={result.checks.handover_bot_mode ? 'Modo Bot' : 'Modo Humano'}
-                color={result.checks.handover_bot_mode ? 'success' : 'warning'}
-              />
+            <Box mb={6}>
+              <Text fontWeight="semibold" mb={3} fontSize="lg">Verificações</Text>
+              <HStack gap={3} flexWrap="wrap">
+                <Badge 
+                  size="lg" 
+                  colorPalette={result.checks.agent_active ? 'green' : 'red'}
+                  variant="subtle"
+                  px={3}
+                  py={1}
+                >
+                  <HStack gap={1}>
+                    <Icon 
+                      as={result.checks.agent_active ? CheckCircleIcon : ExclamationTriangleIcon} 
+                      boxSize={4} 
+                    />
+                    <span>{result.checks.agent_active ? 'Agente Ativo' : 'Agente Inativo'}</span>
+                  </HStack>
+                </Badge>
+                <Badge 
+                  size="lg" 
+                  colorPalette={result.checks.handover_bot_mode ? 'green' : 'yellow'}
+                  variant="subtle"
+                  px={3}
+                  py={1}
+                >
+                  <HStack gap={1}>
+                    <Icon 
+                      as={result.checks.handover_bot_mode ? CheckCircleIcon : UserIcon} 
+                      boxSize={4} 
+                    />
+                    <span>{result.checks.handover_bot_mode ? 'Modo Bot' : 'Modo Humano'}</span>
+                  </HStack>
+                </Badge>
+              </HStack>
             </Box>
 
-            {/* Agent Info */}
-            {result.agent && (
-              <>
-                <Typography variant="subtitle2" gutterBottom>
-                  Agente:
-                </Typography>
-                <Box mb={2}>
-                  <Typography variant="body2">
-                    <strong>Nome:</strong> {result.agent.name}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Status:</strong> {result.agent.is_active ? 'Ativo' : 'Inativo'}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Modelo:</strong> {result.agent.model}
-                  </Typography>
+            <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6} mb={6}>
+              {/* Agent Info */}
+              {result.agent && (
+                <Box 
+                  p={4} 
+                  bg="bg.subtle" 
+                  borderRadius="lg"
+                  border="1px solid"
+                  borderColor="border.subtle"
+                >
+                  <Text fontWeight="semibold" mb={3} fontSize="lg">Informações do Agente</Text>
+                  <VStack align="stretch" gap={2}>
+                    <HStack justify="space-between">
+                      <Text color="fg.muted" fontSize="sm">Nome:</Text>
+                      <Text fontWeight="medium">{result.agent.name}</Text>
+                    </HStack>
+                    <HStack justify="space-between">
+                      <Text color="fg.muted" fontSize="sm">Status:</Text>
+                      <Badge colorPalette={result.agent.is_active ? 'green' : 'red'} size="sm">
+                        {result.agent.is_active ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </HStack>
+                    <HStack justify="space-between">
+                      <Text color="fg.muted" fontSize="sm">Modelo:</Text>
+                      <Text fontSize="sm" fontFamily="mono" bg="bg.muted" px={2} py={0.5} borderRadius="md">
+                        {result.agent.model}
+                      </Text>
+                    </HStack>
+                  </VStack>
                 </Box>
-              </>
-            )}
+              )}
 
-            {/* Handover Info */}
-            <Typography variant="subtitle2" gutterBottom>
-              Handover:
-            </Typography>
-            {result.handover ? (
-              <Box mb={2}>
-                <Typography variant="body2">
-                  <strong>Status:</strong> {result.handover.status}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Atribuído a:</strong> {result.handover.assigned_to || 'Ninguém'}
-                </Typography>
+              {/* Handover Info */}
+              <Box 
+                p={4} 
+                bg="bg.subtle" 
+                borderRadius="lg"
+                border="1px solid"
+                borderColor="border.subtle"
+              >
+                <Text fontWeight="semibold" mb={3} fontSize="lg">Handover</Text>
+                {result.handover ? (
+                  <VStack align="stretch" gap={2}>
+                    <HStack justify="space-between">
+                      <Text color="fg.muted" fontSize="sm">Status:</Text>
+                      <Badge colorPalette="blue" size="sm">{result.handover.status}</Badge>
+                    </HStack>
+                    <HStack justify="space-between">
+                      <Text color="fg.muted" fontSize="sm">Atribuído a:</Text>
+                      <Text fontSize="sm">
+                        {result.handover.assigned_to || (
+                          <Text as="span" color="fg.muted" fontStyle="italic">Ninguém</Text>
+                        )}
+                      </Text>
+                    </HStack>
+                  </VStack>
+                ) : (
+                  <Text color="fg.muted" fontSize="sm">
+                    Sem registro de handover (assume modo bot)
+                  </Text>
+                )}
               </Box>
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                Sem registro de handover (assume modo bot)
-              </Typography>
-            )}
+            </Grid>
 
-            <Divider sx={{ my: 2 }} />
+            <Separator mb={6} />
 
             {/* Ações */}
-            <Typography variant="subtitle2" gutterBottom>
-              Ações:
-            </Typography>
-            <Box display="flex" gap={2}>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => forceHandover('bot')}
-                disabled={loading}
-              >
-                Forçar Modo Bot
-              </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => forceHandover('human')}
-                disabled={loading}
-              >
-                Forçar Modo Humano
-              </Button>
+            <Box>
+              <Text fontWeight="semibold" mb={3} fontSize="lg">Ações</Text>
+              <HStack gap={3} flexWrap="wrap">
+                <Button
+                  variant="outline"
+                  colorPalette="blue"
+                  onClick={() => forceHandover('bot')}
+                  disabled={loading}
+                  size="lg"
+                >
+                  <Icon as={CpuChipIcon} mr={2} />
+                  Forçar Modo Bot
+                </Button>
+                <Button
+                  variant="outline"
+                  colorPalette="green"
+                  onClick={() => forceHandover('human')}
+                  disabled={loading}
+                  size="lg"
+                >
+                  <Icon as={UserIcon} mr={2} />
+                  Forçar Modo Humano
+                </Button>
+              </HStack>
             </Box>
-          </CardContent>
-        </Card>
+          </Card.Body>
+        </MotionCard>
       )}
     </Box>
   );
