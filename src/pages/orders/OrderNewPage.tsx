@@ -469,7 +469,7 @@ export const OrderNewPage: React.FC = () => {
                     type="submit"
                     size="lg"
                     width="full"
-                    loading={isSubmitting}
+                    isLoading={isSubmitting}
                     leftIcon={<PlusIcon className="w-5 h-5" />}
                   >
                     Criar Pedido
