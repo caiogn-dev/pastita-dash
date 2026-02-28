@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { ChakraProvider, ColorModeProvider } from '@chakra-ui/react'
+import { ChakraProvider } from '@chakra-ui/react'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -32,19 +32,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <ChakraProvider value={system}>
-        <ColorModeProvider>
-          <ThemeProvider>
-            <BrowserRouter>
-              <App />
-              <Toaster 
-                position="top-right"
-                toastOptions={{
-                  className: 'dark:bg-zinc-900 dark:text-white dark:border dark:border-zinc-800',
-                }}
-              />
-            </BrowserRouter>
-          </ThemeProvider>
-        </ColorModeProvider>
+        <ThemeProvider>
+          <BrowserRouter>
+            <App />
+            <Toaster 
+              position="top-right"
+              toastOptions={{
+                className: 'dark:bg-zinc-900 dark:text-white dark:border dark:border-zinc-800',
+              }}
+            />
+          </BrowserRouter>
+        </ThemeProvider>
       </ChakraProvider>
     </ErrorBoundary>
   </React.StrictMode>,

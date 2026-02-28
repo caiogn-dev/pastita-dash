@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
@@ -14,31 +13,62 @@ import {
   VStack,
   HStack,
   Field,
+  Select,
+  createListCollection,
+  Spinner,
+  Icon,
 } from '@chakra-ui/react';
 import {
-  InstagramLogoIcon,
-  PaperPlaneIcon,
+  UserIcon,
+  PaperAirplaneIcon,
   MagnifyingGlassIcon,
-  ImageIcon,
-  ReloadIcon,
+  PhotoIcon,
+  ArrowPathIcon,
   ClockIcon,
   CheckIcon,
-  CheckCircledIcon,
-  CrossCircledIcon,
-} from '@radix-ui/react-icons';
+  CheckCircleIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import {
-  instagramService,
+  instagramDirectService,
+  instagramAccountService,
   InstagramAccount,
-  InstagramConversation,
-  InstagramMessage,
 } from '../../services/instagram';
 
-const messageStatusIcon: Record<string, React.ReactNode> = {
-  pending: <ClockIcon />,
-  sent: <CheckIcon />,
-  delivered: <CheckIcon />,
-  seen: <CheckCircledIcon />,
-  failed: <CrossCircledIcon />,
+// Types para conversas e mensagens
+interface InstagramConversation {
+  id: string;
+  account: string;
+  participant_id: string;
+  participant_username?: string;
+  participant_name?: string;
+  participant_profile_pic?: string;
+  last_message_preview?: string;
+  last_message_at?: string;
+  unread_count: number;
+  status: 'active' | 'closed';
+}
+
+interface InstagramMessage {
+  id: string;
+  conversation: string;
+  content: string;
+  direction: 'inbound' | 'outbound';
+  message_type?: string;
+  media_url?: string;
+  status?: string;
+  created_at: string;
+}
+
+const MotionFlex = motion(Flex);
+
+const messageStatusIcon: Record<string, React.ElementType> = {
+  pending: ClockIcon,
+  sent: CheckIcon,
+  delivered: CheckIcon,
+  seen: CheckCircleIcon,
+  failed: XCircleIcon,
 };
 
 export default function InstagramInbox() {
@@ -81,9 +111,8 @@ export default function InstagramInbox() {
 
   const loadAccounts = async () => {
     try {
-      const response = await instagramService.getAccounts();
-      // PaginatedResponse: response.data.results
-      const results = response.data?.results || [];
+      const response = await instagramAccountService.list();
+      const results = response.data || [];
       setAccounts(results);
       if (results.length > 0) {
         setSelectedAccountId(results[0].id);
@@ -101,11 +130,9 @@ export default function InstagramInbox() {
     
     try {
       setLoading(true);
-      const response = await instagramService.getConversations({
-        account_id: selectedAccountId,
-      });
-      // PaginatedResponse: response.data.results
-      setConversations(response.data?.results || []);
+      const response = await instagramDirectService.getConversations(selectedAccountId);
+      // @ts-ignore
+      setConversations(response.data?.results || response.data || []);
       setError(null);
     } catch (err) {
       console.error('Error loading conversations:', err);
@@ -120,16 +147,16 @@ export default function InstagramInbox() {
     
     try {
       setLoadingMessages(true);
-      const response = await instagramService.getMessages({
-        conversation_id: selectedConversation.id,
-      });
-      // PaginatedResponse: response.data.results
-      const results = response.data?.results || [];
+      const response = await instagramDirectService.getMessages(selectedConversation.id);
+      // @ts-ignore
+      const results = response.data?.results || response.data || [];
       setMessages(results.reverse());
       
-      // Mark as seen - usa sender_id (quem enviou a última mensagem)
-      if (selectedAccountId && selectedConversation.participant_id) {
-        await instagramService.markSeen(selectedAccountId, selectedConversation.participant_id);
+      // Mark as read
+      try {
+        await instagramDirectService.markAsRead(selectedConversation.id);
+      } catch {
+        // Silently ignore
       }
     } catch (err) {
       console.error('Error loading messages:', err);
@@ -139,26 +166,16 @@ export default function InstagramInbox() {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !selectedAccountId) return;
+    if (!newMessage.trim() || !selectedConversation) return;
 
     try {
       setSending(true);
+      const response = await instagramDirectService.sendMessage(
+        selectedConversation.id,
+        newMessage.trim()
+      );
       
-      // Typing indicator (best effort - não falha se der erro)
-      try {
-        await instagramService.sendTyping(selectedAccountId, selectedConversation.participant_id);
-      } catch {
-        // Silently ignore typing errors
-      }
-      
-      // Send message
-      const response = await instagramService.sendMessage({
-        account_id: selectedAccountId,
-        recipient_id: selectedConversation.participant_id,
-        text: newMessage.trim(),
-      });
-      
-      // Adiciona mensagem enviada à lista
+      // @ts-ignore
       const sentMessage = response.data;
       if (sentMessage) {
         setMessages((prev) => [...prev, sentMessage]);
@@ -200,10 +217,18 @@ export default function InstagramInbox() {
   };
 
   // Helper para pegar o ícone de status com fallback
-  const getStatusIcon = (status: string | undefined) => {
+  const getStatusIcon = (status: string | undefined): React.ElementType | null => {
     if (!status) return null;
     return messageStatusIcon[status] || null;
   };
+
+  const accountOptions = createListCollection({
+    items: accounts.map((acc) => ({ 
+      label: acc.username, 
+      value: acc.id,
+      imageUrl: acc.profile_picture_url,
+    })),
+  });
 
   return (
     <Flex h="calc(100vh - 100px)" gap={4} p={4}>
@@ -212,7 +237,14 @@ export default function InstagramInbox() {
         {/* Header */}
         <Box p={4} borderBottomWidth={1} borderColor="border">
           <Flex align="center" gap={3} mb={3}>
-            <Box color="#E4405F"><InstagramLogoIcon width="28" height="28" /></Box>
+            <Box 
+              p={2} 
+              bgGradient="linear(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)" 
+              borderRadius="lg"
+              color="white"
+            >
+              <Icon as={UserIcon} boxSize={5} />
+            </Box>
             <Heading size="md">Instagram DM</Heading>
             <Box flex={1} />
             <IconButton 
@@ -221,7 +253,7 @@ export default function InstagramInbox() {
               onClick={loadConversations}
               title="Atualizar"
             >
-              <ReloadIcon />
+              <Icon as={ArrowPathIcon} boxSize={4} />
             </IconButton>
           </Flex>
           
@@ -229,25 +261,29 @@ export default function InstagramInbox() {
           {accounts.length > 1 && (
             <Field.Root mb={3}>
               <Select.Root
+                collection={accountOptions}
                 value={[selectedAccountId]}
                 onValueChange={(e) => setSelectedAccountId(e.value[0])}
               >
                 <Select.HiddenSelect />
                 <Select.Control>
                   <Select.Trigger>
-                    <Select.ValueText />
+                    <Select.ValueText placeholder="Selecione uma conta" />
                   </Select.Trigger>
+                  <Select.IndicatorGroup>
+                    <Select.Indicator />
+                  </Select.IndicatorGroup>
                 </Select.Control>
                 <Select.Positioner>
                   <Select.Content>
-                    {accounts.map((account) => (
-                      <Select.Item key={account.id} value={account.id}>
-                        <HStack>
+                    {accountOptions.items.map((account) => (
+                      <Select.Item item={account} key={account.value}>
+                        <HStack gap={2}>
                           <Avatar.Root size="xs">
-                            <Avatar.Image src={account.profile_picture_url} />
-                            <Avatar.Fallback>@{account.username?.[0]}</Avatar.Fallback>
+                            <Avatar.Image src={account.imageUrl} />
+                            <Avatar.Fallback>@{account.label?.[0]}</Avatar.Fallback>
                           </Avatar.Root>
-                          @{account.username}
+                          @{account.label}
                         </HStack>
                       </Select.Item>
                     ))}
@@ -263,11 +299,7 @@ export default function InstagramInbox() {
               placeholder="Buscar conversas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-            >
-              <Input.ElementLeft pointerEvents="none">
-                <MagnifyingGlassIcon />
-              </Input.ElementLeft>
-            </Input>
+            />
           </Field.Root>
         </Box>
 
@@ -275,11 +307,13 @@ export default function InstagramInbox() {
         <VStack flex={1} overflow="auto" py={0} align="stretch">
           {loading ? (
             <Flex justify="center" py={8}>
-              <Text>⏳</Text>
+              <Spinner size="lg" />
             </Flex>
           ) : filteredConversations.length === 0 ? (
             <Box textAlign="center" py={8} px={4}>
-              <Box color="fg.muted" mb={2}><InstagramLogoIcon width="48" height="48" /></Box>
+              <Box color="fg.muted" mb={2}>
+                <Icon as={UserIcon} boxSize={12} />
+              </Box>
               <Text color="fg.muted">
                 {searchQuery ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
               </Text>
@@ -304,7 +338,7 @@ export default function InstagramInbox() {
                       <Flex justify="space-between" align="center">
                         <Text 
                           fontWeight={conv.unread_count > 0 ? 'bold' : 'normal'}
-                          noOfLines={1}
+                          truncate
                         >
                           @{conv.participant_username || conv.participant_id}
                         </Text>
@@ -316,7 +350,7 @@ export default function InstagramInbox() {
                         fontSize="sm"
                         color={conv.unread_count > 0 ? 'fg.primary' : 'fg.muted'}
                         fontWeight={conv.unread_count > 0 ? 500 : 400}
-                        noOfLines={1}
+                        truncate
                       >
                         {conv.last_message_preview || 'Nenhuma mensagem'}
                       </Text>
@@ -343,8 +377,15 @@ export default function InstagramInbox() {
             flex={1}
             color="fg.muted"
           >
-            <Box color="#E4405F" opacity={0.5} mb={4}>
-              <InstagramLogoIcon width="80" height="80" />
+            <Box 
+              p={4} 
+              bgGradient="linear(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)" 
+              borderRadius="2xl"
+              color="white"
+              opacity={0.5}
+              mb={4}
+            >
+              <Icon as={UserIcon} boxSize={12} />
             </Box>
             <Heading size="md">Selecione uma conversa</Heading>
             <Text>Escolha uma conversa da lista para ver as mensagens</Text>
@@ -387,7 +428,7 @@ export default function InstagramInbox() {
             >
               {loadingMessages ? (
                 <Flex justify="center" py={8}>
-                  <Text>⏳</Text>
+                  <Spinner size="lg" />
                 </Flex>
               ) : messages.length === 0 ? (
                 <Box textAlign="center" py={8}>
@@ -395,9 +436,12 @@ export default function InstagramInbox() {
                 </Box>
               ) : (
                 messages.map((msg) => (
-                  <Flex
+                  <MotionFlex
                     key={msg.id}
                     justify={msg.direction === 'outbound' ? 'flex-end' : 'flex-start'}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
                     <Box
                       p={3}
@@ -424,23 +468,26 @@ export default function InstagramInbox() {
                               style={{ maxWidth: '100%', borderRadius: 8 }}
                             />
                           ) : (
-                            <Badge><ImageIcon /> {msg.message_type}</Badge>
+                            <Badge>
+                              <Icon as={PhotoIcon} mr={1} />
+                              {msg.message_type}
+                            </Badge>
                           )}
                         </Box>
                       )}
-                      {msg.text_content && (
-                        <Text>{msg.text_content}</Text>
+                      {msg.content && (
+                        <Text>{msg.content}</Text>
                       )}
                       <Flex justify="flex-end" align="center" gap={1} mt={1}>
                         <Text fontSize="xs" opacity={0.7}>
                           {formatTime(msg.created_at)}
                         </Text>
-                        {msg.direction === 'outbound' && (
-                          <Box fontSize="sm">{getStatusIcon(msg.status)}</Box>
+                        {msg.direction === 'outbound' && msg.status && (
+                          <Icon as={getStatusIcon(msg.status)!} boxSize={3} />
                         )}
                       </Flex>
                     </Box>
-                  </Flex>
+                  </MotionFlex>
                 ))
               )}
               <div ref={messagesEndRef} />
@@ -458,7 +505,7 @@ export default function InstagramInbox() {
                 placeholder="Digite uma mensagem..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => {
+                onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     handleSendMessage();
@@ -469,8 +516,9 @@ export default function InstagramInbox() {
                 colorPalette="blue"
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || sending}
+                loading={sending}
               >
-                {sending ? '⏳' : <PaperPlaneIcon />}
+                <Icon as={PaperAirplaneIcon} boxSize={5} />
               </IconButton>
             </Flex>
           </>
@@ -482,13 +530,18 @@ export default function InstagramInbox() {
           position="fixed"
           bottom={4}
           right={4}
-          p={3}
+          p={4}
           bg="red.50"
           color="red.700"
-          borderRadius="md"
+          borderRadius="lg"
           shadow="lg"
+          borderLeft="4px solid"
+          borderLeftColor="red.500"
         >
-          {error}
+          <HStack gap={2}>
+            <Icon as={XCircleIcon} color="red.500" />
+            <Text fontWeight="medium">{error}</Text>
+          </HStack>
         </Box>
       )}
     </Flex>

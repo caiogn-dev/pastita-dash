@@ -7,35 +7,19 @@ import {
   Button,
   Flex,
   Grid,
-  Card,
-  CardHeader,
-  CardBody,
   Badge,
   Spinner,
-  Alert,
-  AlertIcon,
 } from '@chakra-ui/react';
 import {
   PlusIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
   ExclamationTriangleIcon,
-  XCircleIcon,
 } from '@heroicons/react/24/outline';
 import { 
   instagramAccountService,
   InstagramAccount,
 } from '../../services/instagram';
 
-const statusConfig: Record<string, { color: string; label: string }> = {
-  active: { color: 'green', label: 'Ativo' },
-  inactive: { color: 'gray', label: 'Inativo' },
-  pending: { color: 'yellow', label: 'Pendente' },
-  error: { color: 'red', label: 'Erro' },
-};
-
 export default function InstagramAccounts() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +32,9 @@ export default function InstagramAccounts() {
     try {
       setLoading(true);
       const response = await instagramAccountService.list();
-      setAccounts(response.data.results || []);
+      // Handle both paginated and non-paginated responses
+      const data = (response.data as any).results || response.data || [];
+      setAccounts(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar contas');
     } finally {
@@ -66,10 +52,14 @@ export default function InstagramAccounts() {
 
   if (error) {
     return (
-      <Alert status="error" mb={4}>
-        <AlertIcon />
-        {error}
-      </Alert>
+      <Box p={6}>
+        <Box bg="red.50" border="1px" borderColor="red.200" borderRadius="md" p={4} mb={4}>
+          <Flex align="center" gap={2}>
+            <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
+            <Text color="red.700">{error}</Text>
+          </Flex>
+        </Box>
+      </Box>
     );
   }
 
@@ -80,36 +70,44 @@ export default function InstagramAccounts() {
           <Heading size="lg" mb={2}>Contas do Instagram</Heading>
           <Text color="gray.500">Gerencie suas contas do Instagram</Text>
         </Box>
-        <Button leftIcon={<PlusIcon className="w-4 h-4" />} colorScheme="blue">
-          Adicionar Conta
+        <Button colorScheme="blue">
+          <Flex align="center" gap={2}>
+            <PlusIcon className="w-4 h-4" />
+            <span>Adicionar Conta</span>
+          </Flex>
         </Button>
       </Flex>
 
       <Grid templateColumns="repeat(3, 1fr)" gap={6}>
         {accounts.map((account) => (
-          <Card key={account.id} variant="outline">
-            <CardHeader>
-              <Flex justify="space-between" align="center">
-                <Heading size="md">@{account.username}</Heading>
-                <Badge colorScheme={account.is_active ? 'green' : 'red'}>
-                  {account.is_active ? 'Ativo' : 'Inativo'}
-                </Badge>
-              </Flex>
-            </CardHeader>
-            <CardBody>
-              <Text mb={2}>{account.biography || 'Sem biografia'}</Text>
-              <Flex gap={4} mt={4}>
-                <Box>
-                  <Text fontWeight="bold">{account.followers_count}</Text>
-                  <Text fontSize="sm" color="gray.500">Seguidores</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold">{account.media_count}</Text>
-                  <Text fontSize="sm" color="gray.500">Posts</Text>
-                </Box>
-              </Flex>
-            </CardBody>
-          </Card>
+          <Box
+            key={account.id}
+            borderWidth="1px"
+            borderRadius="lg"
+            p={6}
+            bg="white"
+            boxShadow="sm"
+          >
+            <Flex justify="space-between" align="center" mb={4}>
+              <Heading size="md">@{account.username}</Heading>
+              <Badge colorScheme={account.is_active ? 'green' : 'red'}>
+                {account.is_active ? 'Ativo' : 'Inativo'}
+              </Badge>
+            </Flex>
+            
+            <Text mb={4} color="gray.600">{account.biography || 'Sem biografia'}</Text>
+            
+            <Flex gap={6}>
+              <Box>
+                <Text fontWeight="bold" fontSize="lg">{account.followers_count}</Text>
+                <Text fontSize="sm" color="gray.500">Seguidores</Text>
+              </Box>
+              <Box>
+                <Text fontWeight="bold" fontSize="lg">{account.media_count}</Text>
+                <Text fontSize="sm" color="gray.500">Posts</Text>
+              </Box>
+            </Flex>
+          </Box>
         ))}
       </Grid>
 
@@ -119,8 +117,11 @@ export default function InstagramAccounts() {
           <Text fontSize="lg" color="gray.500" mb={4}>
             Nenhuma conta do Instagram conectada
           </Text>
-          <Button leftIcon={<PlusIcon className="w-4 h-4" />} colorScheme="blue">
-            Conectar Conta
+          <Button colorScheme="blue">
+            <Flex align="center" gap={2}>
+              <PlusIcon className="w-4 h-4" />
+              <span>Conectar Conta</span>
+            </Flex>
           </Button>
         </Flex>
       )}

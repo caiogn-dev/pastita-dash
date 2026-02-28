@@ -6,12 +6,8 @@ import {
   Text,
   Button,
   Input,
-  Card,
-  CardBody,
   Badge,
   Spinner,
-  Alert,
-  AlertIcon,
   Grid,
   GridItem,
 } from '@chakra-ui/react';
@@ -75,10 +71,11 @@ export default function MessengerInbox() {
 
   if (error) {
     return (
-      <Alert status="error" mb={4}>
-        <AlertIcon />
-        {error}
-      </Alert>
+      <Box p={6}>
+        <Box bg="red.50" border="1px" borderColor="red.200" borderRadius="md" p={4}>
+          <Text color="red.700">{error}</Text>
+        </Box>
+      </Box>
     );
   }
 
@@ -127,31 +124,31 @@ export default function MessengerInbox() {
           {/* Conversations List */}
           <Box overflowY="auto" maxH="calc(100vh - 250px)">
             {conversations.map((conversation) => (
-              <Card
+              <Box
                 key={conversation.id}
-                variant="outline"
+                borderWidth="1px"
+                borderRadius="md"
+                p={3}
                 mb={2}
                 cursor="pointer"
                 _hover={{ bg: 'gray.50' }}
               >
-                <CardBody py={3}>
-                  <Flex justify="space-between" align="start">
-                    <Box>
-                      <Text fontWeight="bold" mb={1}>
-                        {conversation.customer_name}
-                      </Text>
-                      <Text fontSize="sm" color="gray.500" noOfLines={1}>
-                        {conversation.last_message}
-                      </Text>
-                    </Box>
-                    {conversation.unread_count > 0 && (
-                      <Badge colorScheme="blue" borderRadius="full">
-                        {conversation.unread_count}
-                      </Badge>
-                    )}
-                  </Flex>
-                </CardBody>
-              </Card>
+                <Flex justify="space-between" align="start">
+                  <Box>
+                    <Text fontWeight="bold" mb={1}>
+                      {conversation.customer_name}
+                    </Text>
+                    <Text fontSize="sm" color="gray.500">
+                      {conversation.last_message}
+                    </Text>
+                  </Box>
+                  {conversation.unread_count > 0 && (
+                    <Badge colorScheme="blue" borderRadius="full">
+                      {conversation.unread_count}
+                    </Badge>
+                  )}
+                </Flex>
+              </Box>
             ))}
           </Box>
         </GridItem>
@@ -174,8 +171,11 @@ export default function MessengerInbox() {
                 placeholder="Digite sua mensagem..."
                 flex={1}
               />
-              <Button colorScheme="blue" leftIcon={<PaperAirplaneIcon className="w-4 h-4" />}>
-                Enviar
+              <Button colorScheme="blue">
+                <Flex align="center" gap={2}>
+                  <PaperAirplaneIcon className="w-4 h-4" />
+                  <span>Enviar</span>
+                </Flex>
               </Button>
             </Flex>
           </Flex>
