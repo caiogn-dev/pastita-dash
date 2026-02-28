@@ -13,7 +13,6 @@ import {
   Grid,
   GridItem,
   Input,
-  Select,
   Textarea,
   IconButton,
   Badge,
@@ -286,9 +285,16 @@ export const OrderNewPage: React.FC = () => {
                   <Flex gap={3} align="flex-end">
                     <Box flex={1}>
                       <Text mb={1} fontSize="sm" fontWeight="medium">Produto</Text>
-                      <Select
+                      <select
                         value={selectedProduct}
-                        onChange={(e) => setSelectedProduct(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedProduct(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '14px'
+                        }}
                       >
                         <option value="">Selecione um produto</option>
                         {products.map(product => (
@@ -296,7 +302,7 @@ export const OrderNewPage: React.FC = () => {
                             {product.name} - R$ {product.price.toFixed(2)}
                           </option>
                         ))}
-                      </Select>
+                      </select>
                     </Box>
                     <Box w="100px">
                       <Text mb={1} fontSize="sm" fontWeight="medium">Qtd</Text>
@@ -368,11 +374,20 @@ export const OrderNewPage: React.FC = () => {
                     <Heading size="md">Entrega</Heading>
                   </Flex>
 
-                  <Select {...register('delivery_method')}>
+                  <select
+                    {...register('delivery_method')}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #e2e8f0',
+                      fontSize: '14px'
+                    }}
+                  >
                     <option value="delivery">Entrega</option>
                     <option value="pickup">Retirada</option>
                     <option value="digital">Digital</option>
-                  </Select>
+                  </select>
 
                   {deliveryMethod === 'delivery' && (
                     <Box>
@@ -409,12 +424,21 @@ export const OrderNewPage: React.FC = () => {
                     <Heading size="md">Pagamento</Heading>
                   </Flex>
 
-                  <Select {...register('payment_method')}>
+                  <select
+                    {...register('payment_method')}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #e2e8f0',
+                      fontSize: '14px'
+                    }}
+                  >
                     <option value="pix">PIX</option>
                     <option value="cash">Dinheiro</option>
                     <option value="credit_card">Cartão de Crédito</option>
                     <option value="debit_card">Cartão de Débito</option>
-                  </Select>
+                  </select>
                 </Stack>
               </Card>
 
@@ -444,8 +468,8 @@ export const OrderNewPage: React.FC = () => {
                   <Button
                     type="submit"
                     size="lg"
-                    w="full"
-                    isLoading={isSubmitting}
+                    width="full"
+                    loading={isSubmitting}
                     leftIcon={<PlusIcon className="w-5 h-5" />}
                   >
                     Criar Pedido
