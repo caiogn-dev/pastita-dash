@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Flex,
@@ -9,177 +10,187 @@ import {
   Badge,
   Spinner,
   Grid,
-  GridItem,
+  Separator,
+  Stack,
 } from '@chakra-ui/react';
 import {
   PaperAirplaneIcon,
   MagnifyingGlassIcon,
+  RobotIcon,
 } from '@heroicons/react/24/outline';
-
-// Mock data - replace with actual API integration
-interface MessengerAccount {
-  id: string;
-  name: string;
-  page_id: string;
-  is_active: boolean;
-}
-
-interface Conversation {
-  id: string;
-  customer_name: string;
-  last_message: string;
-  unread_count: number;
-  updated_at: string;
-}
-
-const mockAccounts: MessengerAccount[] = [
-  { id: '1', name: 'Página Principal', page_id: '123456', is_active: true },
-];
-
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    customer_name: 'João Silva',
-    last_message: 'Olá, gostaria de fazer um pedido',
-    unread_count: 2,
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    customer_name: 'Maria Santos',
-    last_message: 'Obrigado pelo atendimento!',
-    unread_count: 0,
-    updated_at: new Date().toISOString(),
-  },
-];
+import { useStore } from '../../hooks';
+import { conversationsService } from '../../services';
+import type { MessengerConversation } from '../../types';
 
 export default function MessengerInbox() {
-  const [accounts] = useState<MessengerAccount[]>(mockAccounts);
-  const [conversations] = useState<Conversation[]>(mockConversations);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const navigate = useNavigate();
+  const { currentStore } = useStore();
+  const [conversations, setConversations] = useState<MessengerConversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedConversation, setSelectedConversation] = useState<MessengerConversation | null>(null);
+  const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading] = useState(false);
-  const [error] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentStore) {
+      loadConversations();
+    }
+  }, [currentStore]);
+
+  const loadConversations = async () => {
+    try {
+      setLoading(true);
+      const response = await conversationsService.getMessengerConversations(currentStore!.id);
+      setConversations(response.data || []);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!selectedConversation || !messageText.trim()) return;
+    
+    try {
+      await conversationsService.sendMessengerMessage(selectedConversation.id, messageText);
+      setMessageText('');
+      loadConversations();
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const filteredConversations = conversations.filter((conv) =>
+    conv.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
-      <Flex justify="center" align="center" h="400px">
+      <Flex justify="center" align="center" h="100vh">
         <Spinner size="xl" />
       </Flex>
     );
   }
 
-  if (error) {
-    return (
-      <Box p={6}>
-        <Box bg="red.50" border="1px" borderColor="red.200" borderRadius="md" p={4}>
-          <Text color="red.700">{error}</Text>
-        </Box>
-      </Box>
-    );
-  }
-
   return (
-    <Box h="calc(100vh - 64px)" overflow="hidden">
-      <Grid templateColumns="300px 1fr" h="full">
+    <Box h="calc(100vh - 64px)">
+      <Grid templateColumns="350px 1fr" h="full">
         {/* Sidebar */}
-        <GridItem borderRight="1px" borderColor="gray.200" p={4}>
-          <Heading size="md" mb={4}>Messenger Inbox</Heading>
-          
-          {/* Account Selector */}
-          <Box mb={4}>
-            <select
-              value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              <option value="">Selecione uma página</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </select>
-          </Box>
-
-          {/* Search */}
-          <Box mb={4}>
-            <Flex align="center" bg="gray.100" borderRadius="md" px={3} py={2}>
-              <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 mr-2" />
+        <Box borderRight="1px" borderColor="gray.200" bg="gray.50">
+          <Stack p={4} gap={4}>
+            <Heading size="md">Messenger</Heading>
+            
+            {/* Search */}
+            <Box position="relative">
+              <Box position="absolute" left={3} top="50%" transform="translateY(-50%)">
+                <MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />
+              </Box>
               <Input
                 placeholder="Buscar conversas..."
+                pl={10}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                variant="flushed"
-                size="sm"
               />
-            </Flex>
-          </Box>
-
-          {/* Conversations List */}
-          <Box overflowY="auto" maxH="calc(100vh - 250px)">
-            {conversations.map((conversation) => (
-              <Box
-                key={conversation.id}
-                borderWidth="1px"
-                borderRadius="md"
-                p={3}
-                mb={2}
-                cursor="pointer"
-                _hover={{ bg: 'gray.50' }}
-              >
-                <Flex justify="space-between" align="start">
-                  <Box>
-                    <Text fontWeight="bold" mb={1}>
-                      {conversation.customer_name}
-                    </Text>
-                    <Text fontSize="sm" color="gray.500">
-                      {conversation.last_message}
-                    </Text>
-                  </Box>
-                  {conversation.unread_count > 0 && (
-                    <Badge colorScheme="blue" borderRadius="full">
-                      {conversation.unread_count}
-                    </Badge>
-                  )}
-                </Flex>
-              </Box>
-            ))}
-          </Box>
-        </GridItem>
-
-        {/* Chat Area */}
-        <GridItem p={4}>
-          <Flex direction="column" h="full">
-            <Box borderBottom="1px" borderColor="gray.200" pb={4} mb={4}>
-              <Heading size="md">Selecione uma conversa</Heading>
             </Box>
 
-            <Flex flex={1} align="center" justify="center">
-              <Text color="gray.500">
-                Selecione uma conversa para começar
-              </Text>
-            </Flex>
+            {/* Conversations List */}
+            <Stack overflow="auto" maxH="calc(100vh - 200px)">
+              {filteredConversations.map((conversation) => (
+                <Box
+                  key={conversation.id}
+                  p={3}
+                  bg={selectedConversation?.id === conversation.id ? 'blue.50' : 'white'}
+                  borderRadius="md"
+                  cursor="pointer"
+                  onClick={() => setSelectedConversation(conversation)}
+                  border="1px"
+                  borderColor={selectedConversation?.id === conversation.id ? 'blue.200' : 'gray.200'}
+                >
+                  <Flex justify="space-between" align="start">
+                    <Box flex={1} minW={0}>
+                      <Text fontWeight="semibold" truncate>
+                        {conversation.customer_name || 'Cliente'}
+                      </Text>
+                      <Text fontSize="sm" color="gray.500" truncate>
+                        {conversation.last_message || 'Sem mensagens'}
+                      </Text>
+                    </Box>
+                    {conversation.unread_count > 0 && (
+                      <Badge colorScheme="blue" borderRadius="full" ml={2}>
+                        {conversation.unread_count}
+                      </Badge>
+                    )}
+                  </Flex>
+                </Box>
+              ))}
+            </Stack>
+          </Stack>
+        </Box>
 
-            <Flex gap={2} mt={4}>
-              <Input
-                placeholder="Digite sua mensagem..."
-                flex={1}
-              />
-              <Button colorScheme="blue">
-                <Flex align="center" gap={2}>
+        {/* Chat Area */}
+        <Box bg="white" display="flex" flexDirection="column">
+          {selectedConversation ? (
+            <>
+              {/* Header */}
+              <Flex p={4} borderBottom="1px" borderColor="gray.200" align="center">
+                <Box flex={1}>
+                  <Text fontWeight="semibold">{selectedConversation.customer_name}</Text>
+                  <Text fontSize="sm" color="gray.500">
+                    {selectedConversation.customer_id}
+                  </Text>
+                </Box>
+              </Flex>
+
+              {/* Messages */}
+              <Box flex={1} p={4} overflow="auto" bg="gray.50">
+                <Stack gap={3}>
+                  {selectedConversation.messages?.map((message) => (
+                    <Flex
+                      key={message.id}
+                      justify={message.sent_by === 'business' ? 'flex-end' : 'flex-start'}
+                    >
+                      <Box
+                        maxW="70%"
+                        p={3}
+                        borderRadius="lg"
+                        bg={message.sent_by === 'business' ? 'blue.500' : 'white'}
+                        color={message.sent_by === 'business' ? 'white' : 'gray.800'}
+                        boxShadow="sm"
+                      >
+                        <Text>{message.content}</Text>
+                      </Box>
+                    </Flex>
+                  ))}
+                </Stack>
+              </Box>
+
+              {/* Input Area */}
+              <Flex p={4} gap={2} borderTop="1px" borderColor="gray.200">
+                <Input
+                  flex={1}
+                  placeholder="Digite sua mensagem..."
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                />
+                <Button
+                  colorScheme="blue"
+                  onClick={handleSendMessage}
+                  disabled={!messageText.trim()}
+                >
                   <PaperAirplaneIcon className="w-4 h-4" />
-                  <span>Enviar</span>
-                </Flex>
-              </Button>
+                </Button>
+              </Flex>
+            </>
+          ) : (
+            <Flex flex={1} align="center" justify="center" direction="column" gap={4} color="gray.400">
+              <RobotIcon className="w-16 h-16" />
+              <Text>Selecione uma conversa para começar</Text>
             </Flex>
-          </Flex>
-        </GridItem>
+          )}
+        </Box>
       </Grid>
     </Box>
   );
