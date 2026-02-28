@@ -655,9 +655,9 @@ const AnalyticsPage: React.FC = () => {
             <Alert.Title>Erro</Alert.Title>
             <Alert.Description>{error}</Alert.Description>
           </Alert.Content>
-        <Alert.CloseTrigger asChild>
-          <Button size="sm" variant="ghost" onClick={() => setError(null)}>Fechar</Button>
-        </Alert.CloseTrigger>
+          <Button size="sm" variant="ghost" onClick={() => setError(null)} ml="auto">
+            Fechar
+          </Button>
         </Alert.Root>
       )}
       

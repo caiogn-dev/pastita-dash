@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { useColorMode } from '@chakra-ui/react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -15,8 +14,6 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const STORAGE_KEY = 'pastita-theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { colorMode, setColorMode, toggleColorMode } = useColorMode();
-  
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY) as Theme;
@@ -27,7 +24,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return 'system';
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(colorMode as 'light' | 'dark');
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   // Resolve the actual theme based on system preference
   useEffect(() => {
@@ -35,10 +32,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (theme === 'system') {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         setResolvedTheme(isDark ? 'dark' : 'light');
-        setColorMode(isDark ? 'dark' : 'light');
       } else {
         setResolvedTheme(theme);
-        setColorMode(theme);
       }
     };
 
@@ -50,28 +45,27 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     mediaQuery.addEventListener('change', handler);
 
     return () => mediaQuery.removeEventListener('change', handler);
-  }, [theme, setColorMode]);
+  }, [theme]);
 
-  // Sync with Chakra's color mode
+  // Apply theme to document
   useEffect(() => {
-    setResolvedTheme(colorMode as 'light' | 'dark');
-  }, [colorMode]);
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(resolvedTheme);
+  }, [resolvedTheme]);
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem(STORAGE_KEY, newTheme);
-    
-    if (newTheme === 'system') {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setColorMode(isDark ? 'dark' : 'light');
-    } else {
-      setColorMode(newTheme);
-    }
-  }, [setColorMode]);
+  }, []);
 
   const toggleTheme = useCallback(() => {
-    toggleColorMode();
-  }, [toggleColorMode]);
+    setThemeState((prev) => {
+      const newTheme = prev === 'light' ? 'dark' : 'light';
+      localStorage.setItem(STORAGE_KEY, newTheme);
+      return newTheme;
+    });
+  }, []);
 
   const value = useMemo(() => ({
     theme,
