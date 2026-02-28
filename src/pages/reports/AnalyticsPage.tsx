@@ -360,11 +360,11 @@ const AnalyticsPage: React.FC = () => {
                 />
                 <RechartsTooltip
                   formatter={(value: number | undefined) => [formatCurrency(value ?? 0), 'Faturamento']}
-                  labelFormatter={(label) => {
+                  labelFormatter={(label: any) => {
                     try {
-                      return format(parseISO(String(label)), "dd 'de' MMMM", { locale: ptBR });
+                      return format(parseISO(String(label)), "dd 'de' MMMM", { locale: ptBR }) as any;
                     } catch {
-                      return String(label);
+                      return String(label) as any;
                     }
                   }}
                   contentStyle={{
