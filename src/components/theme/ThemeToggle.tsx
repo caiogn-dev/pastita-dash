@@ -1,32 +1,19 @@
-import { useTheme } from '../../hooks/useTheme';
+import React from 'react';
+import { IconButton, Icon } from '@chakra-ui/react';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import { useTheme } from '@/context/ThemeContext';
 
 export function ThemeToggle() {
-  const { isDark, toggle, mounted } = useTheme();
-
-  // Prevent hydration mismatch
-  if (!mounted) {
-    return (
-      <button
-        className="p-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 transition-colors"
-        aria-label="Carregando tema"
-      >
-        <div className="w-5 h-5" />
-      </button>
-    );
-  }
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   return (
-    <button
-      onClick={toggle}
-      className="p-2 rounded-lg bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors"
-      aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
+    <IconButton
+      onClick={toggleTheme}
+      variant="ghost"
+      size="sm"
+      aria-label={resolvedTheme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
     >
-      {isDark ? (
-        <SunIcon className="w-5 h-5 text-yellow-400" />
-      ) : (
-        <MoonIcon className="w-5 h-5 text-zinc-600" />
-      )}
-    </button>
+      <Icon as={resolvedTheme === 'dark' ? SunIcon : MoonIcon} boxSize={5} />
+    </IconButton>
   );
 }

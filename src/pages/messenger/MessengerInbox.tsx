@@ -2,34 +2,26 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Card,
-  Typography,
-  TextField,
+  Heading,
+  Text,
+  Input,
   IconButton,
   Avatar,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemButton,
   Badge,
-  Chip,
-  Divider,
-  CircularProgress,
-  InputAdornment,
-  Paper,
-  Tooltip,
-  Alert,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-} from '@mui/material';
-import MessengerIcon from '@mui/icons-material/Chat'; // Using Chat as Messenger icon
-import SendIcon from '@mui/icons-material/Send';
-import SearchIcon from '@mui/icons-material/Search';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import PersonIcon from '@mui/icons-material/Person';
+  Separator,
+  Flex,
+  VStack,
+  HStack,
+  Field,
+} from '@chakra-ui/react';
+import {
+  ChatBubbleIcon,
+  PaperPlaneIcon,
+  MagnifyingGlassIcon,
+  ReloadIcon,
+  RobotIcon,
+  PersonIcon,
+} from '@radix-ui/react-icons';
 import {
   messengerService,
   MessengerAccount,
@@ -207,244 +199,236 @@ export default function MessengerInbox() {
   const getHandoverIcon = (status: string) => {
     switch (status) {
       case 'bot':
-        return <SmartToyIcon fontSize="small" color="primary" />;
+        return <RobotIcon />;
       case 'human':
-        return <PersonIcon fontSize="small" color="success" />;
+        return <PersonIcon />;
       default:
-        return <SmartToyIcon fontSize="small" color="disabled" />;
+        return <RobotIcon />;
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 100px)', gap: 2, p: 2 }}>
+    <Flex h="calc(100vh - 100px)" gap={4} p={4}>
       {/* Sidebar - Conversations List */}
-      <Card sx={{ width: 360, display: 'flex', flexDirection: 'column' }}>
+      <Card.Root w="360px" display="flex" flexDirection="column">
         {/* Header */}
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Box display="flex" alignItems="center" gap={2} mb={2}>
-            <MessengerIcon sx={{ color: '#0084FF', fontSize: 28 }} />
-            <Typography variant="h6" fontWeight="bold">
-              Messenger
-            </Typography>
+        <Box p={4} borderBottomWidth={1} borderColor="border">
+          <Flex align="center" gap={3} mb={3}>
+            <Box color="#0084FF"><ChatBubbleIcon width="28" height="28" /></Box>
+            <Heading size="md">Messenger</Heading>
             <Box flex={1} />
-            <Tooltip title="Atualizar">
-              <IconButton size="small" onClick={loadConversations}>
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
-          </Box>
+            <IconButton 
+              size="sm" 
+              variant="ghost"
+              onClick={loadConversations}
+              title="Atualizar"
+            >
+              <ReloadIcon />
+            </IconButton>
+          </Flex>
           
           {/* Account Selector */}
           {accounts.length > 1 && (
-            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-              <InputLabel>Página</InputLabel>
-              <Select
-                value={selectedAccountId}
-                label="Página"
-                onChange={(e) => setSelectedAccountId(e.target.value)}
+            <Field.Root mb={3}>
+              <Select.Root
+                value={[selectedAccountId]}
+                onValueChange={(e) => setSelectedAccountId(e.value[0])}
               >
-                {accounts.map((account) => (
-                  <MenuItem key={account.id} value={account.id}>
-                    {account.page_name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                <Select.HiddenSelect />
+                <Select.Control>
+                  <Select.Trigger>
+                    <Select.ValueText placeholder="Página" />
+                  </Select.Trigger>
+                </Select.Control>
+                <Select.Positioner>
+                  <Select.Content>
+                    {accounts.map((account) => (
+                      <Select.Item key={account.id} value={account.id}>
+                        {account.page_name}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Positioner>
+              </Select.Root>
+            </Field.Root>
           )}
           
           {/* Search */}
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Buscar conversas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <Field.Root>
+            <Input
+              placeholder="Buscar conversas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            >
+              <Input.ElementLeft pointerEvents="none">
+                <MagnifyingGlassIcon />
+              </Input.ElementLeft>
+            </Input>
+          </Field.Root>
         </Box>
 
         {/* Conversations List */}
-        <List sx={{ flex: 1, overflow: 'auto', py: 0 }}>
+        <VStack flex={1} overflow="auto" py={0} align="stretch">
           {loading ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <CircularProgress />
-            </Box>
+            <Flex justify="center" py={8}>
+              <Text>⏳</Text>
+            </Flex>
           ) : filteredConversations.length === 0 ? (
-            <Box textAlign="center" py={4} px={2}>
-              <MessengerIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-              <Typography color="text.secondary">
+            <Box textAlign="center" py={8} px={4}>
+              <Box color="fg.muted" mb={2}><ChatBubbleIcon width="48" height="48" /></Box>
+              <Text color="fg.muted">
                 {searchQuery ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
-              </Typography>
+              </Text>
             </Box>
           ) : (
             filteredConversations.map((conv) => (
               <React.Fragment key={conv.id}>
-                <ListItemButton
-                  selected={selectedConversation?.id === conv.id}
+                <Box
+                  py={3}
+                  px={4}
+                  cursor="pointer"
+                  bg={selectedConversation?.id === conv.id ? 'bg.active' : 'transparent'}
+                  _hover={{ bg: 'bg.hover' }}
                   onClick={() => setSelectedConversation(conv)}
-                  sx={{ py: 1.5 }}
                 >
-                  <ListItemAvatar>
-                    <Badge
-                      badgeContent={conv.unread_count}
-                      color="error"
-                      overlap="circular"
-                    >
-                      <Avatar>
-                        {conv.sender_name?.[0]?.toUpperCase() || 'U'}
-                      </Avatar>
-                    </Badge>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography
-                          variant="body2"
+                  <Flex align="center" gap={3}>
+                    <Avatar.Root>
+                      <Avatar.Fallback>{conv.sender_name?.[0]?.toUpperCase() || 'U'}</Avatar.Fallback>
+                    </Avatar.Root>
+                    <Box flex={1} minW={0}>
+                      <Flex justify="space-between" align="center">
+                        <Text 
                           fontWeight={conv.unread_count > 0 ? 'bold' : 'normal'}
-                          noWrap
+                          noOfLines={1}
                         >
                           {conv.sender_name || 'Usuário'}
-                        </Typography>
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          {getHandoverIcon(conv.handover_status)}
-                          <Typography variant="caption" color="text.secondary">
+                        </Text>
+                        <HStack gap={1}>
+                          <Box color={conv.handover_status === 'bot' ? 'blue.500' : 'green.500'}>
+                            {getHandoverIcon(conv.handover_status)}
+                          </Box>
+                          <Text fontSize="xs" color="fg.muted">
                             {formatTime(conv.last_message_at)}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    }
-                    secondary={
-                      <Typography
-                        variant="caption"
-                        color={conv.unread_count > 0 ? 'text.primary' : 'text.secondary'}
+                          </Text>
+                        </HStack>
+                      </Flex>
+                      <Text
+                        fontSize="sm"
+                        color={conv.unread_count > 0 ? 'fg.primary' : 'fg.muted'}
                         fontWeight={conv.unread_count > 0 ? 500 : 400}
-                        noWrap
+                        noOfLines={1}
                       >
                         {conv.last_message || 'Nenhuma mensagem'}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-                <Divider component="li" />
+                      </Text>
+                    </Box>
+                    {conv.unread_count > 0 && (
+                      <Badge colorPalette="red" size="sm">{conv.unread_count}</Badge>
+                    )}
+                  </Flex>
+                </Box>
+                <Separator />
               </React.Fragment>
             ))
           )}
-        </List>
-      </Card>
+        </VStack>
+      </Card.Root>
 
       {/* Main - Chat Area */}
-      <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Card.Root flex={1} display="flex" flexDirection="column">
         {!selectedConversation ? (
-          <Box
-            display="flex"
+          <Flex
             flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
+            align="center"
+            justify="center"
             flex={1}
-            color="text.secondary"
+            color="fg.muted"
           >
-            <MessengerIcon sx={{ fontSize: 80, color: '#0084FF', opacity: 0.5, mb: 2 }} />
-            <Typography variant="h6">Selecione uma conversa</Typography>
-            <Typography variant="body2">
-              Escolha uma conversa da lista para ver as mensagens
-            </Typography>
-          </Box>
+            <Box color="#0084FF" opacity={0.5} mb={4}>
+              <ChatBubbleIcon width="80" height="80" />
+            </Box>
+            <Heading size="md">Selecione uma conversa</Heading>
+            <Text>Escolha uma conversa da lista para ver as mensagens</Text>
+          </Flex>
         ) : (
           <>
             {/* Chat Header */}
-            <Box
-              sx={{
-                p: 2,
-                borderBottom: 1,
-                borderColor: 'divider',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-              }}
+            <Flex
+              p={4}
+              borderBottomWidth={1}
+              borderColor="border"
+              align="center"
+              gap={3}
             >
-              <Avatar sx={{ width: 48, height: 48 }}>
-                {selectedConversation.sender_name?.[0]?.toUpperCase()}
-              </Avatar>
+              <Avatar.Root size="lg">
+                <Avatar.Fallback>{selectedConversation.sender_name?.[0]?.toUpperCase()}</Avatar.Fallback>
+              </Avatar.Root>
               <Box flex={1}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {selectedConversation.sender_name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
+                <Text fontWeight="bold">{selectedConversation.sender_name}</Text>
+                <Text fontSize="sm" color="fg.muted">
                   {selectedConversation.handover_status === 'bot' ? 'Modo Bot' : 'Atendimento Humano'}
-                </Typography>
+                </Text>
               </Box>
               
               {/* Handover Controls */}
-              <Box display="flex" gap={1}>
-                <Chip
-                  icon={<SmartToyIcon />}
-                  label="Bot"
-                  color={selectedConversation.handover_status === 'bot' ? 'primary' : 'default'}
-                  size="small"
+              <HStack gap={2}>
+                <Badge
+                  colorPalette={selectedConversation.handover_status === 'bot' ? 'blue' : 'gray'}
+                  cursor="pointer"
                   onClick={() => handleHandover('bot')}
-                  sx={{ cursor: 'pointer' }}
-                />
-                <Chip
-                  icon={<PersonIcon />}
-                  label="Humano"
-                  color={selectedConversation.handover_status === 'human' ? 'success' : 'default'}
-                  size="small"
+                >
+                  <HStack gap={1}>
+                    <RobotIcon />
+                    <span>Bot</span>
+                  </HStack>
+                </Badge>
+                <Badge
+                  colorPalette={selectedConversation.handover_status === 'human' ? 'green' : 'gray'}
+                  cursor="pointer"
                   onClick={() => handleHandover('human')}
-                  sx={{ cursor: 'pointer' }}
-                />
-              </Box>
-            </Box>
+                >
+                  <HStack gap={1}>
+                    <PersonIcon />
+                    <span>Humano</span>
+                  </HStack>
+                </Badge>
+              </HStack>
+            </Flex>
 
             {/* Messages Area */}
-            <Box
-              sx={{
-                flex: 1,
-                overflow: 'auto',
-                p: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                bgcolor: 'grey.50',
-              }}
+            <VStack
+              flex={1}
+              overflow="auto"
+              p={4}
+              gap={2}
+              bg="gray.50"
+              align="stretch"
             >
               {loadingMessages ? (
-                <Box display="flex" justifyContent="center" py={4}>
-                  <CircularProgress />
-                </Box>
+                <Flex justify="center" py={8}>
+                  <Text>⏳</Text>
+                </Flex>
               ) : messages.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <Typography color="text.secondary">
-                    Nenhuma mensagem ainda. Envie a primeira!
-                  </Typography>
+                <Box textAlign="center" py={8}>
+                  <Text color="fg.muted">Nenhuma mensagem ainda. Envie a primeira!</Text>
                 </Box>
               ) : (
                 messages.map((msg) => (
-                  <Box
+                  <Flex
                     key={msg.id}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: msg.is_from_bot ? 'flex-end' : 'flex-start',
-                    }}
+                    justify={msg.is_from_bot ? 'flex-end' : 'flex-start'}
                   >
-                    <Paper
-                      sx={{
-                        p: 1.5,
-                        maxWidth: '70%',
-                        bgcolor: msg.is_from_bot ? 'primary.main' : 'white',
-                        color: msg.is_from_bot ? 'white' : 'text.primary',
-                        borderRadius: 2,
-                        borderTopRightRadius: msg.is_from_bot ? 0 : 2,
-                        borderTopLeftRadius: msg.is_from_bot ? 2 : 0,
-                      }}
+                    <Box
+                      p={3}
+                      maxW="70%"
+                      bg={msg.is_from_bot ? 'blue.500' : 'white'}
+                      color={msg.is_from_bot ? 'white' : 'fg.primary'}
+                      borderRadius="lg"
+                      borderTopRightRadius={msg.is_from_bot ? 0 : 'lg'}
+                      borderTopLeftRadius={msg.is_from_bot ? 'lg' : 0}
+                      shadow="sm"
                     >
                       {msg.attachments && msg.attachments.length > 0 && (
-                        <Box mb={1}>
+                        <Box mb={2}>
                           {msg.attachments.map((att, idx) => (
                             <Box key={idx}>
                               {att.type === 'image' ? (
@@ -454,46 +438,34 @@ export default function MessengerInbox() {
                                   style={{ maxWidth: '100%', borderRadius: 8 }}
                                 />
                               ) : (
-                                <Chip label={att.name || att.type} size="small" />
+                                <Badge>{att.name || att.type}</Badge>
                               )}
                             </Box>
                           ))}
                         </Box>
                       )}
                       {msg.content && (
-                        <Typography variant="body2">{msg.content}</Typography>
+                        <Text>{msg.content}</Text>
                       )}
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          opacity: 0.7,
-                          fontSize: '0.65rem',
-                          display: 'block',
-                          textAlign: 'right',
-                          mt: 0.5,
-                        }}
-                      >
+                      <Text fontSize="xs" opacity={0.7} textAlign="right" mt={1}>
                         {formatTime(msg.created_at)}
-                      </Typography>
-                    </Paper>
-                  </Box>
+                      </Text>
+                    </Box>
+                  </Flex>
                 ))
               )}
               <div ref={messagesEndRef} />
-            </Box>
+            </VStack>
 
             {/* Message Input */}
-            <Box
-              sx={{
-                p: 2,
-                borderTop: 1,
-                borderColor: 'divider',
-                display: 'flex',
-                gap: 1,
-              }}
+            <Flex
+              p={4}
+              borderTopWidth={1}
+              borderColor="border"
+              gap={2}
             >
-              <TextField
-                fullWidth
+              <Input
+                flex={1}
                 placeholder="Digite uma mensagem..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
@@ -503,37 +475,33 @@ export default function MessengerInbox() {
                     handleSendMessage();
                   }
                 }}
-                multiline
-                maxRows={4}
-                disabled={sending}
               />
               <IconButton
-                color="primary"
+                colorPalette="blue"
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || sending}
-                sx={{
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'primary.dark' },
-                  '&:disabled': { bgcolor: 'grey.300' },
-                }}
               >
-                {sending ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
+                {sending ? '⏳' : <PaperPlaneIcon />}
               </IconButton>
-            </Box>
+            </Flex>
           </>
         )}
-      </Card>
+      </Card.Root>
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-          onClose={() => setError(null)}
+        <Box
+          position="fixed"
+          bottom={4}
+          right={4}
+          p={3}
+          bg="red.50"
+          color="red.700"
+          borderRadius="md"
+          shadow="lg"
         >
           {error}
-        </Alert>
+        </Box>
       )}
-    </Box>
+    </Flex>
   );
 }

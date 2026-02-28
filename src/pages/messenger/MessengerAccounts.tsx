@@ -2,32 +2,30 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
-  CardContent,
-  Typography,
+  Heading,
+  Text,
   Button,
-  TextField,
+  Input,
   Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
-  Chip,
-  Tooltip,
-  Alert,
-  CircularProgress,
+  Badge,
+  Separator,
+  Flex,
+  VStack,
+  HStack,
   Grid,
-  InputAdornment,
-} from '@mui/material';
+  Field,
+} from '@chakra-ui/react';
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Refresh as RefreshIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
-  Chat as ChatIcon,
-  Search as SearchIcon,
-} from '@mui/icons-material';
+  PlusIcon,
+  Pencil1Icon,
+  TrashIcon,
+  ReloadIcon,
+  CheckCircledIcon,
+  CrossCircledIcon,
+  ChatBubbleIcon,
+  MagnifyingGlassIcon,
+} from '@radix-ui/react-icons';
 import { messengerService, MessengerAccount } from '../../services/messenger';
 
 export default function MessengerAccounts() {
@@ -145,188 +143,173 @@ export default function MessengerAccounts() {
   });
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold">
-          Contas do Messenger
-        </Typography>
-        <Box display="flex" gap={2}>
-          <TextField
-            size="small"
+    <Box p={6}>
+      <Flex justify="space-between" align="center" mb={6}>
+        <Heading size="xl">Contas do Messenger</Heading>
+        <HStack gap={2}>
+          <Input
             placeholder="Buscar contas..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
+            w="250px"
           >
+            <Input.ElementLeft pointerEvents="none">
+              <MagnifyingGlassIcon />
+            </Input.ElementLeft>
+          </Input>
+          <Button onClick={() => handleOpenDialog()}>
+            <PlusIcon />
             Adicionar Conta
           </Button>
-        </Box>
-      </Box>
+        </HStack>
+      </Flex>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Box mb={4} p={3} bg="red.50" color="red.700" borderRadius="md">
           {error}
-        </Alert>
+        </Box>
       )}
 
       {loading ? (
-        <Box display="flex" justifyContent="center" py={8}>
-          <CircularProgress />
-        </Box>
+        <Flex justify="center" py={16}>
+          <Text>⏳</Text>
+        </Flex>
       ) : filteredAccounts.length === 0 ? (
-        <Card>
-          <CardContent sx={{ textAlign: 'center', py: 8 }}>
-            <ChatIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Nenhuma conta configurada
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={3}>
+        <Card.Root>
+          <Card.Body textAlign="center" py={16}>
+            <Box color="fg.muted" mb={4}><ChatBubbleIcon width="64" height="64" /></Box>
+            <Heading size="md" color="fg.muted" mb={2}>Nenhuma conta configurada</Heading>
+            <Text color="fg.muted" mb={6}>
               Adicione uma página do Facebook para começar a receber mensagens
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
-            >
+            </Text>
+            <Button onClick={() => handleOpenDialog()}>
+              <PlusIcon />
               Adicionar Conta
             </Button>
-          </CardContent>
-        </Card>
+          </Card.Body>
+        </Card.Root>
       ) : (
-        <Grid container spacing={3}>
+        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={6}>
           {filteredAccounts.map((account) => (
-            <Grid item xs={12} md={6} lg={4} key={account.id}>
-              <Card>
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                    <Box>
-                      <Typography variant="h6" fontWeight="bold">
-                        {account.page_name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        ID: {account.page_id}
-                      </Typography>
-                    </Box>
-                    <Box display="flex" gap={1}>
-                      <Tooltip title="Editar">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(account)}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Excluir">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(account.id)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+            <Card.Root key={account.id}>
+              <Card.Body>
+                <Flex justify="space-between" align="flex-start" mb={4}>
+                  <Box>
+                    <Heading size="sm">{account.page_name}</Heading>
+                    <Text fontSize="xs" color="fg.muted">ID: {account.page_id}</Text>
                   </Box>
-
-                  <Box display="flex" gap={1} mb={2}>
-                    <Chip
-                      size="small"
-                      icon={account.is_active ? <CheckCircleIcon /> : <ErrorIcon />}
-                      label={account.is_active ? 'Ativo' : 'Inativo'}
-                      color={account.is_active ? 'success' : 'default'}
-                    />
-                    <Chip
-                      size="small"
-                      icon={account.webhook_verified ? <CheckCircleIcon /> : <ErrorIcon />}
-                      label={account.webhook_verified ? 'Webhook OK' : 'Webhook Pendente'}
-                      color={account.webhook_verified ? 'success' : 'warning'}
-                    />
-                  </Box>
-
-                  {!account.webhook_verified && (
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      startIcon={<RefreshIcon />}
-                      onClick={() => handleVerifyWebhook(account.id)}
+                  <HStack gap={1}>
+                    <IconButton
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleOpenDialog(account)}
+                      title="Editar"
                     >
-                      Verificar Webhook
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
+                      <Pencil1Icon />
+                    </IconButton>
+                    <IconButton
+                      size="sm"
+                      variant="ghost"
+                      colorPalette="red"
+                      onClick={() => handleDelete(account.id)}
+                      title="Excluir"
+                    >
+                      <TrashIcon />
+                    </IconButton>
+                  </HStack>
+                </Flex>
+
+                <HStack gap={2} mb={4}>
+                  <Badge colorPalette={account.is_active ? 'green' : 'gray'}>
+                    <HStack gap={1}>
+                      {account.is_active ? <CheckCircledIcon /> : <CrossCircledIcon />}
+                      <span>{account.is_active ? 'Ativo' : 'Inativo'}</span>
+                    </HStack>
+                  </Badge>
+                  <Badge colorPalette={account.webhook_verified ? 'green' : 'yellow'}>
+                    <HStack gap={1}>
+                      {account.webhook_verified ? <CheckCircledIcon /> : <CrossCircledIcon />}
+                      <span>{account.webhook_verified ? 'Webhook OK' : 'Webhook Pendente'}</span>
+                    </HStack>
+                  </Badge>
+                </HStack>
+
+                {!account.webhook_verified && (
+                  <Button
+                    w="full"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleVerifyWebhook(account.id)}
+                  >
+                    <ReloadIcon />
+                    Verificar Webhook
+                  </Button>
+                )}
+              </Card.Body>
+            </Card.Root>
           ))}
         </Grid>
       )}
 
       {/* Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingAccount ? 'Editar Conta' : 'Adicionar Conta do Messenger'}
-        </DialogTitle>
-        <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2} mt={1}>
-            <TextField
-              label="Nome da Conta"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              fullWidth
-              required
-              helperText="Nome para identificar esta conta no painel"
-            />
+      <Dialog.Root open={dialogOpen} onOpenChange={(e) => setDialogOpen(e.open)}>
+        <Dialog.Content maxW="md">
+          <Dialog.Header>
+            <Dialog.Title>
+              {editingAccount ? 'Editar Conta' : 'Adicionar Conta do Messenger'}
+            </Dialog.Title>
+          </Dialog.Header>
+          <Dialog.Body>
+            <VStack gap={4} align="stretch">
+              <Field.Root>
+                <Field.Label>Nome da Conta</Field.Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Nome para identificar esta conta no painel"
+                />
+              </Field.Root>
 
-            <TextField
-              label="Page ID"
-              value={formData.page_id}
-              onChange={(e) => setFormData({ ...formData, page_id: e.target.value })}
-              fullWidth
-              required
-              disabled={!!editingAccount}
-            />
-            
-            <TextField
-              label="Nome da Página"
-              value={formData.page_name}
-              onChange={(e) => setFormData({ ...formData, page_name: e.target.value })}
-              fullWidth
-              required
-            />
-            
-            <TextField
-              label="Page Access Token"
-              value={formData.page_access_token}
-              onChange={(e) => setFormData({ ...formData, page_access_token: e.target.value })}
-              fullWidth
-              required
-              type="password"
-              helperText="Token de acesso da página do Facebook"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={submitting || !formData.name || !formData.page_id || !formData.page_name || !formData.page_access_token}
-          >
-            {submitting ? <CircularProgress size={24} /> : 'Salvar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+              <Field.Root>
+                <Field.Label>Page ID</Field.Label>
+                <Input
+                  value={formData.page_id}
+                  onChange={(e) => setFormData({ ...formData, page_id: e.target.value })}
+                  disabled={!!editingAccount}
+                />
+              </Field.Root>
+              
+              <Field.Root>
+                <Field.Label>Nome da Página</Field.Label>
+                <Input
+                  value={formData.page_name}
+                  onChange={(e) => setFormData({ ...formData, page_name: e.target.value })}
+                />
+              </Field.Root>
+              
+              <Field.Root>
+                <Field.Label>Page Access Token</Field.Label>
+                <Input
+                  type="password"
+                  value={formData.page_access_token}
+                  onChange={(e) => setFormData({ ...formData, page_access_token: e.target.value })}
+                  placeholder="Token de acesso da página do Facebook"
+                />
+              </Field.Root>
+            </VStack>
+          </Dialog.Body>
+          <Dialog.Footer>
+            <Button variant="outline" onClick={handleCloseDialog}>Cancelar</Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting || !formData.name || !formData.page_id || !formData.page_name || !formData.page_access_token}
+              loading={submitting}
+            >
+              Salvar
+            </Button>
+          </Dialog.Footer>
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 }

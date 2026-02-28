@@ -14,6 +14,7 @@ import {
   Field,
   Spinner,
   Icon,
+  Grid,
 } from '@chakra-ui/react';
 import {
   MagnifyingGlassIcon,

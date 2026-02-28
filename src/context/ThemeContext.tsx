@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useColorMode } from '@chakra-ui/react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -14,6 +15,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const STORAGE_KEY = 'pastita-theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { colorMode, setColorMode, toggleColorMode } = useColorMode();
+  
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY) as Theme;
@@ -24,7 +27,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return 'system';
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(colorMode as 'light' | 'dark');
 
   // Resolve the actual theme based on system preference
   useEffect(() => {
@@ -32,8 +35,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (theme === 'system') {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         setResolvedTheme(isDark ? 'dark' : 'light');
+        setColorMode(isDark ? 'dark' : 'light');
       } else {
         setResolvedTheme(theme);
+        setColorMode(theme);
       }
     };
 
@@ -45,49 +50,38 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     mediaQuery.addEventListener('change', handler);
 
     return () => mediaQuery.removeEventListener('change', handler);
-  }, [theme]);
+  }, [theme, setColorMode]);
 
-  const cssVariables = useMemo(() => {
-    const isDark = resolvedTheme === 'dark';
-    return {
-      '--pastita-background': isDark ? '#0f172a' : '#ffffff',
-      '--pastita-surface': isDark ? '#1e293b' : '#f8fafc',
-      '--pastita-foreground': isDark ? '#f8fafc' : '#0f172a',
-      '--pastita-border': isDark ? '#334155' : '#e5e7eb',
-      '--pastita-primary': '#722F37',
-      '--pastita-chart-accent': isDark ? '#f472b6' : '#de5b72',
-    };
-  }, [resolvedTheme]);
-
+  // Sync with Chakra's color mode
   useEffect(() => {
-    const root = document.documentElement;
-    if (resolvedTheme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [resolvedTheme]);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (!root) return;
-
-    Object.entries(cssVariables).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
-    });
-  }, [cssVariables]);
+    setResolvedTheme(colorMode as 'light' | 'dark');
+  }, [colorMode]);
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem(STORAGE_KEY, newTheme);
-  }, []);
+    
+    if (newTheme === 'system') {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setColorMode(isDark ? 'dark' : 'light');
+    } else {
+      setColorMode(newTheme);
+    }
+  }, [setColorMode]);
 
   const toggleTheme = useCallback(() => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  }, [resolvedTheme, setTheme]);
+    toggleColorMode();
+  }, [toggleColorMode]);
+
+  const value = useMemo(() => ({
+    theme,
+    resolvedTheme,
+    setTheme,
+    toggleTheme,
+  }), [theme, resolvedTheme, setTheme, toggleTheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

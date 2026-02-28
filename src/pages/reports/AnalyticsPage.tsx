@@ -101,7 +101,7 @@ const StatCard: React.FC<StatCardProps> = ({
   color = 'blue.500',
   loading
 }) => {
-  const isPositive = change >= 0;
+  const isPositive = (change ?? 0) >= 0;
   
   return (
     <MotionCard
@@ -394,7 +394,7 @@ const AnalyticsPage: React.FC = () => {
                               fill="currentColor"
                             />
                           )}
-                          <Text fontSize="sm" noOfLines={1} maxW="150px">
+                          <Text fontSize="sm" truncate maxW="150px">
                             {product.product_name}
                           </Text>
                         </HStack>
@@ -655,7 +655,9 @@ const AnalyticsPage: React.FC = () => {
             <Alert.Title>Erro</Alert.Title>
             <Alert.Description>{error}</Alert.Description>
           </Alert.Content>
-          <Alert.CloseTrigger onClick={() => setError(null)} />
+        <Alert.CloseTrigger asChild>
+          <Button size="sm" variant="ghost" onClick={() => setError(null)}>Fechar</Button>
+        </Alert.CloseTrigger>
         </Alert.Root>
       )}
       
