@@ -115,7 +115,7 @@ export default function MessengerInbox() {
                 placeholder="Buscar conversas..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                variant="unstyled"
+                variant="flushed"
                 size="sm"
               />
             </Flex>
