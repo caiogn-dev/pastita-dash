@@ -108,7 +108,7 @@ export default function ReportsPage() {
       ]);
       setSchedules(schedulesRes.results);
       setReports(reportsRes.results);
-      setAccounts(accountsRes.data?.results || accountsRes.data || []);
+      setAccounts(accountsRes.data?.results || []);
       setCompanies(companiesRes.results);
     } catch (error) {
       toast.error('Erro ao carregar dados');
