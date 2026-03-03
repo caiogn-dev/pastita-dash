@@ -36,8 +36,10 @@ export interface NotificationPreference {
 export const getNotifications = () =>
   api.get('/notifications/');
 
+// NOTA: Endpoint /unread_count/ não existe no backend atual
+// Usando filtro na listagem principal para obter não lidas
 export const getUnreadCount = () =>
-  api.get('/notifications/unread_count/');
+  api.get('/notifications/', { params: { is_read: false, limit: 1 } });
 
 export const markAsRead = (id?: string, all?: boolean) => {
   if (all) {

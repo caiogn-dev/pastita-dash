@@ -101,7 +101,7 @@ export interface DeliveryZoneFilters {
 
 class DeliveryService {
   private baseUrl = '/commerce/delivery-zones';
-  private storeUrl = '/stores';
+  private storeUrl = '/commerce';
   private storeSlug = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
   async getZones(filters?: DeliveryZoneFilters): Promise<PaginatedResponse<DeliveryZone>> {
@@ -172,6 +172,7 @@ class DeliveryService {
   async getStoreLocation(): Promise<StoreLocation | null> {
     try {
       // Use the store slug to get the store location
+      // Endpoint: /commerce/{store_slug}/
       const response = await api.get<StoreLocation>(`${this.storeUrl}/${this.storeSlug}/`);
       if (response.data && Object.keys(response.data).length > 0) {
         return response.data as StoreLocation;
@@ -185,6 +186,7 @@ class DeliveryService {
 
   async updateStoreLocation(data: UpdateStoreLocation): Promise<StoreLocation> {
     // Use PATCH to update the store with the slug
+    // Endpoint: /commerce/{store_slug}/
     const response = await api.patch<StoreLocation>(`${this.storeUrl}/${this.storeSlug}/`, data);
     return response.data;
   }
