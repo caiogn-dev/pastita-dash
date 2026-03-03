@@ -7,7 +7,7 @@ import logger from './logger';
 import { getStoreSlug } from '../hooks/useStore';
 
 const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
-const BASE_URL = '/stores/reports';
+const BASE_URL = '/commerce/reports';
 const getStoreParam = () => getStoreSlug() || STORE_SLUG;
 
 // =============================================================================
