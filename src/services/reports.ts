@@ -208,7 +208,7 @@ export const getCustomersReport = async (params: DateRange = {}): Promise<Custom
  */
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
-    const response = await api.get(`/dashboard-stats/`, {
+    const response = await api.get(`${BASE_URL}/dashboard/`, {
       params: { store: getStoreParam() }
     });
     return response.data;

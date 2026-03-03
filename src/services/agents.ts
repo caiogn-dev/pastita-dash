@@ -149,7 +149,7 @@ let backendProviderConfig: Record<string, { base_url: string; model_name: string
 // Fetch provider config from backend (includes correct base URLs)
 export const fetchProviderConfig = async (): Promise<Record<string, { base_url: string; model_name: string; api_style: string }>> => {
   try {
-    const response = await api.get('/agents/agents/provider_config/');
+    const response = await api.get('/agents/provider_config/');
     backendProviderConfig = response.data;
     return response.data;
   } catch (error) {
@@ -228,7 +228,7 @@ const agentsService = {
   // Agents
   getAgents: async (): Promise<Agent[]> => {
     try {
-      const response = await api.get('/agents/agents/');
+      const response = await api.get('/agents/');
       return response.data.results || response.data;
     } catch (error) {
       return handleApiError(error);
@@ -237,7 +237,7 @@ const agentsService = {
 
   getAgent: async (id: string): Promise<AgentDetail> => {
     try {
-      const response = await api.get(`/agents/agents/${id}/`);
+      const response = await api.get(`/agents/${id}/`);
       return response.data;
     } catch (error) {
       return handleApiError(error);
@@ -246,7 +246,7 @@ const agentsService = {
 
   createAgent: async (data: CreateAgentData): Promise<Agent> => {
     try {
-      const response = await api.post('/agents/agents/', data);
+      const response = await api.post('/agents/', data);
       return response.data;
     } catch (error) {
       return handleApiError(error);
@@ -255,7 +255,7 @@ const agentsService = {
 
   updateAgent: async (id: string, data: Partial<CreateAgentData>): Promise<Agent> => {
     try {
-      const response = await api.patch(`/agents/agents/${id}/`, data);
+      const response = await api.patch(`/agents/${id}/`, data);
       return response.data;
     } catch (error) {
       return handleApiError(error);
@@ -264,7 +264,7 @@ const agentsService = {
 
   deleteAgent: async (id: string): Promise<void> => {
     try {
-      await api.delete(`/agents/agents/${id}/`);
+      await api.delete(`/agents/${id}/`);
     } catch (error) {
       return handleApiError(error);
     }
@@ -282,7 +282,7 @@ const agentsService = {
     });
     
     try {
-      const response = await api.post(`/agents/agents/${agentId}/process/`, data);
+      const response = await api.post(`/agents/${agentId}/process/`, data);
       console.log('[AgentService] Process message success:', {
         hasResponse: !!response.data?.response,
         sessionId: response.data?.session_id,
@@ -299,7 +299,7 @@ const agentsService = {
   // Stats
   getAgentStats: async (agentId: string): Promise<AgentStats> => {
     try {
-      const response = await api.get(`/agents/agents/${agentId}/stats/`);
+      const response = await api.get(`/agents/${agentId}/stats/`);
       return response.data;
     } catch (error) {
       return handleApiError(error);
@@ -309,7 +309,7 @@ const agentsService = {
   // Conversations
   getAgentConversations: async (agentId: string): Promise<AgentConversation[]> => {
     try {
-      const response = await api.get(`/agents/agents/${agentId}/conversations/`);
+      const response = await api.get(`/agents/${agentId}/conversations/`);
       return response.data.results || response.data;
     } catch (error) {
       return handleApiError(error);

@@ -1,12 +1,13 @@
 /**
  * Commerce Service - API endpoints para o novo backend
+ * ATUALIZADO: Usando /commerce/ em vez de /commerce/
  */
 import api from './api';
 
 // Stores
-export const getStores = () => api.get('/commerce/stores/');
-export const getStore = (slug: string) => api.get(`/commerce/stores/${slug}/`);
-export const getStoreProducts = (slug: string) => api.get(`/commerce/stores/${slug}/products/`);
+export const getStores = () => api.get('/commerce/');
+export const getStore = (slug: string) => api.get(`/commerce/${slug}/`);
+export const getStoreProducts = (slug: string) => api.get(`/commerce/${slug}/products/`);
 
 // Products
 export const getProducts = (params?: { store?: string }) => 

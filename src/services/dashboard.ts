@@ -5,57 +5,60 @@ import api from './api';
  */
 
 export const dashboardService = {
-  getOverview: async (accountId?: string) => {
-    const params = accountId ? { account: accountId } : {};
+  getOverview: async (storeSlug?: string) => {
+    const params = storeSlug ? { store: storeSlug } : {};
     const [ordersRes, messagesRes] = await Promise.all([
-      api.get('/commerce/orders/stats/', { params }).catch(() => ({ data: { count: 0, revenue: 0 } })),
-      api.get('/messaging/stats/', { params }).catch(() => ({ data: { total: 0 } })),
+      api.get('/stores/reports/dashboard/', { params }).catch(() => ({ data: { orders_count: 0, revenue_total: 0 } })),
+      api.get('/messaging/messenger/accounts/', { params }).catch(() => ({ data: { count: 0 } })),
     ]);
 
     return {
       orders: {
-        today: ordersRes.data.count || 0,
-        revenue_today: ordersRes.data.revenue || 0,
+        today: ordersRes.data.orders_count || 0,
+        revenue_today: ordersRes.data.revenue_total || 0,
       },
       conversations: {
-        active: messagesRes.data.active_conversations || 0,
+        active: ordersRes.data.active_conversations || 0,
       },
       messages: {
-        today: messagesRes.data.total || 0,
-        delivered: messagesRes.data.delivered || 0,
-        read: messagesRes.data.read || 0,
-        failed: messagesRes.data.failed || 0,
+        today: ordersRes.data.messages_count || 0,
+        delivered: ordersRes.data.messages_delivered || 0,
+        read: ordersRes.data.messages_read || 0,
+        failed: ordersRes.data.messages_failed || 0,
       },
     };
   },
 
-  getCharts: async (accountId?: string, days = 7) => {
+  getCharts: async (storeSlug?: string, days = 7) => {
     const params: any = { days };
-    if (accountId) params.account = accountId;
+    if (storeSlug) params.store = storeSlug;
 
-    const [ordersRes, messagesRes] = await Promise.all([
-      api.get('/commerce/orders/charts/', { params }).catch(() => ({ data: { daily: [] } })),
-      api.get('/messaging/charts/', { params }).catch(() => ({ data: { daily: [] } })),
-    ]);
+    // Usando o endpoint de dashboard que existe no backend
+    const response = await api.get('/stores/reports/dashboard/', { params }).catch(() => ({ data: { daily_stats: [] } }));
 
     return {
-      orders_per_day: ordersRes.data.daily || [],
-      messages_per_day: messagesRes.data.daily || [],
+      orders_per_day: response.data.daily_stats || [],
+      messages_per_day: response.data.daily_stats || [],
     };
   },
 
   getOrderStats: async (params?: Record<string, string>) => {
-    const response = await api.get('/commerce/orders/stats/', { params }).catch(() => ({
-      data: { total: 0, pending: 0, confirmed: 0, delivered: 0, cancelled: 0, revenue: 0 }
+    const response = await api.get('/stores/reports/dashboard/', { params }).catch(() => ({
+      data: { orders_count: 0, revenue_total: 0 }
     }));
-    return response.data;
+    return {
+      total: response.data.orders_count || 0,
+      revenue: response.data.revenue_total || 0,
+    };
   },
 
   getMessageStats: async (params?: Record<string, string>) => {
-    const response = await api.get('/messaging/stats/', { params }).catch(() => ({
-      data: { total: 0, sent: 0, delivered: 0, failed: 0 }
+    const response = await api.get('/stores/reports/dashboard/', { params }).catch(() => ({
+      data: { messages_count: 0 }
     }));
-    return response.data;
+    return {
+      total: response.data.messages_count || 0,
+    };
   },
 };
 

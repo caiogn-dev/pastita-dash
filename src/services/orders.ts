@@ -3,9 +3,16 @@ import { Order, OrderItem, OrderEvent, CreateOrder, PaginatedResponse } from '..
 
 /**
  * Orders Service - API V2
+ * 
+ * Endpoint correto do backend: /api/v1/commerce/{store_slug}/orders/
  */
 
-const BASE_URL = '/commerce/orders';
+const getBaseUrl = (storeSlug?: string) => {
+  if (storeSlug) {
+    return `/commerce/${storeSlug}/orders`;
+  }
+  return '/commerce/orders';
+};
 
 const toNumber = (value: number | string | null | undefined) => {
   if (value === null || value === undefined) return 0;
@@ -25,101 +32,105 @@ const normalizeOrder = (order: Order): Order => ({
 });
 
 export const ordersService = {
-  getOrders: async (params?: Record<string, string>): Promise<PaginatedResponse<Order>> => {
-    const response = await api.get<PaginatedResponse<Order>>(`${BASE_URL}/`, { params });
+  getOrders: async (params?: Record<string, string> & { store_slug?: string }): Promise<PaginatedResponse<Order>> => {
+    const storeSlug = params?.store_slug;
+    const { store_slug, ...apiParams } = params || {};
+    const response = await api.get<PaginatedResponse<Order>>(`${getBaseUrl(storeSlug)}/`, { params: apiParams });
     const results = response.data.results?.map(normalizeOrder) || [];
     return { ...response.data, results };
   },
 
-  getOrder: async (id: string): Promise<Order> => {
-    const response = await api.get<Order>(`${BASE_URL}/${id}/`);
+  getOrder: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.get<Order>(`${getBaseUrl(storeSlug)}/${id}/`);
     return normalizeOrder(response.data);
   },
 
-  createOrder: async (data: CreateOrder): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/`, data);
+  createOrder: async (data: CreateOrder, storeSlug?: string): Promise<Order> => {
+    const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/`, data);
     return normalizeOrder(response.data);
   },
 
-  updateOrder: async (id: string, data: Partial<Order>): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, data);
+  updateOrder: async (id: string, data: Partial<Order>, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, data);
     return normalizeOrder(response.data);
   },
 
-  deleteOrder: async (id: string): Promise<void> => {
-    await api.delete(`${BASE_URL}/${id}/`);
+  deleteOrder: async (id: string, storeSlug?: string): Promise<void> => {
+    await api.delete(`${getBaseUrl(storeSlug)}/${id}/`);
   },
 
   // Métodos de compatibilidade legado
-  confirmOrder: async (id: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, { status: 'confirmed' });
+  confirmOrder: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'confirmed' });
     return normalizeOrder(response.data);
   },
 
-  startPreparing: async (id: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, { status: 'preparing' });
+  startPreparing: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'preparing' });
     return normalizeOrder(response.data);
   },
 
-  markReady: async (id: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, { status: 'ready' });
+  markReady: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'ready' });
     return normalizeOrder(response.data);
   },
 
-  markOutForDelivery: async (id: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, { status: 'out_for_delivery' });
+  markOutForDelivery: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'out_for_delivery' });
     return normalizeOrder(response.data);
   },
 
-  deliverOrder: async (id: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, { status: 'delivered' });
+  deliverOrder: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'delivered' });
     return normalizeOrder(response.data);
   },
 
-  cancelOrder: async (id: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, { status: 'cancelled' });
+  cancelOrder: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'cancelled' });
     return normalizeOrder(response.data);
   },
 
-  markPaid: async (id: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, { payment_status: 'paid' });
+  markPaid: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { payment_status: 'paid' });
     return normalizeOrder(response.data);
   },
 
-  getByCustomer: async (customerId: string): Promise<Order[]> => {
-    const response = await api.get<PaginatedResponse<Order>>(`${BASE_URL}/`, { params: { customer: customerId } });
+  getByCustomer: async (customerId: string, storeSlug?: string): Promise<Order[]> => {
+    const response = await api.get<PaginatedResponse<Order>>(`${getBaseUrl(storeSlug)}/`, { params: { customer: customerId } });
     return (response.data.results || []).map(normalizeOrder);
   },
 
-  updateStatus: async (id: string, status: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, { status });
+  updateStatus: async (id: string, status: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status });
     return normalizeOrder(response.data);
   },
 
-  getPaymentStatus: async (id: string): Promise<{ status: string; payment_url?: string }> => {
-    const response = await api.get(`${BASE_URL}/${id}/payment/`);
+  getPaymentStatus: async (id: string, storeSlug?: string): Promise<{ status: string; payment_url?: string }> => {
+    const response = await api.get(`${getBaseUrl(storeSlug)}/${id}/payment/`);
     return response.data;
   },
 
-  addEvent: async (orderId: string, event: { type: string; description: string }): Promise<OrderEvent> => {
-    const response = await api.post<OrderEvent>(`${BASE_URL}/${orderId}/events/`, event);
+  addEvent: async (orderId: string, event: { type: string; description: string }, storeSlug?: string): Promise<OrderEvent> => {
+    const response = await api.post<OrderEvent>(`${getBaseUrl(storeSlug)}/${orderId}/events/`, event);
     return response.data;
   },
 
-  getEvents: async (orderId: string): Promise<OrderEvent[]> => {
-    const response = await api.get<OrderEvent[]>(`${BASE_URL}/${orderId}/events/`);
+  getEvents: async (orderId: string, storeSlug?: string): Promise<OrderEvent[]> => {
+    const response = await api.get<OrderEvent[]>(`${getBaseUrl(storeSlug)}/${orderId}/events/`);
     return response.data;
   },
 
-  exportOrders: async (params?: Record<string, string>): Promise<Blob> => {
-    const response = await api.get(`${BASE_URL}/export/`, {
-      params,
+  exportOrders: async (params?: Record<string, string> & { store_slug?: string }): Promise<Blob> => {
+    const storeSlug = params?.store_slug;
+    const { store_slug, ...apiParams } = params || {};
+    const response = await api.get(`${getBaseUrl(storeSlug)}/export/`, {
+      params: apiParams,
       responseType: 'blob',
     });
     return response.data;
   },
 
-  getStats: async (params?: Record<string, string>): Promise<{
+  getStats: async (params?: Record<string, string> & { store_slug?: string }): Promise<{
     total: number;
     pending: number;
     confirmed: number;
@@ -127,7 +138,9 @@ export const ordersService = {
     cancelled: number;
     revenue: number;
   }> => {
-    const response = await api.get(`${BASE_URL}/stats/`, { params });
+    const storeSlug = params?.store_slug;
+    const { store_slug, ...apiParams } = params || {};
+    const response = await api.get(`${getBaseUrl(storeSlug)}/stats/`, { params: apiParams });
     return response.data;
   },
 };

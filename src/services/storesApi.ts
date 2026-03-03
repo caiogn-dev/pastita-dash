@@ -439,7 +439,7 @@ const buildFormData = (data: Record<string, unknown>, includeFile = true): FormD
 // Stores
 export const getStores = async (): Promise<PaginatedResponse<Store>> => {
   try {
-    const response = await api.get(`${BASE_URL}/stores/`);
+    const response = await api.get(`${BASE_URL}/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch stores', error);
@@ -449,7 +449,7 @@ export const getStores = async (): Promise<PaginatedResponse<Store>> => {
 
 export const getStore = async (id: string): Promise<Store> => {
   try {
-    const response = await api.get(`${BASE_URL}/stores/${id}/`);
+    const response = await api.get(`${BASE_URL}/${id}/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch store', error);
@@ -459,7 +459,7 @@ export const getStore = async (id: string): Promise<Store> => {
 
 export const createStore = async (data: StoreInput): Promise<Store> => {
   try {
-    const response = await api.post(`${BASE_URL}/stores/`, data);
+    const response = await api.post(`${BASE_URL}/`, data);
     return response.data;
   } catch (error) {
     logger.error('Failed to create store', error);
@@ -469,7 +469,7 @@ export const createStore = async (data: StoreInput): Promise<Store> => {
 
 export const updateStore = async (id: string, data: Partial<StoreInput>): Promise<Store> => {
   try {
-    const response = await api.patch(`${BASE_URL}/stores/${id}/`, data);
+    const response = await api.patch(`${BASE_URL}/${id}/`, data);
     return response.data;
   } catch (error) {
     logger.error('Failed to update store', error);
@@ -479,7 +479,7 @@ export const updateStore = async (id: string, data: Partial<StoreInput>): Promis
 
 export const deleteStore = async (id: string): Promise<void> => {
   try {
-    await api.delete(`${BASE_URL}/stores/${id}/`);
+    await api.delete(`${BASE_URL}/${id}/`);
   } catch (error) {
     logger.error('Failed to delete store', error);
     throw error;
@@ -488,7 +488,7 @@ export const deleteStore = async (id: string): Promise<void> => {
 
 export const getStoreStats = async (id: string): Promise<StoreStats> => {
   try {
-    const response = await api.get(`${BASE_URL}/stores/${id}/stats/`);
+    const response = await api.get(`${BASE_URL}/${id}/stats/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch store stats', error);
@@ -498,7 +498,7 @@ export const getStoreStats = async (id: string): Promise<StoreStats> => {
 
 export const activateStore = async (id: string): Promise<{ status: string }> => {
   try {
-    const response = await api.post(`${BASE_URL}/stores/${id}/activate/`);
+    const response = await api.post(`${BASE_URL}/${id}/activate/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to activate store', error);
@@ -508,7 +508,7 @@ export const activateStore = async (id: string): Promise<{ status: string }> => 
 
 export const deactivateStore = async (id: string): Promise<{ status: string }> => {
   try {
-    const response = await api.post(`${BASE_URL}/stores/${id}/deactivate/`);
+    const response = await api.post(`${BASE_URL}/${id}/deactivate/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to deactivate store', error);
@@ -518,7 +518,7 @@ export const deactivateStore = async (id: string): Promise<{ status: string }> =
 
 export const syncPastitaToStore = async (id: string): Promise<{ message: string; synced: Record<string, number> }> => {
   try {
-    const response = await api.post(`${BASE_URL}/stores/${id}/sync_pastita/`);
+    const response = await api.post(`${BASE_URL}/${id}/sync_pastita/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to sync Pastita to store', error);
