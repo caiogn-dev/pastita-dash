@@ -64,18 +64,15 @@ export const ConversationsPage: React.FC = () => {
         params.account = selectedAccount.id;
       }
       const response = await conversationsService.getConversations(params);
-      setConversations(response.results);
+      setConversations(response.results || []);
       
       // Load orders for each conversation to show order status indicators
       const ordersMap: Record<string, Order[]> = {};
-      for (const conv of response.results) {
+      for (const conv of response.results || []) {
         try {
-          const orders = await ordersService.getByCustomer(
-            conv.phone_number,
-            storeSlug || contextStoreId || undefined
-          );
-          if (orders.length > 0) {
-            ordersMap[conv.id] = orders;
+          const orders = await ordersService.getOrders({ customer: conv.phone_number });
+          if (orders.results.length > 0) {
+            ordersMap[conv.id] = orders.results;
           }
         } catch {
           // Ignore errors for individual order lookups

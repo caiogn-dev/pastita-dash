@@ -119,7 +119,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       try {
         // Load accounts (required)
         const accountsRes = await whatsappService.getAccounts();
-        const accountsList = accountsRes.results || [];
+        const accountsList = accountsRes.data.results || [];
         setAccounts(accountsList);
 
         // Auto-select first account if only one
@@ -152,8 +152,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
       try {
         const templatesRes = await whatsappService.getTemplates(formData.accountId);
-        const templatesList = templatesRes.results || [];
-        setTemplates(templatesList.filter(t => t.status === 'approved'));
+        const templatesList = templatesRes.data.results || [];
+        setTemplates(templatesList.filter((t: any) => t.status === 'approved'));
       } catch (error) {
         logger.error('Failed to load templates', error);
         setTemplates([]);
@@ -212,7 +212,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       const params: Record<string, string> = { limit: '500' };
       if (formData.accountId) params.account = formData.accountId;
       const response = await conversationsService.getConversations(params);
-      const contacts: SystemContact[] = response.results.map(conv => ({
+      const contacts: SystemContact[] = response.results.map((conv: any) => ({
         phone: conv.phone_number,
         name: conv.contact_name || conv.phone_number,
         last_message_at: conv.last_message_at || undefined,
@@ -696,7 +696,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         toast.success('Templates sincronizados');
                         // Reload templates
                         whatsappService.getTemplates(formData.accountId)
-                          .then(res => setTemplates(res.results.filter(t => t.status === 'approved')));
+                          .then(res => setTemplates(res.data.results.filter((t: any) => t.status === 'approved')));
                       })}
                     >
                       Sincronizar Templates

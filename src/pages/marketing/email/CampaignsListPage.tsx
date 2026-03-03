@@ -96,7 +96,7 @@ export const CampaignsListPage: React.FC = () => {
       const response = await api.get(`/marketing/campaigns/`, { params });
       console.log('Campaigns response:', response.data);
       
-      const data = response.data.results || response.data || [];
+      const data = response.data?.results || response.data || [];
       setCampaigns(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading campaigns:', error);
@@ -114,7 +114,7 @@ export const CampaignsListPage: React.FC = () => {
     try {
       setLoadingRecipients(true);
       const response = await api.get(`/marketing/campaigns/${campaignId}/recipients/`);
-      setRecipients(response.data.results || response.data || []);
+      setRecipients(response.data?.results || response.data || []);
     } catch (error) {
       console.error('Error loading recipients:', error);
       toast.error('Erro ao carregar destinatários');

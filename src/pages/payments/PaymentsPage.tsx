@@ -109,7 +109,7 @@ export const PaymentsPage: React.FC = () => {
   // Handle confirm payment (mark as paid)
   const handleConfirmPayment = async (order: Order) => {
     try {
-      const updatedOrder = await ordersService.markPaid(order.id);
+      const updatedOrder = await ordersService.updateStatus(order.id, 'paid');
       setOrders(orders.map(o =>
         o.id === order.id
           ? { ...o, payment_status: updatedOrder.payment_status, status: updatedOrder.status }

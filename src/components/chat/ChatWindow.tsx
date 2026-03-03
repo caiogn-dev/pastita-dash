@@ -120,11 +120,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     
     setIsLoadingMessages(true);
     try {
-      const history = await whatsappService.getConversationHistory(
+      const historyRes = await whatsappService.getConversationHistory(
         accountId,
         selectedConversation.phone_number,
         100
       );
+      const history = (historyRes.data as { results?: Message[] })?.results || [];
       setMessages(history.reverse());
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -257,13 +258,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     setIsSending(true);
     try {
-      const message = await whatsappService.sendTextMessage({
+      const messageRes = await whatsappService.sendTextMessage({
         account_id: accountId,
         to: selectedConversation.phone_number,
         text,
       });
       
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => [...prev, messageRes.data]);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {

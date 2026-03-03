@@ -39,17 +39,17 @@ export const AccountDetailPage: React.FC = () => {
     if (!id) return;
     setIsLoading(true);
     try {
-      const accountData = await whatsappService.getAccount(id);
-      setAccount(accountData);
+      const accountRes = await whatsappService.getAccount(id);
+      setAccount(accountRes.data);
 
       // Load templates
       const templatesResponse = await whatsappService.getTemplates(id);
-      setTemplates(templatesResponse.results);
+      setTemplates(templatesResponse.data?.results || []);
 
       // Load business profile
       try {
-        const profile = await whatsappService.getBusinessProfile(id);
-        setBusinessProfile(profile);
+        const profileRes = await whatsappService.getBusinessProfile(id);
+        setBusinessProfile(profileRes.data);
       } catch {
         // Profile might not be available
       }
@@ -59,12 +59,11 @@ export const AccountDetailPage: React.FC = () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
       try {
-        const stats = await whatsappService.getMessageStats(
-          id,
-          startDate.toISOString().split('T')[0],
-          endDate.toISOString().split('T')[0]
-        );
-        setMessageStats(stats);
+        const statsRes = await whatsappService.getMessageStats(id, {
+          start_date: startDate.toISOString().split('T')[0],
+          end_date: endDate.toISOString().split('T')[0]
+        });
+        setMessageStats(statsRes.data);
       } catch {
         // Stats might not be available
       }
@@ -80,11 +79,12 @@ export const AccountDetailPage: React.FC = () => {
     if (!account) return;
     setActionLoading('status');
     try {
-      const updated = account.status === 'active'
+      const updatedRes = account.status === 'active'
         ? await whatsappService.deactivateAccount(account.id)
         : await whatsappService.activateAccount(account.id);
-      setAccount(updated);
-      toast.success(`Conta ${updated.status === 'active' ? 'ativada' : 'desativada'} com sucesso!`);
+      const updated = updatedRes.data;
+      setAccount(prev => prev ? { ...prev, status: updated?.status || (account.status === 'active' ? 'inactive' : 'active') } : null);
+      toast.success(`Conta ${account.status === 'active' ? 'desativada' : 'ativada'} com sucesso!`);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -97,7 +97,7 @@ export const AccountDetailPage: React.FC = () => {
     setActionLoading('sync');
     try {
       const result = await whatsappService.syncTemplates(account.id);
-      toast.success(result.message);
+      toast.success((result.data as { message?: string })?.message || 'Templates sincronizados!');
       loadAccount();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -112,7 +112,7 @@ export const AccountDetailPage: React.FC = () => {
     setActionLoading('rotate');
     try {
       const result = await whatsappService.rotateToken(account.id, newToken);
-      toast.success(result.message);
+      toast.success((result.data as { message?: string })?.message || 'Token rotacionado!');
       setRotateTokenModal(false);
       setNewToken('');
       loadAccount();

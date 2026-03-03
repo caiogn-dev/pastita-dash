@@ -99,14 +99,14 @@ export const DashboardPage: React.FC = () => {
   const storeProductsRoute = storeKey ? `/stores/${storeKey}/products` : '/stores';
 
   const fetchOverview = useCallback(
-    () => dashboardService.getOverview(selectedAccount?.id),
-    [selectedAccount?.id]
+    () => dashboardService.getOverview(),
+    []
   );
   const { data: overview, loading: isLoadingOverview } = useFetch(fetchOverview);
 
   const fetchCharts = useCallback(
-    () => dashboardService.getCharts(selectedAccount?.id, chartRangeDays),
-    [selectedAccount?.id, chartRangeDays]
+    () => dashboardService.getCharts(),
+    []
   );
   const { data: charts, loading: isLoadingCharts } = useFetch(fetchCharts);
 
@@ -124,11 +124,11 @@ export const DashboardPage: React.FC = () => {
   ];
 
   const messagesChartData = {
-    labels: charts?.messages_per_day?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
+    labels: (charts?.messages_per_day as Array<{ date: string; inbound: number; outbound: number }> | undefined)?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
     datasets: [
       {
         label: 'Recebidas',
-        data: charts?.messages_per_day?.map((d) => d.inbound) || [],
+        data: (charts?.messages_per_day as Array<{ date: string; inbound: number; outbound: number }> | undefined)?.map((d) => d.inbound) || [],
         borderColor: '#25D366',
         backgroundColor: 'rgba(37, 211, 102, 0.15)',
         fill: true,
@@ -136,7 +136,7 @@ export const DashboardPage: React.FC = () => {
       },
       {
         label: 'Enviadas',
-        data: charts?.messages_per_day?.map((d) => d.outbound) || [],
+        data: (charts?.messages_per_day as Array<{ date: string; inbound: number; outbound: number }> | undefined)?.map((d) => d.outbound) || [],
         borderColor: '#722F37',
         backgroundColor: 'rgba(114, 47, 55, 0.14)',
         fill: true,
@@ -146,11 +146,11 @@ export const DashboardPage: React.FC = () => {
   };
 
   const ordersChartData = {
-    labels: charts?.orders_per_day?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
+    labels: (charts?.orders_per_day as Array<{ date: string; count: number }> | undefined)?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
     datasets: [
       {
         label: 'Pedidos',
-        data: charts?.orders_per_day?.map((d) => d.count) || [],
+        data: (charts?.orders_per_day as Array<{ date: string; count: number }> | undefined)?.map((d) => d.count) || [],
         borderColor: '#f59e0b',
         backgroundColor: 'rgba(245, 158, 11, 0.14)',
         fill: true,

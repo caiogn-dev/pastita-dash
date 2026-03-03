@@ -47,7 +47,7 @@ export const AccountsPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await whatsappService.getAccounts();
-      setAccounts(response.results);
+      setAccounts(response.data?.results || []);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -57,11 +57,12 @@ export const AccountsPage: React.FC = () => {
 
   const handleToggleStatus = async (account: WhatsAppAccount) => {
     try {
-      const updated = account.status === 'active'
+      const updatedRes = account.status === 'active'
         ? await whatsappService.deactivateAccount(account.id)
         : await whatsappService.activateAccount(account.id);
-      updateAccount(updated);
-      toast.success(`Conta ${updated.status === 'active' ? 'ativada' : 'desativada'} com sucesso!`);
+      const updated = updatedRes.data;
+      updateAccount({ ...account, status: updated?.status || (account.status === 'active' ? 'inactive' : 'active') });
+      toast.success(`Conta ${account.status === 'active' ? 'desativada' : 'ativada'} com sucesso!`);
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -70,7 +71,7 @@ export const AccountsPage: React.FC = () => {
   const handleSyncTemplates = async (account: WhatsAppAccount) => {
     try {
       const result = await whatsappService.syncTemplates(account.id);
-      toast.success(result.message);
+      toast.success(result.data?.message || 'Templates sincronizados!');
     } catch (error) {
       toast.error(getErrorMessage(error));
     }

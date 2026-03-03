@@ -20,7 +20,10 @@ export const AgentCreatePage: React.FC = () => {
     const loadAccounts = async () => {
       try {
         const response = await whatsappService.getAccounts();
-        setWhatsappAccounts(response.results || []);
+        // Type assertion needed because API response shape varies
+        const data = response.data as { results?: WhatsAppAccount[] } | WhatsAppAccount[] | undefined;
+        const accounts = Array.isArray(data) ? data : (data?.results ?? []);
+        setWhatsappAccounts(accounts);
       } catch (error) {
         console.error('Erro ao carregar contas WhatsApp:', error);
       }
@@ -50,7 +53,6 @@ export const AgentCreatePage: React.FC = () => {
         >
           <ArrowLeftIcon className="w-5 h-5 text-zinc-500" />
         </button>
-        
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
             Criar Novo Agente

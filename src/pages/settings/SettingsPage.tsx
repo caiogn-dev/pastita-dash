@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Card, Button, Input, Loading, PageTitle } from '../../components/common';
 import { authService, getErrorMessage, notificationsService } from '../../services';
-import { NotificationPreference } from '../../services/notifications';
+import type { NotificationPreference } from '../../services/notifications';
 import { useAuthStore } from '../../stores/authStore';
 
 type NotificationSection = {
@@ -84,8 +84,8 @@ export const SettingsPage: React.FC = () => {
   const loadPreferences = async () => {
     setIsLoadingPreferences(true);
     try {
-      const data = await notificationsService.getPreferences();
-      setPreferences(data);
+      const response = await notificationsService.getPreferences();
+      setPreferences(response.data);
     } catch (error) {
       toast.error('Não foi possível carregar as preferências de notificação');
     } finally {
@@ -98,7 +98,7 @@ export const SettingsPage: React.FC = () => {
   }, []);
 
   const handlePreferenceChange = (key: keyof NotificationPreference, value: boolean) => {
-    setPreferences((prev) => {
+    setPreferences((prev: NotificationPreference | null) => {
       if (!prev) return prev;
       const updated = { ...prev, [key]: value };
 
@@ -129,7 +129,7 @@ export const SettingsPage: React.FC = () => {
     setIsSavingPreferences(true);
     try {
       const updated = await notificationsService.updatePreferences(preferences);
-      setPreferences(updated);
+      setPreferences(updated.data);
       toast.success('Preferências de notificação salvas!');
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -308,22 +308,22 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <Toggle
                       label={`Ativar ${section.title}`}
-                      checked={isSectionEnabled}
+                      checked={!!isSectionEnabled}
                       onChange={(value) => handlePreferenceChange(section.enabledKey, value)}
                     />
                   </div>
                   {section.options.length > 0 && (
                     <div className="mt-4 space-y-3">
                       {section.options.map((option) => (
-                        <div key={option.key} className="flex items-center justify-between gap-4">
+                        <div key={String(option.key)} className="flex items-center justify-between gap-4">
                           <div>
                             <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{option.label}</p>
                             <p className="text-xs text-gray-500 dark:text-zinc-400">{option.description}</p>
                           </div>
                           <Toggle
                             label={`${section.title} - ${option.label}`}
-                            checked={Boolean(preferences[option.key])}
-                            onChange={(value) => handlePreferenceChange(option.key, value)}
+                            checked={Boolean(preferences[option.key as keyof NotificationPreference])}
+                            onChange={(value) => handlePreferenceChange(option.key as keyof NotificationPreference, value)}
                             disabled={!isSectionEnabled}
                           />
                         </div>

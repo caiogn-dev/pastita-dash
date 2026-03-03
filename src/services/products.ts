@@ -65,7 +65,7 @@ async function getStoreId(): Promise<string> {
   if (cachedStoreId) return cachedStoreId;
   
   try {
-    const response = await api.get('/stores/stores/', { params: { slug: STORE_SLUG } });
+    const response = await api.get('/commerce/stores/', { params: { slug: STORE_SLUG } });
     const stores = response.data.results || response.data;
     if (stores.length > 0) {
       cachedStoreId = stores[0].id as string;
@@ -81,7 +81,7 @@ async function getCategoriesWithIds(): Promise<Category[]> {
   if (cachedCategories) return cachedCategories;
   
   try {
-    const response = await api.get('/stores/categories/');
+    const response = await api.get('/commerce/categories/');
     const data = response.data;
     const results = data.results || data || [];
     if (Array.isArray(results)) {

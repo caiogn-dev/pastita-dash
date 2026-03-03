@@ -109,7 +109,7 @@ const AppContent: React.FC = () => {
       if (isAuthenticated && token) {
         try {
           const response = await whatsappService.getAccounts();
-          setAccounts(response.results);
+          setAccounts(response.data?.results || []);
         } catch (error) {
           logger.error('Error loading accounts:', error);
         }

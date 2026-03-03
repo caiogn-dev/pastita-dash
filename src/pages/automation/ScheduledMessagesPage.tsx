@@ -74,7 +74,7 @@ export default function ScheduledMessagesPage() {
       ]);
       setMessages(messagesRes.results);
       setStats(statsRes);
-      setAccounts(accountsRes.results);
+      setAccounts(accountsRes.data.results || []);
     } catch (error) {
       toast.error('Erro ao carregar mensagens agendadas');
       logger.error('Failed to load scheduled messages', error);

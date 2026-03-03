@@ -100,8 +100,8 @@ export interface DeliveryZoneFilters {
 }
 
 class DeliveryService {
-  private baseUrl = '/stores/delivery-zones';
-  private storeUrl = '/stores/stores';
+  private baseUrl = '/commerce/delivery-zones';
+  private storeUrl = '/commerce/stores';
   private storeSlug = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
   async getZones(filters?: DeliveryZoneFilters): Promise<PaginatedResponse<DeliveryZone>> {

@@ -130,7 +130,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
     setReprocessing(true);
     try {
       const response = await api.post('/webhooks/whatsapp/debug/', { action, limit: 50 });
-      const results = response.data.results;
+      const results = response.data;
       toast.success(`Reprocessado: ${results.processed} sucesso, ${results.failed} falhas`);
       fetchDiagnostics();
     } catch (error) {

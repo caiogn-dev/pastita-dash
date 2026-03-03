@@ -119,3 +119,6 @@ export const automationDashboardService = {
 };
 
 export default intentService;
+
+// Re-export intentTypeLabels from automation for convenience
+export { intentTypeLabels } from './automation';

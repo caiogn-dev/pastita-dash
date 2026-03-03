@@ -228,22 +228,22 @@ export const OrderDetailPageNew: React.FC = () => {
       let updated: Order;
       switch (action) {
         case 'confirm':
-          updated = await ordersService.confirmOrder(order.id);
+          updated = await ordersService.updateStatus(order.id, 'confirmed');
           break;
         case 'prepare':
-          updated = await ordersService.startPreparing(order.id);
+          updated = await ordersService.updateStatus(order.id, 'preparing');
           break;
         case 'ready':
-          updated = await ordersService.markReady(order.id);
+          updated = await ordersService.updateStatus(order.id, 'ready');
           break;
         case 'deliver':
-          updated = await ordersService.markOutForDelivery(order.id);
+          updated = await ordersService.updateStatus(order.id, 'out_for_delivery');
           break;
         case 'complete':
-          updated = await ordersService.deliverOrder(order.id);
+          updated = await ordersService.updateStatus(order.id, 'delivered');
           break;
         case 'cancel':
-          updated = await ordersService.cancelOrder(order.id);
+          updated = await ordersService.updateStatus(order.id, 'cancelled');
           setShowCancelModal(false);
           break;
         default:
