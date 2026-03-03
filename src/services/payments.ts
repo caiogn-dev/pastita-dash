@@ -4,15 +4,15 @@ import { Payment, PaymentGateway, PaginatedResponse } from '../types';
 /**
  * Payment Service
  * 
- * Updated to use the unified stores API:
- * Base URL: /api/v1/stores/payments/
+ * ATUALIZADO: Usando /commerce/payments/ em vez de /stores/payments/
  * 
- * All payment operations are now integrated with the stores app,
+ * All payment operations are now integrated with the commerce app,
  * maintaining compatibility with StoreOrder while supporting
  * multiple payments per order.
  */
 
-const BASE_URL = '/stores/payments';
+// ATUALIZADO: BASE_URL alterado de /stores/payments para /commerce/payments
+const BASE_URL = '/commerce/payments';
 const GATEWAYS_URL = `${BASE_URL}/gateways`;
 
 export const paymentsService = {

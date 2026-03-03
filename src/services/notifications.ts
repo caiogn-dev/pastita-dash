@@ -1,8 +1,12 @@
-import api from './api';
-
 /**
  * Notifications Service - API V2
+ * 
+ * NOTA: O endpoint /notifications/ não existe no backend atual.
+ * Todos os métodos foram modificados para retornar dados vazios/mockados
+ * até que o backend implemente o sistema de notificações.
  */
+
+import api from './api';
 
 export interface Notification {
   id: string;
@@ -33,32 +37,68 @@ export interface NotificationPreference {
   inapp_sound: boolean;
 }
 
+// NOTA: Endpoint /notifications/ não existe no backend atual
+// Retornando dados vazios até implementação
 export const getNotifications = () =>
-  api.get('/notifications/');
+  Promise.resolve({ data: { results: [], count: 0 } });
 
 // NOTA: Endpoint /unread_count/ não existe no backend atual
-// Usando filtro na listagem principal para obter não lidas
 export const getUnreadCount = () =>
-  api.get('/notifications/', { params: { is_read: false, limit: 1 } });
+  Promise.resolve({ data: { count: 0 } });
 
+// NOTA: Endpoint não existe - mockado
 export const markAsRead = (id?: string, all?: boolean) => {
   if (all) {
-    return api.post('/notifications/mark-all-read/');
+    return Promise.resolve({ data: { success: true } });
   }
-  return api.patch(`/notifications/${id}/read/`);
+  return Promise.resolve({ data: { success: true, id } });
 };
 
+// NOTA: Endpoint não existe - mockado
 export const markAllAsRead = () =>
-  api.post('/notifications/mark-all-read/');
+  Promise.resolve({ data: { success: true } });
 
+// NOTA: Endpoint não existe - mockado
 export const deleteNotification = (id: string) =>
-  api.delete(`/notifications/${id}/`);
+  Promise.resolve({ data: { success: true, id } });
 
+// NOTA: Endpoint não existe - mockado com id
 export const getPreferences = () =>
-  api.get('/notifications/preferences/');
+  Promise.resolve({ 
+    data: { 
+      id: 'default',
+      email_enabled: false,
+      email_messages: false,
+      email_orders: false,
+      email_payments: false,
+      email_system: false,
+      push_enabled: false,
+      push_messages: false,
+      push_orders: false,
+      push_payments: false,
+      push_system: false,
+      inapp_enabled: true,
+      inapp_sound: false,
+    } 
+  });
 
+// NOTA: Endpoint não existe - mockado com id
 export const updatePreferences = (prefs: Partial<NotificationPreference>) =>
-  api.patch('/notifications/preferences/', prefs);
+  Promise.resolve({ data: { 
+    id: 'default',
+    email_enabled: prefs.email_enabled ?? false,
+    email_messages: prefs.email_messages ?? false,
+    email_orders: prefs.email_orders ?? false,
+    email_payments: prefs.email_payments ?? false,
+    email_system: prefs.email_system ?? false,
+    push_enabled: prefs.push_enabled ?? false,
+    push_messages: prefs.push_messages ?? false,
+    push_orders: prefs.push_orders ?? false,
+    push_payments: prefs.push_payments ?? false,
+    push_system: prefs.push_system ?? false,
+    inapp_enabled: prefs.inapp_enabled ?? true,
+    inapp_sound: prefs.inapp_sound ?? false,
+  }});
 
 export const notificationsService = {
   getNotifications,

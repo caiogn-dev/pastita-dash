@@ -467,17 +467,19 @@ export class RealtimeConnection {
     switch (transport) {
       case 'websocket': {
         const proto = this.isSecure() ? 'wss' : 'ws';
-        return `${proto}://${wsHost}/ws/stores/${storeSlug}/orders/?token=${token}`;
+        // ATUALIZADO: Usando /ws/commerce/ em vez de /ws/stores/
+        return `${proto}://${wsHost}/ws/commerce/${storeSlug}/orders/?token=${token}`;
       }
       case 'sse': {
+        // NOTA: SSE não existe no backend atual - retornar URL que vai falhar
+        // O fallback automático vai tentar polling
         const httpProto = this.isSecure() ? 'https' : 'http';
-        // Use the correct SSE endpoint
-        return `${httpProto}://${wsHost}/api/sse/orders/?token=${token}&store_id=${storeSlug}`;
+        return `${httpProto}://${wsHost}/api/v1/commerce/${storeSlug}/orders/sse/?token=${token}`;
       }
       case 'polling': {
         const httpProto = this.isSecure() ? 'https' : 'http';
-        // Use the correct polling endpoint (orders API)
-        return `${httpProto}://${wsHost}/api/v1/stores/${storeSlug}/orders/?token=${token}`;
+        // ATUALIZADO: Usando /api/v1/commerce/ em vez de /api/v1/stores/
+        return `${httpProto}://${wsHost}/api/v1/commerce/${storeSlug}/orders/?token=${token}`;
       }
     }
   }
