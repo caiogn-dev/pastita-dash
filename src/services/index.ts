@@ -1,45 +1,39 @@
-// =============================================================================
-// CORE SERVICES
-// =============================================================================
+/**
+ * Services Index - Exports atualizados para API V2
+ */
 
-export { default as api, getErrorMessage } from './api';
-export { setAuthToken } from './api';
-export { authService } from './auth';
-export { dashboardService } from './dashboard';
-export { default as logger } from './logger';
+// Core
+export { default as api, getErrorMessage, setAuthToken } from './api';
 
-// =============================================================================
-// STORE API (Multi-tenant) - PRIMARY API
-// =============================================================================
+// 🆕 Novos serviços V2 (endpoints atualizados)
+export { commerceService } from './commerce';
+export { messagingService } from './messaging';
+export { marketingService } from './marketing';
 
-export { 
-  storeService,
-  useStoreApi,
-  getActiveStoreSlug,
-  type Product,
-  type Category,
-  type Order,
-  type OrderItem,
-  type OrderStatus,
-  type PaymentStatus,
-  type DeliveryMethod,
-  type DeliveryAddress,
-  type Coupon,
-  type DeliveryZone,
-  type DashboardStats,
-  type ApiParams,
-  type PaginatedResponse,
-  type ProductType,
-  type CustomField,
-} from './storeApi';
-
-// =============================================================================
-// COMMUNICATION SERVICES
-// =============================================================================
-
+// 🔄 Serviços legados mantidos temporariamente para compatibilidade
+// Serão migrados gradualmente para os novos serviços acima
 export { whatsappService } from './whatsapp';
 export { conversationsService } from './conversations';
+export { default as agentsService } from './agents';
+export { ordersService } from './orders';
+export { paymentsService } from './payments';
+export { productsService } from './products';
+export { exportService } from './export';
 export { notificationsService } from './notifications';
+export { dashboardService } from './dashboard';
+export { auditService } from './audit';
+export { authService } from './auth';
+export { companyProfileService } from './automation';
+export { scheduledMessagesService } from './scheduling';
+
+// Labels e constantes
+export { intentService } from './intents';
+export { intentTypeLabels } from './automation';
+
+// Instagram - exportar tudo
+export * from './instagram';
+
+// WebSocket
 export {
   notificationWS,
   chatWS,
@@ -49,7 +43,7 @@ export {
   disconnectWebSockets,
 } from './websocket';
 
-// Realtime service with fallback (WebSocket → SSE → Polling)
+// Realtime
 export {
   RealtimeConnection,
   createRealtimeConnection,
@@ -59,109 +53,8 @@ export {
   isTransportSupported,
   getWebSocketUrl as getRealtimeUrl,
 } from './realtime';
-export type { 
-  TransportType, 
+export type {
+  TransportType,
   ConnectionStatus,
   TransportCapabilities,
 } from './realtime';
-
-// =============================================================================
-// BUSINESS SERVICES
-// =============================================================================
-
-export { ordersService } from './orders';
-export { paymentsService } from './payments';
-export { couponsService } from './coupons';
-export { deliveryService } from './delivery';
-export { productsService } from './products';
-
-// =============================================================================
-// AUTOMATION & AI AGENTS
-// =============================================================================
-
-export { default as agentsService } from './agents';
-export { auditService } from './audit';
-export {
-  companyProfileService,
-  autoMessageService,
-  customerSessionService,
-  automationLogService,
-  eventTypeLabels,
-  businessTypeLabels,
-  sessionStatusLabels,
-  messageVariables,
-  intentTypeLabels,
-} from './automation';
-export {
-  scheduledMessagesService,
-  reportSchedulesService,
-  generatedReportsService,
-} from './scheduling';
-export { exportService } from './export';
-
-// Intent Detection & Automation Dashboard
-export {
-  intentService,
-  automationDashboardService,
-} from './intents';
-
-// =============================================================================
-// CATALOG SERVICE
-// =============================================================================
-
-export { catalogService } from './catalogService';
-
-// =============================================================================
-// MESSENGER PLATFORM
-// =============================================================================
-
-export { default as messengerService } from './messenger';
-export type {
-  MessengerAccount,
-  MessengerConversation,
-  MessengerMessage,
-  MessengerProfile,
-  BroadcastMessage,
-  SponsoredMessage,
-} from './messenger';
-
-// =============================================================================
-// INSTAGRAM PLATFORM (Complete - Posts, Stories, Reels, Shopping, Live, Direct)
-// =============================================================================
-
-export {
-  instagramAccountService,
-  instagramMediaService,
-  instagramShoppingService,
-  instagramLiveService,
-  instagramScheduledPostService,
-  instagramDirectService,
-} from './instagram';
-
-export type {
-  InstagramAccount,
-  InstagramMedia,
-  InstagramInsight,
-  InstagramCatalog,
-  InstagramProduct,
-  InstagramLive,
-  InstagramScheduledPost,
-} from './instagram';
-
-// =============================================================================
-// HANDOVER PROTOCOL (Bot ↔ Human Transfer)
-// =============================================================================
-
-export { default as handoverService } from './handover';
-export type {
-  HandoverStatus,
-  HandoverResponse,
-  HandoverLog,
-  HandoverRequest,
-} from './handover';
-
-// =============================================================================
-// CONVERSIONS API (Facebook, Google, TikTok Pixel Events)
-// =============================================================================
-
-export { default as conversionsService } from './conversions';

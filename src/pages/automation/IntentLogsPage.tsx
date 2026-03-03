@@ -80,7 +80,7 @@ export const IntentLogsPage: React.FC = () => {
         >
           <option value="">Todas intenções</option>
           {Object.entries(intentTypeLabels).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
+            <option key={key} value={key}>{label as string}</option>
           ))}
         </select>
 
