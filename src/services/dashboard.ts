@@ -31,7 +31,9 @@ export const dashboardService = {
   },
 
   getCharts: async (storeSlug?: string, days = 7) => {
-    const params: any = { days };
+    // ATUALIZADO: Usando 'period' em vez de 'days' (o backend espera period: '7d', '30d', etc)
+    const period = days === 7 ? '7d' : days === 30 ? '30d' : '7d';
+    const params: any = { period };
     if (storeSlug) params.store = storeSlug;
 
     // Usando o endpoint de dashboard que existe no backend
