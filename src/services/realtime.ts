@@ -467,8 +467,9 @@ export class RealtimeConnection {
     switch (transport) {
       case 'websocket': {
         const proto = this.isSecure() ? 'wss' : 'ws';
-        // ATUALIZADO: Usando /ws/commerce/ em vez de /ws/stores/
-        return `${proto}://${wsHost}/ws/commerce/${storeSlug}/orders/?token=${token}`;
+        // IMPORTANTE: O WebSocket do backend ainda está em /ws/stores/ (não /ws/commerce/)
+        // O backend não foi migrado para /ws/commerce/ ainda
+        return `${proto}://${wsHost}/ws/stores/${storeSlug}/orders/?token=${token}`;
       }
       case 'sse': {
         // NOTA: SSE não existe no backend atual - retornar URL que vai falhar
