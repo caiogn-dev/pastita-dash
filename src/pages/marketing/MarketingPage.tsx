@@ -102,9 +102,12 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
     <Card className="overflow-hidden hover:shadow-lg transition-shadow group">
       {/* Preview Area */}
       <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-        <div 
-          className="absolute inset-0 scale-[0.3] origin-top-left pointer-events-none"
-          dangerouslySetInnerHTML={{ __html: template.html_content.slice(0, 2000) }}
+        {/* SECURITY: HTML preview is sandboxed in iframe to prevent XSS */}
+        <iframe
+          srcDoc={`<!DOCTYPE html><html><head><style>body{margin:0;transform:scale(0.3);transform-origin:top left;pointer-events:none;}</style></head><body>${template.html_content.slice(0, 2000)}</body></html>`}
+          sandbox=""
+          className="absolute inset-0 w-[333%] h-[333%] border-0"
+          title="Template Preview"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent" />
         
