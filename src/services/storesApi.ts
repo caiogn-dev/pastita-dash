@@ -438,9 +438,11 @@ const buildFormData = (data: Record<string, unknown>, includeFile = true): FormD
 };
 
 // Stores
+// ATUALIZADO: Usando /stores/stores/ em vez de /stores/ (2026-03-04)
+// O endpoint /stores/ retorna um router com URLs, não a lista de lojas
 export const getStores = async (): Promise<PaginatedResponse<Store>> => {
   try {
-    const response = await api.get(`${BASE_URL}/`);
+    const response = await api.get(`${BASE_URL}/stores/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch stores', error);
