@@ -17,9 +17,38 @@ export const getPlatformAccount = (id: string) =>
 export const createPlatformAccount = (data: {
   platform: 'whatsapp' | 'instagram' | 'messenger';
   name: string;
-  phone_number?: string;
-  access_token?: string;
-}) => api.post('/messaging/messenger/accounts/', data);
+  // Campos específicos por plataforma
+  page_id?: string;        // Para Messenger (obrigatório)
+  page_name?: string;      // Para Messenger (obrigatório)
+  page_access_token?: string;  // Para Messenger (obrigatório)
+  phone_number?: string;   // Para WhatsApp
+  access_token?: string;   // Para Instagram
+}) => {
+  // Para WhatsApp: usar endpoint específico /whatsapp/accounts/
+  if (data.platform === 'whatsapp') {
+    return api.post('/whatsapp/accounts/', {
+      name: data.name,
+      phone_number: data.phone_number,
+      access_token: data.access_token,
+    });
+  }
+
+  // Para Messenger: usar endpoint /messaging/messenger/accounts/
+  if (data.platform === 'messenger') {
+    return api.post('/messaging/messenger/accounts/', {
+      page_id: data.page_id,
+      page_name: data.page_name || data.name,
+      page_access_token: data.page_access_token,
+    });
+  }
+
+  // Para Instagram: endpoint ainda não implementado
+  if (data.platform === 'instagram') {
+    return Promise.reject(new Error('Instagram ainda não implementado'));
+  }
+
+  return Promise.reject(new Error('Plataforma não suportada'));
+};
 
 export const updatePlatformAccount = (id: string, data: Partial<{
   name: string;

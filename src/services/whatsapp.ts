@@ -1,49 +1,48 @@
 import api from './api';
 
 /**
- * Whatsapp Service - API V2 (compatibilidade com legado)
- * ATUALIZADO: Usando /messaging/messenger/accounts/ (backend migrado - 2026-03-04)
- * NOTA: Vários endpoints foram mockados pois não existem no backend atual
+ * Whatsapp Service - API V2
+ * ATUALIZADO: Usando /whatsapp/accounts/ (endpoint correto - 2026-03-04)
  */
 
 // Contas
 export const getAccounts = (params?: { store?: string }) =>
-  api.get('/messaging/messenger/accounts/', { params });
+  api.get('/whatsapp/accounts/', { params });
 
 export const getAccount = (id: string) =>
-  api.get(`/messaging/messenger/accounts/${id}/`);
+  api.get(`/whatsapp/accounts/${id}/`);
 
 export const createAccount = (data: any) =>
-  api.post('/messaging/messenger/accounts/', data);
+  api.post('/whatsapp/accounts/', data);
 
 export const updateAccount = (id: string, data: any) =>
-  api.patch(`/messaging/messenger/accounts/${id}/`, data);
+  api.patch(`/whatsapp/accounts/${id}/`, data);
 
 export const deleteAccount = (id: string) =>
-  api.delete(`/messaging/messenger/accounts/${id}/`);
+  api.delete(`/whatsapp/accounts/${id}/`);
 
 // Compatibilidade legado
 export const deactivateAccount = (id: string) =>
-  api.patch(`/messaging/messenger/accounts/${id}/`, { is_active: false });
+  api.patch(`/whatsapp/accounts/${id}/`, { is_active: false });
 
 export const activateAccount = (id: string) =>
-  api.patch(`/messaging/messenger/accounts/${id}/`, { is_active: true });
+  api.patch(`/whatsapp/accounts/${id}/`, { is_active: true });
 
 export const syncTemplates = (id: string) =>
-  api.post(`/messaging/messenger/accounts/${id}/sync-templates/`);
+  api.post(`/whatsapp/accounts/${id}/sync-templates/`);
 
 export const rotateToken = (id: string, token: string) =>
-  api.post(`/messaging/messenger/accounts/${id}/rotate-token/`, { token });
+  api.post(`/whatsapp/accounts/${id}/rotate-token/`, { token });
 
 // QR e Status
 export const getQRCode = (accountId: string) =>
-  api.get(`/messaging/messenger/accounts/${accountId}/qr/`);
+  api.get(`/whatsapp/accounts/${accountId}/qr/`);
 
 export const getConnectionStatus = (accountId: string) =>
-  api.get(`/messaging/messenger/accounts/${accountId}/status/`);
+  api.get(`/whatsapp/accounts/${accountId}/status/`);
 
 export const disconnectAccount = (accountId: string) =>
-  api.post(`/messaging/messenger/accounts/${accountId}/disconnect/`);
+  api.post(`/whatsapp/accounts/${accountId}/disconnect/`);
 
 // Templates - NOTA: Endpoint não existe no backend atual
 export const getTemplates = (accountId: string) =>
