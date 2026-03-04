@@ -306,11 +306,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }));
 
   const groupedMessages = messages.reduce((groups, message) => {
-    const date = format(new Date(message.created_at), 'yyyy-MM-dd');
-    if (!groups[date]) {
-      groups[date] = [];
+    // Verifica se created_at é válido antes de formatar
+    if (!message.created_at) return groups;
+    
+    try {
+      const date = format(new Date(message.created_at), 'yyyy-MM-dd');
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(message);
+    } catch (e) {
+      // Ignora mensagens com data inválida
+      console.warn('Data inválida na mensagem:', message.id, message.created_at);
     }
-    groups[date].push(message);
     return groups;
   }, {} as Record<string, Message[]>);
 
@@ -521,7 +529,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         borderRadius="full"
                         px={3}
                       >
-                        {format(new Date(date), "d 'de' MMMM", { locale: ptBR })}
+                        {(() => {
+                          try {
+                            return format(new Date(date), "d 'de' MMMM", { locale: ptBR });
+                          } catch (e) {
+                            return date;
+                          }
+                        })()}
                       </Badge>
                     </Flex>
                     

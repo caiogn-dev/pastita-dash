@@ -20,7 +20,6 @@ import {
   Tabs,
   Avatar,
   Switch,
-  Tooltip,
   Alert,
   Stack,
 } from '@chakra-ui/react';
@@ -40,15 +39,32 @@ import {
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { messagingService, PlatformAccount } from '../../services/messaging';
-import { whatsappService } from '../../services/whatsapp';
+import * as messagingService from '../../services/messaging';
+import * as whatsappService from '../../services/whatsapp';
 import { messengerService } from '../../services/messenger';
 
 const MotionCard = motion(Card.Root);
 const MotionBox = motion(Box);
 
 // Tipos de plataforma
-const PLATFORMS = {
+interface PlatformField {
+  name: string;
+  label: string;
+  type: string;
+  required: boolean;
+  placeholder: string;
+}
+
+interface PlatformConfig {
+  name: string;
+  color: string;
+  icon: string;
+  description: string;
+  fields: PlatformField[];
+  disabled?: boolean;
+}
+
+const PLATFORMS: Record<string, PlatformConfig> = {
   whatsapp: {
     name: 'WhatsApp',
     color: 'green',
@@ -219,17 +235,17 @@ export default function ConnectionsPage() {
       if (editingConnection) {
         // Atualiza conexão existente
         if (selectedPlatform === 'whatsapp') {
-          await whatsappService.updateAccount(editingConnection.id, formData);
+          await whatsappService.updateAccount(editingConnection.id, formData as any);
         } else if (selectedPlatform === 'messenger') {
-          await messengerService.updateAccount(editingConnection.id, formData);
+          await messengerService.updateAccount(editingConnection.id, formData as any);
         }
         toast.success('Conexão atualizada com sucesso!');
       } else {
         // Cria nova conexão
         if (selectedPlatform === 'whatsapp') {
-          await whatsappService.createAccount(formData);
+          await whatsappService.createAccount(formData as any);
         } else if (selectedPlatform === 'messenger') {
-          await messengerService.createAccount(formData);
+          await messengerService.createAccount(formData as any);
         }
         toast.success('Conexão criada com sucesso!');
       }
@@ -379,7 +395,6 @@ export default function ConnectionsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               w="280px"
-              leftIcon={<Icon as={MagnifyingGlassIcon} boxSize={4} />}
             />
             <Button onClick={() => handleOpenDialog()} size="lg" colorScheme="blue">
               <Icon as={PlusIcon} mr={2} boxSize={5} />
@@ -554,7 +569,7 @@ export default function ConnectionsPage() {
                         <Avatar.Image src={connection.avatar} />
                       </Avatar.Root>
                       <Box>
-                        <Heading size="sm" noOfLines={1}>
+                        <Heading size="sm" truncate>
                           {connection.name}
                         </Heading>
                         <HStack gap={1} mt={1}>
@@ -602,48 +617,44 @@ export default function ConnectionsPage() {
                   <Separator mb={4} />
                   <HStack gap={2} justify="flex-end">
                     {connection.platform === 'whatsapp' && !connection.is_active && (
-                      <Tooltip content="Conectar via QR Code">
-                        <IconButton
-                          size="sm"
-                          variant="ghost"
-                          colorPalette="green"
-                          onClick={() => handleShowQR(connection)}
-                        >
-                          <Icon as={QrCodeIcon} boxSize={4} />
-                        </IconButton>
-                      </Tooltip>
+                      <IconButton
+                        size="sm"
+                        variant="ghost"
+                        colorPalette="green"
+                        onClick={() => handleShowQR(connection)}
+                        aria-label="Conectar via QR Code"
+                      >
+                        <Icon as={QrCodeIcon} boxSize={4} />
+                      </IconButton>
                     )}
                     {connection.platform === 'messenger' && !connection.webhook_verified && (
-                      <Tooltip content="Verificar Webhook">
-                        <IconButton
-                          size="sm"
-                          variant="ghost"
-                          colorPalette="blue"
-                          onClick={() => handleVerifyWebhook(connection)}
-                        >
-                          <Icon as={LinkIcon} boxSize={4} />
-                        </IconButton>
-                      </Tooltip>
+                      <IconButton
+                        size="sm"
+                        variant="ghost"
+                        colorPalette="blue"
+                        onClick={() => handleVerifyWebhook(connection)}
+                        aria-label="Verificar Webhook"
+                      >
+                        <Icon as={LinkIcon} boxSize={4} />
+                      </IconButton>
                     )}
-                    <Tooltip content="Editar">
-                      <IconButton
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleOpenDialog(connection.platform, connection)}
-                      >
-                        <Icon as={PencilIcon} boxSize={4} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip content="Excluir">
-                      <IconButton
-                        size="sm"
-                        variant="ghost"
-                        colorPalette="red"
-                        onClick={() => handleDelete(connection)}
-                      >
-                        <Icon as={TrashIcon} boxSize={4} />
-                      </IconButton>
-                    </Tooltip>
+                    <IconButton
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleOpenDialog(connection.platform, connection)}
+                      aria-label="Editar"
+                    >
+                      <Icon as={PencilIcon} boxSize={4} />
+                    </IconButton>
+                    <IconButton
+                      size="sm"
+                      variant="ghost"
+                      colorPalette="red"
+                      onClick={() => handleDelete(connection)}
+                      aria-label="Excluir"
+                    >
+                      <Icon as={TrashIcon} boxSize={4} />
+                    </IconButton>
                   </HStack>
                 </Card.Body>
               </MotionCard>
@@ -738,7 +749,7 @@ export default function ConnectionsPage() {
                         value={formData[field.name] || ''}
                         onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
                         placeholder={field.placeholder}
-                        disabled={editingConnection && field.name === 'page_id'}
+                        disabled={!!(editingConnection && field.name === 'page_id')}
                       />
                       {field.name.includes('token') && (
                         <Field.HelperText fontSize="xs">

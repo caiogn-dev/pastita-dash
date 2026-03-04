@@ -95,7 +95,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           name: 'Conexões', 
           href: '/connections', 
           icon: LinkIcon,
-          badge: accounts.filter(a => !a.is_active).length > 0 ? String(accounts.filter(a => !a.is_active).length) : undefined,
         },
         { 
           name: 'WhatsApp', 

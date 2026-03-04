@@ -459,7 +459,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         {/* Footer com timestamp e status */}
         <div className="flex items-center justify-end gap-1 px-3 pb-2">
           <span className="text-[10px] text-gray-400">
-            {format(new Date(createdAt), 'HH:mm', { locale: ptBR })}
+            {(() => {
+              try {
+                return createdAt ? format(new Date(createdAt), 'HH:mm', { locale: ptBR }) : '--:--';
+              } catch (e) {
+                return '--:--';
+              }
+            })()}
           </span>
           
           {!isInbound && (
