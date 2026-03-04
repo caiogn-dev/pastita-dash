@@ -65,7 +65,8 @@ async function getStoreId(): Promise<string> {
   if (cachedStoreId) return cachedStoreId;
   
   try {
-    const response = await api.get('/commerce/', { params: { slug: STORE_SLUG } });
+    // ATUALIZADO: Usando /stores/ em vez de /commerce/
+    const response = await api.get('/stores/', { params: { slug: STORE_SLUG } });
     const stores = response.data.results || response.data;
     if (stores.length > 0) {
       cachedStoreId = stores[0].id as string;
@@ -81,7 +82,8 @@ async function getCategoriesWithIds(): Promise<Category[]> {
   if (cachedCategories) return cachedCategories;
   
   try {
-    const response = await api.get('/commerce/categories/');
+    // ATUALIZADO: Usando /stores/categories/ em vez de /commerce/categories/
+    const response = await api.get('/stores/categories/');
     const data = response.data;
     const results = data.results || data || [];
     if (Array.isArray(results)) {
@@ -150,8 +152,9 @@ const buildProductFormData = async (data: CreateProduct | UpdateProduct, include
 };
 
 class ProductsService {
-  private baseUrl = '/commerce/products';
-  private categoriesUrl = '/commerce/categories';
+  // ATUALIZADO: Usando /stores/ em vez de /commerce/ (2026-03-04)
+  private baseUrl = '/stores/products';
+  private categoriesUrl = '/stores/categories';
 
   async getProducts(filters?: ProductFilters): Promise<PaginatedResponse<Product>> {
     const params = new URLSearchParams();

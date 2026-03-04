@@ -4,14 +4,14 @@ import { Order, OrderItem, OrderEvent, CreateOrder, PaginatedResponse } from '..
 /**
  * Orders Service - API V2
  * 
- * Endpoint correto do backend: /api/v1/commerce/{store_slug}/orders/
+ * ATUALIZADO: Endpoint migrado de /commerce/ para /stores/ (2026-03-04)
  */
 
 const getBaseUrl = (storeSlug?: string) => {
   if (storeSlug) {
-    return `/commerce/${storeSlug}/orders`;
+    return `/stores/${storeSlug}/orders`;
   }
-  return '/commerce/orders';
+  return '/stores/orders';
 };
 
 const toNumber = (value: number | string | null | undefined) => {

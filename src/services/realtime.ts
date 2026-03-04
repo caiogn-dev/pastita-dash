@@ -475,13 +475,13 @@ export class RealtimeConnection {
         // NOTA: SSE não existe no backend atual - retornar URL que vai falhar
         // O fallback automático vai tentar polling
         const httpProto = this.isSecure() ? 'https' : 'http';
-        // ATENÇÃO: URL completa com /api/v1/ pois não passa pelo axios
-        return `${httpProto}://${wsHost}/api/v1/commerce/${storeSlug}/orders/sse/?token=${token}`;
+        // ATUALIZADO: Usando /stores/ em vez de /commerce/ (2026-03-04)
+        return `${httpProto}://${wsHost}/api/v1/stores/${storeSlug}/orders/sse/?token=${token}`;
       }
       case 'polling': {
         const httpProto = this.isSecure() ? 'https' : 'http';
-        // ATENÇÃO: URL completa com /api/v1/ pois não passa pelo axios
-        return `${httpProto}://${wsHost}/api/v1/commerce/${storeSlug}/orders/?token=${token}`;
+        // ATUALIZADO: Usando /stores/ em vez de /commerce/ (2026-03-04)
+        return `${httpProto}://${wsHost}/api/v1/stores/${storeSlug}/orders/?token=${token}`;
       }
     }
   }

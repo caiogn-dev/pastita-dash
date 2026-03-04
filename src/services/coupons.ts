@@ -68,7 +68,7 @@ export interface CouponFilters {
 
 class CouponsService {
   // ATUALIZADO: Usando /commerce/coupons em vez de /stores/coupons
-  private baseUrl = '/commerce/coupons';
+  private baseUrl = '/stores/coupons';
 
   async getCoupons(filters?: CouponFilters): Promise<PaginatedResponse<Coupon>> {
     const params = new URLSearchParams();
