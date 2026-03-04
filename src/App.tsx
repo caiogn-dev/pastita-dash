@@ -79,6 +79,9 @@ const InstagramInbox = lazy(() => import('./pages/instagram').then(m => ({ defau
 const MessengerInbox = lazy(() => import('./pages/messenger').then(m => ({ default: m.MessengerInbox })));
 const MessengerAccounts = lazy(() => import('./pages/messenger').then(m => ({ default: m.MessengerAccounts })));
 
+// Unified Messaging Connections Page
+const ConnectionsPage = lazy(() => import('./pages/messaging/ConnectionsPage').then(m => ({ default: m.default })));
+
 // WhatsApp Pages
 const WebhookDiagnosticsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WebhookDiagnosticsPage })));
 const WhatsAppChatPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WhatsAppChatPage })));
@@ -209,6 +212,10 @@ const AppContent: React.FC = () => {
         <Route path="instagram/inbox" element={<Suspense fallback={<FullPageLoading />}><InstagramInbox /></Suspense>} />
         
         {/* Messenger Routes */}
+        {/* Messenger/WhatsApp Routes - NOVA PÁGINA UNIFICADA */}
+        <Route path="connections" element={<Suspense fallback={<FullPageLoading />}><ConnectionsPage /></Suspense>} />
+        
+        {/* Legacy Routes (mantidas para compatibilidade) */}
         <Route path="messenger" element={<Suspense fallback={<FullPageLoading />}><MessengerInbox /></Suspense>} />
         <Route path="messenger/inbox" element={<Suspense fallback={<FullPageLoading />}><MessengerInbox /></Suspense>} />
         <Route path="messenger/accounts" element={<Suspense fallback={<FullPageLoading />}><MessengerAccounts /></Suspense>} />

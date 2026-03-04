@@ -31,6 +31,7 @@ import {
   SparklesIcon,
   ReceiptPercentIcon,
   QueueListIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -91,14 +92,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
         },
         { 
+          name: 'Conexões', 
+          href: '/connections', 
+          icon: LinkIcon,
+          badge: accounts.filter(a => !a.is_active).length > 0 ? String(accounts.filter(a => !a.is_active).length) : undefined,
+        },
+        { 
           name: 'WhatsApp', 
           href: '/whatsapp/chat', 
           icon: DevicePhoneMobileIcon,
           children: [
             { name: 'Chat', href: '/whatsapp/chat', icon: ChatBubbleLeftRightIcon },
-            { name: 'Contas', href: '/accounts', icon: DevicePhoneMobileIcon },
             { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-            { name: 'Analytics', href: '/analytics', icon: PresentationChartLineIcon },
             { name: 'Diagnóstico', href: '/whatsapp/diagnostics', icon: Cog6ToothIcon },
           ]
         },

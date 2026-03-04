@@ -6,6 +6,35 @@ import api from './api';
 import logger from './logger';
 
 // =============================================================================
+// HELPERS
+// =============================================================================
+
+/**
+ * Normaliza respostas paginadas do backend.
+ * O DRF pode retornar {count, next, previous, results} ou um array direto.
+ */
+function normalizePaginatedResponse<T>(data: unknown): PaginatedResponse<T> {
+  if (Array.isArray(data)) {
+    return {
+      count: data.length,
+      next: null,
+      previous: null,
+      results: data,
+    };
+  }
+  if (data && typeof data === 'object') {
+    const d = data as Record<string, unknown>;
+    return {
+      count: (d.count as number) || 0,
+      next: (d.next as string | null) || null,
+      previous: (d.previous as string | null) || null,
+      results: Array.isArray(d.results) ? (d.results as T[]) : [],
+    };
+  }
+  return { count: 0, next: null, previous: null, results: [] };
+}
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -443,7 +472,7 @@ const buildFormData = (data: Record<string, unknown>, includeFile = true): FormD
 export const getStores = async (): Promise<PaginatedResponse<Store>> => {
   try {
     const response = await api.get(`${BASE_URL}/stores/`);
-    return response.data;
+    return normalizePaginatedResponse<Store>(response.data);
   } catch (error) {
     logger.error('Failed to fetch stores', error);
     throw error;
@@ -534,7 +563,7 @@ export const getIntegrations = async (storeId?: string): Promise<PaginatedRespon
   try {
     const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/integrations/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreIntegration>(response.data);
   } catch (error) {
     logger.error('Failed to fetch integrations', error);
     throw error;
@@ -646,7 +675,7 @@ export const getCategories = async (storeId?: string): Promise<PaginatedResponse
   try {
     const params = storeId ? { store: storeId, page_size: 100 } : { page_size: 100 };
     const response = await api.get(`${BASE_URL}/categories/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreCategory>(response.data);
   } catch (error) {
     logger.error('Failed to fetch categories', error);
     throw error;
@@ -711,7 +740,7 @@ export const getProducts = async (params?: {
 }): Promise<PaginatedResponse<StoreProduct>> => {
   try {
     const response = await api.get(`${BASE_URL}/products/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreProduct>(response.data);
   } catch (error) {
     logger.error('Failed to fetch products', error);
     throw error;
@@ -832,7 +861,7 @@ export const getOrders = async (params?: {
 }): Promise<PaginatedResponse<StoreOrder>> => {
   try {
     const response = await api.get(`${BASE_URL}/orders/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreOrder>(response.data);
   } catch (error) {
     logger.error('Failed to fetch orders', error);
     throw error;
@@ -954,7 +983,7 @@ export const getCustomers = async (params?: {
 }): Promise<PaginatedResponse<StoreCustomer>> => {
   try {
     const response = await api.get(`${BASE_URL}/customers/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreCustomer>(response.data);
   } catch (error) {
     logger.error('Failed to fetch customers', error);
     throw error;
@@ -1041,7 +1070,7 @@ export const getCoupons = async (storeId?: string): Promise<PaginatedResponse<St
   try {
     const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/coupons/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreCoupon>(response.data);
   } catch (error) {
     logger.error('Failed to fetch coupons', error);
     throw error;
@@ -1170,7 +1199,7 @@ export const getDeliveryZones = async (storeId?: string): Promise<PaginatedRespo
   try {
     const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/delivery-zones/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreDeliveryZone>(response.data);
   } catch (error) {
     logger.error('Failed to fetch delivery zones', error);
     throw error;

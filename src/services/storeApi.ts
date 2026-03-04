@@ -12,7 +12,7 @@
  * @module services/storeApi
  */
 
-import api from './api';
+import api, { normalizePaginatedResponse } from './api';
 import logger from './logger';
 import { useStoreContextStore } from '../stores/storeContextStore';
 
@@ -261,7 +261,7 @@ class StoreApiClient {
       const response = await api.get(`${this.baseUrl}/products/`, {
         params: { store, ...params }
       });
-      return response.data.results || response.data;
+      return normalizePaginatedResponse<Product>(response.data);
     } catch (error) {
       logger.error('Failed to fetch products', { store, error });
       throw error;
@@ -322,7 +322,7 @@ class StoreApiClient {
       const response = await api.get(`${this.baseUrl}/categories/`, {
         params: { store, ...params }
       });
-      return response.data.results || response.data;
+      return normalizePaginatedResponse<Category>(response.data);
     } catch (error) {
       logger.error('Failed to fetch categories', { store, error });
       throw error;
@@ -382,7 +382,7 @@ class StoreApiClient {
       const response = await api.get(`${this.baseUrl}/orders/`, {
         params: { store, ...params }
       });
-      return response.data.results || response.data;
+      return normalizePaginatedResponse<Order>(response.data);
     } catch (error) {
       logger.error('Failed to fetch orders', { store, error });
       throw error;
@@ -429,7 +429,7 @@ class StoreApiClient {
       const response = await api.get(`${this.baseUrl}/coupons/`, {
         params: { store, ...params }
       });
-      return response.data.results || response.data;
+      return normalizePaginatedResponse<Coupon>(response.data);
     } catch (error) {
       logger.error('Failed to fetch coupons', { store, error });
       throw error;
@@ -503,7 +503,7 @@ class StoreApiClient {
       const response = await api.get(`${this.baseUrl}/delivery-zones/`, {
         params: { store, ...params }
       });
-      return response.data.results || response.data;
+      return normalizePaginatedResponse<DeliveryZone>(response.data);
     } catch (error) {
       logger.error('Failed to fetch delivery zones', { store, error });
       throw error;
@@ -589,7 +589,7 @@ class StoreApiClient {
     const store = resolveStore(storeSlug);
     try {
       const response = await api.get(`${this.baseUrl}/${store}/product-types/`, { params });
-      return response.data.results || response.data;
+      return normalizePaginatedResponse<ProductType>(response.data);
     } catch (error) {
       logger.error('Failed to fetch product types', { store, error });
       throw error;

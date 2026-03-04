@@ -128,3 +128,30 @@ export const getErrorMessage = (error: unknown): string => {
   }
   return 'An unexpected error occurred';
 };
+
+/**
+ * Normalize paginated response from Django REST Framework
+ * Handles both paginated ({ results: [], count, next, previous }) and direct array responses
+ */
+export function normalizePaginatedResponse<T>(data: unknown): T[] {
+  if (!data) {
+    return [];
+  }
+
+  // If it's a paginated response, return results array
+  if (typeof data === 'object' && data !== null && 'results' in data) {
+    const results = (data as { results: unknown }).results;
+    if (Array.isArray(results)) {
+      return results as T[];
+    }
+  }
+
+  // If it's a direct array, return it
+  if (Array.isArray(data)) {
+    return data as T[];
+  }
+
+  // Log unexpected format and return empty array
+  console.error('[API] Unexpected response format:', data);
+  return [];
+}

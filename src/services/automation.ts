@@ -382,36 +382,48 @@ export const agentFlowService = {
     page?: number;
     page_size?: number;
   }): Promise<PaginatedResponse<AgentFlow>> => {
-    const response = await api.get('/automation/flows/', { params });
-    return response.data;
+    // MOCK: Endpoint /automation/flows/ não existe no backend
+    console.warn('[AgentFlowService] list: Endpoint não implementado no backend, retornando mock vazio');
+    return {
+      count: 0,
+      next: null,
+      previous: null,
+      results: []
+    };
   },
 
   get: async (id: string): Promise<AgentFlow> => {
-    const response = await api.get(`/automation/flows/${id}/`);
-    return response.data;
+    // MOCK: Endpoint não existe no backend
+    console.warn('[AgentFlowService] get: Endpoint não implementado no backend');
+    throw new Error('Endpoint não implementado no backend');
   },
 
   create: async (data: CreateAgentFlow): Promise<AgentFlow> => {
-    const response = await api.post('/automation/flows/', data);
-    return response.data;
+    // MOCK: Endpoint não existe no backend
+    console.warn('[AgentFlowService] create: Endpoint não implementado no backend');
+    throw new Error('Endpoint não implementado no backend');
   },
 
   update: async (id: string, data: UpdateAgentFlow): Promise<AgentFlow> => {
-    const response = await api.put(`/automation/flows/${id}/`, data);
-    return response.data;
+    // MOCK: Endpoint não existe no backend
+    console.warn('[AgentFlowService] update: Endpoint não implementado no backend');
+    throw new Error('Endpoint não implementado no backend');
   },
 
   delete: async (id: string): Promise<void> => {
-    await api.delete(`/automation/flows/${id}/`);
+    // MOCK: Endpoint não existe no backend
+    console.warn('[AgentFlowService] delete: Endpoint não implementado no backend');
   },
 
   duplicate: async (id: string): Promise<AgentFlow> => {
-    const response = await api.post(`/automation/flows/${id}/duplicate/`);
-    return response.data;
+    // MOCK: Endpoint não existe no backend
+    console.warn('[AgentFlowService] duplicate: Endpoint não implementado no backend');
+    throw new Error('Endpoint não implementado no backend');
   },
 
   setDefault: async (id: string): Promise<{ status: string }> => {
-    const response = await api.post(`/automation/flows/${id}/set_default/`);
-    return response.data;
+    // MOCK: Endpoint não existe no backend
+    console.warn('[AgentFlowService] setDefault: Endpoint não implementado no backend');
+    throw new Error('Endpoint não implementado no backend');
   },
 };

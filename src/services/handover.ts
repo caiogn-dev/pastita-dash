@@ -1,4 +1,4 @@
-import api from './api';
+import api, { normalizePaginatedResponse } from './api';
 
 export interface HandoverStatus {
   handover_status: 'bot' | 'human' | 'pending';
@@ -126,8 +126,8 @@ export const handoverService = {
    * Listar solicitações de handover pendentes
    */
   getRequests: async (): Promise<HandoverRequest[]> => {
-    const response = await api.get<{ results: HandoverRequest[] }>('/handover/requests/');
-    return response.data.results || response.data as unknown as HandoverRequest[];
+    const response = await api.get('/handover/requests/');
+    return normalizePaginatedResponse<HandoverRequest>(response.data);
   },
 
   /**

@@ -1,4 +1,4 @@
-import api from './api';
+import api, { normalizePaginatedResponse } from './api';
 
 // Provider configurations - synced with backend
 // IMPORTANT: defaultBaseUrl is DEPRECATED - use fetchProviderConfig() to get base URLs from backend
@@ -229,7 +229,7 @@ const agentsService = {
   getAgents: async (): Promise<Agent[]> => {
     try {
       const response = await api.get('/agents/');
-      return response.data.results || response.data;
+      return normalizePaginatedResponse<Agent>(response.data);
     } catch (error) {
       return handleApiError(error);
     }
@@ -310,7 +310,7 @@ const agentsService = {
   getAgentConversations: async (agentId: string): Promise<AgentConversation[]> => {
     try {
       const response = await api.get(`/agents/${agentId}/conversations/`);
-      return response.data.results || response.data;
+      return normalizePaginatedResponse<AgentConversation>(response.data);
     } catch (error) {
       return handleApiError(error);
     }

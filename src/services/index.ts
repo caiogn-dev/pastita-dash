@@ -8,6 +8,7 @@ export { default as api, getErrorMessage, setAuthToken } from './api';
 // 🆕 Novos serviços V2 (endpoints atualizados)
 export { commerceService } from './commerce';
 export { default as messagingService } from './messaging';
+export { default as messengerService } from './messenger';
 export { marketingService } from './marketing';
 
 // 🔄 Serviços legados mantidos temporariamente para compatibilidade

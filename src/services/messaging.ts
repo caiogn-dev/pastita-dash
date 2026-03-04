@@ -3,8 +3,22 @@ import api from './api';
 /**
  * Unified Messaging Service - API V2
  * Gerencia todas as plataformas de mensagem (WhatsApp, Instagram, Messenger)
- * ATUALIZADO: Endpoints migrados de /messaging/platform-accounts/ para /messaging/messenger/accounts/
  */
+
+// ==================== TYPES ====================
+export interface PlatformAccount {
+  id: string;
+  platform: 'whatsapp' | 'messenger' | 'instagram';
+  name: string;
+  status: 'active' | 'inactive' | 'connecting' | 'error';
+  is_active: boolean;
+  webhook_verified?: boolean;
+  phone_number?: string;
+  page_name?: string;
+  page_id?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 // ==================== PLATFORM ACCOUNTS ====================
 // ATUALIZADO: Endpoint correto é /messaging/messenger/accounts/

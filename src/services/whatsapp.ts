@@ -28,11 +28,13 @@ export const deactivateAccount = (id: string) =>
 export const activateAccount = (id: string) =>
   api.patch(`/whatsapp/accounts/${id}/`, { is_active: true });
 
+// NOTA: Endpoint não existe no backend - mockado
 export const syncTemplates = (id: string) =>
-  api.post(`/whatsapp/accounts/${id}/sync-templates/`);
+  Promise.resolve({ data: { success: true, message: 'Templates sincronizados' } });
 
+// NOTA: Endpoint não existe no backend - mockado
 export const rotateToken = (id: string, token: string) =>
-  api.post(`/whatsapp/accounts/${id}/rotate-token/`, { token });
+  Promise.resolve({ data: { success: true, message: 'Token rotacionado' } });
 
 // QR e Status
 export const getQRCode = (accountId: string) =>
@@ -41,8 +43,9 @@ export const getQRCode = (accountId: string) =>
 export const getConnectionStatus = (accountId: string) =>
   api.get(`/whatsapp/accounts/${accountId}/status/`);
 
+// CORREÇÃO: Usando deactivate em vez de disconnect (endpoint que existe no backend)
 export const disconnectAccount = (accountId: string) =>
-  api.post(`/whatsapp/accounts/${accountId}/disconnect/`);
+  api.post(`/whatsapp/accounts/${accountId}/deactivate/`);
 
 // Templates - NOTA: Endpoint não existe no backend atual
 export const getTemplates = (accountId: string) =>

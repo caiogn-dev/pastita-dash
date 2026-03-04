@@ -14,22 +14,23 @@ export type MessageRole = 'user' | 'assistant' | 'system';
 
 /**
  * AI Agent configuration
+ * CORREÇÃO: Campos opcionais para compatibilidade com AgentListSerializer do backend
  */
 export interface Agent {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   provider: AgentProvider;
   model_name: string;
   base_url?: string;
-  temperature: number;
-  max_tokens: number;
-  timeout: number;
-  system_prompt: string;
-  context_prompt: string;
+  temperature?: number;
+  max_tokens?: number;
+  timeout?: number;
+  system_prompt?: string;
+  context_prompt?: string;
   status: AgentStatus;
-  use_memory: boolean;
-  memory_ttl: number;
+  use_memory?: boolean;
+  memory_ttl?: number;
   accounts?: WhatsAppAccountMinimal[];
   created_at: string;
   updated_at: string;

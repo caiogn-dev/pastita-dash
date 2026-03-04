@@ -27,9 +27,11 @@ export const AgentsPage: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await agentsService.getAgents();
-      setAgents(data);
+      // Ensure data is an array
+      setAgents(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar agentes:', error);
+      setAgents([]);
     } finally {
       setIsLoading(false);
     }
