@@ -2,15 +2,15 @@ import api from './api';
 
 /**
  * Dashboard Service - API V2
- * ATUALIZADO: Usando /commerce/reports/ em vez de /stores/reports/
+ * ATUALIZADO: Usando /stores/reports/ (backend migrado - 2026-03-04)
  */
 
 export const dashboardService = {
   getOverview: async (storeSlug?: string) => {
     const params = storeSlug ? { store: storeSlug } : {};
     const [ordersRes, messagesRes] = await Promise.all([
-      api.get('/commerce/reports/dashboard/', { params }).catch(() => ({ data: { orders_count: 0, revenue_total: 0 } })),
-      api.get('/messaging/platform-accounts/', { params }).catch(() => ({ data: { count: 0 } })),
+      api.get('/stores/reports/dashboard/', { params }).catch(() => ({ data: { orders_count: 0, revenue_total: 0 } })),
+      api.get('/messaging/messenger/accounts/', { params }).catch(() => ({ data: { count: 0 } })),
     ]);
 
     return {
@@ -37,7 +37,7 @@ export const dashboardService = {
     if (storeSlug) params.store = storeSlug;
 
     // Usando o endpoint de dashboard que existe no backend
-    const response = await api.get('/commerce/reports/dashboard/', { params }).catch(() => ({ data: { daily_stats: [] } }));
+    const response = await api.get('/stores/reports/dashboard/', { params }).catch(() => ({ data: { daily_stats: [] } }));
 
     return {
       orders_per_day: response.data.daily_stats || [],
@@ -46,7 +46,7 @@ export const dashboardService = {
   },
 
   getOrderStats: async (params?: Record<string, string>) => {
-    const response = await api.get('/commerce/reports/dashboard/', { params }).catch(() => ({
+    const response = await api.get('/stores/reports/dashboard/', { params }).catch(() => ({
       data: { orders_count: 0, revenue_total: 0 }
     }));
     return {
@@ -56,7 +56,7 @@ export const dashboardService = {
   },
 
   getMessageStats: async (params?: Record<string, string>) => {
-    const response = await api.get('/commerce/reports/dashboard/', { params }).catch(() => ({
+    const response = await api.get('/stores/reports/dashboard/', { params }).catch(() => ({
       data: { messages_count: 0 }
     }));
     return {

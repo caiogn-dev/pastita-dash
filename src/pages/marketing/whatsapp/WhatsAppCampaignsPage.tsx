@@ -17,7 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge } from '../../../components/common';
-import { whatsappService } from '../../../services/whatsapp';
+import whatsappService from '../../../services/whatsapp';
 import { campaignsService, Campaign } from '../../../services/campaigns';
 import logger from '../../../services/logger';
 

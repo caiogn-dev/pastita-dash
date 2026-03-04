@@ -1,37 +1,34 @@
-/**
+/** 
  * Commerce Service - API endpoints para o novo backend
- * ATUALIZADO: Usando /commerce/ em vez de /commerce/
+ * ATUALIZADO: Usando /stores/ em vez de /commerce/ (backend migrado - 2026-03-04)
  */
 import api from './api';
 
 // Stores
-export const getStores = () => api.get('/commerce/');
-export const getStore = (slug: string) => api.get(`/commerce/${slug}/`);
-export const getStoreProducts = (slug: string) => api.get(`/commerce/${slug}/products/`);
+export const getStores = () => api.get('/stores/');
+export const getStore = (slug: string) => api.get(`/stores/${slug}/`);
+export const getStoreProducts = (slug: string) => api.get(`/stores/${slug}/products/`);
 
 // Products
-export const getProducts = (params?: { store?: string }) => 
-  api.get('/commerce/products/', { params });
-export const getProduct = (id: string) => api.get(`/commerce/products/${id}/`);
-export const createProduct = (data: any) => api.post('/commerce/products/', data);
-export const updateProduct = (id: string, data: any) => api.put(`/commerce/products/${id}/`, data);
-export const deleteProduct = (id: string) => api.delete(`/commerce/products/${id}/`);
+export const getProducts = (params?: { store?: string }) => api.get('/stores/products/', { params });
+export const getProduct = (id: string) => api.get(`/stores/products/${id}/`);
+export const createProduct = (data: any) => api.post('/stores/products/', data);
+export const updateProduct = (id: string, data: any) => api.put(`/stores/products/${id}/`, data);
+export const deleteProduct = (id: string) => api.delete(`/stores/products/${id}/`);
 
 // Categories
-export const getCategories = () => api.get('/commerce/categories/');
-export const getCategory = (id: string) => api.get(`/commerce/categories/${id}/`);
+export const getCategories = () => api.get('/stores/categories/');
+export const getCategory = (id: string) => api.get(`/stores/categories/${id}/`);
 
 // Customers
-export const getCustomers = () => api.get('/commerce/customers/');
-export const getCustomerByPhone = (phone: string) => 
-  api.get('/commerce/customers/by_phone/', { params: { phone } });
-export const createCustomer = (data: any) => api.post('/commerce/customers/', data);
+export const getCustomers = () => api.get('/stores/customers/');
+export const getCustomerByPhone = (phone: string) => api.get('/stores/customers/by_phone/', { params: { phone } });
+export const createCustomer = (data: any) => api.post('/stores/customers/', data);
 
 // Orders
-export const getOrders = (params?: { store?: string }) => 
-  api.get('/commerce/orders/', { params });
-export const getOrder = (id: string) => api.get(`/commerce/orders/${id}/`);
-export const createOrder = (data: any) => api.post('/commerce/orders/', data);
+export const getOrders = (params?: { store?: string }) => api.get('/stores/orders/', { params });
+export const getOrder = (id: string) => api.get(`/stores/orders/${id}/`);
+export const createOrder = (data: any) => api.post('/stores/orders/', data);
 
 // Export
 export const commerceService = {

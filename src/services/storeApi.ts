@@ -20,7 +20,7 @@ import { useStoreContextStore } from '../stores/storeContextStore';
 // CONFIGURATION
 // =============================================================================
 
-const API_BASE = '/commerce';
+const API_BASE = '/stores';
 const DEFAULT_STORE = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
 // =============================================================================

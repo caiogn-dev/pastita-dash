@@ -400,8 +400,8 @@ export interface PaginatedResponse<T> {
 // API FUNCTIONS
 // =============================================================================
 
-// ATUALIZADO: Usando /commerce/ em vez de /stores/ (endpoint legado removido)
-const BASE_URL = '/commerce';
+// ATUALIZADO: Usando /stores/ (backend migrado - 2026-03-04)
+const BASE_URL = '/stores';
 
 const generateSlug = (name: string): string => {
   return name

@@ -7,12 +7,12 @@ export { default as api, getErrorMessage, setAuthToken } from './api';
 
 // 🆕 Novos serviços V2 (endpoints atualizados)
 export { commerceService } from './commerce';
-export { messagingService } from './messaging';
+export { default as messagingService } from './messaging';
 export { marketingService } from './marketing';
 
 // 🔄 Serviços legados mantidos temporariamente para compatibilidade
 // Serão migrados gradualmente para os novos serviços acima
-export { whatsappService } from './whatsapp';
+export { default as whatsappService } from './whatsapp';
 export { conversationsService } from './conversations';
 export { default as agentsService } from './agents';
 export { ordersService } from './orders';
