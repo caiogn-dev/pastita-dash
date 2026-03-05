@@ -152,7 +152,8 @@ export default function ConnectionsPage() {
       const allConnections: Connection[] = [];
 
       if (whatsappRes.status === 'fulfilled') {
-        const whatsappAccounts = whatsappRes.value.data || [];
+        const responseData = whatsappRes.value.data as any;
+        const whatsappAccounts = responseData?.results || responseData || [];
         allConnections.push(...whatsappAccounts.map((acc: any) => ({
           ...acc,
           platform: 'whatsapp' as const,
@@ -162,7 +163,8 @@ export default function ConnectionsPage() {
       }
 
       if (messengerRes.status === 'fulfilled') {
-        const messengerAccounts = messengerRes.value.data || [];
+        const responseData = messengerRes.value.data as any;
+        const messengerAccounts = responseData?.results || responseData || [];
         allConnections.push(...messengerAccounts.map((acc: any) => ({
           ...acc,
           platform: 'messenger' as const,
