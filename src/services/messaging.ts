@@ -3,249 +3,334 @@ import api from './api';
 /**
  * Unified Messaging Service - API V2
  * Gerencia todas as plataformas de mensagem (WhatsApp, Instagram, Messenger)
+ * 
+ * Endpoint unificado: /api/v1/messaging/v2/platform-accounts/
  */
 
 // ==================== TYPES ====================
 export interface PlatformAccount {
   id: string;
   platform: 'whatsapp' | 'messenger' | 'instagram';
+  platform_display: string;
   name: string;
-  status: 'active' | 'inactive' | 'connecting' | 'error';
+  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  status_display: string;
   is_active: boolean;
-  webhook_verified?: boolean;
+  is_verified: boolean;
+  webhook_verified: boolean;
+  
+  // Campos WhatsApp
   phone_number?: string;
-  page_name?: string;
+  phone_number_id?: string;
+  waba_id?: string;
+  display_phone_number?: string;
+  
+  // Campos Messenger
   page_id?: string;
+  page_name?: string;
+  
+  // Campos Instagram
+  instagram_account_id?: string;
+  
+  // Configurações
+  auto_response_enabled: boolean;
+  human_handoff_enabled: boolean;
+  category?: string;
+  followers_count: number;
+  
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePlatformAccountData {
+  platform: 'whatsapp' | 'messenger' | 'instagram';
+  name: string;
+  
+  // WhatsApp
+  phone_number_id?: string;
+  waba_id?: string;
+  phone_number?: string;
+  display_phone_number?: string;
+  
+  // Messenger
+  page_id?: string;
+  page_name?: string;
+  
+  // Instagram
+  instagram_account_id?: string;
+  
+  // Comum
+  access_token?: string;
+  webhook_verify_token?: string;
+  auto_response_enabled?: boolean;
+  human_handoff_enabled?: boolean;
+}
+
+export interface Conversation {
+  id: string;
+  platform_account: string;
+  platform_account_name: string;
+  customer_id: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_profile_pic?: string;
+  platform: string;
+  platform_display: string;
+  is_open: boolean;
+  unread_count: number;
+  last_message_at: string;
+  last_message?: {
+    id: string;
+    text: string;
+    message_type: string;
+    direction: string;
+    status: string;
+    created_at: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UnifiedMessage {
+  id: string;
+  conversation: string;
+  conversation_id: string;
+  customer_name: string;
+  customer_phone: string;
+  direction: 'inbound' | 'outbound';
+  status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
+  status_display: string;
+  message_type: string;
+  text: string;
+  media_url?: string;
+  media_caption?: string;
+  external_id?: string;
+  template_name?: string;
+  sent_at?: string;
+  delivered_at?: string;
+  read_at?: string;
+  created_at: string;
+}
+
+export interface MessageTemplate {
+  id: string;
+  platform_account: string;
+  platform_account_name: string;
+  name: string;
+  language: string;
+  category: 'UTILITY' | 'MARKETING' | 'AUTHENTICATION';
+  category_display: string;
+  status: 'pending' | 'approved' | 'rejected';
+  status_display: string;
+  header?: Record<string, any>;
+  body: string;
+  footer?: string;
+  buttons?: any[];
+  external_id?: string;
   created_at: string;
   updated_at: string;
 }
 
 // ==================== PLATFORM ACCOUNTS ====================
-// ATUALIZADO: Endpoint correto é /messaging/messenger/accounts/
-export const getPlatformAccounts = (params?: { platform?: string; is_active?: boolean }) =>
-  api.get('/messaging/messenger/accounts/', { params });
+const API_BASE = '/messaging/v2';
 
+/**
+ * Listar todas as contas de plataforma do usuário
+ */
+export const getPlatformAccounts = (params?: { 
+  platform?: string; 
+  is_active?: boolean;
+  is_verified?: boolean;
+  status?: string;
+}) => api.get(`${API_BASE}/platform-accounts/`, { params });
+
+/**
+ * Listar contas agrupadas por plataforma
+ */
+export const getPlatformAccountsByPlatform = () => 
+  api.get(`${API_BASE}/platform-accounts/by_platform/`);
+
+/**
+ * Obter uma conta específica
+ */
 export const getPlatformAccount = (id: string) =>
-  api.get(`/messaging/messenger/accounts/${id}/`);
+  api.get(`${API_BASE}/platform-accounts/${id}/`);
 
-export const createPlatformAccount = (data: {
-  platform: 'whatsapp' | 'instagram' | 'messenger';
-  name: string;
-  // Campos específicos por plataforma
-  page_id?: string;        // Para Messenger (obrigatório)
-  page_name?: string;      // Para Messenger (obrigatório)
-  page_access_token?: string;  // Para Messenger (obrigatório)
-  phone_number?: string;   // Para WhatsApp
-  access_token?: string;   // Para Instagram
-}) => {
-  // Para WhatsApp: usar endpoint específico /whatsapp/accounts/
-  if (data.platform === 'whatsapp') {
-    return api.post('/whatsapp/accounts/', {
-      name: data.name,
-      phone_number: data.phone_number,
-      access_token: data.access_token,
-    });
-  }
+/**
+ * Criar nova conta de plataforma (WhatsApp, Messenger ou Instagram)
+ */
+export const createPlatformAccount = (data: CreatePlatformAccountData) =>
+  api.post(`${API_BASE}/platform-accounts/`, data);
 
-  // Para Messenger: usar endpoint /messaging/messenger/accounts/
-  if (data.platform === 'messenger') {
-    return api.post('/messaging/messenger/accounts/', {
-      page_id: data.page_id,
-      page_name: data.page_name || data.name,
-      page_access_token: data.page_access_token,
-    });
-  }
+/**
+ * Atualizar conta existente
+ */
+export const updatePlatformAccount = (id: string, data: Partial<CreatePlatformAccountData>) =>
+  api.patch(`${API_BASE}/platform-accounts/${id}/`, data);
 
-  // Para Instagram: endpoint ainda não implementado
-  if (data.platform === 'instagram') {
-    return Promise.reject(new Error('Instagram ainda não implementado'));
-  }
-
-  return Promise.reject(new Error('Plataforma não suportada'));
-};
-
-export const updatePlatformAccount = (id: string, data: Partial<{
-  name: string;
-  phone_number: string;
-  access_token: string;
-  is_active: boolean;
-}>) => api.patch(`/messaging/messenger/accounts/${id}/`, data);
-
+/**
+ * Excluir conta
+ */
 export const deletePlatformAccount = (id: string) =>
-  api.delete(`/messaging/messenger/accounts/${id}/`);
+  api.delete(`${API_BASE}/platform-accounts/${id}/`);
 
-// QR Code para WhatsApp
-export const getWhatsAppQR = (accountId: string) =>
-  api.get(`/messaging/messenger/accounts/${accountId}/qr/`);
+/**
+ * Ativar conta
+ */
+export const activatePlatformAccount = (id: string) =>
+  api.post(`${API_BASE}/platform-accounts/${id}/activate/`);
 
-export const getConnectionStatus = (accountId: string) =>
-  api.get(`/messaging/messenger/accounts/${accountId}/status/`);
+/**
+ * Desativar conta
+ */
+export const deactivatePlatformAccount = (id: string) =>
+  api.post(`${API_BASE}/platform-accounts/${id}/deactivate/`);
 
-export const disconnectPlatform = (accountId: string) =>
-  api.post(`/messaging/messenger/accounts/${accountId}/disconnect/`);
+/**
+ * Sincronizar conta com a plataforma
+ */
+export const syncPlatformAccount = (id: string) =>
+  api.post(`${API_BASE}/platform-accounts/${id}/sync/`);
+
+/**
+ * Sincronizar templates do WhatsApp
+ */
+export const syncWhatsAppTemplates = (id: string) =>
+  api.post(`${API_BASE}/platform-accounts/${id}/sync_templates/`);
 
 // ==================== CONVERSATIONS ====================
-// Usando endpoint real do backend: /api/v1/conversations/
+
+/**
+ * Listar conversas
+ */
 export const getConversations = (params?: {
-  store?: string;
   platform?: string;
   is_open?: boolean;
+  platform_account?: string;
   search?: string;
-  limit?: number;
-  offset?: number;
-}) => api.get('/conversations/', { params });
+}) => api.get(`${API_BASE}/conversations/`, { params });
 
+/**
+ * Obter conversa específica
+ */
 export const getConversation = (id: string) =>
-  api.get(`/conversations/${id}/`);
+  api.get(`${API_BASE}/conversations/${id}/`);
 
-export const createConversation = (data: {
-  store: string;
-  customer_phone: string;
-  customer_name?: string;
-  platform?: string;
-}) => api.post('/conversations/', data);
-
+/**
+ * Fechar conversa
+ */
 export const closeConversation = (id: string) =>
-  api.post(`/conversations/${id}/close/`);
+  api.post(`${API_BASE}/conversations/${id}/close/`);
 
+/**
+ * Reabrir conversa
+ */
 export const reopenConversation = (id: string) =>
-  api.post(`/conversations/${id}/reopen/`);
+  api.post(`${API_BASE}/conversations/${id}/reopen/`);
+
+/**
+ * Marcar conversa como lida
+ */
+export const markConversationAsRead = (id: string) =>
+  api.post(`${API_BASE}/conversations/${id}/mark_read/`);
+
+/**
+ * Enviar mensagem em uma conversa
+ */
+export const sendMessage = (conversationId: string, data: {
+  text: string;
+  message_type?: string;
+}) => api.post(`${API_BASE}/conversations/${conversationId}/send_message/`, data);
 
 // ==================== MESSAGES ====================
-// Usando endpoint real do backend: /api/v1/conversations/{id}/messages/
+
+/**
+ * Listar mensagens
+ */
 export const getMessages = (params?: {
   conversation?: string;
-  limit?: number;
-  offset?: number;
-}) => {
-  if (params?.conversation) {
-    return api.get(`/conversations/${params.conversation}/messages/`);
-  }
-  // Fallback: retorna lista vazia se não houver conversation_id
-  return Promise.resolve({ data: [] });
-};
+  direction?: string;
+  status?: string;
+  message_type?: string;
+}) => api.get(`${API_BASE}/messages/`, { params });
 
-export const sendMessage = (data: {
-  conversation: string;
-  text: string;
-  media_url?: string;
-}) =>
-  // NOTA: Endpoint de envio de mensagem não existe em conversations
-  // Usando mock temporariamente
-  Promise.resolve({ data: { id: 'mock', ...data, sent_at: new Date().toISOString() } });
-
-export const sendTemplateMessage = (data: {
-  conversation: string;
-  template_name: string;
-  language?: string;
-  components?: Record<string, unknown>[];
-}) =>
-  // NOTA: Endpoint de templates não existe no backend
-  // Usando mock temporariamente
-  Promise.resolve({
-    data: {
-      id: 'mock-template',
-      ...data,
-      sent_at: new Date().toISOString()
-    }
-  });
+/**
+ * Obter mensagem específica
+ */
+export const getMessage = (id: string) =>
+  api.get(`${API_BASE}/messages/${id}/`);
 
 // ==================== TEMPLATES ====================
-// NOTA: Endpoint de templates não existe no backend - mockado
-export const getTemplates = (platformAccountId?: string) =>
-  Promise.resolve({ data: { results: [] } });
 
-export const getTemplate = (id: string) =>
-  Promise.resolve({ data: { id, name: 'mock' } });
+/**
+ * Listar templates de mensagem
+ */
+export const getMessageTemplates = (params?: {
+  platform_account?: string;
+  status?: string;
+  category?: string;
+  language?: string;
+}) => api.get(`${API_BASE}/templates/`, { params });
 
-export const createTemplate = (data: Record<string, unknown>) =>
-  Promise.resolve({ data: { id: 'mock', ...data } });
+/**
+ * Obter template específico
+ */
+export const getMessageTemplate = (id: string) =>
+  api.get(`${API_BASE}/templates/${id}/`);
 
-// ==================== ANALYTICS ====================
-// NOTA: Endpoints de analytics não existem no backend - mockado
-export const getMessagingStats = (params?: { store?: string; days?: number }) =>
-  Promise.resolve({
-    data: {
-      total_conversations: 0,
-      active_conversations: 0,
-      messages_sent: 0,
-      messages_delivered: 0,
-      messages_read: 0,
-      avg_response_time: 0,
-    }
-  });
-
-export const getPlatformMetrics = (platformAccountId: string, days = 30) =>
-  Promise.resolve({
-    data: {
-      total_messages: 0,
-      conversations: 0,
-      response_rate: 0,
-      avg_response_time: 0,
-      daily_stats: [],
-    }
-  });
-
-// ==================== WEBHOOKS ====================
-export const getWebhooks = () =>
-  api.get('/messaging/webhooks/');
-
-export const getWebhook = (id: string) =>
-  api.get(`/messaging/webhooks/${id}/`);
-
-export const createWebhook = (data: {
+/**
+ * Criar template
+ */
+export const createMessageTemplate = (data: {
+  platform_account: string;
   name: string;
-  url: string;
-  events: string[];
-  secret?: string;
-}) => api.post('/messaging/webhooks/', data);
+  language?: string;
+  category?: 'UTILITY' | 'MARKETING' | 'AUTHENTICATION';
+  header?: Record<string, any>;
+  body: string;
+  footer?: string;
+  buttons?: any[];
+}) => api.post(`${API_BASE}/templates/`, data);
 
-export const updateWebhook = (id: string, data: Partial<{
+/**
+ * Atualizar template
+ */
+export const updateMessageTemplate = (id: string, data: Partial<{
   name: string;
-  url: string;
-  events: string[];
-  is_active: boolean;
-}>) => api.patch(`/messaging/webhooks/${id}/`, data);
+  body: string;
+  footer: string;
+  buttons: any[];
+}>) => api.patch(`${API_BASE}/templates/${id}/`, data);
 
-export const deleteWebhook = (id: string) =>
-  api.delete(`/messaging/webhooks/${id}/`);
+/**
+ * Excluir template
+ */
+export const deleteMessageTemplate = (id: string) =>
+  api.delete(`${API_BASE}/templates/${id}/`);
 
-export const testWebhook = (id: string) =>
-  api.post(`/messaging/webhooks/${id}/test/`);
+// ==================== LEGACY COMPATIBILITY ====================
+// Mantidos para compatibilidade com código antigo
 
-// ==================== EXPORTS ====================
-export default {
-  // Platform Accounts
-  getPlatformAccounts,
-  getPlatformAccount,
-  createPlatformAccount,
-  updatePlatformAccount,
-  deletePlatformAccount,
-  getWhatsAppQR,
-  getConnectionStatus,
-  disconnectPlatform,
-  // Conversations
-  getConversations,
-  getConversation,
-  createConversation,
-  closeConversation,
-  reopenConversation,
-  // Messages
-  getMessages,
-  sendMessage,
-  sendTemplateMessage,
-  // Templates
-  getTemplates,
-  getTemplate,
-  createTemplate,
-  // Analytics
-  getMessagingStats,
-  getPlatformMetrics,
-  // Webhooks
-  getWebhooks,
-  getWebhook,
-  createWebhook,
-  updateWebhook,
-  deleteWebhook,
-  testWebhook,
-};
+/** @deprecated Use getPlatformAccounts com filtro platform='whatsapp' */
+export const getWhatsAppAccounts = () => 
+  getPlatformAccounts({ platform: 'whatsapp' });
+
+/** @deprecated Use getPlatformAccount */
+export const getWhatsAppAccount = getPlatformAccount;
+
+/** @deprecated Use createPlatformAccount */
+export const createWhatsAppAccount = (data: { name: string; phone_number?: string; access_token?: string }) =>
+  createPlatformAccount({ ...data, platform: 'whatsapp' });
+
+/** @deprecated Use updatePlatformAccount */
+export const updateWhatsAppAccount = updatePlatformAccount;
+
+/** @deprecated Use deletePlatformAccount */
+export const deleteWhatsAppAccount = deletePlatformAccount;
+
+/** @deprecated Use syncWhatsAppTemplates */
+export const syncWhatsAppAccountTemplates = syncWhatsAppTemplates;
+
+// QR Code - mantido para compatibilidade (não implementado no v2 ainda)
+export const getWhatsAppQR = (_accountId: string) =>
+  Promise.reject(new Error('QR Code não implementado no messaging v2'));
