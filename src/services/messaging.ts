@@ -334,3 +334,42 @@ export const syncWhatsAppAccountTemplates = syncWhatsAppTemplates;
 // QR Code - mantido para compatibilidade (não implementado no v2 ainda)
 export const getWhatsAppQR = (_accountId: string) =>
   Promise.reject(new Error('QR Code não implementado no messaging v2'));
+
+// Export default para compatibilidade
+export default {
+  // Platform Accounts
+  getPlatformAccounts,
+  getPlatformAccountsByPlatform,
+  getPlatformAccount,
+  createPlatformAccount,
+  updatePlatformAccount,
+  deletePlatformAccount,
+  activatePlatformAccount,
+  deactivatePlatformAccount,
+  syncPlatformAccount,
+  syncWhatsAppTemplates,
+  // Conversations
+  getConversations,
+  getConversation,
+  closeConversation,
+  reopenConversation,
+  markConversationAsRead,
+  sendMessage,
+  // Messages
+  getMessages,
+  getMessage,
+  // Templates
+  getMessageTemplates,
+  getMessageTemplate,
+  createMessageTemplate,
+  updateMessageTemplate,
+  deleteMessageTemplate,
+  // Legacy
+  getWhatsAppAccounts,
+  getWhatsAppAccount,
+  createWhatsAppAccount,
+  updateWhatsAppAccount,
+  deleteWhatsAppAccount,
+  syncWhatsAppAccountTemplates,
+  getWhatsAppQR,
+};
