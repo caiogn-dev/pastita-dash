@@ -1,375 +1,193 @@
 import api from './api';
 
 /**
- * Unified Messaging Service - API V2
- * Gerencia todas as plataformas de mensagem (WhatsApp, Instagram, Messenger)
+ * Messaging Service - API para WhatsApp, Messenger, Instagram
  * 
- * Endpoint unificado: /api/v1/messaging/v2/platform-accounts/
+ * WhatsApp: /api/v1/whatsapp/
+ * Messenger: /api/v1/messenger/ (quando implementado)
+ * Instagram: /api/v1/instagram/ (quando implementado)
  */
 
 // ==================== TYPES ====================
-export interface PlatformAccount {
+export interface WhatsAppAccount {
   id: string;
-  platform: 'whatsapp' | 'messenger' | 'instagram';
-  platform_display: string;
   name: string;
+  phone_number: string;
+  phone_number_id: string;
+  waba_id: string;
+  display_phone_number: string;
   status: 'active' | 'inactive' | 'pending' | 'suspended';
-  status_display: string;
-  is_active: boolean;
-  is_verified: boolean;
-  webhook_verified: boolean;
-  
-  // Campos WhatsApp
-  phone_number?: string;
-  phone_number_id?: string;
-  waba_id?: string;
-  display_phone_number?: string;
-  
-  // Campos Messenger
-  page_id?: string;
-  page_name?: string;
-  
-  // Campos Instagram
-  instagram_account_id?: string;
-  
-  // Configurações
   auto_response_enabled: boolean;
   human_handoff_enabled: boolean;
-  category?: string;
-  followers_count: number;
-  
+  webhook_verified: boolean;
   created_at: string;
   updated_at: string;
 }
 
-export interface CreatePlatformAccountData {
-  platform: 'whatsapp' | 'messenger' | 'instagram';
-  name: string;
-  
-  // WhatsApp
-  phone_number_id?: string;
-  waba_id?: string;
-  phone_number?: string;
-  display_phone_number?: string;
-  
-  // Messenger
-  page_id?: string;
-  page_name?: string;
-  
-  // Instagram
-  instagram_account_id?: string;
-  
-  // Comum
-  access_token?: string;
-  webhook_verify_token?: string;
-  auto_response_enabled?: boolean;
-  human_handoff_enabled?: boolean;
-}
-
-export interface Conversation {
+export interface WhatsAppMessage {
   id: string;
-  platform_account: string;
-  platform_account_name: string;
-  customer_id: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_profile_pic?: string;
-  platform: string;
-  platform_display: string;
-  is_open: boolean;
-  unread_count: number;
-  last_message_at: string;
-  last_message?: {
-    id: string;
-    text: string;
-    message_type: string;
-    direction: string;
-    status: string;
-    created_at: string;
-  };
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UnifiedMessage {
-  id: string;
-  conversation: string;
-  conversation_id: string;
-  customer_name: string;
-  customer_phone: string;
+  account: string;
   direction: 'inbound' | 'outbound';
-  status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
-  status_display: string;
   message_type: string;
-  text: string;
+  content: string;
   media_url?: string;
-  media_caption?: string;
+  status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
   external_id?: string;
-  template_name?: string;
-  sent_at?: string;
-  delivered_at?: string;
-  read_at?: string;
   created_at: string;
 }
 
-export interface MessageTemplate {
+export interface WhatsAppTemplate {
   id: string;
-  platform_account: string;
-  platform_account_name: string;
+  account: string;
   name: string;
   language: string;
-  category: 'UTILITY' | 'MARKETING' | 'AUTHENTICATION';
-  category_display: string;
+  category: string;
   status: 'pending' | 'approved' | 'rejected';
-  status_display: string;
   header?: Record<string, any>;
   body: string;
   footer?: string;
   buttons?: any[];
-  external_id?: string;
-  created_at: string;
-  updated_at: string;
 }
 
-// ==================== PLATFORM ACCOUNTS ====================
-const API_BASE = '/messaging/v2';
+// ==================== WHATSAPP ACCOUNTS ====================
+const WHATSAPP_BASE = '/whatsapp';
 
 /**
- * Listar todas as contas de plataforma do usuário
+ * Listar contas WhatsApp
  */
-export const getPlatformAccounts = (params?: { 
-  platform?: string; 
-  is_active?: boolean;
-  is_verified?: boolean;
+export const getWhatsAppAccounts = () =>
+  api.get(`${WHATSAPP_BASE}/accounts/`);
+
+/**
+ * Obter conta WhatsApp específica
+ */
+export const getWhatsAppAccount = (id: string) =>
+  api.get(`${WHATSAPP_BASE}/accounts/${id}/`);
+
+/**
+ * Criar conta WhatsApp
+ */
+export const createWhatsAppAccount = (data: {
+  name: string;
+  phone_number: string;
+  phone_number_id: string;
+  waba_id: string;
+  access_token_encrypted?: string;
+}) => api.post(`${WHATSAPP_BASE}/accounts/`, data);
+
+/**
+ * Atualizar conta WhatsApp
+ */
+export const updateWhatsAppAccount = (id: string, data: Partial<{
+  name: string;
+  phone_number: string;
+  status: string;
+  auto_response_enabled: boolean;
+  human_handoff_enabled: boolean;
+}>) => api.patch(`${WHATSAPP_BASE}/accounts/${id}/`, data);
+
+/**
+ * Excluir conta WhatsApp
+ */
+export const deleteWhatsAppAccount = (id: string) =>
+  api.delete(`${WHATSAPP_BASE}/accounts/${id}/`);
+
+// ==================== WHATSAPP MESSAGES ====================
+
+/**
+ * Listar mensagens WhatsApp
+ */
+export const getWhatsAppMessages = (params?: {
+  account?: string;
+  direction?: string;
   status?: string;
-}) => api.get(`${API_BASE}/platform-accounts/`, { params });
+}) => api.get(`${WHATSAPP_BASE}/messages/`, { params });
 
 /**
- * Listar contas agrupadas por plataforma
+ * Enviar mensagem WhatsApp
  */
-export const getPlatformAccountsByPlatform = () => 
-  api.get(`${API_BASE}/platform-accounts/by_platform/`);
+export const sendWhatsAppMessage = (data: {
+  account: string;
+  to: string;
+  content: string;
+  message_type?: string;
+}) => api.post(`${WHATSAPP_BASE}/messages/`, data);
+
+// ==================== WHATSAPP TEMPLATES ====================
 
 /**
- * Obter uma conta específica
+ * Listar templates WhatsApp
  */
-export const getPlatformAccount = (id: string) =>
-  api.get(`${API_BASE}/platform-accounts/${id}/`);
+export const getWhatsAppTemplates = (params?: {
+  account?: string;
+  status?: string;
+}) => api.get(`${WHATSAPP_BASE}/templates/`, { params });
 
 /**
- * Criar nova conta de plataforma (WhatsApp, Messenger ou Instagram)
+ * Sincronizar templates do WhatsApp Business API
  */
-export const createPlatformAccount = (data: CreatePlatformAccountData) =>
-  api.post(`${API_BASE}/platform-accounts/`, data);
+export const syncWhatsAppTemplates = (accountId: string) =>
+  api.post(`${WHATSAPP_BASE}/accounts/${accountId}/sync_templates/`);
+
+// ==================== CONVERSATIONS (LEGACY) ====================
 
 /**
- * Atualizar conta existente
- */
-export const updatePlatformAccount = (id: string, data: Partial<CreatePlatformAccountData>) =>
-  api.patch(`${API_BASE}/platform-accounts/${id}/`, data);
-
-/**
- * Excluir conta
- */
-export const deletePlatformAccount = (id: string) =>
-  api.delete(`${API_BASE}/platform-accounts/${id}/`);
-
-/**
- * Ativar conta
- */
-export const activatePlatformAccount = (id: string) =>
-  api.post(`${API_BASE}/platform-accounts/${id}/activate/`);
-
-/**
- * Desativar conta
- */
-export const deactivatePlatformAccount = (id: string) =>
-  api.post(`${API_BASE}/platform-accounts/${id}/deactivate/`);
-
-/**
- * Sincronizar conta com a plataforma
- */
-export const syncPlatformAccount = (id: string) =>
-  api.post(`${API_BASE}/platform-accounts/${id}/sync/`);
-
-/**
- * Sincronizar templates do WhatsApp
- */
-export const syncWhatsAppTemplates = (id: string) =>
-  api.post(`${API_BASE}/platform-accounts/${id}/sync_templates/`);
-
-// ==================== CONVERSATIONS ====================
-
-/**
- * Listar conversas
+ * Listar conversas - usar conversations service
+ * @deprecated Use conversations.ts
  */
 export const getConversations = (params?: {
-  platform?: string;
+  account?: string;
+  customer_phone?: string;
   is_open?: boolean;
-  platform_account?: string;
-  search?: string;
-}) => api.get(`${API_BASE}/conversations/`, { params });
+}) => api.get('/conversations/', { params });
 
 /**
  * Obter conversa específica
+ * @deprecated Use conversations.ts
  */
 export const getConversation = (id: string) =>
-  api.get(`${API_BASE}/conversations/${id}/`);
-
-/**
- * Fechar conversa
- */
-export const closeConversation = (id: string) =>
-  api.post(`${API_BASE}/conversations/${id}/close/`);
-
-/**
- * Reabrir conversa
- */
-export const reopenConversation = (id: string) =>
-  api.post(`${API_BASE}/conversations/${id}/reopen/`);
-
-/**
- * Marcar conversa como lida
- */
-export const markConversationAsRead = (id: string) =>
-  api.post(`${API_BASE}/conversations/${id}/mark_read/`);
+  api.get(`/conversations/${id}/`);
 
 /**
  * Enviar mensagem em uma conversa
+ * @deprecated Use conversations.ts
  */
 export const sendMessage = (conversationId: string, data: {
-  text: string;
+  content: string;
   message_type?: string;
-}) => api.post(`${API_BASE}/conversations/${conversationId}/send_message/`, data);
-
-// ==================== MESSAGES ====================
-
-/**
- * Listar mensagens
- */
-export const getMessages = (params?: {
-  conversation?: string;
-  direction?: string;
-  status?: string;
-  message_type?: string;
-}) => api.get(`${API_BASE}/messages/`, { params });
-
-/**
- * Obter mensagem específica
- */
-export const getMessage = (id: string) =>
-  api.get(`${API_BASE}/messages/${id}/`);
-
-// ==================== TEMPLATES ====================
-
-/**
- * Listar templates de mensagem
- */
-export const getMessageTemplates = (params?: {
-  platform_account?: string;
-  status?: string;
-  category?: string;
-  language?: string;
-}) => api.get(`${API_BASE}/templates/`, { params });
-
-/**
- * Obter template específico
- */
-export const getMessageTemplate = (id: string) =>
-  api.get(`${API_BASE}/templates/${id}/`);
-
-/**
- * Criar template
- */
-export const createMessageTemplate = (data: {
-  platform_account: string;
-  name: string;
-  language?: string;
-  category?: 'UTILITY' | 'MARKETING' | 'AUTHENTICATION';
-  header?: Record<string, any>;
-  body: string;
-  footer?: string;
-  buttons?: any[];
-}) => api.post(`${API_BASE}/templates/`, data);
-
-/**
- * Atualizar template
- */
-export const updateMessageTemplate = (id: string, data: Partial<{
-  name: string;
-  body: string;
-  footer: string;
-  buttons: any[];
-}>) => api.patch(`${API_BASE}/templates/${id}/`, data);
-
-/**
- * Excluir template
- */
-export const deleteMessageTemplate = (id: string) =>
-  api.delete(`${API_BASE}/templates/${id}/`);
+}) => api.post(`/conversations/${conversationId}/send_message/`, data);
 
 // ==================== LEGACY COMPATIBILITY ====================
-// Mantidos para compatibilidade com código antigo
 
-/** @deprecated Use getPlatformAccounts com filtro platform='whatsapp' */
-export const getWhatsAppAccounts = () => 
-  getPlatformAccounts({ platform: 'whatsapp' });
+// Aliases para código antigo que usa messaging service
+export const getPlatformAccounts = getWhatsAppAccounts;
+export const getPlatformAccount = getWhatsAppAccount;
+export const createPlatformAccount = createWhatsAppAccount;
+export const updatePlatformAccount = updateWhatsAppAccount;
+export const deletePlatformAccount = deleteWhatsAppAccount;
 
-/** @deprecated Use getPlatformAccount */
-export const getWhatsAppAccount = getPlatformAccount;
-
-/** @deprecated Use createPlatformAccount */
-export const createWhatsAppAccount = (data: { name: string; phone_number?: string; access_token?: string }) =>
-  createPlatformAccount({ ...data, platform: 'whatsapp' });
-
-/** @deprecated Use updatePlatformAccount */
-export const updateWhatsAppAccount = updatePlatformAccount;
-
-/** @deprecated Use deletePlatformAccount */
-export const deleteWhatsAppAccount = deletePlatformAccount;
-
-/** @deprecated Use syncWhatsAppTemplates */
-export const syncWhatsAppAccountTemplates = syncWhatsAppTemplates;
-
-// QR Code - mantido para compatibilidade (não implementado no v2 ainda)
-export const getWhatsAppQR = (_accountId: string) =>
-  Promise.reject(new Error('QR Code não implementado no messaging v2'));
-
-// Export default para compatibilidade
+// Export default
 export default {
-  // Platform Accounts
-  getPlatformAccounts,
-  getPlatformAccountsByPlatform,
-  getPlatformAccount,
-  createPlatformAccount,
-  updatePlatformAccount,
-  deletePlatformAccount,
-  activatePlatformAccount,
-  deactivatePlatformAccount,
-  syncPlatformAccount,
-  syncWhatsAppTemplates,
-  // Conversations
-  getConversations,
-  getConversation,
-  closeConversation,
-  reopenConversation,
-  markConversationAsRead,
-  sendMessage,
-  // Messages
-  getMessages,
-  getMessage,
-  // Templates
-  getMessageTemplates,
-  getMessageTemplate,
-  createMessageTemplate,
-  updateMessageTemplate,
-  deleteMessageTemplate,
-  // Legacy
+  // WhatsApp Accounts
   getWhatsAppAccounts,
   getWhatsAppAccount,
   createWhatsAppAccount,
   updateWhatsAppAccount,
   deleteWhatsAppAccount,
-  syncWhatsAppAccountTemplates,
-  getWhatsAppQR,
+  // Messages
+  getWhatsAppMessages,
+  sendWhatsAppMessage,
+  // Templates
+  getWhatsAppTemplates,
+  syncWhatsAppTemplates,
+  // Conversations (legacy)
+  getConversations,
+  getConversation,
+  sendMessage,
+  // Aliases
+  getPlatformAccounts,
+  getPlatformAccount,
+  createPlatformAccount,
+  updatePlatformAccount,
+  deletePlatformAccount,
 };
