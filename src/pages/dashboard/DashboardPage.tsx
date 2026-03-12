@@ -38,6 +38,8 @@ import { dashboardService } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { DashboardOverview, DashboardCharts } from '../../types';
 import { useFetch } from '../../hooks/useFetch';
+import { useStore } from '../../hooks/useStore';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -93,8 +95,11 @@ const StatCard: React.FC<{
 };
 
 export const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const { selectedAccount } = useAccountStore();
+  const { storeId, storeSlug } = useStore();
   const [chartRangeDays, setChartRangeDays] = useState(7);
+  const ordersPath = storeId || storeSlug ? `/stores/${storeId || storeSlug}/orders` : '/stores';
 
   const fetchOverview = useCallback(
     () => dashboardService.getOverview(selectedAccount?.id),
@@ -341,7 +346,7 @@ export const DashboardPage: React.FC = () => {
                 <Button 
                   variant="outline"
                   leftIcon={<ShoppingCartIcon className="w-4 h-4" />}
-                  onClick={() => window.location.href = '/orders'}
+                  onClick={() => navigate(ordersPath)}
                 >
                   Ver Pedidos
                 </Button>

@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeftIcon,
-  BuildingOfficeIcon,
   ClipboardDocumentIcon,
   KeyIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { companyProfileService, businessTypeLabels } from '../../services/automation';
-import { CompanyProfile, UpdateCompanyProfile, BusinessHours } from '../../types';
+import { whatsappService } from '../../services/whatsapp';
+import { getStores, type Store as StoreRecord } from '../../services/storesApi';
+import {
+  CompanyProfile,
+  CreateCompanyProfile,
+  UpdateCompanyProfile,
+  BusinessHours,
+  WhatsAppAccount,
+} from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
 
@@ -25,45 +32,93 @@ const daysOfWeek = [
 const CompanyProfileDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isCreateMode = !id;
+
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
+  const [stores, setStores] = useState<StoreRecord[]>([]);
+  const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<UpdateCompanyProfile>({});
   const [businessHours, setBusinessHours] = useState<BusinessHours>({});
+  const [createLinks, setCreateLinks] = useState({
+    store_id: '',
+    account_id: '',
+  });
 
   useEffect(() => {
-    if (id) {
-      loadProfile();
-    }
+    void loadInitialData();
   }, [id]);
 
-  const loadProfile = async () => {
+  const hydrateForm = (data: CompanyProfile) => {
+    setProfile(data);
+    setFormData({
+      company_name: data.company_name || data.store_name || '',
+      business_type: data.business_type || '',
+      description: data.description || '',
+      website_url: data.website_url || '',
+      menu_url: data.menu_url || '',
+      order_url: data.order_url || '',
+      auto_reply_enabled: data.auto_reply_enabled ?? false,
+      welcome_message_enabled: data.welcome_message_enabled ?? false,
+      menu_auto_send: data.menu_auto_send ?? false,
+      abandoned_cart_notification: data.abandoned_cart_notification ?? false,
+      abandoned_cart_delay_minutes: data.abandoned_cart_delay_minutes || 30,
+      pix_notification_enabled: data.pix_notification_enabled ?? false,
+      payment_confirmation_enabled: data.payment_confirmation_enabled ?? false,
+      order_status_notification_enabled: data.order_status_notification_enabled ?? false,
+      delivery_notification_enabled: data.delivery_notification_enabled ?? false,
+      use_ai_agent: data.use_ai_agent ?? false,
+      default_agent: data.default_agent || null,
+    });
+    setBusinessHours(data.business_hours || {});
+  };
+
+  const loadInitialData = async () => {
     try {
       setLoading(true);
-      const data = await companyProfileService.get(id!);
-      setProfile(data);
-      setFormData({
-        company_name: data.company_name || '',
-        business_type: data.business_type || '',
-        description: data.description || '',
-        website_url: data.website_url || '',
-        menu_url: data.menu_url || '',
-        order_url: data.order_url || '',
-        auto_reply_enabled: data.auto_reply_enabled ?? false,
-        welcome_message_enabled: data.welcome_message_enabled ?? false,
-        menu_auto_send: data.menu_auto_send ?? false,
-        abandoned_cart_notification: data.abandoned_cart_notification ?? false,
-        abandoned_cart_delay_minutes: data.abandoned_cart_delay_minutes || 30,
-        pix_notification_enabled: data.pix_notification_enabled ?? false,
-        payment_confirmation_enabled: data.payment_confirmation_enabled ?? false,
-        order_status_notification_enabled: data.order_status_notification_enabled ?? false,
-        delivery_notification_enabled: data.delivery_notification_enabled ?? false,
-        use_ai_agent: data.use_ai_agent ?? false,
-        default_agent: data.default_agent || null,
-      });
-      setBusinessHours(data.business_hours || {});
+      const [storesResponse, accountsResponse, profileResponse] = await Promise.all([
+        getStores(),
+        whatsappService.getAccounts(),
+        isCreateMode ? Promise.resolve(null) : companyProfileService.get(id!),
+      ]);
+
+      const availableStores = storesResponse.results || [];
+      const availableAccounts = accountsResponse.results || [];
+
+      setStores(availableStores);
+      setAccounts(availableAccounts);
+
+      if (isCreateMode) {
+        setCreateLinks({
+          store_id: availableStores.length === 1 ? availableStores[0].id : '',
+          account_id: availableAccounts.length === 1 ? availableAccounts[0].id : '',
+        });
+        setFormData({
+          company_name: '',
+          business_type: '',
+          description: '',
+          website_url: '',
+          menu_url: '',
+          order_url: '',
+          auto_reply_enabled: true,
+          welcome_message_enabled: true,
+          menu_auto_send: true,
+          abandoned_cart_notification: true,
+          abandoned_cart_delay_minutes: 30,
+          pix_notification_enabled: true,
+          payment_confirmation_enabled: true,
+          order_status_notification_enabled: true,
+          delivery_notification_enabled: true,
+          use_ai_agent: false,
+          default_agent: null,
+        });
+        setBusinessHours({});
+      } else if (profileResponse) {
+        hydrateForm(profileResponse);
+      }
     } catch (error) {
-      toast.error('Erro ao carregar perfil');
+      toast.error(isCreateMode ? 'Erro ao carregar dados para criação' : 'Erro ao carregar perfil');
       navigate('/automation/companies');
     } finally {
       setLoading(false);
@@ -72,27 +127,56 @@ const CompanyProfileDetailPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
       setSaving(true);
+
+      if (isCreateMode) {
+        if (!createLinks.store_id || !createLinks.account_id) {
+          toast.error('Selecione a loja e a conta WhatsApp antes de continuar');
+          return;
+        }
+
+        const createPayload: CreateCompanyProfile = {
+          account_id: createLinks.account_id,
+          store_id: createLinks.store_id,
+          name: formData.company_name || 'Perfil de automação',
+          company_name: formData.company_name,
+          description: formData.description,
+          business_hours: businessHours,
+        };
+
+        const created = await companyProfileService.create(createPayload);
+        await companyProfileService.update(created.id, {
+          ...formData,
+          business_hours: businessHours,
+        });
+
+        toast.success('Perfil criado com sucesso!');
+        navigate(`/automation/companies/${created.id}`);
+        return;
+      }
+
       await companyProfileService.update(id!, {
         ...formData,
         business_hours: businessHours,
       });
       toast.success('Perfil atualizado com sucesso!');
-      loadProfile();
+      await loadInitialData();
     } catch (error) {
-      toast.error('Erro ao atualizar perfil');
+      toast.error(isCreateMode ? 'Erro ao criar perfil' : 'Erro ao atualizar perfil');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
+    if (!id) return;
     if (!confirm('Tem certeza que deseja excluir este perfil? Esta ação não pode ser desfeita.')) {
       return;
     }
     try {
-      await companyProfileService.delete(id!);
+      await companyProfileService.delete(id);
       toast.success('Perfil excluído com sucesso');
       navigate('/automation/companies');
     } catch (error) {
@@ -108,12 +192,13 @@ const CompanyProfileDetailPage: React.FC = () => {
   };
 
   const handleRegenerateApiKey = async () => {
+    if (!id) return;
     if (!confirm('Tem certeza? A chave atual será invalidada.')) return;
     try {
-      const result = await companyProfileService.regenerateApiKey(id!);
+      const result = await companyProfileService.regenerateApiKey(id);
       toast.success('Nova API key gerada!');
       navigator.clipboard.writeText(result.api_key);
-      loadProfile();
+      await loadInitialData();
     } catch (error) {
       toast.error('Erro ao gerar nova API key');
     }
@@ -124,7 +209,7 @@ const CompanyProfileDetailPage: React.FC = () => {
     field: 'open' | 'start' | 'end',
     value: boolean | string
   ) => {
-    setBusinessHours(prev => ({
+    setBusinessHours((prev) => ({
       ...prev,
       [day]: {
         ...prev[day as keyof BusinessHours],
@@ -132,6 +217,9 @@ const CompanyProfileDetailPage: React.FC = () => {
       },
     }));
   };
+
+  const selectedStore = stores.find((store) => store.id === createLinks.store_id);
+  const selectedAccount = accounts.find((account) => account.id === createLinks.account_id);
 
   if (loading) {
     return (
@@ -141,13 +229,12 @@ const CompanyProfileDetailPage: React.FC = () => {
     );
   }
 
-  if (!profile) {
+  if (!isCreateMode && !profile) {
     return null;
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link
@@ -157,31 +244,107 @@ const CompanyProfileDetailPage: React.FC = () => {
             <ArrowLeftIcon className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.company_name}</h1>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">{profile.account_phone}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {isCreateMode ? 'Novo Perfil de Automação' : profile?.company_name}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-zinc-400">
+              {isCreateMode
+                ? 'Vincule uma loja e uma conta WhatsApp para centralizar automações'
+                : profile?.account_phone}
+            </p>
           </div>
         </div>
-        <div className="flex space-x-2">
-          <Link
-            to={`/automation/companies/${id}/messages`}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
-          >
-            Mensagens Automáticas
-          </Link>
-          <button
-            onClick={handleDelete}
-            className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 dark:text-red-300 bg-white dark:bg-zinc-900 hover:bg-red-50"
-          >
-            <TrashIcon className="h-4 w-4 mr-2" />
-            Excluir
-          </button>
-        </div>
+        {!isCreateMode && id && (
+          <div className="flex space-x-2">
+            <Link
+              to={`/automation/companies/${id}/messages`}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
+            >
+              Mensagens Automáticas
+            </Link>
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 dark:text-red-300 bg-white dark:bg-zinc-900 hover:bg-red-50"
+            >
+              <TrashIcon className="h-4 w-4 mr-2" />
+              Excluir
+            </button>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Info */}
+        {isCreateMode && (
+          <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Vínculos obrigatórios</h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                  Loja
+                </label>
+                <select
+                  value={createLinks.store_id}
+                  onChange={(e) => setCreateLinks((prev) => ({ ...prev, store_id: e.target.value }))}
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                >
+                  <option value="">Selecione uma loja</option>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-gray-500 dark:text-zinc-400">
+                  A loja deve ser a fonte principal dos dados de negócio.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                  Conta WhatsApp
+                </label>
+                <select
+                  value={createLinks.account_id}
+                  onChange={(e) => setCreateLinks((prev) => ({ ...prev, account_id: e.target.value }))}
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                >
+                  <option value="">Selecione uma conta</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name} ({account.phone_number})
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-gray-500 dark:text-zinc-400">
+                  Essa conta será usada nas mensagens automáticas e sessões.
+                </p>
+              </div>
+            </div>
+            {(selectedStore || selectedAccount) && (
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black p-4 text-sm text-gray-600 dark:text-zinc-300">
+                  <p className="font-medium text-gray-900 dark:text-white">Loja selecionada</p>
+                  <p>{selectedStore?.name || 'Nenhuma loja selecionada'}</p>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400">{selectedStore?.slug || 'Sem slug'}</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black p-4 text-sm text-gray-600 dark:text-zinc-300">
+                  <p className="font-medium text-gray-900 dark:text-white">Conta selecionada</p>
+                  <p>{selectedAccount?.name || 'Nenhuma conta selecionada'}</p>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400">{selectedAccount?.phone_number || 'Sem telefone'}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
+          {!isCreateMode && profile?.store_name && (
+            <div className="mb-4 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black p-4 text-sm text-gray-600 dark:text-zinc-300">
+              <p className="font-medium text-gray-900 dark:text-white">Fonte principal do negócio</p>
+              <p>{profile.store_name}</p>
+              <p className="text-xs text-gray-500 dark:text-zinc-400">{profile.store_slug || 'Sem slug de loja'}</p>
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
@@ -200,9 +363,10 @@ const CompanyProfileDetailPage: React.FC = () => {
               </label>
               <select
                 value={formData.business_type || ''}
-                onChange={(e) => setFormData({ ...formData, business_type: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, business_type: e.target.value as UpdateCompanyProfile['business_type'] })}
                 className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
               >
+                <option value="">Selecione</option>
                 {Object.entries(businessTypeLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
@@ -255,7 +419,6 @@ const CompanyProfileDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Automation Settings */}
         <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Configurações de Automação</h2>
           <div className="space-y-4">
@@ -298,7 +461,6 @@ const CompanyProfileDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Notification Settings */}
         <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Notificações</h2>
           <div className="space-y-4">
@@ -323,7 +485,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                   type="number"
                   min="1"
                   value={formData.abandoned_cart_delay_minutes || 30}
-                  onChange={(e) => setFormData({ ...formData, abandoned_cart_delay_minutes: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, abandoned_cart_delay_minutes: parseInt(e.target.value, 10) || 30 })}
                   className="mt-1 block w-32 rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
                 />
               </div>
@@ -379,7 +541,6 @@ const CompanyProfileDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Business Hours */}
         <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Horário de Funcionamento</h2>
           <div className="space-y-3">
@@ -416,56 +577,56 @@ const CompanyProfileDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* API Integration */}
-        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Integração API</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">API Key</label>
-              <div className="mt-1 flex rounded-md shadow-sm">
-                <input
-                  type="text"
-                  readOnly
-                  value={profile.external_api_key || 'Não gerada'}
-                  className="flex-1 block w-full rounded-l-md border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black"
-                />
-                <button
-                  type="button"
-                  onClick={handleCopyApiKey}
-                  className="inline-flex items-center px-3 border border-l-0 border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 dark:hover:text-zinc-300"
-                >
-                  <ClipboardDocumentIcon className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRegenerateApiKey}
-                  className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 dark:hover:text-zinc-300"
-                >
-                  <KeyIcon className="h-5 w-5" />
-                </button>
+        {!isCreateMode && (
+          <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Integração API</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">API Key</label>
+                <div className="mt-1 flex rounded-md shadow-sm">
+                  <input
+                    type="text"
+                    readOnly
+                    value={profile?.external_api_key || 'Não gerada'}
+                    className="flex-1 block w-full rounded-l-md border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyApiKey}
+                    className="inline-flex items-center px-3 border border-l-0 border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
+                  >
+                    <ClipboardDocumentIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRegenerateApiKey}
+                    className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
+                  >
+                    <KeyIcon className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+                  Use esta chave no header X-API-Key para autenticar webhooks
+                </p>
               </div>
-              <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-                Use esta chave no header X-API-Key para autenticar webhooks
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Webhook Secret</label>
-              <div className="mt-1 flex rounded-md shadow-sm">
-                <input
-                  type="text"
-                  readOnly
-                  value={profile.webhook_secret ? '••••••••••••••••' : 'Não gerado'}
-                  className="flex-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black"
-                />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Webhook Secret</label>
+                <div className="mt-1 flex rounded-md shadow-sm">
+                  <input
+                    type="text"
+                    readOnly
+                    value={profile?.webhook_secret ? '••••••••••••••••' : 'Não gerado'}
+                    className="flex-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black"
+                  />
+                </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+                  Use para validar assinaturas de webhook (opcional)
+                </p>
               </div>
-              <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-                Use para validar assinaturas de webhook (opcional)
-              </p>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* AI Agent Integration */}
         <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Integração Agente IA</h2>
           <div className="space-y-4">
@@ -501,7 +662,6 @@ const CompanyProfileDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Submit */}
         <div className="flex justify-end space-x-3">
           <Link
             to="/automation/companies"
@@ -514,7 +674,7 @@ const CompanyProfileDetailPage: React.FC = () => {
             disabled={saving}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
           >
-            {saving ? <LoadingSpinner size="sm" /> : 'Salvar'}
+            {saving ? <LoadingSpinner size="sm" /> : isCreateMode ? 'Criar Perfil' : 'Salvar'}
           </button>
         </div>
       </form>

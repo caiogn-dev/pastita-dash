@@ -124,8 +124,12 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
     if (!host) {
       const apiUrl = import.meta.env.VITE_API_URL;
       if (apiUrl) {
-        const url = new URL(apiUrl);
-        host = url.host;
+        try {
+          const url = new URL(apiUrl);
+          host = url.host;
+        } catch {
+          host = window.location.host;
+        }
       } else {
         host = window.location.host;
       }

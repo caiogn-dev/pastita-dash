@@ -157,7 +157,15 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     let host = import.meta.env.VITE_WS_HOST;
     if (!host) {
       const api = import.meta.env.VITE_API_URL;
-      host = api ? new URL(api).host : window.location.host;
+      if (api) {
+        try {
+          host = new URL(api).host;
+        } catch {
+          host = window.location.host;
+        }
+      } else {
+        host = window.location.host;
+      }
     }
     
     const proto = host.includes('railway') || host.includes('vercel') || location.protocol === 'https:' ? 'wss' : 'ws';

@@ -1,7 +1,22 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://backend.pastita.com.br/api/v1';
+const DEFAULT_API_BASE_URL = 'https://backend.pastita.com.br/api/v1';
+
+const normalizeApiBaseUrl = (rawUrl?: string): string => {
+  const candidate = (rawUrl || DEFAULT_API_BASE_URL).trim().replace(/\/+$/, '');
+  if (candidate.endsWith('/api/v1')) {
+    return candidate;
+  }
+  if (candidate.includes('/api/')) {
+    return candidate;
+  }
+  return `${candidate}/api/v1`;
+};
+
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
+export const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/v1$/, '');
+export const WS_BASE_URL = (import.meta.env.VITE_WS_URL || `${BACKEND_BASE_URL.replace(/^http/, 'ws')}/ws`).replace(/\/+$/, '');
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

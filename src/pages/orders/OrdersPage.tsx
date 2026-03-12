@@ -130,7 +130,11 @@ export const OrdersPage: React.FC = () => {
 
   // Carrega pedidos
   const loadOrders = useCallback(async () => {
-    if (!effectiveStoreId) return;
+    if (!effectiveStoreId) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const response = await ordersService.getOrders({ store: effectiveStoreId });
@@ -201,6 +205,24 @@ export const OrdersPage: React.FC = () => {
 
   if (loading) {
     return <PageLoading />;
+  }
+
+  if (!effectiveStoreId) {
+    return (
+      <Box p={6}>
+        <Card>
+          <Stack gap={4}>
+            <Heading size="lg">Pedidos</Heading>
+            <Text color="fg.muted">
+              Selecione uma loja para visualizar ou criar pedidos.
+            </Text>
+            <Flex>
+              <Button onClick={() => navigate('/stores')}>Ir para Lojas</Button>
+            </Flex>
+          </Stack>
+        </Card>
+      </Box>
+    );
   }
 
   return (

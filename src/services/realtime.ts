@@ -754,7 +754,15 @@ export function getWebSocketUrl(path: string): string {
   if (!wsHost) {
     // @ts-ignore - Vite env
     const apiUrl: string = typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_API_URL || '') : '';
-    wsHost = apiUrl ? new URL(apiUrl).host : window.location.host;
+    if (apiUrl) {
+      try {
+        wsHost = new URL(apiUrl).host;
+      } catch {
+        wsHost = window.location.host;
+      }
+    } else {
+      wsHost = window.location.host;
+    }
   }
   const proto = wsHost.includes('railway') || wsHost.includes('vercel') || window.location.protocol === 'https:' ? 'wss' : 'ws';
   return `${proto}://${wsHost}${path}`;

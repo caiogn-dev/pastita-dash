@@ -176,6 +176,9 @@ export interface Conversation {
   labels: string[];
   tags?: string[];
   assigned_to?: string;
+  handover_status?: 'bot' | 'human' | 'pending' | string;
+  handover_assigned_to?: string | null;
+  handover_assigned_to_name?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -432,6 +435,9 @@ export type BusinessHours = Record<string, { open: boolean; start?: string; end?
 export interface CompanyProfile {
   id: string;
   name: string;
+  store_id?: string;
+  store_slug?: string;
+  store_name?: string;
   company_name?: string;
   slug?: string;
   description?: string;
@@ -469,6 +475,8 @@ export interface CompanyProfile {
 }
 
 export interface CreateCompanyProfile {
+  account_id: string;
+  store_id?: string;
   name: string;
   company_name?: string;
   slug?: string;

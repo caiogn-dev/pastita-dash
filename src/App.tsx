@@ -23,6 +23,7 @@ const AccountDetailPage = lazy(() => import('./pages/accounts/AccountDetailPage'
 const MessagesPage = lazy(() => import('./pages/messages/MessagesPage').then(m => ({ default: m.MessagesPage })));
 const ConversationsPage = lazy(() => import('./pages/conversations/ConversationsPage').then(m => ({ default: m.ConversationsPage })));
 const OrdersPage = lazy(() => import('./pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
+const OrderNewPage = lazy(() => import('./pages/orders/OrderNewPage').then(m => ({ default: m.OrderNewPage })));
 const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPageNew').then(m => ({ default: m.OrderDetailPageNew })));
 const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
@@ -58,6 +59,7 @@ const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default:
 const StoresPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoresPage })));
 const StoreDetailPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreDetailPage })));
 const StoreSettingsPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreSettingsPage })));
+const DeliveryZonesPage = lazy(() => import('./pages/delivery/DeliveryZonesPage').then(m => ({ default: m.DeliveryZonesPage })));
 
 // Marketing Pages
 const MarketingPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.MarketingPage })));
@@ -146,6 +148,10 @@ const AppContent: React.FC = () => {
         <Route path="accounts/:id/edit" element={<Suspense fallback={<FullPageLoading />}><AccountFormPage /></Suspense>} />
         <Route path="messages" element={<Suspense fallback={<FullPageLoading />}><MessagesPage /></Suspense>} />
         <Route path="conversations" element={<Suspense fallback={<FullPageLoading />}><ConversationsPage /></Suspense>} />
+        <Route path="orders" element={<Suspense fallback={<FullPageLoading />}><OrdersPage /></Suspense>} />
+        <Route path="orders/new" element={<Suspense fallback={<FullPageLoading />}><OrderNewPage /></Suspense>} />
+        <Route path="orders/:id" element={<Suspense fallback={<FullPageLoading />}><OrderDetailPage /></Suspense>} />
+        <Route path="delivery/zones" element={<Suspense fallback={<FullPageLoading />}><DeliveryZonesPage /></Suspense>} />
         
         {/* AI Agents Routes (Langchain) */}
         <Route path="agents" element={<Suspense fallback={<FullPageLoading />}><AgentsPage /></Suspense>} />
@@ -182,8 +188,10 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId" element={<Suspense fallback={<FullPageLoading />}><StoreDetailPage /></Suspense>} />
         <Route path="stores/:storeId/products" element={<Suspense fallback={<FullPageLoading />}><ProductsPage /></Suspense>} />
         <Route path="stores/:storeId/orders" element={<Suspense fallback={<FullPageLoading />}><OrdersPage /></Suspense>} />
+        <Route path="stores/:storeId/orders/new" element={<Suspense fallback={<FullPageLoading />}><OrderNewPage /></Suspense>} />
         <Route path="stores/:storeId/orders/:id" element={<Suspense fallback={<FullPageLoading />}><OrderDetailPage /></Suspense>} />
         <Route path="stores/:storeId/coupons" element={<Suspense fallback={<FullPageLoading />}><CouponsPage /></Suspense>} />
+        <Route path="stores/:storeId/delivery" element={<Suspense fallback={<FullPageLoading />}><DeliveryZonesPage /></Suspense>} />
         <Route path="stores/:storeId/analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
         <Route path="stores/:storeId/payments" element={<Suspense fallback={<FullPageLoading />}><PaymentsPage /></Suspense>} />
         <Route path="stores/:storeId/settings" element={<Suspense fallback={<FullPageLoading />}><StoreSettingsPage /></Suspense>} />

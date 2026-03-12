@@ -207,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         },
         { 
           name: 'Entregas', 
-          href: '/delivery/zones', 
+          href: storeHref('delivery'), 
           icon: TruckIcon 
         },
       ]

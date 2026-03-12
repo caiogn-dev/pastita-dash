@@ -97,8 +97,14 @@ export const whatsappService = {
     return response.data;
   },
 
-  markAsRead: async (messageId: string): Promise<void> => {
-    await api.post(`/whatsapp/messages/${messageId}/mark_as_read/`);
+  markAsRead: async (messageId: string, accountId?: string): Promise<void> => {
+    if (!accountId) {
+      throw new Error('accountId is required to mark message as read.');
+    }
+    await api.post('/whatsapp/messages/mark_as_read/', {
+      account_id: accountId,
+      message_id: messageId,
+    });
   },
 
   // Templates
@@ -115,8 +121,11 @@ export const whatsappService = {
   },
 
   syncTemplates: async (accountId: string): Promise<{ message: string; synced: number }> => {
-    const response = await api.post('/whatsapp/templates/sync/', { account_id: accountId });
-    return response.data;
+    const response = await api.post(`/whatsapp/accounts/${accountId}/sync_templates/`);
+    return {
+      message: response.data?.message || 'Templates sincronizados',
+      synced: response.data?.synced ?? response.data?.count ?? 0,
+    };
   },
 
   // Business Profile
