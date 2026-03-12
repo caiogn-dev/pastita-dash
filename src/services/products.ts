@@ -1,8 +1,6 @@
 import api from './api';
 import { PaginatedResponse } from '../types';
-
-// Store slug for filtering products
-const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
+import { getStoreSlugWithFallback } from '../hooks/useStore';
 
 export interface Product {
   id: string;
@@ -63,9 +61,11 @@ let cachedCategories: Category[] | null = null;
 
 async function getStoreId(): Promise<string> {
   if (cachedStoreId) return cachedStoreId;
+  const storeSlug = getStoreSlugWithFallback();
+  if (!storeSlug) return '';
   
   try {
-    const response = await api.get('/stores/stores/', { params: { slug: STORE_SLUG } });
+    const response = await api.get('/stores/stores/', { params: { slug: storeSlug } });
     const stores = response.data.results || response.data;
     if (stores.length > 0) {
       cachedStoreId = stores[0].id as string;

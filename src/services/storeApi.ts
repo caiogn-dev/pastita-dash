@@ -15,13 +15,13 @@
 import api from './api';
 import logger from './logger';
 import { useStoreContextStore } from '../stores/storeContextStore';
+import { requireStoreSlug, resolveStoreSlug } from '../config/storeConfig';
 
 // =============================================================================
 // CONFIGURATION
 // =============================================================================
 
 const API_BASE = '/stores';
-const DEFAULT_STORE = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
 // =============================================================================
 // STORE CONTEXT HELPERS
@@ -32,14 +32,16 @@ const DEFAULT_STORE = import.meta.env.VITE_STORE_SLUG || 'pastita';
  */
 export function getActiveStoreSlug(): string {
   const state = useStoreContextStore.getState();
-  return state.selectedStore?.slug || DEFAULT_STORE;
+  return requireStoreSlug(state.selectedStore?.slug);
 }
 
 /**
  * Get store slug - uses provided value or active store
  */
 function resolveStore(storeSlug?: string): string {
-  return storeSlug || getActiveStoreSlug();
+  if (storeSlug) return storeSlug;
+  const state = useStoreContextStore.getState();
+  return requireStoreSlug(state.selectedStore?.slug);
 }
 
 // =============================================================================
@@ -659,57 +661,58 @@ import { useMemo } from 'react';
  */
 export function useStoreApi() {
   const selectedStore = useStoreContextStore(state => state.selectedStore);
+  const currentStoreSlug = resolveStoreSlug(selectedStore?.slug);
   
   return useMemo(() => ({
-    storeSlug: selectedStore?.slug || DEFAULT_STORE,
+    storeSlug: currentStoreSlug,
     storeName: selectedStore?.name || 'Loja',
     
     // Products
-    getProducts: (params?: ApiParams) => storeService.getProducts(params, selectedStore?.slug),
-    getProduct: (id: number) => storeService.getProduct(id, selectedStore?.slug),
-    createProduct: (data: Partial<Product>) => storeService.createProduct(data, selectedStore?.slug),
+    getProducts: (params?: ApiParams) => storeService.getProducts(params, currentStoreSlug || undefined),
+    getProduct: (id: number) => storeService.getProduct(id, currentStoreSlug || undefined),
+    createProduct: (data: Partial<Product>) => storeService.createProduct(data, currentStoreSlug || undefined),
     updateProduct: storeService.updateProduct.bind(storeService),
     deleteProduct: storeService.deleteProduct.bind(storeService),
     
     // Categories
-    getCategories: (params?: ApiParams) => storeService.getCategories(params, selectedStore?.slug),
+    getCategories: (params?: ApiParams) => storeService.getCategories(params, currentStoreSlug || undefined),
     getCategory: storeService.getCategory.bind(storeService),
-    createCategory: (data: Partial<Category>) => storeService.createCategory(data, selectedStore?.slug),
+    createCategory: (data: Partial<Category>) => storeService.createCategory(data, currentStoreSlug || undefined),
     updateCategory: storeService.updateCategory.bind(storeService),
     deleteCategory: storeService.deleteCategory.bind(storeService),
     
     // Orders
-    getOrders: (params?: ApiParams) => storeService.getOrders(params, selectedStore?.slug),
+    getOrders: (params?: ApiParams) => storeService.getOrders(params, currentStoreSlug || undefined),
     getOrder: storeService.getOrder.bind(storeService),
     updateOrderStatus: storeService.updateOrderStatus.bind(storeService),
     getOrderPaymentStatus: storeService.getOrderPaymentStatus.bind(storeService),
     
     // Coupons
-    getCoupons: (params?: ApiParams) => storeService.getCoupons(params, selectedStore?.slug),
+    getCoupons: (params?: ApiParams) => storeService.getCoupons(params, currentStoreSlug || undefined),
     getCoupon: storeService.getCoupon.bind(storeService),
-    createCoupon: (data: Partial<Coupon>) => storeService.createCoupon(data, selectedStore?.slug),
+    createCoupon: (data: Partial<Coupon>) => storeService.createCoupon(data, currentStoreSlug || undefined),
     updateCoupon: storeService.updateCoupon.bind(storeService),
     deleteCoupon: storeService.deleteCoupon.bind(storeService),
-    validateCoupon: (code: string) => storeService.validateCoupon(code, selectedStore?.slug),
+    validateCoupon: (code: string) => storeService.validateCoupon(code, currentStoreSlug || undefined),
     
     // Delivery Zones
-    getDeliveryZones: (params?: ApiParams) => storeService.getDeliveryZones(params, selectedStore?.slug),
+    getDeliveryZones: (params?: ApiParams) => storeService.getDeliveryZones(params, currentStoreSlug || undefined),
     getDeliveryZone: storeService.getDeliveryZone.bind(storeService),
-    createDeliveryZone: (data: Partial<DeliveryZone>) => storeService.createDeliveryZone(data, selectedStore?.slug),
+    createDeliveryZone: (data: Partial<DeliveryZone>) => storeService.createDeliveryZone(data, currentStoreSlug || undefined),
     updateDeliveryZone: storeService.updateDeliveryZone.bind(storeService),
     deleteDeliveryZone: storeService.deleteDeliveryZone.bind(storeService),
     
     // Product Types
-    getProductTypes: (params?: ApiParams) => storeService.getProductTypes(params, selectedStore?.slug),
-    getProductType: (id: string) => storeService.getProductType(id, selectedStore?.slug),
-    createProductType: (data: Partial<ProductType>) => storeService.createProductType(data, selectedStore?.slug),
+    getProductTypes: (params?: ApiParams) => storeService.getProductTypes(params, currentStoreSlug || undefined),
+    getProductType: (id: string) => storeService.getProductType(id, currentStoreSlug || undefined),
+    createProductType: (data: Partial<ProductType>) => storeService.createProductType(data, currentStoreSlug || undefined),
     updateProductType: storeService.updateProductType.bind(storeService),
     deleteProductType: storeService.deleteProductType.bind(storeService),
     
     // Dashboard
-    getDashboardStats: () => storeService.getDashboardStats(selectedStore?.slug),
-    getCatalog: () => storeService.getCatalog(selectedStore?.slug),
-  }), [selectedStore]);
+    getDashboardStats: () => storeService.getDashboardStats(currentStoreSlug || undefined),
+    getCatalog: () => storeService.getCatalog(currentStoreSlug || undefined),
+  }), [currentStoreSlug, selectedStore?.name]);
 }
 
 export default storeService;

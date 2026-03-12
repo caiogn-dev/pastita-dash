@@ -1,6 +1,6 @@
 import api from './api';
 import { ExportParams } from '../types';
-import { getStoreSlug } from '../hooks/useStore';
+import { getStoreSlugWithFallback } from '../hooks/useStore';
 
 export const exportService = {
   exportMessages: async (params: ExportParams = {}): Promise<Blob> => {
@@ -12,7 +12,7 @@ export const exportService = {
   },
 
   exportOrders: async (params: ExportParams = {}): Promise<Blob> => {
-    const storeSlug = getStoreSlug();
+    const storeSlug = getStoreSlugWithFallback();
     const store = params.store || storeSlug || undefined;
     const response = await api.get('/stores/reports/orders/export/', {
       params: { ...params, store },

@@ -1,7 +1,18 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
-const DEFAULT_API_BASE_URL = 'https://backend.pastita.com.br/api/v1';
+const getDefaultApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000/api/v1';
+    }
+    return `${window.location.origin.replace(/\/+$/, '')}/api/v1`;
+  }
+  return 'http://localhost:8000/api/v1';
+};
+
+const DEFAULT_API_BASE_URL = getDefaultApiBaseUrl();
 
 const normalizeApiBaseUrl = (rawUrl?: string): string => {
   const candidate = (rawUrl || DEFAULT_API_BASE_URL).trim().replace(/\/+$/, '');

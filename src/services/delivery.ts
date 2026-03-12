@@ -1,5 +1,6 @@
 import api from './api';
 import { PaginatedResponse } from '../types';
+import { getStoreSlugWithFallback } from '../hooks/useStore';
 
 export interface DeliveryZone {
   id: string;
@@ -102,7 +103,6 @@ export interface DeliveryZoneFilters {
 class DeliveryService {
   private baseUrl = '/stores/delivery-zones';
   private storeUrl = '/stores/stores';
-  private storeSlug = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
   async getZones(filters?: DeliveryZoneFilters): Promise<PaginatedResponse<DeliveryZone>> {
     const params = new URLSearchParams();
@@ -171,8 +171,12 @@ class DeliveryService {
 
   async getStoreLocation(): Promise<StoreLocation | null> {
     try {
+      const storeSlug = getStoreSlugWithFallback();
+      if (!storeSlug) {
+        return null;
+      }
       // Use the store slug to get the store location
-      const response = await api.get<StoreLocation>(`${this.storeUrl}/${this.storeSlug}/`);
+      const response = await api.get<StoreLocation>(`${this.storeUrl}/${storeSlug}/`);
       if (response.data && Object.keys(response.data).length > 0) {
         return response.data as StoreLocation;
       }
@@ -184,8 +188,12 @@ class DeliveryService {
   }
 
   async updateStoreLocation(data: UpdateStoreLocation): Promise<StoreLocation> {
+    const storeSlug = getStoreSlugWithFallback();
+    if (!storeSlug) {
+      throw new Error('Nenhuma loja selecionada para atualizar localização.');
+    }
     // Use PATCH to update the store with the slug
-    const response = await api.patch<StoreLocation>(`${this.storeUrl}/${this.storeSlug}/`, data);
+    const response = await api.patch<StoreLocation>(`${this.storeUrl}/${storeSlug}/`, data);
     return response.data;
   }
 }
