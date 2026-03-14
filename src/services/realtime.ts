@@ -28,6 +28,21 @@ export interface TransportCapabilities {
   polling: boolean;
 }
 
+interface PollingOrderSnapshot {
+  id: string;
+  order_number?: string;
+  status?: string;
+  payment_status?: string;
+  updated_at?: string;
+  created_at?: string;
+  customer_name?: string;
+  total?: number | string;
+}
+
+interface PaginatedPayload<T> {
+  results?: T[];
+}
+
 /**
  * Detecta as capacidades do navegador para cada transporte
  */
@@ -75,6 +90,8 @@ export class RealtimeConnection {
   private options: ConnectionOptions;
   private baseUrl: string;
   private token: string | null = null;
+  private pollingBaselineReady = false;
+  private pollingSnapshot = new Map<string, PollingOrderSnapshot>();
   
   // Event listeners
   private listeners = new Map<string, Set<EventCallback>>();
@@ -133,6 +150,7 @@ export class RealtimeConnection {
       status: this.status,
       reconnectAttempts: this.reconnectAttempts,
       currentFallbackIndex: this.currentFallbackIndex,
+      storeSlug: this.options.storeSlug || null,
       capabilities: detectTransportCapabilities(),
     };
   }
@@ -426,19 +444,15 @@ export class RealtimeConnection {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const events = await response.json();
+      const payload = await response.json() as PollingOrderSnapshot[] | PaginatedPayload<PollingOrderSnapshot> | null;
       
       // Primeira resposta bem-sucedida = conectado
       if (this.status !== 'connected') {
         this.onConnectSuccess();
       }
 
-      // Processar eventos recebidos
-      if (Array.isArray(events)) {
-        events.forEach((event) => this.handleMessage(event));
-      } else if (events) {
-        this.handleMessage(events);
-      }
+      const orders = Array.isArray(payload) ? payload : (payload?.results || []);
+      this.processPollingOrders(orders);
     } catch (err) {
       if ((err as Error).name === 'AbortError') {
         return; // Polling cancelado intencionalmente
@@ -476,10 +490,81 @@ export class RealtimeConnection {
       }
       case 'polling': {
         const httpProto = this.isSecure() ? 'https' : 'http';
-        // Use the correct polling endpoint (orders API)
-        return `${httpProto}://${wsHost}/api/v1/stores/${storeSlug}/orders/?token=${token}`;
+        const params = new URLSearchParams();
+        params.set('store', storeSlug);
+        params.set('page_size', '50');
+        params.set('ordering', '-updated_at');
+        if (token) {
+          params.set('token', token);
+        }
+        return `${httpProto}://${wsHost}/api/v1/stores/orders/?${params.toString()}`;
       }
     }
+  }
+
+  /**
+   * Compara snapshot do polling e emite eventos sintéticos.
+   */
+  private processPollingOrders(orders: PollingOrderSnapshot[]): void {
+    const nextSnapshot = new Map<string, PollingOrderSnapshot>();
+
+    for (const order of orders) {
+      nextSnapshot.set(order.id, order);
+    }
+
+    if (!this.pollingBaselineReady) {
+      this.pollingSnapshot = nextSnapshot;
+      this.pollingBaselineReady = true;
+      return;
+    }
+
+    orders.forEach((order) => {
+      const previous = this.pollingSnapshot.get(order.id);
+
+      if (!previous) {
+        this.emitEvent('order_created', {
+          type: 'order.created',
+          order_id: order.id,
+          order_number: order.order_number,
+          customer_name: order.customer_name,
+          total: order.total,
+          created_at: order.created_at,
+          status: order.status,
+          payment_status: order.payment_status,
+        });
+        return;
+      }
+
+      const statusChanged = previous.status !== order.status;
+      const paymentChanged = previous.payment_status !== order.payment_status;
+      const updatedChanged = previous.updated_at !== order.updated_at;
+
+      if (paymentChanged && order.payment_status === 'paid') {
+        this.emitEvent('payment_received', {
+          type: 'order.paid',
+          order_id: order.id,
+          order_number: order.order_number,
+          payment_status: order.payment_status,
+          status: order.status,
+          updated_at: order.updated_at,
+        });
+        return;
+      }
+
+      if (statusChanged || paymentChanged || updatedChanged) {
+        const normalizedType = order.status === 'cancelled' ? 'order_cancelled' : 'order_updated';
+        this.emitEvent(normalizedType, {
+          type: order.status === 'cancelled' ? 'order.cancelled' : 'order.updated',
+          order_id: order.id,
+          order_number: order.order_number,
+          status: order.status,
+          payment_status: order.payment_status,
+          updated_at: order.updated_at,
+        });
+      }
+    });
+
+    this.pollingSnapshot = nextSnapshot;
   }
 
   /**
@@ -713,6 +798,8 @@ export class RealtimeConnection {
     }
 
     this.transport = null;
+    this.pollingBaselineReady = false;
+    this.pollingSnapshot.clear();
   }
 
   /**

@@ -91,9 +91,23 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Reutilizar conexão global se existir
+    // Reutilizar conexão global se existir, mas recriar se a loja mudou
     let connection = getGlobalConnection();
-    
+
+    const currentInfo = connection?.getConnectionInfo();
+    const isWrongStore = Boolean(
+      connection &&
+      currentInfo?.storeSlug &&
+      currentInfo.storeSlug !== effectiveStoreSlug
+    );
+
+    if (isWrongStore && connection) {
+      console.log(`[WS] Store changed (${currentInfo?.storeSlug} → ${effectiveStoreSlug}), recreating realtime connection`);
+      connection.disconnect();
+      setGlobalConnection(null);
+      connection = null;
+    }
+
     if (!connection) {
       console.log('[WS] Creating new RealtimeConnection with fallback support');
       connection = createRealtimeConnection({
