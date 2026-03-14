@@ -186,6 +186,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId" element={<Suspense fallback={<FullPageLoading />}><StoreDetailPage /></Suspense>} />
         <Route path="stores/:storeId/products" element={<Suspense fallback={<FullPageLoading />}><ProductsPage /></Suspense>} />
         <Route path="stores/:storeId/orders" element={<Suspense fallback={<FullPageLoading />}><OrdersPage /></Suspense>} />
+        <Route path="stores/:storeId/customers" element={<Suspense fallback={<FullPageLoading />}><SubscribersPage /></Suspense>} />
         <Route path="stores/:storeId/orders/new" element={<Suspense fallback={<FullPageLoading />}><OrderNewPage /></Suspense>} />
         <Route path="stores/:storeId/orders/:id" element={<Suspense fallback={<FullPageLoading />}><OrderDetailPage /></Suspense>} />
         <Route path="stores/:storeId/coupons" element={<Suspense fallback={<FullPageLoading />}><CouponsPage /></Suspense>} />

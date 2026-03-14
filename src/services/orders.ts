@@ -101,7 +101,7 @@ export const ordersService = {
   },
 
   updateStatus: async (id: string, status: string, storeSlug?: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status });
+    const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/${id}/update_status/`, { status });
     return normalizeOrder(response.data);
   },
 

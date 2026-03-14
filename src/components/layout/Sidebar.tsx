@@ -78,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       items: [
         { name: 'Dashboard', href: '/', icon: HomeIcon },
         { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon },
+        { name: 'Clientes', href: storeHref('customers'), icon: UserGroupIcon },
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
         { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
       ]

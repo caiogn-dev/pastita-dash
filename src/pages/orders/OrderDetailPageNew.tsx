@@ -97,6 +97,19 @@ const formatMoney = (value: number | undefined | null) => {
   return `R$ ${(value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 };
 
+const formatOrderCreatedAt = (value?: string | null) => {
+  if (!value) {
+    return '--';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return '--';
+  }
+
+  return format(parsed, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR });
+};
+
 const getStatusIndex = (status: string): number => {
   const normalizedStatus = status.toLowerCase();
   const index = STATUS_FLOW.findIndex(s => 
@@ -322,7 +335,7 @@ export const OrderDetailPageNew: React.FC = () => {
                   Pedido #{order.order_number}
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-zinc-400">
-                  {format(new Date(order.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                  {formatOrderCreatedAt(order.created_at)}
                 </p>
               </div>
             </div>

@@ -143,6 +143,28 @@ const formatCurrency = (value: number | string | null | undefined) => {
 
 const getItemsCount = (order: Order) => order.items_count ?? order.items?.length ?? 0;
 
+const formatOrderTime = (value?: string | null) => {
+  if (!value) {
+    return '--:--';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return '--:--';
+  }
+
+  return format(parsed, 'HH:mm', { locale: ptBR });
+};
+
+const getOrderTimestamp = (value?: string | null) => {
+  if (!value) {
+    return 0;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+};
+
 const formatAddress = (address: Order['delivery_address']) => {
   if (!address) return null;
   if (typeof address === 'string') return address;
@@ -253,7 +275,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
           )}
           {!isUpdating && !isSuccess && (
             <span className="text-xs text-gray-500 dark:text-zinc-400">
-              {format(new Date(order.created_at), 'HH:mm', { locale: ptBR })}
+              {formatOrderTime(order.created_at)}
             </span>
           )}
         </div>
@@ -527,7 +549,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     // Sort by created_at within each column
     Object.keys(grouped).forEach(status => {
       grouped[status].sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        getOrderTimestamp(b.created_at) - getOrderTimestamp(a.created_at)
       );
     });
 

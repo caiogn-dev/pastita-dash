@@ -128,7 +128,12 @@ const mergeOrder = (currentOrders: Order[], incomingOrder: Order) => {
   }
 
   const nextOrders = [...currentOrders];
-  nextOrders[existingIndex] = incomingOrder;
+  nextOrders[existingIndex] = {
+    ...nextOrders[existingIndex],
+    ...Object.fromEntries(
+      Object.entries(incomingOrder).filter(([, value]) => value !== undefined)
+    ),
+  };
   return nextOrders;
 };
 
@@ -145,10 +150,25 @@ const patchOrder = (
     order.id === orderId
       ? {
           ...order,
-          ...patch,
+          ...Object.fromEntries(
+            Object.entries(patch).filter(([, value]) => value !== undefined)
+          ),
         }
       : order
   );
+};
+
+const formatOrderDateTime = (value?: string | null) => {
+  if (!value) {
+    return '--';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return '--';
+  }
+
+  return format(parsed, 'dd/MM HH:mm', { locale: ptBR });
 };
 
 const MetricCard: React.FC<{
@@ -735,7 +755,7 @@ export const OrdersPage: React.FC = () => {
                       </Table.Cell>
                       <Table.Cell>
                         <Text fontSize="sm" color="fg.muted">
-                          {format(new Date(order.updated_at || order.created_at), 'dd/MM HH:mm', { locale: ptBR })}
+                          {formatOrderDateTime(order.updated_at || order.created_at)}
                         </Text>
                       </Table.Cell>
                     </Table.Row>
