@@ -15,6 +15,7 @@
 import { useCallback } from 'react';
 import { useStoreContextStore } from '../stores/storeContextStore';
 import { Store } from '../services/storesApi';
+import { DEFAULT_STORE_SLUG, resolveStoreSlug } from '../config/storeConfig';
 
 export interface UseStoreReturn {
   /** UUID of the selected store */
@@ -111,17 +112,20 @@ export function getStoreSlug(): string | null {
 }
 
 /**
+ * Get store slug with environment fallback.
+ * Prefer selected store, then VITE_STORE_SLUG (when provided).
+ */
+export function getStoreSlugWithFallback(): string | null {
+  return resolveStoreSlug(getStoreSlug(), DEFAULT_STORE_SLUG);
+}
+
+/**
  * Get store ID or fallback to env variable.
  * This is useful for backwards compatibility.
  */
-export function getStoreIdWithFallback(): string {
+export function getStoreIdWithFallback(): string | null {
   const storeId = getStoreId();
-  if (storeId) return storeId;
-  
-  // Fallback to env variable (for backwards compatibility)
-  const envSlug = import.meta.env.VITE_STORE_SLUG || 'pastita';
-  console.warn(`No store selected, using fallback: ${envSlug}`);
-  return envSlug;
+  return storeId || null;
 }
 
 export default useStore;

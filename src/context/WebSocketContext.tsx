@@ -9,7 +9,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import { useStore } from '../hooks/useStore';
+import { getStoreSlugWithFallback, useStore } from '../hooks/useStore';
 import { 
   RealtimeConnection, 
   TransportType, 
@@ -19,8 +19,6 @@ import {
   getGlobalConnection,
   setGlobalConnection
 } from '../services/realtime';
-
-const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
 interface OrderEvent {
   type: string;
@@ -55,7 +53,7 @@ const WSContext = createContext<WSContextValue | null>(null);
  */
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuthStore();
-  const { storeSlug, storeId } = useStore();
+  const { storeSlug } = useStore();
   const connectionRef = useRef<RealtimeConnection | null>(null);
   const listenersRef = useRef<Map<string, Set<Callback>>>(new Map());
   
@@ -64,7 +62,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [transport, setTransport] = useState<TransportType | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   
-  const effectiveStoreSlug = storeSlug || storeId || STORE_SLUG;
+  const effectiveStoreSlug = storeSlug || getStoreSlugWithFallback();
 
   // Obter token efetivo (do store ou localStorage)
   const getEffectiveToken = useCallback(() => {
@@ -88,14 +86,28 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const effectiveToken = getEffectiveToken();
     
-    if (!effectiveToken) {
+    if (!effectiveToken || !effectiveStoreSlug) {
       console.log('[WS] No token, skipping connection');
       return;
     }
 
-    // Reutilizar conexão global se existir
+    // Reutilizar conexão global se existir, mas recriar se a loja mudou
     let connection = getGlobalConnection();
-    
+
+    const currentInfo = connection?.getConnectionInfo();
+    const isWrongStore = Boolean(
+      connection &&
+      currentInfo?.storeSlug &&
+      currentInfo.storeSlug !== effectiveStoreSlug
+    );
+
+    if (isWrongStore && connection) {
+      console.log(`[WS] Store changed (${currentInfo?.storeSlug} → ${effectiveStoreSlug}), recreating realtime connection`);
+      connection.disconnect();
+      setGlobalConnection(null);
+      connection = null;
+    }
+
     if (!connection) {
       console.log('[WS] Creating new RealtimeConnection with fallback support');
       connection = createRealtimeConnection({
