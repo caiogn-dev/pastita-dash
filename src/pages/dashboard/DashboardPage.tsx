@@ -1,7 +1,7 @@
 /**
- * DashboardPage - Revamp com hierarquia visual, foco em ação e narrativa de operação
+ * DashboardPage - Revamp com hierarquia visual, foco em acao e narrativa de operacao
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Flex,
@@ -42,7 +42,7 @@ import { useAccountStore } from '../../stores/accountStore';
 import { useFetch } from '../../hooks/useFetch';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useStore } from '../../hooks/useStore';
+import { useNotificationSound, useOrdersWebSocket, useStore } from '../../hooks';
 
 ChartJS.register(
   CategoryScale,
@@ -55,6 +55,11 @@ ChartJS.register(
   Legend,
   Filler
 );
+
+const CURRENCY_FORMATTER = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
 
 const StatCard: React.FC<{
   title: string;
@@ -92,43 +97,108 @@ const StatCard: React.FC<{
 export const DashboardPage: React.FC = () => {
   const { selectedAccount } = useAccountStore();
   const { store } = useStore();
+  const { playNotificationSound } = useNotificationSound();
   const [chartRangeDays, setChartRangeDays] = useState(7);
+  const refreshTimeoutRef = useRef<number | null>(null);
 
   const storeKey = store?.slug || store?.id;
   const storeOrdersRoute = storeKey ? `/stores/${storeKey}/orders` : '/stores';
   const storeProductsRoute = storeKey ? `/stores/${storeKey}/products` : '/stores';
 
   const fetchOverview = useCallback(
-    () => dashboardService.getOverview(),
-    []
+    () =>
+      dashboardService.getOverview({
+        store: storeKey || undefined,
+        accountId: selectedAccount?.id,
+      }),
+    [selectedAccount?.id, storeKey]
   );
-  const { data: overview, loading: isLoadingOverview } = useFetch(fetchOverview);
+  const {
+    data: overview,
+    loading: isLoadingOverview,
+    refresh: refreshOverview,
+  } = useFetch(fetchOverview);
 
   const fetchCharts = useCallback(
-    () => dashboardService.getCharts(),
-    []
+    () =>
+      dashboardService.getCharts({
+        store: storeKey || undefined,
+        accountId: selectedAccount?.id,
+        days: chartRangeDays,
+      }),
+    [chartRangeDays, selectedAccount?.id, storeKey]
   );
-  const { data: charts, loading: isLoadingCharts } = useFetch(fetchCharts);
+  const {
+    data: charts,
+    loading: isLoadingCharts,
+    refresh: refreshCharts,
+  } = useFetch(fetchCharts);
 
-  const totalMessagesToday = (overview?.messages as { today?: number } | undefined)?.today || 0;
-  const deliveredMessages = (overview?.messages as { delivered?: number } | undefined)?.delivered || 0;
-  const readMessages = (overview?.messages as { read?: number } | undefined)?.read || 0;
-  const failedMessages = (overview?.messages as { failed?: number } | undefined)?.failed || 0;
-  const deliveredRate = totalMessagesToday > 0 ? Math.round((deliveredMessages / totalMessagesToday) * 100) : 0;
+  const scheduleRefresh = useCallback(
+    (delay = 700) => {
+      if (refreshTimeoutRef.current) {
+        window.clearTimeout(refreshTimeoutRef.current);
+      }
+
+      refreshTimeoutRef.current = window.setTimeout(() => {
+        void Promise.all([refreshOverview(), refreshCharts()]);
+      }, delay);
+    },
+    [refreshCharts, refreshOverview]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        window.clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useOrdersWebSocket({
+    enabled: Boolean(storeKey),
+    onOrderCreated: () => {
+      playNotificationSound();
+      scheduleRefresh(250);
+    },
+    onOrderUpdated: () => {
+      scheduleRefresh(900);
+    },
+    onOrderCancelled: () => {
+      scheduleRefresh(900);
+    },
+    onPaymentReceived: () => {
+      playNotificationSound();
+      scheduleRefresh(500);
+    },
+  });
+
+  const totalMessagesToday = overview?.messages.today || 0;
+  const inboundMessages = Number(overview?.messages.by_direction.inbound || 0);
+  const outboundMessages = Number(overview?.messages.by_direction.outbound || 0);
+  const sentMessages = Number(overview?.messages.by_status.sent || 0);
+  const deliveredMessages = Number(overview?.messages.by_status.delivered || 0);
+  const readMessages = Number(overview?.messages.by_status.read || 0);
+  const failedMessages = Number(overview?.messages.by_status.failed || 0);
+  const deliveryRate = outboundMessages > 0
+    ? Math.round(((deliveredMessages + readMessages) / outboundMessages) * 100)
+    : 0;
 
   const chartRangeOptions = [
-    { value: 7, label: 'Últimos 7 dias' },
-    { value: 14, label: 'Últimos 14 dias' },
-    { value: 30, label: 'Últimos 30 dias' },
-    { value: 90, label: 'Últimos 90 dias' },
+    { value: 7, label: 'Ultimos 7 dias' },
+    { value: 14, label: 'Ultimos 14 dias' },
+    { value: 30, label: 'Ultimos 30 dias' },
+    { value: 90, label: 'Ultimos 90 dias' },
   ];
 
   const messagesChartData = {
-    labels: (charts?.messages_per_day as Array<{ date: string; inbound: number; outbound: number }> | undefined)?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
+    labels: charts?.messages_per_day.map((item: { date: string }) =>
+      format(new Date(item.date), 'dd/MM', { locale: ptBR })
+    ) || [],
     datasets: [
       {
         label: 'Recebidas',
-        data: (charts?.messages_per_day as Array<{ date: string; inbound: number; outbound: number }> | undefined)?.map((d) => d.inbound) || [],
+        data: charts?.messages_per_day.map((item: { inbound: number }) => item.inbound) || [],
         borderColor: '#25D366',
         backgroundColor: 'rgba(37, 211, 102, 0.15)',
         fill: true,
@@ -136,7 +206,7 @@ export const DashboardPage: React.FC = () => {
       },
       {
         label: 'Enviadas',
-        data: (charts?.messages_per_day as Array<{ date: string; inbound: number; outbound: number }> | undefined)?.map((d) => d.outbound) || [],
+        data: charts?.messages_per_day.map((item: { outbound: number }) => item.outbound) || [],
         borderColor: '#722F37',
         backgroundColor: 'rgba(114, 47, 55, 0.14)',
         fill: true,
@@ -146,11 +216,13 @@ export const DashboardPage: React.FC = () => {
   };
 
   const ordersChartData = {
-    labels: (charts?.orders_per_day as Array<{ date: string; count: number }> | undefined)?.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
+    labels: charts?.orders_per_day.map((item: { date: string }) =>
+      format(new Date(item.date), 'dd/MM', { locale: ptBR })
+    ) || [],
     datasets: [
       {
         label: 'Pedidos',
-        data: (charts?.orders_per_day as Array<{ date: string; count: number }> | undefined)?.map((d) => d.count) || [],
+        data: charts?.orders_per_day.map((item: { count: number }) => item.count) || [],
         borderColor: '#f59e0b',
         backgroundColor: 'rgba(245, 158, 11, 0.14)',
         fill: true,
@@ -160,49 +232,57 @@ export const DashboardPage: React.FC = () => {
   };
 
   const statusChartData = {
-    labels: ['Entregue', 'Lido', 'Falhou'],
+    labels: ['Enviadas', 'Entregues', 'Lidas', 'Falhas'],
     datasets: [
       {
-        data: [deliveredMessages, readMessages, failedMessages],
-        backgroundColor: ['#22c55e', '#0ea5e9', '#ef4444'],
+        data: [sentMessages, deliveredMessages, readMessages, failedMessages],
+        backgroundColor: ['#6366f1', '#22c55e', '#0ea5e9', '#ef4444'],
         borderWidth: 0,
       },
     ],
   };
 
-  const chartOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(113, 113, 122, 0.12)',
+  const hasStatusData = [sentMessages, deliveredMessages, readMessages, failedMessages].some(
+    (value) => value > 0
+  );
+
+  const chartOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom' as const,
         },
       },
-      x: {
-        grid: {
-          display: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(113, 113, 122, 0.12)',
+          },
+        },
+        x: {
+          grid: {
+            display: false,
+          },
         },
       },
-    },
-  }), []);
+    }),
+    []
+  );
 
   return (
     <Stack gap={6}>
       <Card variant="default" size="lg" className="overflow-hidden">
         <Flex justify="space-between" align={{ base: 'flex-start', lg: 'center' }} direction={{ base: 'column', lg: 'row' }} gap={4}>
           <Stack gap={2}>
-            <Badge colorPalette="brand" width="fit-content" px={3} py={1} borderRadius="full">Operação em tempo real</Badge>
-            <Heading size="xl" color="fg.primary">Visão executiva do seu dashboard</Heading>
+            <Badge colorPalette="brand" width="fit-content" px={3} py={1} borderRadius="full">Operacao em tempo real</Badge>
+            <Heading size="xl" color="fg.primary">Visao executiva do seu dashboard</Heading>
             <Text color="fg.muted" maxW="720px">
-              Acompanhe pedidos, conversas e receita com foco em ações rápidas para manter a operação fluida.
+              Acompanhe pedidos, conversas e receita com foco em acoes rapidas para manter a operacao fluida.
               {selectedAccount && ` Conta ativa: ${selectedAccount.name}.`}
+              {store && ` Loja ativa: ${store.name}.`}
             </Text>
           </Stack>
           <Stack direction={{ base: 'column', sm: 'row' }} gap={2}>
@@ -217,18 +297,66 @@ export const DashboardPage: React.FC = () => {
       </Card>
 
       <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(4, 1fr)' }} gap={4}>
-        <GridItem>{isLoadingOverview ? <Skeleton height="108px" borderRadius="lg" /> : <StatCard title="Mensagens Hoje" value={totalMessagesToday} subtitle="Total de mensagens" icon={ChatBubbleLeftRightIcon} colorPalette="brand" />}</GridItem>
-        <GridItem>{isLoadingOverview ? <Skeleton height="108px" borderRadius="lg" /> : <StatCard title="Pedidos" value={(overview?.orders as { today?: number } | undefined)?.today || 0} subtitle="Pedidos hoje" icon={ShoppingCartIcon} colorPalette="accent" />}</GridItem>
-        <GridItem>{isLoadingOverview ? <Skeleton height="108px" borderRadius="lg" /> : <StatCard title="Receita" value={`R$ ${((overview?.orders as { revenue_today?: number } | undefined)?.revenue_today || 0).toFixed(2)}`} subtitle="Receita de hoje" icon={CurrencyDollarIcon} colorPalette="success" />}</GridItem>
-        <GridItem>{isLoadingOverview ? <Skeleton height="108px" borderRadius="lg" /> : <StatCard title="Conversas" value={(overview?.conversations as { active?: number } | undefined)?.active || 0} subtitle="Conversas ativas" icon={UsersIcon} colorPalette="warning" />}</GridItem>
+        <GridItem>
+          {isLoadingOverview ? (
+            <Skeleton height="108px" borderRadius="lg" />
+          ) : (
+            <StatCard
+              title="Mensagens Hoje"
+              value={totalMessagesToday}
+              subtitle={`${inboundMessages} recebidas / ${outboundMessages} enviadas`}
+              icon={ChatBubbleLeftRightIcon}
+              colorPalette="brand"
+            />
+          )}
+        </GridItem>
+        <GridItem>
+          {isLoadingOverview ? (
+            <Skeleton height="108px" borderRadius="lg" />
+          ) : (
+            <StatCard
+              title="Pedidos"
+              value={overview?.orders.today || 0}
+              subtitle="Pedidos criados hoje"
+              icon={ShoppingCartIcon}
+              colorPalette="accent"
+            />
+          )}
+        </GridItem>
+        <GridItem>
+          {isLoadingOverview ? (
+            <Skeleton height="108px" borderRadius="lg" />
+          ) : (
+            <StatCard
+              title="Receita"
+              value={CURRENCY_FORMATTER.format(overview?.orders.revenue_today || 0)}
+              subtitle="Receita confirmada hoje"
+              icon={CurrencyDollarIcon}
+              colorPalette="success"
+            />
+          )}
+        </GridItem>
+        <GridItem>
+          {isLoadingOverview ? (
+            <Skeleton height="108px" borderRadius="lg" />
+          ) : (
+            <StatCard
+              title="Conversas"
+              value={overview?.conversations.active || 0}
+              subtitle="Conversas ativas"
+              icon={UsersIcon}
+              colorPalette="warning"
+            />
+          )}
+        </GridItem>
       </Grid>
 
       <Grid templateColumns={{ base: '1fr', lg: '1.8fr 1fr' }} gap={6}>
         <GridItem>
-          <Card title="Performance de Mensagens" subtitle="Recebidas vs enviadas por período" action={
+          <Card title="Performance de Mensagens" subtitle="Recebidas vs enviadas por periodo" action={
             <select
               value={chartRangeDays}
-              onChange={(e) => setChartRangeDays(Number(e.target.value))}
+              onChange={(event) => setChartRangeDays(Number(event.target.value))}
               className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
             >
               {chartRangeOptions.map((option) => (
@@ -236,24 +364,31 @@ export const DashboardPage: React.FC = () => {
               ))}
             </select>
           }>
-            {isLoadingCharts ? <Skeleton height="320px" /> : <Box height="320px"><Line data={messagesChartData} options={chartOptions} /></Box>}
+            {isLoadingCharts ? (
+              <Skeleton height="320px" />
+            ) : (
+              <Box height="320px">
+                <Line data={messagesChartData} options={chartOptions} />
+              </Box>
+            )}
           </Card>
         </GridItem>
 
         <GridItem>
-          <Card title="Saúde da operação" subtitle="Indicadores de entrega e leitura">
+          <Card title="Saude da operacao" subtitle="Indicadores do envio e leitura das mensagens">
             <Stack gap={4}>
               <Box>
                 <Flex align="center" justify="space-between" mb={1}>
                   <Text fontSize="sm" color="fg.muted">Taxa de entrega</Text>
-                  <Text fontSize="sm" fontWeight="semibold">{deliveredRate}%</Text>
+                  <Text fontSize="sm" fontWeight="semibold">{deliveryRate}%</Text>
                 </Flex>
-                <Box h="8px" borderRadius="full" bg="gray.100" _dark={{ bg: "zinc.800" }} overflow="hidden">
-                  <Box h="full" w={`${deliveredRate}%`} bg="green.500" borderRadius="full" />
+                <Box h="8px" borderRadius="full" bg="gray.100" _dark={{ bg: 'zinc.800' }} overflow="hidden">
+                  <Box h="full" w={`${deliveryRate}%`} bg="green.500" borderRadius="full" />
                 </Box>
               </Box>
 
               <Stack gap={2}>
+                <Flex justify="space-between"><Text fontSize="sm">Saida hoje</Text><Text fontWeight="semibold">{outboundMessages}</Text></Flex>
                 <Flex justify="space-between"><Text fontSize="sm">Entregues</Text><Text fontWeight="semibold">{deliveredMessages}</Text></Flex>
                 <Flex justify="space-between"><Text fontSize="sm">Lidas</Text><Text fontWeight="semibold">{readMessages}</Text></Flex>
                 <Flex justify="space-between"><Text fontSize="sm">Falhas</Text><Text fontWeight="semibold">{failedMessages}</Text></Flex>
@@ -267,7 +402,7 @@ export const DashboardPage: React.FC = () => {
                   Priorizar pedidos
                 </Button>
                 <Button variant="outline" leftIcon={<ShoppingCartIcon className="w-4 h-4" />} onClick={() => window.location.href = storeProductsRoute}>
-                  Atualizar catálogo
+                  Atualizar catalogo
                 </Button>
               </Stack>
             </Stack>
@@ -277,19 +412,29 @@ export const DashboardPage: React.FC = () => {
 
       <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
         <GridItem>
-          <Card title="Pedidos por dia" subtitle="Volume diário no período selecionado">
-            {isLoadingCharts ? <Skeleton height="300px" /> : <Box height="300px"><Line data={ordersChartData} options={chartOptions} /></Box>}
+          <Card title="Pedidos por dia" subtitle="Volume diario no periodo selecionado">
+            {isLoadingCharts ? (
+              <Skeleton height="300px" />
+            ) : (
+              <Box height="300px">
+                <Line data={ordersChartData} options={chartOptions} />
+              </Box>
+            )}
           </Card>
         </GridItem>
 
         <GridItem>
-          <Card title="Status das mensagens" subtitle="Distribuição do resultado">
+          <Card title="Status das mensagens" subtitle="Distribuicao das mensagens de saida">
             {isLoadingOverview ? (
               <Skeleton height="300px" />
-            ) : (
+            ) : hasStatusData ? (
               <Box height="300px" maxW="320px" mx="auto">
-                <Doughnut data={statusChartData} options={{ ...chartOptions, cutout: '62%' }} />
+                <Doughnut data={statusChartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' as const } }, cutout: '62%' }} />
               </Box>
+            ) : (
+              <Flex minH="300px" align="center" justify="center">
+                <Text color="fg.muted">Sem dados de mensagens para o periodo atual.</Text>
+              </Flex>
             )}
           </Card>
         </GridItem>
