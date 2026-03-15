@@ -13,7 +13,9 @@ export const conversationsService = {
   },
 
   getMessages: async (conversationId: string): Promise<Message[]> => {
-    const response = await api.get<Message[]>(`/conversations/${conversationId}/messages/`);
+    const response = await api.get<Message[]>('/whatsapp/messages/', {
+      params: { conversation: conversationId }
+    });
     return response.data;
   },
 
