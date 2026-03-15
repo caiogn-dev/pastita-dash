@@ -99,9 +99,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         },
         { 
           name: 'WhatsApp', 
-          href: '/whatsapp/chat', 
+          href: '/whatsapp/inbox', 
           icon: DevicePhoneMobileIcon,
           children: [
+            { name: 'Caixa de Entrada', href: '/whatsapp/inbox', icon: ChatBubbleLeftRightIcon },
             { name: 'Chat', href: '/whatsapp/chat', icon: ChatBubbleLeftRightIcon },
             { name: 'Debug/Logs', href: '/whatsapp/debug', icon: DocumentChartBarIcon },
             { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
