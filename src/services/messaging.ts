@@ -155,7 +155,11 @@ export const getConversation = (id: string) =>
 export const sendMessage = (conversationId: string, data: {
   content: string;
   message_type?: string;
-}) => api.post(`/conversations/${conversationId}/send_message/`, data);
+}) => api.post(`/whatsapp/messages/send_text/`, {
+  conversation: conversationId,
+  content: data.content,
+  message_type: data.message_type || 'text'
+});
 
 // ==================== LEGACY COMPATIBILITY ====================
 
