@@ -43,6 +43,16 @@ interface PaginatedPayload<T> {
   results?: T[];
 }
 
+function buildAuthHeader(token: string | null): Record<string, string> {
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: token.includes('.') ? `Bearer ${token}` : `Token ${token}`,
+  };
+}
+
 /**
  * Detecta as capacidades do navegador para cada transporte
  */
@@ -435,7 +445,7 @@ export class RealtimeConnection {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          ...(this.token ? { 'Authorization': `Bearer ${this.token}` } : {}),
+          ...buildAuthHeader(this.token),
         },
         signal: this.pollingController?.signal,
       });
