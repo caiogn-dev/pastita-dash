@@ -64,20 +64,12 @@ export const deleteTemplate = (id: string) =>
   // api.delete(`/messaging/templates/${id}/`);
   Promise.resolve({ data: { success: true } });
 
-// Mensagens - NOTA: Endpoint não existe no backend atual
+// Mensagens
 export const sendMessage = (data: any) =>
-  // api.post('/messaging/send/', data);
-  Promise.resolve({
-    data: {
-      id: 'mock',
-      ...data,
-      status: 'sent',
-      sent_at: new Date().toISOString()
-    }
-  });
+  api.post('/whatsapp/messages/send_text/', data);
 
 export const sendTemplate = (data: any) =>
-  // api.post('/messaging/send-template/', data);
+  api.post('/whatsapp/messages/send_template/', data);
   Promise.resolve({
     data: {
       id: 'mock-template',
