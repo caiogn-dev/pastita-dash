@@ -103,6 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           icon: DevicePhoneMobileIcon,
           children: [
             { name: 'Chat', href: '/whatsapp/chat', icon: ChatBubbleLeftRightIcon },
+            { name: 'Debug/Logs', href: '/whatsapp/debug', icon: DocumentChartBarIcon },
             { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
             { name: 'Diagnóstico', href: '/whatsapp/diagnostics', icon: Cog6ToothIcon },
           ]
