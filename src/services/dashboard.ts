@@ -1,12 +1,17 @@
 import api from './api';
+import {
+  DashboardOverview,
+  DashboardCharts,
+  DashboardQueryOptions,
+  DailyMessageChart,
+  DailyOrderChart,
+  DailyConversationChart,
+} from '../types/dashboard';
 
-interface DashboardQueryOptions {
-  accountId?: string;
-  store?: string;
-  days?: number;
-}
-
-const buildParams = (options: DashboardQueryOptions = {}) => {
+/**
+ * Build query parameters for dashboard API calls
+ */
+const buildParams = (options: DashboardQueryOptions = {}): Record<string, string | number> => {
   const params: Record<string, string | number> = {};
 
   if (options.accountId) {
@@ -18,13 +23,17 @@ const buildParams = (options: DashboardQueryOptions = {}) => {
   }
 
   if (typeof options.days === 'number') {
-    params.days = options.days;
+    params.days = Math.max(1, Math.min(options.days, 90)); // Clamp between 1-90
   }
 
   return params;
 };
 
-const emptyOverview = () => ({
+/**
+ * Create empty dashboard overview with correct structure
+ * No hallucinations - all values come from backend
+ */
+const emptyOverview = (): DashboardOverview => ({
   accounts: {
     total: 0,
     active: 0,
@@ -34,18 +43,18 @@ const emptyOverview = () => ({
     today: 0,
     week: 0,
     month: 0,
-    by_status: {} as Record<string, number>,
-    by_direction: {} as Record<string, number>,
+    by_status: { sent: 0, delivered: 0, read: 0, failed: 0, pending: 0 },
+    by_direction: { inbound: 0, outbound: 0 },
   },
   conversations: {
     active: 0,
-    by_status: {} as Record<string, number>,
-    by_mode: {} as Record<string, number>,
+    by_status: { open: 0, closed: 0, pending: 0, resolved: 0 },
+    by_mode: { auto: 0, human: 0, hybrid: 0 },
     resolved_today: 0,
   },
   orders: {
     today: 0,
-    by_status: {} as Record<string, number>,
+    by_status: { pending: 0, confirmed: 0, processing: 0, paid: 0, preparing: 0, ready: 0, shipped: 0, out_for_delivery: 0, delivered: 0, completed: 0, cancelled: 0, refunded: 0, failed: 0 },
     revenue_today: 0,
     revenue_month: 0,
   },
@@ -57,117 +66,112 @@ const emptyOverview = () => ({
     interactions_today: 0,
     avg_duration_ms: 0,
   },
-  timestamp: null as string | null,
+  timestamp: null,
 });
 
-const emptyCharts = () => ({
-  messages_per_day: [] as Array<{ date: string; inbound: number; outbound: number; total: number }>,
-  orders_per_day: [] as Array<{ date: string; count: number; revenue: number }>,
-  conversations_per_day: [] as Array<{ date: string; new: number; resolved: number }>,
-  message_types: {} as Record<string, number>,
-  order_statuses: {} as Record<string, number>,
+/**
+ * Create empty charts data with correct structure
+ */
+const emptyCharts = (): DashboardCharts => ({
+  messages_per_day: [],
+  orders_per_day: [],
+  conversations_per_day: [],
+  message_types: { text: 0, image: 0, audio: 0, video: 0, document: 0 },
+  order_statuses: {
+    pending: 0,
+    confirmed: 0,
+    processing: 0,
+    paid: 0,
+    preparing: 0,
+    ready: 0,
+    shipped: 0,
+    out_for_delivery: 0,
+    delivered: 0,
+    completed: 0,
+    cancelled: 0,
+    refunded: 0,
+    failed: 0,
+  },
 });
 
 export const dashboardService = {
-  getOverview: async (options: DashboardQueryOptions = {}) => {
+  /**
+   * Fetch dashboard overview with aggregated metrics
+   * Data comes exclusively from backend - no hallucinations
+   */
+  getOverview: async (options: DashboardQueryOptions = {}): Promise<DashboardOverview> => {
     const fallback = emptyOverview();
-    const response = await api
-      .get('/core/dashboard/overview/', { params: buildParams(options) })
-      .catch(() => ({ data: fallback }));
-
-    const data = response.data || fallback;
-
-    return {
-      accounts: {
-        total: Number(data.accounts?.total || 0),
-        active: Number(data.accounts?.active || 0),
-        inactive: Number(data.accounts?.inactive || 0),
-      },
-      messages: {
-        today: Number(data.messages?.today || 0),
-        week: Number(data.messages?.week || 0),
-        month: Number(data.messages?.month || 0),
-        by_status: data.messages?.by_status || {},
-        by_direction: data.messages?.by_direction || {},
-      },
-      conversations: {
-        active: Number(data.conversations?.active || 0),
-        by_status: data.conversations?.by_status || {},
-        by_mode: data.conversations?.by_mode || {},
-        resolved_today: Number(data.conversations?.resolved_today || 0),
-      },
-      orders: {
-        today: Number(data.orders?.today || 0),
-        by_status: data.orders?.by_status || {},
-        revenue_today: Number(data.orders?.revenue_today || 0),
-        revenue_month: Number(data.orders?.revenue_month || 0),
-      },
-      payments: {
-        pending: Number(data.payments?.pending || 0),
-        completed_today: Number(data.payments?.completed_today || 0),
-      },
-      agents: {
-        interactions_today: Number(data.agents?.interactions_today || 0),
-        avg_duration_ms: Number(data.agents?.avg_duration_ms || 0),
-      },
-      timestamp: data.timestamp || null,
-    };
+    
+    try {
+      const response = await api.get<DashboardOverview>('/core/dashboard/overview/', {
+        params: buildParams(options),
+      });
+      
+      const data = response.data || fallback;
+      
+      // Validate basic structure to prevent partial/corrupted responses
+      if (!data.accounts || !data.messages || !data.conversations || !data.orders) {
+        console.warn('[Dashboard] Invalid overview response structure, using fallback');
+        return fallback;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('[Dashboard] Failed to fetch overview:', error);
+      return fallback;
+    }
   },
 
-  getCharts: async (options: DashboardQueryOptions = {}) => {
+  /**
+   * Fetch chart data for time-series visualization
+   * All data points are calculated by backend
+   */
+  getCharts: async (options: DashboardQueryOptions = {}): Promise<DashboardCharts> => {
     const fallback = emptyCharts();
-    const response = await api
-      .get('/core/dashboard/charts/', {
+    
+    try {
+      const response = await api.get<DashboardCharts>('/core/dashboard/charts/', {
         params: buildParams({
           ...options,
           days: options.days || 7,
         }),
-      })
-      .catch(() => ({ data: fallback }));
-
-    const data = response.data || fallback;
-
-    return {
-      messages_per_day: Array.isArray(data.messages_per_day)
-        ? data.messages_per_day.map((item: Record<string, unknown>) => ({
-            date: String(item.date || ''),
-            inbound: Number(item.inbound || 0),
-            outbound: Number(item.outbound || 0),
-            total: Number(item.total || 0),
-          }))
-        : [],
-      orders_per_day: Array.isArray(data.orders_per_day)
-        ? data.orders_per_day.map((item: Record<string, unknown>) => ({
-            date: String(item.date || ''),
-            count: Number(item.count || 0),
-            revenue: Number(item.revenue || 0),
-          }))
-        : [],
-      conversations_per_day: Array.isArray(data.conversations_per_day)
-        ? data.conversations_per_day.map((item: Record<string, unknown>) => ({
-            date: String(item.date || ''),
-            new: Number(item.new || 0),
-            resolved: Number(item.resolved || 0),
-          }))
-        : [],
-      message_types: data.message_types || {},
-      order_statuses: data.order_statuses || {},
-    };
-  },
-
-  getOrderStats: async (options: DashboardQueryOptions = {}) => {
-    const response = await dashboardService.getOverview(options);
-    return {
-      total: response.orders.today || 0,
-      revenue: response.orders.revenue_today || 0,
-    };
-  },
-
-  getMessageStats: async (options: DashboardQueryOptions = {}) => {
-    const response = await dashboardService.getOverview(options);
-    return {
-      total: response.messages.today || 0,
-    };
+      });
+      
+      const data = response.data || fallback;
+      
+      // Validate structures
+      if (!Array.isArray(data.messages_per_day) ||
+          !Array.isArray(data.orders_per_day) ||
+          !Array.isArray(data.conversations_per_day)) {
+        console.warn('[Dashboard] Invalid charts response structure, using fallback');
+        return fallback;
+      }
+      
+      // Validate and transform data
+      return {
+        messages_per_day: data.messages_per_day.map((item): DailyMessageChart => ({
+          date: String(item.date || ''),
+          inbound: Number(item.inbound || 0),
+          outbound: Number(item.outbound || 0),
+          total: Number(item.total || 0),
+        })),
+        orders_per_day: data.orders_per_day.map((item): DailyOrderChart => ({
+          date: String(item.date || ''),
+          count: Number(item.count || 0),
+          revenue: Number(item.revenue || 0),
+        })),
+        conversations_per_day: data.conversations_per_day.map((item): DailyConversationChart => ({
+          date: String(item.date || ''),
+          new: Number(item.new || 0),
+          resolved: Number(item.resolved || 0),
+        })),
+        message_types: data.message_types || {},
+        order_statuses: data.order_statuses || {},
+      };
+    } catch (error) {
+      console.error('[Dashboard] Failed to fetch charts:', error);
+      return fallback;
+    }
   },
 };
 

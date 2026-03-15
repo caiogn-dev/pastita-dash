@@ -296,7 +296,7 @@ export const DashboardPage: React.FC = () => {
         </Flex>
       </Card>
 
-      <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(4, 1fr)' }} gap={4}>
+      <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(5, 1fr)' }} gap={4}>
         <GridItem>
           {isLoadingOverview ? (
             <Skeleton height="108px" borderRadius="lg" />
@@ -349,6 +349,19 @@ export const DashboardPage: React.FC = () => {
             />
           )}
         </GridItem>
+        <GridItem>
+          {isLoadingOverview ? (
+            <Skeleton height="108px" borderRadius="lg" />
+          ) : (
+            <StatCard
+              title="IA - Interações"
+              value={overview?.agents.interactions_today || 0}
+              subtitle={`${overview?.agents.avg_duration_ms?.toFixed(0) || 0}ms med.`}
+              icon={FireIcon}
+              colorPalette="accent"
+            />
+          )}
+        </GridItem>
       </Grid>
 
       <Grid templateColumns={{ base: '1fr', lg: '1.8fr 1fr' }} gap={6}>
@@ -375,7 +388,7 @@ export const DashboardPage: React.FC = () => {
         </GridItem>
 
         <GridItem>
-          <Card title="Saude da operacao" subtitle="Indicadores do envio e leitura das mensagens">
+          <Card title="Saude da operacao" subtitle="Indicadores do envio, conversas e agentes IA">
             <Stack gap={4}>
               <Box>
                 <Flex align="center" justify="space-between" mb={1}>
@@ -387,12 +400,27 @@ export const DashboardPage: React.FC = () => {
                 </Box>
               </Box>
 
-              <Stack gap={2}>
-                <Flex justify="space-between"><Text fontSize="sm">Saida hoje</Text><Text fontWeight="semibold">{outboundMessages}</Text></Flex>
-                <Flex justify="space-between"><Text fontSize="sm">Entregues</Text><Text fontWeight="semibold">{deliveredMessages}</Text></Flex>
-                <Flex justify="space-between"><Text fontSize="sm">Lidas</Text><Text fontWeight="semibold">{readMessages}</Text></Flex>
-                <Flex justify="space-between"><Text fontSize="sm">Falhas</Text><Text fontWeight="semibold">{failedMessages}</Text></Flex>
+              <Stack gap={2} fontSize="sm">
+                <Flex justify="space-between"><Text>Saida hoje</Text><Text fontWeight="semibold">{outboundMessages}</Text></Flex>
+                <Flex justify="space-between"><Text>Entregues</Text><Text fontWeight="semibold">{deliveredMessages}</Text></Flex>
+                <Flex justify="space-between"><Text>Lidas</Text><Text fontWeight="semibold">{readMessages}</Text></Flex>
+                <Flex justify="space-between"><Text>Falhas</Text><Text fontWeight="semibold">{failedMessages}</Text></Flex>
               </Stack>
+
+              <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
+                <Text fontSize="xs" color="fg.muted" mb={2}>Conversas por modo:</Text>
+                <Stack gap={1} fontSize="sm">
+                  {Object.entries(overview?.conversations.by_mode || {}).map(([mode, count]) => (
+                    <Flex key={mode} justify="space-between">
+                      <Text textTransform="capitalize">{mode === 'auto' ? 'Automatizado' : mode === 'human' ? 'Humano' : 'Híbrido'}</Text>
+                      <Text fontWeight="semibold">{count}</Text>
+                    </Flex>
+                  ))}
+                  {Object.keys(overview?.conversations.by_mode || {}).length === 0 && (
+                    <Text color="fg.muted">Sem conversas</Text>
+                  )}
+                </Stack>
+              </Box>
 
               <Stack gap={2} pt={2} borderTopWidth="1px" borderColor="border.subtle">
                 <Button variant="outline" leftIcon={<ArrowTrendingUpIcon className="w-4 h-4" />} onClick={() => window.location.href = '/analytics'}>
@@ -410,7 +438,7 @@ export const DashboardPage: React.FC = () => {
         </GridItem>
       </Grid>
 
-      <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
+      <Grid templateColumns={{ base: '1fr', lg: 'repeat(3, 1fr)' }} gap={6}>
         <GridItem>
           <Card title="Pedidos por dia" subtitle="Volume diario no periodo selecionado">
             {isLoadingCharts ? (
@@ -419,6 +447,47 @@ export const DashboardPage: React.FC = () => {
               <Box height="300px">
                 <Line data={ordersChartData} options={chartOptions} />
               </Box>
+            )}
+          </Card>
+        </GridItem>
+
+        <GridItem>
+          <Card title="Conversas por dia" subtitle="Novas conversas e resolvidas">
+            {isLoadingCharts ? (
+              <Skeleton height="300px" />
+            ) : charts?.conversations_per_day && charts.conversations_per_day.length > 0 ? (
+              <Box height="300px">
+                <Line 
+                  data={{
+                    labels: charts.conversations_per_day.map((item) =>
+                      format(new Date(item.date), 'dd/MM', { locale: ptBR })
+                    ),
+                    datasets: [
+                      {
+                        label: 'Novas',
+                        data: charts.conversations_per_day.map((item) => item.new),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                      },
+                      {
+                        label: 'Resolvidas',
+                        data: charts.conversations_per_day.map((item) => item.resolved),
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                      },
+                    ],
+                  }} 
+                  options={chartOptions} 
+                />
+              </Box>
+            ) : (
+              <Flex minH="300px" align="center" justify="center">
+                <Text color="fg.muted">Sem dados de conversas para o periodo.</Text>
+              </Flex>
             )}
           </Card>
         </GridItem>
