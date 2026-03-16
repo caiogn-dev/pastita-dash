@@ -14,8 +14,6 @@ import {
   Flex,
   Heading,
   Input,
-  InputGroup,
-  InputLeftElement,
   Stack,
   Text,
   Avatar,
@@ -24,13 +22,7 @@ import {
   Spinner,
   Button,
   Textarea,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
+  Dialog,
   useDisclosure,
   HStack,
   VStack,
@@ -102,7 +94,7 @@ export const WhatsAppInboxOptimized: React.FC = () => {
   const [messageText, setMessageText] = useState('');
   const [newNote, setNewNote] = useState('');
   
-  const { isOpen: isNoteModalOpen, onOpen: onNoteModalOpen, onClose: onNoteModalClose } = useDisclosure();
+  const { open: isNoteModalOpen, onOpen: onNoteModalOpen, onClose: onNoteModalClose } = useDisclosure();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const debouncedSearch = useDebounce(state.searchQuery, 300);
 
@@ -270,7 +262,6 @@ export const WhatsAppInboxOptimized: React.FC = () => {
       status: 'pending',
       created_at: new Date().toISOString(),
       conversation_id: state.selectedConversation.id,
-      conversation: state.selectedConversation.id,
       account: selectedAccount?.id || '',
       isOptimistic: true,
       whatsapp_message_id: '',
@@ -357,7 +348,7 @@ export const WhatsAppInboxOptimized: React.FC = () => {
 
     switch (state.selectedTab) {
       case 'active':
-        return filtered.filter(c => c.status !== 'closed');
+        return filtered.filter(c => c.status !== 'archived');
       case 'auto':
         return filtered.filter(c => c.mode === 'auto');
       case 'human':
@@ -394,20 +385,22 @@ export const WhatsAppInboxOptimized: React.FC = () => {
         {/* Sidebar */}
         <Box w="360px" borderRight="1px" borderColor="gray.200" display="flex" flexDir="column" bg="gray.50">
           <Box p={4} borderBottom="1px" borderColor="gray.200">
-            <InputGroup size="sm">
-              <InputLeftElement pointerEvents="none">
-                <MagnifyingGlassIcon className="w-4 h-4 text-gray.400" />
-              </InputLeftElement>
+            <Flex position="relative" alignItems="center">
+              <Box position="absolute" left={3} color="gray.400" pointerEvents="none">
+                <MagnifyingGlassIcon className="w-4 h-4" />
+              </Box>
               <Input
                 placeholder="Buscar..."
                 value={state.searchQuery}
                 onChange={(e) => setState(prev => ({ ...prev, searchQuery: e.target.value }))}
+                paddingLeft={10}
+                size="sm"
               />
-            </InputGroup>
+            </Flex>
           </Box>
 
           <Box p={4} borderBottom="1px" borderColor="gray.200">
-            <Tabs.Root value={state.selectedTab} onValueChange={(d) => setState(prev => ({ ...prev, selectedTab: d.value as any }))} variant="soft" size="sm">
+            <Tabs.Root value={state.selectedTab} onValueChange={(d) => setState(prev => ({ ...prev, selectedTab: d.value as any }))} variant="enclosed" size="sm">
               <Tabs.List>
                 <Tabs.Trigger value="all">Todas</Tabs.Trigger>
                 <Tabs.Trigger value="active">Ativas</Tabs.Trigger>
@@ -436,7 +429,9 @@ export const WhatsAppInboxOptimized: React.FC = () => {
                     onClick={() => setState(prev => ({ ...prev, selectedConversation: conv }))}
                   >
                     <HStack gap={3} mb={2}>
-                      <Avatar name={conv.contact_name || conv.phone_number} size="sm" />
+                    <Avatar.Root size="sm">
+                      <Avatar.Fallback>{(conv.contact_name || conv.phone_number).charAt(0).toUpperCase()}</Avatar.Fallback>
+                    </Avatar.Root>
                       <VStack flex={1} gap={0} align="start">
                         <HStack gap={2}>
                           <Text fontWeight="600" fontSize="sm">
@@ -446,7 +441,7 @@ export const WhatsAppInboxOptimized: React.FC = () => {
                             {conv.mode === 'auto' ? '🤖' : '👤'}
                           </Badge>
                         </HStack>
-                        <Text fontSize="xs" color="gray.600" noOfLines={1}>
+                        <Text fontSize="xs" color="gray.600" truncate>
                           {conv.phone_number}
                         </Text>
                       </VStack>
@@ -469,7 +464,9 @@ export const WhatsAppInboxOptimized: React.FC = () => {
             <>
               <Box p={4} borderBottom="1px" borderColor="gray.200" display="flex" justifyContent="space-between" alignItems="center">
                 <HStack gap={3}>
-                  <Avatar name={state.selectedConversation.contact_name || state.selectedConversation.phone_number} />
+                  <Avatar.Root>
+                    <Avatar.Fallback>{(state.selectedConversation.contact_name || state.selectedConversation.phone_number).charAt(0).toUpperCase()}</Avatar.Fallback>
+                  </Avatar.Root>
                   <VStack gap={0} align="start">
                     <Heading size="sm">{state.selectedConversation.contact_name || state.selectedConversation.phone_number}</Heading>
                     <Text fontSize="xs" color="gray.600">{state.selectedConversation.phone_number}</Text>
@@ -567,22 +564,21 @@ export const WhatsAppInboxOptimized: React.FC = () => {
         </Box>
       </Flex>
 
-      <Modal isOpen={isNoteModalOpen} onClose={onNoteModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Adicionar Nota</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
+      <Dialog.Root open={isNoteModalOpen} onOpenChange={(details) => details.open ? onNoteModalOpen() : onNoteModalClose()}>
+        <Dialog.Content>
+          <Dialog.Header>Adicionar Nota</Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body>
             <Textarea value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Digite uma nota..." size="sm" />
-          </ModalBody>
-          <ModalFooter>
+          </Dialog.Body>
+          <Dialog.Footer>
             <HStack gap={2}>
               <Button variant="outline" onClick={onNoteModalClose}>Cancelar</Button>
               <Button colorPalette="blue" onClick={handleAddNote} disabled={!newNote.trim()}>Adicionar</Button>
             </HStack>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </Dialog.Footer>
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 };
