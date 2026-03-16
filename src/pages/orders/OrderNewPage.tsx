@@ -44,7 +44,7 @@ import { useStore } from '../../hooks';
 interface Product {
   id: string;
   name: string;
-  price: number;
+  price: number | string; // API pode retornar string
   stock_quantity: number;
   sku: string;
 }
@@ -55,6 +55,19 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
 }
+
+// Helper para converter preço para número
+const toNumber = (value: unknown): number => {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseFloat(value) || 0;
+  return 0;
+};
+
+// Helper para formatar preço com segurança
+const formatPrice = (value: unknown): string => {
+  const num = toNumber(value);
+  return num.toFixed(2);
+};
 
 // Schema de validação
 const orderSchema = z.object({
@@ -129,7 +142,13 @@ export const OrderNewPage: React.FC = () => {
     const loadProducts = async () => {
       try {
         const response = await productsService.getProducts({ is_active: true });
-        setProducts(response.results || []);
+        // Garantir que price é número
+        const productsWithNumberPrice = (response.results || []).map(p => ({
+          ...p,
+          price: toNumber(p.price),
+          stock_quantity: toNumber(p.stock_quantity),
+        }));
+        setProducts(productsWithNumberPrice);
       } catch (error) {
         toast.error('Erro ao carregar produtos');
       } finally {
@@ -159,7 +178,7 @@ export const OrderNewPage: React.FC = () => {
         product_id: product.id,
         product_name: product.name,
         quantity,
-        unit_price: product.price,
+        unit_price: toNumber(product.price),
       });
     }
 
@@ -299,7 +318,7 @@ export const OrderNewPage: React.FC = () => {
                         <option value="">Selecione um produto</option>
                         {products.map(product => (
                           <option key={product.id} value={product.id}>
-                            {product.name} - R$ {product.price.toFixed(2)}
+                            {product.name} - R$ {formatPrice(product.price)}
                           </option>
                         ))}
                       </select>
@@ -341,12 +360,12 @@ export const OrderNewPage: React.FC = () => {
                             <Stack gap={0} flex={1}>
                               <Text fontWeight="medium">{field.product_name}</Text>
                               <Text fontSize="sm" color="fg.muted">
-                                {field.quantity} x R$ {field.unit_price.toFixed(2)}
+                                {field.quantity} x R$ {formatPrice(field.unit_price)}
                               </Text>
                             </Stack>
                             <Flex align="center" gap={4}>
                               <Text fontWeight="semibold">
-                                R$ {(field.quantity * field.unit_price).toFixed(2)}
+                                R$ {formatPrice(field.quantity * toNumber(field.unit_price))}
                               </Text>
                               <IconButton
                                 aria-label="Remover"
@@ -448,12 +467,12 @@ export const OrderNewPage: React.FC = () => {
                   
                   <Flex justify="space-between">
                     <Text color="fg.muted">Subtotal</Text>
-                    <Text>R$ {totals.subtotal.toFixed(2)}</Text>
+                    <Text>R$ {formatPrice(totals.subtotal)}</Text>
                   </Flex>
                   
                   <Flex justify="space-between">
                     <Text color="fg.muted">Taxa de Entrega</Text>
-                    <Text>R$ {totals.deliveryFee.toFixed(2)}</Text>
+                    <Text>R$ {formatPrice(totals.deliveryFee)}</Text>
                   </Flex>
                   
                   <Separator />
@@ -461,7 +480,7 @@ export const OrderNewPage: React.FC = () => {
                   <Flex justify="space-between">
                     <Text fontWeight="bold" fontSize="lg">Total</Text>
                     <Text fontWeight="bold" fontSize="lg" color="green.500">
-                      R$ {totals.total.toFixed(2)}
+                      R$ {formatPrice(totals.total)}
                     </Text>
                   </Flex>
 
