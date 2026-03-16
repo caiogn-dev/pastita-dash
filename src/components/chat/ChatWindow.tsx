@@ -75,8 +75,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isSending, setIsSending] = useState(false);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
   
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom - only when needed
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
 
   const {
     isConnected,
@@ -160,9 +168,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [selectedConversation, loadMessages, subscribeToConversation, unsubscribeFromConversation, onConversationSelect]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Auto-scroll only for received messages, not for sent messages
+  const handleAutoScroll = useCallback((isReceivedMessage: boolean = true) => {
+    if (isReceivedMessage && shouldAutoScrollRef.current) {
+      setTimeout(() => scrollToBottom(), 100);
+    }
+  }, [scrollToBottom]);
+
+  // Detect user scroll to enable/disable auto-scroll
+  const handleContainerScroll = useCallback(() => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      // If user scrolls up, disable auto-scroll. If at bottom, enable
+      shouldAutoScrollRef.current = scrollHeight - (scrollTop + clientHeight) < 100;
+    }
+  }, []);
 
   function handleMessageReceived(event: MessageReceivedEvent) {
     const newMessage = event.message;
@@ -174,6 +194,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
         return [...prev, newMessage as unknown as Message];
       });
+      // Auto-scroll when receiving a message
+      handleAutoScroll(true);
     }
 
     setConversations(prev => {
@@ -207,6 +229,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
         return [...prev, newMessage];
       });
+      // Auto-scroll for received messages
+      if (newMessage.direction === 'inbound') {
+        handleAutoScroll(true);
+      }
     }
   }
 
@@ -261,6 +287,25 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSendMessage = async (text: string) => {
     if (!selectedConversation || !accountId) return;
 
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      conversation_id: selectedConversation.id,
+      account: accountId,
+      text_body: text,
+      direction: 'outbound',
+      message_type: 'text',
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      whatsapp_message_id: '',
+      from_number: '',
+      to_number: selectedConversation.phone_number,
+      timestamp: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as unknown as Message;
+
+    // Add optimistic message without auto-scroll
+    setMessages(prev => [...prev, optimisticMessage]);
+
     setIsSending(true);
     try {
       const messageRes = await whatsappService.sendTextMessage({
@@ -269,8 +314,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         text,
       });
       
-      setMessages(prev => [...prev, messageRes.data]);
+      // Replace optimistic message with real one
+      setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? messageRes.data : m));
     } catch (error) {
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
       toast.error(getErrorMessage(error));
     } finally {
       setIsSending(false);
@@ -500,6 +548,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               ref={messagesContainerRef}
               flex={1}
               overflowY="auto"
+              onScroll={handleContainerScroll}
               p={4}
               gap={4}
               bg="bg.muted"
