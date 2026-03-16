@@ -20,6 +20,11 @@ import toast from 'react-hot-toast';
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
 
+// Type-safe helper to ensure value is array
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
 interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
   last_message?: Message | string;
 }
@@ -38,8 +43,8 @@ const WhatsAppInboxPage: React.FC = () => {
   const loadConversations = async () => {
     try {
       const response = await conversationsService.getConversations({});
-      const convs = response.results || [];
-      setConversations(convs as ConversationWithMessages[]);
+      const convs = ensureArray<ConversationWithMessages>(response?.results || response);
+      setConversations(convs);
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
       toast.error('Erro ao carregar conversas');
@@ -49,7 +54,7 @@ const WhatsAppInboxPage: React.FC = () => {
   const loadMessages = async (conversationId: string) => {
     try {
       const msgs = await conversationsService.getMessages(conversationId);
-      setMessages(msgs || []);
+      setMessages(ensureArray<Message>(msgs));
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
       toast.error('Erro ao carregar mensagens');
@@ -137,7 +142,7 @@ const WhatsAppInboxPage: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const filteredConversations = conversations.filter(conv =>
+  const filteredConversations = ensureArray<ConversationWithMessages>(conversations).filter(conv =>
     conv.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conv.phone_number.includes(searchTerm)
   );

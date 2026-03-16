@@ -25,6 +25,11 @@ import { useWhatsAppWS, MessageReceivedEvent, StatusUpdatedEvent, TypingEvent, C
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
 import { Message, Conversation } from '../../types';
 
+// Type-safe helper to ensure value is array
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
 export interface ChatWindowProps {
   accountId: string;
   accountName?: string;
@@ -107,7 +112,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     setIsLoadingConversations(true);
     try {
       const response = await conversationsService.getConversations({ account: accountId });
-      setConversations(response.results);
+      setConversations(ensureArray<Conversation>(response?.results || response));
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -125,7 +130,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         selectedConversation.phone_number,
         100
       );
-      const history = (historyRes.data as { results?: Message[] })?.results || [];
+      const history = ensureArray<Message>((historyRes.data as { results?: Message[] })?.results || historyRes.data);
       setMessages(history.reverse());
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -300,12 +305,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  const contacts: Contact[] = conversations.map(conv => ({
+  const contacts: Contact[] = ensureArray<Conversation>(conversations).map(conv => ({
     ...conversationToContact(conv),
     isTyping: typingContacts.has(conv.id),
   }));
 
-  const groupedMessages = messages.reduce((groups, message) => {
+  const groupedMessages = ensureArray<Message>(messages).reduce((groups, message) => {
     // Verifica se created_at é válido antes de formatar
     if (!message.created_at) return groups;
     
