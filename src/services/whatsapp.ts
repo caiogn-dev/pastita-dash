@@ -70,14 +70,6 @@ export const sendMessage = (data: any) =>
 
 export const sendTemplate = (data: any) =>
   api.post('/whatsapp/messages/send_template/', data);
-  Promise.resolve({
-    data: {
-      id: 'mock-template',
-      ...data,
-      status: 'sent',
-      sent_at: new Date().toISOString()
-    }
-  });
 
 // Estatísticas - NOTA: Endpoint não existe no backend atual
 export const getAccountStats = (accountId: string) =>

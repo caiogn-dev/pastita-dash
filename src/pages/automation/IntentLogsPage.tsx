@@ -258,12 +258,12 @@ const IntentLogsPage: React.FC = () => {
                   <td className="confidence-cell">
                     <div className="confidence-bar">
                       <div
-                        className={`confidence-fill confidence-${getConfidenceColor(log.confidence_score)}`}
-                        style={{ width: `${(log.confidence_score || 0) * 100}%` }}
+                        className={`confidence-fill confidence-${getConfidenceColor(log.confidence)}`}
+                        style={{ width: `${(log.confidence || 0) * 100}%` }}
                       ></div>
                     </div>
                     <span className="confidence-value">
-                      {log.confidence_score ? (log.confidence_score * 100).toFixed(0) + '%' : '-'}
+                      {log.confidence ? (log.confidence * 100).toFixed(0) + '%' : '-'}
                     </span>
                   </td>
                   <td className="actions-cell">
@@ -355,18 +355,18 @@ const IntentLogsPage: React.FC = () => {
                     </span>
                   </span>
                 </div>
-                {selectedLog.confidence_score !== undefined && (
+                {selectedLog.confidence !== undefined && (
                   <div className="detail-row">
                     <span className="label">Confiança:</span>
                     <span className="value">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <div className="confidence-bar" style={{ width: '150px' }}>
                           <div
-                            className={`confidence-fill confidence-${getConfidenceColor(selectedLog.confidence_score)}`}
-                            style={{ width: `${selectedLog.confidence_score * 100}%` }}
+                            className={`confidence-fill confidence-${getConfidenceColor(selectedLog.confidence)}`}
+                            style={{ width: `${selectedLog.confidence * 100}%` }}
                           ></div>
                         </div>
-                        {(selectedLog.confidence_score * 100).toFixed(2)}%
+                        {(selectedLog.confidence * 100).toFixed(2)}%
                       </div>
                     </span>
                   </div>

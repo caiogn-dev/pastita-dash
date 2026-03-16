@@ -12,18 +12,16 @@ import {
   PhoneIcon,
   EllipsisVerticalIcon,
   CheckIcon,
-  ChecksIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
 import { conversationsService } from '../../services/conversations';
-import { whatsappService } from '../../services/whatsapp';
+import * as whatsappService from '../../services/whatsapp';
 import toast from 'react-hot-toast';
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
 
-interface ConversationWithMessages extends Conversation {
-  last_message?: Message;
-  unread_count?: number;
+interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
+  last_message?: Message | string;
 }
 
 const WhatsAppInboxPage: React.FC = () => {
@@ -35,12 +33,13 @@ const WhatsAppInboxPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadConversations = async () => {
     try {
       const response = await conversationsService.getConversations({});
-      setConversations(response.results || []);
+      const convs = response.results || [];
+      setConversations(convs as ConversationWithMessages[]);
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
       toast.error('Erro ao carregar conversas');
@@ -69,7 +68,8 @@ const WhatsAppInboxPage: React.FC = () => {
 
     setSending(true);
     try {
-      await whatsappService.sendMessage({
+      const sendFn = (whatsappService as any).sendMessage;
+      await sendFn({
         conversation: selectedConversation.id,
         content: messageText.trim(),
         message_type: 'text',
@@ -80,7 +80,7 @@ const WhatsAppInboxPage: React.FC = () => {
       setTimeout(() => loadMessages(selectedConversation.id), 500);
     } catch (error: any) {
       console.error('Erro ao enviar mensagem:', error);
-      toast.error(error.response?.data?.detail || 'Erro ao enviar mensagem');
+      toast.error(error?.response?.data?.detail || 'Erro ao enviar mensagem');
     } finally {
       setSending(false);
     }
@@ -144,8 +144,8 @@ const WhatsAppInboxPage: React.FC = () => {
 
   const getStatusIcon = (message: Message) => {
     if (message.direction === 'inbound') return null;
-    if (message.status === 'read') return <ChecksIcon className="w-4 h-4 text-blue-500" />;
-    if (message.status === 'delivered') return <ChecksIcon className="w-4 h-4 text-gray-400" />;
+    if (message.status === 'read') return <CheckIcon className="w-4 h-4 text-blue-500 fill-blue-500" />;
+    if (message.status === 'delivered') return <CheckIcon className="w-4 h-4 text-gray-400" />;
     if (message.status === 'sent') return <CheckIcon className="w-4 h-4 text-gray-400" />;
     return <ClockIcon className="w-4 h-4 text-gray-300" />;
   };
@@ -185,7 +185,7 @@ const WhatsAppInboxPage: React.FC = () => {
                 <div className="conversation-info">
                   <h3>{conv.contact_name || conv.phone_number}</h3>
                   <p className="conversation-preview">
-                    {conv.last_message?.text_body || 'Sem mensagens'}
+                    {typeof conv.last_message === 'object' && conv.last_message?.text_body ? conv.last_message.text_body : (typeof conv.last_message === 'string' ? conv.last_message : 'Sem mensagens')}
                   </p>
                 </div>
                 <div className="conversation-meta">

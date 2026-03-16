@@ -278,7 +278,7 @@ const DebugDashboardPage: React.FC = () => {
                         </td>
                         <td>
                           <span className="status-indicator">
-                            {log.confidence_score && log.confidence_score > 0.8 ? (
+                            {log.confidence && log.confidence > 0.8 ? (
                               <CheckCircleIcon className="w-4 h-4 text-green-500" />
                             ) : (
                               <ExclamationTriangleIcon className="w-4 h-4 text-yellow-500" />
