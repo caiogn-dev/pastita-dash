@@ -118,9 +118,18 @@ export const getMessages = (accountIdOrParams?: any, paramsOrPhone?: any, limit?
   return Promise.resolve({ data: { results: [] } });
 };
 
-export const getConversationHistory = (conversationIdOrAccountId: any, phoneNumber?: any, limit?: any) => {
-  // Suporta diferentes assinaturas
-  return Promise.resolve({ data: { results: [] } });
+export const getConversationHistory = async (accountId: string, phoneNumber: string, limit: number = 100) => {
+  try {
+    const response = await api.post('/whatsapp/messages/conversation_history/', {
+      account_id: accountId,
+      phone_number: phoneNumber,
+      limit: limit
+    });
+    return response;
+  } catch (error) {
+    console.error('Error fetching conversation history:', error);
+    return { data: { results: [] } };
+  }
 };
 
 export const sendTextMessage = sendMessage;

@@ -281,7 +281,7 @@ export const OrderDetailPageNew: React.FC = () => {
       confirmed: { action: 'prepare', label: 'Iniciar Preparo', color: 'bg-orange-500 hover:bg-orange-600' },
       paid: { action: 'prepare', label: 'Iniciar Preparo', color: 'bg-orange-500 hover:bg-orange-600' },
       preparing: { action: 'ready', label: 'Marcar como Pronto', color: 'bg-purple-500 hover:bg-purple-600' },
-      processing: { action: 'ready', label: 'Marcar como Pronto', color: 'bg-purple-500 hover:bg-purple-600' },
+      processing: { action: 'prepare', label: 'Iniciar Preparo', color: 'bg-orange-500 hover:bg-orange-600' },
       ready: { action: 'deliver', label: 'Saiu para Entrega', color: 'bg-indigo-500 hover:bg-indigo-600' },
       out_for_delivery: { action: 'complete', label: 'Marcar Entregue', color: 'bg-green-500 hover:bg-green-600' },
       shipped: { action: 'complete', label: 'Marcar Entregue', color: 'bg-green-500 hover:bg-green-600' },
