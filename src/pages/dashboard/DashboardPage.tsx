@@ -128,10 +128,14 @@ const variantMap = {
 
 const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, icon, variant = 'brand', href, badge, loading }) => {
   const c = variantMap[variant];
-  return (
+  const boxStyle: React.CSSProperties = {
+    cursor: href ? 'pointer' : 'default',
+    textDecoration: 'none',
+    display: 'block',
+    height: '100%',
+  };
+  const content = (
     <Box
-      as={href ? 'a' : 'div'}
-      href={href}
       h="full"
       p={4}
       borderRadius="xl"
@@ -140,10 +144,8 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, icon, variant
       borderColor="gray.100"
       boxShadow="0 1px 4px rgba(0,0,0,.05)"
       transition="all 0.18s"
-      cursor={href ? 'pointer' : 'default'}
       _hover={href ? { borderColor: c.border, boxShadow: '0 4px 16px rgba(0,0,0,.09)', transform: 'translateY(-1px)' } : {}}
       _dark={{ bg: 'zinc.900', borderColor: 'zinc.800' }}
-      textDecoration="none"
     >
       {loading ? (
         <Stack gap={3}>
@@ -177,6 +179,10 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, icon, variant
       )}
     </Box>
   );
+  if (href) {
+    return <a href={href} style={boxStyle}>{content}</a>;
+  }
+  return <div style={boxStyle}>{content}</div>;
 };
 
 // ──────────────────────────────────────────────────────────
@@ -554,9 +560,9 @@ export const DashboardPage: React.FC = () => {
               {/* Mode breakdown */}
               <Stack gap={2}>
                 {Object.entries(overview?.conversations.by_mode || {}).map(([mode, count]) => {
-                  const m = modeLabel[mode] || { label: mode, color: '#64748b' };
-                  const total = Object.values(overview?.conversations.by_mode || {}).reduce((a, b) => a + Number(b), 0);
-                  const pct = total > 0 ? Math.round((Number(count) / total) * 100) : 0;
+                  const m = modeLabel[mode] ?? { label: mode, color: '#64748b' };
+                  const total = Object.values(overview?.conversations.by_mode ?? {}).reduce((acc: number, b) => acc + Number(b ?? 0), 0);
+                  const pct = total > 0 ? Math.round((Number(count ?? 0) / total) * 100) : 0;
                   return (
                     <Box key={mode}>
                       <Flex justify="space-between" mb={1}>
