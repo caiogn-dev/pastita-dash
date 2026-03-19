@@ -49,7 +49,7 @@ import { useAccountStore } from '../../stores/accountStore';
 import { useFetch } from '../../hooks/useFetch';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useNotificationSound, useOrdersWebSocket, useStore } from '../../hooks';
+import { useNotificationSound, useOrdersWebSocket, useStore, useTheme } from '../../hooks';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler);
 
@@ -74,19 +74,20 @@ const AlertBanner: React.FC<{
       px={4}
       borderRadius="lg"
       bg="warning.50"
+      _dark={{ bg: 'rgba(217,119,6,0.12)', borderColor: 'rgba(217,119,6,0.3)' }}
       border="1px solid"
       borderColor="warning.200"
       flexWrap="wrap"
     >
-      <Icon as={ExclamationTriangleIcon} boxSize={5} color="warning.600" flexShrink={0} />
+      <Icon as={ExclamationTriangleIcon} boxSize={5} color="warning.600" _dark={{ color: 'warning.400' }} flexShrink={0} />
       <Flex gap={4} flex={1} flexWrap="wrap" align="center">
         {pendingOrders > 0 && (
-          <Text fontSize="sm" fontWeight="medium" color="warning.800">
+          <Text fontSize="sm" fontWeight="medium" color="warning.800" _dark={{ color: 'warning.300' }}>
             <strong>{pendingOrders}</strong> pedido{pendingOrders > 1 ? 's' : ''} aguardando confirmação
           </Text>
         )}
         {openConversations > 0 && (
-          <Text fontSize="sm" fontWeight="medium" color="warning.800">
+          <Text fontSize="sm" fontWeight="medium" color="warning.800" _dark={{ color: 'warning.300' }}>
             <strong>{openConversations}</strong> conversa{openConversations > 1 ? 's' : ''} em aberto
           </Text>
         )}
@@ -118,12 +119,12 @@ interface KpiCardProps {
 }
 
 const variantMap = {
-  brand:   { bg: '#faf0f1', icon: '#722F37', border: 'rgba(114,47,55,0.18)' },
-  success: { bg: '#f0fdf4', icon: '#16a34a', border: 'rgba(22,163,74,0.18)' },
-  warning: { bg: '#fffbeb', icon: '#d97706', border: 'rgba(217,119,6,0.18)' },
-  danger:  { bg: '#fff1f2', icon: '#dc2626', border: 'rgba(220,38,38,0.18)' },
-  accent:  { bg: '#fff7ed', icon: '#ea580c', border: 'rgba(234,88,12,0.18)' },
-  neutral: { bg: '#f8fafc', icon: '#64748b', border: 'rgba(100,116,139,0.18)' },
+  brand:   { bg: '#faf0f1', icon: '#722F37', border: 'rgba(114,47,55,0.18)',   darkBg: 'rgba(114,47,55,0.20)',   darkIcon: '#e87d8a' },
+  success: { bg: '#f0fdf4', icon: '#16a34a', border: 'rgba(22,163,74,0.18)',   darkBg: 'rgba(22,163,74,0.18)',   darkIcon: '#4ade80' },
+  warning: { bg: '#fffbeb', icon: '#d97706', border: 'rgba(217,119,6,0.18)',   darkBg: 'rgba(217,119,6,0.18)',   darkIcon: '#fbbf24' },
+  danger:  { bg: '#fff1f2', icon: '#dc2626', border: 'rgba(220,38,38,0.18)',   darkBg: 'rgba(220,38,38,0.16)',   darkIcon: '#f87171' },
+  accent:  { bg: '#fff7ed', icon: '#ea580c', border: 'rgba(234,88,12,0.18)',   darkBg: 'rgba(234,88,12,0.16)',   darkIcon: '#fb923c' },
+  neutral: { bg: '#f8fafc', icon: '#64748b', border: 'rgba(100,116,139,0.18)', darkBg: 'rgba(100,116,139,0.16)', darkIcon: '#94a3b8' },
 };
 
 const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, icon, variant = 'brand', href, badge, loading }) => {
@@ -172,8 +173,8 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, icon, variant
               </Badge>
             )}
           </Stack>
-          <Box p={2.5} borderRadius="lg" bg={c.bg} flexShrink={0}>
-            <Icon as={icon} boxSize={5} color={c.icon} />
+          <Box p={2.5} borderRadius="lg" bg={c.bg} _dark={{ bg: c.darkBg }} flexShrink={0}>
+            <Icon as={icon} boxSize={5} color={c.icon} _dark={{ color: c.darkIcon }} />
           </Box>
         </Flex>
       )}
@@ -217,6 +218,7 @@ const modeLabel: Record<string, { label: string; color: string }> = {
 // Main component
 // ──────────────────────────────────────────────────────────
 export const DashboardPage: React.FC = () => {
+  const { isDark } = useTheme();
   const { selectedAccount } = useAccountStore();
   const { store } = useStore();
   const { playNotificationSound } = useNotificationSound();
@@ -279,12 +281,24 @@ export const DashboardPage: React.FC = () => {
   const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom' as const, labels: { boxWidth: 10, padding: 14, font: { size: 12 } } } },
-    scales: {
-      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } } },
-      x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: { boxWidth: 10, padding: 14, font: { size: 12 }, color: isDark ? '#d1d5db' : '#374151' },
+      },
     },
-  }), []);
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' },
+        ticks: { font: { size: 11 }, color: isDark ? '#9ca3af' : '#6b7280' },
+      },
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 11 }, color: isDark ? '#9ca3af' : '#6b7280' },
+      },
+    },
+  }), [isDark]);
 
   const messagesChartData = {
     labels: charts?.messages_per_day.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
@@ -333,9 +347,9 @@ export const DashboardPage: React.FC = () => {
         </Stack>
         <Flex gap={2} flexWrap="wrap" align="center">
           {/* Live indicator */}
-          <Flex align="center" gap={1.5} px={3} py={1.5} borderRadius="full" bg="green.50" border="1px solid" borderColor="green.200">
+          <Flex align="center" gap={1.5} px={3} py={1.5} borderRadius="full" bg="green.50" _dark={{ bg: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.3)' }} border="1px solid" borderColor="green.200">
             <Box w={2} h={2} borderRadius="full" bg="green.500" animation="pulse 2s infinite" />
-            <Text fontSize="xs" fontWeight={500} color="green.700">Operação ativa</Text>
+            <Text fontSize="xs" fontWeight={500} color="green.700" _dark={{ color: 'green.300' }}>Operação ativa</Text>
           </Flex>
           <Button
             size="sm"
@@ -444,7 +458,7 @@ export const DashboardPage: React.FC = () => {
                 <select
                   value={chartRangeDays}
                   onChange={(e) => setChartRangeDays(Number(e.target.value))}
-                  style={{ padding: '4px 10px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', background: 'white' }}
+                  style={{ padding: '4px 10px', border: `1px solid ${isDark ? '#3f3f46' : '#e2e8f0'}`, borderRadius: '8px', fontSize: '13px', background: isDark ? '#27272a' : 'white', color: isDark ? '#d4d4d8' : 'inherit' }}
                 >
                   {chartRangeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
@@ -572,7 +586,7 @@ export const DashboardPage: React.FC = () => {
                         </Flex>
                         <Text fontSize="sm" fontWeight={600}>{count} ({pct}%)</Text>
                       </Flex>
-                      <Box h="6px" borderRadius="full" bg="gray.100" overflow="hidden">
+                      <Box h="6px" borderRadius="full" bg="gray.100" _dark={{ bg: 'zinc.800' }} overflow="hidden">
                         <Box h="full" w={`${pct}%`} borderRadius="full" style={{ background: m.color }} />
                       </Box>
                     </Box>

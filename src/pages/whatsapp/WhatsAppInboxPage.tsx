@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { conversationsService } from '../../services/conversations';
 import * as whatsappService from '../../services/whatsapp';
+import { handoverService } from '../../services/handover';
 import toast from 'react-hot-toast';
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
@@ -94,11 +95,15 @@ const WhatsAppInboxPage: React.FC = () => {
   const handleSwitchToHuman = async () => {
     if (!selectedConversation) return;
     try {
-      await conversationsService.switchToHuman(selectedConversation.id);
-      toast.success('Conversa alterada para modo humano');
-      await loadConversations();
+      const res = await handoverService.transferToHuman(selectedConversation.id);
+      const newMode = res.handover_status === 'human' ? 'human' : 'auto';
+      setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
+      setConversations(prev =>
+        prev.map(c => c.id === selectedConversation.id ? { ...c, mode: newMode } : c)
+      );
+      toast.success('Conversa transferida para atendimento humano');
     } catch (error) {
-      console.error('Erro ao alternador para modo humano:', error);
+      console.error('Erro ao transferir para modo humano:', error);
       toast.error('Erro ao alternar modo');
     }
   };
@@ -106,11 +111,15 @@ const WhatsAppInboxPage: React.FC = () => {
   const handleSwitchToAuto = async () => {
     if (!selectedConversation) return;
     try {
-      await conversationsService.switchToAuto(selectedConversation.id);
-      toast.success('Conversa alterada para modo automático');
-      await loadConversations();
+      const res = await handoverService.transferToBot(selectedConversation.id);
+      const newMode = res.handover_status === 'human' ? 'human' : 'auto';
+      setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
+      setConversations(prev =>
+        prev.map(c => c.id === selectedConversation.id ? { ...c, mode: newMode } : c)
+      );
+      toast.success('Conversa retornada para o bot');
     } catch (error) {
-      console.error('Erro ao alternar para modo automático:', error);
+      console.error('Erro ao retornar para modo automático:', error);
       toast.error('Erro ao alternar modo');
     }
   };

@@ -58,12 +58,21 @@ interface WsError {
   message_id?: string;
 }
 
-type WsEvent = 
-  | WsMessageReceived 
-  | WsMessageSent 
-  | WsStatusUpdated 
-  | WsTyping 
-  | WsConversationUpdated 
+interface WsHandoverModeChanged {
+  type: 'handover_mode_changed';
+  conversation_id: string;
+  handover_status: 'bot' | 'human' | 'pending';
+  assigned_to?: string;
+  assigned_to_name?: string;
+}
+
+type WsEvent =
+  | WsMessageReceived
+  | WsMessageSent
+  | WsStatusUpdated
+  | WsTyping
+  | WsConversationUpdated
+  | WsHandoverModeChanged
   | WsError
   | { type: 'pong' }
   | { type: 'connection_established'; account_id?: string; accounts?: string[]; message?: string }
@@ -212,6 +221,17 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
         
         case 'conversation_updated': {
           chatStore.updateConversation(data.conversation);
+          break;
+        }
+
+        case 'handover_mode_changed': {
+          // Map handover_status to conversation mode and update store
+          const newMode = data.handover_status === 'human' ? 'human' : 'auto';
+          chatStore.updateConversation({
+            id: data.conversation_id,
+            mode: newMode as Conversation['mode'],
+            assigned_to: data.assigned_to,
+          });
           break;
         }
         

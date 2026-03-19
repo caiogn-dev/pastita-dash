@@ -25,6 +25,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import api from '@/services/api';
+import { handoverService } from '@/services/handover';
 
 interface DebugResult {
   timestamp: string;
@@ -82,13 +83,14 @@ export default function AgentDebugPage() {
 
   const forceHandover = async (target: 'bot' | 'human') => {
     if (!conversationId.trim()) return;
-    
+
     try {
       setLoading(true);
-      await api.post(`/conversations/${conversationId}/force-handover/`, {
-        target,
-        reason: 'Manual override from debug page'
-      });
+      if (target === 'bot') {
+        await handoverService.transferToBot(conversationId, 'Manual override from debug page');
+      } else {
+        await handoverService.transferToHuman(conversationId, { reason: 'Manual override from debug page' });
+      }
       await checkStatus();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erro ao transferir');

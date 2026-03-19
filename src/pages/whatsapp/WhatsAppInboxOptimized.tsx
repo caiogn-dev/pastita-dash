@@ -39,6 +39,7 @@ import {
 import { CheckIcon as CheckSolidIcon } from '@heroicons/react/24/solid';
 
 import { conversationsService, getErrorMessage } from '../../services';
+import { handoverService } from '../../services/handover';
 import { useWhatsAppWS } from '../../hooks/useWhatsAppWS';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useAccountStore } from '../../stores/accountStore';
@@ -321,16 +322,27 @@ export const WhatsAppInboxOptimized: React.FC = () => {
     if (!state.selectedConversation) return;
 
     try {
-      const updated =
-        mode === 'auto'
-          ? await conversationsService.switchToAuto(state.selectedConversation.id)
-          : await conversationsService.switchToHuman(state.selectedConversation.id);
+      const handoverTarget = mode === 'human' ? 'human' : 'bot';
+      const currentStatus = state.selectedConversation.mode === 'human' ? 'human' : 'bot';
 
+      let res;
+      if (handoverTarget === 'human') {
+        res = await handoverService.transferToHuman(state.selectedConversation.id);
+      } else {
+        res = await handoverService.transferToBot(state.selectedConversation.id);
+      }
+
+      const newMode = res.handover_status === 'human' ? 'human' : 'auto';
       setState(prev => ({
         ...prev,
-        selectedConversation: { ...prev.selectedConversation!, ...updated },
+        selectedConversation: prev.selectedConversation
+          ? { ...prev.selectedConversation, mode: newMode }
+          : null,
+        conversations: ensureArray<ConversationWithUI>(prev.conversations).map(c =>
+          c.id === prev.selectedConversation?.id ? { ...c, mode: newMode } : c
+        ),
       }));
-      toast.success(`Modo: ${mode === 'auto' ? '🤖 Automático' : '👤 Humano'}`);
+      toast.success(`Modo: ${newMode === 'human' ? '👤 Humano' : '🤖 Automático'}`);
     } catch (error) {
       toast.error('Erro ao alternar modo');
     }

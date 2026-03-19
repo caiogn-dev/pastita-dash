@@ -90,6 +90,7 @@ const WebhookDiagnosticsPage = lazy(() => import('./pages/whatsapp').then(m => (
 const WhatsAppChatPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WhatsAppChatPage })));
 const WhatsAppInboxPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WhatsAppInboxPage })));
 const DebugDashboardPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.DebugDashboardPage })));
+const HandoverRequestsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.HandoverRequestsPage })));
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -231,6 +232,7 @@ const AppContent: React.FC = () => {
         <Route path="whatsapp" element={<Suspense fallback={<FullPageLoading />}><WhatsAppInboxPage /></Suspense>} />
         <Route path="whatsapp/inbox" element={<Suspense fallback={<FullPageLoading />}><WhatsAppInboxPage /></Suspense>} />
         <Route path="whatsapp/chat" element={<Suspense fallback={<FullPageLoading />}><WhatsAppChatPage /></Suspense>} />
+        <Route path="whatsapp/handover" element={<Suspense fallback={<FullPageLoading />}><HandoverRequestsPage /></Suspense>} />
         <Route path="whatsapp/debug" element={<Suspense fallback={<FullPageLoading />}><DebugDashboardPage /></Suspense>} />
         <Route path="whatsapp/diagnostics" element={<Suspense fallback={<FullPageLoading />}><WebhookDiagnosticsPage /></Suspense>} />
       </Route>

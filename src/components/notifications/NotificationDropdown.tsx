@@ -68,7 +68,9 @@ export const NotificationDropdown: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationsService.markAllAsRead();
+      // markAsRead accepts string[] — pass all unread IDs at once
+      const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
+      if (unreadIds.length > 0) await notificationsService.markAsRead(unreadIds);
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
       );
@@ -80,7 +82,7 @@ export const NotificationDropdown: React.FC = () => {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      await notificationsService.markAsRead(id);
+      await notificationsService.markAsRead([id]);
       setNotifications((prev) =>
         prev.map((n) =>
           n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n

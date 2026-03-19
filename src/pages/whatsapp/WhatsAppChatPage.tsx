@@ -3,9 +3,9 @@
  */
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Heading, Text, Button, Stack } from '@chakra-ui/react';
 import { ChatWindow } from '../../components/chat/ChatWindow';
 import { useAccountStore } from '../../stores/accountStore';
+import { Button } from '../../components/common';
 
 export const WhatsAppChatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,34 +20,34 @@ export const WhatsAppChatPage: React.FC = () => {
 
   if (!selectedAccount) {
     return (
-      <Box p={4} h="100vh">
-        <Heading mb={4}>WhatsApp Chat</Heading>
-        <Box textAlign="center" mt={10}>
-          <Text mb={4}>Nenhuma conta selecionada</Text>
-          <Text color="gray.500" mb={4}>
+      <div className="p-4 h-screen">
+        <h1 className="text-2xl font-bold mb-4">WhatsApp Chat</h1>
+        <div className="text-center mt-10">
+          <p className="mb-4">Nenhuma conta selecionada</p>
+          <p className="text-gray-500 mb-4">
             Selecione uma conta no dropdown acima ou cadastre uma nova conta.
-          </Text>
-          <Stack direction="row" gap={2} justify="center">
-            <Button onClick={() => navigate('/accounts')} colorPalette="green">
+          </p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => navigate('/accounts')}>
               Ver Contas
             </Button>
             <Button onClick={() => navigate('/accounts/new')} variant="outline">
               Nova Conta
             </Button>
-          </Stack>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box p={4} h="100vh">
-      <Heading mb={4}>WhatsApp Chat - {selectedAccount.name}</Heading>
-      <ChatWindow 
-        accountId={selectedAccount.id} 
-        accountName={selectedAccount.name} 
+    <div className="p-4 h-screen">
+      <h1 className="text-2xl font-bold mb-4">WhatsApp Chat - {selectedAccount.name}</h1>
+      <ChatWindow
+        accountId={selectedAccount.id}
+        accountName={selectedAccount.name}
       />
-    </Box>
+    </div>
   );
 };
 

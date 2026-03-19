@@ -1,20 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Badge as ChakraBadge,
-  Box,
-  Flex,
-  Grid,
-  Heading,
-  IconButton,
-  Input as ChakraInput,
-  InputGroup,
-  Stack,
-  Table,
-  Tabs,
-  Text,
-} from '@chakra-ui/react';
-import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
   BanknotesIcon,
@@ -56,21 +42,28 @@ const ORDER_STATUS_VALUES: OrderStatus[] = [
   'failed',
 ];
 
-const STATUS_CONFIG: Record<string, { label: string; colorPalette: string }> = {
-  all: { label: 'Todos', colorPalette: 'gray' },
-  pending: { label: 'Recebidos', colorPalette: 'gray' },
-  processing: { label: 'Processando', colorPalette: 'orange' },
-  confirmed: { label: 'Confirmados', colorPalette: 'blue' },
-  paid: { label: 'Pagos', colorPalette: 'green' },
-  preparing: { label: 'Preparando', colorPalette: 'orange' },
-  ready: { label: 'Prontos', colorPalette: 'purple' },
-  shipped: { label: 'Enviados', colorPalette: 'cyan' },
-  out_for_delivery: { label: 'Em entrega', colorPalette: 'blue' },
-  delivered: { label: 'Entregues', colorPalette: 'green' },
-  completed: { label: 'Concluidos', colorPalette: 'green' },
-  cancelled: { label: 'Cancelados', colorPalette: 'red' },
-  refunded: { label: 'Reembolsados', colorPalette: 'red' },
-  failed: { label: 'Falharam', colorPalette: 'red' },
+const STATUS_CONFIG: Record<string, { label: string; colorClass: string }> = {
+  all: { label: 'Todos', colorClass: 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300' },
+  pending: { label: 'Recebidos', colorClass: 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300' },
+  processing: { label: 'Processando', colorClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  confirmed: { label: 'Confirmados', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  paid: { label: 'Pagos', colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  preparing: { label: 'Preparando', colorClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  ready: { label: 'Prontos', colorClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+  shipped: { label: 'Enviados', colorClass: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  out_for_delivery: { label: 'Em entrega', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  delivered: { label: 'Entregues', colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  completed: { label: 'Concluidos', colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  cancelled: { label: 'Cancelados', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  refunded: { label: 'Reembolsados', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  failed: { label: 'Falharam', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+};
+
+const PAYMENT_STATUS_COLOR: Record<string, string> = {
+  paid: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  refunded: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  pending: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
 };
 
 const TRANSPORT_LABELS: Record<string, string> = {
@@ -175,36 +168,28 @@ const MetricCard: React.FC<{
   label: string;
   value: string;
   helper: string;
-  accent: string;
+  accentClass: string;
   icon: React.ReactNode;
-}> = ({ label, value, helper, accent, icon }) => (
+}> = ({ label, value, helper, accentClass, icon }) => (
   <Card>
-    <Stack gap={3}>
-      <Flex align="center" justify="space-between">
-        <Box
-          borderRadius="full"
-          bg={accent}
-          color="white"
-          p={2.5}
-          display="inline-flex"
-          alignItems="center"
-          justifyContent="center"
-        >
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div className={`rounded-full ${accentClass} p-2.5 inline-flex items-center justify-center`}>
           {icon}
-        </Box>
-        <Text fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase" letterSpacing="0.08em">
+        </div>
+        <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide">
           {label}
-        </Text>
-      </Flex>
-      <Stack gap={1}>
-        <Text fontSize={{ base: '2xl', md: '3xl' }} fontWeight="bold" color="fg.primary">
+        </span>
+      </div>
+      <div className="flex flex-col gap-1">
+        <span className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
           {value}
-        </Text>
-        <Text fontSize="sm" color="fg.muted">
+        </span>
+        <span className="text-sm text-gray-500 dark:text-zinc-400">
           {helper}
-        </Text>
-      </Stack>
-    </Stack>
+        </span>
+      </div>
+    </div>
   </Card>
 );
 
@@ -442,80 +427,74 @@ export const OrdersPage: React.FC = () => {
 
   if (!effectiveStoreQuery) {
     return (
-      <Box p={{ base: 4, md: 6 }}>
+      <div className="p-4 md:p-6">
         <Card>
-          <Stack gap={4}>
-            <Heading size="lg">Pedidos</Heading>
-            <Text color="fg.muted">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pedidos</h2>
+            <p className="text-gray-500 dark:text-zinc-400">
               Selecione uma loja para visualizar os pedidos e ativar o realtime.
-            </Text>
-            <Flex>
+            </p>
+            <div>
               <Button onClick={() => navigate('/stores')}>Ir para lojas</Button>
-            </Flex>
-          </Stack>
+            </div>
+          </div>
         </Card>
-      </Box>
+      </div>
     );
   }
 
+  // Realtime badge classes
+  const realtimeBadgeClass = realtimeConnected
+    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+    : connectionStatus === 'connecting'
+    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+    : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400';
+
   return (
-    <Box p={{ base: 4, md: 6 }}>
-      <Stack gap={6}>
+    <div className="p-4 md:p-6">
+      <div className="flex flex-col gap-6">
+        {/* Header Card */}
         <Card variant="filled">
-          <Stack gap={5}>
-            <Flex
-              align={{ base: 'flex-start', xl: 'center' }}
-              justify="space-between"
-              direction={{ base: 'column', xl: 'row' }}
-              gap={4}
-            >
-              <Stack gap={2}>
-                <Flex align="center" gap={3} wrap="wrap">
-                  <Heading size="xl" color="fg.primary">
-                    Pedidos
-                  </Heading>
-                  <ChakraBadge
-                    colorPalette={realtimeConnected ? 'success' : connectionStatus === 'connecting' ? 'orange' : 'gray'}
-                    borderRadius="full"
-                    px={3}
-                    py={1}
-                  >
-                    <Flex align="center" gap={1.5}>
-                      {realtimeConnected ? (
-                        <SignalIcon className="h-3.5 w-3.5" />
-                      ) : (
-                        <SignalSlashIcon className="h-3.5 w-3.5" />
-                      )}
-                      <Text fontSize="xs" fontWeight="semibold">
-                        {realtimeConnected ? 'Tempo real ativo' : connectionStatus === 'connecting' ? 'Reconectando' : 'Sem tempo real'}
-                      </Text>
-                    </Flex>
-                  </ChakraBadge>
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pedidos</h1>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${realtimeBadgeClass}`}>
+                    {realtimeConnected ? (
+                      <SignalIcon className="h-3.5 w-3.5" />
+                    ) : (
+                      <SignalSlashIcon className="h-3.5 w-3.5" />
+                    )}
+                    {realtimeConnected
+                      ? 'Tempo real ativo'
+                      : connectionStatus === 'connecting'
+                      ? 'Reconectando'
+                      : 'Sem tempo real'}
+                  </span>
                   {transport && (
-                    <ChakraBadge colorPalette="blue" variant="subtle" borderRadius="full" px={3} py={1}>
-                      <Text fontSize="xs" fontWeight="semibold">
-                        {TRANSPORT_LABELS[transport] || transport}
-                      </Text>
-                    </ChakraBadge>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                      {TRANSPORT_LABELS[transport] || transport}
+                    </span>
                   )}
-                </Flex>
-                <Text color="fg.muted">
+                </div>
+                <p className="text-gray-500 dark:text-zinc-400">
                   {effectiveStoreName} • {orders.length} pedido(s) carregado(s)
                   {lastSyncedAt ? ` • Ultima sincronia ${format(lastSyncedAt, 'HH:mm:ss', { locale: ptBR })}` : ''}
-                </Text>
+                </p>
                 {!realtimeConnected && connectionError && (
-                  <Flex align="center" gap={3} wrap="wrap">
-                    <Text fontSize="sm" color="orange.600">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-sm text-orange-600 dark:text-orange-400">
                       {connectionError}
-                    </Text>
+                    </span>
                     <Button variant="outline" size="xs" onClick={() => reconnect()}>
                       Reconectar
                     </Button>
-                  </Flex>
+                  </div>
                 )}
-              </Stack>
+              </div>
 
-              <Flex gap={3} wrap="wrap">
+              <div className="flex gap-3 flex-wrap">
                 <Button
                   variant="outline"
                   size="sm"
@@ -541,147 +520,149 @@ export const OrdersPage: React.FC = () => {
                 >
                   Novo pedido
                 </Button>
-              </Flex>
-            </Flex>
+              </div>
+            </div>
 
-            <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(4, 1fr)' }} gap={4}>
+            {/* Metric Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               <MetricCard
                 label="Pedidos ativos"
                 value={String(metrics.actionable)}
                 helper="Fila que exige acao operacional"
-                accent="blue.500"
+                accentClass="bg-blue-500 text-white"
                 icon={<Squares2X2Icon className="h-5 w-5" />}
               />
               <MetricCard
                 label="Em entrega"
                 value={String(metrics.deliveryQueue)}
                 helper="Pedidos prontos, enviados ou em rota"
-                accent="purple.500"
+                accentClass="bg-purple-500 text-white"
                 icon={<TruckIcon className="h-5 w-5" />}
               />
               <MetricCard
                 label="Receita paga"
                 value={`R$ ${formatMoney(metrics.revenue)}`}
                 helper="Total confirmado no periodo carregado"
-                accent="green.500"
+                accentClass="bg-green-500 text-white"
                 icon={<BanknotesIcon className="h-5 w-5" />}
               />
               <MetricCard
                 label="Clientes"
                 value={String(metrics.customers)}
                 helper="Base unica de clientes na lista atual"
-                accent="orange.500"
+                accentClass="bg-orange-500 text-white"
                 icon={<UserGroupIcon className="h-5 w-5" />}
               />
-            </Grid>
-          </Stack>
+            </div>
+          </div>
         </Card>
 
+        {/* Filter / Search Card */}
         <Card>
-          <Stack gap={4}>
-            <Flex align={{ base: 'stretch', lg: 'center' }} direction={{ base: 'column', lg: 'row' }} gap={4}>
-              <InputGroup
-                flex={1}
-                startElement={<MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />}
-              >
-                <ChakraInput
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-zinc-500" />
+                <input
+                  type="text"
                   placeholder="Buscar por numero do pedido, cliente ou telefone"
                   value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                 />
-              </InputGroup>
+              </div>
 
-              <Flex
-                align="center"
-                justify="space-between"
-                gap={3}
-                wrap="wrap"
-              >
-                <Flex bg="bg.secondary" borderRadius="lg" p={1}>
-                  <IconButton
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                {/* View mode toggle */}
+                <div className="flex bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
+                  <button
                     aria-label="Kanban"
-                    size="sm"
-                    variant={viewMode === 'kanban' ? 'solid' : 'ghost'}
                     onClick={() => setViewMode('kanban')}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      viewMode === 'kanban'
+                        ? 'bg-white dark:bg-zinc-700 shadow-sm text-gray-900 dark:text-white'
+                        : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300'
+                    }`}
                   >
                     <Squares2X2Icon className="h-4 w-4" />
-                  </IconButton>
-                  <IconButton
+                  </button>
+                  <button
                     aria-label="Tabela"
-                    size="sm"
-                    variant={viewMode === 'table' ? 'solid' : 'ghost'}
                     onClick={() => setViewMode('table')}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      viewMode === 'table'
+                        ? 'bg-white dark:bg-zinc-700 shadow-sm text-gray-900 dark:text-white'
+                        : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300'
+                    }`}
                   >
                     <ListBulletIcon className="h-4 w-4" />
-                  </IconButton>
-                </Flex>
+                  </button>
+                </div>
 
-                <Text fontSize="sm" color="fg.muted">
+                <span className="text-sm text-gray-500 dark:text-zinc-400">
                   {filteredOrders.length} pedido(s) visivel(is)
-                </Text>
-              </Flex>
-            </Flex>
+                </span>
+              </div>
+            </div>
 
-            <Box
-              overflowX="auto"
-              pb={2}
-              css={{
-                scrollbarWidth: 'thin',
-                '&::-webkit-scrollbar': { height: '6px' },
-              }}
+            {/* Status Tabs */}
+            <div
+              className="overflow-x-auto pb-2"
+              style={{ scrollbarWidth: 'thin' }}
             >
-              <Tabs.Root
-                value={statusFilter}
-                onValueChange={(details) => {
-                  const value = (details as { value: string }).value;
-                  if (value === 'all' || isOrderStatus(value)) {
-                    setStatusFilter(value as OrderStatus | 'all');
-                  }
-                }}
-              >
-                <Tabs.List display="flex" flexWrap="nowrap" gap={2} minW="max-content" py={1}>
-                  <Tabs.Trigger value="all" flexShrink={0}>
-                    <Text whiteSpace="nowrap">Todos</Text>
-                    <ChakraBadge ml={2} size="sm" variant="subtle" borderRadius="full">
-                      {statusCounts.all}
-                    </ChakraBadge>
-                  </Tabs.Trigger>
-                  {ORDER_STATUS_VALUES.map((status) => (
-                    <Tabs.Trigger key={status} value={status} flexShrink={0}>
-                      <Text whiteSpace="nowrap">
-                        {STATUS_CONFIG[status]?.label || status}
-                      </Text>
-                      <ChakraBadge
-                        ml={2}
-                        size="sm"
-                        variant="subtle"
-                        colorPalette={STATUS_CONFIG[status]?.colorPalette as 'gray'}
-                        borderRadius="full"
+              <div className="flex gap-1.5 min-w-max py-1">
+                {(['all', ...ORDER_STATUS_VALUES] as const).map((status) => {
+                  const cfg = STATUS_CONFIG[status];
+                  const count = statusCounts[status] ?? 0;
+                  const isActive = statusFilter === status;
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => {
+                        if (status === 'all' || isOrderStatus(status)) {
+                          setStatusFilter(status as OrderStatus | 'all');
+                        }
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                        isActive
+                          ? 'bg-primary-600 text-white shadow-sm'
+                          : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      {cfg?.label || status}
+                      <span
+                        className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-xs font-semibold ${
+                          isActive
+                            ? 'bg-white/20 text-white'
+                            : cfg?.colorClass || 'bg-gray-100 text-gray-600'
+                        }`}
                       >
-                        {statusCounts[status] || 0}
-                      </ChakraBadge>
-                    </Tabs.Trigger>
-                  ))}
-                </Tabs.List>
-              </Tabs.Root>
-            </Box>
-          </Stack>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </Card>
 
+        {/* Content */}
         {filteredOrders.length === 0 ? (
           <Card>
-            <Stack gap={2} py={8} textAlign="center">
-              <Heading size="md" color="fg.primary">
+            <div className="flex flex-col gap-2 py-8 text-center">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                 Nenhum pedido encontrado
-              </Heading>
-              <Text color="fg.muted">
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-zinc-400">
                 Ajuste os filtros ou aguarde novos eventos em tempo real.
-              </Text>
-            </Stack>
+              </p>
+            </div>
           </Card>
         ) : viewMode === 'kanban' ? (
           <Card noPadding>
-            <Box p={{ base: 3, md: 4 }}>
+            <div className="p-3 md:p-4">
               <OrdersKanban
                 orders={filteredOrders}
                 visibleStatuses={statusFilter === 'all' ? undefined : [statusFilter]}
@@ -690,83 +671,80 @@ export const OrdersPage: React.FC = () => {
                 }
                 onStatusChange={handleUpdateOrder}
               />
-            </Box>
+            </div>
           </Card>
         ) : (
           <Card noPadding>
-            <Box overflowX="auto">
-              <Table.Root variant="line">
-                <Table.Header>
-                  <Table.Row>
-                    <Table.ColumnHeader>Pedido</Table.ColumnHeader>
-                    <Table.ColumnHeader>Cliente</Table.ColumnHeader>
-                    <Table.ColumnHeader>Status</Table.ColumnHeader>
-                    <Table.ColumnHeader>Pagamento</Table.ColumnHeader>
-                    <Table.ColumnHeader>Total</Table.ColumnHeader>
-                    <Table.ColumnHeader>Atualizado</Table.ColumnHeader>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {filteredOrders.map((order) => (
-                    <Table.Row
-                      key={order.id}
-                      cursor="pointer"
-                      onClick={() =>
-                        navigate(`/stores/${effectiveStoreId || effectiveStoreSlug || 'default'}/orders/${order.id}`)
-                      }
-                      _hover={{ bg: 'bg.hover' }}
-                    >
-                      <Table.Cell>
-                        <Stack gap={1}>
-                          <Text fontWeight="semibold" color="fg.primary">
-                            #{order.order_number}
-                          </Text>
-                          <Text fontSize="xs" color="fg.muted">
-                            {order.items_count ?? order.items?.length ?? 0} item(ns)
-                          </Text>
-                        </Stack>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Stack gap={1}>
-                          <Text color="fg.primary">{order.customer_name || 'Cliente'}</Text>
-                          <Text fontSize="xs" color="fg.muted">
-                            {order.customer_phone || 'Telefone nao informado'}
-                          </Text>
-                        </Stack>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <OrderStatusBadge status={order.status} />
-                      </Table.Cell>
-                      <Table.Cell>
-                        <ChakraBadge
-                          colorPalette={order.payment_status === 'paid' ? 'green' : order.payment_status === 'failed' ? 'red' : 'orange'}
-                          variant="subtle"
-                          borderRadius="full"
-                          px={3}
-                          py={1}
-                        >
-                          {paymentStatusLabel(order.payment_status)}
-                        </ChakraBadge>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Text fontWeight="semibold" color="fg.primary">
-                          R$ {formatMoney(order.total)}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Text fontSize="sm" color="fg.muted">
-                          {formatOrderDateTime(order.updated_at || order.created_at)}
-                        </Text>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table.Root>
-            </Box>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b border-gray-200 dark:border-zinc-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pedido</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Cliente</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pagamento</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Atualizado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                  {filteredOrders.map((order) => {
+                    const payStatus = String(order.payment_status || 'pending').toLowerCase();
+                    const payColorClass = PAYMENT_STATUS_COLOR[payStatus] || PAYMENT_STATUS_COLOR.pending;
+                    return (
+                      <tr
+                        key={order.id}
+                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+                        onClick={() =>
+                          navigate(`/stores/${effectiveStoreId || effectiveStoreSlug || 'default'}/orders/${order.id}`)
+                        }
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              #{order.order_number}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-zinc-400">
+                              {order.items_count ?? order.items?.length ?? 0} item(ns)
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-gray-900 dark:text-white">{order.customer_name || 'Cliente'}</span>
+                            <span className="text-xs text-gray-500 dark:text-zinc-400">
+                              {order.customer_phone || 'Telefone nao informado'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <OrderStatusBadge status={order.status} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${payColorClass}`}>
+                            {paymentStatusLabel(order.payment_status)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            R$ {formatMoney(order.total)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-gray-500 dark:text-zinc-400">
+                            {formatOrderDateTime(order.updated_at || order.created_at)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Card>
         )}
-      </Stack>
-    </Box>
+      </div>
+    </div>
   );
 };
 

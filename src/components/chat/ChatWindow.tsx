@@ -23,6 +23,7 @@ import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { useWhatsAppWS, MessageReceivedEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
+import { handoverService } from '../../services/handover';
 import { Message, Conversation } from '../../types';
 
 // Type-safe helper to ensure value is array
@@ -340,13 +341,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!selectedConversation) return;
 
     try {
-      const newMode = selectedConversation.mode === 'human' ? 'auto' : 'human';
-      const updated = newMode === 'human'
-        ? await conversationsService.switchToHuman(selectedConversation.id)
-        : await conversationsService.switchToAuto(selectedConversation.id);
-      
-      setSelectedConversation(updated);
-      setConversations(prev => prev.map(c => c.id === updated.id ? updated : c));
+      const currentStatus = selectedConversation.mode === 'human' ? 'human' : 'bot';
+      const res = await handoverService.toggle(selectedConversation.id, currentStatus);
+      const newMode = res.handover_status === 'human' ? 'human' : 'auto';
+
+      setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
+      setConversations(prev =>
+        prev.map(c => c.id === selectedConversation.id ? { ...c, mode: newMode } : c)
+      );
       toast.success(`Modo alterado para ${newMode === 'human' ? 'humano' : 'automático'}`);
     } catch (error) {
       toast.error(getErrorMessage(error));

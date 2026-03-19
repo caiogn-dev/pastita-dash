@@ -1,113 +1,93 @@
 /**
- * Notifications Service - API V2
- * 
- * NOTA: O endpoint /notifications/ não existe no backend atual.
- * Todos os métodos foram modificados para retornar dados vazios/mockados
- * até que o backend implemente o sistema de notificações.
+ * Notifications Service
+ * Endpoints: /api/v1/notifications/
  */
 
 import api from './api';
 
 export interface Notification {
   id: string;
+  notification_type: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'success' | 'error';
+  data?: Record<string, unknown>;
+  related_object_type?: string;
+  related_object_id?: string;
   is_read: boolean;
-  notification_type: string;
+  read_at?: string | null;
   created_at: string;
 }
 
 export interface NotificationPreference {
-  id: string;
-  // Email
   email_enabled: boolean;
   email_messages: boolean;
   email_orders: boolean;
   email_payments: boolean;
   email_system: boolean;
-  // Push
   push_enabled: boolean;
   push_messages: boolean;
   push_orders: boolean;
   push_payments: boolean;
   push_system: boolean;
-  // In-app
   inapp_enabled: boolean;
   inapp_sound: boolean;
 }
 
-// NOTA: Endpoint /notifications/ não existe no backend atual
-// Retornando dados vazios até implementação
-export const getNotifications = () =>
-  Promise.resolve({ data: { results: [], count: 0 } });
+export interface PushSubscription {
+  id: string;
+  endpoint: string;
+  p256dh_key: string;
+  auth_key: string;
+  user_agent?: string;
+  is_active: boolean;
+  created_at: string;
+}
 
-// NOTA: Endpoint /unread_count/ não existe no backend atual
+export const getNotifications = (params?: {
+  notification_type?: string;
+  is_read?: boolean;
+  priority?: string;
+  page?: number;
+}) => api.get('/notifications/', { params });
+
 export const getUnreadCount = () =>
-  Promise.resolve({ data: { count: 0 } });
+  api.get('/notifications/unread_count/');
 
-// NOTA: Endpoint não existe - mockado
-export const markAsRead = (id?: string, all?: boolean) => {
-  if (all) {
-    return Promise.resolve({ data: { success: true } });
-  }
-  return Promise.resolve({ data: { success: true, id } });
-};
-
-// NOTA: Endpoint não existe - mockado
-export const markAllAsRead = () =>
-  Promise.resolve({ data: { success: true } });
-
-// NOTA: Endpoint não existe - mockado
-export const deleteNotification = (id: string) =>
-  Promise.resolve({ data: { success: true, id } });
-
-// NOTA: Endpoint não existe - mockado com id
-export const getPreferences = () =>
-  Promise.resolve({ 
-    data: { 
-      id: 'default',
-      email_enabled: false,
-      email_messages: false,
-      email_orders: false,
-      email_payments: false,
-      email_system: false,
-      push_enabled: false,
-      push_messages: false,
-      push_orders: false,
-      push_payments: false,
-      push_system: false,
-      inapp_enabled: true,
-      inapp_sound: false,
-    } 
+export const markAsRead = (ids?: string[], markAll?: boolean) =>
+  api.post('/notifications/mark_read/', {
+    notification_ids: ids ?? [],
+    mark_all: markAll ?? false,
   });
 
-// NOTA: Endpoint não existe - mockado com id
+export const deleteNotification = (id: string) =>
+  api.delete(`/notifications/${id}/remove/`);
+
+export const getPreferences = () =>
+  api.get('/notifications/preferences/me/');
+
 export const updatePreferences = (prefs: Partial<NotificationPreference>) =>
-  Promise.resolve({ data: { 
-    id: 'default',
-    email_enabled: prefs.email_enabled ?? false,
-    email_messages: prefs.email_messages ?? false,
-    email_orders: prefs.email_orders ?? false,
-    email_payments: prefs.email_payments ?? false,
-    email_system: prefs.email_system ?? false,
-    push_enabled: prefs.push_enabled ?? false,
-    push_messages: prefs.push_messages ?? false,
-    push_orders: prefs.push_orders ?? false,
-    push_payments: prefs.push_payments ?? false,
-    push_system: prefs.push_system ?? false,
-    inapp_enabled: prefs.inapp_enabled ?? true,
-    inapp_sound: prefs.inapp_sound ?? false,
-  }});
+  api.patch('/notifications/preferences/update_preferences/', prefs);
+
+export const registerPushSubscription = (data: {
+  endpoint: string;
+  p256dh_key: string;
+  auth_key: string;
+  user_agent?: string;
+}) => api.post('/notifications/push/register/', data);
+
+export const unregisterPushSubscription = (endpoint: string) =>
+  api.post('/notifications/push/unregister/', { endpoint });
 
 export const notificationsService = {
   getNotifications,
   getUnreadCount,
   markAsRead,
-  markAllAsRead,
   deleteNotification,
   getPreferences,
   updatePreferences,
+  registerPushSubscription,
+  unregisterPushSubscription,
 };
 
 export default notificationsService;

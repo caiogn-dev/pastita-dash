@@ -10,11 +10,11 @@
 | MainLayout | ✅ | Flex, Box, Sidebar, Header |
 | WhatsAppChatPage | ✅ | Box, Heading, ChatWindow |
 
-## 🔄 Páginas Pendentes (44 restantes)
+## 🔄 Páginas Pendentes (43 restantes)
 
 ### Prioridade Alta
-- [ ] OrdersPage
-- [ ] ProductsPageNew
+- [x] OrdersPage ✅ migrado para HTML+Tailwind (Fase 2.3)
+- [x] ProductsPageNew ✅ já usava HTML+Tailwind (sem Chakra)
 - [ ] ConversationsPage
 - [ ] MessagesPage
 - [ ] AccountDetailPage

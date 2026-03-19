@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from './Button';
+import { Button } from '../ui/button';
 import { cn } from '../../utils/cn';
 
 export interface EmptyStateProps {
