@@ -348,7 +348,7 @@ export const WhatsAppInboxOptimized: React.FC = () => {
 
     switch (state.selectedTab) {
       case 'active':
-        return filtered.filter(c => c.status !== 'archived');
+        return filtered.filter(c => c.status === 'open' || c.status === 'pending');
       case 'auto':
         return filtered.filter(c => c.mode === 'auto');
       case 'human':

@@ -70,6 +70,9 @@ const WhatsAppCampaignsPage = lazy(() => import('./pages/marketing/whatsapp').th
 const WhatsAppTemplatesPage = lazy(() => import('./pages/marketing/whatsapp/WhatsAppTemplatesPage').then(m => ({ default: m.default })));
 const AutomationsPage = lazy(() => import('./pages/marketing/AutomationsPage').then(m => ({ default: m.default })));
 
+// Delivery Pages
+const DeliveryZonesPage = lazy(() => import('./pages/delivery/DeliveryZonesPage').then(m => ({ default: m.default || m.DeliveryZonesPage })));
+
 // Instagram Pages
 const InstagramAccountsPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramAccountsPage })));
 const InstagramDashboardPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramDashboardPage })));
@@ -175,13 +178,13 @@ const AppContent: React.FC = () => {
         <Route path="automation/reports" element={<Suspense fallback={<FullPageLoading />}><ReportsPage /></Suspense>} />
 
         {/* Intent Detection Routes */}
-        <Route path="automation/intents" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
+        <Route path="automation/intents" element={<Navigate to="/automation/intents/stats" replace />} />
         <Route path="automation/intents/stats" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
         <Route path="automation/intents/logs" element={<Suspense fallback={<FullPageLoading />}><IntentLogsPage /></Suspense>} />
         
         {/* Analytics/Reports Routes */}
         <Route path="analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
-        <Route path="reports" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
+        <Route path="reports" element={<Navigate to="/analytics" replace />} />
         
         {/* Stores Routes */}
         <Route path="stores" element={<Suspense fallback={<FullPageLoading />}><StoresPage /></Suspense>} />
@@ -195,12 +198,13 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
         <Route path="stores/:storeId/payments" element={<Suspense fallback={<FullPageLoading />}><PaymentsPage /></Suspense>} />
         <Route path="stores/:storeId/settings" element={<Suspense fallback={<FullPageLoading />}><StoreSettingsPage /></Suspense>} />
+        <Route path="stores/:storeId/delivery" element={<Suspense fallback={<FullPageLoading />}><DeliveryZonesPage /></Suspense>} />
         
         {/* Marketing Routes */}
         <Route path="marketing" element={<Suspense fallback={<FullPageLoading />}><MarketingPage /></Suspense>} />
         <Route path="marketing/subscribers" element={<Suspense fallback={<FullPageLoading />}><SubscribersPage /></Suspense>} />
         <Route path="marketing/automations" element={<Suspense fallback={<FullPageLoading />}><AutomationsPage /></Suspense>} />
-        <Route path="marketing/email" element={<Suspense fallback={<FullPageLoading />}><CampaignsListPage /></Suspense>} />
+        <Route path="marketing/email" element={<Navigate to="/marketing/email/campaigns" replace />} />
         <Route path="marketing/email/campaigns" element={<Suspense fallback={<FullPageLoading />}><CampaignsListPage /></Suspense>} />
         <Route path="marketing/email/new" element={<Suspense fallback={<FullPageLoading />}><NewCampaignPage /></Suspense>} />
         <Route path="marketing/email/templates" element={<Suspense fallback={<FullPageLoading />}><MarketingPage /></Suspense>} />
@@ -209,7 +213,7 @@ const AppContent: React.FC = () => {
         <Route path="marketing/whatsapp/templates" element={<Suspense fallback={<FullPageLoading />}><WhatsAppTemplatesPage /></Suspense>} />
         
         {/* Instagram Routes */}
-        <Route path="instagram" element={<Suspense fallback={<FullPageLoading />}><InstagramAccountsPage /></Suspense>} />
+        <Route path="instagram" element={<Navigate to="/instagram/accounts" replace />} />
         <Route path="instagram/accounts" element={<Suspense fallback={<FullPageLoading />}><InstagramAccountsPage /></Suspense>} />
         <Route path="instagram/:accountId" element={<Suspense fallback={<FullPageLoading />}><InstagramDashboardPage /></Suspense>} />
         <Route path="instagram/inbox" element={<Suspense fallback={<FullPageLoading />}><InstagramInbox /></Suspense>} />

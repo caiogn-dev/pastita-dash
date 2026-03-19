@@ -171,11 +171,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         },
         {
           name: 'Intenções (Novo)',
-          href: '/automation/intents',
+          href: '/automation/intents/stats',
           icon: SparklesIcon,
           badge: 'Novo',
           children: [
-            { name: 'Estatísticas', href: '/automation/intents', icon: PresentationChartLineIcon },
+            { name: 'Estatísticas', href: '/automation/intents/stats', icon: PresentationChartLineIcon },
             { name: 'Logs de Intenções', href: '/automation/intents/logs', icon: DocumentChartBarIcon },
           ]
         },
@@ -185,13 +185,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       title: 'Analytics & Dados',
       items: [
         { name: 'Analytics', href: storeHref('analytics'), icon: PresentationChartLineIcon },
-        { name: 'Relatórios', href: '/reports', icon: DocumentChartBarIcon },
-        { 
-          name: 'Lojas', 
-          href: '/stores', 
+        { name: 'Relatórios', href: '/analytics', icon: DocumentChartBarIcon },
+        {
+          name: 'Lojas',
+          href: '/stores',
           icon: BuildingStorefrontIcon,
           children: [
             { name: 'Todas Lojas', href: '/stores', icon: BuildingStorefrontIcon },
+            { name: 'Zonas de Entrega', href: storeHref('delivery'), icon: QueueListIcon },
             { name: 'Configurações', href: storeHref('settings'), icon: Cog6ToothIcon },
             { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
           ]

@@ -167,8 +167,8 @@ export interface Conversation {
   phone_number: string;
   contact_name?: string;
   account: string;
-  status: 'active' | 'archived' | 'blocked' | 'spam' | 'open' | 'pending';
-  mode?: 'auto' | 'manual' | 'hybrid' | 'human' | string;
+  status: 'open' | 'closed' | 'pending';
+  mode?: 'auto' | 'human' | 'hybrid';
   last_message_at?: string;
   last_message_preview?: string;
   last_message?: string;
@@ -293,36 +293,8 @@ export interface PaymentGateway {
 // ============================================
 // DASHBOARD TYPES
 // ============================================
-
-export interface DashboardOverview {
-  total_revenue?: number;
-  total_orders?: number;
-  total_customers?: number;
-  conversion_rate?: number;
-  timestamp?: string;
-  messages?: number | { today: number; by_status: Record<string, number> };
-  conversations?: number | { active: number; new: number; resolved: number; by_mode?: Record<string, number> };
-  orders?: number | { today: number; revenue_today: number; revenue_month?: number };
-  agents?: number;
-  accounts?: number | { active: number; total: number };
-  payments?: {
-    total?: number;
-    pix?: number;
-    credit_card?: number;
-    debit_card?: number;
-    cash?: number;
-    pending?: number;
-    completed_today?: number;
-  };
-  period_comparison?: {
-    revenue_change: number;
-    orders_change: number;
-    customers_change: number;
-  };
-  interactions_today?: number;
-  avg_response_time_ms?: number;
-  success_rate?: number;
-}
+// Re-exported from dashboard.ts (canonical, aligned with backend)
+export type { DashboardOverview, DashboardCharts } from './dashboard';
 
 export interface DashboardActivity {
   id: string;
@@ -330,19 +302,6 @@ export interface DashboardActivity {
   description: string;
   timestamp: string;
   metadata?: Record<string, unknown>;
-}
-
-export interface DashboardCharts {
-  sales_over_time?: Array<{ date: string; amount: number; orders: number; revenue?: number; new?: number; resolved?: number }>;
-  orders_by_status?: Record<string, number>;
-  top_products?: Array<{ name: string; quantity: number; revenue: number }>;
-  revenue_by_payment_method?: Record<string, number>;
-  orders_per_day?: Array<{ date: string; count: number; revenue?: number }>;
-  conversations_per_day?: Array<{ date: string; count: number; new?: number; resolved?: number }>;
-  messages_per_day?: Array<{ date: string; count: number; incoming?: number; outgoing?: number; inbound?: number; outbound?: number }>;
-  message_types?: Record<string, number>;
-  order_statuses?: Record<string, number>;
-  messages_by_day?: Array<{ date: string; count: number; inbound?: number; outbound?: number }>;
 }
 
 // ============================================

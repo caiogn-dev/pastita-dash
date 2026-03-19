@@ -9,7 +9,7 @@ export { default as api, getErrorMessage, setAuthToken } from './api';
 export { commerceService } from './commerce';
 export { default as messagingService } from './messaging';
 export { default as messengerService } from './messenger';
-export { marketingService } from './marketing';
+export { marketingService } from './marketingService';
 
 // 🔄 Serviços legados mantidos temporariamente para compatibilidade
 // Serão migrados gradualmente para os novos serviços acima
