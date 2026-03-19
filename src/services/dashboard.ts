@@ -6,6 +6,8 @@ import {
   DailyMessageChart,
   DailyOrderChart,
   DailyConversationChart,
+  DashboardStats,
+  DashboardActivity,
 } from '../types/dashboard';
 
 /**
@@ -171,6 +173,40 @@ export const dashboardService = {
     } catch (error) {
       console.error('[Dashboard] Failed to fetch charts:', error);
       return fallback;
+    }
+  },
+
+  /**
+   * Fetch per-store revenue stats: today vs yesterday trend, low stock alerts.
+   * Endpoint: GET /core/dashboard-stats/?store=<slug|id>
+   */
+  getStats: async (store: string): Promise<DashboardStats | null> => {
+    try {
+      const response = await api.get<DashboardStats>('/core/dashboard-stats/', {
+        params: { store },
+      });
+      return response.data ?? null;
+    } catch (error) {
+      console.error('[Dashboard] Failed to fetch stats:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Fetch recent activity feed: latest messages, orders, conversations.
+   * Endpoint: GET /core/dashboard/activity/
+   */
+  getActivity: async (options: DashboardQueryOptions & { limit?: number } = {}): Promise<DashboardActivity | null> => {
+    try {
+      const params: Record<string, string | number> = {};
+      if (options.accountId) params.account_id = options.accountId;
+      if (options.store) params.store = options.store;
+      if (options.limit) params.limit = options.limit;
+      const response = await api.get<DashboardActivity>('/core/dashboard/activity/', { params });
+      return response.data ?? null;
+    } catch (error) {
+      console.error('[Dashboard] Failed to fetch activity:', error);
+      return null;
     }
   },
 };

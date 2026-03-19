@@ -20,15 +20,15 @@ import {
   ShoppingCartIcon,
   CurrencyDollarIcon,
   ArrowTrendingUpIcon,
-  FireIcon,
+  ArrowTrendingDownIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
   ArrowRightIcon,
-  BoltIcon,
-  UserIcon,
   CpuChipIcon,
-  ClockIcon,
   EnvelopeIcon,
+  ArchiveBoxXMarkIcon,
+  CreditCardIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 import { Line, Doughnut } from 'react-chartjs-2';
 import {
@@ -57,14 +57,18 @@ const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: '
 const fmt = (v: number) => CURRENCY.format(v);
 
 // ──────────────────────────────────────────────────────────
-// Alert Banner — appears when there are pending orders / open conversations waiting
+// Alert Banner — pending orders, open conversations, low stock, payments
 // ──────────────────────────────────────────────────────────
 const AlertBanner: React.FC<{
   pendingOrders: number;
   openConversations: number;
+  lowStockProducts: number;
+  paymentsPending: number;
   storeOrdersRoute: string;
-}> = ({ pendingOrders, openConversations, storeOrdersRoute }) => {
-  if (pendingOrders === 0 && openConversations === 0) return null;
+  storeProductsRoute: string;
+}> = ({ pendingOrders, openConversations, lowStockProducts, paymentsPending, storeOrdersRoute, storeProductsRoute }) => {
+  const hasAlerts = pendingOrders > 0 || openConversations > 0 || lowStockProducts > 0 || paymentsPending > 0;
+  if (!hasAlerts) return null;
 
   return (
     <Flex
@@ -91,15 +95,32 @@ const AlertBanner: React.FC<{
             <strong>{openConversations}</strong> conversa{openConversations > 1 ? 's' : ''} em aberto
           </Text>
         )}
+        {paymentsPending > 0 && (
+          <Text fontSize="sm" fontWeight="medium" color="warning.800" _dark={{ color: 'warning.300' }}>
+            <strong>{paymentsPending}</strong> pagamento{paymentsPending > 1 ? 's' : ''} pendente{paymentsPending > 1 ? 's' : ''}
+          </Text>
+        )}
+        {lowStockProducts > 0 && (
+          <Text fontSize="sm" fontWeight="medium" color="orange.800" _dark={{ color: 'orange.300' }}>
+            <strong>{lowStockProducts}</strong> produto{lowStockProducts > 1 ? 's' : ''} com estoque baixo
+          </Text>
+        )}
       </Flex>
-      <Button
-        size="sm"
-        variant="outline"
-        rightIcon={<ArrowRightIcon className="w-3 h-3" />}
-        onClick={() => window.location.href = storeOrdersRoute}
-      >
-        Ver pedidos
-      </Button>
+      <Flex gap={2} flexWrap="wrap">
+        {lowStockProducts > 0 && (
+          <Button size="sm" variant="ghost" onClick={() => window.location.href = storeProductsRoute}>
+            Estoque
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          rightIcon={<ArrowRightIcon className="w-3 h-3" />}
+          onClick={() => window.location.href = storeOrdersRoute}
+        >
+          Ver pedidos
+        </Button>
+      </Flex>
     </Flex>
   );
 };
@@ -241,6 +262,20 @@ export const DashboardPage: React.FC = () => {
   );
   const { data: charts, loading: isLoadingCharts, refresh: refreshCharts } = useFetch(fetchCharts);
 
+  // Per-store stats: revenue trend vs yesterday, low stock alerts
+  const fetchStats = useCallback(
+    () => storeKey ? dashboardService.getStats(storeKey) : Promise.resolve(null),
+    [storeKey]
+  );
+  const { data: stats } = useFetch(fetchStats);
+
+  // Recent activity feed: last 10 events across orders/messages/conversations
+  const fetchActivity = useCallback(
+    () => dashboardService.getActivity({ store: storeKey || undefined, accountId: selectedAccount?.id, limit: 10 }),
+    [selectedAccount?.id, storeKey]
+  );
+  const { data: activity, loading: isLoadingActivity } = useFetch(fetchActivity);
+
   const scheduleRefresh = useCallback((delay = 700) => {
     if (refreshTimeoutRef.current) window.clearTimeout(refreshTimeoutRef.current);
     refreshTimeoutRef.current = window.setTimeout(() => void Promise.all([refreshOverview(), refreshCharts()]), delay);
@@ -259,6 +294,9 @@ export const DashboardPage: React.FC = () => {
   // ── Derived metrics ──
   const pendingOrders = overview?.orders.by_status.pending || 0;
   const openConversations = overview?.conversations.by_status.open || 0;
+  const resolvedToday = overview?.conversations.resolved_today || 0;
+  const paymentsPending = overview?.payments.pending || 0;
+  const paymentsCompletedToday = overview?.payments.completed_today || 0;
   const inboundMessages = Number(overview?.messages.by_direction.inbound || 0);
   const outboundMessages = Number(overview?.messages.by_direction.outbound || 0);
   const deliveredMessages = Number(overview?.messages.by_status.delivered || 0);
@@ -275,6 +313,13 @@ export const DashboardPage: React.FC = () => {
     + (overview?.orders.by_status.preparing || 0)
     + (overview?.orders.by_status.processing || 0);
   const hasStatusData = [sentMessages, deliveredMessages, readMessages, failedMessages].some((v) => v > 0);
+
+  // Stats-derived: revenue trend & stock alerts
+  const revenueChangePct = stats?.today?.revenue_change_percent ?? null;
+  const revenueChangeAbs = stats?.today?.revenue_change ?? null;
+  const lowStockCount = stats?.alerts?.low_stock_products ?? 0;
+  const weekRevenue = stats?.week?.revenue ?? overview?.orders.revenue_month ?? 0;
+  const monthRevenue = stats?.month?.revenue ?? overview?.orders.revenue_month ?? 0;
 
   // ── Chart options ──
   const chartOptions = useMemo(() => ({
@@ -372,7 +417,10 @@ export const DashboardPage: React.FC = () => {
       <AlertBanner
         pendingOrders={pendingOrders}
         openConversations={openConversations}
+        lowStockProducts={lowStockCount}
+        paymentsPending={paymentsPending}
         storeOrdersRoute={storeOrdersRoute}
+        storeProductsRoute={storeProductsRoute}
       />
 
       {/* ── KPI Strip ── */}
@@ -381,10 +429,15 @@ export const DashboardPage: React.FC = () => {
           <KpiCard
             title="Receita hoje"
             value={fmt(overview?.orders.revenue_today || 0)}
-            subtitle={`Mês: ${fmt(overview?.orders.revenue_month || 0)}`}
+            subtitle={`Semana: ${fmt(weekRevenue)} · Mês: ${fmt(monthRevenue)}`}
             icon={CurrencyDollarIcon}
             variant="success"
             href={storeOrdersRoute}
+            badge={revenueChangePct !== null ? {
+              label: `${revenueChangePct >= 0 ? '↑' : '↓'} ${Math.abs(revenueChangePct).toFixed(1)}% vs ontem`,
+              variant: 'subtle',
+              colorPalette: revenueChangePct >= 0 ? 'green' : 'red',
+            } : undefined}
             loading={isLoadingOverview}
           />
         </GridItem>
@@ -392,7 +445,7 @@ export const DashboardPage: React.FC = () => {
           <KpiCard
             title="Pedidos hoje"
             value={overview?.orders.today || 0}
-            subtitle={pendingOrders > 0 ? `${pendingOrders} pendente(s)` : `${ordersInProgress} em andamento`}
+            subtitle={pendingOrders > 0 ? `${pendingOrders} pendente(s) · ${ordersInProgress} em andamento` : `${ordersInProgress} em andamento`}
             icon={ShoppingCartIcon}
             variant={pendingOrders > 0 ? 'warning' : 'accent'}
             href={storeOrdersRoute}
@@ -404,7 +457,7 @@ export const DashboardPage: React.FC = () => {
           <KpiCard
             title="Conversas ativas"
             value={overview?.conversations.active || 0}
-            subtitle={`${openConversations} em aberto`}
+            subtitle={`${openConversations} abertas · ${resolvedToday} resolvidas hoje`}
             icon={ChatBubbleLeftRightIcon}
             variant={openConversations > 5 ? 'danger' : 'brand'}
             href={chatRoute}
@@ -415,7 +468,7 @@ export const DashboardPage: React.FC = () => {
           <KpiCard
             title="Mensagens hoje"
             value={overview?.messages.today || 0}
-            subtitle={`${inboundMessages} rec. / ${outboundMessages} env.`}
+            subtitle={`${inboundMessages} rec. / ${outboundMessages} env. · semana: ${overview?.messages.week || 0}`}
             icon={EnvelopeIcon}
             variant="neutral"
             loading={isLoadingOverview}
@@ -423,11 +476,12 @@ export const DashboardPage: React.FC = () => {
         </GridItem>
         <GridItem>
           <KpiCard
-            title="Taxa entrega"
-            value={`${deliveryRate}%`}
-            subtitle={`${readRate}% de leitura`}
-            icon={CheckCircleIcon}
-            variant={deliveryRate >= 85 ? 'success' : deliveryRate >= 60 ? 'warning' : 'danger'}
+            title="Pagamentos"
+            value={paymentsCompletedToday}
+            subtitle={`${paymentsPending} pendente${paymentsPending !== 1 ? 's' : ''} · entrega: ${deliveryRate}%`}
+            icon={CreditCardIcon}
+            variant={paymentsPending > 0 ? 'warning' : 'success'}
+            badge={paymentsPending > 0 ? { label: `${paymentsPending} pendente${paymentsPending > 1 ? 's' : ''}`, variant: 'subtle', colorPalette: 'warning' } : undefined}
             loading={isLoadingOverview}
           />
         </GridItem>
@@ -439,6 +493,7 @@ export const DashboardPage: React.FC = () => {
             icon={CpuChipIcon}
             variant="accent"
             href="/agents"
+            badge={lowStockCount > 0 ? { label: `${lowStockCount} produto${lowStockCount > 1 ? 's' : ''} sem estoque`, variant: 'subtle', colorPalette: 'warning' } : undefined}
             loading={isLoadingOverview}
           />
         </GridItem>
@@ -512,6 +567,48 @@ export const DashboardPage: React.FC = () => {
                 </Stack>
               </Box>
 
+              <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
+                <Text fontSize="xs" fontWeight={500} color="fg.muted" mb={2} textTransform="uppercase" letterSpacing="0.04em">
+                  Pagamentos
+                </Text>
+                <Stack gap={1.5}>
+                  {paymentsPending > 0 && (
+                    <Flex justify="space-between" align="center">
+                      <Text fontSize="sm" color="warning.700" _dark={{ color: 'warning.400' }} fontWeight={500}>Pendentes</Text>
+                      <Badge colorPalette="warning" variant="subtle">{paymentsPending}</Badge>
+                    </Flex>
+                  )}
+                  <MetricRow label="Concluídos hoje" value={paymentsCompletedToday} />
+                </Stack>
+              </Box>
+
+              {resolvedToday > 0 && (
+                <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
+                  <Flex justify="space-between" align="center">
+                    <Flex align="center" gap={1.5}>
+                      <Icon as={CheckCircleIcon} boxSize={4} color="green.500" />
+                      <Text fontSize="sm" color="fg.muted">Conversas resolvidas hoje</Text>
+                    </Flex>
+                    <Badge colorPalette="green" variant="subtle">{resolvedToday}</Badge>
+                  </Flex>
+                </Box>
+              )}
+
+              {lowStockCount > 0 && (
+                <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
+                  <Flex justify="space-between" align="center">
+                    <Flex align="center" gap={1.5}>
+                      <Icon as={ArchiveBoxXMarkIcon} boxSize={4} color="orange.500" />
+                      <Text fontSize="sm" color="orange.700" _dark={{ color: 'orange.300' }} fontWeight={500}>Estoque baixo</Text>
+                    </Flex>
+                    <Badge colorPalette="warning" variant="subtle">{lowStockCount} produto{lowStockCount > 1 ? 's' : ''}</Badge>
+                  </Flex>
+                  <Button mt={2} variant="ghost" size="xs" colorPalette="warning" onClick={() => window.location.href = storeProductsRoute}>
+                    Ver produtos →
+                  </Button>
+                </Box>
+              )}
+
               <Stack gap={2} pt={1}>
                 <Button variant="outline" size="sm" leftIcon={<ShoppingCartIcon className="w-4 h-4" />} onClick={() => window.location.href = storeOrdersRoute}>
                   Gerenciar pedidos
@@ -526,7 +623,7 @@ export const DashboardPage: React.FC = () => {
       </Grid>
 
       {/* ── Secondary charts row ── */}
-      <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }} gap={4}>
+      <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(4, 1fr)' }} gap={4}>
         {/* Orders per day */}
         <GridItem>
           <Card title="Pedidos por dia" subtitle="Volume no período selecionado">
@@ -563,6 +660,58 @@ export const DashboardPage: React.FC = () => {
                 <Text fontSize="sm" color="fg.muted">Sem dados de conversas.</Text>
               </Flex>
             )}
+          </Card>
+        </GridItem>
+
+        {/* Revenue trend mini-stats */}
+        <GridItem>
+          <Card title="Desempenho financeiro" subtitle="Comparativo de períodos">
+            <Stack gap={4}>
+              <Box>
+                <Text fontSize="xs" fontWeight={500} color="fg.muted" mb={2} textTransform="uppercase" letterSpacing="0.04em">Hoje</Text>
+                <Flex justify="space-between" align="center">
+                  <Text fontSize="2xl" fontWeight={700} color="fg.primary">{fmt(overview?.orders.revenue_today || 0)}</Text>
+                  {revenueChangePct !== null && (
+                    <Flex align="center" gap={1} px={2} py={1} borderRadius="md" bg={revenueChangePct >= 0 ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)'}>
+                      <Icon as={revenueChangePct >= 0 ? ArrowTrendingUpIcon : ArrowTrendingDownIcon} boxSize={4} color={revenueChangePct >= 0 ? 'green.500' : 'red.500'} />
+                      <Text fontSize="sm" fontWeight={600} color={revenueChangePct >= 0 ? 'green.600' : 'red.600'}>
+                        {revenueChangePct >= 0 ? '+' : ''}{revenueChangePct.toFixed(1)}%
+                      </Text>
+                    </Flex>
+                  )}
+                </Flex>
+                {revenueChangeAbs !== null && (
+                  <Text fontSize="xs" color="fg.muted" mt={0.5}>
+                    {revenueChangeAbs >= 0 ? '+' : ''}{fmt(revenueChangeAbs)} vs ontem
+                  </Text>
+                )}
+              </Box>
+
+              <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
+                <Stack gap={2}>
+                  <Flex justify="space-between">
+                    <Text fontSize="sm" color="fg.muted">Semana (7d)</Text>
+                    <Stack gap={0} align="flex-end">
+                      <Text fontSize="sm" fontWeight={600} color="fg.primary">{fmt(stats?.week?.revenue || 0)}</Text>
+                      <Text fontSize="xs" color="fg.muted">{stats?.week?.orders || 0} pedidos</Text>
+                    </Stack>
+                  </Flex>
+                  <Flex justify="space-between">
+                    <Text fontSize="sm" color="fg.muted">Mês (30d)</Text>
+                    <Stack gap={0} align="flex-end">
+                      <Text fontSize="sm" fontWeight={600} color="fg.primary">{fmt(stats?.month?.revenue || 0)}</Text>
+                      <Text fontSize="xs" color="fg.muted">{stats?.month?.orders || 0} pedidos</Text>
+                    </Stack>
+                  </Flex>
+                  {stats?.month?.avg_daily_revenue !== undefined && (
+                    <Flex justify="space-between">
+                      <Text fontSize="sm" color="fg.muted">Média diária (mês)</Text>
+                      <Text fontSize="sm" fontWeight={600} color="fg.primary">{fmt(stats.month.avg_daily_revenue)}</Text>
+                    </Flex>
+                  )}
+                </Stack>
+              </Box>
+            </Stack>
           </Card>
         </GridItem>
 
@@ -617,6 +766,101 @@ export const DashboardPage: React.FC = () => {
                 </Button>
               </Box>
             </Stack>
+          </Card>
+        </GridItem>
+      </Grid>
+      {/* ── Activity Feed ── */}
+      <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={4}>
+        {/* Recent orders */}
+        <GridItem>
+          <Card title="Pedidos recentes" subtitle="Últimos pedidos da loja" action={
+            <Button size="xs" variant="ghost" onClick={() => window.location.href = storeOrdersRoute}>
+              Ver todos →
+            </Button>
+          }>
+            {isLoadingActivity ? (
+              <Stack gap={2}>
+                {[1,2,3].map(i => <Skeleton key={i} height="48px" borderRadius="md" />)}
+              </Stack>
+            ) : activity?.orders && activity.orders.length > 0 ? (
+              <Stack gap={2}>
+                {activity.orders.slice(0, 6).map((order, i) => (
+                  <Flex key={order.id} justify="space-between" align="center" py={1.5} borderTopWidth={i > 0 ? '1px' : 0} borderColor="border.subtle">
+                    <Stack gap={0.5} minWidth={0}>
+                      <Flex align="center" gap={2}>
+                        <Text fontSize="sm" fontWeight={600} color="fg.primary" truncate>
+                          #{order.order_number}
+                        </Text>
+                        <Badge
+                          size="sm"
+                          colorPalette={
+                            order.status === 'delivered' || order.status === 'completed' ? 'green' :
+                            order.status === 'cancelled' || order.status === 'failed' ? 'red' :
+                            order.status === 'pending' ? 'yellow' : 'blue'
+                          }
+                          variant="subtle"
+                        >
+                          {order.status}
+                        </Badge>
+                      </Flex>
+                      <Text fontSize="xs" color="fg.muted" truncate>{order.customer_name}</Text>
+                    </Stack>
+                    <Stack gap={0.5} align="flex-end" flexShrink={0}>
+                      <Text fontSize="sm" fontWeight={600} color="fg.primary">{fmt(order.total)}</Text>
+                      <Text fontSize="xs" color="fg.muted">
+                        {format(new Date(order.created_at), 'HH:mm', { locale: ptBR })}
+                      </Text>
+                    </Stack>
+                  </Flex>
+                ))}
+              </Stack>
+            ) : (
+              <Flex minH="120px" align="center" justify="center">
+                <Text fontSize="sm" color="fg.muted">Nenhum pedido recente.</Text>
+              </Flex>
+            )}
+          </Card>
+        </GridItem>
+
+        {/* Recent messages */}
+        <GridItem>
+          <Card title="Mensagens recentes" subtitle="Últimas mensagens recebidas" action={
+            <Button size="xs" variant="ghost" onClick={() => window.location.href = chatRoute}>
+              Abrir chat →
+            </Button>
+          }>
+            {isLoadingActivity ? (
+              <Stack gap={2}>
+                {[1,2,3].map(i => <Skeleton key={i} height="48px" borderRadius="md" />)}
+              </Stack>
+            ) : activity?.messages && activity.messages.length > 0 ? (
+              <Stack gap={2}>
+                {activity.messages.slice(0, 6).map((msg, i) => (
+                  <Flex key={msg.id} gap={3} align="flex-start" py={1.5} borderTopWidth={i > 0 ? '1px' : 0} borderColor="border.subtle">
+                    <Box
+                      w={8} h={8} borderRadius="full" bg="rgba(37,211,102,0.12)"
+                      display="flex" alignItems="center" justifyContent="center" flexShrink={0}
+                    >
+                      <Icon as={EnvelopeIcon} boxSize={4} color="green.500" />
+                    </Box>
+                    <Stack gap={0.5} minWidth={0} flex={1}>
+                      <Flex justify="space-between" align="center">
+                        <Text fontSize="xs" fontWeight={600} color="fg.primary">{msg.from_number}</Text>
+                        <Text fontSize="xs" color="fg.muted">
+                          {format(new Date(msg.created_at), 'HH:mm', { locale: ptBR })}
+                        </Text>
+                      </Flex>
+                      <Text fontSize="xs" color="fg.muted" truncate>{msg.text}</Text>
+                      <Text fontSize="xs" color="fg.subtle">{msg.account_name}</Text>
+                    </Stack>
+                  </Flex>
+                ))}
+              </Stack>
+            ) : (
+              <Flex minH="120px" align="center" justify="center">
+                <Text fontSize="sm" color="fg.muted">Nenhuma mensagem recente.</Text>
+              </Flex>
+            )}
           </Card>
         </GridItem>
       </Grid>

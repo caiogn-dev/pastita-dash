@@ -308,3 +308,74 @@ export const isDashboardCharts = (value: unknown): value is DashboardCharts => {
     'conversations_per_day' in value
   );
 };
+
+// ============================================
+// DASHBOARD STATS (per-store, /core/dashboard-stats/)
+// ============================================
+
+export interface DashboardStatsPeriod {
+  orders: number;
+  revenue: number;
+  avg_daily_revenue?: number;
+  revenue_change?: number;
+  revenue_change_percent?: number;
+}
+
+export interface DashboardStatsAlerts {
+  pending_orders: number;
+  low_stock_products: number;
+}
+
+export interface DashboardStats {
+  today: DashboardStatsPeriod;
+  week: DashboardStatsPeriod;
+  month: DashboardStatsPeriod;
+  alerts: DashboardStatsAlerts;
+  generated_at: string;
+}
+
+// ============================================
+// DASHBOARD ACTIVITY (/core/dashboard/activity/)
+// ============================================
+
+export interface ActivityMessage {
+  id: string;
+  type: 'message';
+  account_name: string;
+  from_number: string;
+  text: string;
+  message_type: string;
+  created_at: string;
+}
+
+export interface ActivityOrder {
+  id: string;
+  type: 'order';
+  store_name: string;
+  order_number: string;
+  customer_name: string;
+  customer_phone: string;
+  status: string;
+  total: number;
+  created_at: string;
+}
+
+export interface ActivityConversation {
+  id: string;
+  type: 'conversation';
+  account_name: string;
+  phone_number: string;
+  contact_name: string;
+  status: string;
+  mode: string;
+  last_message_at: string | null;
+}
+
+export type ActivityItem = ActivityMessage | ActivityOrder | ActivityConversation;
+
+export interface DashboardActivity {
+  activity: ActivityItem[];
+  messages: ActivityMessage[];
+  orders: ActivityOrder[];
+  conversations: ActivityConversation[];
+}
