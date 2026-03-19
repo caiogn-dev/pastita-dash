@@ -140,13 +140,12 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, icon, variant
       h="full"
       p={4}
       borderRadius="xl"
-      bg="white"
+      bg="bg.card"
       border="1px solid"
-      borderColor="gray.100"
+      borderColor="border.subtle"
       boxShadow="0 1px 4px rgba(0,0,0,.05)"
       transition="all 0.18s"
       _hover={href ? { borderColor: c.border, boxShadow: '0 4px 16px rgba(0,0,0,.09)', transform: 'translateY(-1px)' } : {}}
-      _dark={{ bg: 'zinc.900', borderColor: 'zinc.800' }}
     >
       {loading ? (
         <Stack gap={3}>
@@ -198,7 +197,7 @@ const MetricRow: React.FC<{ label: string; value: number | string; progress?: nu
       <Text fontSize="sm" fontWeight="semibold" color="fg.primary">{value}</Text>
     </Flex>
     {progress !== undefined && (
-      <Box h="6px" borderRadius="full" bg="gray.100" _dark={{ bg: 'zinc.800' }} overflow="hidden">
+      <Box h="6px" borderRadius="full" bg="bg.tertiary" overflow="hidden">
         <Box h="full" w={`${Math.min(100, progress)}%`} bg={color} borderRadius="full" transition="width 0.5s ease" />
       </Box>
     )}
@@ -503,7 +502,7 @@ export const DashboardPage: React.FC = () => {
                 <Stack gap={1.5}>
                   {pendingOrders > 0 && (
                     <Flex justify="space-between" align="center">
-                      <Text fontSize="sm" color="warning.700" fontWeight={500}>Pendentes</Text>
+                      <Text fontSize="sm" color="warning.700" _dark={{ color: 'warning.400' }} fontWeight={500}>Pendentes</Text>
                       <Badge colorPalette="warning" variant="subtle">{pendingOrders}</Badge>
                     </Flex>
                   )}
@@ -586,7 +585,7 @@ export const DashboardPage: React.FC = () => {
                         </Flex>
                         <Text fontSize="sm" fontWeight={600}>{count} ({pct}%)</Text>
                       </Flex>
-                      <Box h="6px" borderRadius="full" bg="gray.100" _dark={{ bg: 'zinc.800' }} overflow="hidden">
+                      <Box h="6px" borderRadius="full" bg="bg.tertiary" overflow="hidden">
                         <Box h="full" w={`${pct}%`} borderRadius="full" style={{ background: m.color }} />
                       </Box>
                     </Box>
