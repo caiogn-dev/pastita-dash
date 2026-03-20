@@ -4,18 +4,6 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Box,
-  Flex,
-  Grid,
-  GridItem,
-  Heading,
-  Text,
-  Stack,
-  Skeleton,
-  Icon,
-  Badge,
-} from '@chakra-ui/react';
-import {
   ChatBubbleLeftRightIcon,
   ShoppingCartIcon,
   CurrencyDollarIcon,
@@ -43,7 +31,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { Card, Button } from '../../components/common';
+import { Card, Button, Badge } from '../../components/common';
 import { dashboardService } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { useFetch } from '../../hooks/useFetch';
@@ -57,7 +45,7 @@ const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: '
 const fmt = (v: number) => CURRENCY.format(v);
 
 // ──────────────────────────────────────────────────────────
-// Alert Banner — pending orders, open conversations, low stock, payments
+// Alert Banner
 // ──────────────────────────────────────────────────────────
 const AlertBanner: React.FC<{
   pendingOrders: number;
@@ -71,42 +59,31 @@ const AlertBanner: React.FC<{
   if (!hasAlerts) return null;
 
   return (
-    <Flex
-      align="center"
-      gap={3}
-      p={3}
-      px={4}
-      borderRadius="lg"
-      bg="warning.50"
-      _dark={{ bg: 'rgba(217,119,6,0.12)', borderColor: 'rgba(217,119,6,0.3)' }}
-      border="1px solid"
-      borderColor="warning.200"
-      flexWrap="wrap"
-    >
-      <Icon as={ExclamationTriangleIcon} boxSize={5} color="warning.600" _dark={{ color: 'warning.400' }} flexShrink={0} />
-      <Flex gap={4} flex={1} flexWrap="wrap" align="center">
+    <div className="flex items-center gap-3 p-3 px-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 flex-wrap">
+      <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+      <div className="flex gap-4 flex-1 flex-wrap items-center">
         {pendingOrders > 0 && (
-          <Text fontSize="sm" fontWeight="medium" color="warning.800" _dark={{ color: 'warning.300' }}>
+          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
             <strong>{pendingOrders}</strong> pedido{pendingOrders > 1 ? 's' : ''} aguardando confirmação
-          </Text>
+          </p>
         )}
         {openConversations > 0 && (
-          <Text fontSize="sm" fontWeight="medium" color="warning.800" _dark={{ color: 'warning.300' }}>
+          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
             <strong>{openConversations}</strong> conversa{openConversations > 1 ? 's' : ''} em aberto
-          </Text>
+          </p>
         )}
         {paymentsPending > 0 && (
-          <Text fontSize="sm" fontWeight="medium" color="warning.800" _dark={{ color: 'warning.300' }}>
+          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
             <strong>{paymentsPending}</strong> pagamento{paymentsPending > 1 ? 's' : ''} pendente{paymentsPending > 1 ? 's' : ''}
-          </Text>
+          </p>
         )}
         {lowStockProducts > 0 && (
-          <Text fontSize="sm" fontWeight="medium" color="orange.800" _dark={{ color: 'orange.300' }}>
+          <p className="text-sm font-medium text-orange-800 dark:text-orange-300">
             <strong>{lowStockProducts}</strong> produto{lowStockProducts > 1 ? 's' : ''} com estoque baixo
-          </Text>
+          </p>
         )}
-      </Flex>
-      <Flex gap={2} flexWrap="wrap">
+      </div>
+      <div className="flex gap-2 flex-wrap">
         {lowStockProducts > 0 && (
           <Button size="sm" variant="ghost" onClick={() => window.location.href = storeProductsRoute}>
             Estoque
@@ -120,13 +97,13 @@ const AlertBanner: React.FC<{
         >
           Ver pedidos
         </Button>
-      </Flex>
-    </Flex>
+      </div>
+    </div>
   );
 };
 
 // ──────────────────────────────────────────────────────────
-// KPI Card — metric with icon, value, subtitle, optional action link
+// KPI Card
 // ──────────────────────────────────────────────────────────
 interface KpiCardProps {
   title: string;
@@ -148,91 +125,89 @@ const variantMap = {
   neutral: { bg: '#f8fafc', icon: '#64748b', border: 'rgba(100,116,139,0.18)', darkBg: 'rgba(100,116,139,0.16)', darkIcon: '#94a3b8' },
 };
 
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, icon, variant = 'brand', href, badge, loading }) => {
+const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, icon: Icon, variant = 'brand', href, badge, loading }) => {
   const c = variantMap[variant];
-  const boxStyle: React.CSSProperties = {
-    cursor: href ? 'pointer' : 'default',
-    textDecoration: 'none',
-    display: 'block',
-    height: '100%',
-  };
-  const content = (
-    <Box
-      h="full"
-      p={4}
-      borderRadius="xl"
-      bg="bg.card"
-      border="1px solid"
-      borderColor="border.subtle"
-      boxShadow="0 1px 4px rgba(0,0,0,.05)"
-      transition="all 0.18s"
-      _hover={href ? { borderColor: c.border, boxShadow: '0 4px 16px rgba(0,0,0,.09)', transform: 'translateY(-1px)' } : {}}
+  const inner = (
+    <div
+      className="h-full p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-[0_1px_4px_rgba(0,0,0,.05)] transition-all duration-200"
+      style={href ? undefined : undefined}
     >
       {loading ? (
-        <Stack gap={3}>
-          <Skeleton height="20px" width="60%" />
-          <Skeleton height="32px" width="40%" />
-        </Stack>
+        <div className="flex flex-col gap-3 animate-pulse">
+          <div className="h-4 w-3/5 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-8 w-2/5 bg-gray-200 dark:bg-gray-700 rounded" />
+        </div>
       ) : (
-        <Flex align="flex-start" justify="space-between" gap={3}>
-          <Stack gap={1.5} minWidth={0}>
-            <Text fontSize="xs" fontWeight={500} color="fg.muted" letterSpacing="0.04em" textTransform="uppercase">
-              {title}
-            </Text>
-            <Heading size="xl" color="fg.primary" lineHeight={1}>
-              {value}
-            </Heading>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-1.5 min-w-0">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wider uppercase">{title}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white leading-none">{value}</p>
             {subtitle && (
-              <Text fontSize="xs" color="fg.muted" lineHeight={1.4}>
-                {subtitle}
-              </Text>
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{subtitle}</p>
             )}
             {badge && (
-              <Badge colorPalette={badge.colorPalette || 'brand'} variant={badge.variant} width="fit-content" fontSize="xs">
+              <Badge colorPalette={badge.colorPalette as any} variant="subtle" size="sm">
                 {badge.label}
               </Badge>
             )}
-          </Stack>
-          <Box p={2.5} borderRadius="lg" bg={c.bg} _dark={{ bg: c.darkBg }} flexShrink={0}>
-            <Icon as={icon} boxSize={5} color={c.icon} _dark={{ color: c.darkIcon }} />
-          </Box>
-        </Flex>
+          </div>
+          <div
+            className="p-2.5 rounded-lg flex-shrink-0"
+            style={{ background: c.bg }}
+          >
+            <Icon className="w-5 h-5" style={{ color: c.icon }} />
+          </div>
+        </div>
       )}
-    </Box>
+    </div>
   );
   if (href) {
-    return <a href={href} style={boxStyle}>{content}</a>;
+    return (
+      <a href={href} className="block h-full hover:-translate-y-px transition-transform">
+        {inner}
+      </a>
+    );
   }
-  return <div style={boxStyle}>{content}</div>;
+  return <div className="h-full">{inner}</div>;
 };
 
 // ──────────────────────────────────────────────────────────
 // Progress bar metric row
 // ──────────────────────────────────────────────────────────
 const MetricRow: React.FC<{ label: string; value: number | string; progress?: number; color?: string }> = ({
-  label, value, progress, color = 'green.500',
+  label, value, progress, color = '#22c55e',
 }) => (
-  <Box>
-    <Flex justify="space-between" mb={1}>
-      <Text fontSize="sm" color="fg.muted">{label}</Text>
-      <Text fontSize="sm" fontWeight="semibold" color="fg.primary">{value}</Text>
-    </Flex>
+  <div>
+    <div className="flex justify-between mb-1">
+      <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+      <span className="text-sm font-semibold text-gray-900 dark:text-white">{value}</span>
+    </div>
     {progress !== undefined && (
-      <Box h="6px" borderRadius="full" bg="bg.tertiary" overflow="hidden">
-        <Box h="full" w={`${Math.min(100, progress)}%`} bg={color} borderRadius="full" transition="width 0.5s ease" />
-      </Box>
+      <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${Math.min(100, progress)}%`, background: color }}
+        />
+      </div>
     )}
-  </Box>
+  </div>
 );
 
 // ──────────────────────────────────────────────────────────
-// Conversation mode pill row
+// Conversation mode label map
 // ──────────────────────────────────────────────────────────
 const modeLabel: Record<string, { label: string; color: string }> = {
   auto:   { label: 'Automatizado (IA)', color: '#722F37' },
   human:  { label: 'Humano',           color: '#2563eb' },
   hybrid: { label: 'Híbrido',          color: '#7c3aed' },
 };
+
+// ──────────────────────────────────────────────────────────
+// Skeleton block helper
+// ──────────────────────────────────────────────────────────
+const Skel: React.FC<{ h: string }> = ({ h }) => (
+  <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg" style={{ height: h }} />
+);
 
 // ──────────────────────────────────────────────────────────
 // Main component
@@ -262,14 +237,12 @@ export const DashboardPage: React.FC = () => {
   );
   const { data: charts, loading: isLoadingCharts, refresh: refreshCharts } = useFetch(fetchCharts);
 
-  // Per-store stats: revenue trend vs yesterday, low stock alerts
   const fetchStats = useCallback(
     () => storeKey ? dashboardService.getStats(storeKey) : Promise.resolve(null),
     [storeKey]
   );
   const { data: stats } = useFetch(fetchStats);
 
-  // Recent activity feed: last 10 events across orders/messages/conversations
   const fetchActivity = useCallback(
     () => dashboardService.getActivity({ store: storeKey || undefined, accountId: selectedAccount?.id, limit: 10 }),
     [selectedAccount?.id, storeKey]
@@ -292,36 +265,31 @@ export const DashboardPage: React.FC = () => {
   });
 
   // ── Derived metrics ──
-  const pendingOrders = overview?.orders.by_status.pending || 0;
-  const openConversations = overview?.conversations.by_status.open || 0;
-  const resolvedToday = overview?.conversations.resolved_today || 0;
-  const paymentsPending = overview?.payments.pending || 0;
+  const pendingOrders       = overview?.orders.by_status.pending || 0;
+  const openConversations   = overview?.conversations.by_status.open || 0;
+  const resolvedToday       = overview?.conversations.resolved_today || 0;
+  const paymentsPending     = overview?.payments.pending || 0;
   const paymentsCompletedToday = overview?.payments.completed_today || 0;
-  const inboundMessages = Number(overview?.messages.by_direction.inbound || 0);
-  const outboundMessages = Number(overview?.messages.by_direction.outbound || 0);
-  const deliveredMessages = Number(overview?.messages.by_status.delivered || 0);
-  const readMessages = Number(overview?.messages.by_status.read || 0);
-  const failedMessages = Number(overview?.messages.by_status.failed || 0);
-  const sentMessages = Number(overview?.messages.by_status.sent || 0);
-  const deliveryRate = outboundMessages > 0
-    ? Math.round(((deliveredMessages + readMessages) / outboundMessages) * 100)
-    : 0;
-  const readRate = outboundMessages > 0
-    ? Math.round((readMessages / outboundMessages) * 100)
-    : 0;
-  const ordersInProgress = (overview?.orders.by_status.confirmed || 0)
-    + (overview?.orders.by_status.preparing || 0)
-    + (overview?.orders.by_status.processing || 0);
-  const hasStatusData = [sentMessages, deliveredMessages, readMessages, failedMessages].some((v) => v > 0);
+  const inboundMessages     = Number(overview?.messages.by_direction.inbound || 0);
+  const outboundMessages    = Number(overview?.messages.by_direction.outbound || 0);
+  const deliveredMessages   = Number(overview?.messages.by_status.delivered || 0);
+  const readMessages        = Number(overview?.messages.by_status.read || 0);
+  const failedMessages      = Number(overview?.messages.by_status.failed || 0);
+  const sentMessages        = Number(overview?.messages.by_status.sent || 0);
+  const deliveryRate        = outboundMessages > 0 ? Math.round(((deliveredMessages + readMessages) / outboundMessages) * 100) : 0;
+  const readRate            = outboundMessages > 0 ? Math.round((readMessages / outboundMessages) * 100) : 0;
+  const ordersInProgress    = (overview?.orders.by_status.confirmed || 0) + (overview?.orders.by_status.preparing || 0) + (overview?.orders.by_status.processing || 0);
+  const hasStatusData       = [sentMessages, deliveredMessages, readMessages, failedMessages].some((v) => v > 0);
 
-  // Stats-derived: revenue trend & stock alerts
-  const revenueChangePct = stats?.today?.revenue_change_percent ?? null;
-  const revenueChangeAbs = stats?.today?.revenue_change ?? null;
-  const lowStockCount = stats?.alerts?.low_stock_products ?? 0;
-  const weekRevenue = stats?.week?.revenue ?? overview?.orders.revenue_month ?? 0;
-  const monthRevenue = stats?.month?.revenue ?? overview?.orders.revenue_month ?? 0;
+  const revenueChangePct  = stats?.today?.revenue_change_percent ?? null;
+  const revenueChangeAbs  = stats?.today?.revenue_change ?? null;
+  const lowStockCount     = stats?.alerts?.low_stock_products ?? 0;
+  const weekRevenue       = stats?.week?.revenue ?? overview?.orders.revenue_month ?? 0;
+  const monthRevenue      = stats?.month?.revenue ?? overview?.orders.revenue_month ?? 0;
 
-  // ── Chart options ──
+  const chartTextColor = isDark ? '#9ca3af' : '#6b7280';
+  const chartGridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+
   const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
@@ -332,23 +300,16 @@ export const DashboardPage: React.FC = () => {
       },
     },
     scales: {
-      y: {
-        beginAtZero: true,
-        grid: { color: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' },
-        ticks: { font: { size: 11 }, color: isDark ? '#9ca3af' : '#6b7280' },
-      },
-      x: {
-        grid: { display: false },
-        ticks: { font: { size: 11 }, color: isDark ? '#9ca3af' : '#6b7280' },
-      },
+      y: { beginAtZero: true, grid: { color: chartGridColor }, ticks: { font: { size: 11 }, color: chartTextColor } },
+      x: { grid: { display: false },               ticks: { font: { size: 11 }, color: chartTextColor } },
     },
-  }), [isDark]);
+  }), [isDark, chartTextColor, chartGridColor]);
 
   const messagesChartData = {
     labels: charts?.messages_per_day.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
     datasets: [
-      { label: 'Recebidas', data: charts?.messages_per_day.map((d) => d.inbound) || [], borderColor: '#25D366', backgroundColor: 'rgba(37,211,102,0.12)', fill: true, tension: 0.35, pointRadius: 3 },
-      { label: 'Enviadas',  data: charts?.messages_per_day.map((d) => d.outbound) || [], borderColor: '#722F37', backgroundColor: 'rgba(114,47,55,0.10)', fill: true, tension: 0.35, pointRadius: 3 },
+      { label: 'Recebidas', data: charts?.messages_per_day.map((d) => d.inbound)  || [], borderColor: '#25D366', backgroundColor: 'rgba(37,211,102,0.12)', fill: true, tension: 0.35, pointRadius: 3 },
+      { label: 'Enviadas',  data: charts?.messages_per_day.map((d) => d.outbound) || [], borderColor: '#722F37', backgroundColor: 'rgba(114,47,55,0.10)',  fill: true, tension: 0.35, pointRadius: 3 },
     ],
   };
 
@@ -374,44 +335,28 @@ export const DashboardPage: React.FC = () => {
   const todayLabel = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
 
   return (
-    <Stack gap={5}>
+    <div className="flex flex-col gap-5">
       {/* ── Hero strip ── */}
-      <Flex
-        align={{ base: 'flex-start', md: 'center' }}
-        justify="space-between"
-        direction={{ base: 'column', md: 'row' }}
-        gap={3}
-        pb={1}
-      >
-        <Stack gap={0.5}>
-          <Text fontSize="sm" color="fg.muted" textTransform="capitalize">{todayLabel}</Text>
-          <Heading size="lg" color="fg.primary" fontWeight={600}>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-1">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{todayLabel}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
             {greeting}{store?.name ? `, ${store.name}` : ''} 👋
-          </Heading>
-        </Stack>
-        <Flex gap={2} flexWrap="wrap" align="center">
-          {/* Live indicator */}
-          <Flex align="center" gap={1.5} px={3} py={1.5} borderRadius="full" bg="green.50" _dark={{ bg: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.3)' }} border="1px solid" borderColor="green.200">
-            <Box w={2} h={2} borderRadius="full" bg="green.500" animation="pulse 2s infinite" />
-            <Text fontSize="xs" fontWeight={500} color="green.700" _dark={{ color: 'green.300' }}>Operação ativa</Text>
-          </Flex>
-          <Button
-            size="sm"
-            leftIcon={<ChatBubbleLeftRightIcon className="w-4 h-4" />}
-            onClick={() => window.location.href = chatRoute}
-          >
+          </h1>
+        </div>
+        <div className="flex gap-2 flex-wrap items-center">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs font-medium text-green-700 dark:text-green-300">Operação ativa</span>
+          </div>
+          <Button size="sm" leftIcon={<ChatBubbleLeftRightIcon className="w-4 h-4" />} onClick={() => window.location.href = chatRoute}>
             Abrir chat
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<ShoppingCartIcon className="w-4 h-4" />}
-            onClick={() => window.location.href = storeOrdersRoute}
-          >
+          <Button size="sm" variant="outline" leftIcon={<ShoppingCartIcon className="w-4 h-4" />} onClick={() => window.location.href = storeOrdersRoute}>
             Pedidos
           </Button>
-        </Flex>
-      </Flex>
+        </div>
+      </div>
 
       {/* ── Alert banner ── */}
       <AlertBanner
@@ -424,447 +369,409 @@ export const DashboardPage: React.FC = () => {
       />
 
       {/* ── KPI Strip ── */}
-      <Grid templateColumns={{ base: '1fr 1fr', md: 'repeat(3, 1fr)', xl: 'repeat(6, 1fr)' }} gap={3}>
-        <GridItem>
-          <KpiCard
-            title="Receita hoje"
-            value={fmt(overview?.orders.revenue_today || 0)}
-            subtitle={`Semana: ${fmt(weekRevenue)} · Mês: ${fmt(monthRevenue)}`}
-            icon={CurrencyDollarIcon}
-            variant="success"
-            href={storeOrdersRoute}
-            badge={revenueChangePct !== null ? {
-              label: `${revenueChangePct >= 0 ? '↑' : '↓'} ${Math.abs(revenueChangePct).toFixed(1)}% vs ontem`,
-              variant: 'subtle',
-              colorPalette: revenueChangePct >= 0 ? 'green' : 'red',
-            } : undefined}
-            loading={isLoadingOverview}
-          />
-        </GridItem>
-        <GridItem>
-          <KpiCard
-            title="Pedidos hoje"
-            value={overview?.orders.today || 0}
-            subtitle={pendingOrders > 0 ? `${pendingOrders} pendente(s) · ${ordersInProgress} em andamento` : `${ordersInProgress} em andamento`}
-            icon={ShoppingCartIcon}
-            variant={pendingOrders > 0 ? 'warning' : 'accent'}
-            href={storeOrdersRoute}
-            badge={pendingOrders > 0 ? { label: `${pendingOrders} pendente${pendingOrders > 1 ? 's' : ''}`, variant: 'subtle', colorPalette: 'warning' } : undefined}
-            loading={isLoadingOverview}
-          />
-        </GridItem>
-        <GridItem>
-          <KpiCard
-            title="Conversas ativas"
-            value={overview?.conversations.active || 0}
-            subtitle={`${openConversations} abertas · ${resolvedToday} resolvidas hoje`}
-            icon={ChatBubbleLeftRightIcon}
-            variant={openConversations > 5 ? 'danger' : 'brand'}
-            href={chatRoute}
-            loading={isLoadingOverview}
-          />
-        </GridItem>
-        <GridItem>
-          <KpiCard
-            title="Mensagens hoje"
-            value={overview?.messages.today || 0}
-            subtitle={`${inboundMessages} rec. / ${outboundMessages} env. · semana: ${overview?.messages.week || 0}`}
-            icon={EnvelopeIcon}
-            variant="neutral"
-            loading={isLoadingOverview}
-          />
-        </GridItem>
-        <GridItem>
-          <KpiCard
-            title="Pagamentos"
-            value={paymentsCompletedToday}
-            subtitle={`${paymentsPending} pendente${paymentsPending !== 1 ? 's' : ''} · entrega: ${deliveryRate}%`}
-            icon={CreditCardIcon}
-            variant={paymentsPending > 0 ? 'warning' : 'success'}
-            badge={paymentsPending > 0 ? { label: `${paymentsPending} pendente${paymentsPending > 1 ? 's' : ''}`, variant: 'subtle', colorPalette: 'warning' } : undefined}
-            loading={isLoadingOverview}
-          />
-        </GridItem>
-        <GridItem>
-          <KpiCard
-            title="IA hoje"
-            value={overview?.agents.interactions_today || 0}
-            subtitle={`${overview?.agents.avg_duration_ms?.toFixed(0) || 0}ms méd.`}
-            icon={CpuChipIcon}
-            variant="accent"
-            href="/agents"
-            badge={lowStockCount > 0 ? { label: `${lowStockCount} produto${lowStockCount > 1 ? 's' : ''} sem estoque`, variant: 'subtle', colorPalette: 'warning' } : undefined}
-            loading={isLoadingOverview}
-          />
-        </GridItem>
-      </Grid>
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        <KpiCard
+          title="Receita hoje"
+          value={fmt(overview?.orders.revenue_today || 0)}
+          subtitle={`Semana: ${fmt(weekRevenue)} · Mês: ${fmt(monthRevenue)}`}
+          icon={CurrencyDollarIcon}
+          variant="success"
+          href={storeOrdersRoute}
+          badge={revenueChangePct !== null ? {
+            label: `${revenueChangePct >= 0 ? '↑' : '↓'} ${Math.abs(revenueChangePct).toFixed(1)}% vs ontem`,
+            variant: 'subtle',
+            colorPalette: revenueChangePct >= 0 ? 'success' : 'danger',
+          } : undefined}
+          loading={isLoadingOverview}
+        />
+        <KpiCard
+          title="Pedidos hoje"
+          value={overview?.orders.today || 0}
+          subtitle={pendingOrders > 0 ? `${pendingOrders} pendente(s) · ${ordersInProgress} em andamento` : `${ordersInProgress} em andamento`}
+          icon={ShoppingCartIcon}
+          variant={pendingOrders > 0 ? 'warning' : 'accent'}
+          href={storeOrdersRoute}
+          badge={pendingOrders > 0 ? { label: `${pendingOrders} pendente${pendingOrders > 1 ? 's' : ''}`, variant: 'subtle', colorPalette: 'warning' } : undefined}
+          loading={isLoadingOverview}
+        />
+        <KpiCard
+          title="Conversas ativas"
+          value={overview?.conversations.active || 0}
+          subtitle={`${openConversations} abertas · ${resolvedToday} resolvidas hoje`}
+          icon={ChatBubbleLeftRightIcon}
+          variant={openConversations > 5 ? 'danger' : 'brand'}
+          href={chatRoute}
+          loading={isLoadingOverview}
+        />
+        <KpiCard
+          title="Mensagens hoje"
+          value={overview?.messages.today || 0}
+          subtitle={`${inboundMessages} rec. / ${outboundMessages} env. · semana: ${overview?.messages.week || 0}`}
+          icon={EnvelopeIcon}
+          variant="neutral"
+          loading={isLoadingOverview}
+        />
+        <KpiCard
+          title="Pagamentos"
+          value={paymentsCompletedToday}
+          subtitle={`${paymentsPending} pendente${paymentsPending !== 1 ? 's' : ''} · entrega: ${deliveryRate}%`}
+          icon={CreditCardIcon}
+          variant={paymentsPending > 0 ? 'warning' : 'success'}
+          badge={paymentsPending > 0 ? { label: `${paymentsPending} pendente${paymentsPending > 1 ? 's' : ''}`, variant: 'subtle', colorPalette: 'warning' } : undefined}
+          loading={isLoadingOverview}
+        />
+        <KpiCard
+          title="IA hoje"
+          value={overview?.agents.interactions_today || 0}
+          subtitle={`${overview?.agents.avg_duration_ms?.toFixed(0) || 0}ms méd.`}
+          icon={CpuChipIcon}
+          variant="accent"
+          href="/agents"
+          badge={lowStockCount > 0 ? { label: `${lowStockCount} produto${lowStockCount > 1 ? 's' : ''} sem estoque`, variant: 'subtle', colorPalette: 'warning' } : undefined}
+          loading={isLoadingOverview}
+        />
+      </div>
 
       {/* ── Main charts row ── */}
-      <Grid templateColumns={{ base: '1fr', lg: '1.8fr 1fr' }} gap={4}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.8fr_1fr] gap-4">
         {/* Messages over time */}
-        <GridItem>
-          <Card
-            title="Mensagens por período"
-            subtitle="Recebidas vs. enviadas"
-            action={
-              <Flex align="center" gap={2}>
-                <Text fontSize="xs" color="fg.muted">Período:</Text>
-                <select
-                  value={chartRangeDays}
-                  onChange={(e) => setChartRangeDays(Number(e.target.value))}
-                  style={{ padding: '4px 10px', border: `1px solid ${isDark ? '#3f3f46' : '#e2e8f0'}`, borderRadius: '8px', fontSize: '13px', background: isDark ? '#27272a' : 'white', color: isDark ? '#d4d4d8' : 'inherit' }}
-                >
-                  {chartRangeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </Flex>
-            }
-          >
-            {isLoadingCharts ? (
-              <Skeleton height="300px" borderRadius="lg" />
-            ) : (
-              <Box height="300px">
-                <Line data={messagesChartData} options={chartOptions} />
-              </Box>
-            )}
-          </Card>
-        </GridItem>
+        <Card
+          title="Mensagens por período"
+          subtitle="Recebidas vs. enviadas"
+          action={
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">Período:</span>
+              <select
+                value={chartRangeDays}
+                onChange={(e) => setChartRangeDays(Number(e.target.value))}
+                className="px-2.5 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[13px] bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+              >
+                {chartRangeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          }
+        >
+          {isLoadingCharts ? <Skel h="300px" /> : (
+            <div style={{ height: 300 }}>
+              <Line data={messagesChartData} options={chartOptions} />
+            </div>
+          )}
+        </Card>
 
         {/* Operations health panel */}
-        <GridItem>
-          <Card title="Saúde da operação" subtitle="Métricas em tempo real">
-            <Stack gap={4}>
-              <MetricRow label="Taxa de entrega" value={`${deliveryRate}%`} progress={deliveryRate} color={deliveryRate >= 85 ? 'green.500' : deliveryRate >= 60 ? 'yellow.500' : 'red.500'} />
-              <MetricRow label="Taxa de leitura" value={`${readRate}%`} progress={readRate} color="blue.500" />
+        <Card title="Saúde da operação" subtitle="Métricas em tempo real">
+          <div className="flex flex-col gap-4">
+            <MetricRow label="Taxa de entrega" value={`${deliveryRate}%`} progress={deliveryRate} color={deliveryRate >= 85 ? '#22c55e' : deliveryRate >= 60 ? '#eab308' : '#ef4444'} />
+            <MetricRow label="Taxa de leitura" value={`${readRate}%`} progress={readRate} color="#3b82f6" />
 
-              <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
-                <Text fontSize="xs" fontWeight={500} color="fg.muted" mb={2} textTransform="uppercase" letterSpacing="0.04em">
-                  Mensagens de saída
-                </Text>
-                <Stack gap={1.5}>
-                  <MetricRow label="Enviadas"  value={sentMessages} />
-                  <MetricRow label="Entregues" value={deliveredMessages} />
-                  <MetricRow label="Lidas"     value={readMessages} />
-                  {failedMessages > 0 && (
-                    <MetricRow label="Falhas" value={failedMessages} />
-                  )}
-                </Stack>
-              </Box>
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Mensagens de saída</p>
+              <div className="flex flex-col gap-1.5">
+                <MetricRow label="Enviadas"  value={sentMessages} />
+                <MetricRow label="Entregues" value={deliveredMessages} />
+                <MetricRow label="Lidas"     value={readMessages} />
+                {failedMessages > 0 && <MetricRow label="Falhas" value={failedMessages} />}
+              </div>
+            </div>
 
-              <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
-                <Text fontSize="xs" fontWeight={500} color="fg.muted" mb={2} textTransform="uppercase" letterSpacing="0.04em">
-                  Pedidos em andamento
-                </Text>
-                <Stack gap={1.5}>
-                  {pendingOrders > 0 && (
-                    <Flex justify="space-between" align="center">
-                      <Text fontSize="sm" color="warning.700" _dark={{ color: 'warning.400' }} fontWeight={500}>Pendentes</Text>
-                      <Badge colorPalette="warning" variant="subtle">{pendingOrders}</Badge>
-                    </Flex>
-                  )}
-                  <MetricRow label="Confirmados"  value={overview?.orders.by_status.confirmed || 0} />
-                  <MetricRow label="Em preparo"   value={overview?.orders.by_status.preparing || 0} />
-                  <MetricRow label="Entregues hoje" value={overview?.orders.by_status.delivered || 0} />
-                </Stack>
-              </Box>
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Pedidos em andamento</p>
+              <div className="flex flex-col gap-1.5">
+                {pendingOrders > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Pendentes</span>
+                    <Badge variant="warning" size="sm">{pendingOrders}</Badge>
+                  </div>
+                )}
+                <MetricRow label="Confirmados"    value={overview?.orders.by_status.confirmed || 0} />
+                <MetricRow label="Em preparo"     value={overview?.orders.by_status.preparing || 0} />
+                <MetricRow label="Entregues hoje" value={overview?.orders.by_status.delivered || 0} />
+              </div>
+            </div>
 
-              <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
-                <Text fontSize="xs" fontWeight={500} color="fg.muted" mb={2} textTransform="uppercase" letterSpacing="0.04em">
-                  Pagamentos
-                </Text>
-                <Stack gap={1.5}>
-                  {paymentsPending > 0 && (
-                    <Flex justify="space-between" align="center">
-                      <Text fontSize="sm" color="warning.700" _dark={{ color: 'warning.400' }} fontWeight={500}>Pendentes</Text>
-                      <Badge colorPalette="warning" variant="subtle">{paymentsPending}</Badge>
-                    </Flex>
-                  )}
-                  <MetricRow label="Concluídos hoje" value={paymentsCompletedToday} />
-                </Stack>
-              </Box>
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Pagamentos</p>
+              <div className="flex flex-col gap-1.5">
+                {paymentsPending > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Pendentes</span>
+                    <Badge variant="warning" size="sm">{paymentsPending}</Badge>
+                  </div>
+                )}
+                <MetricRow label="Concluídos hoje" value={paymentsCompletedToday} />
+              </div>
+            </div>
 
-              {resolvedToday > 0 && (
-                <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
-                  <Flex justify="space-between" align="center">
-                    <Flex align="center" gap={1.5}>
-                      <Icon as={CheckCircleIcon} boxSize={4} color="green.500" />
-                      <Text fontSize="sm" color="fg.muted">Conversas resolvidas hoje</Text>
-                    </Flex>
-                    <Badge colorPalette="green" variant="subtle">{resolvedToday}</Badge>
-                  </Flex>
-                </Box>
-              )}
+            {resolvedToday > 0 && (
+              <div className="border-t border-gray-100 dark:border-gray-700 pt-3 flex justify-between items-center">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Conversas resolvidas hoje</span>
+                </div>
+                <Badge variant="success" size="sm">{resolvedToday}</Badge>
+              </div>
+            )}
 
-              {lowStockCount > 0 && (
-                <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
-                  <Flex justify="space-between" align="center">
-                    <Flex align="center" gap={1.5}>
-                      <Icon as={ArchiveBoxXMarkIcon} boxSize={4} color="orange.500" />
-                      <Text fontSize="sm" color="orange.700" _dark={{ color: 'orange.300' }} fontWeight={500}>Estoque baixo</Text>
-                    </Flex>
-                    <Badge colorPalette="warning" variant="subtle">{lowStockCount} produto{lowStockCount > 1 ? 's' : ''}</Badge>
-                  </Flex>
-                  <Button mt={2} variant="ghost" size="xs" colorPalette="warning" onClick={() => window.location.href = storeProductsRoute}>
-                    Ver produtos →
-                  </Button>
-                </Box>
-              )}
+            {lowStockCount > 0 && (
+              <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <ArchiveBoxXMarkIcon className="w-4 h-4 text-orange-500" />
+                    <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Estoque baixo</span>
+                  </div>
+                  <Badge variant="warning" size="sm">{lowStockCount} produto{lowStockCount > 1 ? 's' : ''}</Badge>
+                </div>
+                <button
+                  className="mt-2 text-xs text-yellow-600 dark:text-yellow-400 hover:underline"
+                  onClick={() => window.location.href = storeProductsRoute}
+                >
+                  Ver produtos →
+                </button>
+              </div>
+            )}
 
-              <Stack gap={2} pt={1}>
-                <Button variant="outline" size="sm" leftIcon={<ShoppingCartIcon className="w-4 h-4" />} onClick={() => window.location.href = storeOrdersRoute}>
-                  Gerenciar pedidos
-                </Button>
-                <Button variant="outline" size="sm" leftIcon={<ArrowTrendingUpIcon className="w-4 h-4" />} onClick={() => window.location.href = storeProductsRoute}>
-                  Atualizar catálogo
-                </Button>
-              </Stack>
-            </Stack>
-          </Card>
-        </GridItem>
-      </Grid>
+            <div className="flex flex-col gap-2 pt-1">
+              <Button variant="outline" size="sm" leftIcon={<ShoppingCartIcon className="w-4 h-4" />} onClick={() => window.location.href = storeOrdersRoute}>
+                Gerenciar pedidos
+              </Button>
+              <Button variant="outline" size="sm" leftIcon={<ArrowTrendingUpIcon className="w-4 h-4" />} onClick={() => window.location.href = storeProductsRoute}>
+                Atualizar catálogo
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* ── Secondary charts row ── */}
-      <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(4, 1fr)' }} gap={4}>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Orders per day */}
-        <GridItem>
-          <Card title="Pedidos por dia" subtitle="Volume no período selecionado">
-            {isLoadingCharts ? (
-              <Skeleton height="240px" borderRadius="lg" />
-            ) : (
-              <Box height="240px">
-                <Line data={ordersChartData} options={chartOptions} />
-              </Box>
-            )}
-          </Card>
-        </GridItem>
+        <Card title="Pedidos por dia" subtitle="Volume no período selecionado">
+          {isLoadingCharts ? <Skel h="240px" /> : (
+            <div style={{ height: 240 }}>
+              <Line data={ordersChartData} options={chartOptions} />
+            </div>
+          )}
+        </Card>
 
         {/* Conversations per day */}
-        <GridItem>
-          <Card title="Conversas por dia" subtitle="Novas e resolvidas">
-            {isLoadingCharts ? (
-              <Skeleton height="240px" borderRadius="lg" />
-            ) : charts?.conversations_per_day && charts.conversations_per_day.length > 0 ? (
-              <Box height="240px">
-                <Line
-                  data={{
-                    labels: charts.conversations_per_day.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })),
-                    datasets: [
-                      { label: 'Novas',     data: charts.conversations_per_day.map((d) => d.new),      borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.12)', fill: true, tension: 0.35, pointRadius: 3 },
-                      { label: 'Resolvidas', data: charts.conversations_per_day.map((d) => d.resolved), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)',  fill: true, tension: 0.35, pointRadius: 3 },
-                    ],
-                  }}
-                  options={chartOptions}
-                />
-              </Box>
-            ) : (
-              <Flex minH="240px" align="center" justify="center">
-                <Text fontSize="sm" color="fg.muted">Sem dados de conversas.</Text>
-              </Flex>
-            )}
-          </Card>
-        </GridItem>
+        <Card title="Conversas por dia" subtitle="Novas e resolvidas">
+          {isLoadingCharts ? <Skel h="240px" /> : charts?.conversations_per_day && charts.conversations_per_day.length > 0 ? (
+            <div style={{ height: 240 }}>
+              <Line
+                data={{
+                  labels: charts.conversations_per_day.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })),
+                  datasets: [
+                    { label: 'Novas',      data: charts.conversations_per_day.map((d) => d.new),      borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.12)', fill: true, tension: 0.35, pointRadius: 3 },
+                    { label: 'Resolvidas', data: charts.conversations_per_day.map((d) => d.resolved), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)',  fill: true, tension: 0.35, pointRadius: 3 },
+                  ],
+                }}
+                options={chartOptions}
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center" style={{ minHeight: 240 }}>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Sem dados de conversas.</p>
+            </div>
+          )}
+        </Card>
 
         {/* Revenue trend mini-stats */}
-        <GridItem>
-          <Card title="Desempenho financeiro" subtitle="Comparativo de períodos">
-            <Stack gap={4}>
-              <Box>
-                <Text fontSize="xs" fontWeight={500} color="fg.muted" mb={2} textTransform="uppercase" letterSpacing="0.04em">Hoje</Text>
-                <Flex justify="space-between" align="center">
-                  <Text fontSize="2xl" fontWeight={700} color="fg.primary">{fmt(overview?.orders.revenue_today || 0)}</Text>
-                  {revenueChangePct !== null && (
-                    <Flex align="center" gap={1} px={2} py={1} borderRadius="md" bg={revenueChangePct >= 0 ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)'}>
-                      <Icon as={revenueChangePct >= 0 ? ArrowTrendingUpIcon : ArrowTrendingDownIcon} boxSize={4} color={revenueChangePct >= 0 ? 'green.500' : 'red.500'} />
-                      <Text fontSize="sm" fontWeight={600} color={revenueChangePct >= 0 ? 'green.600' : 'red.600'}>
-                        {revenueChangePct >= 0 ? '+' : ''}{revenueChangePct.toFixed(1)}%
-                      </Text>
-                    </Flex>
-                  )}
-                </Flex>
-                {revenueChangeAbs !== null && (
-                  <Text fontSize="xs" color="fg.muted" mt={0.5}>
-                    {revenueChangeAbs >= 0 ? '+' : ''}{fmt(revenueChangeAbs)} vs ontem
-                  </Text>
+        <Card title="Desempenho financeiro" subtitle="Comparativo de períodos">
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Hoje</p>
+              <div className="flex justify-between items-center">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{fmt(overview?.orders.revenue_today || 0)}</p>
+                {revenueChangePct !== null && (
+                  <div
+                    className="flex items-center gap-1 px-2 py-1 rounded-md"
+                    style={{ background: revenueChangePct >= 0 ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)' }}
+                  >
+                    {revenueChangePct >= 0
+                      ? <ArrowTrendingUpIcon className="w-4 h-4 text-green-500" />
+                      : <ArrowTrendingDownIcon className="w-4 h-4 text-red-500" />}
+                    <span className={`text-sm font-semibold ${revenueChangePct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {revenueChangePct >= 0 ? '+' : ''}{revenueChangePct.toFixed(1)}%
+                    </span>
+                  </div>
                 )}
-              </Box>
+              </div>
+              {revenueChangeAbs !== null && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {revenueChangeAbs >= 0 ? '+' : ''}{fmt(revenueChangeAbs)} vs ontem
+                </p>
+              )}
+            </div>
 
-              <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
-                <Stack gap={2}>
-                  <Flex justify="space-between">
-                    <Text fontSize="sm" color="fg.muted">Semana (7d)</Text>
-                    <Stack gap={0} align="flex-end">
-                      <Text fontSize="sm" fontWeight={600} color="fg.primary">{fmt(stats?.week?.revenue || 0)}</Text>
-                      <Text fontSize="xs" color="fg.muted">{stats?.week?.orders || 0} pedidos</Text>
-                    </Stack>
-                  </Flex>
-                  <Flex justify="space-between">
-                    <Text fontSize="sm" color="fg.muted">Mês (30d)</Text>
-                    <Stack gap={0} align="flex-end">
-                      <Text fontSize="sm" fontWeight={600} color="fg.primary">{fmt(stats?.month?.revenue || 0)}</Text>
-                      <Text fontSize="xs" color="fg.muted">{stats?.month?.orders || 0} pedidos</Text>
-                    </Stack>
-                  </Flex>
-                  {stats?.month?.avg_daily_revenue !== undefined && (
-                    <Flex justify="space-between">
-                      <Text fontSize="sm" color="fg.muted">Média diária (mês)</Text>
-                      <Text fontSize="sm" fontWeight={600} color="fg.primary">{fmt(stats.month.avg_daily_revenue)}</Text>
-                    </Flex>
-                  )}
-                </Stack>
-              </Box>
-            </Stack>
-          </Card>
-        </GridItem>
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-3 flex flex-col gap-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Semana (7d)</span>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(stats?.week?.revenue || 0)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{stats?.week?.orders || 0} pedidos</p>
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Mês (30d)</span>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(stats?.month?.revenue || 0)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{stats?.month?.orders || 0} pedidos</p>
+                </div>
+              </div>
+              {stats?.month?.avg_daily_revenue !== undefined && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Média diária (mês)</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(stats.month.avg_daily_revenue)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
 
         {/* Conversation modes + message status */}
-        <GridItem>
-          <Card title="Canais de atendimento" subtitle="Automação vs. humano">
-            <Stack gap={4}>
-              {/* Mode breakdown */}
-              <Stack gap={2}>
-                {Object.entries(overview?.conversations.by_mode || {}).map(([mode, count]) => {
-                  const m = modeLabel[mode] ?? { label: mode, color: '#64748b' };
-                  const total = Object.values(overview?.conversations.by_mode ?? {}).reduce((acc: number, b) => acc + Number(b ?? 0), 0);
-                  const pct = total > 0 ? Math.round((Number(count ?? 0) / total) * 100) : 0;
-                  return (
-                    <Box key={mode}>
-                      <Flex justify="space-between" mb={1}>
-                        <Flex align="center" gap={1.5}>
-                          <Box w={2} h={2} borderRadius="full" bg={m.color} />
-                          <Text fontSize="sm">{m.label}</Text>
-                        </Flex>
-                        <Text fontSize="sm" fontWeight={600}>{count} ({pct}%)</Text>
-                      </Flex>
-                      <Box h="6px" borderRadius="full" bg="bg.tertiary" overflow="hidden">
-                        <Box h="full" w={`${pct}%`} borderRadius="full" style={{ background: m.color }} />
-                      </Box>
-                    </Box>
-                  );
-                })}
-                {Object.keys(overview?.conversations.by_mode || {}).length === 0 && (
-                  <Text fontSize="sm" color="fg.muted">Sem conversas no período.</Text>
-                )}
-              </Stack>
-
-              {/* Message status doughnut */}
-              {hasStatusData && (
-                <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
-                  <Text fontSize="xs" fontWeight={500} color="fg.muted" mb={2} textTransform="uppercase" letterSpacing="0.04em">
-                    Status das mensagens
-                  </Text>
-                  <Box height="160px" maxW="200px" mx="auto">
-                    <Doughnut
-                      data={statusChartData}
-                      options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' as const, labels: { boxWidth: 8, padding: 10, font: { size: 11 } } } }, cutout: '58%' }}
-                    />
-                  </Box>
-                </Box>
+        <Card title="Canais de atendimento" subtitle="Automação vs. humano">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              {Object.entries(overview?.conversations.by_mode || {}).map(([mode, count]) => {
+                const m = modeLabel[mode] ?? { label: mode, color: '#64748b' };
+                const total = Object.values(overview?.conversations.by_mode ?? {}).reduce((acc: number, b) => acc + Number(b ?? 0), 0);
+                const pct = total > 0 ? Math.round((Number(count ?? 0) / total) * 100) : 0;
+                return (
+                  <div key={mode}>
+                    <div className="flex justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full" style={{ background: m.color }} />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{m.label}</span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">{count} ({pct}%)</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: m.color }} />
+                    </div>
+                  </div>
+                );
+              })}
+              {Object.keys(overview?.conversations.by_mode || {}).length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">Sem conversas no período.</p>
               )}
+            </div>
 
-              <Box borderTopWidth="1px" borderColor="border.subtle" pt={3}>
-                <Button variant="outline" size="sm" leftIcon={<ChatBubbleLeftRightIcon className="w-4 h-4" />} onClick={() => window.location.href = chatRoute}>
-                  Ir para atendimento
-                </Button>
-              </Box>
-            </Stack>
-          </Card>
-        </GridItem>
-      </Grid>
+            {hasStatusData && (
+              <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Status das mensagens</p>
+                <div style={{ height: 160, maxWidth: 200, margin: '0 auto' }}>
+                  <Doughnut
+                    data={statusChartData}
+                    options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' as const, labels: { boxWidth: 8, padding: 10, font: { size: 11 } } } }, cutout: '58%' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+              <Button variant="outline" size="sm" leftIcon={<ChatBubbleLeftRightIcon className="w-4 h-4" />} onClick={() => window.location.href = chatRoute}>
+                Ir para atendimento
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       {/* ── Activity Feed ── */}
-      <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={4}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent orders */}
-        <GridItem>
-          <Card title="Pedidos recentes" subtitle="Últimos pedidos da loja" action={
+        <Card
+          title="Pedidos recentes"
+          subtitle="Últimos pedidos da loja"
+          action={
             <Button size="xs" variant="ghost" onClick={() => window.location.href = storeOrdersRoute}>
               Ver todos →
             </Button>
-          }>
-            {isLoadingActivity ? (
-              <Stack gap={2}>
-                {[1,2,3].map(i => <Skeleton key={i} height="48px" borderRadius="md" />)}
-              </Stack>
-            ) : activity?.orders && activity.orders.length > 0 ? (
-              <Stack gap={2}>
-                {activity.orders.slice(0, 6).map((order, i) => (
-                  <Flex key={order.id} justify="space-between" align="center" py={1.5} borderTopWidth={i > 0 ? '1px' : 0} borderColor="border.subtle">
-                    <Stack gap={0.5} minWidth={0}>
-                      <Flex align="center" gap={2}>
-                        <Text fontSize="sm" fontWeight={600} color="fg.primary" truncate>
-                          #{order.order_number}
-                        </Text>
-                        <Badge
-                          size="sm"
-                          colorPalette={
-                            order.status === 'delivered' || order.status === 'completed' ? 'green' :
-                            order.status === 'cancelled' || order.status === 'failed' ? 'red' :
-                            order.status === 'pending' ? 'yellow' : 'blue'
-                          }
-                          variant="subtle"
-                        >
-                          {order.status}
-                        </Badge>
-                      </Flex>
-                      <Text fontSize="xs" color="fg.muted" truncate>{order.customer_name}</Text>
-                    </Stack>
-                    <Stack gap={0.5} align="flex-end" flexShrink={0}>
-                      <Text fontSize="sm" fontWeight={600} color="fg.primary">{fmt(order.total)}</Text>
-                      <Text fontSize="xs" color="fg.muted">
-                        {format(new Date(order.created_at), 'HH:mm', { locale: ptBR })}
-                      </Text>
-                    </Stack>
-                  </Flex>
-                ))}
-              </Stack>
-            ) : (
-              <Flex minH="120px" align="center" justify="center">
-                <Text fontSize="sm" color="fg.muted">Nenhum pedido recente.</Text>
-              </Flex>
-            )}
-          </Card>
-        </GridItem>
+          }
+        >
+          {isLoadingActivity ? (
+            <div className="flex flex-col gap-2">
+              {[1, 2, 3].map((i) => <Skel key={i} h="48px" />)}
+            </div>
+          ) : activity?.orders && activity.orders.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {activity.orders.slice(0, 6).map((order, i) => (
+                <div key={order.id} className={`flex justify-between items-center py-1.5 ${i > 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''}`}>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">#{order.order_number}</span>
+                      <Badge
+                        size="sm"
+                        colorPalette={
+                          order.status === 'delivered' || order.status === 'completed' ? 'success' :
+                          order.status === 'cancelled' || order.status === 'failed' ? 'danger' :
+                          order.status === 'pending' ? 'warning' : 'info'
+                        }
+                        variant="subtle"
+                      >
+                        {order.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{order.customer_name}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(order.total)}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {format(new Date(order.created_at), 'HH:mm', { locale: ptBR })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center min-h-[120px]">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum pedido recente.</p>
+            </div>
+          )}
+        </Card>
 
         {/* Recent messages */}
-        <GridItem>
-          <Card title="Mensagens recentes" subtitle="Últimas mensagens recebidas" action={
+        <Card
+          title="Mensagens recentes"
+          subtitle="Últimas mensagens recebidas"
+          action={
             <Button size="xs" variant="ghost" onClick={() => window.location.href = chatRoute}>
               Abrir chat →
             </Button>
-          }>
-            {isLoadingActivity ? (
-              <Stack gap={2}>
-                {[1,2,3].map(i => <Skeleton key={i} height="48px" borderRadius="md" />)}
-              </Stack>
-            ) : activity?.messages && activity.messages.length > 0 ? (
-              <Stack gap={2}>
-                {activity.messages.slice(0, 6).map((msg, i) => (
-                  <Flex key={msg.id} gap={3} align="flex-start" py={1.5} borderTopWidth={i > 0 ? '1px' : 0} borderColor="border.subtle">
-                    <Box
-                      w={8} h={8} borderRadius="full" bg="rgba(37,211,102,0.12)"
-                      display="flex" alignItems="center" justifyContent="center" flexShrink={0}
-                    >
-                      <Icon as={EnvelopeIcon} boxSize={4} color="green.500" />
-                    </Box>
-                    <Stack gap={0.5} minWidth={0} flex={1}>
-                      <Flex justify="space-between" align="center">
-                        <Text fontSize="xs" fontWeight={600} color="fg.primary">{msg.from_number}</Text>
-                        <Text fontSize="xs" color="fg.muted">
-                          {format(new Date(msg.created_at), 'HH:mm', { locale: ptBR })}
-                        </Text>
-                      </Flex>
-                      <Text fontSize="xs" color="fg.muted" truncate>{msg.text}</Text>
-                      <Text fontSize="xs" color="fg.subtle">{msg.account_name}</Text>
-                    </Stack>
-                  </Flex>
-                ))}
-              </Stack>
-            ) : (
-              <Flex minH="120px" align="center" justify="center">
-                <Text fontSize="sm" color="fg.muted">Nenhuma mensagem recente.</Text>
-              </Flex>
-            )}
-          </Card>
-        </GridItem>
-      </Grid>
-    </Stack>
+          }
+        >
+          {isLoadingActivity ? (
+            <div className="flex flex-col gap-2">
+              {[1, 2, 3].map((i) => <Skel key={i} h="48px" />)}
+            </div>
+          ) : activity?.messages && activity.messages.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {activity.messages.slice(0, 6).map((msg, i) => (
+                <div key={msg.id} className={`flex gap-3 items-start py-1.5 ${i > 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''}`}>
+                  <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                    <EnvelopeIcon className="w-4 h-4 text-green-500" />
+                  </div>
+                  <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white">{msg.from_number}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {format(new Date(msg.created_at), 'HH:mm', { locale: ptBR })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{msg.text}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{msg.account_name}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center min-h-[120px]">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma mensagem recente.</p>
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
   );
 };
 

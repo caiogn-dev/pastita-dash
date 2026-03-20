@@ -1,78 +1,64 @@
 /**
- * MainLayout - Layout principal moderno com Chakra UI v3
+ * MainLayout - Layout principal sem Chakra UI
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Box, Flex, useBreakpointValue } from '@chakra-ui/react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
 export const MainLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isMobile = useBreakpointValue({ base: true, lg: false });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)');
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   return (
-    <Flex minH="100vh" bg="bg.secondary" color="fg.primary" position="relative">
-      <Box
-        position="fixed"
-        inset={0}
-        pointerEvents="none"
-        background="radial-gradient(circle at top right, rgba(180, 100, 110, 0.12), transparent 55%)"
+    <div className="flex min-h-screen bg-bg-secondary text-fg-primary relative">
+      {/* Decorative gradient */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(circle at top right, rgba(180, 100, 110, 0.12), transparent 55%)' }}
       />
-      {/* Overlay para mobile */}
+
+      {/* Mobile overlay */}
       {sidebarOpen && isMobile && (
-        <Box
-          position="fixed"
-          inset={0}
-          bg="blackAlpha.600"
-          zIndex={30}
+        <div
+          className="fixed inset-0 bg-black/60 z-30"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar Mobile */}
-      <Box
-        position="fixed"
-        left={0}
-        top={0}
-        bottom={0}
-        width="280px"
-        zIndex={40}
-        transform={sidebarOpen ? 'translateX(0)' : 'translateX(-100%)'}
-        transition="transform 0.3s ease-in-out"
-        display={{ base: 'block', lg: 'none' }}
+      <div
+        className="fixed left-0 top-0 bottom-0 w-[280px] z-40 lg:hidden transition-transform duration-300 ease-in-out"
+        style={{ transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)' }}
       >
         <Sidebar onClose={() => setSidebarOpen(false)} />
-      </Box>
+      </div>
 
       {/* Sidebar Desktop */}
-      <Box
-        width="280px"
-        flexShrink={0}
-        display={{ base: 'none', lg: 'block' }}
-      >
+      <div className="w-[280px] flex-shrink-0 hidden lg:block">
         <Sidebar />
-      </Box>
+      </div>
 
       {/* Main Content */}
-      <Flex flex={1} flexDirection="column" overflow="hidden" zIndex={1}>
-        <Header 
-          title="Painel Operacional" 
-          subtitle="CRM Pastita" 
-          onMenuClick={() => setSidebarOpen(true)} 
+      <div className="flex flex-col flex-1 overflow-hidden z-10">
+        <Header
+          title="Painel Operacional"
+          subtitle="CRM Pastita"
+          onMenuClick={() => setSidebarOpen(true)}
         />
-        <Box 
-          as="main" 
-          flex={1} 
-          overflow="auto"
-          bg="transparent"
-          px={{ base: 3, md: 5, xl: 7 }}
-          py={{ base: 3, md: 5 }}
-        >
+        <main className="flex-1 overflow-auto bg-transparent px-3 py-3 md:px-5 md:py-5 xl:px-7">
           <Outlet />
-        </Box>
-      </Flex>
-    </Flex>
+        </main>
+      </div>
+    </div>
   );
 };
 

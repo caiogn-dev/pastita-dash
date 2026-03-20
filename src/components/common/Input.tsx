@@ -1,9 +1,7 @@
 /**
- * Input - Componente de input moderno com Chakra UI v3
- * Suporta props legados para compatibilidade
+ * Input - Componente de input sem Chakra UI
  */
 import React from 'react';
-import { Input as ChakraInput, Stack, Text } from '@chakra-ui/react';
 
 export interface InputProps {
   label?: string;
@@ -27,6 +25,12 @@ export interface InputProps {
   step?: string | number;
 }
 
+const sizeClasses = {
+  sm: 'px-2.5 py-1.5 text-sm',
+  md: 'px-3 py-2 text-sm',
+  lg: 'px-4 py-3 text-base',
+};
+
 export const Input: React.FC<InputProps> = ({
   label,
   placeholder,
@@ -41,8 +45,6 @@ export const Input: React.FC<InputProps> = ({
   required = false,
   error,
   helperText,
-  leftElement,
-  rightElement,
   className,
   min,
   max,
@@ -50,47 +52,44 @@ export const Input: React.FC<InputProps> = ({
 }) => {
   const finalRequired = isRequired || required;
   const finalDisabled = isDisabled || disabled;
-  
-  // Converte value para string se for number
-  const stringValue = value !== undefined && value !== null 
-    ? String(value) 
-    : '';
+  const stringValue = value !== undefined && value !== null ? String(value) : '';
 
   return (
-    <Stack gap={1.5} className={className}>
+    <div className={`flex flex-col gap-1.5 ${className ?? ''}`}>
       {label && (
-        <Text fontSize="sm" fontWeight="medium" color="fg.primary">
+        <label className="text-sm font-medium text-fg-primary">
           {label}
-          {finalRequired && <Text as="span" color="danger.500"> *</Text>}
-        </Text>
+          {finalRequired && <span className="text-danger-500 ml-0.5"> *</span>}
+        </label>
       )}
-      
-      <ChakraInput
+
+      <input
         type={type}
         placeholder={placeholder}
         value={stringValue}
         onChange={onChange}
-        size={size}
         disabled={finalDisabled}
         readOnly={isReadOnly}
+        required={finalRequired}
         min={min}
         max={max}
         step={step}
-        borderColor={error ? 'danger.500' : 'border.primary'}
-        _focus={{
-          borderColor: 'brand.500',
-          boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)',
-        }}
+        className={[
+          'w-full rounded-md border bg-bg-card text-fg-primary placeholder-fg-muted',
+          'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          sizeClasses[size],
+          error ? 'border-danger-500' : 'border-border-primary',
+        ].join(' ')}
       />
-      
+
       {helperText && !error && (
-        <Text fontSize="xs" color="fg.muted">{helperText}</Text>
+        <p className="text-xs text-fg-muted">{helperText}</p>
       )}
-      
       {error && (
-        <Text fontSize="xs" color="danger.500">{error}</Text>
+        <p className="text-xs text-danger-500">{error}</p>
       )}
-    </Stack>
+    </div>
   );
 };
 

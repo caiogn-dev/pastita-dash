@@ -5,34 +5,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Box,
-  Flex,
-  Stack,
-  Heading,
-  Text,
-  Grid,
-  GridItem,
-  Input,
-  Textarea,
-  IconButton,
-  Badge,
-  Separator,
-  Card as ChakraCard,
-} from '@chakra-ui/react';
-import {
   ArrowLeftIcon,
   PlusIcon,
   TrashIcon,
-  MagnifyingGlassIcon,
   UserIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  MapPinIcon,
   CreditCardIcon,
   TruckIcon,
   ShoppingCartIcon,
 } from '@heroicons/react/24/outline';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
@@ -40,36 +21,22 @@ import { Card, Button, PageLoading } from '../../components/common';
 import { ordersService, productsService, getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
 
-// Tipos
 interface Product {
   id: string;
   name: string;
-  price: number | string; // API pode retornar string
+  price: number | string;
   stock_quantity: number;
   sku: string;
 }
 
-interface OrderItem {
-  product_id: string;
-  product_name: string;
-  quantity: number;
-  unit_price: number;
-}
-
-// Helper para converter preço para número
 const toNumber = (value: unknown): number => {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') return parseFloat(value) || 0;
   return 0;
 };
 
-// Helper para formatar preço com segurança
-const formatPrice = (value: unknown): string => {
-  const num = toNumber(value);
-  return num.toFixed(2);
-};
+const formatPrice = (value: unknown): string => toNumber(value).toFixed(2);
 
-// Schema de validação
 const orderSchema = z.object({
   customer_name: z.string().min(2, 'Nome é obrigatório'),
   customer_phone: z.string().min(10, 'Telefone inválido'),
@@ -88,6 +55,11 @@ const orderSchema = z.object({
 
 type OrderFormData = z.infer<typeof orderSchema>;
 
+const inputCls = 'w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500';
+const selectCls = inputCls;
+const labelCls = 'block text-sm font-medium text-fg-secondary mb-1';
+const errorCls = 'text-xs text-red-500 mt-1';
+
 export const OrderNewPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
@@ -96,111 +68,65 @@ export const OrderNewPage: React.FC = () => {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<string>('');
+  const [selectedProduct, setSelectedProduct] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<OrderFormData>({
+  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
-      customer_name: '',
-      customer_phone: '',
-      customer_email: '',
-      delivery_method: 'delivery',
-      delivery_address: '',
-      payment_method: 'pix',
-      notes: '',
-      items: [],
+      customer_name: '', customer_phone: '', customer_email: '',
+      delivery_method: 'delivery', delivery_address: '',
+      payment_method: 'pix', notes: '', items: [],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'items',
-  });
-
+  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const deliveryMethod = watch('delivery_method');
   const items = watch('items');
 
-  // Calcular totais
   const totals = useMemo(() => {
     const subtotal = items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
-    const deliveryFee = deliveryMethod === 'delivery' ? 5.00 : 0; // Taxa fixa exemplo
-    const total = subtotal + deliveryFee;
-    return { subtotal, deliveryFee, total };
+    const deliveryFee = deliveryMethod === 'delivery' ? 5.00 : 0;
+    return { subtotal, deliveryFee, total: subtotal + deliveryFee };
   }, [items, deliveryMethod]);
 
-  // Carregar produtos
   useEffect(() => {
-    const loadProducts = async () => {
+    const load = async () => {
       try {
         const response = await productsService.getProducts({ is_active: true });
-        // Garantir que price é número
-        const productsWithNumberPrice = (response.results || []).map(p => ({
+        setProducts((response.results || []).map(p => ({
           ...p,
           price: toNumber(p.price),
           stock_quantity: toNumber(p.stock_quantity),
-        }));
-        setProducts(productsWithNumberPrice);
-      } catch (error) {
-        toast.error('Erro ao carregar produtos');
-      } finally {
-        setProductsLoading(false);
-      }
+        })));
+      } catch { toast.error('Erro ao carregar produtos'); }
+      finally { setProductsLoading(false); }
     };
-    loadProducts();
+    load();
   }, []);
 
-  // Adicionar item ao pedido
   const handleAddItem = () => {
     if (!selectedProduct || quantity < 1) return;
-    
     const product = products.find(p => p.id === selectedProduct);
     if (!product) return;
-
-    // Verificar se já existe
     const existingIndex = items.findIndex(item => item.product_id === product.id);
     if (existingIndex >= 0) {
-      const existing = items[existingIndex];
-      const newQuantity = existing.quantity + quantity;
-      const updatedItems = [...items];
-      updatedItems[existingIndex] = { ...existing, quantity: newQuantity };
-      setValue('items', updatedItems);
+      const updated = [...items];
+      updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + quantity };
+      setValue('items', updated);
     } else {
-      append({
-        product_id: product.id,
-        product_name: product.name,
-        quantity,
-        unit_price: toNumber(product.price),
-      });
+      append({ product_id: product.id, product_name: product.name, quantity, unit_price: toNumber(product.price) });
     }
-
     setSelectedProduct('');
     setQuantity(1);
   };
 
-  // Remover item
-  const handleRemoveItem = (index: number) => {
-    remove(index);
-  };
-
-  // Submit do formulário
   const onSubmit = async (data: OrderFormData) => {
-    if (!effectiveStoreId) {
-      toast.error('Selecione uma loja');
-      return;
-    }
-
+    if (!effectiveStoreId) { toast.error('Selecione uma loja'); return; }
     setIsSubmitting(true);
     try {
-      const orderData = {
+      const order = await ordersService.createOrder({
         store: effectiveStoreId,
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
@@ -208,298 +134,238 @@ export const OrderNewPage: React.FC = () => {
         delivery_address: data.delivery_method === 'delivery' ? data.delivery_address : undefined,
         payment_method: data.payment_method,
         notes: data.notes,
-        items: data.items.map(item => ({
-          product_id: item.product_id,
-          quantity: item.quantity,
-        })),
-      };
-
-      const order = await ordersService.createOrder(orderData);
+        items: data.items.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
+      });
       toast.success(`Pedido #${order.order_number} criado com sucesso!`);
       navigate(`/stores/${effectiveStoreId}/orders/${order.id}`);
     } catch (error) {
       toast.error(getErrorMessage(error));
-    } finally {
-      setIsSubmitting(false);
-    }
+    } finally { setIsSubmitting(false); }
   };
 
-  if (productsLoading) {
-    return <PageLoading />;
-  }
+  if (productsLoading) return <PageLoading />;
 
   return (
-    <Box p={6}>
-      <Stack gap={6}>
+    <div className="p-6">
+      <div className="flex flex-col gap-6">
         {/* Header */}
-        <Flex justify="space-between" align="center">
-          <Flex align="center" gap={4}>
-            <IconButton
-              aria-label="Voltar"
-              variant="ghost"
-              onClick={() => navigate(`/stores/${effectiveStoreId}/orders`)}
-            >
-              <ArrowLeftIcon className="w-5 h-5" />
-            </IconButton>
-            <Heading size="xl">Novo Pedido</Heading>
-          </Flex>
-        </Flex>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => navigate(`/stores/${effectiveStoreId}/orders`)}
+            className="p-2 rounded-lg hover:bg-bg-hover text-fg-muted transition-colors"
+            aria-label="Voltar"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+          <h1 className="text-2xl font-bold text-fg-primary">Novo Pedido</h1>
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={6}>
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
             {/* Coluna Principal */}
-            <Stack gap={6}>
+            <div className="flex flex-col gap-6">
               {/* Cliente */}
               <Card>
-                <Stack gap={4}>
-                  <Flex align="center" gap={2}>
-                    <UserIcon className="w-5 h-5" />
-                    <Heading size="md">Dados do Cliente</Heading>
-                  </Flex>
-                  
-                  <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={4}>
-                    <GridItem>
-                      <Text mb={1} fontSize="sm" fontWeight="medium">Nome *</Text>
-                      <Input
-                        {...register('customer_name')}
-                        placeholder="Nome do cliente"
-                      />
-                      {errors.customer_name && (
-                        <Text color="red.500" fontSize="xs">{errors.customer_name.message}</Text>
-                      )}
-                    </GridItem>
-                    
-                    <GridItem>
-                      <Text mb={1} fontSize="sm" fontWeight="medium">Telefone *</Text>
-                      <Input
-                        {...register('customer_phone')}
-                        placeholder="(11) 99999-9999"
-                      />
-                      {errors.customer_phone && (
-                        <Text color="red.500" fontSize="xs">{errors.customer_phone.message}</Text>
-                      )}
-                    </GridItem>
-                  </Grid>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="w-5 h-5 text-fg-muted" />
+                    <h2 className="text-base font-semibold text-fg-primary">Dados do Cliente</h2>
+                  </div>
 
-                  <GridItem>
-                    <Text mb={1} fontSize="sm" fontWeight="medium">Email</Text>
-                    <Input
-                      {...register('customer_email')}
-                      placeholder="cliente@email.com"
-                      type="email"
-                    />
-                  </GridItem>
-                </Stack>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Nome *</label>
+                      <input {...register('customer_name')} placeholder="Nome do cliente" className={inputCls} />
+                      {errors.customer_name && <p className={errorCls}>{errors.customer_name.message}</p>}
+                    </div>
+                    <div>
+                      <label className={labelCls}>Telefone *</label>
+                      <input {...register('customer_phone')} placeholder="(11) 99999-9999" className={inputCls} />
+                      {errors.customer_phone && <p className={errorCls}>{errors.customer_phone.message}</p>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>Email</label>
+                    <input {...register('customer_email')} type="email" placeholder="cliente@email.com" className={inputCls} />
+                  </div>
+                </div>
               </Card>
 
               {/* Produtos */}
               <Card>
-                <Stack gap={4}>
-                  <Flex align="center" gap={2}>
-                    <ShoppingCartIcon className="w-5 h-5" />
-                    <Heading size="md">Produtos</Heading>
-                  </Flex>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCartIcon className="w-5 h-5 text-fg-muted" />
+                    <h2 className="text-base font-semibold text-fg-primary">Produtos</h2>
+                  </div>
 
-                  {/* Adicionar Produto */}
-                  <Flex gap={3} align="flex-end">
-                    <Box flex={1}>
-                      <Text mb={1} fontSize="sm" fontWeight="medium">Produto</Text>
+                  <div className="flex flex-col sm:flex-row gap-3 items-end">
+                    <div className="flex-1">
+                      <label className={labelCls}>Produto</label>
                       <select
                         value={selectedProduct}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedProduct(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          borderRadius: '6px',
-                          border: '1px solid #e2e8f0',
-                          fontSize: '14px'
-                        }}
+                        onChange={(e) => setSelectedProduct(e.target.value)}
+                        className={selectCls}
                       >
                         <option value="">Selecione um produto</option>
-                        {products.map(product => (
-                          <option key={product.id} value={product.id}>
-                            {product.name} - R$ {formatPrice(product.price)}
-                          </option>
+                        {products.map(p => (
+                          <option key={p.id} value={p.id}>{p.name} — R$ {formatPrice(p.price)}</option>
                         ))}
                       </select>
-                    </Box>
-                    <Box w="100px">
-                      <Text mb={1} fontSize="sm" fontWeight="medium">Qtd</Text>
-                      <Input
+                    </div>
+                    <div className="w-24">
+                      <label className={labelCls}>Qtd</label>
+                      <input
                         type="number"
                         min={1}
                         value={quantity}
                         onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                        className={inputCls}
                       />
-                    </Box>
+                    </div>
                     <Button
+                      type="button"
                       leftIcon={<PlusIcon className="w-4 h-4" />}
                       onClick={handleAddItem}
                       disabled={!selectedProduct}
                     >
                       Adicionar
                     </Button>
-                  </Flex>
+                  </div>
 
                   {errors.items && (
-                    <Text color="red.500" fontSize="sm">{errors.items.message}</Text>
+                    <p className="text-sm text-red-500">{errors.items.message as string}</p>
                   )}
 
-                  {/* Lista de Itens */}
                   {fields.length > 0 && (
-                    <ChakraCard.Root variant="outline">
-                      <ChakraCard.Body p={0}>
-                        {fields.map((field, index) => (
-                          <Flex
-                            key={field.id}
-                            p={3}
-                            justify="space-between"
-                            align="center"
-                            borderBottomWidth={index < fields.length - 1 ? 1 : 0}
-                          >
-                            <Stack gap={0} flex={1}>
-                              <Text fontWeight="medium">{field.product_name}</Text>
-                              <Text fontSize="sm" color="fg.muted">
-                                {field.quantity} x R$ {formatPrice(field.unit_price)}
-                              </Text>
-                            </Stack>
-                            <Flex align="center" gap={4}>
-                              <Text fontWeight="semibold">
-                                R$ {formatPrice(field.quantity * toNumber(field.unit_price))}
-                              </Text>
-                              <IconButton
-                                aria-label="Remover"
-                                variant="ghost"
-                                size="sm"
-                                colorPalette="red"
-                                onClick={() => handleRemoveItem(index)}
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </IconButton>
-                            </Flex>
-                          </Flex>
-                        ))}
-                      </ChakraCard.Body>
-                    </ChakraCard.Root>
+                    <div className="border border-border-primary rounded-lg overflow-hidden">
+                      {fields.map((field, index) => (
+                        <div
+                          key={field.id}
+                          className={`flex items-center justify-between p-3 ${index < fields.length - 1 ? 'border-b border-border-primary' : ''}`}
+                        >
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-fg-primary">{field.product_name}</p>
+                            <p className="text-xs text-fg-muted">{field.quantity} x R$ {formatPrice(field.unit_price)}</p>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm font-semibold text-fg-primary">
+                              R$ {formatPrice(field.quantity * toNumber(field.unit_price))}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => remove(index)}
+                              className="p-1.5 rounded hover:bg-bg-hover text-red-500 transition-colors"
+                              aria-label="Remover"
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </Stack>
+                </div>
               </Card>
 
               {/* Entrega */}
               <Card>
-                <Stack gap={4}>
-                  <Flex align="center" gap={2}>
-                    <TruckIcon className="w-5 h-5" />
-                    <Heading size="md">Entrega</Heading>
-                  </Flex>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <TruckIcon className="w-5 h-5 text-fg-muted" />
+                    <h2 className="text-base font-semibold text-fg-primary">Entrega</h2>
+                  </div>
 
-                  <select
-                    {...register('delivery_method')}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '14px'
-                    }}
-                  >
+                  <select {...register('delivery_method')} className={selectCls}>
                     <option value="delivery">Entrega</option>
                     <option value="pickup">Retirada</option>
                     <option value="digital">Digital</option>
                   </select>
 
                   {deliveryMethod === 'delivery' && (
-                    <Box>
-                      <Text mb={1} fontSize="sm" fontWeight="medium">Endereço de Entrega</Text>
-                      <Textarea
+                    <div>
+                      <label className={labelCls}>Endereço de Entrega</label>
+                      <textarea
                         {...register('delivery_address')}
                         placeholder="Rua, número, bairro, cidade..."
                         rows={3}
+                        className={`${inputCls} resize-none`}
                       />
-                    </Box>
+                    </div>
                   )}
-                </Stack>
+                </div>
               </Card>
 
               {/* Observações */}
               <Card>
-                <Stack gap={4}>
-                  <Heading size="md">Observações</Heading>
-                  <Textarea
+                <div className="flex flex-col gap-4">
+                  <h2 className="text-base font-semibold text-fg-primary">Observações</h2>
+                  <textarea
                     {...register('notes')}
                     placeholder="Observações sobre o pedido..."
                     rows={3}
+                    className={`${inputCls} resize-none`}
                   />
-                </Stack>
+                </div>
               </Card>
-            </Stack>
+            </div>
 
-            {/* Coluna Lateral - Resumo */}
-            <Stack gap={6}>
+            {/* Coluna Lateral */}
+            <div className="flex flex-col gap-6">
+              {/* Pagamento */}
               <Card>
-                <Stack gap={4}>
-                  <Flex align="center" gap={2}>
-                    <CreditCardIcon className="w-5 h-5" />
-                    <Heading size="md">Pagamento</Heading>
-                  </Flex>
-
-                  <select
-                    {...register('payment_method')}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '14px'
-                    }}
-                  >
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <CreditCardIcon className="w-5 h-5 text-fg-muted" />
+                    <h2 className="text-base font-semibold text-fg-primary">Pagamento</h2>
+                  </div>
+                  <select {...register('payment_method')} className={selectCls}>
                     <option value="pix">PIX</option>
                     <option value="cash">Dinheiro</option>
                     <option value="credit_card">Cartão de Crédito</option>
                     <option value="debit_card">Cartão de Débito</option>
                   </select>
-                </Stack>
+                </div>
               </Card>
 
+              {/* Resumo */}
               <Card>
-                <Stack gap={4}>
-                  <Heading size="md">Resumo do Pedido</Heading>
-                  
-                  <Flex justify="space-between">
-                    <Text color="fg.muted">Subtotal</Text>
-                    <Text>R$ {formatPrice(totals.subtotal)}</Text>
-                  </Flex>
-                  
-                  <Flex justify="space-between">
-                    <Text color="fg.muted">Taxa de Entrega</Text>
-                    <Text>R$ {formatPrice(totals.deliveryFee)}</Text>
-                  </Flex>
-                  
-                  <Separator />
-                  
-                  <Flex justify="space-between">
-                    <Text fontWeight="bold" fontSize="lg">Total</Text>
-                    <Text fontWeight="bold" fontSize="lg" color="green.500">
-                      R$ {formatPrice(totals.total)}
-                    </Text>
-                  </Flex>
+                <div className="flex flex-col gap-4">
+                  <h2 className="text-base font-semibold text-fg-primary">Resumo do Pedido</h2>
+
+                  <div className="flex justify-between text-sm">
+                    <span className="text-fg-muted">Subtotal</span>
+                    <span className="text-fg-primary">R$ {formatPrice(totals.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-fg-muted">Taxa de Entrega</span>
+                    <span className="text-fg-primary">R$ {formatPrice(totals.deliveryFee)}</span>
+                  </div>
+
+                  <div className="border-t border-border-primary" />
+
+                  <div className="flex justify-between">
+                    <span className="font-bold text-lg text-fg-primary">Total</span>
+                    <span className="font-bold text-lg text-green-600 dark:text-green-400">R$ {formatPrice(totals.total)}</span>
+                  </div>
 
                   <Button
                     type="submit"
-                    size="lg"
-                    width="full"
+                    className="w-full"
                     isLoading={isSubmitting}
                     leftIcon={<PlusIcon className="w-5 h-5" />}
                   >
                     Criar Pedido
                   </Button>
-                </Stack>
+                </div>
               </Card>
-            </Stack>
-          </Grid>
+            </div>
+          </div>
         </form>
-      </Stack>
-    </Box>
+      </div>
+    </div>
   );
 };
 

@@ -1,64 +1,25 @@
+/**
+ * AgentDebugPage - Diagnóstico do Agente AI (sem Chakra UI)
+ */
 import React, { useState } from 'react';
 import {
-  Box,
-  Card,
-  Heading,
-  Text,
-  Button,
-  Input,
-  Badge,
-  Separator,
-  Flex,
-  VStack,
-  HStack,
-  Field,
-  Spinner,
-  Icon,
-  Grid,
-} from '@chakra-ui/react';
-import {
-  MagnifyingGlassIcon,
-  CpuChipIcon,
-  UserIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
+  MagnifyingGlassIcon, CpuChipIcon, UserIcon,
+  CheckCircleIcon, ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
+import { Card, Button, Badge } from '../../components/common';
 import api from '@/services/api';
 import { handoverService } from '@/services/handover';
 
 interface DebugResult {
   timestamp: string;
-  conversation?: {
-    id: string;
-    status: string;
-  };
-  account?: {
-    id: string;
-    phone_number: string;
-    has_default_agent: boolean;
-  };
-  agent?: {
-    id: string;
-    name: string;
-    is_active: boolean;
-    model: string;
-  };
-  handover?: {
-    id: string;
-    status: string;
-    assigned_to: string | null;
-  } | null;
-  checks: {
-    agent_active?: boolean;
-    handover_bot_mode?: boolean;
-    agent_error?: string;
-  };
+  conversation?: { id: string; status: string };
+  account?: { id: string; phone_number: string; has_default_agent: boolean };
+  agent?: { id: string; name: string; is_active: boolean; model: string } | null;
+  handover?: { id: string; status: string; assigned_to: string | null } | null;
+  checks: { agent_active?: boolean; handover_bot_mode?: boolean; agent_error?: string };
   agent_would_respond: boolean;
   recommendation: string;
 }
-
-const MotionCard = motion(Card.Root);
 
 export default function AgentDebugPage() {
   const [conversationId, setConversationId] = useState('');
@@ -68,7 +29,6 @@ export default function AgentDebugPage() {
 
   const checkStatus = async () => {
     if (!conversationId.trim()) return;
-    
     try {
       setLoading(true);
       setError(null);
@@ -76,284 +36,171 @@ export default function AgentDebugPage() {
       setResult(response.data);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erro ao verificar status');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const forceHandover = async (target: 'bot' | 'human') => {
     if (!conversationId.trim()) return;
-
     try {
       setLoading(true);
-      if (target === 'bot') {
-        await handoverService.transferToBot(conversationId, 'Manual override from debug page');
-      } else {
-        await handoverService.transferToHuman(conversationId, { reason: 'Manual override from debug page' });
-      }
+      if (target === 'bot') await handoverService.transferToBot(conversationId, 'Manual override from debug page');
+      else await handoverService.transferToHuman(conversationId, { reason: 'Manual override from debug page' });
       await checkStatus();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erro ao transferir');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <Box p={6} maxW="1200px" mx="auto">
-      <MotionCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        mb={6}
-      >
-        <Card.Header>
-          <HStack gap={3}>
-            <Box p={2} bg="blue.100" borderRadius="lg" color="blue.600">
-              <Icon as={CpuChipIcon} boxSize={6} />
-            </Box>
-            <Box>
-              <Heading size="lg">Diagnóstico do Agente AI</Heading>
-              <Text color="fg.muted" fontSize="sm">
-                Verifique o status e controle o modo de operação do agente
-              </Text>
-            </Box>
-          </HStack>
-        </Card.Header>
-      </MotionCard>
+    <div className="p-6 max-w-5xl mx-auto">
 
-      <MotionCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        mb={6}
-      >
-        <Card.Header>
-          <Heading size="md">Verificar Status</Heading>
-        </Card.Header>
-        <Card.Body>
-          <Flex gap={4} mb={4} direction={{ base: 'column', sm: 'row' }}>
-            <Field.Root flex={1}>
-              <Field.Label>ID da Conversa</Field.Label>
-              <Input
-                placeholder="Digite o ID da conversa..."
-                value={conversationId}
-                onChange={(e) => setConversationId(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && checkStatus()}
-              />
-            </Field.Root>
-            <Button
-              onClick={checkStatus}
-              disabled={loading || !conversationId.trim()}
-              loading={loading}
-              loadingText="Verificando..."
-              alignSelf={{ base: 'stretch', sm: 'flex-end' }}
-              minW="140px"
-            >
-              <Icon as={MagnifyingGlassIcon} mr={2} />
-              Verificar
-            </Button>
-          </Flex>
+      {/* Header */}
+      <Card className="mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+            <CpuChipIcon className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-fg-primary">Diagnóstico do Agente AI</h1>
+            <p className="text-sm text-fg-muted">Verifique o status e controle o modo de operação do agente</p>
+          </div>
+        </div>
+      </Card>
 
-          {error && (
-            <Box 
-              p={4} 
-              bg="red.50" 
-              color="red.700" 
-              borderRadius="lg"
-              borderLeft="4px solid"
-              borderLeftColor="red.500"
-            >
-              <HStack gap={2}>
-                <Icon as={ExclamationTriangleIcon} color="red.500" />
-                <Text fontWeight="medium">{error}</Text>
-              </HStack>
-            </Box>
-          )}
-        </Card.Body>
-      </MotionCard>
+      {/* Query */}
+      <Card className="mb-6">
+        <h2 className="text-base font-semibold text-fg-primary mb-4">Verificar Status</h2>
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-fg-secondary mb-1">ID da Conversa</label>
+            <input
+              className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="Digite o ID da conversa..."
+              value={conversationId}
+              onChange={(e) => setConversationId(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && checkStatus()}
+            />
+          </div>
+          <Button
+            onClick={checkStatus}
+            disabled={loading || !conversationId.trim()}
+            isLoading={loading}
+            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
+            className="sm:self-end"
+          >
+            Verificar
+          </Button>
+        </div>
 
+        {error && (
+          <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border-l-4 border-red-500 text-red-700 dark:text-red-400">
+            <ExclamationTriangleIcon className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium">{error}</span>
+          </div>
+        )}
+      </Card>
+
+      {/* Result */}
       {result && (
-        <MotionCard
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Card.Header>
-            <Heading size="md">Resultado do Diagnóstico</Heading>
-            <Text fontSize="sm" color="fg.muted">
-              {new Date(result.timestamp).toLocaleString('pt-BR')}
-            </Text>
-          </Card.Header>
-          <Card.Body>
-            {/* Status Geral */}
-            <Box 
-              mb={6} 
-              p={6} 
-              borderRadius="xl"
-              bg={result.agent_would_respond ? 'red.50' : 'green.50'}
-              border="2px solid"
-              borderColor={result.agent_would_respond ? 'red.200' : 'green.200'}
-            >
-              <VStack align="center" gap={3}>
-                <Badge 
-                  size="lg" 
-                  colorPalette={result.agent_would_respond ? 'red' : 'green'}
-                  px={4}
-                  py={2}
-                  fontSize="md"
-                  borderRadius="full"
-                >
-                  <HStack gap={2}>
-                    <Icon 
-                      as={result.agent_would_respond ? ExclamationTriangleIcon : CheckCircleIcon} 
-                      boxSize={5} 
-                    />
-                    <span>
-                      {result.agent_would_respond ? 'AGENTE ESTÁ RESPONDENDO' : 'AGENTE NÃO RESPONDE'}
-                    </span>
-                  </HStack>
-                </Badge>
-                <Text color="fg.muted" textAlign="center" maxW="600px">
-                  {result.recommendation}
-                </Text>
-              </VStack>
-            </Box>
+        <Card>
+          <div className="flex justify-between items-start mb-6">
+            <h2 className="text-base font-semibold text-fg-primary">Resultado do Diagnóstico</h2>
+            <span className="text-sm text-fg-muted">{new Date(result.timestamp).toLocaleString('pt-BR')}</span>
+          </div>
 
-            <Separator mb={6} />
+          {/* Overall status */}
+          <div className={`mb-6 p-6 rounded-xl border-2 text-center ${result.agent_would_respond ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'}`}>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              {result.agent_would_respond
+                ? <ExclamationTriangleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+                : <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400" />}
+              <span className={`text-lg font-bold ${result.agent_would_respond ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
+                {result.agent_would_respond ? 'AGENTE ESTÁ RESPONDENDO' : 'AGENTE NÃO RESPONDE'}
+              </span>
+            </div>
+            <p className="text-sm text-fg-muted max-w-xl mx-auto">{result.recommendation}</p>
+          </div>
 
-            {/* Checks */}
-            <Box mb={6}>
-              <Text fontWeight="semibold" mb={3} fontSize="lg">Verificações</Text>
-              <HStack gap={3} flexWrap="wrap">
-                <Badge 
-                  size="lg" 
-                  colorPalette={result.checks.agent_active ? 'green' : 'red'}
-                  variant="subtle"
-                  px={3}
-                  py={1}
-                >
-                  <HStack gap={1}>
-                    <Icon 
-                      as={result.checks.agent_active ? CheckCircleIcon : ExclamationTriangleIcon} 
-                      boxSize={4} 
-                    />
-                    <span>{result.checks.agent_active ? 'Agente Ativo' : 'Agente Inativo'}</span>
-                  </HStack>
-                </Badge>
-                <Badge 
-                  size="lg" 
-                  colorPalette={result.checks.handover_bot_mode ? 'green' : 'yellow'}
-                  variant="subtle"
-                  px={3}
-                  py={1}
-                >
-                  <HStack gap={1}>
-                    <Icon 
-                      as={result.checks.handover_bot_mode ? CheckCircleIcon : UserIcon} 
-                      boxSize={4} 
-                    />
-                    <span>{result.checks.handover_bot_mode ? 'Modo Bot' : 'Modo Humano'}</span>
-                  </HStack>
-                </Badge>
-              </HStack>
-            </Box>
+          <div className="border-t border-border-primary my-6" />
 
-            <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6} mb={6}>
-              {/* Agent Info */}
-              {result.agent && (
-                <Box 
-                  p={4} 
-                  bg="bg.subtle" 
-                  borderRadius="lg"
-                  border="1px solid"
-                  borderColor="border.subtle"
-                >
-                  <Text fontWeight="semibold" mb={3} fontSize="lg">Informações do Agente</Text>
-                  <VStack align="stretch" gap={2}>
-                    <HStack justify="space-between">
-                      <Text color="fg.muted" fontSize="sm">Nome:</Text>
-                      <Text fontWeight="medium">{result.agent.name}</Text>
-                    </HStack>
-                    <HStack justify="space-between">
-                      <Text color="fg.muted" fontSize="sm">Status:</Text>
-                      <Badge colorPalette={result.agent.is_active ? 'green' : 'red'} size="sm">
-                        {result.agent.is_active ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </HStack>
-                    <HStack justify="space-between">
-                      <Text color="fg.muted" fontSize="sm">Modelo:</Text>
-                      <Text fontSize="sm" fontFamily="mono" bg="bg.muted" px={2} py={0.5} borderRadius="md">
-                        {result.agent.model}
-                      </Text>
-                    </HStack>
-                  </VStack>
-                </Box>
+          {/* Checks */}
+          <div className="mb-6">
+            <h3 className="font-semibold text-fg-primary mb-3">Verificações</h3>
+            <div className="flex flex-wrap gap-3">
+              <Badge variant={result.checks.agent_active ? 'success' : 'danger'}>
+                <span className="flex items-center gap-1">
+                  {result.checks.agent_active ? <CheckCircleIcon className="w-4 h-4" /> : <ExclamationTriangleIcon className="w-4 h-4" />}
+                  {result.checks.agent_active ? 'Agente Ativo' : 'Agente Inativo'}
+                </span>
+              </Badge>
+              <Badge variant={result.checks.handover_bot_mode ? 'success' : 'warning'}>
+                <span className="flex items-center gap-1">
+                  {result.checks.handover_bot_mode ? <CheckCircleIcon className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
+                  {result.checks.handover_bot_mode ? 'Modo Bot' : 'Modo Humano'}
+                </span>
+              </Badge>
+            </div>
+          </div>
+
+          {/* Details grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Agent info */}
+            {result.agent && (
+              <div className="p-4 bg-bg-subtle border border-border-primary rounded-lg">
+                <h3 className="font-semibold text-fg-primary mb-3">Informações do Agente</h3>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-fg-muted">Nome:</span>
+                    <span className="text-sm font-medium text-fg-primary">{result.agent.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-fg-muted">Status:</span>
+                    <Badge variant={result.agent.is_active ? 'success' : 'danger'} size="sm">{result.agent.is_active ? 'Ativo' : 'Inativo'}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-fg-muted">Modelo:</span>
+                    <code className="text-xs bg-bg-muted px-2 py-0.5 rounded font-mono text-fg-primary">{result.agent.model}</code>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Handover info */}
+            <div className="p-4 bg-bg-subtle border border-border-primary rounded-lg">
+              <h3 className="font-semibold text-fg-primary mb-3">Handover</h3>
+              {result.handover ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-fg-muted">Status:</span>
+                    <Badge variant="info" size="sm">{result.handover.status}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-fg-muted">Atribuído a:</span>
+                    <span className="text-sm text-fg-primary">{result.handover.assigned_to || <em className="text-fg-muted">Ninguém</em>}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-fg-muted">Sem registro de handover (assume modo bot)</p>
               )}
+            </div>
+          </div>
 
-              {/* Handover Info */}
-              <Box 
-                p={4} 
-                bg="bg.subtle" 
-                borderRadius="lg"
-                border="1px solid"
-                borderColor="border.subtle"
-              >
-                <Text fontWeight="semibold" mb={3} fontSize="lg">Handover</Text>
-                {result.handover ? (
-                  <VStack align="stretch" gap={2}>
-                    <HStack justify="space-between">
-                      <Text color="fg.muted" fontSize="sm">Status:</Text>
-                      <Badge colorPalette="blue" size="sm">{result.handover.status}</Badge>
-                    </HStack>
-                    <HStack justify="space-between">
-                      <Text color="fg.muted" fontSize="sm">Atribuído a:</Text>
-                      <Text fontSize="sm">
-                        {result.handover.assigned_to || (
-                          <Text as="span" color="fg.muted" fontStyle="italic">Ninguém</Text>
-                        )}
-                      </Text>
-                    </HStack>
-                  </VStack>
-                ) : (
-                  <Text color="fg.muted" fontSize="sm">
-                    Sem registro de handover (assume modo bot)
-                  </Text>
-                )}
-              </Box>
-            </Grid>
+          <div className="border-t border-border-primary my-6" />
 
-            <Separator mb={6} />
-
-            {/* Ações */}
-            <Box>
-              <Text fontWeight="semibold" mb={3} fontSize="lg">Ações</Text>
-              <HStack gap={3} flexWrap="wrap">
-                <Button
-                  variant="outline"
-                  colorPalette="blue"
-                  onClick={() => forceHandover('bot')}
-                  disabled={loading}
-                  size="lg"
-                >
-                  <Icon as={CpuChipIcon} mr={2} />
-                  Forçar Modo Bot
-                </Button>
-                <Button
-                  variant="outline"
-                  colorPalette="green"
-                  onClick={() => forceHandover('human')}
-                  disabled={loading}
-                  size="lg"
-                >
-                  <Icon as={UserIcon} mr={2} />
-                  Forçar Modo Humano
-                </Button>
-              </HStack>
-            </Box>
-          </Card.Body>
-        </MotionCard>
+          {/* Actions */}
+          <div>
+            <h3 className="font-semibold text-fg-primary mb-3">Ações</h3>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={() => forceHandover('bot')} disabled={loading} leftIcon={<CpuChipIcon className="w-5 h-5" />}>
+                Forçar Modo Bot
+              </Button>
+              <Button variant="outline" onClick={() => forceHandover('human')} disabled={loading} leftIcon={<UserIcon className="w-5 h-5" />}>
+                Forçar Modo Humano
+              </Button>
+            </div>
+          </div>
+        </Card>
       )}
-    </Box>
+    </div>
   );
 }

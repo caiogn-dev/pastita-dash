@@ -1,22 +1,10 @@
 /**
- * ChatWindow - Interface de Chat WhatsApp com Chakra UI v3
- * Versão melhorada com UX/UI aprimorada
+ * ChatWindow - Interface de Chat WhatsApp (sem Chakra UI)
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import {
-  Box,
-  Flex,
-  Text,
-  IconButton,
-  Badge,
-  Spinner,
-  Stack,
-  Separator,
-  Avatar,
-} from '@chakra-ui/react';
 
 import { ContactList, Contact } from './ContactList';
 import { MessageBubble, MessageBubbleProps } from './MessageBubble';
@@ -26,7 +14,6 @@ import { whatsappService, conversationsService, getErrorMessage } from '../../se
 import { handoverService } from '../../services/handover';
 import { Message, Conversation } from '../../types';
 
-// Type-safe helper to ensure value is array
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
@@ -63,11 +50,12 @@ const conversationToContact = (conv: Conversation): Contact => ({
   mode: conv.mode as 'auto' | 'human' | 'hybrid',
 });
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({
-  accountId,
-  accountName,
-  onConversationSelect,
-}) => {
+const getInitials = (name?: string, phone?: string) => {
+  if (name) return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  return phone?.slice(-2) || '?';
+};
+
+export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, onConversationSelect }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -75,82 +63,52 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
-  
+
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom - only when needed
   const scrollToBottom = useCallback(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  const {
-    isConnected,
-    connectionError,
-    subscribeToConversation,
-    unsubscribeFromConversation,
-    sendTypingIndicator,
-    sendMessage,
-  } = useWhatsAppWS({
-    accountId,
-    enabled: !!accountId,
-    onMessageReceived: handleMessageReceived,
-    onMessage: (msg) => {
-      const convertedMsg: Message = {
-        ...msg,
-        timestamp: msg.created_at,
-        account: accountId,
-        updated_at: msg.created_at,
-      } as unknown as Message;
-      handleNewMessage(convertedMsg);
-    },
-    onStatusUpdated: handleStatusUpdated,
-    onTyping: handleTyping,
-    onConversationUpdated: handleConversationUpdated,
-    onError: (event) => {
-      toast.error(`Erro: ${event.error_message}`);
-    },
-  });
+  const { isConnected, connectionError, subscribeToConversation, unsubscribeFromConversation, sendTypingIndicator } =
+    useWhatsAppWS({
+      accountId,
+      enabled: !!accountId,
+      onMessageReceived: handleMessageReceived,
+      onMessage: (msg) => {
+        const converted: Message = { ...msg, timestamp: msg.created_at, account: accountId, updated_at: msg.created_at } as unknown as Message;
+        handleNewMessage(converted);
+      },
+      onStatusUpdated: handleStatusUpdated,
+      onTyping: handleTyping,
+      onConversationUpdated: handleConversationUpdated,
+      onError: (event) => { toast.error(`Erro: ${event.error_message}`); },
+    });
 
   const loadConversations = useCallback(async () => {
     if (!accountId) return;
-    
     setIsLoadingConversations(true);
     try {
       const response = await conversationsService.getConversations({ account: accountId });
       setConversations(ensureArray<Conversation>(response?.results || response));
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsLoadingConversations(false);
-    }
+    } catch (error) { toast.error(getErrorMessage(error)); }
+    finally { setIsLoadingConversations(false); }
   }, [accountId]);
 
   const loadMessages = useCallback(async () => {
     if (!selectedConversation || !accountId) return;
-    
     setIsLoadingMessages(true);
     try {
-      const historyRes = await whatsappService.getConversationHistory(
-        accountId,
-        selectedConversation.phone_number,
-        100
-      );
+      const historyRes = await whatsappService.getConversationHistory(accountId, selectedConversation.phone_number, 100);
       const history = ensureArray<Message>((historyRes.data as { results?: Message[] })?.results || historyRes.data);
       setMessages(history.reverse());
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsLoadingMessages(false);
-    }
+    } catch (error) { toast.error(getErrorMessage(error)); }
+    finally { setIsLoadingMessages(false); }
   }, [accountId, selectedConversation]);
 
-  useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+  useEffect(() => { loadConversations(); }, [loadConversations]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -161,124 +119,67 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       setMessages([]);
       onConversationSelect?.(null);
     }
-
-    return () => {
-      if (selectedConversation) {
-        unsubscribeFromConversation(selectedConversation.id);
-      }
-    };
+    return () => { if (selectedConversation) unsubscribeFromConversation(selectedConversation.id); };
   }, [selectedConversation, loadMessages, subscribeToConversation, unsubscribeFromConversation, onConversationSelect]);
 
-  // Auto-scroll only for received messages, not for sent messages
-  const handleAutoScroll = useCallback((isReceivedMessage: boolean = true) => {
-    if (isReceivedMessage && shouldAutoScrollRef.current) {
-      setTimeout(() => scrollToBottom(), 100);
-    }
+  const handleAutoScroll = useCallback((isReceived = true) => {
+    if (isReceived && shouldAutoScrollRef.current) setTimeout(() => scrollToBottom(), 100);
   }, [scrollToBottom]);
 
-  // Detect user scroll to enable/disable auto-scroll
   const handleContainerScroll = useCallback(() => {
     if (messagesContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-      // If user scrolls up, disable auto-scroll. If at bottom, enable
       shouldAutoScrollRef.current = scrollHeight - (scrollTop + clientHeight) < 100;
     }
   }, []);
 
   function handleMessageReceived(event: MessageReceivedEvent) {
     const newMessage = event.message;
-    
     if (selectedConversation && event.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) {
-          return prev;
-        }
+        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) return prev;
         return [...prev, newMessage as unknown as Message];
       });
-      // Auto-scroll when receiving a message
       handleAutoScroll(true);
     }
-
-    setConversations(prev => {
-      const updated = prev.map(conv => {
-        if (conv.id === event.conversation_id) {
-          return {
-            ...conv,
-            last_message_at: newMessage.created_at,
-          };
-        }
-        return conv;
-      });
-      return updated.sort((a, b) => {
-        if (!a.last_message_at) return 1;
-        if (!b.last_message_at) return -1;
-        return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
-      });
-    });
-
+    setConversations(prev => prev.map(c => c.id === event.conversation_id ? { ...c, last_message_at: newMessage.created_at } : c)
+      .sort((a, b) => new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()));
     if (!selectedConversation || event.conversation_id !== selectedConversation.id) {
-      const contactName = event.contact?.name || newMessage.from_number;
-      toast(`Nova mensagem de ${contactName}`, { icon: '💬' });
+      toast(`Nova mensagem de ${event.contact?.name || newMessage.from_number}`, { icon: '💬' });
     }
   }
 
-  function handleNewMessage(newMessage: Message) {
-    if (selectedConversation && newMessage.conversation_id === selectedConversation.id) {
+  function handleNewMessage(msg: Message) {
+    if (selectedConversation && msg.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) {
-          return prev;
-        }
-        return [...prev, newMessage];
+        if (prev.some(m => m.id === msg.id || m.whatsapp_message_id === msg.whatsapp_message_id)) return prev;
+        return [...prev, msg];
       });
-      // Auto-scroll for received messages
-      if (newMessage.direction === 'inbound') {
-        handleAutoScroll(true);
-      }
+      if (msg.direction === 'inbound') handleAutoScroll(true);
     }
   }
 
   function handleStatusUpdated(event: StatusUpdatedEvent) {
-    setMessages(prev => prev.map(msg => {
-      if (msg.id === event.message_id || msg.whatsapp_message_id === event.whatsapp_message_id) {
-        return {
-          ...msg,
-          status: event.status,
-        };
-      }
-      return msg;
-    }));
+    setMessages(prev => prev.map(m =>
+      (m.id === event.message_id || m.whatsapp_message_id === event.whatsapp_message_id) ? { ...m, status: event.status } : m
+    ));
   }
 
   function handleTyping(event: TypingEvent) {
     setTypingContacts(prev => {
       const next = new Set(prev);
-      if (event.is_typing) {
-        next.add(event.conversation_id);
-      } else {
-        next.delete(event.conversation_id);
-      }
+      if (event.is_typing) next.add(event.conversation_id); else next.delete(event.conversation_id);
       return next;
     });
   }
 
   function handleConversationUpdated(event: ConversationUpdatedEvent) {
     const wsConv = event.conversation;
-    
     setConversations(prev => {
-      const exists = prev.some(c => c.id === wsConv.id);
-      if (exists) {
-        return prev.map(c => {
-          if (c.id === wsConv.id) {
-            return {
-              ...c,
-              phone_number: wsConv.phone_number,
-              contact_name: wsConv.contact_name,
-              status: wsConv.status as Conversation['status'],
-              mode: wsConv.mode as Conversation['mode'],
-            };
-          }
-          return c;
-        });
+      if (prev.some(c => c.id === wsConv.id)) {
+        return prev.map(c => c.id === wsConv.id
+          ? { ...c, phone_number: wsConv.phone_number, contact_name: wsConv.contact_name, status: wsConv.status as Conversation['status'], mode: wsConv.mode as Conversation['mode'] }
+          : c);
       }
       loadConversations();
       return prev;
@@ -287,72 +188,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSendMessage = async (text: string) => {
     if (!selectedConversation || !accountId) return;
-
-    const optimisticMessage: Message = {
-      id: `temp-${Date.now()}`,
-      conversation_id: selectedConversation.id,
-      account: accountId,
-      text_body: text,
-      direction: 'outbound',
-      message_type: 'text',
-      status: 'pending',
-      created_at: new Date().toISOString(),
-      whatsapp_message_id: '',
-      from_number: '',
-      to_number: selectedConversation.phone_number,
-      timestamp: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    const optimistic: Message = {
+      id: `temp-${Date.now()}`, conversation_id: selectedConversation.id, account: accountId, text_body: text,
+      direction: 'outbound', message_type: 'text', status: 'pending', created_at: new Date().toISOString(),
+      whatsapp_message_id: '', from_number: '', to_number: selectedConversation.phone_number,
+      timestamp: new Date().toISOString(), updated_at: new Date().toISOString(),
     } as unknown as Message;
-
-    // Add optimistic message without auto-scroll
-    setMessages(prev => [...prev, optimisticMessage]);
-
+    setMessages(prev => [...prev, optimistic]);
     setIsSending(true);
     try {
-      const messageRes = await whatsappService.sendTextMessage({
-        account_id: accountId,
-        to: selectedConversation.phone_number,
-        text,
-      });
-      
-      // Replace optimistic message with real one
-      setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? messageRes.data : m));
+      const res = await whatsappService.sendTextMessage({ account_id: accountId, to: selectedConversation.phone_number, text });
+      setMessages(prev => prev.map(m => m.id === optimistic.id ? res.data : m));
     } catch (error) {
-      // Remove optimistic message on error
-      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
       toast.error(getErrorMessage(error));
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleTypingIndicator = (isTyping: boolean) => {
-    if (selectedConversation) {
-      sendTypingIndicator(selectedConversation.id, isTyping);
-    }
-  };
-
-  const handleSelectContact = (contact: Contact) => {
-    const conversation = conversations.find(c => c.id === contact.id);
-    setSelectedConversation(conversation || null);
+    } finally { setIsSending(false); }
   };
 
   const handleSwitchMode = async () => {
     if (!selectedConversation) return;
-
     try {
       const currentStatus = selectedConversation.mode === 'human' ? 'human' : 'bot';
       const res = await handoverService.toggle(selectedConversation.id, currentStatus);
       const newMode = res.handover_status === 'human' ? 'human' : 'auto';
-
       setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
-      setConversations(prev =>
-        prev.map(c => c.id === selectedConversation.id ? { ...c, mode: newMode } : c)
-      );
+      setConversations(prev => prev.map(c => c.id === selectedConversation.id ? { ...c, mode: newMode } : c));
       toast.success(`Modo alterado para ${newMode === 'human' ? 'humano' : 'automático'}`);
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
+    } catch (error) { toast.error(getErrorMessage(error)); }
   };
 
   const contacts: Contact[] = ensureArray<Conversation>(conversations).map(conv => ({
@@ -361,274 +223,128 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }));
 
   const groupedMessages = ensureArray<Message>(messages).reduce((groups, message) => {
-    // Verifica se created_at é válido antes de formatar
     if (!message.created_at) return groups;
-    
     try {
       const date = format(new Date(message.created_at), 'yyyy-MM-dd');
-      if (!groups[date]) {
-        groups[date] = [];
-      }
+      if (!groups[date]) groups[date] = [];
       groups[date].push(message);
-    } catch (e) {
-      // Ignora mensagens com data inválida
-      console.warn('Data inválida na mensagem:', message.id, message.created_at);
-    }
+    } catch { /* ignore invalid dates */ }
     return groups;
   }, {} as Record<string, Message[]>);
 
-  // Get initials for avatar
-  const getInitials = (name?: string, phone?: string) => {
-    if (name) {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    }
-    return phone?.slice(-2) || '?';
-  };
-
   return (
-    <Flex 
-      h="calc(100vh - 64px)"
-      maxH="900px"
-      w="100%"
-      maxW="1400px"
-      mx="auto"
-      bg="bg.subtle"
-      borderRadius="xl"
-      overflow="hidden"
-      boxShadow="xl"
-      borderWidth="1px"
-      borderColor="border.default"
-    >
+    <div className="flex h-[calc(100vh-64px)] max-h-[900px] w-full max-w-[1400px] mx-auto bg-bg-subtle rounded-xl overflow-hidden shadow-xl border border-border-primary">
+
       {/* Contact list sidebar */}
-      <Box 
-        w={{ base: '100%', md: '360px' }}
-        h="100%"
-        bg="bg.default"
-        borderRightWidth="1px"
-        borderColor="border.default"
-        display={{ base: selectedConversation ? 'none' : 'flex', md: 'flex' }}
-        flexDirection="column"
-      >
+      <div className={`w-full md:w-[360px] h-full bg-bg-card border-r border-border-primary flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
         <ContactList
           contacts={contacts}
           selectedContactId={selectedConversation?.id}
-          onSelectContact={handleSelectContact}
+          onSelectContact={(c) => setSelectedConversation(conversations.find(conv => conv.id === c.id) || null)}
           isLoading={isLoadingConversations}
           emptyMessage="Nenhuma conversa encontrada"
         />
-      </Box>
+      </div>
 
       {/* Chat area */}
-      <Flex 
-        flex={1} 
-        flexDirection="column"
-        bg="bg.muted"
-        display={{ base: selectedConversation ? 'flex' : 'none', md: 'flex' }}
-      >
+      <div className={`flex-1 flex flex-col bg-bg-muted ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
         {!selectedConversation ? (
           // Empty state
-          <Flex 
-            flex={1} 
-            align="center" 
-            justify="center" 
-            direction="column"
-            gap={6}
-            p={8}
-            bg="bg.default"
-          >
-            <Box 
-              p={8}
-              borderRadius="full"
-              bg="green.50"
-              _dark={{ bg: 'green.900' }}
-            >
-              <Text fontSize="6xl">💬</Text>
-            </Box>
-            
-            <Stack gap={2} textAlign="center">
-              <Text fontSize="2xl" fontWeight="bold">
-                {accountName || 'WhatsApp Business'}
-              </Text>
-              <Text color="fg.muted" maxW="400px">
-                Selecione uma conversa ao lado para começar a atender seus clientes
-              </Text>
-            </Stack>
-            
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 bg-bg-card">
+            <div className="p-8 rounded-full bg-green-50 dark:bg-green-900/30">
+              <span className="text-6xl">💬</span>
+            </div>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-fg-primary">{accountName || 'WhatsApp Business'}</h2>
+              <p className="text-fg-muted mt-1 max-w-md">Selecione uma conversa ao lado para começar a atender seus clientes</p>
+            </div>
             {!isConnected && (
-              <Badge colorPalette="red" variant="solid" size="lg">
-                ⚠️ Desconectado
-              </Badge>
+              <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-sm font-medium">⚠️ Desconectado</span>
             )}
-          </Flex>
+          </div>
         ) : (
           <>
-            {/* Chat Header */}
-            <Flex 
-              px={4}
-              py={3}
-              bg="bg.default"
-              borderBottomWidth="1px"
-              borderColor="border.default"
-              justify="space-between"
-              align="center"
-            >
-              <Flex gap={3} align="center">
-                <Avatar.Root 
-                  size="md"
-                  colorPalette={selectedConversation.mode === 'human' ? 'blue' : 'green'}
-                >
-                  <Avatar.Fallback>
-                    {getInitials(
-                      selectedConversation.contact_name,
-                      selectedConversation.phone_number
-                    )}
-                  </Avatar.Fallback>
-                </Avatar.Root>
-                
-                <Stack gap={0} align="flex-start">
-                  <Text fontWeight="semibold" fontSize="md">
-                    {selectedConversation.contact_name || selectedConversation.phone_number}
-                  </Text>
-                  <Flex gap={2} align="center">
-                    {typingContacts.has(selectedConversation.id) ? (
-                      <Text fontSize="sm" color="green.500" fontWeight="medium">
-                        digitando...
-                      </Text>
-                    ) : (
-                      <Text fontSize="sm" color="fg.muted">
-                        {isConnected ? '🟢 Online' : '🔴 Offline'}
-                      </Text>
-                    )}
-                  </Flex>
-                </Stack>
-              </Flex>
-
-              <Flex gap={2} align="center">
-                <Badge 
-                  colorPalette={selectedConversation.mode === 'human' ? 'blue' : 'green'}
-                  variant="subtle"
-                  size="md"
-                  cursor="pointer"
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-bg-card border-b border-border-primary">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white ${selectedConversation.mode === 'human' ? 'bg-blue-500' : 'bg-green-500'}`}>
+                  {getInitials(selectedConversation.contact_name, selectedConversation.phone_number)}
+                </div>
+                <div>
+                  <p className="font-semibold text-fg-primary">{selectedConversation.contact_name || selectedConversation.phone_number}</p>
+                  <p className="text-sm text-fg-muted">
+                    {typingContacts.has(selectedConversation.id)
+                      ? <span className="text-green-500 font-medium">digitando...</span>
+                      : isConnected ? '🟢 Online' : '🔴 Offline'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
                   onClick={handleSwitchMode}
-                  _hover={{ opacity: 0.8 }}
+                  className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-opacity hover:opacity-80 ${selectedConversation.mode === 'human' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}
                 >
                   {selectedConversation.mode === 'human' ? '👤 Humano' : '🤖 Auto'}
-                </Badge>
+                </button>
+                <button onClick={loadMessages} disabled={isLoadingMessages} className="p-2 rounded hover:bg-bg-hover transition-colors text-fg-muted">
+                  {isLoadingMessages ? <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" /> : '🔄'}
+                </button>
+              </div>
+            </div>
 
-                <IconButton
-                  aria-label="Atualizar"
-                  variant="ghost"
-                  size="sm"
-                  onClick={loadMessages}
-                  loading={isLoadingMessages}
-                >
-                  🔄
-                </IconButton>
-              </Flex>
-            </Flex>
-
-            {/* Connection Error Banner */}
+            {/* Connection error banner */}
             {connectionError && (
-              <Flex 
-                px={4}
-                py={2}
-                bg="yellow.50"
-                _dark={{ bg: 'yellow.900' }}
-                borderBottomWidth="1px"
-                borderColor="yellow.200"
-                align="center"
-                gap={2}
-              >
-                <Text fontSize="sm" color="yellow.700">
-                  ⚠️ {connectionError}
-                </Text>
-              </Flex>
+              <div className="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
+                <p className="text-sm text-yellow-700 dark:text-yellow-400">⚠️ {connectionError}</p>
+              </div>
             )}
 
-            {/* Messages Area */}
-            <Stack
-              ref={messagesContainerRef}
-              flex={1}
-              overflowY="auto"
-              onScroll={handleContainerScroll}
-              p={4}
-              gap={4}
-              bg="bg.muted"
-            >
+            {/* Messages */}
+            <div ref={messagesContainerRef} onScroll={handleContainerScroll} className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-bg-muted">
               {isLoadingMessages ? (
-                <Flex flex={1} align="center" justify="center">
-                  <Spinner size="xl" color="green.500" />
-                </Flex>
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+                </div>
               ) : messages.length === 0 ? (
-                <Flex 
-                  flex={1}
-                  direction="column"
-                  align="center"
-                  justify="center"
-                  gap={4}
-                  color="fg.muted"
-                >
-                  <Text fontSize="5xl">👋</Text>
-                  <Text fontSize="lg">Inicie a conversa</Text>
-                  <Text fontSize="sm" textAlign="center" maxW="300px">
-                    Envie uma mensagem para começar o atendimento
-                  </Text>
-                </Flex>
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 text-fg-muted">
+                  <span className="text-5xl">👋</span>
+                  <p className="text-lg">Inicie a conversa</p>
+                  <p className="text-sm text-center max-w-[300px]">Envie uma mensagem para começar o atendimento</p>
+                </div>
               ) : (
                 Object.entries(groupedMessages).map(([date, dayMessages]) => (
-                  <Stack key={date} gap={4}>
+                  <div key={date} className="flex flex-col gap-4">
                     {/* Date separator */}
-                    <Flex align="center" justify="center">
-                      <Badge 
-                        variant="subtle" 
-                        size="sm"
-                        borderRadius="full"
-                        px={3}
-                      >
-                        {(() => {
-                          try {
-                            return format(new Date(date), "d 'de' MMMM", { locale: ptBR });
-                          } catch (e) {
-                            return date;
-                          }
-                        })()}
-                      </Badge>
-                    </Flex>
-                    
-                    {/* Messages */}
-                    <Stack gap={2}>
+                    <div className="flex items-center justify-center">
+                      <span className="px-3 py-0.5 bg-bg-card border border-border-primary rounded-full text-xs text-fg-muted">
+                        {(() => { try { return format(new Date(date), "d 'de' MMMM", { locale: ptBR }); } catch { return date; } })()}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2">
                       {dayMessages.map((message) => (
-                        <MessageBubble 
-                          key={message.id} 
-                          {...messageToBubbleProps(message)} 
-                        />
+                        <MessageBubble key={message.id} {...messageToBubbleProps(message)} />
                       ))}
-                    </Stack>
-                  </Stack>
+                    </div>
+                  </div>
                 ))
               )}
               <div ref={messagesEndRef} />
-            </Stack>
+            </div>
 
             {/* Message Input */}
-            <Box 
-              p={4}
-              bg="bg.default"
-              borderTopWidth="1px"
-              borderColor="border.default"
-            >
+            <div className="p-4 bg-bg-card border-t border-border-primary">
               <MessageInput
                 onSend={handleSendMessage}
-                onTyping={handleTypingIndicator}
+                onTyping={(isTyping) => { if (selectedConversation) sendTypingIndicator(selectedConversation.id, isTyping); }}
                 disabled={!isConnected}
                 isLoading={isSending}
                 placeholder={isConnected ? 'Digite uma mensagem...' : 'Conectando...'}
               />
-            </Box>
+            </div>
           </>
         )}
-      </Flex>
-    </Flex>
+      </div>
+    </div>
   );
 };
 

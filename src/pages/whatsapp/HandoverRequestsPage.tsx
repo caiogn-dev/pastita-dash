@@ -1,43 +1,19 @@
 /**
- * HandoverRequestsPage - Pending handover requests for human agent takeover
- *
- * Lists requests from bots/agents asking for a human to take over a conversation.
- * Agents (human operators) can approve or reject each request from here.
- *
- * Endpoint: GET/PATCH /api/v1/handover/requests/
+ * HandoverRequestsPage - Solicitações de handover (sem Chakra UI)
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import {
-  Box,
-  Flex,
-  Heading,
-  Text,
-  Badge,
-  Button,
-  Spinner,
-  Stack,
-  HStack,
-  VStack,
-  IconButton,
-} from '@chakra-ui/react';
 import { ArrowPathIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Badge, Button } from '../../components/common';
 import { handoverService, HandoverRequest } from '../../services/handover';
 
-const priorityColor: Record<HandoverRequest['priority'], string> = {
-  low: 'gray',
-  medium: 'blue',
-  high: 'orange',
-  urgent: 'red',
+const PRIORITY_VARIANT: Record<HandoverRequest['priority'], string> = {
+  low: 'gray', medium: 'info', high: 'warning', urgent: 'danger',
 };
-
-const statusColor: Record<HandoverRequest['status'], string> = {
-  pending: 'yellow',
-  approved: 'green',
-  rejected: 'red',
-  expired: 'gray',
+const STATUS_VARIANT: Record<HandoverRequest['status'], string> = {
+  pending: 'warning', approved: 'success', rejected: 'danger', expired: 'gray',
 };
 
 export const HandoverRequestsPage: React.FC = () => {
@@ -50,214 +26,146 @@ export const HandoverRequestsPage: React.FC = () => {
     try {
       const data = await handoverService.getRequests();
       setRequests(data);
-    } catch (error) {
-      toast.error('Erro ao carregar solicitações de handover');
-    } finally {
-      setIsLoading(false);
-    }
+    } catch { toast.error('Erro ao carregar solicitações de handover'); }
+    finally { setIsLoading(false); }
   }, []);
 
   useEffect(() => {
     loadRequests();
-    // Poll every 30s for new requests
     const interval = setInterval(loadRequests, 30000);
     return () => clearInterval(interval);
   }, [loadRequests]);
 
-  const handleApprove = async (requestId: string) => {
-    setProcessingId(requestId);
+  const handleApprove = async (id: string) => {
+    setProcessingId(id);
     try {
-      await handoverService.approveRequest(requestId);
+      await handoverService.approveRequest(id);
       toast.success('Solicitação aprovada — conversa transferida para atendimento humano');
-      setRequests(prev =>
-        prev.map(r => r.id === requestId ? { ...r, status: 'approved' as const } : r)
-      );
-    } catch (error) {
-      toast.error('Erro ao aprovar solicitação');
-    } finally {
-      setProcessingId(null);
-    }
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' as const } : r));
+    } catch { toast.error('Erro ao aprovar solicitação'); }
+    finally { setProcessingId(null); }
   };
 
-  const handleReject = async (requestId: string) => {
-    setProcessingId(requestId);
+  const handleReject = async (id: string) => {
+    setProcessingId(id);
     try {
-      await handoverService.rejectRequest(requestId);
+      await handoverService.rejectRequest(id);
       toast.success('Solicitação rejeitada');
-      setRequests(prev =>
-        prev.map(r => r.id === requestId ? { ...r, status: 'rejected' as const } : r)
-      );
-    } catch (error) {
-      toast.error('Erro ao rejeitar solicitação');
-    } finally {
-      setProcessingId(null);
-    }
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected' as const } : r));
+    } catch { toast.error('Erro ao rejeitar solicitação'); }
+    finally { setProcessingId(null); }
   };
 
-  const pendingRequests = requests.filter(r => r.status === 'pending');
-  const resolvedRequests = requests.filter(r => r.status !== 'pending');
+  const pending = requests.filter(r => r.status === 'pending');
+  const resolved = requests.filter(r => r.status !== 'pending');
 
   return (
-    <Box p={6} maxW="900px" mx="auto">
-      <Flex justify="space-between" align="center" mb={6}>
-        <VStack align="start" gap={0}>
-          <Heading size="lg">Solicitações de Handover</Heading>
-          <Text color="fg.muted" fontSize="sm">
-            Pedidos de agentes para transferência para atendimento humano
-          </Text>
-        </VStack>
-        <IconButton
-          aria-label="Atualizar"
-          variant="ghost"
+    <div className="p-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-fg-primary">Solicitações de Handover</h1>
+          <p className="text-sm text-fg-muted mt-0.5">Pedidos de agentes para transferência para atendimento humano</p>
+        </div>
+        <button
           onClick={loadRequests}
-          loading={isLoading}
+          disabled={isLoading}
+          className="p-2 rounded-lg hover:bg-bg-hover transition-colors text-fg-muted disabled:opacity-50"
+          aria-label="Atualizar"
         >
-          <ArrowPathIcon className="w-5 h-5" />
-        </IconButton>
-      </Flex>
+          <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
 
       {isLoading && requests.length === 0 ? (
-        <Flex justify="center" py={12}>
-          <Spinner size="xl" color="green.500" />
-        </Flex>
+        <div className="flex justify-center py-12">
+          <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+        </div>
       ) : (
-        <Stack gap={6}>
-          {/* Pending requests */}
-          <Box>
-            <HStack mb={3}>
-              <Heading size="sm">Pendentes</Heading>
-              {pendingRequests.length > 0 && (
-                <Badge colorPalette="yellow" variant="solid" borderRadius="full">
-                  {pendingRequests.length}
-                </Badge>
+        <div className="flex flex-col gap-6">
+          {/* Pending */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-base font-semibold text-fg-primary">Pendentes</h2>
+              {pending.length > 0 && (
+                <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs font-bold rounded-full">{pending.length}</span>
               )}
-            </HStack>
+            </div>
 
-            {pendingRequests.length === 0 ? (
-              <Box
-                p={8}
-                textAlign="center"
-                borderWidth="1px"
-                borderStyle="dashed"
-                borderColor="border.default"
-                borderRadius="xl"
-              >
-                <Text color="fg.muted">Nenhuma solicitação pendente</Text>
-              </Box>
+            {pending.length === 0 ? (
+              <div className="p-8 text-center border-2 border-dashed border-border-primary rounded-xl">
+                <p className="text-fg-muted">Nenhuma solicitação pendente</p>
+              </div>
             ) : (
-              <Stack gap={3}>
-                {pendingRequests.map(req => (
-                  <Box
-                    key={req.id}
-                    p={4}
-                    borderWidth="1px"
-                    borderColor="border.default"
-                    borderRadius="xl"
-                    bg="bg.default"
-                    boxShadow="sm"
-                  >
-                    <Flex justify="space-between" align="start">
-                      <VStack align="start" gap={1}>
-                        <HStack gap={2}>
-                          <Text fontWeight="semibold" fontSize="sm">
-                            Conversa: <Text as="span" fontFamily="mono" fontSize="xs">{req.conversation}</Text>
-                          </Text>
-                          <Badge colorPalette={priorityColor[req.priority]} size="sm">
-                            {req.priority_display || req.priority}
-                          </Badge>
-                        </HStack>
-
-                        {req.reason && (
-                          <Text fontSize="sm" color="fg.muted">
-                            Motivo: {req.reason}
-                          </Text>
-                        )}
-
-                        <Text fontSize="xs" color="fg.subtle">
-                          Solicitado em{' '}
-                          {format(new Date(req.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          {req.expires_at && (
-                            <> — Expira em {format(new Date(req.expires_at), "HH:mm", { locale: ptBR })}</>
-                          )}
-                        </Text>
-                      </VStack>
-
-                      <HStack gap={2}>
+              <div className="flex flex-col gap-3">
+                {pending.map(req => (
+                  <div key={req.id} className="p-4 bg-bg-card border border-border-primary rounded-xl shadow-sm">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-fg-primary">
+                            Conversa: <span className="font-mono text-xs text-fg-muted">{req.conversation}</span>
+                          </span>
+                          <Badge variant={PRIORITY_VARIANT[req.priority] as any} size="sm">{req.priority_display || req.priority}</Badge>
+                        </div>
+                        {req.reason && <p className="text-sm text-fg-muted">Motivo: {req.reason}</p>}
+                        <p className="text-xs text-fg-muted">
+                          Solicitado em {format(new Date(req.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          {req.expires_at && <> — Expira em {format(new Date(req.expires_at), 'HH:mm', { locale: ptBR })}</>}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
                         <Button
                           size="sm"
-                          colorPalette="green"
                           onClick={() => handleApprove(req.id)}
-                          loading={processingId === req.id}
+                          isLoading={processingId === req.id}
                           disabled={processingId !== null && processingId !== req.id}
+                          leftIcon={<CheckIcon className="w-4 h-4" />}
                         >
-                          <CheckIcon className="w-4 h-4 mr-1" />
                           Aprovar
                         </Button>
                         <Button
                           size="sm"
-                          variant="outline"
-                          colorPalette="red"
+                          variant="danger"
                           onClick={() => handleReject(req.id)}
-                          loading={processingId === req.id}
+                          isLoading={processingId === req.id}
                           disabled={processingId !== null && processingId !== req.id}
+                          leftIcon={<XMarkIcon className="w-4 h-4" />}
                         >
-                          <XMarkIcon className="w-4 h-4 mr-1" />
                           Rejeitar
                         </Button>
-                      </HStack>
-                    </Flex>
-                  </Box>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </Stack>
+              </div>
             )}
-          </Box>
+          </div>
 
-          {/* Resolved requests */}
-          {resolvedRequests.length > 0 && (
-            <Box>
-              <Heading size="sm" mb={3} color="fg.muted">
-                Histórico Recente
-              </Heading>
-              <Stack gap={2}>
-                {resolvedRequests.slice(0, 10).map(req => (
-                  <Box
-                    key={req.id}
-                    p={3}
-                    borderWidth="1px"
-                    borderColor="border.subtle"
-                    borderRadius="lg"
-                    bg="bg.subtle"
-                    opacity={0.8}
-                  >
-                    <Flex justify="space-between" align="center">
-                      <HStack gap={2}>
-                        <Text fontSize="xs" fontFamily="mono" color="fg.muted">
-                          {req.conversation}
-                        </Text>
-                        <Badge colorPalette={statusColor[req.status]} size="sm" variant="subtle">
-                          {req.status_display || req.status}
-                        </Badge>
-                        <Badge colorPalette={priorityColor[req.priority]} size="sm" variant="subtle">
-                          {req.priority_display || req.priority}
-                        </Badge>
-                      </HStack>
-                      <Text fontSize="xs" color="fg.subtle">
-                        {format(new Date(req.created_at), 'dd/MM HH:mm', { locale: ptBR })}
-                      </Text>
-                    </Flex>
-                    {req.reason && (
-                      <Text fontSize="xs" color="fg.muted" mt={1}>
-                        {req.reason}
-                      </Text>
-                    )}
-                  </Box>
+          {/* Resolved */}
+          {resolved.length > 0 && (
+            <div>
+              <h2 className="text-base font-semibold text-fg-muted mb-3">Histórico Recente</h2>
+              <div className="flex flex-col gap-2">
+                {resolved.slice(0, 10).map(req => (
+                  <div key={req.id} className="p-3 bg-bg-subtle border border-border-primary rounded-lg opacity-80">
+                    <div className="flex justify-between items-center">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs text-fg-muted">{req.conversation}</span>
+                        <Badge variant={STATUS_VARIANT[req.status] as any} size="sm">{req.status_display || req.status}</Badge>
+                        <Badge variant={PRIORITY_VARIANT[req.priority] as any} size="sm">{req.priority_display || req.priority}</Badge>
+                      </div>
+                      <span className="text-xs text-fg-muted">{format(new Date(req.created_at), 'dd/MM HH:mm', { locale: ptBR })}</span>
+                    </div>
+                    {req.reason && <p className="text-xs text-fg-muted mt-1">{req.reason}</p>}
+                  </div>
                 ))}
-              </Stack>
-            </Box>
+              </div>
+            </div>
           )}
-        </Stack>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 

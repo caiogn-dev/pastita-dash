@@ -202,11 +202,16 @@ export interface OrderItem {
   id: string;
   product_id: string;
   product_name: string;
+  variant_name?: string;
   quantity: number;
   unit_price: number;
   subtotal: number;
   total_price?: number;
-  options?: Record<string, unknown>;
+  notes?: string;
+  options?: Record<string, unknown> & {
+    is_salad_builder?: boolean;
+    ingredients?: Array<{ id: string; name: string; price: number; role: string }>;
+  };
 }
 
 export interface OrderEvent {

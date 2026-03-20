@@ -391,27 +391,42 @@ export const OrderDetailPageNew: React.FC = () => {
             <Card className="p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Itens do Pedido</h2>
               <div className="space-y-3">
-                {order.items?.map((item, index) => (
-                  <div 
-                    key={item.id || index}
-                    className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-lg">
-                        🍝
+                {order.items?.map((item, index) => {
+                  const isSalad = !!(item.options?.is_salad_builder);
+                  return (
+                    <div
+                      key={item.id || index}
+                      className="flex items-start justify-between py-3 border-b border-gray-100 last:border-0"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-lg flex-shrink-0">
+                          {isSalad ? '🥗' : '🍝'}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {isSalad && (
+                              <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                Salada
+                              </span>
+                            )}
+                            <p className="font-medium text-gray-900 dark:text-white">{item.product_name}</p>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-zinc-400">
+                            {item.quantity}x {formatMoney(item.unit_price)}
+                          </p>
+                          {item.notes && (
+                            <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1 leading-relaxed">
+                              {item.notes}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{item.product_name}</p>
-                        <p className="text-sm text-gray-500 dark:text-zinc-400">
-                          {item.quantity}x {formatMoney(item.unit_price)}
-                        </p>
-                      </div>
+                      <p className="font-semibold text-gray-900 dark:text-white flex-shrink-0">
+                        {formatMoney(item.subtotal || item.total_price)}
+                      </p>
                     </div>
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      {formatMoney(item.subtotal || item.total_price)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Summary */}
@@ -581,13 +596,28 @@ export const OrderDetailPageNew: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ações</h2>
               <div className="space-y-2">
                 <button
-                  onClick={() => printOrder(order as any, {
-                    storeName: store?.name || order.store_name || 'Loja',
-                    storePhone: store?.phone || store?.whatsapp_number || '',
-                    storeAddress: store?.address && store?.city && store?.state
-                      ? `${store.address} - ${store.city}/${store.state}`
-                      : (store?.address || store?.city || store?.state || ''),
-                  })}
+                  onClick={async () => {
+                    try {
+                      // Always re-fetch the latest order data before printing
+                      const freshOrder = id ? await ordersService.getOrder(id) : order;
+                      printOrder(freshOrder as any, {
+                        storeName: store?.name || freshOrder?.store_name || order.store_name || 'Loja',
+                        storePhone: store?.phone || store?.whatsapp_number || '',
+                        storeAddress: store?.address && store?.city && store?.state
+                          ? `${store.address} - ${store.city}/${store.state}`
+                          : (store?.address || store?.city || store?.state || ''),
+                      });
+                    } catch {
+                      // Fallback to cached order if re-fetch fails
+                      printOrder(order as any, {
+                        storeName: store?.name || order.store_name || 'Loja',
+                        storePhone: store?.phone || store?.whatsapp_number || '',
+                        storeAddress: store?.address && store?.city && store?.state
+                          ? `${store.address} - ${store.city}/${store.state}`
+                          : (store?.address || store?.city || store?.state || ''),
+                      });
+                    }
+                  }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors text-primary-700 font-medium"
                 >
                   <PrinterIcon className="w-5 h-5" />

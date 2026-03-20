@@ -1390,6 +1390,39 @@ export const deleteCombo = async (id: string): Promise<void> => {
   }
 };
 
+export interface StoreComboItemInput {
+  product: string;
+  variant?: string;
+  quantity: number;
+  allow_customization?: boolean;
+  customization_options?: Record<string, unknown>;
+}
+
+export const createComboWithItems = async (
+  data: StoreComboInput & { items?: StoreComboItemInput[] }
+): Promise<StoreCombo> => {
+  try {
+    const response = await api.post(`${BASE_URL}/combos/`, data);
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to create combo with items', error);
+    throw error;
+  }
+};
+
+export const updateComboWithItems = async (
+  id: string,
+  data: Partial<StoreComboInput> & { items?: StoreComboItemInput[] }
+): Promise<StoreCombo> => {
+  try {
+    const response = await api.patch(`${BASE_URL}/combos/${id}/`, data);
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to update combo with items', error);
+    throw error;
+  }
+};
+
 // =============================================================================
 // PRODUCT TYPE FUNCTIONS
 // =============================================================================

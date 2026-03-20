@@ -1,9 +1,7 @@
 /**
- * Badge - Componente de badge moderno com Chakra UI v3
- * Suporta variants e colorPalettes legados para compatibilidade
+ * Badge - Componente de badge sem Chakra UI
  */
 import React from 'react';
-import { Badge as ChakraBadge } from '@chakra-ui/react';
 
 export interface BadgeProps {
   children: React.ReactNode;
@@ -13,27 +11,34 @@ export interface BadgeProps {
   className?: string;
 }
 
-// Mapeia variants legados para novos
-const variantMap: Record<string, 'solid' | 'subtle' | 'outline'> = {
-  solid: 'solid',
-  subtle: 'subtle',
-  outline: 'outline',
-  success: 'subtle',
-  warning: 'subtle',
-  danger: 'subtle',
-  info: 'subtle',
-  gray: 'subtle',
-  purple: 'subtle',
+// Map legacy variants → Tailwind class sets
+const VARIANT_CLASSES: Record<string, string> = {
+  solid:   'bg-gray-700 text-white',
+  subtle:  'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200',
+  outline: 'border border-gray-400 text-gray-700 dark:text-gray-300',
+  success: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+  warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+  danger:  'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  info:    'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  gray:    'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+  purple:  'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
 };
 
-// Mapeia variants legados para colorPalettes
-const colorPaletteMap: Record<string, 'brand' | 'accent' | 'success' | 'warning' | 'danger' | 'gray' | 'info' | 'purple'> = {
-  success: 'success',
-  warning: 'warning',
-  danger: 'danger',
-  info: 'accent',
-  gray: 'gray',
-  purple: 'accent',
+const COLOR_PALETTE_CLASSES: Record<string, string> = {
+  brand:   'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300',
+  accent:  'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  success: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+  warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+  danger:  'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  gray:    'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+  info:    'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  purple:  'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+};
+
+const SIZE_CLASSES: Record<string, string> = {
+  sm: 'text-xs px-1.5 py-0.5',
+  md: 'text-xs px-2 py-0.5',
+  lg: 'text-sm px-2.5 py-1',
 };
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -43,57 +48,58 @@ export const Badge: React.FC<BadgeProps> = ({
   size = 'md',
   className,
 }) => {
-  // Mapeia variant legado
-  const mappedVariant = variantMap[variant] || 'subtle';
-  
-  // Determina colorPalette baseado no variant legado se não especificado
-  const finalColorPalette = colorPalette || colorPaletteMap[variant] || 'gray';
+  const colorClass = colorPalette
+    ? COLOR_PALETTE_CLASSES[colorPalette] ?? COLOR_PALETTE_CLASSES.gray
+    : VARIANT_CLASSES[variant] ?? VARIANT_CLASSES.subtle;
 
   return (
-    <ChakraBadge
-      colorPalette={finalColorPalette}
-      variant={mappedVariant}
-      size={size}
-      className={className}
-      borderRadius="full"
-      px={2}
-      py={0.5}
+    <span
+      className={[
+        'inline-flex items-center font-medium rounded-full',
+        colorClass,
+        SIZE_CLASSES[size],
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       {children}
-    </ChakraBadge>
+    </span>
   );
 };
 
-// Configurações de status para compatibilidade
+export default Badge;
+
+// ─── Status configs (preserved for compatibility) ────────────────────────────
+
 export const ORDER_STATUS_CONFIG: Record<string, { label: string; variant: string }> = {
-  pending: { label: 'Pendente', variant: 'warning' },
-  processing: { label: 'Processando', variant: 'info' },
-  confirmed: { label: 'Confirmado', variant: 'success' },
-  paid: { label: 'Pago', variant: 'success' },
-  preparing: { label: 'Preparando', variant: 'info' },
-  ready: { label: 'Pronto', variant: 'success' },
-  shipped: { label: 'Enviado', variant: 'info' },
-  out_for_delivery: { label: 'Em Entrega', variant: 'warning' },
-  delivered: { label: 'Entregue', variant: 'success' },
-  cancelled: { label: 'Cancelado', variant: 'danger' },
-  refunded: { label: 'Reembolsado', variant: 'gray' },
-  failed: { label: 'Falhou', variant: 'danger' },
+  pending:          { label: 'Pendente',    variant: 'warning' },
+  processing:       { label: 'Processando', variant: 'info'    },
+  confirmed:        { label: 'Confirmado',  variant: 'success' },
+  paid:             { label: 'Pago',        variant: 'success' },
+  preparing:        { label: 'Preparando',  variant: 'info'    },
+  ready:            { label: 'Pronto',      variant: 'success' },
+  shipped:          { label: 'Enviado',     variant: 'info'    },
+  out_for_delivery: { label: 'Em Entrega',  variant: 'warning' },
+  delivered:        { label: 'Entregue',    variant: 'success' },
+  cancelled:        { label: 'Cancelado',   variant: 'danger'  },
+  refunded:         { label: 'Reembolsado', variant: 'gray'    },
+  failed:           { label: 'Falhou',      variant: 'danger'  },
 };
 
 export const CONVERSATION_STATUS_CONFIG: Record<string, { label: string; variant: string }> = {
-  active: { label: 'Ativa', variant: 'success' },
-  inactive: { label: 'Inativa', variant: 'gray' },
+  active:   { label: 'Ativa',     variant: 'success' },
+  inactive: { label: 'Inativa',   variant: 'gray'    },
   archived: { label: 'Arquivada', variant: 'warning' },
-  spam: { label: 'Spam', variant: 'danger' },
+  spam:     { label: 'Spam',      variant: 'danger'  },
 };
 
 export const CONVERSATION_MODE_CONFIG: Record<string, { label: string; variant: string }> = {
-  auto: { label: 'Auto', variant: 'success' },
-  human: { label: 'Humano', variant: 'warning' },
-  hybrid: { label: 'Híbrido', variant: 'info' },
+  auto:   { label: 'Auto',    variant: 'success' },
+  human:  { label: 'Humano',  variant: 'warning' },
+  hybrid: { label: 'Híbrido', variant: 'info'    },
 };
 
-// Componentes de badge específicos para compatibilidade
 export const StatusBadge: React.FC<{ status: string; children?: React.ReactNode }> = ({ status, children }) => {
   const config = ORDER_STATUS_CONFIG[status] || { label: status, variant: 'gray' };
   return <Badge variant={config.variant as any}>{children || config.label}</Badge>;
@@ -113,5 +119,3 @@ export const ConversationModeBadge: React.FC<{ mode: string }> = ({ mode }) => {
   const config = CONVERSATION_MODE_CONFIG[mode] || { label: mode, variant: 'gray' };
   return <Badge variant={config.variant as any}>{config.label}</Badge>;
 };
-
-export default Badge;
