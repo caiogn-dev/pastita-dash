@@ -584,7 +584,7 @@ export const CombosPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, storeName } = useStore();
-  const storeId = routeStoreId || contextStoreId;
+  const storeId = contextStoreId || routeStoreId;
 
   const [combos, setCombos] = useState<StoreCombo[]>([]);
   const [products, setProducts] = useState<Product[]>([]);

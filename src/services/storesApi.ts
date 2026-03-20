@@ -1402,7 +1402,8 @@ export const createComboWithItems = async (
   data: StoreComboInput & { items?: StoreComboItemInput[] }
 ): Promise<StoreCombo> => {
   try {
-    const response = await api.post(`${BASE_URL}/combos/`, data);
+    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    const response = await api.post(`${BASE_URL}/combos/`, payload);
     return response.data;
   } catch (error) {
     logger.error('Failed to create combo with items', error);
