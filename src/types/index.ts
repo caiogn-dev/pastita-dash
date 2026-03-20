@@ -214,6 +214,21 @@ export interface OrderItem {
   };
 }
 
+export interface OrderComboItem {
+  id: string;
+  combo_id?: string;
+  combo_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  notes?: string;
+  customizations?: {
+    is_salad_builder?: boolean;
+    ingredients?: Array<{ id: string; name: string; price: number; role: string }>;
+    [key: string]: unknown;
+  };
+}
+
 export interface OrderEvent {
   id: string;
   order_id: string;
@@ -237,6 +252,7 @@ export interface Order {
   shipping_address?: Record<string, unknown>;
   delivery_instructions?: string;
   items: OrderItem[];
+  combo_items?: OrderComboItem[];
   items_count?: number;
   subtotal: number;
   tax: number;

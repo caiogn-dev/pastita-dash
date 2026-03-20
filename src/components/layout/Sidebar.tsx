@@ -20,6 +20,7 @@ import {
   DocumentChartBarIcon,
   TagIcon,
   Squares2X2Icon,
+  CubeIcon,
   XMarkIcon,
   BuildingStorefrontIcon,
   PresentationChartLineIcon,
@@ -80,6 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon },
         { name: 'Clientes', href: storeHref('customers'), icon: UserGroupIcon },
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
+        { name: 'Combos', href: storeHref('combos'), icon: CubeIcon },
         { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
       ]
     },

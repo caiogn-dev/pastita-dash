@@ -376,54 +376,36 @@ export interface UpdateAgentFlow {
 }
 
 export const agentFlowService = {
-  list: async (params?: {
+  list: async (_params?: {
     store_id?: string;
     store_slug?: string;
     page?: number;
     page_size?: number;
   }): Promise<PaginatedResponse<AgentFlow>> => {
-    // MOCK: Endpoint /automation/flows/ não existe no backend
-    console.warn('[AgentFlowService] list: Endpoint não implementado no backend, retornando mock vazio');
-    return {
-      count: 0,
-      next: null,
-      previous: null,
-      results: []
-    };
+    return { count: 0, next: null, previous: null, results: [] };
   },
 
-  get: async (id: string): Promise<AgentFlow> => {
-    // MOCK: Endpoint não existe no backend
-    console.warn('[AgentFlowService] get: Endpoint não implementado no backend');
+  get: async (_id: string): Promise<AgentFlow> => {
     throw new Error('Endpoint não implementado no backend');
   },
 
-  create: async (data: CreateAgentFlow): Promise<AgentFlow> => {
-    // MOCK: Endpoint não existe no backend
-    console.warn('[AgentFlowService] create: Endpoint não implementado no backend');
+  create: async (_data: CreateAgentFlow): Promise<AgentFlow> => {
     throw new Error('Endpoint não implementado no backend');
   },
 
-  update: async (id: string, data: UpdateAgentFlow): Promise<AgentFlow> => {
-    // MOCK: Endpoint não existe no backend
-    console.warn('[AgentFlowService] update: Endpoint não implementado no backend');
+  update: async (_id: string, _data: UpdateAgentFlow): Promise<AgentFlow> => {
     throw new Error('Endpoint não implementado no backend');
   },
 
-  delete: async (id: string): Promise<void> => {
-    // MOCK: Endpoint não existe no backend
-    console.warn('[AgentFlowService] delete: Endpoint não implementado no backend');
+  delete: async (_id: string): Promise<void> => {
+    // no-op until backend implements this endpoint
   },
 
-  duplicate: async (id: string): Promise<AgentFlow> => {
-    // MOCK: Endpoint não existe no backend
-    console.warn('[AgentFlowService] duplicate: Endpoint não implementado no backend');
+  duplicate: async (_id: string): Promise<AgentFlow> => {
     throw new Error('Endpoint não implementado no backend');
   },
 
-  setDefault: async (id: string): Promise<{ status: string }> => {
-    // MOCK: Endpoint não existe no backend
-    console.warn('[AgentFlowService] setDefault: Endpoint não implementado no backend');
+  setDefault: async (_id: string): Promise<{ status: string }> => {
     throw new Error('Endpoint não implementado no backend');
   },
 };

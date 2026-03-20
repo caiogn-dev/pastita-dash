@@ -43,8 +43,4 @@ export {
   QuickFilterPills,
 } from './StatusFilter';
 
-// Re-export do Chakra UI para componentes que não temos wrappers
 export { Textarea } from './Textarea';
-export {
-  Menu,
-} from '@chakra-ui/react';

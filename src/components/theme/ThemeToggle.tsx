@@ -1,19 +1,20 @@
 import React from 'react';
-import { IconButton, Icon } from '@chakra-ui/react';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { useTheme } from '@/context/ThemeContext';
 
 export function ThemeToggle() {
   const { resolvedTheme, toggleTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   return (
-    <IconButton
+    <button
       onClick={toggleTheme}
-      variant="ghost"
-      size="sm"
-      aria-label={resolvedTheme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+      aria-label={isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+      className="p-2 rounded-lg text-fg-muted hover:bg-bg-hover hover:text-fg-primary transition-colors"
     >
-      <Icon as={resolvedTheme === 'dark' ? SunIcon : MoonIcon} boxSize={5} />
-    </IconButton>
+      {isDark
+        ? <SunIcon className="w-5 h-5" />
+        : <MoonIcon className="w-5 h-5" />}
+    </button>
   );
 }

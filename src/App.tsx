@@ -1,5 +1,4 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
-import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import logger from './services/logger';
@@ -11,7 +10,6 @@ import { useAccountStore } from './stores/accountStore';
 import { whatsappService, setAuthToken } from './services';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { WhatsAppWsProvider } from './context/WhatsAppWsContext';
-import system from './theme';
 import './App.css';
 
 // Lazy load pages for better performance
@@ -270,14 +268,12 @@ const App: React.FC = () => {
   );
   
   return (
-    <ChakraProvider value={system}>
-      <QueryClientProvider client={queryClient}>
-        <div className="app">
-          {appContent}
-        </div>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </ChakraProvider>
+    <QueryClientProvider client={queryClient}>
+      <div className="app">
+        {appContent}
+      </div>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 };
 
