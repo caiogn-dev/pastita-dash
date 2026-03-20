@@ -1,190 +1,160 @@
-# 🍝 Pastita Dashboard - Análise Técnica
+# Pastita Dashboard — Repository Knowledge
 
-## 📁 Arquitetura do Projeto
+React/TypeScript admin dashboard for the Pastita/CE Saladas multi-tenant platform.
+
+## Tech Stack
+
+| Layer | Choice |
+|---|---|
+| Framework | React 18 + Vite 5 |
+| Language | TypeScript (strict mode) |
+| Styling | Tailwind CSS v4 (Chakra UI migration complete) |
+| State | Zustand (auth + store selection) + React Query (server state) |
+| Forms | react-hook-form + zod |
+| Charts | Recharts |
+| Icons | @heroicons/react |
+| Toast | react-hot-toast |
+| HTTP | Axios (base instance in `src/services/api.ts`) |
+| WebSocket | Custom WS manager in `src/services/websocket.ts` |
+| Routing | React Router v6 |
+
+## Authentication
+
+**DRF Token** (not JWT). `Authorization: Token <token>`.
+
+- Auth state: `useAuthStore()` (Zustand, `src/context/AuthContext.tsx`)
+- Token stored in `localStorage` via the auth store
+- API instance auto-attaches token via request interceptor in `src/services/api.ts`
+
+## Project Structure
 
 ```
-pastita-dash/
-├── src/
-│   ├── components/     # Componentes reutilizáveis
-│   │   ├── common/     # Button, Card, Modal, Input, etc.
-│   │   ├── layout/     # Sidebar, Header, Layout
-│   │   └── orders/     # OrdersKanban, OrderCard, etc.
-│   ├── pages/          # Páginas da aplicação
-│   ├── services/       # APIs e serviços
-│   ├── hooks/          # Custom hooks
-│   ├── context/        # React Contexts (Store, Auth, WebSocket)
-│   └── types/          # TypeScript types
-├── tailwind.config.js  # Configuração do Tailwind
-└── vite.config.ts      # Configuração do Vite
+src/
+├── components/
+│   ├── common/          # Button, Card, Modal, Input, Badge, PageLoading, etc.
+│   ├── layout/          # Sidebar, Header, Layout wrapper
+│   └── orders/          # OrdersKanban, OrderCard, StatusBadge
+├── context/
+│   ├── AuthContext.tsx  # useAuthStore (Zustand) — user, token, login/logout
+│   ├── StoreContext.tsx # useStoreContext — current store selection
+│   └── WhatsAppWsContext.tsx  # Global WhatsApp WebSocket
+├── hooks/
+│   ├── useStore.ts      # Convenience hook: storeId, storeSlug
+│   ├── useHandover.ts   # Handover protocol hooks
+│   └── ...
+├── pages/               # One folder per domain
+│   ├── dashboard/       # DashboardPage.tsx
+│   ├── orders/          # OrdersPage, OrderDetailPage, OrderNewPage
+│   ├── products/        # ProductsPageNew.tsx
+│   ├── conversations/   # ConversationsPage, ChatWindow
+│   ├── whatsapp/        # WhatsApp account/inbox pages
+│   ├── automation/      # AutomationPage, flows, stats
+│   ├── agents/          # AgentListPage, AgentDetailPage, AgentCreate, AgentTest
+│   ├── marketing/       # Marketing dashboard, email campaigns
+│   ├── analytics/       # AnalyticsPage (reports + charts)
+│   ├── settings/        # SettingsPage
+│   ├── handover/        # HandoverRequestsPage
+│   ├── debug/           # AgentDebugPage (diagnostic tool)
+│   └── ...
+├── services/            # API service modules (one per domain)
+│   ├── api.ts           # Axios base instance
+│   ├── auth.ts          # Auth endpoints
+│   ├── orders.ts        # Orders CRUD
+│   ├── products.ts      # Products CRUD
+│   ├── storesApi.ts     # Store management (canonical)
+│   ├── dashboard.ts     # Dashboard stats
+│   ├── reports.ts       # Analytics/reports
+│   ├── whatsapp.ts      # WhatsApp API
+│   ├── conversations.ts # Conversations API
+│   ├── handover.ts      # Handover protocol
+│   ├── automation.ts    # Automation API
+│   ├── agents.ts        # AI agents API
+│   ├── marketingService.ts # Email marketing (canonical)
+│   └── ...
+├── types/               # TypeScript types
+│   ├── index.ts         # Core domain types
+│   ├── dashboard.ts     # Dashboard-specific types
+│   └── ...
+└── App.tsx              # React Router routes
 ```
 
-## 🔌 APIs Conectadas
+## API Contract
 
-### Server (Backend Django)
-- **Base URL**: `/api/v1/`
-- **Auth**: JWT Token (httpOnly cookie)
+- Base URL: `${VITE_API_URL}/api/v1/` (set in `.env`)
+- Auth: `Authorization: Token <token>` on all requests
+- Backend: DRF Token (NOT JWT — do not send `Bearer`)
 
-### Endpoints Principais:
-| Endpoint | Status | Descrição |
-|----------|--------|-----------|
-| `/stores/orders/` | ✅ Funcional | CRUD de pedidos |
-| `/stores/products/` | ✅ Funcional | CRUD de produtos |
-| `/stores/categories/` | ✅ Funcional | Categorias |
-| `/stores/coupons/` | ✅ Funcional | Cupons de desconto |
-| `/stores/delivery-zones/` | ⚠️ Legado | Zonas de entrega (não usado no checkout) |
-| `/stores/customers/` | ✅ Funcional | Clientes |
-| `/stores/reports/` | ✅ Funcional | Relatórios e analytics |
-| `/marketing/` | ✅ Funcional | Email marketing |
-| `/whatsapp/` | ✅ Funcional | Contas WhatsApp |
-| `/conversations/` | ✅ Funcional | Conversas |
-| `/langflow/` | ✅ Funcional | Flows de IA |
+## Key Pages and Routes
 
-## 📊 Status das Páginas
+| Route | Component | Status |
+|---|---|---|
+| `/` | DashboardPage | ✅ Live |
+| `/stores/:storeId/orders` | OrdersPage (Kanban) | ✅ Live |
+| `/stores/:storeId/orders/new` | OrderNewPage | ✅ Live |
+| `/stores/:storeId/orders/:id` | OrderDetailPage | ✅ Live |
+| `/stores/:storeId/products` | ProductsPageNew | ✅ Live |
+| `/conversations` | ConversationsPage | ✅ Live |
+| `/whatsapp/accounts` | AccountsPage | ✅ Live |
+| `/automation` | AutomationPage | ✅ Live |
+| `/agents` | AgentListPage | ✅ Live |
+| `/agents/new` | AgentCreatePage | ✅ Live |
+| `/analytics` | AnalyticsPage | ✅ Live |
+| `/marketing` | MarketingDashboard | ✅ Live |
+| `/settings` | SettingsPage | ✅ Live |
+| `/handover/requests` | HandoverRequestsPage | ✅ Live |
+| `/debug/agent` | AgentDebugPage | ✅ Live |
 
-### ✅ FUNCIONAIS
-| Página | Rota | Observações |
-|--------|------|-------------|
-| Dashboard | `/` | Conectado ao `/stores/reports/dashboard/` |
-| Pedidos (Kanban) | `/orders` | ✅ Optimistic UI funcionando |
-| Produtos | `/products` | CRUD completo |
-| Cupons | `/coupons` | CRUD completo |
-| Conversas | `/conversations` | WebSocket funcional |
-| Mensagens | `/messages` | Lista de mensagens |
-| Contas WhatsApp | `/accounts` | Gerenciamento de contas |
-| Marketing | `/marketing` | Dashboard de marketing |
-| Email Campanhas | `/marketing/email` | Criar/enviar campanhas |
-| Contatos | `/marketing/subscribers` | Lista de contatos |
-| Automações | `/marketing/automations` | Email automations |
-| Relatórios | `/analytics` | Gráficos e métricas |
-| Lojas | `/stores` | Multi-tenant |
-| Langflow | `/langflow` | Integração IA |
-| Configurações | `/settings` | Settings da conta |
+## WebSocket (WhatsAppWsContext)
 
-### ⚠️ LEGADAS / PARA REMOVER
-| Página | Rota | Motivo |
-|--------|------|--------|
-| Zonas de Entrega | `/delivery-zones` | Entrega calculada por script/CEP no checkout |
+Global singleton WebSocket for WhatsApp dashboard events.
 
-### 🔧 DUPLICADAS (CONSOLIDAR)
-| Páginas | Manter | Remover |
-|---------|--------|---------|
-| `ProductsPage.tsx` vs `ProductsPageNew.tsx` | ProductsPageNew | ProductsPage |
-| `OrderDetailPage.tsx` vs `OrderDetailPageNew.tsx` | OrderDetailPageNew | OrderDetailPage |
+- URL: `wss://{API_HOST}/ws/whatsapp/dashboard/?token={token}`
+- Reconnection: exponential backoff (1s → 30s max)
+- Keepalive: ping/pong every 30s
 
-## 🎨 Design System
+Events received:
+- `message_received`, `message_sent`, `status_updated`
+- `conversation_updated`
+- `order_created`, `order_status_changed`, `payment_received`
+- `handover_requested`, `handover_assigned`
 
-### Cores da Marca (Marsala)
-```css
---marsala-50: #F9F2F3;
---marsala-500: #B4646E;
---marsala-700: #722F37; /* Primary */
---marsala-900: #2D1215;
-```
+## Handover Protocol
 
-### Componentes Base
-- `Button` - Botões com variantes (primary, secondary, danger)
-- `Card` - Cards com sombras e bordas
-- `Modal` - Modais responsivos
-- `Input` - Inputs estilizados
-- `Badge` - Status badges
-- `Table` - Tabelas com ordenação
+Frontend fully implemented. Backend: `apps.handover`.
 
-## 🐛 Bugs Conhecidos (Resolvidos)
+- Service: `src/services/handover.ts`
+- Hooks: `src/hooks/useHandover.ts`
+- Page: `HandoverRequestsPage.tsx`
+- Debug: `AgentDebugPage.tsx` — check/force handover mode for any conversation
 
-### ✅ Kanban Drag & Drop
-**Problema**: Pedido voltava ao status anterior após drag
-**Solução**: Implementado `localOrderStates` com precedência sobre dados externos
+## Component System
 
-```typescript
-// Estado local tem precedência até external sincronizar
-const effectiveOrders = useMemo(() => {
-  return externalOrders.map(order => {
-    const localState = localOrderStates.get(order.id);
-    if (localState && (localState.isPending || localState.isConfirmed)) {
-      return { ...order, status: localState.status };
-    }
-    return order;
-  });
-}, [externalOrders, localOrderStates]);
-```
+**Single canonical system**: `src/components/common/`
 
-## 💡 Melhorias Sugeridas
+Components: `Button`, `Card`, `Modal`, `Input`, `Badge`, `PageLoading`, `Table`, `Pagination`, `Select`, `Textarea`, `LoadingSpinner`, `EmptyState`, `ConfirmDialog`.
 
-### Curto Prazo
-1. [ ] Remover página "Zonas de Entrega" do menu
-2. [ ] Consolidar ProductsPage → ProductsPageNew
-3. [ ] Consolidar OrderDetailPage → OrderDetailPageNew
-4. [ ] Adicionar loading skeletons nas páginas
+Do NOT use Chakra UI components directly. The Chakra migration is complete — all pages use native HTML + Tailwind.
 
-### Médio Prazo
-1. [ ] Dark mode completo
-2. [ ] PWA com notificações push
-3. [ ] Dashboard customizável (widgets drag & drop)
-4. [ ] Filtros avançados em todas as listagens
+## Known Issues
 
-### Longo Prazo
-1. [ ] App mobile (React Native)
-2. [ ] Multi-idioma (i18n)
-3. [ ] A/B testing integrado
-4. [ ] Analytics avançado com funis
+1. **Recharts TypeScript** — Tooltip `formatter` prop: use `(v) => [String(v), label]` pattern to avoid type mismatch with `ValueType`.
+2. **ChakraProvider still in main.tsx** — The root provider was kept for backward compat with `theme.ts`. It can be removed once `ThemeToggle` and base styles are fully ported.
+3. **`src/pages/reports/AnalyticsPage.tsx`** — Note: this is in `reports/` subfolder, not `analytics/`.
 
-## 🔐 Autenticação
-
-- Login via `/auth/login/`
-- Token JWT em httpOnly cookie
-- Refresh automático
-- Context: `useAuth()` hook
-
-## 📡 WebSocket
-
-### WhatsAppWsContext (`src/context/WhatsAppWsContext.tsx`)
-- Conexão única global para WhatsApp
-- URL: `wss://api.domain.com/ws/whatsapp/dashboard/?token={auth_token}`
-- Ping/pong keepalive a cada 30 segundos
-- Reconexão com exponential backoff (1s → 30s max)
-
-### Eventos WebSocket
-- `message_received` - Nova mensagem recebida
-- `message_sent` - Confirmação de envio
-- `status_updated` - Status de mensagem alterado
-- `conversation_updated` - Conversa atualizada
-- `order_created`, `order_status_changed`, `payment_received` - Eventos de pedidos
-
-### Correção de Reconexão Rápida
-Problema: WebSocket abria e fechava rapidamente em loop.
-Solução: Usar refs para controlar estado de conexão:
-```typescript
-const hasConnected = useRef(false);
-const prevAccountId = useRef<string | null>(null);
-
-useEffect(() => {
-  if (token && !hasConnected.current) {
-    hasConnected.current = true;
-    connect();
-  }
-}, [token]); // Só depende do token
-```
-
-## 🛠️ Comandos Úteis
+## Commands
 
 ```bash
-# Desenvolvimento
-npm run dev
-
-# Build
-npm run build
-
-# Type check
-npx tsc --noEmit
-
-# Lint
-npm run lint
+npm run dev          # Development server (localhost:5173)
+npm run build        # Production build
+npm run lint         # ESLint
+npx tsc --noEmit     # Type check
 ```
 
-## 📝 Notas para Desenvolvimento
+## Design System
 
-1. **Store Context**: Sempre usar `useStore()` para obter o storeId atual
-2. **API Calls**: Usar services em `src/services/` ao invés de axios direto
-3. **Toasts**: Usar `react-hot-toast` para notificações
-4. **Icons**: Usar `@heroicons/react` para ícones
-5. **Formulários**: Componentes em `src/components/common/`
+Tailwind CSS v4 with custom design tokens defined in `tailwind.config.js`:
+- Brand: Marsala palette (`brand-500` = `#722F37`)
+- Semantic tokens: `bg-bg-primary`, `text-fg-primary`, `border-border-primary`, etc.
+- Dark mode: `class` strategy (`.dark` on `<html>`)
+
+Icons: `@heroicons/react/24/outline` (always outline variant, never solid unless explicitly needed).
