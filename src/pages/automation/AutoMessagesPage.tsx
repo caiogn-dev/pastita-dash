@@ -215,13 +215,13 @@ const AutoMessagesPage: React.FC = () => {
   }, {} as Record<string, AutoMessage[]>);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-4">
           <Link
             to={`/automation/companies/${companyId}`}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:text-zinc-400"
+            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Link>
@@ -236,9 +236,9 @@ const AutoMessagesPage: React.FC = () => {
             setEditingMessage(null);
             setShowModal(true);
           }}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium shadow-sm transition-colors"
         >
-          <PlusIcon className="h-5 w-5 mr-2" />
+          <PlusIcon className="h-5 w-5" />
           Nova Mensagem
         </button>
       </div>
@@ -269,9 +269,9 @@ const AutoMessagesPage: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-gray-200 dark:divide-zinc-800">
                 {eventMessages.map((message) => (
-                  <li key={message.id} className="px-6 py-4">
+                  <li key={message.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3">

@@ -149,11 +149,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     {
       title: 'Automação & IA',
       items: [
-        { 
-          name: 'Agentes IA', 
-          href: '/agents', 
+        {
+          name: 'Agentes IA',
+          href: '/agents',
           icon: CpuChipIcon,
-          badge: 'Novo',
           children: [
             { name: 'Lista de Agentes', href: '/agents', icon: CpuChipIcon },
             { name: 'Novo Agente', href: '/agents/new', icon: PlusIcon },
@@ -165,21 +164,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           href: '/automation/companies',
           icon: BoltIcon,
           children: [
-            { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
+            { name: 'Perfis & Mensagens', href: '/automation/companies', icon: BuildingOfficeIcon },
             { name: 'Sessões Clientes', href: '/automation/sessions', icon: UserGroupIcon },
             { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
-            { name: 'Logs', href: '/automation/logs', icon: DocumentChartBarIcon },
-            { name: 'Relatórios', href: '/automation/reports', icon: DocumentChartBarIcon },
-          ]
-        },
-        {
-          name: 'Intenções (Novo)',
-          href: '/automation/intents/stats',
-          icon: SparklesIcon,
-          badge: 'Novo',
-          children: [
-            { name: 'Estatísticas', href: '/automation/intents/stats', icon: PresentationChartLineIcon },
-            { name: 'Logs de Intenções', href: '/automation/intents/logs', icon: DocumentChartBarIcon },
+            { name: 'Logs Automação', href: '/automation/logs', icon: DocumentChartBarIcon },
+            { name: 'Logs Intenções', href: '/automation/intents/logs', icon: SparklesIcon },
+            { name: 'Estatísticas IA', href: '/automation/intents/stats', icon: PresentationChartLineIcon },
           ]
         },
       ]
