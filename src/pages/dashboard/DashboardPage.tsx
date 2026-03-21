@@ -219,7 +219,7 @@ export const DashboardPage: React.FC = () => {
   const [chartRangeDays, setChartRangeDays] = useState(7);
   const refreshTimeoutRef = useRef<number | null>(null);
 
-  const storeKey = store?.slug || store?.id;
+  const storeKey = store?.id;
   const storeOrdersRoute = storeKey ? `/stores/${storeKey}/orders` : '/stores';
   const storeProductsRoute = storeKey ? `/stores/${storeKey}/products` : '/stores';
   const chatRoute = '/whatsapp/chat';

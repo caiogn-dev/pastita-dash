@@ -203,7 +203,7 @@ export const OrderDetailPageNew: React.FC = () => {
   const navigate = useNavigate();
   const { printOrder } = useOrderPrint();
   const { store } = useStore();
-  const storeRouteBase = routeStoreId || store?.slug || store?.id || null;
+  const storeRouteBase = routeStoreId || store?.id || null;
   const ordersRoute = storeRouteBase ? `/stores/${storeRouteBase}/orders` : '/stores';
   
   const [order, setOrder] = useState<Order | null>(null);

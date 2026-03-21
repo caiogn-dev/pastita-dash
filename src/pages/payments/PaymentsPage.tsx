@@ -79,19 +79,19 @@ export const PaymentsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeSlug, stores } = useStore();
-  const effectiveStoreSlug = useMemo(() => {
-    if (!routeStoreId) return storeSlug || null;
+  const { storeId, stores } = useStore();
+  const effectiveStoreId = useMemo(() => {
+    if (!routeStoreId) return storeId || null;
     const match = stores.find((store) => store.id === routeStoreId || store.slug === routeStoreId);
-    return match?.slug || match?.id || routeStoreId;
-  }, [routeStoreId, storeSlug, stores]);
+    return match?.id || routeStoreId;
+  }, [routeStoreId, storeId, stores]);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       // Get all orders from store, ordered by most recent
       const params: Record<string, string> = { ordering: '-created_at' };
-      if (effectiveStoreSlug) params.store = effectiveStoreSlug;
+      if (effectiveStoreId) params.store = effectiveStoreId;
       const ordersData = await ordersService.getOrders(params);
       setOrders(ordersData.results);
     } catch (error) {
@@ -100,7 +100,7 @@ export const PaymentsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [effectiveStoreSlug]);
+  }, [effectiveStoreId]);
 
   useEffect(() => {
     loadData();

@@ -376,36 +376,42 @@ export interface UpdateAgentFlow {
 }
 
 export const agentFlowService = {
-  list: async (_params?: {
+  list: async (params?: {
     store_id?: string;
     store_slug?: string;
     page?: number;
     page_size?: number;
   }): Promise<PaginatedResponse<AgentFlow>> => {
-    return { count: 0, next: null, previous: null, results: [] };
+    const response = await api.get('/automation/flows/', { params });
+    return response.data;
   },
 
-  get: async (_id: string): Promise<AgentFlow> => {
-    throw new Error('Endpoint não implementado no backend');
+  get: async (id: string): Promise<AgentFlow> => {
+    const response = await api.get(`/automation/flows/${id}/`);
+    return response.data;
   },
 
-  create: async (_data: CreateAgentFlow): Promise<AgentFlow> => {
-    throw new Error('Endpoint não implementado no backend');
+  create: async (data: CreateAgentFlow): Promise<AgentFlow> => {
+    const response = await api.post('/automation/flows/', data);
+    return response.data;
   },
 
-  update: async (_id: string, _data: UpdateAgentFlow): Promise<AgentFlow> => {
-    throw new Error('Endpoint não implementado no backend');
+  update: async (id: string, data: UpdateAgentFlow): Promise<AgentFlow> => {
+    const response = await api.patch(`/automation/flows/${id}/`, data);
+    return response.data;
   },
 
-  delete: async (_id: string): Promise<void> => {
-    // no-op until backend implements this endpoint
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/automation/flows/${id}/`);
   },
 
-  duplicate: async (_id: string): Promise<AgentFlow> => {
-    throw new Error('Endpoint não implementado no backend');
+  duplicate: async (id: string): Promise<AgentFlow> => {
+    const response = await api.post(`/automation/flows/${id}/duplicate/`);
+    return response.data;
   },
 
-  setDefault: async (_id: string): Promise<{ status: string }> => {
-    throw new Error('Endpoint não implementado no backend');
+  setDefault: async (id: string): Promise<{ status: string }> => {
+    const response = await api.post(`/automation/flows/${id}/set_default/`);
+    return response.data;
   },
 };

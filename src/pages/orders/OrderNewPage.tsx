@@ -63,8 +63,8 @@ const errorCls = 'text-xs text-red-500 mt-1';
 export const OrderNewPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeSlug } = useStore();
-  const effectiveStoreId = routeStoreId || storeSlug || contextStoreId;
+  const { storeId: contextStoreId } = useStore();
+  const effectiveStoreId = routeStoreId || contextStoreId;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);

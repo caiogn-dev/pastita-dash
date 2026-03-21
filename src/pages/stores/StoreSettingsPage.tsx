@@ -33,12 +33,12 @@ const defaultDeliveryConfig: DeliveryConfig = {
 
 export const StoreSettingsPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeSlug, stores } = useStore();
+  const { storeId: contextStoreId, stores } = useStore();
 
   const effectiveStoreId = useMemo(() => {
-    if (!routeStoreId) return storeSlug || contextStoreId || null;
+    if (!routeStoreId) return contextStoreId || null;
     const match = stores.find((store) => store.id === routeStoreId || store.slug === routeStoreId);
-    return match?.id || match?.slug || routeStoreId;
+    return match?.id || routeStoreId;
   }, [routeStoreId, storeSlug, contextStoreId, stores]);
 
   const [loading, setLoading] = useState(true);

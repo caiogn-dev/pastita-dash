@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const totalUnreadCount = useTotalUnreadCount();
   const wsConnected = useWsConnected();
 
-  const storeKey = store?.slug || store?.id || null;
+  const storeKey = store?.id || null;
   const storeRoot = storeKey ? `/stores/${storeKey}` : '/stores';
   const storeHref = useMemo(() => {
     return (path: string) => (storeKey ? `${storeRoot}/${path}` : '/stores');

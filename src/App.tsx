@@ -46,6 +46,7 @@ const CustomerSessionsPage = lazy(() => import('./pages/automation').then(m => (
 const AutomationLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutomationLogsPage })));
 const ScheduledMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ScheduledMessagesPage })));
 const ReportsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ReportsPage })));
+const AgentFlowsPage = lazy(() => import('./pages/automation/AgentFlowsPage').then(m => ({ default: m.AgentFlowsPage })));
 
 // Intent Detection Pages (Novo Sistema)
 const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentStatsPage })));
@@ -176,6 +177,7 @@ const AppContent: React.FC = () => {
         <Route path="automation/logs" element={<Suspense fallback={<FullPageLoading />}><AutomationLogsPage /></Suspense>} />
         <Route path="automation/scheduled" element={<Suspense fallback={<FullPageLoading />}><ScheduledMessagesPage /></Suspense>} />
         <Route path="automation/reports" element={<Suspense fallback={<FullPageLoading />}><ReportsPage /></Suspense>} />
+        <Route path="automation/flows" element={<Suspense fallback={<FullPageLoading />}><AgentFlowsPage /></Suspense>} />
 
         {/* Intent Detection Routes */}
         <Route path="automation/intents" element={<Navigate to="/automation/intents/stats" replace />} />
