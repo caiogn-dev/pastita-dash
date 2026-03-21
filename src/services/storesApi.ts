@@ -429,8 +429,12 @@ export interface PaginatedResponse<T> {
 // API FUNCTIONS
 // =============================================================================
 
-// ATUALIZADO: Usando /stores/ (backend migrado - 2026-03-04)
+// URL base do módulo de lojas
 const BASE_URL = '/stores';
+// Sub-URL para o admin ViewSet de lojas (registrado como router.register('stores', ...))
+// O roteador gera: /stores/stores/ (list) e /stores/stores/{id}/ (detail)
+// Não usar /stores/{id}/ pois o catch-all <slug:store_slug>/ intercepta e retorna 404
+const STORES_ADMIN_URL = `${BASE_URL}/stores`;
 
 const generateSlug = (name: string): string => {
   return name
@@ -466,12 +470,11 @@ const buildFormData = (data: Record<string, unknown>, includeFile = true): FormD
   return formData;
 };
 
-// Stores
-// ATUALIZADO: Usando /stores/stores/ em vez de /stores/ (2026-03-04)
-// O endpoint /stores/ retorna um router com URLs, não a lista de lojas
+// Stores — Admin CRUD (usa STORES_ADMIN_URL = /stores/stores/)
+// Não usar BASE_URL/{id}/ pois o catch-all <slug:store_slug>/ intercepta antes
 export const getStores = async (): Promise<PaginatedResponse<Store>> => {
   try {
-    const response = await api.get(`${BASE_URL}/stores/`);
+    const response = await api.get(`${STORES_ADMIN_URL}/`);
     return normalizePaginatedResponse<Store>(response.data);
   } catch (error) {
     logger.error('Failed to fetch stores', error);
@@ -481,7 +484,7 @@ export const getStores = async (): Promise<PaginatedResponse<Store>> => {
 
 export const getStore = async (id: string): Promise<Store> => {
   try {
-    const response = await api.get(`${BASE_URL}/${id}/`);
+    const response = await api.get(`${STORES_ADMIN_URL}/${id}/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch store', error);
@@ -491,7 +494,7 @@ export const getStore = async (id: string): Promise<Store> => {
 
 export const createStore = async (data: StoreInput): Promise<Store> => {
   try {
-    const response = await api.post(`${BASE_URL}/`, data);
+    const response = await api.post(`${STORES_ADMIN_URL}/`, data);
     return response.data;
   } catch (error) {
     logger.error('Failed to create store', error);
@@ -501,7 +504,7 @@ export const createStore = async (data: StoreInput): Promise<Store> => {
 
 export const updateStore = async (id: string, data: Partial<StoreInput>): Promise<Store> => {
   try {
-    const response = await api.patch(`${BASE_URL}/${id}/`, data);
+    const response = await api.patch(`${STORES_ADMIN_URL}/${id}/`, data);
     return response.data;
   } catch (error) {
     logger.error('Failed to update store', error);
@@ -511,7 +514,7 @@ export const updateStore = async (id: string, data: Partial<StoreInput>): Promis
 
 export const deleteStore = async (id: string): Promise<void> => {
   try {
-    await api.delete(`${BASE_URL}/${id}/`);
+    await api.delete(`${STORES_ADMIN_URL}/${id}/`);
   } catch (error) {
     logger.error('Failed to delete store', error);
     throw error;
@@ -520,7 +523,7 @@ export const deleteStore = async (id: string): Promise<void> => {
 
 export const getStoreStats = async (id: string): Promise<StoreStats> => {
   try {
-    const response = await api.get(`${BASE_URL}/${id}/stats/`);
+    const response = await api.get(`${STORES_ADMIN_URL}/${id}/stats/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch store stats', error);
@@ -530,7 +533,7 @@ export const getStoreStats = async (id: string): Promise<StoreStats> => {
 
 export const activateStore = async (id: string): Promise<{ status: string }> => {
   try {
-    const response = await api.post(`${BASE_URL}/${id}/activate/`);
+    const response = await api.post(`${STORES_ADMIN_URL}/${id}/activate/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to activate store', error);
@@ -540,7 +543,7 @@ export const activateStore = async (id: string): Promise<{ status: string }> => 
 
 export const deactivateStore = async (id: string): Promise<{ status: string }> => {
   try {
-    const response = await api.post(`${BASE_URL}/${id}/deactivate/`);
+    const response = await api.post(`${STORES_ADMIN_URL}/${id}/deactivate/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to deactivate store', error);
@@ -550,7 +553,7 @@ export const deactivateStore = async (id: string): Promise<{ status: string }> =
 
 export const syncPastitaToStore = async (id: string): Promise<{ message: string; synced: Record<string, number> }> => {
   try {
-    const response = await api.post(`${BASE_URL}/${id}/sync_pastita/`);
+    const response = await api.post(`${STORES_ADMIN_URL}/${id}/sync_pastita/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to sync Pastita to store', error);
