@@ -43,17 +43,16 @@ const AutoMessagesPage: React.FC = () => {
   });
 
   useEffect(() => {
-    if (companyId) {
-      loadData();
-    }
+    loadData();
   }, [companyId]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [companyData, messagesData] = await Promise.all([
-        companyProfileService.get(companyId!),
-        autoMessageService.list({ company_id: companyId }),
+      const params: Record<string, string | undefined> = companyId ? { company_id: companyId } : {};
+      const [messagesData, companyData] = await Promise.all([
+        autoMessageService.list(params),
+        companyId ? companyProfileService.get(companyId) : Promise.resolve(null),
       ]);
       setCompany(companyData);
       setMessages(messagesData.results);

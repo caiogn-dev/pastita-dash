@@ -72,9 +72,9 @@ export const AgentFlowsPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      let flowJsonParsed: unknown;
+      let flowJsonParsed: AgentFlow['flow_json'];
       try {
-        flowJsonParsed = JSON.parse(formData.flow_json);
+        flowJsonParsed = JSON.parse(formData.flow_json) as AgentFlow['flow_json'];
       } catch {
         toast.error('JSON do flow inválido');
         return;

@@ -39,7 +39,7 @@ export const StoreSettingsPage: React.FC = () => {
     if (!routeStoreId) return contextStoreId || null;
     const match = stores.find((store) => store.id === routeStoreId || store.slug === routeStoreId);
     return match?.id || routeStoreId;
-  }, [routeStoreId, storeSlug, contextStoreId, stores]);
+  }, [routeStoreId, contextStoreId, stores]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

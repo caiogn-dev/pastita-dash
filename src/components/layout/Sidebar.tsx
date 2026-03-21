@@ -164,9 +164,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           href: '/automation/companies',
           icon: BoltIcon,
           children: [
-            { name: 'Perfis & Mensagens', href: '/automation/companies', icon: BuildingOfficeIcon },
+            { name: 'Flows de Agente', href: '/automation/flows', icon: CpuChipIcon },
+            { name: 'Perfis & Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
+            { name: 'Mensagens Automáticas', href: '/automation/messages', icon: ChatBubbleBottomCenterTextIcon },
             { name: 'Sessões Clientes', href: '/automation/sessions', icon: UserGroupIcon },
             { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
+            { name: 'Relatórios Agendados', href: '/automation/reports', icon: DocumentChartBarIcon },
             { name: 'Logs Automação', href: '/automation/logs', icon: DocumentChartBarIcon },
             { name: 'Logs Intenções', href: '/automation/intents/logs', icon: SparklesIcon },
             { name: 'Estatísticas IA', href: '/automation/intents/stats', icon: PresentationChartLineIcon },

@@ -49,7 +49,7 @@ export const MessagesPage: React.FC = () => {
       if (dateRange.end) {
         params.created_before = dateRange.end;
       }
-      const response = await whatsappService.getMessages(selectedAccount.id, params);
+      const response = await whatsappService.getMessages({ account_id: selectedAccount.id, ...params });
       setMessages(response.data.results || []);
     } catch (error) {
       toast.error(getErrorMessage(error));
