@@ -47,9 +47,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => mediaQuery.removeEventListener('change', handler);
   }, [theme]);
 
-  // Apply theme to document
+  // Apply theme to document — only via class, never via data-theme
+  // (data-theme is reserved for per-store brand theming)
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', resolvedTheme);
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(resolvedTheme);
   }, [resolvedTheme]);

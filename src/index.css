@@ -30,12 +30,26 @@
   font-weight: 400;
   color-scheme: light;
 
-  /* Brand Colors - Laranja + Verde */
-  --brand-primary: #F97316;
-  --brand-primary-light: #FB923C;
-  --brand-primary-dark: #EA580C;
-  --brand-secondary: #16A34A;
-  --brand-accent: #22C55E;
+  /* Brand color — única var setada pelo JS com o hex da API.
+     O resto da paleta é derivado automaticamente via color-mix(). */
+  --primary-500: #722F37; /* Pastita marsala (padrão até a loja carregar) */
+
+  /* Paleta derivada — não editar manualmente */
+  --primary-50:  color-mix(in srgb, var(--primary-500)  8%, white);
+  --primary-100: color-mix(in srgb, var(--primary-500) 15%, white);
+  --primary-200: color-mix(in srgb, var(--primary-500) 30%, white);
+  --primary-300: color-mix(in srgb, var(--primary-500) 50%, white);
+  --primary-400: color-mix(in srgb, var(--primary-500) 70%, white);
+  --primary-600: color-mix(in srgb, var(--primary-500) 80%, black);
+  --primary-700: color-mix(in srgb, var(--primary-500) 60%, black);
+  --primary-800: color-mix(in srgb, var(--primary-500) 45%, black);
+  --primary-900: color-mix(in srgb, var(--primary-500) 30%, black);
+  --primary-950: color-mix(in srgb, var(--primary-500) 15%, black);
+
+  /* Aliases usados em outros lugares */
+  --brand-primary:       var(--primary-500);
+  --brand-primary-light: var(--primary-400);
+  --brand-primary-dark:  var(--primary-600);
 
   /* Semantic Colors */
   --pastita-background: #ffffff;

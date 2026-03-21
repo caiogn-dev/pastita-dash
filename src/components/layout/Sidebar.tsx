@@ -233,55 +233,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   // Dynamic brand info based on selected store
   const brandInfo = useMemo(() => {
-    // Default Pastita branding with local SVG logo
-    const defaultBrand = {
-      name: 'Pastita',
-      logo: '/pastita-logo.svg',
-      primaryColor: '#F97316',
-      secondaryColor: '#16A34A',
-      initial: 'P',
-    };
-
-    if (!store) return defaultBrand;
-
-    // Check if it's Agrião based on store name or slug
-    const isAgriao = store.name?.toLowerCase().includes('agriao') || 
-                     store.slug?.toLowerCase().includes('agriao');
-
-    if (isAgriao) {
+    if (!store) {
       return {
-        name: store.name || 'Agrião',
-        logo: store.logo_url || null,
-        primaryColor: '#4A5D23',
-        secondaryColor: '#6B8E23',
-        initial: 'A',
+        name: 'Pastita',
+        logo: '/pastita-logo.svg',
+        primaryColor: '#722F37', // marsala
+        initial: 'P',
       };
     }
 
-    // For Pastita stores, use local SVG logo
-    const isPastita = store.name?.toLowerCase().includes('pastita') || 
+    const isPastita = store.name?.toLowerCase().includes('pastita') ||
                       store.slug?.toLowerCase().includes('pastita');
 
     return {
       name: store.name || 'Pastita',
       logo: isPastita ? '/pastita-logo.svg' : (store.logo_url || null),
-      primaryColor: store.primary_color || '#F97316',
-      secondaryColor: store.secondary_color || '#16A34A',
+      // usa o hex da API diretamente — fonte de verdade
+      primaryColor: store.primary_color || '#722F37',
       initial: store.name?.[0]?.toUpperCase() || 'P',
     };
   }, [store]);
 
-  // Apply theme based on store
+  // Seta --primary-500 com o hex da API → o CSS deriva toda a paleta via color-mix()
   useEffect(() => {
-    const isAgriao = store?.name?.toLowerCase().includes('agriao') || 
-                     store?.slug?.toLowerCase().includes('agriao');
-    
-    if (isAgriao) {
-      document.documentElement.setAttribute('data-theme', 'agriao');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-  }, [store]);
+    document.documentElement.style.setProperty('--primary-500', brandInfo.primaryColor);
+  }, [brandInfo.primaryColor]);
 
   const handleLogout = () => {
     logout();
@@ -406,7 +382,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           <div 
             className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 ${brandInfo.logo ? 'hidden' : ''}`}
             style={{ 
-              background: `linear-gradient(135deg, ${brandInfo.primaryColor} 0%, ${brandInfo.secondaryColor} 100%)` 
+              background: `linear-gradient(135deg, ${brandInfo.primaryColor} 0%, color-mix(in srgb, ${brandInfo.primaryColor} 60%, black) 100%)` 
             }}
           >
             <span className="text-white font-bold text-lg">{brandInfo.initial}</span>
