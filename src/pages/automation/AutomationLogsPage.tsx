@@ -75,11 +75,14 @@ const AutomationLogsPage: React.FC = () => {
   const loadLogs = async () => {
     try {
       setLoading(true);
-      const params: Record<string, string | number | boolean> = { page, page_size: 50 };
-      if (filters.company_id) params.company_id = filters.company_id;
-      if (filters.action_type) params.action_type = filters.action_type;
-      if (filters.is_error) params.is_error = filters.is_error === 'true';
-      if (filters.phone_number) params.phone_number = filters.phone_number;
+      const params = {
+        page,
+        page_size: 50,
+        ...(filters.company_id && { company_id: filters.company_id }),
+        ...(filters.action_type && { action_type: filters.action_type }),
+        ...(filters.is_error && { is_error: filters.is_error === 'true' }),
+        ...(filters.phone_number && { phone_number: filters.phone_number }),
+      };
 
       const response = await automationLogService.list(params);
       setLogs(response.results);

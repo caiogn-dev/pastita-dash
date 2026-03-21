@@ -12,7 +12,7 @@ import { AgentCard } from '../../components/agents';
 import agentsService, { Agent } from '../../services/agents';
 
 type StatusFilter = 'all' | 'active' | 'inactive' | 'draft';
-type ProviderFilter = 'all' | 'kimi' | 'openai' | 'anthropic' | 'ollama';
+type ProviderFilter = 'all' | 'kimi' | 'openai' | 'anthropic' | 'ollama' | 'nvidia';
 
 export const AgentsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -224,6 +224,7 @@ export const AgentsPage: React.FC = () => {
                 <option value="openai">OpenAI</option>
                 <option value="anthropic">Anthropic</option>
                 <option value="ollama">Ollama</option>
+                <option value="nvidia">NVIDIA</option>
               </select>
             </div>
           </div>

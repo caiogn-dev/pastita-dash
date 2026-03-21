@@ -13,10 +13,11 @@ export const conversationsService = {
   },
 
   getMessages: async (conversationId: string): Promise<Message[]> => {
-    const response = await api.get<Message[]>('/whatsapp/messages/', {
-      params: { conversation: conversationId }
+    const response = await api.get<{ results: Message[] } | Message[]>('/whatsapp/messages/', {
+      params: { conversation: conversationId, page_size: 100 }
     });
-    return response.data;
+    const data = response.data as any;
+    return Array.isArray(data) ? data : (data?.results ?? []);
   },
 
   switchToHuman: async (id: string, agentId?: number): Promise<Conversation> => {

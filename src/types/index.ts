@@ -719,8 +719,7 @@ export interface CreateScheduledMessage {
   message_type: 'text' | 'template' | 'image' | 'document' | 'interactive';
   message_text?: string;
   template_name?: string;
-  scheduled_for: string;
-  scheduled_at?: string;
+  scheduled_at: string;
   timezone?: string;
   notes?: string;
   metadata?: Record<string, unknown>;

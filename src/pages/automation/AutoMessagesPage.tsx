@@ -356,7 +356,7 @@ const AutoMessagesPage: React.FC = () => {
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black0 bg-opacity-75" onClick={() => setShowModal(false)} />
+            <div className="fixed inset-0 bg-gray-50 dark:bg-black/75 bg-opacity-75" onClick={() => setShowModal(false)} />
             <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <form onSubmit={handleSubmit}>
                 <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
@@ -533,7 +533,7 @@ const AutoMessagesPage: React.FC = () => {
       {testModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black0 bg-opacity-75" onClick={() => {
+            <div className="fixed inset-0 bg-gray-50 dark:bg-black/75 bg-opacity-75" onClick={() => {
               setTestModal(null);
               setTestPhone('');
               setTestResult(null);

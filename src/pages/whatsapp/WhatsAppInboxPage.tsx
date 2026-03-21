@@ -74,11 +74,10 @@ const WhatsAppInboxPage: React.FC = () => {
 
     setSending(true);
     try {
-      const sendFn = (whatsappService as any).sendMessage;
-      await sendFn({
-        conversation: selectedConversation.id,
-        content: messageText.trim(),
-        message_type: 'text',
+      await whatsappService.sendMessage({
+        account_id: selectedConversation.account,
+        to: selectedConversation.phone_number,
+        text: messageText.trim(),
       });
       setMessageText('');
       toast.success('Mensagem enviada');

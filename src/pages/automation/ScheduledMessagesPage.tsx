@@ -59,7 +59,7 @@ export default function ScheduledMessagesPage() {
     contact_name: '',
     message_type: 'text',
     message_text: '',
-    scheduled_for: '',
+    scheduled_at: '',
     timezone: 'America/Sao_Paulo',
     notes: '',
   });
@@ -88,7 +88,7 @@ export default function ScheduledMessagesPage() {
   }, [fetchData]);
 
   const handleCreate = async () => {
-    if (!formData.account || !formData.to_number || !formData.scheduled_for) {
+    if (!formData.account || !formData.to_number || !formData.scheduled_at) {
       toast.error('Preencha os campos obrigatórios');
       return;
     }
@@ -103,7 +103,7 @@ export default function ScheduledMessagesPage() {
         contact_name: '',
         message_type: 'text',
         message_text: '',
-        scheduled_for: '',
+        scheduled_at: '',
         timezone: 'America/Sao_Paulo',
         notes: '',
       });
@@ -406,8 +406,8 @@ export default function ScheduledMessagesPage() {
             <input
               type="datetime-local"
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              value={formData.scheduled_for}
-              onChange={(e) => setFormData({ ...formData, scheduled_for: e.target.value })}
+              value={formData.scheduled_at}
+              onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
             />
           </div>
 
