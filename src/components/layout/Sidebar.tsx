@@ -237,8 +237,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     const defaultBrand = {
       name: 'Pastita',
       logo: '/pastita-logo.svg',
-      primaryColor: '#722F37',
-      secondaryColor: '#8B3A42',
+      primaryColor: '#F97316',
+      secondaryColor: '#16A34A',
       initial: 'P',
     };
 
@@ -265,8 +265,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     return {
       name: store.name || 'Pastita',
       logo: isPastita ? '/pastita-logo.svg' : (store.logo_url || null),
-      primaryColor: store.primary_color || '#722F37',
-      secondaryColor: store.secondary_color || '#8B3A42',
+      primaryColor: store.primary_color || '#F97316',
+      secondaryColor: store.secondary_color || '#16A34A',
       initial: store.name?.[0]?.toUpperCase() || 'P',
     };
   }, [store]);

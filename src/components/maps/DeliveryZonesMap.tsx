@@ -11,7 +11,7 @@ const HERE_UI_CSS = `https://js.api.here.com/v3/${HERE_API_VERSION}/mapsjs-ui.cs
 
 const DEFAULT_CENTER = { lat: -10.1847, lng: -48.3337 };
 const COLORS = [
-  { fill: 'rgba(114, 47, 55, 0.12)', stroke: '#722F37' },
+  { fill: 'rgba(249, 115, 22, 0.12)', stroke: '#F97316' },
   { fill: 'rgba(212, 175, 55, 0.12)', stroke: '#D4AF37' },
   { fill: 'rgba(76, 175, 80, 0.12)', stroke: '#4CAF50' },
   { fill: 'rgba(33, 150, 243, 0.10)', stroke: '#2196F3' },

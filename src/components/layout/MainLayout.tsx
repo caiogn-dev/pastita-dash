@@ -23,7 +23,7 @@ export const MainLayout: React.FC = () => {
       {/* Decorative gradient */}
       <div
         className="fixed inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(circle at top right, rgba(180, 100, 110, 0.12), transparent 55%)' }}
+        style={{ background: 'radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 55%)' }}
       />
 
       {/* Mobile overlay */}

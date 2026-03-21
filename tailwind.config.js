@@ -9,34 +9,63 @@ export default {
     extend: {
       colors: {
         // ============================================
-        // PASTITA BRAND - Marsala (Primary)
+        // PASTITA BRAND - Laranja (Primary) + Verde (Secondary)
         // ============================================
         primary: {
-          50: '#fdf2f3',
-          100: '#fce4e6',
-          200: '#facdd2',
-          300: '#f5a3ad',
-          400: '#ed6b7b',
-          500: '#722F37', // Marsala - main brand color
-          600: '#5c262d',
-          700: '#4d1f25',
-          800: '#411b20',
-          900: '#391a1e',
-          950: '#1A0B0D',
+          50: '#FFF7ED',
+          100: '#FFEDD5',
+          200: '#FED7AA',
+          300: '#FDBA74',
+          400: '#FB923C',
+          500: '#F97316', // Orange - main brand color
+          600: '#EA580C',
+          700: '#C2410C',
+          800: '#9A3412',
+          900: '#7C2D12',
+          950: '#431407',
         },
-        marsala: {
-          DEFAULT: '#722F37',
-          50: '#F9F2F3',
-          100: '#F0E0E2',
-          200: '#E1C1C5',
-          300: '#D2A2A8',
-          400: '#C3838B',
-          500: '#B4646E',
-          600: '#8A3D46',
-          700: '#722F37',
-          800: '#4A1E23',
-          900: '#2D1215',
-          950: '#1A0B0D',
+        secondary: {
+          50: '#F0FDF4',
+          100: '#DCFCE7',
+          200: '#BBF7D0',
+          300: '#86EFAC',
+          400: '#4ADE80',
+          500: '#22C55E', // Green
+          600: '#16A34A',
+          700: '#15803D',
+          800: '#166534',
+          900: '#14532D',
+          950: '#052E16',
+        },
+        // ============================================
+        // SEMANTIC COLOR TOKENS (used via CSS variables)
+        // ============================================
+        fg: {
+          primary: 'var(--fg-primary)',
+          secondary: 'var(--fg-secondary)',
+          muted: 'var(--fg-muted)',
+        },
+        bg: {
+          primary: 'var(--bg-primary)',
+          secondary: 'var(--bg-secondary)',
+          card: 'var(--bg-card)',
+          hover: 'var(--bg-hover)',
+          active: 'var(--bg-active)',
+        },
+        brand: {
+          400: 'var(--brand-primary-light)',
+          500: 'var(--brand-primary)',
+          600: 'var(--brand-primary-dark)',
+        },
+        border: {
+          primary: 'var(--border-default)',
+          subtle: 'var(--border-subtle)',
+          focus: 'var(--brand-primary)',
+        },
+        danger: {
+          400: '#f87171',
+          500: '#ef4444',
+          600: '#dc2626',
         },
         background: {
           DEFAULT: '#ffffff',
@@ -173,15 +202,15 @@ export default {
       // SHADOWS
       // ============================================
       boxShadow: {
-        'soft': '0 10px 30px rgba(114, 47, 55, 0.1)',
-        'soft-lg': '0 20px 40px rgba(114, 47, 55, 0.15)',
+        'soft': '0 10px 30px rgba(249, 115, 22, 0.1)',
+        'soft-lg': '0 20px 40px rgba(249, 115, 22, 0.15)',
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-        'inner-marsala': 'inset 0 -3px 0 0 #722F37',
-        'inner-gold': 'inset 0 -3px 0 0 #D4AF37',
-        'glow-marsala': '0 0 20px rgba(114, 47, 55, 0.4)',
-        'glow-agriao': '0 0 20px rgba(74, 93, 35, 0.4)',
+        'inner-primary': 'inset 0 -3px 0 0 #F97316',
+        'inner-secondary': 'inset 0 -3px 0 0 #22C55E',
+        'glow-primary': '0 0 20px rgba(249, 115, 22, 0.4)',
+        'glow-secondary': '0 0 20px rgba(34, 197, 94, 0.4)',
       },
       // ============================================
       // ANIMATIONS

@@ -172,7 +172,7 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #722F37 0%, #8B3A42 100%); padding: 40px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #F97316 0%, #16A34A 100%); padding: 40px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🎁 Presente Especial!</h1>
             </td>
           </tr>
@@ -184,7 +184,7 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
                 Preparamos um desconto exclusivo para você aproveitar em sua próxima compra na <strong>{{store_name}}</strong>!
               </p>
               <!-- Coupon Box -->
-              <div style="background: linear-gradient(135deg, #722F37 0%, #8B3A42 100%); border-radius: 12px; padding: 30px; text-align: center; margin: 30px 0;">
+              <div style="background: linear-gradient(135deg, #F97316 0%, #16A34A 100%); border-radius: 12px; padding: 30px; text-align: center; margin: 30px 0;">
                 <p style="color: #ffffff; font-size: 14px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 2px;">Seu cupom</p>
                 <p style="color: #ffffff; font-size: 36px; font-weight: bold; margin: 0; letter-spacing: 4px;">{{coupon_code}}</p>
                 <p style="color: #ffffff; font-size: 48px; font-weight: bold; margin: 20px 0 0;">{{discount_value}}% OFF</p>
@@ -194,7 +194,7 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
               </p>
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="{{store_url}}" style="display: inline-block; background: #722F37; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                <a href="{{store_url}}" style="display: inline-block; background: #F97316; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
                   Usar Meu Cupom
                 </a>
               </div>
@@ -235,7 +235,7 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden;">
           <tr>
-            <td style="background: linear-gradient(135deg, #722F37 0%, #8B3A42 100%); padding: 40px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #F97316 0%, #16A34A 100%); padding: 40px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0;">👋 Bem-vindo(a)!</h1>
             </td>
           </tr>
@@ -249,7 +249,7 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
                 Prepare-se para receber ofertas exclusivas, novidades e muito mais!
               </p>
               <div style="text-align: center; margin: 30px 0;">
-                <a href="{{store_url}}" style="display: inline-block; background: #722F37; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                <a href="{{store_url}}" style="display: inline-block; background: #F97316; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
                   Conhecer a Loja
                 </a>
               </div>
@@ -391,7 +391,7 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden;">
           <tr>
-            <td style="background: linear-gradient(135deg, #722F37 0%, #8B3A42 100%); padding: 40px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #F97316 0%, #16A34A 100%); padding: 40px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0;">🛒 Esqueceu de algo?</h1>
             </td>
           </tr>
@@ -411,7 +411,7 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
-                <a href="{{store_url}}" style="display: inline-block; background: #722F37; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                <a href="{{store_url}}" style="display: inline-block; background: #F97316; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
                   Ver Cardápio
                 </a>
               </div>

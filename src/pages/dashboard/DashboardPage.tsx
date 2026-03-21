@@ -16,7 +16,6 @@ import {
   EnvelopeIcon,
   ArchiveBoxXMarkIcon,
   CreditCardIcon,
-  ClockIcon,
 } from '@heroicons/react/24/outline';
 import { Line, Doughnut } from 'react-chartjs-2';
 import {
@@ -117,7 +116,7 @@ interface KpiCardProps {
 }
 
 const variantMap = {
-  brand:   { bg: '#faf0f1', icon: '#722F37', border: 'rgba(114,47,55,0.18)',   darkBg: 'rgba(114,47,55,0.20)',   darkIcon: '#e87d8a' },
+  brand:   { bg: '#fff7ed', icon: '#F97316', border: 'rgba(249,115,22,0.18)',   darkBg: 'rgba(249,115,22,0.20)',   darkIcon: '#fb923c' },
   success: { bg: '#f0fdf4', icon: '#16a34a', border: 'rgba(22,163,74,0.18)',   darkBg: 'rgba(22,163,74,0.18)',   darkIcon: '#4ade80' },
   warning: { bg: '#fffbeb', icon: '#d97706', border: 'rgba(217,119,6,0.18)',   darkBg: 'rgba(217,119,6,0.18)',   darkIcon: '#fbbf24' },
   danger:  { bg: '#fff1f2', icon: '#dc2626', border: 'rgba(220,38,38,0.18)',   darkBg: 'rgba(220,38,38,0.16)',   darkIcon: '#f87171' },
@@ -197,7 +196,7 @@ const MetricRow: React.FC<{ label: string; value: number | string; progress?: nu
 // Conversation mode label map
 // ──────────────────────────────────────────────────────────
 const modeLabel: Record<string, { label: string; color: string }> = {
-  auto:   { label: 'Automatizado (IA)', color: '#722F37' },
+  auto:   { label: 'Automatizado (IA)', color: '#F97316' },
   human:  { label: 'Humano',           color: '#2563eb' },
   hybrid: { label: 'Híbrido',          color: '#7c3aed' },
 };
@@ -309,7 +308,7 @@ export const DashboardPage: React.FC = () => {
     labels: charts?.messages_per_day.map((d) => format(new Date(d.date), 'dd/MM', { locale: ptBR })) || [],
     datasets: [
       { label: 'Recebidas', data: charts?.messages_per_day.map((d) => d.inbound)  || [], borderColor: '#25D366', backgroundColor: 'rgba(37,211,102,0.12)', fill: true, tension: 0.35, pointRadius: 3 },
-      { label: 'Enviadas',  data: charts?.messages_per_day.map((d) => d.outbound) || [], borderColor: '#722F37', backgroundColor: 'rgba(114,47,55,0.10)',  fill: true, tension: 0.35, pointRadius: 3 },
+      { label: 'Enviadas',  data: charts?.messages_per_day.map((d) => d.outbound) || [], borderColor: '#F97316', backgroundColor: 'rgba(249,115,22,0.10)',  fill: true, tension: 0.35, pointRadius: 3 },
     ],
   };
 
