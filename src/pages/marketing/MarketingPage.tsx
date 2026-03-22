@@ -102,9 +102,12 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
     <Card className="overflow-hidden hover:shadow-lg transition-shadow group">
       {/* Preview Area */}
       <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-        <div 
-          className="absolute inset-0 scale-[0.3] origin-top-left pointer-events-none"
-          dangerouslySetInnerHTML={{ __html: template.html_content.slice(0, 2000) }}
+        {/* sandbox="" blocks all scripts, plugins, forms — safe for untrusted HTML */}
+        <iframe
+          sandbox=""
+          srcDoc={template.html_content.slice(0, 2000)}
+          className="absolute inset-0 scale-[0.3] origin-top-left pointer-events-none border-0 w-full h-full"
+          title="Email template preview"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent" />
         
@@ -447,9 +450,11 @@ export const MarketingPage: React.FC = () => {
               className="border rounded-lg overflow-hidden"
               style={{ height: '500px' }}
             >
+              {/* sandbox="" blocks scripts, forms, plugins — safe for untrusted email HTML */}
               <iframe
+                sandbox=""
                 srcDoc={previewTemplate.html_content}
-                className="w-full h-full"
+                className="w-full h-full border-0"
                 title="Email Preview"
               />
             </div>

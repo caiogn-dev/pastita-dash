@@ -151,7 +151,7 @@ export function normalizePaginatedResponse<T>(data: unknown): T[] {
     return data as T[];
   }
 
-  // Log unexpected format and return empty array
-  console.error('[API] Unexpected response format:', data);
+  // Log unexpected format — avoid logging data which may contain sensitive fields
+  console.error('[API] Unexpected response format (type:', typeof data, ')');
   return [];
 }
