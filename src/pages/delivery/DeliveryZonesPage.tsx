@@ -81,10 +81,13 @@ const buildMapUrls = ({
 
 export const DeliveryZonesPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
-  
-  // Use route storeId if available, otherwise use context
-  const storeId = routeStoreId || contextStoreId;
+  const { storeId: contextStoreId, storeName, isStoreSelected, stores } = useStore();
+
+  const storeId = useMemo(() => {
+    if (!routeStoreId) return contextStoreId || null;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || contextStoreId || null;
+  }, [routeStoreId, contextStoreId, stores]);
   const settingsPath = storeId ? `/stores/${storeId}/settings` : '/settings';
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);

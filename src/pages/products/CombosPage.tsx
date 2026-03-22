@@ -583,8 +583,12 @@ const ComboCard: React.FC<ComboCardProps> = ({ combo, onEdit, onDelete, onToggle
 export const CombosPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName } = useStore();
-  const storeId = contextStoreId || routeStoreId;
+  const { storeId: contextStoreId, storeName, stores } = useStore();
+  const storeId = useMemo(() => {
+    if (!routeStoreId) return contextStoreId || null;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || contextStoreId || null;
+  }, [routeStoreId, contextStoreId, stores]);
 
   const [combos, setCombos] = useState<StoreCombo[]>([]);
   const [products, setProducts] = useState<Product[]>([]);

@@ -1085,9 +1085,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 export const ProductsPageNew: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
-  
-  const storeId = routeStoreId || contextStoreId;
+  const { storeId: contextStoreId, storeName, isStoreSelected, stores } = useStore();
+
+  const storeId = useMemo(() => {
+    if (!routeStoreId) return contextStoreId || null;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || contextStoreId || null;
+  }, [routeStoreId, contextStoreId, stores]);
 
   // State
   const [products, setProducts] = useState<Product[]>([]);

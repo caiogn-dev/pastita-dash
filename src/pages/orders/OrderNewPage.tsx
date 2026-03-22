@@ -63,8 +63,12 @@ const errorCls = 'text-xs text-red-500 mt-1';
 export const OrderNewPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId } = useStore();
-  const effectiveStoreId = routeStoreId || contextStoreId;
+  const { storeId: contextStoreId, stores } = useStore();
+  const effectiveStoreId = useMemo(() => {
+    if (!routeStoreId) return contextStoreId || null;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || contextStoreId || null;
+  }, [routeStoreId, contextStoreId, stores]);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);

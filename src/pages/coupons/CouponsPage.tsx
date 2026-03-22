@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import logger from '../../services/logger';
 import {
@@ -16,10 +16,14 @@ import { useStore } from '../../hooks';
 
 export const CouponsPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
-  
-  // Use route storeId if available, otherwise use context
-  const storeId = routeStoreId || contextStoreId;
+  const { storeId: contextStoreId, storeName, isStoreSelected, stores } = useStore();
+
+  // Resolve route param (could be slug or UUID) to UUID
+  const storeId = useMemo(() => {
+    if (!routeStoreId) return contextStoreId || undefined;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || contextStoreId || undefined;
+  }, [routeStoreId, contextStoreId, stores]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [stats, setStats] = useState<CouponStats | null>(null);
   const [loading, setLoading] = useState(true);

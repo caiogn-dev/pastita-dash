@@ -7,7 +7,7 @@
  * - Templates management
  * - Analytics
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   EnvelopeIcon,
@@ -199,9 +199,13 @@ interface Campaign {
 export const MarketingPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName } = useStore();
-  
-  const storeId = routeStoreId || contextStoreId;
+  const { storeId: contextStoreId, storeName, stores } = useStore();
+
+  const storeId = useMemo(() => {
+    if (!routeStoreId) return contextStoreId || null;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || contextStoreId || null;
+  }, [routeStoreId, contextStoreId, stores]);
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<MarketingStats | null>(null);

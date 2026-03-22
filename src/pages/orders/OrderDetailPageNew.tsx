@@ -202,8 +202,12 @@ export const OrderDetailPageNew: React.FC = () => {
   const { id, storeId: routeStoreId } = useParams<{ id: string; storeId?: string }>();
   const navigate = useNavigate();
   const { printOrder } = useOrderPrint();
-  const { store } = useStore();
-  const storeRouteBase = routeStoreId || store?.id || null;
+  const { store, stores } = useStore();
+  const storeRouteBase = useMemo(() => {
+    if (!routeStoreId) return store?.id || null;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || store?.id || null;
+  }, [routeStoreId, store?.id, stores]);
   const ordersRoute = storeRouteBase ? `/stores/${storeRouteBase}/orders` : '/stores';
   
   const [order, setOrder] = useState<Order | null>(null);

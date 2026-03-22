@@ -218,7 +218,7 @@ export const OrdersPage: React.FC = () => {
     routeStore?.slug ||
     storeSlug ||
     (routeStoreParam && !isUuidLike(routeStoreParam) ? routeStoreParam : null);
-  const effectiveStoreQuery = routeStoreParam || effectiveStoreSlug || effectiveStoreId;
+  const effectiveStoreQuery = effectiveStoreId || effectiveStoreSlug;
   const effectiveStoreName = routeStore?.name || storeName || 'Loja selecionada';
 
   const [orders, setOrders] = useState<Order[]>([]);
@@ -516,7 +516,7 @@ export const OrdersPage: React.FC = () => {
                 <Button
                   size="sm"
                   leftIcon={<PlusIcon className="h-4 w-4" />}
-                  onClick={() => navigate(`/stores/${effectiveStoreId || effectiveStoreSlug || 'default'}/orders/new`)}
+                  onClick={() => navigate(`/stores/${effectiveStoreId || 'default'}/orders/new`)}
                 >
                   Novo pedido
                 </Button>
@@ -667,7 +667,7 @@ export const OrdersPage: React.FC = () => {
                 orders={filteredOrders}
                 visibleStatuses={statusFilter === 'all' ? undefined : [statusFilter]}
                 onOrderClick={(order) =>
-                  navigate(`/stores/${effectiveStoreId || effectiveStoreSlug || 'default'}/orders/${order.id}`)
+                  navigate(`/stores/${effectiveStoreId || 'default'}/orders/${order.id}`)
                 }
                 onStatusChange={handleUpdateOrder}
               />
@@ -696,7 +696,7 @@ export const OrdersPage: React.FC = () => {
                         key={order.id}
                         className="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
                         onClick={() =>
-                          navigate(`/stores/${effectiveStoreId || effectiveStoreSlug || 'default'}/orders/${order.id}`)
+                          navigate(`/stores/${effectiveStoreId || 'default'}/orders/${order.id}`)
                         }
                       >
                         <td className="px-4 py-3">
