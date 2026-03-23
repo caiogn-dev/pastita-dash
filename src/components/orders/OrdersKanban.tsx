@@ -252,9 +252,20 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <span className="font-bold text-gray-900 dark:text-white text-sm">
-          #{order.order_number}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-gray-900 dark:text-white text-sm">
+            #{order.order_number}
+          </span>
+          {order.delivery_method === 'pickup' ? (
+            <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 rounded-full font-medium">
+              🏪 Retirada
+            </span>
+          ) : (
+            <span className="text-xs px-1.5 py-0.5 bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 rounded-full font-medium">
+              🛵 Entrega
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {isUpdating && (
             <ArrowPathIcon className="w-4 h-4 text-primary-500 animate-spin" />
