@@ -46,80 +46,72 @@ import {
 } from '@heroicons/react/24/outline';
 import { Order } from '../../types';
 
-// Order status configuration - SEMANTIC FLOW
-// Separates "order received" from "payment confirmed" for clarity
+// 7-column Kanban flow for a food-delivery restaurant
+// Legacy statuses (processing, paid, shipped, completed, failed, refunded)
+// are normalised into the canonical column via `aliases`.
 export const ORDER_STATUSES = [
-  { 
-    id: 'pending', 
-    label: 'Recebido', 
+  {
+    id: 'pending',
+    label: 'Recebido',
     color: 'bg-slate-50/95 border-slate-200',
     headerColor: 'bg-gray-500',
     icon: ClockIcon,
-    aliases: ['pendente', 'received'],
-    description: 'Pedido recebido, aguardando ação'
+    aliases: ['pendente', 'received', 'processing', 'awaiting_payment', 'payment_pending'],
+    description: 'Pedido recebido, aguardando confirmação',
   },
-  { 
-    id: 'processing', 
-    label: 'Processando', 
-    color: 'bg-amber-50/95 border-amber-200',
-    headerColor: 'bg-amber-500',
-    icon: CurrencyDollarIcon,
-    aliases: ['awaiting_payment', 'payment_pending'],
-    description: 'Pagamento em processamento'
-  },
-  { 
-    id: 'confirmed', 
-    label: 'Confirmado', 
+  {
+    id: 'confirmed',
+    label: 'Confirmado',
     color: 'bg-blue-50/95 border-blue-200',
     headerColor: 'bg-blue-500',
     icon: CheckCircleIcon,
     aliases: ['confirmado', 'aprovado', 'paid', 'payment_confirmed'],
-    description: 'Pagamento confirmado - Pronto para produção'
+    description: 'Pagamento confirmado — pronto para produção',
   },
-  { 
-    id: 'preparing', 
-    label: 'Preparando', 
+  {
+    id: 'preparing',
+    label: 'Preparando',
     color: 'bg-orange-50/95 border-orange-200',
     headerColor: 'bg-orange-500',
     icon: FireIcon,
     aliases: ['preparando', 'in_production'],
-    description: 'Em produção na cozinha'
+    description: 'Em produção na cozinha',
   },
-  { 
-    id: 'ready', 
-    label: 'Pronto', 
+  {
+    id: 'ready',
+    label: 'Pronto',
     color: 'bg-purple-50/95 border-purple-200',
     headerColor: 'bg-purple-500',
     icon: CheckCircleIcon,
     aliases: ['pronto', 'ready_for_pickup', 'ready_for_delivery'],
-    description: 'Pronto para entrega/retirada'
+    description: 'Pronto para entrega ou retirada',
   },
-  { 
-    id: 'out_for_delivery', 
-    label: 'Em Entrega', 
+  {
+    id: 'out_for_delivery',
+    label: 'Em Entrega',
     color: 'bg-indigo-50/95 border-indigo-200',
     headerColor: 'bg-indigo-500',
     icon: TruckIcon,
     aliases: ['shipped', 'enviado', 'em_entrega', 'delivering'],
-    description: 'Saiu para entrega'
+    description: 'Saiu para entrega',
   },
-  { 
-    id: 'delivered', 
-    label: 'Entregue', 
+  {
+    id: 'delivered',
+    label: 'Entregue',
     color: 'bg-emerald-50/95 border-emerald-200',
     headerColor: 'bg-green-500',
     icon: HomeIcon,
-    aliases: ['entregue', 'completed'],
-    description: 'Pedido finalizado'
+    aliases: ['completed', 'entregue', 'picked_up'],
+    description: 'Pedido finalizado',
   },
-  { 
-    id: 'cancelled', 
-    label: 'Cancelado', 
+  {
+    id: 'cancelled',
+    label: 'Cancelado',
     color: 'bg-rose-50/95 border-rose-200',
     headerColor: 'bg-red-500',
     icon: XCircleIcon,
     aliases: ['cancelado', 'refunded', 'failed'],
-    description: 'Pedido cancelado'
+    description: 'Pedido cancelado ou reembolsado',
   },
 ];
 

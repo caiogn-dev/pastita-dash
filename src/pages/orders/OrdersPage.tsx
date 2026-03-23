@@ -26,38 +26,55 @@ import { Order } from '../../types';
 type ViewMode = 'kanban' | 'table';
 type OrderStatus = Order['status'];
 
-const ORDER_STATUS_VALUES: OrderStatus[] = [
-  'pending',
-  'processing',
-  'confirmed',
-  'paid',
-  'preparing',
-  'ready',
-  'shipped',
-  'out_for_delivery',
-  'delivered',
-  'completed',
-  'cancelled',
-  'refunded',
-  'failed',
-];
+// Grouped status filters — maps UI tabs to one or more DB status values.
+// Legacy statuses (processing, paid, shipped, completed, failed, refunded) are
+// folded into their canonical group so the UI stays clean.
+const STATUS_GROUPS = [
+  {
+    id: 'pending' as const,
+    label: 'Recebidos',
+    includes: ['pending', 'processing'] as string[],
+    colorClass: 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300',
+  },
+  {
+    id: 'confirmed' as const,
+    label: 'Confirmados',
+    includes: ['confirmed', 'paid'] as string[],
+    colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  },
+  {
+    id: 'preparing' as const,
+    label: 'Preparando',
+    includes: ['preparing'] as string[],
+    colorClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  },
+  {
+    id: 'ready' as const,
+    label: 'Prontos',
+    includes: ['ready'] as string[],
+    colorClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  },
+  {
+    id: 'out_for_delivery' as const,
+    label: 'Em entrega',
+    includes: ['out_for_delivery', 'shipped'] as string[],
+    colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+  },
+  {
+    id: 'delivered' as const,
+    label: 'Entregues',
+    includes: ['delivered', 'completed'] as string[],
+    colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  },
+  {
+    id: 'cancelled' as const,
+    label: 'Cancelados',
+    includes: ['cancelled', 'refunded', 'failed'] as string[],
+    colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  },
+] as const;
 
-const STATUS_CONFIG: Record<string, { label: string; colorClass: string }> = {
-  all: { label: 'Todos', colorClass: 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300' },
-  pending: { label: 'Recebidos', colorClass: 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300' },
-  processing: { label: 'Processando', colorClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  confirmed: { label: 'Confirmados', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  paid: { label: 'Pagos', colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  preparing: { label: 'Preparando', colorClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  ready: { label: 'Prontos', colorClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-  shipped: { label: 'Enviados', colorClass: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
-  out_for_delivery: { label: 'Em entrega', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  delivered: { label: 'Entregues', colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  completed: { label: 'Concluidos', colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  cancelled: { label: 'Cancelados', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  refunded: { label: 'Reembolsados', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  failed: { label: 'Falharam', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-};
+type StatusFilterKey = typeof STATUS_GROUPS[number]['id'] | 'all';
 
 const PAYMENT_STATUS_COLOR: Record<string, string> = {
   paid: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -85,9 +102,8 @@ const DELIVERY_QUEUE_STATUSES = new Set<OrderStatus>([
   'out_for_delivery',
 ]);
 
-const isOrderStatus = (value: unknown): value is OrderStatus => {
-  return ORDER_STATUS_VALUES.includes(String(value) as OrderStatus);
-};
+const isStatusFilterKey = (value: unknown): value is StatusFilterKey =>
+  value === 'all' || STATUS_GROUPS.some((g) => g.id === value);
 
 const isUuidLike = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -226,7 +242,7 @@ export const OrdersPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilterKey>('all');
   const [isExporting, setIsExporting] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const refreshTimeoutRef = useRef<number | null>(null);
@@ -360,15 +376,18 @@ export const OrdersPage: React.FC = () => {
         order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customer_phone?.includes(searchQuery);
 
-      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      if (statusFilter !== 'all') {
+        const group = STATUS_GROUPS.find((g) => g.id === statusFilter);
+        if (!group?.includes.includes(order.status)) return false;
+      }
+      return matchesSearch;
     });
   }, [orders, searchQuery, statusFilter]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: orders.length };
-    ORDER_STATUS_VALUES.forEach((status) => {
-      counts[status] = orders.filter((order) => order.status === status).length;
+    STATUS_GROUPS.forEach((group) => {
+      counts[group.id] = orders.filter((o) => group.includes.includes(o.status)).length;
     });
     return counts;
   }, [orders]);
@@ -612,17 +631,19 @@ export const OrdersPage: React.FC = () => {
               style={{ scrollbarWidth: 'thin' }}
             >
               <div className="flex gap-1.5 min-w-max py-1">
-                {(['all', ...ORDER_STATUS_VALUES] as const).map((status) => {
-                  const cfg = STATUS_CONFIG[status];
-                  const count = statusCounts[status] ?? 0;
-                  const isActive = statusFilter === status;
+                {(['all', ...STATUS_GROUPS.map((g) => g.id)] as const).map((key) => {
+                  const group = STATUS_GROUPS.find((g) => g.id === key);
+                  const tabLabel = key === 'all' ? 'Todos' : (group?.label ?? key);
+                  const tabColor = key === 'all'
+                    ? 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300'
+                    : (group?.colorClass ?? 'bg-gray-100 text-gray-600');
+                  const count = statusCounts[key] ?? 0;
+                  const isActive = statusFilter === key;
                   return (
                     <button
-                      key={status}
+                      key={key}
                       onClick={() => {
-                        if (status === 'all' || isOrderStatus(status)) {
-                          setStatusFilter(status as OrderStatus | 'all');
-                        }
+                        if (isStatusFilterKey(key)) setStatusFilter(key);
                       }}
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                         isActive
@@ -630,12 +651,10 @@ export const OrdersPage: React.FC = () => {
                           : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
                       }`}
                     >
-                      {cfg?.label || status}
+                      {tabLabel}
                       <span
                         className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-xs font-semibold ${
-                          isActive
-                            ? 'bg-white/20 text-white'
-                            : cfg?.colorClass || 'bg-gray-100 text-gray-600'
+                          isActive ? 'bg-white/20 text-white' : tabColor
                         }`}
                       >
                         {count}

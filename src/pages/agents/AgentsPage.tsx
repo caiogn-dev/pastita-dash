@@ -9,15 +9,17 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { AgentCard } from '../../components/agents';
-import agentsService, { Agent } from '../../services/agents';
+import agentsService, { Agent, PROVIDER_CONFIGS } from '../../services/agents';
+import type { AgentProvider } from '../../services/agents';
 
 type StatusFilter = 'all' | 'active' | 'inactive' | 'draft';
-type ProviderFilter = 'all' | 'kimi' | 'openai' | 'anthropic' | 'ollama' | 'nvidia';
+type ProviderFilter = 'all' | AgentProvider;
 
 export const AgentsPage: React.FC = () => {
   const navigate = useNavigate();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>('all');
@@ -25,12 +27,14 @@ export const AgentsPage: React.FC = () => {
 
   const loadAgents = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const data = await agentsService.getAgents();
-      // Ensure data is an array
       setAgents(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Erro ao carregar agentes:', error);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('[AgentsPage] Erro ao carregar agentes:', error);
+      setLoadError(msg);
       setAgents([]);
     } finally {
       setIsLoading(false);
@@ -220,14 +224,21 @@ export const AgentsPage: React.FC = () => {
                 )}
               >
                 <option value="all">Todos</option>
-                <option value="kimi">Kimi</option>
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="ollama">Ollama</option>
-                <option value="nvidia">NVIDIA</option>
+                {(Object.entries(PROVIDER_CONFIGS) as [AgentProvider, { name: string }][]).map(([key, cfg]) => (
+                  <option key={key} value={key}>{cfg.name}</option>
+                ))}
               </select>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Error banner — mostra o erro real em vez de lista vazia silenciosa */}
+      {loadError && (
+        <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
+          <p className="font-semibold">Erro ao carregar agentes:</p>
+          <p className="text-sm mt-1 font-mono">{loadError}</p>
+          <p className="text-xs mt-2 text-red-500">Abra o DevTools (F12) → Network → veja o request GET /api/v1/agents/ para detalhes.</p>
         </div>
       )}
 

@@ -7,15 +7,13 @@ export const PROVIDER_CONFIGS = {
   kimi: {
     name: 'Kimi (Moonshot)',
     models: ['kimi-for-coding', 'kimi-k2', 'kimi-k2.5'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
-    defaultBaseUrl: 'https://api.kimi.com/coding/',
+    defaultBaseUrl: 'https://api.moonshot.cn/v1',
     requiresApiKey: true,
-    apiStyle: 'anthropic', // Backend uses ChatAnthropic for Kimi
+    apiStyle: 'openai',
   },
   openai: {
     name: 'OpenAI',
     models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'https://api.openai.com/v1',
     requiresApiKey: true,
     apiStyle: 'openai',
@@ -23,15 +21,24 @@ export const PROVIDER_CONFIGS = {
   anthropic: {
     name: 'Anthropic',
     models: ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
-    defaultBaseUrl: 'https://api.anthropic.com/v1',
+    defaultBaseUrl: 'https://api.anthropic.com',
     requiresApiKey: true,
     apiStyle: 'anthropic',
+  },
+  nvidia: {
+    name: 'NVIDIA AI (NIM)',
+    models: [
+      'meta/llama-3.1-405b-instruct',
+      'meta/llama-3.1-70b-instruct',
+      'meta/llama-3.1-8b-instruct',
+    ],
+    defaultBaseUrl: 'https://integrate.api.nvidia.com/v1',
+    requiresApiKey: true,
+    apiStyle: 'openai',
   },
   ollama: {
     name: 'Ollama (Local)',
     models: ['llama3', 'mistral', 'codellama', 'mixtral'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'http://localhost:11434/v1',
     requiresApiKey: false,
     apiStyle: 'openai',
@@ -147,6 +154,7 @@ export const DEFAULT_AGENT_VALUES: Partial<CreateAgentData> = {
 let backendProviderConfig: Record<string, { base_url: string; model_name: string; api_style: string }> | null = null;
 
 // Fetch provider config from backend (includes correct base URLs)
+// DRF 3.14+: url_path de @action preserva underscore → /agents/provider_config/
 export const fetchProviderConfig = async (): Promise<Record<string, { base_url: string; model_name: string; api_style: string }>> => {
   try {
     const response = await api.get('/agents/provider_config/');
@@ -154,7 +162,6 @@ export const fetchProviderConfig = async (): Promise<Record<string, { base_url: 
     return response.data;
   } catch (error) {
     console.error('[AgentService] Failed to fetch provider config:', error);
-    // Return empty object - caller should handle fallback
     return {};
   }
 };
