@@ -198,7 +198,7 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCa
 // MAIN COMPONENT
 // =============================================================================
 
-export const OrderDetailPageNew: React.FC = () => {
+export const OrderDetailPage: React.FC = () => {
   const { id, storeId: routeStoreId } = useParams<{ id: string; storeId?: string }>();
   const navigate = useNavigate();
   const { printOrder } = useOrderPrint();
@@ -673,4 +673,4 @@ export const OrderDetailPageNew: React.FC = () => {
   );
 };
 
-export default OrderDetailPageNew;
+export default OrderDetailPage;

@@ -1,0 +1,20 @@
+{
+  "name": "Pastita Dashboard",
+  "short_name": "Pastita",
+  "description": "Painel de controle da Pastita — pedidos, clientes e conversas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#8c2e2e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pastita-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "pt-BR"
+}

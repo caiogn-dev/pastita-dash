@@ -2,7 +2,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import { useAccountStore } from '../../stores/accountStore';
-import { NotificationDropdown } from '../notifications';
+import { NotificationDropdown, PushNotificationToggle } from '../notifications';
 import { StoreSelector } from './StoreSelector';
 import { ThemeToggle } from '../theme';
 
@@ -175,6 +175,8 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           <ThemeToggle />
+
+          <PushNotificationToggle />
 
           <NotificationDropdown />
 

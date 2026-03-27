@@ -79,6 +79,9 @@ export const registerPushSubscription = (data: {
 export const unregisterPushSubscription = (endpoint: string) =>
   api.post('/notifications/push/unregister/', { endpoint });
 
+export const getVapidPublicKey = () =>
+  api.get<{ publicKey: string }>('/notifications/push/vapid-public-key/');
+
 export const notificationsService = {
   getNotifications,
   getUnreadCount,
@@ -88,6 +91,7 @@ export const notificationsService = {
   updatePreferences,
   registerPushSubscription,
   unregisterPushSubscription,
+  getVapidPublicKey,
 };
 
 export default notificationsService;
