@@ -160,7 +160,9 @@ class ProductsService {
     const params = new URLSearchParams();
     if (filters?.search) params.append('search', filters.search);
     if (filters?.category) params.append('category', filters.category);
-    if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
+    if (filters?.store) params.append('store', filters.store);
+    // Backend uses status field ('active'/'inactive'), not is_active boolean
+    if (filters?.is_active !== undefined) params.append('status', filters.is_active ? 'active' : 'inactive');
     if (filters?.ordering) params.append('ordering', filters.ordering);
     if (filters?.page) params.append('page', String(filters.page));
     if (filters?.page_size) params.append('page_size', String(filters.page_size));

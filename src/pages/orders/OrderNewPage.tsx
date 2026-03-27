@@ -96,9 +96,10 @@ export const OrderNewPage: React.FC = () => {
   }, [items, deliveryMethod]);
 
   useEffect(() => {
+    if (!effectiveStoreId) return;
     const load = async () => {
       try {
-        const response = await productsService.getProducts({ is_active: true });
+        const response = await productsService.getProducts({ store: effectiveStoreId, is_active: true });
         setProducts((response.results || []).map(p => ({
           ...p,
           price: toNumber(p.price),
@@ -108,7 +109,7 @@ export const OrderNewPage: React.FC = () => {
       finally { setProductsLoading(false); }
     };
     load();
-  }, []);
+  }, [effectiveStoreId]);
 
   const handleAddItem = () => {
     if (!selectedProduct || quantity < 1) return;
