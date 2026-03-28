@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -92,44 +94,57 @@
 }
 
 /* ============================================
-   DARK MODE
+   DARK MODE — Charcoal Quente
+   Inspirado no backstage de uma cozinha:
+   escuro mas com calor, profundidade, não vazio.
    ============================================ */
 .dark {
   color-scheme: dark;
 
-  --pastita-background: #000000;
-  --pastita-surface: #0a0a0a;
-  --pastita-foreground: #fafafa;
-  --pastita-border: #27272a;
+  /* Preto quente — marrom-carvão com toque de marsala */
+  --pastita-background: #0D0907;
+  --pastita-surface: #141009;
+  --pastita-foreground: #FAF9F7;
+  --pastita-border: #2C2218;
 
-  --text-primary: #ffffff;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
+  /* Texto com temperatura quente, não zinc puro */
+  --text-primary: #FAF9F7;
+  --text-secondary: #A8998F;
+  --text-muted: #6E6058;
 
-  --border-default: #27272a;
-  --border-subtle: #1c1c1e;
-  --border-focus: #FB923C;
+  --border-default: #2C2218;
+  --border-subtle: #1E1812;
+  --border-focus: #F59342;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  /* Sombras com calor — leve véu âmbar nas camadas */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.4), 0 0 1px rgba(255,180,90,.03);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.5), 0 1px 4px rgba(0,0,0,.3);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,.6), 0 4px 8px rgba(0,0,0,.35);
 
-  /* Semantic tokens - dark mode */
-  --fg-primary: #f9fafb;
-  --fg-secondary: #9ca3af;
-  --fg-muted: #6b7280;
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-card: #141414;
-  --bg-hover: #1f1f1f;
-  --bg-active: #2a2a2a;
+  /* Semantic tokens — dark quente */
+  --fg-primary: #FAF9F7;
+  --fg-secondary: #A8998F;
+  --fg-muted: #6E6058;
+  --bg-primary: #0D0907;
+  --bg-secondary: #141009;
+  --bg-card: #1C1510;
+  --bg-hover: #251C14;
+  --bg-active: #2E2219;
+
+  /* Gradiente sutil para sidebar/nav — profundidade lateral */
+  --sidebar-gradient: linear-gradient(180deg, #181210 0%, #0D0907 100%);
+  --sidebar-active-glow: rgba(var(--primary-500), 0.12);
 }
 
-/* CORRIGIDO: Removido !important e transicao global problematica */
+/* Textura grain sutil — faz o escuro respirar */
+.dark body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+}
+
 .dark .bg-slate-900,
 .dark .bg-slate-800,
 .dark .bg-gray-900 {
-  background-color: #000000;
+  background-color: #0D0907;
 }
 
 /* ============================================
@@ -332,4 +347,61 @@ textarea::placeholder {
   padding: 1rem;
   overflow-wrap: break-word;
   word-wrap: break-word;
+}
+
+/* ============================================
+   EMOTION SYSTEM — pastita-dash
+   Tipografia de exibição + scrollbar quente no dark
+   ============================================ */
+
+/* Font display para métricas grandes — Playfair dá peso emocional */
+.font-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+.metric-display {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.metric-display--italic {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+/* Count-up animation nos valores de métricas */
+@keyframes metric-reveal {
+  from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0);   filter: blur(0); }
+}
+.metric-animate {
+  animation: metric-reveal 0.5s cubic-bezier(.25,.46,.45,.94) both;
+}
+
+/* Scrollbar quente no dark — substitui o cinza neutro */
+.dark ::-webkit-scrollbar-track { background: #181210; }
+.dark ::-webkit-scrollbar-thumb { background: #3A2C20; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #4E3C2C; }
+
+/* Card warm glow — usado em cards de destaque */
+.card-warm-glow {
+  box-shadow:
+    0 0 0 1px rgba(var(--primary-500), 0.08),
+    0 4px 16px rgba(var(--primary-500), 0.12),
+    0 1px 4px rgba(0,0,0,.3);
+  transition: box-shadow 300ms ease;
+}
+.card-warm-glow:hover {
+  box-shadow:
+    0 0 0 1px rgba(var(--primary-500), 0.15),
+    0 8px 32px rgba(var(--primary-500), 0.18),
+    0 2px 8px rgba(0,0,0,.4);
+}
+
+/* Sidebar item active state com glow warm */
+.dark .nav-item-active {
+  background: linear-gradient(90deg, rgba(var(--primary-500), 0.14) 0%, rgba(var(--primary-500), 0.06) 100%);
+  border-left: 2px solid var(--primary-500);
 }

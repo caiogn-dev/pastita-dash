@@ -74,22 +74,22 @@ export default {
         // ============================================
         dark: {
           bg: {
-            primary: '#000000',
-            secondary: '#0a0a0a',
-            tertiary: '#141414',
-            elevated: '#1a1a1a',
-            hover: '#262626',
+            primary: '#0D0907',
+            secondary: '#141009',
+            tertiary: '#1C1510',
+            elevated: '#251C14',
+            hover: '#2E2219',
           },
           border: {
-            DEFAULT: '#27272a',
-            light: '#3f3f46',
-            focus: '#52525b',
+            DEFAULT: '#2C2218',
+            light: '#3D2E20',
+            focus: '#F59342',
           },
           text: {
-            primary: '#ffffff',
-            secondary: '#a1a1aa',
-            tertiary: '#71717a',
-            muted: '#52525b',
+            primary: '#FAF9F7',
+            secondary: '#A8998F',
+            tertiary: '#7A6D64',
+            muted: '#6E6058',
           },
         },
         // ============================================
@@ -184,6 +184,13 @@ export default {
           800: '#1E40AF',
           900: '#1E3A8A',
         },
+      },
+      // ============================================
+      // TYPOGRAPHY
+      // ============================================
+      fontFamily: {
+        display: ['Playfair Display', 'Georgia', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       // ============================================
       // SHADOWS
