@@ -43,7 +43,17 @@ self.addEventListener('fetch', (event) => {
   // API calls: network-first, no caching
   if (url.pathname.startsWith('/api/')) return;
 
-  // Static assets: cache-first
+  // SPA navigation requests (no file extension = React Router route):
+  // serve index.html from cache so the app loads even offline / on hard refresh.
+  const isNavigation = request.mode === 'navigate' || !url.pathname.includes('.');
+  if (isNavigation) {
+    event.respondWith(
+      fetch(request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+
+  // Static assets (js, css, images…): cache-first
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
