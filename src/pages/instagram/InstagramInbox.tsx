@@ -73,8 +73,8 @@ export default function InstagramInbox() {
 
     void loadConversations(false);
     const interval = window.setInterval(() => {
-      void loadConversations(true);
-    }, 15000);
+      if (!document.hidden) void loadConversations(true);
+    }, 60_000);
 
     return () => window.clearInterval(interval);
   }, [selectedAccountId]);
@@ -87,8 +87,8 @@ export default function InstagramInbox() {
 
     void loadMessages(selectedConversationId, false);
     const interval = window.setInterval(() => {
-      void loadMessages(selectedConversationId, true);
-    }, 12000);
+      if (!document.hidden) void loadMessages(selectedConversationId, true);
+    }, 30_000);
 
     return () => window.clearInterval(interval);
   }, [selectedConversationId]);

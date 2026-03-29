@@ -112,7 +112,7 @@ export const ConversationsPage: React.FC = () => {
         return;
       }
       void loadConversations(true);
-    }, 15000);
+    }, 60_000);
     return () => window.clearInterval(interval);
   }, []);
 

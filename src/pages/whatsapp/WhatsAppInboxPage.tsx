@@ -2,7 +2,7 @@
  * WhatsApp Inbox - Página consolidada para gerenciar conversas
  * Similar ao WhatsApp Web, mas integrado ao painel Pastita
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +17,8 @@ import {
 import { conversationsService } from '../../services/conversations';
 import * as whatsappService from '../../services/whatsapp';
 import { handoverService } from '../../services/handover';
+import { useWhatsAppWsContext } from '../../context/WhatsAppWsContext';
+import { useChatStore } from '../../stores/chatStore';
 import toast from 'react-hot-toast';
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
@@ -32,45 +34,59 @@ interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
 
 const WhatsAppInboxPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [conversations, setConversations] = useState<ConversationWithMessages[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ConversationWithMessages | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const loadConversations = async () => {
+  // WebSocket context para atualizações em tempo real
+  const ws = useWhatsAppWsContext();
+
+  // chatStore sincronizado pelo WebSocket
+  const storeConversations = useChatStore((s) => s.conversations);
+  const getConversationMessages = useChatStore((s) => s.getConversationMessages);
+
+  // Deriva lista de conversas do store (já atualizada via WebSocket)
+  const conversations = ensureArray<ConversationWithMessages>(storeConversations as ConversationWithMessages[]);
+
+  // Mensagens da conversa selecionada — lidas do store (WebSocket as atualiza)
+  const messages = selectedConversation
+    ? ensureArray<Message>(getConversationMessages(selectedConversation.id))
+    : [];
+
+  const loadConversations = useCallback(async () => {
     try {
       const response = await conversationsService.getConversations({});
       const convs = ensureArray<ConversationWithMessages>(response?.results || response);
-      setConversations(convs);
+      // Hidrata o chatStore com a lista inicial (o WS mantém atualizado depois)
+      useChatStore.getState().setConversations(convs as unknown as Conversation[]);
 
       const requestedConversationId = searchParams.get('conversation');
       if (requestedConversationId) {
-        const requestedConversation = convs.find((conv) => conv.id === requestedConversationId);
-        if (requestedConversation) {
-          setSelectedConversation(requestedConversation);
-          await loadMessages(requestedConversation.id);
+        const found = convs.find((conv) => conv.id === requestedConversationId);
+        if (found) {
+          setSelectedConversation(found);
+          await loadMessages(found.id);
         }
       }
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
       toast.error('Erro ao carregar conversas');
     }
-  };
+  }, [searchParams]);
 
-  const loadMessages = async (conversationId: string) => {
+  const loadMessages = useCallback(async (conversationId: string) => {
     try {
       const msgs = await conversationsService.getMessages(conversationId);
-      setMessages(ensureArray<Message>(msgs));
+      // Carrega mensagens históricas no store; WS adiciona novas em tempo real
+      useChatStore.getState().setMessages(conversationId, ensureArray<Message>(msgs));
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
       toast.error('Erro ao carregar mensagens');
     }
-  };
+  }, []);
 
   const handleSelectConversation = async (conversation: ConversationWithMessages) => {
     setSelectedConversation(conversation);
@@ -91,8 +107,8 @@ const WhatsAppInboxPage: React.FC = () => {
       });
       setMessageText('');
       toast.success('Mensagem enviada');
-      // Reload messages after short delay for sync
-      setTimeout(() => loadMessages(selectedConversation.id), 500);
+      // Recarrega mensagens uma vez para garantir sync (WS já atualiza em tempo real)
+      void loadMessages(selectedConversation.id);
     } catch (error: any) {
       console.error('Erro ao enviar mensagem:', error);
       toast.error(error?.response?.data?.detail || 'Erro ao enviar mensagem');
@@ -137,26 +153,24 @@ const WhatsAppInboxPage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Carga inicial — apenas UMA vez por mudança de searchParams
   useEffect(() => {
-    void loadConversations();
-    setLoading(false);
+    setLoading(true);
+    void loadConversations().finally(() => setLoading(false));
 
-    // Auto-refresh conversations every 3 seconds
-    pollIntervalRef.current = setInterval(() => {
-      void loadConversations();
-    }, 3000);
-    return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    };
-  }, [searchParams.toString()]);
+    // Refresh leve a cada 60s como fallback (WebSocket cuida do tempo real)
+    const timer = setInterval(() => {
+      if (!document.hidden) void loadConversations();
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [loadConversations]);
 
+  // Subscreve/dessubscreve do canal WS ao selecionar conversa
   useEffect(() => {
-    if (selectedConversation) {
-      // Reload messages every 2 seconds when a conversation is selected
-      const interval = setInterval(() => loadMessages(selectedConversation.id), 2000);
-      return () => clearInterval(interval);
-    }
-  }, [selectedConversation]);
+    if (!selectedConversation) return;
+    ws.subscribeToConversation(selectedConversation.id);
+    return () => ws.unsubscribeFromConversation(selectedConversation.id);
+  }, [selectedConversation, ws]);
 
   useEffect(() => {
     scrollToBottom();
