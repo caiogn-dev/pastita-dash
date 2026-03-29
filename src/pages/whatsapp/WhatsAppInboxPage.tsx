@@ -3,8 +3,8 @@
  * Similar ao WhatsApp Web, mas integrado ao painel Pastita
  */
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { format, formatDistanceToNow } from 'date-fns';
+import { useSearchParams } from 'react-router-dom';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   MagnifyingGlassIcon,
@@ -31,6 +31,7 @@ interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
 }
 
 const WhatsAppInboxPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [conversations, setConversations] = useState<ConversationWithMessages[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ConversationWithMessages | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -46,6 +47,15 @@ const WhatsAppInboxPage: React.FC = () => {
       const response = await conversationsService.getConversations({});
       const convs = ensureArray<ConversationWithMessages>(response?.results || response);
       setConversations(convs);
+
+      const requestedConversationId = searchParams.get('conversation');
+      if (requestedConversationId) {
+        const requestedConversation = convs.find((conv) => conv.id === requestedConversationId);
+        if (requestedConversation) {
+          setSelectedConversation(requestedConversation);
+          await loadMessages(requestedConversation.id);
+        }
+      }
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
       toast.error('Erro ao carregar conversas');
@@ -128,15 +138,17 @@ const WhatsAppInboxPage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadConversations();
+    void loadConversations();
     setLoading(false);
 
     // Auto-refresh conversations every 3 seconds
-    pollIntervalRef.current = setInterval(loadConversations, 3000);
+    pollIntervalRef.current = setInterval(() => {
+      void loadConversations();
+    }, 3000);
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
-  }, []);
+  }, [searchParams.toString()]);
 
   useEffect(() => {
     if (selectedConversation) {

@@ -2,6 +2,7 @@
  * MessengerInbox - Inbox do Facebook Messenger
  */
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   PaperAirplaneIcon,
   MagnifyingGlassIcon,
@@ -10,8 +11,10 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { messengerService, MessengerConversation, MessengerMessage } from '../../services/messenger';
+import { normalizePaginatedResponse } from '../../services/api';
 
 export default function MessengerInbox() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<MessengerConversation[]>([]);
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +27,7 @@ export default function MessengerInbox() {
 
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, [searchParams.toString()]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -32,10 +35,17 @@ export default function MessengerInbox() {
 
   const loadConversations = () => {
     setLoading(true);
-    messengerService.getConversations()
+    messengerService.getConversations(searchParams.get('account') || undefined)
       .then((r: any) => {
-        const list = r.data?.results ?? r.data ?? [];
+        const list = normalizePaginatedResponse<MessengerConversation>(r.data);
         setConversations(list);
+        const requestedConversationId = searchParams.get('conversation');
+        if (requestedConversationId) {
+          const conversation = list.find((item) => item.id === requestedConversationId);
+          if (conversation) {
+            void selectConversation(conversation);
+          }
+        }
       })
       .catch(() => setConversations([]))
       .finally(() => setLoading(false));
@@ -43,10 +53,16 @@ export default function MessengerInbox() {
 
   const selectConversation = async (conv: MessengerConversation) => {
     setSelectedConversation(conv);
+    const next = new URLSearchParams(searchParams);
+    if (conv.account) {
+      next.set('account', conv.account);
+    }
+    next.set('conversation', conv.id);
+    setSearchParams(next, { replace: true });
     setLoadingMessages(true);
     try {
       const r: any = await messengerService.getMessages(conv.id);
-      const msgs = r.data?.results ?? r.data ?? [];
+      const msgs = normalizePaginatedResponse<MessengerMessage>(r.data);
       setMessages(msgs);
       // Mark as read
       if (conv.unread_count > 0) {

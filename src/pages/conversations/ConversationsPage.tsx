@@ -1,804 +1,649 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { 
-  MagnifyingGlassIcon, 
-  ChatBubbleLeftRightIcon, 
-  UserIcon, 
-  CpuChipIcon,
-  TagIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon,
+import {
   ArrowPathIcon,
-  PlusIcon,
+  ChatBubbleLeftRightIcon,
+  ClockIcon,
+  MagnifyingGlassIcon,
+  PhoneIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
-import { 
-  Card, 
-  Button, 
-  Table, 
-  ConversationStatusBadge,
-  ConversationModeBadge,
-  Modal, 
-  Textarea, 
-  Input,
-  PageLoading,
-  StatusTabs,
-  PageTitle,
-  CONVERSATION_STATUS_CONFIG,
-  CONVERSATION_MODE_CONFIG,
-} from '../../components/common';
-import { conversationsService, ordersService, exportService, getErrorMessage } from '../../services';
-import { useAccountStore } from '../../stores/accountStore';
-import { useStore } from '../../hooks';
-import { Conversation, ConversationNote, Order } from '../../types';
+
+import { Button, Modal, PageLoading, PageTitle, Textarea } from '../../components/common';
+import { conversationsService, getErrorMessage } from '../../services';
+import type { Conversation, ConversationNote, Message, UniversalConversation } from '../../types';
+
+type PlatformFilter = 'all' | 'whatsapp' | 'instagram' | 'messenger';
+type WhatsAppAction = 'markAsRead' | 'switchToHuman' | 'switchToAuto' | 'resolve' | 'close' | 'reopen';
+
+const platformLabels: Record<UniversalConversation['platform'], string> = {
+  whatsapp: 'WhatsApp',
+  instagram: 'Instagram',
+  messenger: 'Messenger',
+};
+
+function buildRoute(route: string, params: Record<string, string>) {
+  const search = new URLSearchParams(params).toString();
+  return search ? `${route}?${search}` : route;
+}
+
+function PlatformGlyph({ platform }: { platform: UniversalConversation['platform'] }) {
+  if (platform === 'instagram') {
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 text-white shadow-sm">
+        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="2">
+          <rect x="4" y="4" width="16" height="16" rx="5" />
+          <circle cx="12" cy="12" r="3.5" />
+          <circle cx="17.3" cy="6.7" r="0.9" fill="currentColor" stroke="none" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (platform === 'messenger') {
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-sm">
+        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current">
+          <path d="M12 3C6.76 3 2.5 6.93 2.5 11.75c0 2.74 1.38 5.19 3.54 6.8V21l2.81-1.56c.9.25 1.85.38 2.85.38 5.24 0 9.5-3.93 9.5-8.75S17.24 3 12 3Zm1.06 10.03-2.37-2.53-4.38 2.53 4.84-5.14 2.39 2.53 4.34-2.53-4.82 5.14Z" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-sm">
+      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current">
+        <path d="M20.52 3.48A11.82 11.82 0 0 0 12.08.25C5.6.25.33 5.49.33 11.95c0 2.06.54 4.07 1.56 5.85L.25 23.75l6.12-1.61a11.84 11.84 0 0 0 5.71 1.45h.01c6.48 0 11.75-5.25 11.75-11.71 0-3.13-1.22-6.06-3.32-8.4Zm-8.44 18.13h-.01a9.83 9.83 0 0 1-5.01-1.37l-.36-.21-3.63.96.97-3.53-.24-.37a9.76 9.76 0 0 1-1.5-5.16c0-5.4 4.41-9.79 9.83-9.79 2.62 0 5.08 1.02 6.93 2.87a9.69 9.69 0 0 1 2.89 6.92c0 5.4-4.41 9.78-9.87 9.78Zm5.37-7.36c-.29-.14-1.73-.85-2-.95-.27-.1-.47-.14-.66.14-.19.29-.76.95-.93 1.15-.17.19-.34.22-.63.08-.29-.14-1.21-.45-2.31-1.43-.85-.76-1.43-1.7-1.6-1.99-.17-.29-.02-.45.13-.59.13-.13.29-.34.44-.51.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.51-.07-.14-.66-1.58-.91-2.16-.24-.57-.49-.49-.66-.5h-.56c-.19 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.43 1.04 2.81 1.19 3 .14.19 2.03 3.1 4.92 4.34.69.29 1.23.47 1.65.6.69.22 1.31.19 1.8.12.55-.08 1.73-.71 1.97-1.39.24-.68.24-1.26.17-1.39-.07-.12-.27-.19-.56-.33Z" />
+      </svg>
+    </div>
+  );
+}
+
+function formatRelative(value?: string | null) {
+  if (!value) {
+    return 'Sem atividade';
+  }
+  return formatDistanceToNow(new Date(value), { addSuffix: true, locale: ptBR });
+}
+
+function formatClock(value?: string | null) {
+  if (!value) {
+    return '--';
+  }
+  return format(new Date(value), 'dd/MM HH:mm', { locale: ptBR });
+}
+
+function previewText(message: Message) {
+  if (message.text_body) {
+    return message.text_body;
+  }
+  if (message.content) {
+    return message.content;
+  }
+  if (message.media_filename) {
+    return `Arquivo: ${message.media_filename}`;
+  }
+  return message.message_type;
+}
 
 export const ConversationsPage: React.FC = () => {
-  const { selectedAccount } = useAccountStore();
-  const { storeSlug, storeId: contextStoreId } = useStore();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [conversationOrders, setConversationOrders] = useState<Record<string, Order[]>>({});
+  const navigate = useNavigate();
+  const [conversations, setConversations] = useState<UniversalConversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [detailConversation, setDetailConversation] = useState<Conversation | null>(null);
-  const [notes, setNotes] = useState<ConversationNote[]>([]);
-  const [newNote, setNewNote] = useState('');
-  const [newTag, setNewTag] = useState('');
-  const [isAddingNote, setIsAddingNote] = useState(false);
-  const [isAddingTag, setIsAddingTag] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [modeFilter, setModeFilter] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all');
+  const [selectedWhatsAppId, setSelectedWhatsAppId] = useState<string | null>(null);
+  const [whatsAppConversation, setWhatsAppConversation] = useState<Conversation | null>(null);
+  const [whatsAppMessages, setWhatsAppMessages] = useState<Message[]>([]);
+  const [whatsAppNotes, setWhatsAppNotes] = useState<ConversationNote[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<WhatsAppAction | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
 
   useEffect(() => {
-    loadConversations();
-  }, [selectedAccount, storeSlug, contextStoreId]);
+    void loadConversations(false);
+    const interval = window.setInterval(() => {
+      void loadConversations(true);
+    }, 10000);
+    return () => window.clearInterval(interval);
+  }, []);
 
-  const loadConversations = async () => {
-    setIsLoading(true);
-    try {
-      const params: Record<string, string> = {};
-      if (selectedAccount) {
-        params.account = selectedAccount.id;
+  const filteredConversations = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return conversations.filter((conversation) => {
+      if (platformFilter !== 'all' && conversation.platform !== platformFilter) {
+        return false;
       }
-      const response = await conversationsService.getConversations(params);
-      const convList = response.results || [];
-      setConversations(convList);
+      if (!query) {
+        return true;
+      }
+      const haystack = [
+        conversation.display_name,
+        conversation.secondary_identifier,
+        conversation.last_message_preview,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [conversations, platformFilter, searchQuery]);
 
-      // Load orders in parallel (one request per unique phone number, not per conversation)
-      const phoneNumbers = [...new Set(convList.map(c => c.phone_number))];
-      const ordersMap: Record<string, Order[]> = {};
-      await Promise.allSettled(
-        phoneNumbers.map(async (phone) => {
-          try {
-            const orders = await ordersService.getOrders({ customer: phone });
-            if (orders.results.length > 0) {
-              convList
-                .filter(c => c.phone_number === phone)
-                .forEach(c => { ordersMap[c.id] = orders.results; });
-            }
-          } catch {
-            // Ignore errors for individual phone lookups
-          }
-        })
-      );
-      setConversationOrders(ordersMap);
+  const counters = useMemo(() => {
+    return conversations.reduce(
+      (accumulator, conversation) => {
+        accumulator.total += 1;
+        accumulator.unread += conversation.unread_count;
+        accumulator[conversation.platform] += 1;
+        return accumulator;
+      },
+      {
+        total: 0,
+        unread: 0,
+        whatsapp: 0,
+        instagram: 0,
+        messenger: 0,
+      }
+    );
+  }, [conversations]);
+
+  async function loadConversations(isBackgroundRefresh: boolean) {
+    if (isBackgroundRefresh) {
+      setRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+
+    try {
+      const response = await conversationsService.getUniversalConversations();
+      setConversations(response.results || []);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
-  };
+  }
 
-  // Calculate status counts
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    conversations.forEach((conv) => {
-      const status = conv.status || 'unknown';
-      counts[status] = (counts[status] || 0) + 1;
-    });
-    return counts;
-  }, [conversations]);
-
-  // Calculate mode counts
-  const modeCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    conversations.forEach((conv) => {
-      const mode = conv.mode || 'unknown';
-      counts[mode] = (counts[mode] || 0) + 1;
-    });
-    return counts;
-  }, [conversations]);
-
-  // Filter conversations
-  const filteredConversations = useMemo(() => {
-    let result = conversations;
-    
-    if (statusFilter) {
-      result = result.filter((conv) => conv.status === statusFilter);
+  async function openConversation(conversation: UniversalConversation) {
+    if (conversation.platform !== 'whatsapp') {
+      navigate(buildRoute(conversation.route, conversation.route_params));
+      return;
     }
-    
-    if (modeFilter) {
-      result = result.filter((conv) => conv.mode === modeFilter);
-    }
-    
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((conv) =>
-        conv.contact_name?.toLowerCase().includes(query) ||
-        conv.phone_number.includes(query) ||
-        (conv.tags || []).some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-    
-    return result;
-  }, [conversations, statusFilter, modeFilter, searchQuery]);
 
-  // Get order status summary for a conversation
-  const getOrderSummary = (convId: string) => {
-    const orders = conversationOrders[convId] || [];
-    if (orders.length === 0) return null;
-    
-    const pending = orders.filter(o => ['pending', 'processing'].includes(o.status)).length;
-    const paid = orders.filter(o => o.payment_status === 'paid' || ['paid', 'confirmed'].includes(o.status)).length;
-    const shipped = orders.filter(o => ['shipped', 'out_for_delivery'].includes(o.status)).length;
-    const delivered = orders.filter(o => ['delivered', 'completed'].includes(o.status)).length;
-    
-    return { total: orders.length, pending, paid, shipped, delivered };
-  };
-
-  const handleSwitchMode = async (conversation: Conversation, mode: 'human' | 'auto') => {
+    setSelectedWhatsAppId(conversation.source_conversation_id);
+    setModalLoading(true);
     try {
-      const updated = mode === 'human'
-        ? await conversationsService.switchToHuman(conversation.id)
-        : await conversationsService.switchToAuto(conversation.id);
-      setConversations(conversations.map((c) => (c.id === updated.id ? updated : c)));
-      toast.success(`Modo alterado para ${mode === 'human' ? 'humano' : 'automático'}`);
+      const [detail, messages, notes] = await Promise.all([
+        conversationsService.getConversation(conversation.source_conversation_id),
+        conversationsService.getMessages(conversation.source_conversation_id),
+        conversationsService.getNotes(conversation.source_conversation_id),
+      ]);
+
+      setWhatsAppConversation(detail);
+      setWhatsAppMessages(messages);
+      setWhatsAppNotes(notes);
+      setNoteDraft('');
     } catch (error) {
       toast.error(getErrorMessage(error));
+      setSelectedWhatsAppId(null);
+    } finally {
+      setModalLoading(false);
     }
-  };
+  }
 
-  const handleCloseConversation = async (conversation: Conversation) => {
+  async function refreshWhatsAppModal() {
+    if (!selectedWhatsAppId) {
+      return;
+    }
+
+    setModalLoading(true);
     try {
-      const updated = await conversationsService.closeConversation(conversation.id);
-      setConversations(conversations.map((c) => (c.id === updated.id ? updated : c)));
-      toast.success('Conversa fechada');
+      const [detail, messages, notes] = await Promise.all([
+        conversationsService.getConversation(selectedWhatsAppId),
+        conversationsService.getMessages(selectedWhatsAppId),
+        conversationsService.getNotes(selectedWhatsAppId),
+      ]);
+      setWhatsAppConversation(detail);
+      setWhatsAppMessages(messages);
+      setWhatsAppNotes(notes);
     } catch (error) {
       toast.error(getErrorMessage(error));
+    } finally {
+      setModalLoading(false);
     }
-  };
+  }
 
-  const handleResolveConversation = async (conversation: Conversation) => {
+  function closeWhatsAppModal() {
+    setSelectedWhatsAppId(null);
+    setWhatsAppConversation(null);
+    setWhatsAppMessages([]);
+    setWhatsAppNotes([]);
+    setNoteDraft('');
+    setActionLoading(null);
+  }
+
+  async function handleWhatsAppAction(action: WhatsAppAction) {
+    if (!whatsAppConversation) {
+      return;
+    }
+
+    setActionLoading(action);
     try {
-      const updated = await conversationsService.resolveConversation(conversation.id);
-      setConversations(conversations.map((c) => (c.id === updated.id ? updated : c)));
-      toast.success('Conversa resolvida');
+      switch (action) {
+        case 'markAsRead':
+          await conversationsService.markAsRead(whatsAppConversation.id);
+          break;
+        case 'switchToHuman':
+          await conversationsService.switchToHuman(whatsAppConversation.id);
+          break;
+        case 'switchToAuto':
+          await conversationsService.switchToAuto(whatsAppConversation.id);
+          break;
+        case 'resolve':
+          await conversationsService.resolveConversation(whatsAppConversation.id);
+          break;
+        case 'close':
+          await conversationsService.closeConversation(whatsAppConversation.id);
+          break;
+        case 'reopen':
+          await conversationsService.reopenConversation(whatsAppConversation.id);
+          break;
+      }
+
+      await Promise.all([loadConversations(true), refreshWhatsAppModal()]);
+      toast.success('Conversa atualizada');
     } catch (error) {
       toast.error(getErrorMessage(error));
+    } finally {
+      setActionLoading(null);
     }
-  };
+  }
 
-  const handleReopenConversation = async (conversation: Conversation) => {
-    try {
-      const updated = await conversationsService.reopenConversation(conversation.id);
-      setConversations(conversations.map((c) => (c.id === updated.id ? updated : c)));
-      toast.success('Conversa reaberta');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
+  async function handleAddNote() {
+    if (!selectedWhatsAppId || !noteDraft.trim()) {
+      return;
     }
-  };
 
-  const loadNotes = async (conversation: Conversation) => {
+    setSavingNote(true);
     try {
-      const notesData = await conversationsService.getNotes(conversation.id);
-      setNotes(notesData);
-      setSelectedConversation(conversation);
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
-  };
-
-  const handleAddNote = async () => {
-    if (!selectedConversation || !newNote.trim()) return;
-    setIsAddingNote(true);
-    try {
-      const note = await conversationsService.addNote(selectedConversation.id, newNote);
-      setNotes([note, ...notes]);
-      setNewNote('');
+      const note = await conversationsService.addNote(selectedWhatsAppId, noteDraft.trim());
+      setWhatsAppNotes((current) => [note, ...current]);
+      setNoteDraft('');
       toast.success('Nota adicionada');
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
-      setIsAddingNote(false);
+      setSavingNote(false);
     }
-  };
-
-  const handleAddTag = async () => {
-    if (!detailConversation || !newTag.trim()) return;
-    setIsAddingTag(true);
-    try {
-      const updated = await conversationsService.addTag(detailConversation.id, newTag.trim());
-      setConversations(conversations.map((c) => (c.id === updated.id ? updated : c)));
-      setDetailConversation(updated);
-      setNewTag('');
-      toast.success('Tag adicionada');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsAddingTag(false);
-    }
-  };
-
-  const handleRemoveTag = async (tag: string) => {
-    if (!detailConversation) return;
-    try {
-      const updated = await conversationsService.removeTag(detailConversation.id, tag);
-      setConversations(conversations.map((c) => (c.id === updated.id ? updated : c)));
-      setDetailConversation(updated);
-      toast.success('Tag removida');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
-  };
-
-  const handleExport = async (format: 'csv' | 'xlsx') => {
-    setIsExporting(true);
-    try {
-      const blob = await exportService.exportConversations({
-        format,
-        status: statusFilter || undefined,
-        mode: modeFilter || undefined,
-        account_id: selectedAccount?.id,
-      });
-      const dateStamp = new Date().toISOString().slice(0, 10);
-      exportService.downloadBlob(blob, `conversas-${dateStamp}.${format}`);
-      toast.success('Exporta??o conclu?da!');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const statusTabs = [
-    { value: null, label: 'Todas', count: conversations.length },
-    ...Object.entries(CONVERSATION_STATUS_CONFIG).map(([key, config]) => ({
-      value: key,
-      label: config.label,
-      count: statusCounts[key] || 0,
-    })),
-  ];
-
-  const columns = [
-    {
-      key: 'contact',
-      header: 'Contato',
-      render: (conv: Conversation) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-            <UserIcon className="w-5 h-5 text-primary-600" />
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 dark:text-white">{conv.contact_name || 'Sem nome'}</p>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">{conv.phone_number}</p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (conv: Conversation) => (
-        <div className="flex flex-col gap-1">
-          <ConversationStatusBadge status={conv.status || 'active'} />
-          <ConversationModeBadge mode={conv.mode ?? 'auto'} />
-        </div>
-      ),
-    },
-    {
-      key: 'orders',
-      header: 'Pedidos',
-      render: (conv: Conversation) => {
-        const summary = getOrderSummary(conv.id);
-        if (!summary) {
-          return <span className="text-sm text-gray-400">Sem pedidos</span>;
-        }
-        return (
-          <div className="flex flex-wrap gap-1">
-            {summary.pending > 0 && (
-              <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs rounded-full">
-                {summary.pending} pendente(s)
-              </span>
-            )}
-            {summary.paid > 0 && (
-              <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs rounded-full">
-                {summary.paid} pago(s)
-              </span>
-            )}
-            {summary.shipped > 0 && (
-              <span className="px-2 py-0.5 bg-teal-100 text-teal-700 text-xs rounded-full">
-                {summary.shipped} enviado(s)
-              </span>
-            )}
-            {summary.delivered > 0 && (
-              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full">
-                {summary.delivered} entregue(s)
-              </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      key: 'tags',
-      header: 'Tags',
-      render: (conv: Conversation) => (
-        <div className="flex flex-wrap gap-1">
-          {!conv.tags || conv.tags.length === 0 ? (
-            <span className="text-sm text-gray-400">-</span>
-          ) : (
-            <>
-              {conv.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-400 text-xs rounded-full">
-                  {tag}
-                </span>
-              ))}
-              {conv.tags.length > 3 && (
-                <span className="text-xs text-gray-400">+{conv.tags.length - 3}</span>
-              )}
-            </>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'last_message_at',
-      header: 'Última Atividade',
-      render: (conv: Conversation) => (
-        <div className="flex items-center gap-2">
-          <ClockIcon className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-600 dark:text-zinc-400">
-            {conv.last_message_at
-              ? formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ptBR })
-              : '-'}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Ações',
-      render: (conv: Conversation) => (
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant={conv.mode === 'human' ? 'secondary' : 'primary'}
-            leftIcon={conv.mode === 'human' ? <CpuChipIcon className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
-            onClick={(e) => {
-              e?.stopPropagation();
-              handleSwitchMode(conv, conv.mode === 'human' ? 'auto' : 'human');
-            }}
-          >
-            {conv.mode === 'human' ? 'Auto' : 'Humano'}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e?.stopPropagation();
-              loadNotes(conv);
-            }}
-          >
-            Notas
-          </Button>
-          {conv.status === 'open' || conv.status === 'pending' ? (
-            <>
-              <Button
-                size="sm"
-                variant="ghost"
-                leftIcon={<CheckCircleIcon className="w-4 h-4" />}
-                onClick={(e) => {
-                  e?.stopPropagation();
-                  handleResolveConversation(conv);
-                }}
-              >
-                Resolver
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                leftIcon={<XCircleIcon className="w-4 h-4" />}
-                onClick={(e) => {
-                  e?.stopPropagation();
-                  handleCloseConversation(conv);
-                }}
-              >
-                Fechar
-              </Button>
-            </>
-          ) : (
-            <Button
-              size="sm"
-              variant="ghost"
-              leftIcon={<ArrowPathIcon className="w-4 h-4" />}
-              onClick={(e) => {
-                e?.stopPropagation();
-                handleReopenConversation(conv);
-              }}
-            >
-              Reabrir
-            </Button>
-          )}
-        </div>
-      ),
-    },
-  ];
+  }
 
   if (isLoading) {
     return <PageLoading />;
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       <PageTitle
-        title="Conversas"
-        subtitle={`${filteredConversations.length} de ${conversations.length} conversa(s)`}
+        title="Conversations"
+        subtitle="Atividade geral centralizada por conversa, ordenada pela ultima mensagem."
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => handleExport('csv')}
-              isLoading={isExporting}
-            >
-              Exportar CSV
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => handleExport('xlsx')}
-              isLoading={isExporting}
-            >
-              Exportar XLSX
-            </Button>
-          </div>
+          <Button variant="secondary" onClick={() => void loadConversations(false)}>
+            <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
         }
       />
 
-        {/* Status Tabs */}
-        <StatusTabs
-          tabs={statusTabs}
-          value={statusFilter}
-          onChange={setStatusFilter}
-        />
+      <section className="grid gap-4 md:grid-cols-4">
+        <div className="rounded-2xl border border-border-primary bg-bg-card p-4">
+          <p className="text-xs uppercase tracking-wide text-fg-muted">Conversas</p>
+          <p className="mt-2 text-3xl font-semibold text-fg-primary">{counters.total}</p>
+          <p className="mt-1 text-sm text-fg-muted">Hub multicanal ativo</p>
+        </div>
+        <div className="rounded-2xl border border-border-primary bg-bg-card p-4">
+          <p className="text-xs uppercase tracking-wide text-fg-muted">Nao lidas</p>
+          <p className="mt-2 text-3xl font-semibold text-fg-primary">{counters.unread}</p>
+          <p className="mt-1 text-sm text-fg-muted">Somadas entre todas as plataformas</p>
+        </div>
+        <div className="rounded-2xl border border-border-primary bg-bg-card p-4">
+          <p className="text-xs uppercase tracking-wide text-fg-muted">Instagram</p>
+          <p className="mt-2 text-3xl font-semibold text-fg-primary">{counters.instagram}</p>
+          <p className="mt-1 text-sm text-fg-muted">Conversas do DM sincronizadas</p>
+        </div>
+        <div className="rounded-2xl border border-border-primary bg-bg-card p-4">
+          <p className="text-xs uppercase tracking-wide text-fg-muted">WhatsApp</p>
+          <p className="mt-2 text-3xl font-semibold text-fg-primary">{counters.whatsapp}</p>
+          <p className="mt-1 text-sm text-fg-muted">Com modal rapido de triagem</p>
+        </div>
+      </section>
 
-        {/* Search and Mode Filter */}
-        <div className="flex flex-col sm:flex-row gap-4">
+      <section className="rounded-2xl border border-border-primary bg-bg-card p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
             <input
-              type="text"
-              placeholder="Buscar por nome, telefone ou tag..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Buscar por nome, identificador ou trecho da ultima mensagem"
+              className="w-full rounded-xl border border-border-primary bg-bg-subtle py-2 pl-9 pr-3 text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
-          <div className="flex gap-2">
-            {Object.entries(CONVERSATION_MODE_CONFIG).map(([key, config]) => (
+
+          <div className="flex flex-wrap gap-2">
+            {(['all', 'whatsapp', 'instagram', 'messenger'] as PlatformFilter[]).map((platform) => {
+              const isActive = platformFilter === platform;
+              const label =
+                platform === 'all'
+                  ? 'Todas'
+                  : platformLabels[platform as UniversalConversation['platform']];
+              return (
+                <button
+                  key={platform}
+                  type="button"
+                  onClick={() => setPlatformFilter(platform)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-fg-primary text-bg-card'
+                      : 'bg-bg-subtle text-fg-primary hover:bg-bg-hover'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-5 overflow-hidden rounded-2xl border border-border-primary">
+          <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_180px_120px] gap-4 border-b border-border-primary bg-bg-subtle px-5 py-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
+            <div>Conversa</div>
+            <div>Ultima mensagem</div>
+            <div>Ultima atividade</div>
+            <div className="text-right">Acoes</div>
+          </div>
+
+          {filteredConversations.length === 0 ? (
+            <div className="px-5 py-12 text-center text-sm text-fg-muted">
+              Nenhuma conversa encontrada com os filtros atuais.
+            </div>
+          ) : (
+            filteredConversations.map((conversation) => (
               <button
-                key={key}
-                onClick={() => setModeFilter(modeFilter === key ? null : key)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  modeFilter === key
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                }`}
+                key={conversation.id}
+                type="button"
+                onClick={() => void openConversation(conversation)}
+                className="grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_180px_120px] gap-4 border-b border-border-primary px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-bg-hover"
               >
-                {key === 'auto' && <CpuChipIcon className="w-4 h-4" />}
-                {key === 'human' && <UserIcon className="w-4 h-4" />}
-                {key === 'hybrid' && <ChatBubbleLeftRightIcon className="w-4 h-4" />}
-                {config.label}
-                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                  modeFilter === key ? 'bg-white/20' : 'bg-gray-100'
-                }`}>
-                  {modeCounts[key] || 0}
-                </span>
-              </button>
-            ))}
-          </div>
-          {(statusFilter || modeFilter || searchQuery) && (
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setStatusFilter(null);
-                setModeFilter(null);
-                setSearchQuery('');
-              }}
-            >
-              Limpar
-            </Button>
-          )}
-        </div>
+                <div className="flex min-w-0 items-center gap-3">
+                  <PlatformGlyph platform={conversation.platform} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-fg-primary">
+                      {conversation.display_name}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="rounded-full bg-bg-subtle px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+                        {platformLabels[conversation.platform]}
+                      </span>
+                      {conversation.secondary_identifier && (
+                        <span className="truncate text-xs text-fg-muted">
+                          {conversation.secondary_identifier}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
-                <ChatBubbleLeftRightIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{statusCounts.open || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-zinc-400">Abertas</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg">
-                <ClockIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{statusCounts.pending || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-zinc-400">Pendentes</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-                <CheckCircleIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{statusCounts.resolved || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-zinc-400">Resolvidas</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
-                <UserIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{modeCounts.human || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-zinc-400">Atendimento Humano</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Conversations Table */}
-        <Card noPadding>
-          <Table
-            columns={columns}
-            data={filteredConversations}
-            keyExtractor={(conv) => conv.id}
-            onRowClick={(conv) => setDetailConversation(conv)}
-            emptyMessage={
-              statusFilter || modeFilter || searchQuery
-                ? "Nenhuma conversa encontrada com os filtros aplicados"
-                : "Nenhuma conversa encontrada"
-            }
-          />
-        </Card>
-
-      {/* Notes Modal */}
-      <Modal
-        isOpen={!!selectedConversation}
-        onClose={() => setSelectedConversation(null)}
-        title={`Notas - ${selectedConversation?.contact_name || selectedConversation?.phone_number}`}
-        size="md"
-      >
-        <div className="space-y-4">
-          <div>
-            <Textarea
-              placeholder="Adicionar uma nota..."
-              rows={3}
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-            />
-            <div className="flex justify-end mt-2">
-              <Button size="sm" onClick={handleAddNote} isLoading={isAddingNote}>
-                Adicionar Nota
-              </Button>
-            </div>
-          </div>
-
-          <div className="border-t pt-4 space-y-3 max-h-96 overflow-y-auto">
-            {notes.length === 0 ? (
-              <p className="text-center text-gray-500 dark:text-zinc-400 py-4">Nenhuma nota</p>
-            ) : (
-              notes.map((note) => (
-                <div key={note.id} className="bg-gray-50 dark:bg-black rounded-lg p-3">
-                  <p className="text-sm text-gray-900 dark:text-white">{note.content}</p>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">
-                    {format(new Date(note.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-fg-primary">
+                    {conversation.last_message_preview || 'Sem mensagem registrada'}
+                  </p>
+                  <p className="mt-1 text-xs text-fg-muted">
+                    Status: {conversation.status || 'active'}
                   </p>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      </Modal>
 
-      {/* Conversation Detail Modal */}
-      <Modal
-        isOpen={!!detailConversation}
-        onClose={() => setDetailConversation(null)}
-        title="Detalhes da Conversa"
-        size="lg"
-      >
-        {detailConversation && (
-          <div className="space-y-6">
-            {/* Contact Info */}
-            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-black rounded-lg">
-              <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
-                <UserIcon className="w-8 h-8 text-primary-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {detailConversation.contact_name || 'Sem nome'}
-                </h3>
-                <p className="text-gray-600 dark:text-zinc-400">{detailConversation.phone_number}</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <ConversationStatusBadge status={detailConversation.status} />
-                <ConversationModeBadge mode={detailConversation.mode ?? 'auto'} />
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
-                <TagIcon className="w-4 h-4" />
-                Tags
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {detailConversation.tags?.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-zinc-300 text-sm rounded-full flex items-center gap-2"
-                  >
-                    {tag}
-                    <button
-                      onClick={() => handleRemoveTag(tag)}
-                      className="text-gray-400 hover:text-red-500"
-                    >
-                      <XCircleIcon className="w-4 h-4" />
-                    </button>
+                <div className="flex flex-col justify-center">
+                  <span className="text-sm font-medium text-fg-primary">
+                    {formatRelative(conversation.last_message_at)}
                   </span>
-                ))}
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Nova tag..."
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    className="w-32"
-                  />
+                  <span className="text-xs text-fg-muted">
+                    {formatClock(conversation.last_message_at)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-end gap-3">
+                  {conversation.unread_count > 0 && (
+                    <span className="flex min-w-[28px] items-center justify-center rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
+                      {conversation.unread_count}
+                    </span>
+                  )}
+                  <span className="text-xs font-medium text-fg-muted">
+                    {conversation.platform === 'whatsapp' ? 'Modal' : 'Abrir'}
+                  </span>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </section>
+
+      <Modal
+        isOpen={Boolean(selectedWhatsAppId)}
+        onClose={closeWhatsAppModal}
+        title={whatsAppConversation ? `WhatsApp: ${whatsAppConversation.contact_name || whatsAppConversation.phone_number}` : 'WhatsApp'}
+        size="xl"
+      >
+        {modalLoading || !whatsAppConversation ? (
+          <div className="py-10 text-center text-sm text-fg-muted">Carregando conversa...</div>
+        ) : (
+          <div className="space-y-6">
+            <section className="rounded-2xl border border-border-primary bg-bg-subtle p-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white">
+                    <PhoneIcon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-fg-primary">
+                      {whatsAppConversation.contact_name || 'Contato sem nome'}
+                    </p>
+                    <p className="text-sm text-fg-muted">{whatsAppConversation.phone_number}</p>
+                    <p className="mt-1 text-xs text-fg-muted">
+                      Ultima atividade {formatRelative(whatsAppConversation.last_message_at)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-bg-card px-3 py-1 text-xs font-medium text-fg-primary">
+                    Status: {whatsAppConversation.status}
+                  </span>
+                  <span className="rounded-full bg-bg-card px-3 py-1 text-xs font-medium text-fg-primary">
+                    Modo: {whatsAppConversation.mode || 'auto'}
+                  </span>
+                  <span className="rounded-full bg-bg-card px-3 py-1 text-xs font-medium text-fg-primary">
+                    Nao lidas: {whatsAppConversation.unread_count}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void handleWhatsAppAction('markAsRead')}
+                  isLoading={actionLoading === 'markAsRead'}
+                >
+                  Marcar como lida
+                </Button>
+                <Button
+                  size="sm"
+                  variant={whatsAppConversation.mode === 'human' ? 'secondary' : 'primary'}
+                  onClick={() =>
+                    void handleWhatsAppAction(
+                      whatsAppConversation.mode === 'human' ? 'switchToAuto' : 'switchToHuman'
+                    )
+                  }
+                  isLoading={
+                    actionLoading === 'switchToHuman' || actionLoading === 'switchToAuto'
+                  }
+                >
+                  {whatsAppConversation.mode === 'human' ? 'Voltar para auto' : 'Assumir no humano'}
+                </Button>
+                {(whatsAppConversation.status === 'open' || whatsAppConversation.status === 'pending') && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => void handleWhatsAppAction('resolve')}
+                      isLoading={actionLoading === 'resolve'}
+                    >
+                      Resolver
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => void handleWhatsAppAction('close')}
+                      isLoading={actionLoading === 'close'}
+                    >
+                      Fechar
+                    </Button>
+                  </>
+                )}
+                {(whatsAppConversation.status === 'closed' || whatsAppConversation.status === 'resolved') && (
                   <Button
                     size="sm"
                     variant="secondary"
-                    leftIcon={<PlusIcon className="w-4 h-4" />}
-                    onClick={handleAddTag}
-                    isLoading={isAddingTag}
-                    disabled={!newTag.trim()}
+                    onClick={() => void handleWhatsAppAction('reopen')}
+                    isLoading={actionLoading === 'reopen'}
                   >
-                    Adicionar
+                    Reabrir
                   </Button>
-                </div>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => navigate(`/whatsapp/inbox?conversation=${whatsAppConversation.id}`)}
+                >
+                  Abrir inbox completa
+                </Button>
               </div>
-            </div>
+            </section>
 
-            {/* Orders Summary */}
-            {conversationOrders[detailConversation.id] && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Pedidos do Cliente</h4>
-                <div className="space-y-2">
-                  {conversationOrders[detailConversation.id].map((order) => (
-                    <div
-                      key={order.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-black rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">#{order.order_number}</p>
-                        <p className="text-sm text-gray-500 dark:text-zinc-400">
-                          {format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <span className={`px-2 py-0.5 text-xs rounded-full ${
-                          order.status === 'paid' ? 'bg-green-100 text-green-700' :
-                          order.status === 'shipped' ? 'bg-teal-100 text-teal-700' :
-                          order.status === 'delivered' ? 'bg-indigo-100 text-indigo-700' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {order.status === 'pending' ? 'Pendente' :
-                          order.status === 'processing' ? 'Processando Pagamento' :
-                          order.status === 'paid' ? 'Pago' :
-                           order.status === 'shipped' ? 'Enviado' :
-                           order.status === 'delivered' ? 'Entregue' :
-                           order.status === 'cancelled' ? 'Cancelado' :
-                           order.status}
-                        </span>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_380px]">
+              <section className="min-w-0 rounded-2xl border border-border-primary bg-bg-card">
+                <div className="border-b border-border-primary px-4 py-3">
+                  <h3 className="text-sm font-semibold text-fg-primary">Mensagens recentes</h3>
+                </div>
+                <div className="max-h-[420px] space-y-3 overflow-y-auto px-4 py-4">
+                  {whatsAppMessages.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-fg-muted">
+                      Sem mensagens registradas nesta conversa.
+                    </div>
+                  ) : (
+                    whatsAppMessages.slice(-40).map((message) => {
+                      const inbound = message.direction === 'inbound';
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${inbound ? 'justify-start' : 'justify-end'}`}
+                        >
+                          <div
+                            className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm ${
+                              inbound
+                                ? 'rounded-bl-sm border border-border-primary bg-bg-subtle text-fg-primary'
+                                : 'rounded-br-sm bg-emerald-500 text-white'
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap break-words">{previewText(message)}</p>
+                            <div
+                              className={`mt-2 flex items-center gap-2 text-xs ${
+                                inbound ? 'text-fg-muted' : 'text-white/80'
+                              }`}
+                            >
+                              <span>{format(new Date(message.created_at), 'dd/MM HH:mm', { locale: ptBR })}</span>
+                              <span>{inbound ? 'Cliente' : 'Equipe'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </section>
+
+              <aside className="space-y-4">
+                <section className="rounded-2xl border border-border-primary bg-bg-card p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <UserCircleIcon className="h-5 w-5 text-fg-muted" />
+                    <h3 className="text-sm font-semibold text-fg-primary">Resumo rapido</h3>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-fg-muted">Ultima mensagem</p>
+                      <p className="text-fg-primary">
+                        {whatsAppConversation.last_message_preview || 'Sem preview'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-fg-muted">Etiquetas</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(whatsAppConversation.tags || []).length === 0 ? (
+                          <span className="text-fg-muted">Sem tags</span>
+                        ) : (
+                          whatsAppConversation.tags?.map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded-full bg-bg-subtle px-3 py-1 text-xs font-medium text-fg-primary"
+                            >
+                              {tag}
+                            </span>
+                          ))
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  </div>
+                </section>
 
-            {/* Timestamps */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-500 dark:text-zinc-400">Criada em</p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {format(new Date(detailConversation.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-500 dark:text-zinc-400">Última mensagem</p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {detailConversation.last_message_at
-                    ? format(new Date(detailConversation.last_message_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
-                    : '-'}
-                </p>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                variant={detailConversation.mode === 'human' ? 'secondary' : 'primary'}
-                leftIcon={detailConversation.mode === 'human' ? <CpuChipIcon className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
-                onClick={() => {
-                  handleSwitchMode(detailConversation, detailConversation.mode === 'human' ? 'auto' : 'human');
-                  setDetailConversation(null);
-                }}
-              >
-                Mudar para {detailConversation.mode === 'human' ? 'Automático' : 'Humano'}
-              </Button>
-              {detailConversation.status === 'open' || detailConversation.status === 'pending' ? (
-                <>
-                  <Button
-                    variant="secondary"
-                    leftIcon={<CheckCircleIcon className="w-4 h-4" />}
-                    onClick={() => {
-                      handleResolveConversation(detailConversation);
-                      setDetailConversation(null);
-                    }}
-                  >
-                    Resolver
-                  </Button>
-                  <Button
-                    variant="danger"
-                    leftIcon={<XCircleIcon className="w-4 h-4" />}
-                    onClick={() => {
-                      handleCloseConversation(detailConversation);
-                      setDetailConversation(null);
-                    }}
-                  >
-                    Fechar
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="primary"
-                  leftIcon={<ArrowPathIcon className="w-4 h-4" />}
-                  onClick={() => {
-                    handleReopenConversation(detailConversation);
-                    setDetailConversation(null);
-                  }}
-                >
-                  Reabrir
-                </Button>
-              )}
+                <section className="rounded-2xl border border-border-primary bg-bg-card p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <ChatBubbleLeftRightIcon className="h-5 w-5 text-fg-muted" />
+                    <h3 className="text-sm font-semibold text-fg-primary">Notas internas</h3>
+                  </div>
+                  <Textarea
+                    rows={3}
+                    placeholder="Registrar contexto rapido para a equipe..."
+                    value={noteDraft}
+                    onChange={(event) => setNoteDraft(event.target.value)}
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <Button size="sm" onClick={() => void handleAddNote()} isLoading={savingNote}>
+                      Salvar nota
+                    </Button>
+                  </div>
+                  <div className="mt-4 max-h-[220px] space-y-3 overflow-y-auto">
+                    {whatsAppNotes.length === 0 ? (
+                      <p className="text-sm text-fg-muted">Nenhuma nota ainda.</p>
+                    ) : (
+                      whatsAppNotes.map((note) => (
+                        <div key={note.id} className="rounded-xl bg-bg-subtle p-3">
+                          <p className="text-sm text-fg-primary">{note.content}</p>
+                          <p className="mt-2 text-xs text-fg-muted">
+                            {(note.author_name || 'Equipe')} em{' '}
+                            {format(new Date(note.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+              </aside>
             </div>
           </div>
         )}

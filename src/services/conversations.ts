@@ -1,5 +1,5 @@
 import api from './api';
-import { Conversation, ConversationNote, PaginatedResponse, Message } from '../types';
+import { Conversation, ConversationNote, PaginatedResponse, Message, UniversalConversation } from '../types';
 
 export const conversationsService = {
   getConversations: async (params?: Record<string, string>): Promise<PaginatedResponse<Conversation>> => {
@@ -91,6 +91,11 @@ export const conversationsService = {
 
   markAsRead: async (id: string): Promise<Conversation> => {
     const response = await api.post<Conversation>(`/conversations/${id}/mark_as_read/`);
+    return response.data;
+  },
+
+  getUniversalConversations: async (): Promise<PaginatedResponse<UniversalConversation>> => {
+    const response = await api.get<PaginatedResponse<UniversalConversation>>('/conversations/universal/');
     return response.data;
   },
 };
