@@ -1,62 +1,30 @@
 /**
  * InstagramCallbackPage
  *
- * Handles the OAuth redirect from Facebook after the user authorises access.
- * This page is opened in a popup via InstagramAccountsPage.handleConnect().
- * On success/failure it posts a message to the opener and closes itself.
+ * Fallback page for the OAuth redirect URI.
+ * The FB SDK flow handles auth in a popup and no longer needs this page,
+ * but the route must exist so Facebook's redirect URI validation passes.
  */
-import React, { useEffect, useRef } from 'react';
-import { instagramAccountService } from '@/services';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const InstagramCallbackPage: React.FC = () => {
-  const ran = useRef(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (ran.current) return;
-    ran.current = true;
-
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const error = params.get('error');
-    const errorReason = params.get('error_reason');
-
-    if (error || errorReason || !code) {
-      const msg = error || errorReason || 'Autorização cancelada';
-      if (window.opener) {
-        window.opener.postMessage({ type: 'INSTAGRAM_OAUTH_ERROR', error: msg }, window.location.origin);
-      }
+    // If opened as a popup, close it. Otherwise redirect to accounts.
+    if (window.opener) {
       window.close();
-      return;
+    } else {
+      navigate('/instagram/accounts', { replace: true });
     }
-
-    const redirectUri = `${window.location.origin}/instagram/callback`;
-
-    instagramAccountService
-      .connect({ code, redirect_uri: redirectUri })
-      .then(() => {
-        if (window.opener) {
-          window.opener.postMessage({ type: 'INSTAGRAM_OAUTH_SUCCESS' }, window.location.origin);
-        }
-        window.close();
-      })
-      .catch((err: unknown) => {
-        const message =
-          err instanceof Error ? err.message : 'Erro ao conectar conta';
-        if (window.opener) {
-          window.opener.postMessage(
-            { type: 'INSTAGRAM_OAUTH_ERROR', error: message },
-            window.location.origin,
-          );
-        }
-        window.close();
-      });
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-white dark:bg-zinc-900">
       <div className="text-center">
         <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-pink-500 border-t-transparent mx-auto" />
-        <p className="text-sm text-gray-600 dark:text-gray-400">Conectando conta Instagram...</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Redirecionando...</p>
       </div>
     </div>
   );
