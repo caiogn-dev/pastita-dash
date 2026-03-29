@@ -159,12 +159,8 @@ export const InstagramAccountsPage: React.FC = () => {
 
     const scope = [
       'instagram_basic',
-      'instagram_content_publish',
-      'instagram_manage_messages',
-      'instagram_shopping_tag_product',
-      'pages_read_engagement',
-      'pages_manage_metadata',
       'pages_show_list',
+      'pages_read_engagement',
     ].join(',');
 
     window.FB.login((response) => {
