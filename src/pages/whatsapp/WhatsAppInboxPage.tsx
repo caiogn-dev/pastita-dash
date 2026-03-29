@@ -123,9 +123,7 @@ const WhatsAppInboxPage: React.FC = () => {
       const res = await handoverService.transferToHuman(selectedConversation.id);
       const newMode = res.handover_status === 'human' ? 'human' : 'auto';
       setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
-      setConversations(prev =>
-        prev.map(c => c.id === selectedConversation.id ? { ...c, mode: newMode } : c)
-      );
+      useChatStore.getState().updateConversation({ id: selectedConversation.id, mode: newMode as Conversation['mode'] });
       toast.success('Conversa transferida para atendimento humano');
     } catch (error) {
       console.error('Erro ao transferir para modo humano:', error);
@@ -139,9 +137,7 @@ const WhatsAppInboxPage: React.FC = () => {
       const res = await handoverService.transferToBot(selectedConversation.id);
       const newMode = res.handover_status === 'human' ? 'human' : 'auto';
       setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
-      setConversations(prev =>
-        prev.map(c => c.id === selectedConversation.id ? { ...c, mode: newMode } : c)
-      );
+      useChatStore.getState().updateConversation({ id: selectedConversation.id, mode: newMode as Conversation['mode'] });
       toast.success('Conversa retornada para o bot');
     } catch (error) {
       console.error('Erro ao retornar para modo automático:', error);
