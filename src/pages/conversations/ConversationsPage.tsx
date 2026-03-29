@@ -108,8 +108,11 @@ export const ConversationsPage: React.FC = () => {
   useEffect(() => {
     void loadConversations(false);
     const interval = window.setInterval(() => {
+      if (document.hidden) {
+        return;
+      }
       void loadConversations(true);
-    }, 10000);
+    }, 15000);
     return () => window.clearInterval(interval);
   }, []);
 
