@@ -425,7 +425,7 @@ export const InstagramAccountsPage: React.FC = () => {
             <h3 className="mb-2 text-lg font-semibold">Conectar Instagram</h3>
 
             <p className="mb-6 text-gray-600 dark:text-gray-400">
-              Um popup do Instagram será aberto para autorizar o acesso à sua conta Business.
+              Um popup do Facebook será aberto. Autorize o acesso às suas Páginas para conectar o Instagram Business.
             </p>
 
             <div className="space-y-3">
@@ -436,7 +436,7 @@ export const InstagramAccountsPage: React.FC = () => {
                 isLoading={isConnecting}
                 disabled={isConnecting}
               >
-                Continuar com Instagram
+                Continuar com Facebook
               </Button>
 
               <Button
