@@ -113,8 +113,14 @@ export const setAuthToken = (token: string | null): void => {
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;
+    if (typeof data?.error === 'string') {
+      return data.error;
+    }
     if (data?.error?.message) {
       return data.error.message;
+    }
+    if (typeof data?.message === 'string') {
+      return data.message;
     }
     if (data?.detail) {
       return data.detail;

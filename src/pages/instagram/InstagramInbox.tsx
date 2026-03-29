@@ -57,6 +57,7 @@ export default function InstagramInbox() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const markingConversationIdRef = useRef<string | null>(null);
 
   const selectedConversation =
     conversations.find((conversation) => conversation.id === selectedConversationId) ?? null;
@@ -73,7 +74,7 @@ export default function InstagramInbox() {
     void loadConversations(false);
     const interval = window.setInterval(() => {
       void loadConversations(true);
-    }, 12000);
+    }, 15000);
 
     return () => window.clearInterval(interval);
   }, [selectedAccountId]);
@@ -87,10 +88,18 @@ export default function InstagramInbox() {
     void loadMessages(selectedConversationId, false);
     const interval = window.setInterval(() => {
       void loadMessages(selectedConversationId, true);
-    }, 6000);
+    }, 12000);
 
     return () => window.clearInterval(interval);
   }, [selectedConversationId]);
+
+  useEffect(() => {
+    if (!selectedConversationId || !selectedConversation || selectedConversation.unread_count <= 0) {
+      return;
+    }
+
+    void markConversationAsRead(selectedConversationId);
+  }, [selectedConversationId, selectedConversation?.unread_count]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -197,17 +206,6 @@ export default function InstagramInbox() {
       const nextMessages = normalizePaginatedResponse<InstagramMessage>(response.data);
       setMessages(nextMessages);
 
-      const conversation = conversations.find((item) => item.id === conversationId);
-      if (conversation && conversation.unread_count > 0) {
-        const markResponse = await instagramDirectService.markAsRead(conversationId);
-        const updatedConversation = markResponse.data;
-        setConversations((previous) =>
-          sortByLatest(
-            previous.map((item) => (item.id === conversationId ? { ...item, ...updatedConversation } : item))
-          )
-        );
-      }
-
       setError(null);
     } catch (err) {
       if (!isBackgroundRefresh) {
@@ -218,6 +216,38 @@ export default function InstagramInbox() {
       }
     } finally {
       setLoadingMessages(false);
+    }
+  }
+
+  async function markConversationAsRead(conversationId: string) {
+    if (markingConversationIdRef.current === conversationId) {
+      return;
+    }
+
+    markingConversationIdRef.current = conversationId;
+    try {
+      const markResponse = await instagramDirectService.markAsRead(conversationId);
+      const updatedConversation = markResponse.data;
+      setConversations((previous) =>
+        sortByLatest(
+          previous.map((item) => (item.id === conversationId ? { ...item, ...updatedConversation } : item))
+        )
+      );
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.direction === 'inbound'
+            ? {
+                ...message,
+                is_read: true,
+                status: 'read',
+              }
+            : message
+        )
+      );
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      markingConversationIdRef.current = null;
     }
   }
 
