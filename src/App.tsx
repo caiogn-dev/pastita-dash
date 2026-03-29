@@ -77,6 +77,7 @@ const DeliveryZonesPage = lazy(() => import('./pages/delivery/DeliveryZonesPage'
 const InstagramAccountsPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramAccountsPage })));
 const InstagramDashboardPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramDashboardPage })));
 const InstagramInbox = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramInbox })));
+const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCallbackPage'));
 
 // Messenger Pages
 const MessengerInbox = lazy(() => import('./pages/messenger').then(m => ({ default: m.MessengerInbox })));
@@ -219,6 +220,7 @@ const AppContent: React.FC = () => {
         {/* Instagram Routes */}
         <Route path="instagram" element={<Navigate to="/instagram/accounts" replace />} />
         <Route path="instagram/accounts" element={<Suspense fallback={<FullPageLoading />}><InstagramAccountsPage /></Suspense>} />
+        <Route path="instagram/callback" element={<Suspense fallback={<FullPageLoading />}><InstagramCallbackPage /></Suspense>} />
         <Route path="instagram/:accountId" element={<Suspense fallback={<FullPageLoading />}><InstagramDashboardPage /></Suspense>} />
         <Route path="instagram/inbox" element={<Suspense fallback={<FullPageLoading />}><InstagramInbox /></Suspense>} />
         

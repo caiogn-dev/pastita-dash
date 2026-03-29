@@ -126,23 +126,27 @@ export interface InstagramScheduledPost {
 
 export const instagramAccountService = {
   list: () => api.get<InstagramAccount[]>('/instagram/accounts/'),
-  
-  create: (data: Partial<InstagramAccount>) => 
+
+  create: (data: Partial<InstagramAccount>) =>
     api.post<InstagramAccount>('/instagram/accounts/', data),
-  
-  get: (id: string) => 
+
+  get: (id: string) =>
     api.get<InstagramAccount>(`/instagram/accounts/${id}/`),
-  
-  update: (id: string, data: Partial<InstagramAccount>) => 
+
+  update: (id: string, data: Partial<InstagramAccount>) =>
     api.patch<InstagramAccount>(`/instagram/accounts/${id}/`, data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     api.delete(`/instagram/accounts/${id}/`),
-  
-  sync: (id: string) => 
+
+  sync: (id: string) =>
     api.post<{ status: string; message: string }>(`/instagram/accounts/${id}/sync/`),
-  
-  getInsights: (id: string, days: number = 30) => 
+
+  /** Troca o código OAuth do Facebook por tokens e cria/atualiza a conta. */
+  connect: (data: { code: string; redirect_uri: string }) =>
+    api.post<InstagramAccount>('/instagram/accounts/connect/', data),
+
+  getInsights: (id: string, days: number = 30) =>
     api.get<InstagramInsight[]>(`/instagram/accounts/${id}/insights/?days=${days}`),
 };
 

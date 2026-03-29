@@ -101,14 +101,40 @@ export const InstagramAccountsPage: React.FC = () => {
 
   const handleConnect = () => {
     const clientId = import.meta.env.VITE_FACEBOOK_APP_ID;
+    if (!clientId) {
+      toast.error('VITE_FACEBOOK_APP_ID não configurado. Adicione ao .env.local.');
+      return;
+    }
+
     const redirectUri = `${window.location.origin}/instagram/callback`;
-    const scope =
-      'instagram_basic,instagram_content_publish,instagram_shopping_tag_product,pages_read_engagement';
+    const scope = [
+      'instagram_basic',
+      'instagram_content_publish',
+      'instagram_manage_messages',
+      'instagram_shopping_tag_product',
+      'pages_read_engagement',
+      'pages_manage_metadata',
+      'pages_show_list',
+    ].join(',');
 
-    const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=code`;
+    const extras = encodeURIComponent(JSON.stringify({ setup: { channel: 'IG_API_ONBOARDING' } }));
+    const authUrl = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${clientId}&display=page&extras=${extras}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code`;
 
-    window.open(authUrl, 'instagram_auth', 'width=600,height=700');
+    const popup = window.open(authUrl, 'instagram_auth', 'width=600,height=700');
     setShowConnectModal(false);
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === 'INSTAGRAM_OAUTH_SUCCESS') {
+        toast.success('Conta Instagram conectada com sucesso!');
+        void loadAccounts();
+      } else if (event.data?.type === 'INSTAGRAM_OAUTH_ERROR') {
+        toast.error(event.data.error || 'Erro ao conectar conta Instagram');
+      }
+      window.removeEventListener('message', onMessage);
+      popup?.close();
+    };
+    window.addEventListener('message', onMessage);
   };
 
   if (loading) {
