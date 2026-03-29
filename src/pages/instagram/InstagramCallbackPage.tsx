@@ -1,13 +1,15 @@
 /**
  * InstagramCallbackPage
  *
- * Recebe o authorization code do Instagram Business Login OAuth.
- * O backend relaia o code para cá via redirect.
- * Esta página troca o code pela conta e fecha o popup (ou redireciona).
+ * O Django já trocou o code por token e criou a conta.
+ * Esta página só precisa fechar o popup e notificar o opener.
+ *
+ * Parâmetros esperados:
+ *   ?ig_connected=1  → sucesso
+ *   ?ig_error=xxx    → erro descritivo
  */
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { instagramAccountService } from '@/services';
 
 const InstagramCallbackPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,41 +20,34 @@ const InstagramCallbackPage: React.FC = () => {
     processed.current = true;
 
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const error = params.get('error');
+    const connected = params.get('ig_connected');
+    const igError = params.get('ig_error');
 
-    if (error || !code) {
-      const msg = error || 'Autorização cancelada';
+    const notify = (msg: { type: string; success?: boolean; error?: string }) => {
       if (window.opener) {
-        window.opener.postMessage({ type: 'instagram_oauth', error: msg }, window.location.origin);
+        try {
+          window.opener.postMessage(msg, window.location.origin);
+        } catch (_) { /* opener fechou */ }
         window.close();
       } else {
         navigate('/instagram/accounts', { replace: true });
       }
-      return;
-    }
+    };
 
-    instagramAccountService
-      .connect({ code })
-      .then(() => {
-        if (window.opener) {
-          window.opener.postMessage({ type: 'instagram_oauth', success: true }, window.location.origin);
-          window.close();
-        } else {
-          navigate('/instagram/accounts', { replace: true });
-        }
-      })
-      .catch((err: unknown) => {
-        const msg =
-          (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-          (err instanceof Error ? err.message : 'Erro ao conectar conta');
-        if (window.opener) {
-          window.opener.postMessage({ type: 'instagram_oauth', error: msg }, window.location.origin);
-          window.close();
-        } else {
-          navigate('/instagram/accounts', { replace: true });
-        }
-      });
+    if (connected) {
+      notify({ type: 'instagram_oauth', success: true });
+    } else if (igError) {
+      const label =
+        igError === 'token_exchange_failed' ? 'Falha ao trocar token com o Instagram.' :
+        igError === 'invalid_state' ? 'Sessão expirada. Tente novamente.' :
+        igError === 'no_instagram_id' ? 'Conta Instagram não encontrada. Certifique-se de usar uma conta Business ou Creator.' :
+        igError === 'authorization_failed' ? 'Autorização cancelada.' :
+        decodeURIComponent(igError);
+      notify({ type: 'instagram_oauth', error: label });
+    } else {
+      // Sem parâmetros — apenas fecha/redireciona
+      notify({ type: 'instagram_oauth', error: 'Autorização cancelada.' });
+    }
   }, [navigate]);
 
   return (

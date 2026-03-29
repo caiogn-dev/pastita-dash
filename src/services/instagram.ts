@@ -142,6 +142,10 @@ export const instagramAccountService = {
   sync: (id: string) =>
     api.post<{ status: string; message: string }>(`/instagram/accounts/${id}/sync/`),
 
+  /** Retorna a URL OAuth do Instagram Business Login com state assinado server-side. */
+  getConnectUrl: () =>
+    api.get<{ url: string }>('/instagram/accounts/connect-url/'),
+
   /** Envia o authorization code do Instagram Business Login para o servidor criar/atualizar a conta. */
   connect: (data: { code: string }) =>
     api.post<InstagramAccount>('/instagram/accounts/connect/', data),

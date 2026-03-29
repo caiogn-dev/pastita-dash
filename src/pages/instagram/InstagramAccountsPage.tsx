@@ -103,42 +103,40 @@ export const InstagramAccountsPage: React.FC = () => {
   };
 
   const handleConnect = () => {
-    const appId = import.meta.env.VITE_INSTAGRAM_APP_ID as string;
-    if (!appId) {
-      toast.error('VITE_INSTAGRAM_APP_ID não configurado. Adicione ao .env.local.');
-      return;
-    }
-
-    // Deriva o backend origin a partir de VITE_API_URL (remove /api/v1)
-    const apiUrl = (import.meta.env.VITE_API_URL as string) || '';
-    const backendOrigin = apiUrl.replace(/\/api\/v1\/?$/, '');
-    const redirectUri = `${backendOrigin}/ig/callback`;
-
-    const scope = [
-      'instagram_business_basic',
-      'instagram_business_manage_messages',
-      'instagram_business_manage_comments',
-      'instagram_business_content_publish',
-      'instagram_business_manage_insights',
-    ].join(',');
-
-    const authUrl =
-      `https://www.instagram.com/oauth/authorize` +
-      `?client_id=${appId}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=code` +
-      `&scope=${encodeURIComponent(scope)}`;
-
     setShowConnectModal(false);
     setIsConnecting(true);
+
+    // Abre o popup SINCRONAMENTE (antes de qualquer await) para evitar popup blocker.
+    // Navegamos para a URL real assim que o servidor responder.
+    const popup = window.open('about:blank', 'instagram_oauth', 'width=600,height=700,scrollbars=yes,resizable=yes');
+    popupRef.current = popup;
+
+    if (!popup) {
+      toast.error('Popup bloqueado. Permita popups para este site e tente novamente.');
+      setIsConnecting(false);
+      return;
+    }
 
     // Remove listener anterior se existir
     if (messageHandlerRef.current) {
       window.removeEventListener('message', messageHandlerRef.current);
+      messageHandlerRef.current = null;
     }
 
-    const popup = window.open(authUrl, 'instagram_oauth', 'width=600,height=700,scrollbars=yes,resizable=yes');
-    popupRef.current = popup;
+    // Busca a URL OAuth assinada do servidor (contém state com user_id)
+    instagramAccountService.getConnectUrl()
+      .then(({ data }) => {
+        popup.location.href = data.url;
+      })
+      .catch((err: unknown) => {
+        popup.close();
+        setIsConnecting(false);
+        toast.error(
+          (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+          'Erro ao gerar URL de conexão'
+        );
+        return;
+      });
 
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
@@ -148,12 +146,12 @@ export const InstagramAccountsPage: React.FC = () => {
       messageHandlerRef.current = null;
       setIsConnecting(false);
 
-      const data = event.data as { type: string; success?: boolean; error?: string };
-      if (data.success) {
+      const payload = event.data as { type: string; success?: boolean; error?: string };
+      if (payload.success) {
         toast.success('Conta Instagram conectada com sucesso!');
         void loadAccounts();
       } else {
-        toast.error(data.error || 'Erro ao conectar conta Instagram');
+        toast.error(payload.error || 'Erro ao conectar conta Instagram');
       }
     };
 
