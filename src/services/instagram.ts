@@ -142,8 +142,8 @@ export const instagramAccountService = {
   sync: (id: string) =>
     api.post<{ status: string; message: string }>(`/instagram/accounts/${id}/sync/`),
 
-  /** Troca o código OAuth do Facebook por tokens e cria/atualiza a conta. */
-  connect: (data: { code: string; redirect_uri: string }) =>
+  /** Envia o access_token do FB SDK para o servidor criar/atualizar a conta. */
+  connect: (data: { access_token: string }) =>
     api.post<InstagramAccount>('/instagram/accounts/connect/', data),
 
   getInsights: (id: string, days: number = 30) =>
