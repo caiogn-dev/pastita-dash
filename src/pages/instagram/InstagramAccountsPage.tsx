@@ -61,6 +61,10 @@ export const InstagramAccountsPage: React.FC = () => {
 
   useEffect(() => {
     void loadAccounts();
+    // Pré-carrega o FB SDK para que FB.login() possa ser chamado
+    // sincronamente no clique (popup blockers bloqueiam chamadas async)
+    const clientId = import.meta.env.VITE_FACEBOOK_APP_ID;
+    if (clientId) void loadFbSdk();
   }, []);
 
   const activeAccounts = useMemo(
@@ -137,23 +141,21 @@ export const InstagramAccountsPage: React.FC = () => {
       document.head.appendChild(js);
     });
 
-  const handleConnect = async () => {
+  const handleConnect = () => {
     const clientId = import.meta.env.VITE_FACEBOOK_APP_ID;
     if (!clientId) {
       toast.error('VITE_FACEBOOK_APP_ID não configurado. Adicione ao .env.local.');
       return;
     }
 
-    setShowConnectModal(false);
-    setIsConnecting(true);
-
-    try {
-      await loadFbSdk();
-    } catch {
-      toast.error('Falha ao carregar o SDK do Facebook.');
-      setIsConnecting(false);
+    if (!window.FB) {
+      toast.error('SDK do Facebook ainda carregando, tente novamente em instantes.');
+      void loadFbSdk();
       return;
     }
+
+    setShowConnectModal(false);
+    setIsConnecting(true);
 
     const scope = [
       'instagram_basic',
@@ -165,25 +167,24 @@ export const InstagramAccountsPage: React.FC = () => {
       'pages_show_list',
     ].join(',');
 
-    window.FB.login(async (response) => {
+    window.FB.login((response) => {
       if (response.status !== 'connected' || !response.authResponse?.accessToken) {
         toast.error('Login cancelado ou não autorizado.');
         setIsConnecting(false);
         return;
       }
 
-      try {
-        await instagramAccountService.connect({
-          access_token: response.authResponse.accessToken,
-        });
+      instagramAccountService.connect({
+        access_token: response.authResponse.accessToken,
+      }).then(() => {
         toast.success('Conta Instagram conectada com sucesso!');
-        await loadAccounts();
-      } catch (err: unknown) {
+        void loadAccounts();
+      }).catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : 'Erro ao conectar conta';
         toast.error(msg);
-      } finally {
+      }).finally(() => {
         setIsConnecting(false);
-      }
+      });
     }, { scope });
   };
 
@@ -446,7 +447,7 @@ export const InstagramAccountsPage: React.FC = () => {
 
             <div className="space-y-3">
               <Button
-                onClick={() => void handleConnect()}
+                onClick={handleConnect}
                 variant="primary"
                 className="w-full"
                 isLoading={isConnecting}
