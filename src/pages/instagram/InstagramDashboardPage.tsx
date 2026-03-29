@@ -48,34 +48,34 @@ export const InstagramDashboardPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
 
   // Fetch account data
-  const { 
-    data: account, 
-    loading: accountLoading 
-  } = useFetch(
-    () => instagramAccountService.get(accountId!),
-    { enabled: !!accountId }
+  const {
+    data: account,
+    loading: accountLoading
+  } = useFetch<InstagramAccount>(
+    () => instagramAccountService.get(accountId!).then((r: any) => r.data ?? r)
   );
 
   // Fetch media based on tab
-  const fetchMedia = async () => {
+  const fetchMedia = async (): Promise<InstagramMedia[]> => {
     if (!accountId) return [];
+    const extract = (r: any): InstagramMedia[] => r?.data?.results ?? r?.data ?? r ?? [];
     switch (activeTab) {
       case 'feed':
-        return instagramMediaService.getFeed();
+        return instagramMediaService.getFeed().then(extract);
       case 'stories':
-        return instagramMediaService.getStories();
+        return instagramMediaService.getStories().then(extract);
       case 'reels':
-        return instagramMediaService.getReels();
+        return instagramMediaService.getReels().then(extract);
       default:
         return [];
     }
   };
 
-  const { 
-    data: media, 
+  const {
+    data: media,
     loading: mediaLoading,
-    refresh: refreshMedia 
-  } = useFetch(fetchMedia, { deps: [activeTab, accountId] });
+    refresh: refreshMedia
+  } = useFetch<InstagramMedia[]>(fetchMedia);
 
   const handleCreatePost = () => {
     navigate(`/instagram/${accountId}/create`, { 

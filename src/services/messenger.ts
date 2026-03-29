@@ -17,47 +17,34 @@ export interface MessengerAccount {
 
 export interface MessengerConversation {
   id: string;
+  messenger_conversation_id?: string;
   account: string;
-  account_name?: string;
-  sender_id: string;
-  sender_name: string;
-  status: 'open' | 'closed' | 'pending';
-  last_message?: string;
-  last_message_at?: string;
+  psid: string;
+  participant_name?: string;
+  participant_profile_pic?: string;
+  is_active: boolean;
   unread_count: number;
-  is_bot_active: boolean;
-  handover_status: 'bot' | 'human' | 'pending';
-  assigned_to?: number;
+  last_message_at?: string;
+  last_message?: { type: string; content: string; created_at: string } | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface MessengerMessage {
   id: string;
+  messenger_message_id?: string;
   conversation: string;
-  sender_id: string;
-  sender_name: string;
+  message_type: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE' | 'STICKER' | 'TEMPLATE' | 'POSTBACK' | 'QUICK_REPLY';
   content: string;
-  message_type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'template';
-  media_url?: string;
-  attachments?: Array<{
-    type: string;
-    url: string;
-    name?: string;
-  }>;
-  quick_replies?: Array<{
-    title: string;
-    payload: string;
-  }>;
-  buttons?: Array<{
-    type: string;
-    title: string;
-    url?: string;
-    payload?: string;
-  }>;
-  is_from_bot: boolean;
+  attachment_url?: string;
+  attachment_type?: string;
+  template_payload?: Record<string, unknown>;
+  quick_replies?: Array<{ title: string; payload: string }>;
+  is_from_page: boolean;
   is_read: boolean;
-  mid?: string;  // Messenger message ID
+  delivered_at?: string;
+  read_at?: string;
+  sent_at: string;
   created_at: string;
 }
 

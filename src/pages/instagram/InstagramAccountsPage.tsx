@@ -30,8 +30,11 @@ export const InstagramAccountsPage: React.FC = () => {
   const [deleteAccount, setDeleteAccount] = useState<InstagramAccount | null>(null);
   const [showConnectModal, setShowConnectModal] = useState(false);
 
-  const fetchAccounts = useCallback(() => instagramAccountService.list(), []);
-  const { data: accounts, loading, error, refresh } = useFetch(fetchAccounts);
+  const fetchAccounts = useCallback(
+    () => instagramAccountService.list().then((r: any) => r.data?.results ?? r.data ?? []),
+    []
+  );
+  const { data: accounts, loading, error, refresh } = useFetch<InstagramAccount[]>(fetchAccounts);
 
   const handleSync = async (account: InstagramAccount) => {
     setIsSyncing(account.id);
