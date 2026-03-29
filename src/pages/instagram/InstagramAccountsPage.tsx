@@ -5,16 +5,6 @@
  * de resposta paginada/axios wrapper para evitar crashes por `.filter`.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-
-declare global {
-  interface Window {
-    FB: {
-      init(opts: { appId: string; cookie: boolean; xfbml: boolean; version: string }): void;
-      login(cb: (resp: { status: string; authResponse?: { accessToken: string } }) => void, opts: { scope: string }): void;
-    };
-    fbAsyncInit?: () => void;
-  }
-}
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowPathIcon,
@@ -42,7 +32,8 @@ export const InstagramAccountsPage: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [deleteAccount, setDeleteAccount] = useState<InstagramAccount | null>(null);
   const [showConnectModal, setShowConnectModal] = useState(false);
-  const fbSdkLoaded = useRef(false);
+  const popupRef = useRef<Window | null>(null);
+  const messageHandlerRef = useRef<((e: MessageEvent) => void) | null>(null);
 
   const loadAccounts = async () => {
     setLoading(true);
@@ -61,10 +52,6 @@ export const InstagramAccountsPage: React.FC = () => {
 
   useEffect(() => {
     void loadAccounts();
-    // Pré-carrega o FB SDK para que FB.login() possa ser chamado
-    // sincronamente no clique (popup blockers bloqueiam chamadas async)
-    const clientId = import.meta.env.VITE_FACEBOOK_APP_ID;
-    if (clientId) void loadFbSdk();
   }, []);
 
   const activeAccounts = useMemo(
@@ -115,73 +102,75 @@ export const InstagramAccountsPage: React.FC = () => {
     }
   };
 
-  const loadFbSdk = (): Promise<void> =>
-    new Promise((resolve) => {
-      if (window.FB) { resolve(); return; }
-      if (fbSdkLoaded.current) {
-        // SDK sendo carregado — aguarda fbAsyncInit
-        const prev = window.fbAsyncInit;
-        window.fbAsyncInit = () => { prev?.(); resolve(); };
-        return;
-      }
-      fbSdkLoaded.current = true;
-      window.fbAsyncInit = () => {
-        window.FB.init({
-          appId: import.meta.env.VITE_FACEBOOK_APP_ID as string,
-          cookie: true,
-          xfbml: false,
-          version: 'v22.0',
-        });
-        resolve();
-      };
-      const js = document.createElement('script');
-      js.src = 'https://connect.facebook.net/pt_BR/sdk.js';
-      js.async = true;
-      js.defer = true;
-      document.head.appendChild(js);
-    });
-
   const handleConnect = () => {
-    const clientId = import.meta.env.VITE_FACEBOOK_APP_ID;
-    if (!clientId) {
-      toast.error('VITE_FACEBOOK_APP_ID não configurado. Adicione ao .env.local.');
+    const appId = import.meta.env.VITE_INSTAGRAM_APP_ID as string;
+    if (!appId) {
+      toast.error('VITE_INSTAGRAM_APP_ID não configurado. Adicione ao .env.local.');
       return;
     }
 
-    if (!window.FB) {
-      toast.error('SDK do Facebook ainda carregando, tente novamente em instantes.');
-      void loadFbSdk();
-      return;
-    }
+    // Deriva o backend origin a partir de VITE_API_URL (remove /api/v1)
+    const apiUrl = (import.meta.env.VITE_API_URL as string) || '';
+    const backendOrigin = apiUrl.replace(/\/api\/v1\/?$/, '');
+    const redirectUri = `${backendOrigin}/ig/callback`;
+
+    const scope = [
+      'instagram_business_basic',
+      'instagram_business_manage_messages',
+      'instagram_business_manage_comments',
+      'instagram_business_content_publish',
+      'instagram_business_manage_insights',
+    ].join(',');
+
+    const authUrl =
+      `https://www.instagram.com/oauth/authorize` +
+      `?client_id=${appId}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent(scope)}`;
 
     setShowConnectModal(false);
     setIsConnecting(true);
 
-    const scope = [
-      'instagram_basic',
-      'pages_show_list',
-      'pages_read_engagement',
-    ].join(',');
+    // Remove listener anterior se existir
+    if (messageHandlerRef.current) {
+      window.removeEventListener('message', messageHandlerRef.current);
+    }
 
-    window.FB.login((response) => {
-      if (response.status !== 'connected' || !response.authResponse?.accessToken) {
-        toast.error('Login cancelado ou não autorizado.');
-        setIsConnecting(false);
-        return;
-      }
+    const popup = window.open(authUrl, 'instagram_oauth', 'width=600,height=700,scrollbars=yes,resizable=yes');
+    popupRef.current = popup;
 
-      instagramAccountService.connect({
-        access_token: response.authResponse.accessToken,
-      }).then(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if ((event.data as { type?: string })?.type !== 'instagram_oauth') return;
+
+      window.removeEventListener('message', handleMessage);
+      messageHandlerRef.current = null;
+      setIsConnecting(false);
+
+      const data = event.data as { type: string; success?: boolean; error?: string };
+      if (data.success) {
         toast.success('Conta Instagram conectada com sucesso!');
         void loadAccounts();
-      }).catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : 'Erro ao conectar conta';
-        toast.error(msg);
-      }).finally(() => {
+      } else {
+        toast.error(data.error || 'Erro ao conectar conta Instagram');
+      }
+    };
+
+    messageHandlerRef.current = handleMessage;
+    window.addEventListener('message', handleMessage);
+
+    // Fallback: popup fechou sem postMessage (usuário cancelou)
+    const checkClosed = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(checkClosed);
+        if (messageHandlerRef.current) {
+          window.removeEventListener('message', messageHandlerRef.current);
+          messageHandlerRef.current = null;
+        }
         setIsConnecting(false);
-      });
-    }, { scope });
+      }
+    }, 500);
   };
 
   if (loading) {
@@ -438,7 +427,7 @@ export const InstagramAccountsPage: React.FC = () => {
             <h3 className="mb-2 text-lg font-semibold">Conectar Instagram</h3>
 
             <p className="mb-6 text-gray-600 dark:text-gray-400">
-              Um popup do Facebook será aberto para autorizar o acesso à sua conta do Instagram.
+              Um popup do Instagram será aberto para autorizar o acesso à sua conta Business.
             </p>
 
             <div className="space-y-3">
@@ -449,7 +438,7 @@ export const InstagramAccountsPage: React.FC = () => {
                 isLoading={isConnecting}
                 disabled={isConnecting}
               >
-                Continuar com Facebook
+                Continuar com Instagram
               </Button>
 
               <Button
