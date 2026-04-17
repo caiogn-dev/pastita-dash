@@ -460,7 +460,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       className={`flex ${isInbound ? 'justify-start' : 'justify-end'} mb-4`}
     >
       <div
-        className={`max-w-[70%] ${
+        className={`max-w-[70%] overflow-hidden ${
           isInbound
             ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white'
             : 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-900 dark:text-white'
@@ -477,9 +477,16 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           />
         )}
 
-        {/* Texto */}
-        {textBody && (
+        {/* Texto (só mostra se não for caption de mídia já exibida via mediaUrl) */}
+        {textBody && !(hasMedia && ['image', 'video', 'document'].includes(messageType)) && (
           <div className="px-3 py-2">
+            <p className="text-sm whitespace-pre-wrap break-words">{textBody}</p>
+          </div>
+        )}
+
+        {/* Caption de mídia abaixo da imagem/video */}
+        {textBody && hasMedia && ['image', 'video'].includes(messageType) && (
+          <div className="px-3 pt-1 pb-0">
             <p className="text-sm whitespace-pre-wrap break-words">{textBody}</p>
           </div>
         )}

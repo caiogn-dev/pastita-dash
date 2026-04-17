@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { ContactList, Contact } from './ContactList';
 import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
+import { MediaViewer } from './MediaViewer';
 import { useWhatsAppWS, MessageReceivedEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
 import { sendFile as sendFileApi } from '../../services/whatsapp';
@@ -30,9 +31,11 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   direction: msg.direction as 'inbound' | 'outbound',
   messageType: msg.message_type,
   status: msg.status as 'pending' | 'sent' | 'delivered' | 'read' | 'failed',
-  textBody: msg.text_body,
+  textBody: msg.text_body || msg.media_caption || msg.caption,
   content: msg.content,
   mediaUrl: msg.media_url,
+  mediaType: msg.media_mime_type || msg.media_type,
+  fileName: msg.media_filename || msg.file_name,
   createdAt: msg.created_at,
   sentAt: msg.sent_at ?? undefined,
   deliveredAt: msg.delivered_at ?? undefined,
@@ -44,7 +47,7 @@ const conversationToContact = (conv: Conversation): Contact => ({
   id: conv.id,
   phoneNumber: conv.phone_number,
   contactName: conv.contact_name || '',
-  lastMessagePreview: '',
+  lastMessagePreview: conv.last_message_preview || conv.last_message || '',
   lastMessageAt: conv.last_message_at ?? undefined,
   unreadCount: 0,
   status: conv.status,
@@ -65,6 +68,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const [isSending, setIsSending] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
+  const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
@@ -251,7 +255,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   }, {} as Record<string, Message[]>);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] max-h-[900px] w-full max-w-[1400px] mx-auto bg-bg-subtle rounded-xl overflow-hidden shadow-xl border border-border-primary">
+    <div className="flex h-full w-full bg-bg-subtle overflow-hidden">
+      {mediaViewer && (
+        <MediaViewer
+          url={mediaViewer.url}
+          type={mediaViewer.type}
+          fileName={mediaViewer.fileName}
+          onClose={() => setMediaViewer(null)}
+        />
+      )}
 
       {/* Contact list sidebar */}
       <div className={`w-full md:w-[360px] h-full bg-bg-card border-r border-border-primary flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
@@ -340,7 +352,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
                     </div>
                     <div className="flex flex-col gap-2">
                       {dayMessages.map((message) => (
-                        <MessageBubble key={message.id} {...messageToBubbleProps(message)} />
+                        <MessageBubble
+                          key={message.id}
+                          {...messageToBubbleProps(message)}
+                          onMediaClick={(url, type, fileName) => setMediaViewer({ url, type, fileName })}
+                        />
                       ))}
                     </div>
                   </div>
