@@ -377,19 +377,56 @@ const MediaPreview: React.FC<{
 
   // Pedido/Compra
   if (type === 'order') {
+    const orderData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
     return (
       <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg mb-2 max-w-[280px]">
         <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
           <ShoppingCartIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            Pedido
-          </p>
-          <p className="text-xs text-gray-500 dark:text-zinc-400">
-            {typeof content === 'string' ? content : JSON.stringify(content)}
-          </p>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">Pedido WhatsApp</p>
+          {(orderData as any)?.product_items?.length > 0 && (
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
+              {(orderData as any).product_items.length} item(s)
+            </p>
+          )}
         </div>
+      </div>
+    );
+  }
+
+  // Reação de emoji
+  if (type === 'reaction') {
+    const reactionData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
+    const emoji = (reactionData as any)?.emoji || '👍';
+    return (
+      <div className="flex items-center gap-2 py-1 px-2">
+        <span className="text-2xl">{emoji}</span>
+        <span className="text-xs text-gray-400 dark:text-zinc-500">Reagiu</span>
+      </div>
+    );
+  }
+
+  // Botão de resposta
+  if (type === 'button') {
+    const btnData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
+    const btnText = (btnData as any)?.text || (btnData as any)?.title || String(content || '');
+    return (
+      <div className="flex items-center gap-2 mb-1">
+        <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
+          ↩ {btnText}
+        </div>
+      </div>
+    );
+  }
+
+  // Mensagem de sistema
+  if (type === 'system') {
+    return (
+      <div className="flex justify-center my-1">
+        <span className="text-xs text-gray-400 dark:text-zinc-500 italic px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full">
+          {typeof content === 'string' ? content : 'Mensagem do sistema'}
+        </span>
       </div>
     );
   }

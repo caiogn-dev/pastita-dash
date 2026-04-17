@@ -11,6 +11,7 @@ import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { useWhatsAppWS, MessageReceivedEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
+import { sendFile as sendFileApi } from '../../services/whatsapp';
 import { handoverService } from '../../services/handover';
 import { Message, Conversation } from '../../types';
 
@@ -62,6 +63,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -188,16 +190,32 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
 
   const handleSendMessage = async (text: string) => {
     if (!selectedConversation || !accountId) return;
+    if (!text.trim() && !selectedFile) return;
+
+    const fileToSend = selectedFile;
+    setSelectedFile(null);
+
     const optimistic: Message = {
-      id: `temp-${Date.now()}`, conversation_id: selectedConversation.id, account: accountId, text_body: text,
-      direction: 'outbound', message_type: 'text', status: 'pending', created_at: new Date().toISOString(),
+      id: `temp-${Date.now()}`, conversation_id: selectedConversation.id, account: accountId,
+      text_body: text || (fileToSend ? fileToSend.name : ''),
+      direction: 'outbound',
+      message_type: fileToSend
+        ? (fileToSend.type.startsWith('image/') ? 'image' : fileToSend.type.startsWith('audio/') ? 'audio' : fileToSend.type.startsWith('video/') ? 'video' : 'document')
+        : 'text',
+      status: 'pending', created_at: new Date().toISOString(),
       whatsapp_message_id: '', from_number: '', to_number: selectedConversation.phone_number,
       timestamp: new Date().toISOString(), updated_at: new Date().toISOString(),
     } as unknown as Message;
     setMessages(prev => [...prev, optimistic]);
     setIsSending(true);
+
     try {
-      const res = await whatsappService.sendTextMessage({ account_id: accountId, to: selectedConversation.phone_number, text });
+      let res;
+      if (fileToSend) {
+        res = await sendFileApi(accountId, selectedConversation.phone_number, fileToSend, text || undefined);
+      } else {
+        res = await whatsappService.sendTextMessage({ account_id: accountId, to: selectedConversation.phone_number, text });
+      }
       setMessages(prev => prev.map(m => m.id === optimistic.id ? res.data : m));
     } catch (error) {
       setMessages(prev => prev.filter(m => m.id !== optimistic.id));
@@ -336,6 +354,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
               <MessageInput
                 onSend={handleSendMessage}
                 onTyping={(isTyping) => { if (selectedConversation) sendTypingIndicator(selectedConversation.id, isTyping); }}
+                onFileSelect={(file) => setSelectedFile(file)}
+                onClearFile={() => setSelectedFile(null)}
+                selectedFile={selectedFile}
                 disabled={!isConnected}
                 isLoading={isSending}
                 placeholder={isConnected ? 'Digite uma mensagem...' : 'Conectando...'}

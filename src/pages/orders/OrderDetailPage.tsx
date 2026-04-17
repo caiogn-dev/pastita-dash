@@ -54,11 +54,19 @@ import { useStore } from '../../hooks';
 const STATUS_FLOW = [
   { id: 'pending', label: 'Pendente', icon: ClockIcon, color: 'yellow' },
   { id: 'confirmed', label: 'Confirmado', icon: CheckIcon, color: 'blue' },
-  { id: 'preparing', label: 'Preparando', icon: ClockIcon, color: 'orange' },
-  { id: 'ready', label: 'Pronto', icon: CheckIcon, color: 'purple' },
-  { id: 'out_for_delivery', label: 'Em Entrega', icon: TruckIcon, color: 'indigo' },
+  { id: 'preparing', label: 'Preparando', icon: TruckIcon, color: 'orange' },
   { id: 'delivered', label: 'Entregue', icon: HomeIcon, color: 'green' },
 ];
+
+// Status aliases for progress tracking (intermediate states map to flow steps)
+const STATUS_FLOW_ALIAS: Record<string, string> = {
+  processing: 'pending',
+  paid: 'confirmed',
+  ready: 'preparing',
+  out_for_delivery: 'preparing',
+  shipped: 'preparing',
+  completed: 'delivered',
+};
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   pending: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
@@ -124,14 +132,8 @@ const formatOrderCreatedAt = (value?: string | null) => {
 };
 
 const getStatusIndex = (status: string): number => {
-  const normalizedStatus = status.toLowerCase();
-  const index = STATUS_FLOW.findIndex(s => 
-    s.id === normalizedStatus || 
-    (normalizedStatus === 'paid' && s.id === 'confirmed') ||
-    (normalizedStatus === 'processing' && s.id === 'preparing') ||
-    (normalizedStatus === 'shipped' && s.id === 'out_for_delivery') ||
-    (normalizedStatus === 'completed' && s.id === 'delivered')
-  );
+  const normalized = STATUS_FLOW_ALIAS[status.toLowerCase()] ?? status.toLowerCase();
+  const index = STATUS_FLOW.findIndex(s => s.id === normalized);
   return index >= 0 ? index : 0;
 };
 

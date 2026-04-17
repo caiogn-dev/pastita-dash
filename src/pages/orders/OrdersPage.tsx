@@ -33,6 +33,14 @@ import { useOrderPrint } from '../../components/orders/OrderPrint';
 
 const COLUMNS = [
   {
+    id: 'pending',
+    label: 'Pendente',
+    statuses: ['pending', 'processing'],
+    borderColor: 'border-t-yellow-400',
+    dotColor: 'bg-yellow-400',
+    labelColor: 'text-yellow-700 dark:text-yellow-300',
+  },
+  {
     id: 'confirmed',
     label: 'Confirmado',
     statuses: ['confirmed'],
@@ -278,13 +286,13 @@ const OrderCard: React.FC<CardProps> = ({
   const hasPendingPayment = needsPayment(order);
 
   return (
-    <div className="rounded-2xl border border-black/5 bg-white/92 p-2.5 transition-shadow hover:shadow-[0_10px_30px_rgba(15,15,15,0.06)] dark:border-white/5 dark:bg-zinc-900">
-      <div className="flex items-center justify-between gap-3">
+    <div className="rounded-xl border border-black/5 bg-white/92 p-1.5 transition-shadow hover:shadow-[0_10px_30px_rgba(15,15,15,0.06)] dark:border-white/5 dark:bg-zinc-900">
+      <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold leading-tight text-gray-900 dark:text-white">
+          <p className="truncate text-[12px] font-semibold leading-tight text-gray-900 dark:text-white">
             {order.customer_name || 'Cliente'}
           </p>
-          <p className="mt-0.5 text-lg font-bold tracking-[-0.03em] text-gray-900 dark:text-white">
+          <p className="mt-0.5 text-[15px] font-bold tracking-[-0.03em] text-gray-900 dark:text-white">
             R$ {fmt(order.total)}
           </p>
         </div>
@@ -295,11 +303,11 @@ const OrderCard: React.FC<CardProps> = ({
               onClick={() => onPay(order)}
               disabled={paying}
               title="Lançar pagamento"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-600 transition-colors hover:bg-green-100 disabled:opacity-60 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-green-50 text-green-600 transition-colors hover:bg-green-100 disabled:opacity-60 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40"
             >
               {paying
-                ? <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                : <CurrencyDollarIcon className="h-4 w-4" />
+                ? <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                : <CurrencyDollarIcon className="h-3.5 w-3.5" />
               }
             </button>
           )}
@@ -308,11 +316,11 @@ const OrderCard: React.FC<CardProps> = ({
             <button
               onClick={() => onAdvance(order)}
               disabled={advancing}
-              className={`flex h-8 min-w-[92px] items-center justify-center gap-1 rounded-xl px-2.5 text-[11px] font-semibold text-white transition-colors disabled:opacity-60 ${action.color}`}
+              className={`flex h-7 min-w-[74px] items-center justify-center gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition-colors disabled:opacity-60 ${action.color}`}
             >
               {advancing
-                ? <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                : <CheckIcon className="h-3.5 w-3.5" />
+                ? <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                : <CheckIcon className="h-3 w-3" />
               }
               <span className="truncate">{action.label}</span>
             </button>
@@ -323,24 +331,20 @@ const OrderCard: React.FC<CardProps> = ({
           <button
             onClick={() => onDetail(order)}
             title="Ver detalhes"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
           >
-            <EyeIcon className="h-4 w-4" />
+            <EyeIcon className="h-3.5 w-3.5" />
           </button>
 
           <button
             onClick={() => onCancel(order)}
             disabled={cancelling}
             title="Cancelar pedido"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-100 text-red-400 transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 dark:hover:bg-red-900/20"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-red-100 text-red-400 transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 dark:hover:bg-red-900/20"
           >
-            <XMarkIcon className="h-4 w-4" />
+            <XMarkIcon className="h-3.5 w-3.5" />
           </button>
         </div>
-      </div>
-      <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-gray-400 dark:text-zinc-600">
-        <span>{timeAgo(order.created_at)}</span>
-        <span>{hasPendingPayment ? 'Pagamento pendente' : ' '}</span>
       </div>
       <div className="hidden">
         <button
@@ -534,11 +538,11 @@ export const OrdersPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-2 2xl:grid-cols-4">
+      <div className="grid min-h-0 flex-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
         {columnData.map(col => (
           <div
             key={col.id}
-            className="flex min-h-[220px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/85 dark:border-zinc-800 dark:bg-zinc-950/40 lg:min-h-[calc(100vh-5.75rem)]"
+            className="flex min-h-[220px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/85 dark:border-zinc-800 dark:bg-zinc-950/40 xl:min-h-[calc(100vh-5.75rem)]"
           >
             <div className={`flex items-center justify-between border-b bg-white/85 px-3 py-2 dark:bg-zinc-900 ${col.borderColor}`}>
               <div className="flex items-center gap-2">

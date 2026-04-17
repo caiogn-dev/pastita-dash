@@ -67,6 +67,29 @@ export const sendMessage = (data: any) =>
 export const sendTemplate = (data: any) =>
   api.post('/whatsapp/messages/send_template/', data);
 
+export const sendImage = (data: { account_id: string; to: string; image_url?: string; image_id?: string; caption?: string; reply_to?: string }) =>
+  api.post('/whatsapp/messages/send_image/', data);
+
+export const sendAudio = (data: { account_id: string; to: string; audio_url?: string; audio_id?: string; reply_to?: string }) =>
+  api.post('/whatsapp/messages/send_audio/', data);
+
+export const sendVideo = (data: { account_id: string; to: string; video_url?: string; video_id?: string; caption?: string; reply_to?: string }) =>
+  api.post('/whatsapp/messages/send_video/', data);
+
+export const sendDocument = (data: { account_id: string; to: string; document_url?: string; document_id?: string; filename?: string; caption?: string; reply_to?: string }) =>
+  api.post('/whatsapp/messages/send_document/', data);
+
+export const sendFile = (accountId: string, to: string, file: File, caption?: string) => {
+  const formData = new FormData();
+  formData.append('account_id', accountId);
+  formData.append('to', to);
+  formData.append('file', file);
+  if (caption) formData.append('caption', caption);
+  return api.post('/whatsapp/messages/send_file/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
 // Estatísticas de mensagens (backend: POST /whatsapp/messages/stats/)
 export const getAccountStats = (accountId: string, startDate?: string, endDate?: string) => {
   const now = new Date();
@@ -136,4 +159,9 @@ export default {
   getAccountStats,
   getMessageStats, // alias de compatibilidade
   getBillingInfo,
+  sendImage,
+  sendAudio,
+  sendVideo,
+  sendDocument,
+  sendFile,
 };

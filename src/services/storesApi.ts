@@ -970,9 +970,31 @@ export const getOrderStats = async (storeId?: string): Promise<{
   week_revenue: number;
 }> => {
   try {
-    const params = storeId ? { store_id: storeId } : {};
+    const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/orders/stats/`, { params });
-    return response.data;
+    const data = response.data as {
+      total?: number;
+      today?: number;
+      by_status?: Record<string, number>;
+      revenue?: {
+        total?: number;
+        today?: number;
+        week?: number;
+      };
+    };
+
+    const byStatus = data?.by_status || {};
+    const revenue = data?.revenue || {};
+
+    return {
+      total_orders: Number(data?.today ?? 0),
+      pending_orders: Number(byStatus.pending ?? 0),
+      processing_orders: Number((byStatus.processing ?? 0) + (byStatus.preparing ?? 0) + (byStatus.confirmed ?? 0)),
+      completed_orders: Number((byStatus.delivered ?? 0) + (byStatus.completed ?? 0)),
+      total_revenue: Number(revenue.total ?? 0),
+      today_revenue: Number(revenue.today ?? 0),
+      week_revenue: Number(revenue.week ?? 0),
+    };
   } catch (error) {
     logger.error('Failed to fetch order stats', error);
     throw error;

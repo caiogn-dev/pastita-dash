@@ -28,7 +28,7 @@ import { dashboardService } from '../../services';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number.isFinite(n) ? n : 0);
 
 const PIPELINE = [
   { key: 'pending',          label: 'Pendentes',   color: 'bg-yellow-500' },
@@ -193,13 +193,24 @@ export const DashboardPage: React.FC = () => {
       }
 
       if (statsResp.status === 'fulfilled' && statsResp.value) {
-        setOrdersToday(statsResp.value.total_orders);
-        setRevenueToday(statsResp.value.today_revenue);
+        setOrdersToday(Number(statsResp.value.total_orders || 0));
+        setRevenueToday(Number(statsResp.value.today_revenue || 0));
       }
 
       if (overviewResp.status === 'fulfilled') {
-        const cv = overviewResp.value?.conversations;
-        if (cv) setConversationsOpen(cv.by_status?.open ?? cv.active ?? 0);
+        const overview = overviewResp.value;
+        const cv = overview?.conversations;
+        const ov = overview?.orders;
+        if (cv) setConversationsOpen(Number(cv.by_status?.open ?? cv.active ?? 0));
+        if (ov) {
+          setPendingCount(Number(ov.by_status?.pending ?? 0));
+          if (!Number.isFinite(Number(statsResp.status === 'fulfilled' ? statsResp.value?.today_revenue : NaN))) {
+            setRevenueToday(Number(ov.revenue_today ?? 0));
+          }
+          if (!Number.isFinite(Number(statsResp.status === 'fulfilled' ? statsResp.value?.total_orders : NaN))) {
+            setOrdersToday(Number(ov.today ?? 0));
+          }
+        }
       }
 
       setRefreshedAt(new Date());
