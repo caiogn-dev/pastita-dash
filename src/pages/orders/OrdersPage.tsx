@@ -36,7 +36,7 @@ const COLUMNS = [
   {
     id: 'confirmed',
     label: 'Confirmado',
-    statuses: ['confirmed', 'processing'],
+    statuses: ['confirmed'],
     borderColor: 'border-t-blue-400',
     dotColor: 'bg-blue-400',
     labelColor: 'text-blue-700 dark:text-blue-300',
@@ -82,8 +82,10 @@ const timeAgo = (date?: string | null) => {
 
 const getNextAction = (order: StoreOrder): { status: string; label: string; color: string } | null => {
   switch (order.status) {
-    case 'confirmed':
+    case 'pending':
     case 'processing':
+      return { status: 'confirmed', label: 'Confirmar', color: 'bg-blue-500 hover:bg-blue-600' };
+    case 'confirmed':
       return { status: 'preparing', label: 'Preparar', color: 'bg-orange-500 hover:bg-orange-600' };
     case 'preparing':
       if (order.delivery_method === 'pickup' || order.delivery_method === 'digital') {
@@ -483,7 +485,7 @@ export const OrdersPage: React.FC = () => {
   }, [patchOrder]);
 
   const pendingOrders = useMemo(
-    () => orders.filter(o => o.status === 'pending'),
+    () => orders.filter(o => o.status === 'pending' || o.status === 'processing'),
     [orders]
   );
 
