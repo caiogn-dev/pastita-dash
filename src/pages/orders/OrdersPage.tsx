@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   EyeIcon,
   CheckIcon,
@@ -119,12 +119,18 @@ interface DetailModalProps {
   onClose: () => void;
   onAdvance: (order: StoreOrder) => void;
   onPay: (order: StoreOrder) => void;
+  printOptions?: {
+    storeName?: string;
+    storePhone?: string;
+    storeAddress?: string;
+  };
 }
 
-const OrderDetailModal: React.FC<DetailModalProps> = ({ order, onClose, onAdvance, onPay }) => {
+const OrderDetailModal: React.FC<DetailModalProps> = ({ order, onClose, onAdvance, onPay, printOptions }) => {
   const { printOrder } = useOrderPrint();
   const action = getNextAction(order);
   const hasPendingPayment = needsPayment(order);
+  const orderStoreName = (order as StoreOrder & { store_name?: string }).store_name;
 
   return (
     <Modal isOpen onClose={onClose} title={`Pedido #${order.order_number}`} size="md">
@@ -134,7 +140,10 @@ const OrderDetailModal: React.FC<DetailModalProps> = ({ order, onClose, onAdvanc
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-400 dark:text-zinc-500">{timeAgo(order.created_at)}</span>
           <button
-            onClick={() => printOrder(order as any)}
+            onClick={() => printOrder(order as any, {
+              ...printOptions,
+              storeName: printOptions?.storeName || orderStoreName || undefined,
+            })}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-xs font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
           >
             <PrinterIcon className="h-3.5 w-3.5" />
@@ -380,7 +389,8 @@ const OrderCard: React.FC<CardProps> = ({
 
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { storeId, storeSlug } = useStore();
+  const { storeId, storeSlug, store, stores } = useStore();
+  const { storeId: routeStoreId } = useParams<{ storeId: string }>();
   const storeQuery = storeSlug || storeId;
 
   const [orders, setOrders] = useState<StoreOrder[]>([]);
@@ -394,6 +404,28 @@ export const OrdersPage: React.FC = () => {
   const timerRef = useRef<number | null>(null);
 
   const { playNotificationSound } = useNotificationSound();
+
+  const activeStore = useMemo(() => {
+    if (routeStoreId) {
+      const matchedStore = stores.find(
+        candidate => candidate.id === routeStoreId || candidate.slug === routeStoreId
+      );
+      if (matchedStore) return matchedStore;
+    }
+    return store;
+  }, [routeStoreId, store, stores]);
+
+  const printOptions = useMemo(() => {
+    const storeAddress = activeStore?.address && activeStore?.city && activeStore?.state
+      ? `${activeStore.address} - ${activeStore.city}/${activeStore.state}`
+      : (activeStore?.address || activeStore?.city || activeStore?.state || '');
+
+    return {
+      storeName: activeStore?.name || undefined,
+      storePhone: activeStore?.phone || activeStore?.whatsapp_number || undefined,
+      storeAddress: storeAddress || undefined,
+    };
+  }, [activeStore]);
 
   const loadOrders = useCallback(async (bg = false) => {
     if (!storeQuery) { setLoading(false); return; }
@@ -509,7 +541,7 @@ export const OrdersPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex min-h-screen flex-col gap-4 bg-[#f5f1e8] px-3 py-3 text-fg-primary dark:bg-[#050505] md:px-4 md:py-4">
 
       {/* ── Top bar ── */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/70 px-4 py-3 dark:border-white/5 dark:bg-white/5">
@@ -577,11 +609,11 @@ export const OrdersPage: React.FC = () => {
       )}
 
       {/* ── 4 stage rail ── */}
-      <div className="grid min-h-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2">
         {columnData.map(col => (
           <div
             key={col.id}
-            className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/85 dark:border-zinc-800 dark:bg-zinc-950/40"
+            className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/85 dark:border-zinc-800 dark:bg-zinc-950/40 lg:min-h-[calc((100vh-13rem)/2)]"
           >
             <div className={`flex items-center justify-between border-b bg-white/85 px-3 py-2.5 dark:bg-zinc-900 ${col.borderColor}`}>
               <div className="flex items-center gap-2">
@@ -625,6 +657,7 @@ export const OrdersPage: React.FC = () => {
           onClose={() => setDetailOrder(null)}
           onAdvance={(o) => { handleAdvance(o); setDetailOrder(null); }}
           onPay={(o) => { handlePay(o); setDetailOrder(null); }}
+          printOptions={printOptions}
         />
       )}
     </div>

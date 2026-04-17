@@ -11,7 +11,7 @@ export const MainLayout: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
 
-  const isDedicatedOrderRoute = /^\/stores\/[^/]+\/orders\/[^/]+$/.test(location.pathname);
+  const isDedicatedOrderRoute = /^\/stores\/[^/]+\/orders(?:\/.*)?$/.test(location.pathname);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1023px)');

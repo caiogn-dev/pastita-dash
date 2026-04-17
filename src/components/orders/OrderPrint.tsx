@@ -105,9 +105,9 @@ export const useOrderPrint = () => {
     const discount = Number(pedido.discount || (pedido as unknown as { desconto?: number | string }).desconto || 0);
     const total = Number(pedido.total || 0);
 
-    const storeName = options?.storeName || 'PASTITA';
-    const storePhone = options?.storePhone || '(63) 9117-2166';
-    const storeAddress = options?.storeAddress || 'Palmas - TO';
+    const storeName = options?.storeName || (pedido as unknown as { store_name?: string }).store_name || 'LOJA';
+    const storePhone = options?.storePhone || '';
+    const storeAddress = options?.storeAddress || '';
 
     // Build items HTML
     const itemsHtml = pedido.items?.map((item) => {
