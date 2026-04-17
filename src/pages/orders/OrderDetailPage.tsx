@@ -12,7 +12,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   PhoneIcon,
-  EnvelopeIcon,
   MapPinIcon,
   ClockIcon,
   CheckIcon,
@@ -20,12 +19,12 @@ import {
   HomeIcon,
   XMarkIcon,
   PrinterIcon,
-  ChatBubbleLeftIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Card, Button, Modal, PageLoading } from '../../components/common';
+import { Button, Modal, PageLoading } from '../../components/common';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import { Order, Payment } from '../../types';
 
@@ -97,6 +96,20 @@ const formatMoney = (value: number | undefined | null) => {
   return `R$ ${(value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 };
 
+const getInitials = (name?: string | null) => {
+  if (!name) return 'CL';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'CL';
+};
+
+const buildCompactAddress = (address: Record<string, string>) => {
+  return [
+    [address.street || address.address, address.number].filter(Boolean).join(', '),
+    [address.neighborhood, address.city, address.state].filter(Boolean).join(' • '),
+    address.zip_code || address.cep || '',
+  ].filter(Boolean).join(' · ');
+};
+
 const formatOrderCreatedAt = (value?: string | null) => {
   if (!value) {
     return '--';
@@ -146,13 +159,13 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCa
   }
 
   return (
-    <div className="py-6">
-      <div className="flex items-center justify-between relative">
+    <div className="py-2">
+      <div className="flex items-center justify-between gap-2 relative">
         {/* Progress Line */}
-        <div className="absolute left-0 right-0 top-1/2 h-1 bg-gray-200 -translate-y-1/2 z-0" />
+        <div className="absolute left-6 right-6 top-5 h-px bg-black/10 dark:bg-white/10 z-0" />
         <div 
-          className="absolute left-0 top-1/2 h-1 bg-primary-500 -translate-y-1/2 z-0 transition-all duration-500"
-          style={{ width: `${(currentIndex / (STATUS_FLOW.length - 1)) * 100}%` }}
+          className="absolute left-6 top-5 h-px bg-[#c97a36] z-0 transition-all duration-500"
+          style={{ width: `calc(${(currentIndex / (STATUS_FLOW.length - 1)) * 100}% - 3rem)` }}
         />
         
         {/* Steps */}
@@ -165,11 +178,11 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCa
             <div key={step.id} className="relative z-10 flex flex-col items-center">
               <div 
                 className={`
-                  w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
+                  h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300
                   ${isCompleted 
-                    ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30' 
-                    : 'bg-white border-2 border-gray-200 text-gray-400'}
-                  ${isCurrent ? 'ring-4 ring-primary-100 scale-110' : ''}
+                    ? 'bg-[#1f1f1f] text-[#f5f1e8] shadow-lg shadow-black/15 dark:bg-[#f4efe6] dark:text-[#111]' 
+                    : 'bg-[#faf7f1] border border-black/10 text-gray-400 dark:bg-[#111] dark:border-white/10'}
+                  ${isCurrent ? 'ring-4 ring-[#c97a36]/15 scale-110' : ''}
                 `}
               >
                 {isCompleted && index < currentIndex ? (
@@ -180,8 +193,8 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCa
               </div>
               <span 
                 className={`
-                  mt-2 text-xs font-medium whitespace-nowrap
-                  ${isCompleted ? 'text-primary-600' : 'text-gray-400'}
+                  mt-2 text-[11px] font-medium whitespace-nowrap
+                  ${isCompleted ? 'text-[#1f1f1f] dark:text-[#f4efe6]' : 'text-gray-400 dark:text-zinc-500'}
                 `}
               >
                 {step.label}
@@ -320,289 +333,297 @@ export const OrderDetailPage: React.FC = () => {
     mercadopago: 'Mercado Pago',
   };
   const paymentLink = order.pix_ticket_url || order.payment_url || order.payment_link || order.init_point || null;
+  const compactAddress = buildCompactAddress(address);
+  const customerInitials = getInitials(order.customer_name);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
-      {/* Header */}
-      <div className="bg-white dark:bg-zinc-900 border-b sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate(ordersRoute)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 dark:bg-gray-700 rounded-lg transition-colors"
-              >
-                <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-zinc-400" />
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Pedido #{order.order_number}
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">
-                  {formatOrderCreatedAt(order.created_at)}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${statusColors.bg} ${statusColors.text}`}>
-                {STATUS_LABELS[order.status.toLowerCase()] || order.status}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#f5f1e8] text-[#171717] dark:bg-[#050505] dark:text-[#f4efe6]">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col px-4 pb-28 pt-4 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_360px]">
+          <section className="rounded-[28px] border border-black/10 bg-[#fbf8f2] p-5 shadow-[0_24px_80px_rgba(15,15,15,0.08)] dark:border-white/10 dark:bg-[#0b0b0b] dark:shadow-none sm:p-7">
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex min-w-0 items-start gap-4">
+                  <button
+                    onClick={() => navigate(ordersRoute)}
+                    className="flex h-11 w-11 items-center justify-center rounded-2xl border border-black/10 bg-white/80 text-gray-700 transition hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:bg-white/10"
+                  >
+                    <ArrowLeftIcon className="h-5 w-5" />
+                  </button>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#9a8f7e] dark:text-[#8b816f]">
+                      Pedido #{order.order_number}
+                    </p>
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#171717] text-base font-semibold text-[#f5f1e8] dark:bg-[#f4efe6] dark:text-[#111]">
+                        {customerInitials}
+                      </div>
+                      <div className="min-w-0">
+                        <h1 className="truncate text-3xl font-semibold tracking-[-0.04em] text-[#171717] dark:text-[#f4efe6] sm:text-4xl">
+                          {order.customer_name || 'Cliente sem nome'}
+                        </h1>
+                        <p className="mt-1 text-sm text-[#746b5f] dark:text-[#9d9385]">
+                          {formatOrderCreatedAt(order.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-        {/* Progress Timeline */}
-        <Card className="p-6">
-          <ProgressTimeline currentStatus={order.status} isCancelled={isCancelled} />
-          
-          {/* Action Button */}
-          {nextAction && !isCancelled && !isCompleted && (
-            <div className="flex justify-center pt-4 border-t">
-              <button
-                onClick={() => handleAction(nextAction.action)}
-                disabled={!!actionLoading}
-                className={`
-                  px-8 py-3 rounded-xl text-white font-semibold text-lg
-                  transition-all duration-200 transform hover:scale-105
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  ${nextAction.color}
-                `}
-              >
-                {actionLoading === nextAction.action ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Processando...
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-4 py-2 text-sm font-semibold ${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
+                    {STATUS_LABELS[order.status.toLowerCase()] || order.status}
                   </span>
-                ) : (
-                  nextAction.label
-                )}
-              </button>
-            </div>
-          )}
-        </Card>
+                  <span className="rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-[#5f564b] dark:border-white/10 dark:text-[#ada392]">
+                    {formatMoney(order.total)}
+                  </span>
+                </div>
+              </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Order Items */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Items */}
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Itens do Pedido</h2>
-              <div className="space-y-3">
-                {order.items?.map((item, index) => {
-                  const isSalad = !!(item.options?.is_salad_builder);
-                  return (
-                    <div
-                      key={item.id || index}
-                      className="flex items-start justify-between py-3 border-b border-gray-100 last:border-0"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-lg flex-shrink-0">
-                          {isSalad ? '🥗' : '🍝'}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-black/10 bg-white/65 px-4 py-3 dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9a8f7e] dark:text-[#8b816f]">Contato</p>
+                  <div className="mt-2 flex items-center gap-2 text-sm font-medium">
+                    <PhoneIcon className="h-4 w-4 text-[#c97a36]" />
+                    {order.customer_phone ? (
+                      <a href={`tel:${order.customer_phone}`} className="hover:underline">
+                        {order.customer_phone}
+                      </a>
+                    ) : (
+                      <span className="text-[#746b5f] dark:text-[#9d9385]">Não informado</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-black/10 bg-white/65 px-4 py-3 dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9a8f7e] dark:text-[#8b816f]">Entrega</p>
+                  <div className="mt-2 flex items-center gap-2 text-sm font-medium">
+                    {order.delivery_method === 'pickup' ? (
+                      <>
+                        <HomeIcon className="h-4 w-4 text-[#c97a36]" />
+                        <span>Retirada no balcão</span>
+                      </>
+                    ) : (
+                      <>
+                        <TruckIcon className="h-4 w-4 text-[#c97a36]" />
+                        <span>Delivery</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-black/10 bg-white/65 px-4 py-3 dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9a8f7e] dark:text-[#8b816f]">Pagamento</p>
+                  <div className="mt-2 flex items-center justify-between gap-2 text-sm">
+                    <span className="font-medium">
+                      {paymentMethodLabel[order.payment_method || ''] || order.payment_method || 'Não informado'}
+                    </span>
+                    <span className={`font-semibold ${paymentStatus === 'paid' ? 'text-green-600' : paymentStatus === 'failed' ? 'text-red-500' : 'text-[#c97a36]'}`}>
+                      {paymentStatusLabel[paymentStatus] || paymentStatus}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-black/10 bg-[#f3eee4] px-4 py-4 dark:border-white/10 dark:bg-[#0f0f0f] sm:px-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#9a8f7e] dark:text-[#8b816f]">
+                      Progresso operacional
+                    </p>
+                    <p className="mt-1 text-sm text-[#746b5f] dark:text-[#9d9385]">
+                      Avance o pedido sem sair da tela.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <ProgressTimeline currentStatus={order.status} isCancelled={isCancelled} />
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-black/10 bg-white/70 px-4 py-4 dark:border-white/10 dark:bg-white/5 sm:px-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-semibold">Itens do pedido</h2>
+                    <p className="text-sm text-[#746b5f] dark:text-[#9d9385]">
+                      Resumo compacto para conferência rápida.
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-[#5f564b] dark:text-[#b2a795]">
+                    {order.items?.length || 0} item(ns)
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {order.items?.map((item, index) => {
+                    const isSalad = !!(item.options?.is_salad_builder);
+                    return (
+                      <div
+                        key={item.id || index}
+                        className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-2xl border border-black/5 bg-[#fbf8f2] px-4 py-3 dark:border-white/5 dark:bg-[#0b0b0b]"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold">
+                              {item.quantity}x {item.product_name}
+                            </span>
                             {isSalad && (
-                              <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                              <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-700 dark:bg-green-900/30 dark:text-green-300">
                                 Salada
                               </span>
                             )}
-                            <p className="font-medium text-gray-900 dark:text-white">{item.product_name}</p>
                           </div>
-                          <p className="text-sm text-gray-500 dark:text-zinc-400">
-                            {item.quantity}x {formatMoney(item.unit_price)}
+                          <p className="mt-1 text-xs text-[#746b5f] dark:text-[#9d9385]">
+                            {formatMoney(item.unit_price)} cada
                           </p>
                           {item.notes && (
-                            <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1 leading-relaxed">
+                            <p className="mt-1 text-xs text-[#9a8f7e] dark:text-[#8b816f]">
                               {item.notes}
                             </p>
                           )}
                         </div>
+                        <div className="text-right text-sm font-semibold">
+                          {formatMoney(item.subtotal || item.total_price)}
+                        </div>
                       </div>
-                      <p className="font-semibold text-gray-900 dark:text-white flex-shrink-0">
-                        {formatMoney(item.subtotal || item.total_price)}
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 grid gap-2 rounded-2xl border border-dashed border-black/10 px-4 py-4 text-sm dark:border-white/10 sm:grid-cols-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[#746b5f] dark:text-[#9d9385]">Subtotal</span>
+                    <span className="font-semibold">{formatMoney(order.subtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[#746b5f] dark:text-[#9d9385]">Entrega</span>
+                    <span className="font-semibold">{formatMoney(order.delivery_fee || order.shipping_cost)}</span>
+                  </div>
+                  {order.discount ? (
+                    <div className="flex items-center justify-between gap-3 sm:col-span-2">
+                      <span className="text-[#746b5f] dark:text-[#9d9385]">Desconto</span>
+                      <span className="font-semibold text-green-600 dark:text-green-400">-{formatMoney(order.discount)}</span>
+                    </div>
+                  ) : null}
+                  <div className="flex items-center justify-between gap-3 border-t border-black/10 pt-3 text-base sm:col-span-2 dark:border-white/10">
+                    <span className="font-semibold">Total do pedido</span>
+                    <span className="text-xl font-semibold tracking-[-0.03em]">{formatMoney(order.total)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {(order.notes || compactAddress || paymentLink || order.pix_code || payments.length > 0) && (
+                <details className="group rounded-[24px] border border-black/10 bg-white/55 px-4 py-4 dark:border-white/10 dark:bg-white/5 sm:px-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-semibold">Detalhes adicionais</h2>
+                      <p className="text-sm text-[#746b5f] dark:text-[#9d9385]">
+                        Endereço, observações e dados de pagamento em segundo plano.
                       </p>
                     </div>
-                  );
-                })}
-              </div>
+                    <ChevronDownIcon className="h-5 w-5 text-[#746b5f] transition group-open:rotate-180 dark:text-[#9d9385]" />
+                  </summary>
 
-              {/* Summary */}
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-zinc-800 space-y-2">
-                <div className="flex justify-between text-gray-600 dark:text-zinc-400">
-                  <span>Subtotal</span>
-                  <span>{formatMoney(order.subtotal)}</span>
-                </div>
-                {(order.delivery_fee || order.shipping_cost) ? (
-                  <div className="flex justify-between text-gray-600 dark:text-zinc-400">
-                    <span>Entrega</span>
-                    <span>{formatMoney(order.delivery_fee || order.shipping_cost)}</span>
-                  </div>
-                ) : null}
-                {order.discount ? (
-                  <div className="flex justify-between text-green-600 dark:text-green-400">
-                    <span>Desconto</span>
-                    <span>-{formatMoney(order.discount)}</span>
-                  </div>
-                ) : null}
-                <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white pt-2">
-                  <span>Total</span>
-                  <span>{formatMoney(order.total)}</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Notes */}
-            {order.notes && (
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Observações</h2>
-                <p className="text-gray-600 dark:text-zinc-400 bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                  {order.notes}
-                </p>
-              </Card>
-            )}
-          </div>
-
-          {/* Right Column - Customer & Delivery */}
-          <div className="space-y-6">
-            {/* Customer */}
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Cliente</h2>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                    <span className="text-lg font-semibold text-primary-600">
-                      {(order.customer_name || 'C')[0].toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">{order.customer_name || 'Cliente'}</p>
-                  </div>
-                </div>
-                
-                {order.customer_phone && (
-                  <a 
-                    href={`tel:${order.customer_phone}`}
-                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-800 transition-colors"
-                  >
-                    <PhoneIcon className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-700 dark:text-zinc-300">{order.customer_phone}</span>
-                  </a>
-                )}
-                
-                {order.customer_email && (
-                  <a 
-                    href={`mailto:${order.customer_email}`}
-                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-800 transition-colors"
-                  >
-                    <EnvelopeIcon className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-700 dark:text-zinc-300 text-sm truncate">{order.customer_email}</span>
-                  </a>
-                )}
-              </div>
-            </Card>
-
-            {/* Delivery Address */}
-            {address && Object.keys(address).length > 0 && (
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Entrega</h2>
-                <div className="flex items-start gap-3">
-                  <MapPinIcon className="w-5 h-5 text-gray-400 mt-0.5" />
-                  <div className="text-gray-700 dark:text-zinc-300">
-                    <p className="font-medium">
-                      {address.street || address.address}
-                      {address.number && `, ${address.number}`}
-                    </p>
-                    {address.complement && (
-                      <p className="text-sm text-gray-500 dark:text-zinc-400">{address.complement}</p>
+                  <div className="mt-4 space-y-4 text-sm">
+                    {order.notes && (
+                      <div className="rounded-2xl bg-[#f8edd0] px-4 py-3 text-[#6a5731] dark:bg-[#2b2417] dark:text-[#d8c18c]">
+                        {order.notes}
+                      </div>
                     )}
-                    <p className="text-sm">
-                      {address.neighborhood && `${address.neighborhood}, `}
-                      {address.city} - {address.state}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-zinc-400">
-                      CEP: {address.zip_code || address.cep}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            )}
 
-            {/* Payment */}
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pagamento</h2>
-              {payments.length > 0 ? (
-                <div className="space-y-3">
-                  {payments.map((payment) => (
-                    <div key={payment.id} className="p-3 bg-gray-50 dark:bg-black rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {payment.payment_method === 'pix' ? '💠 PIX' : 
-                           payment.payment_method === 'credit_card' ? '💳 Cartão' :
-                           payment.payment_method === 'cash' ? '💵 Dinheiro' :
-                           payment.payment_method}
-                        </span>
-                        <span className={`text-sm font-medium ${
-                          ['paid', 'approved', 'completed'].includes(payment.status) 
-                            ? 'text-green-600' 
-                            : 'text-yellow-600'
-                        }`}>
-                          {['paid', 'approved', 'completed'].includes(payment.status) ? '✓ Pago' : '⏳ Pendente'}
-                        </span>
+                    {compactAddress && (
+                      <div className="flex items-start gap-2 rounded-2xl border border-black/5 px-4 py-3 dark:border-white/5">
+                        <MapPinIcon className="mt-0.5 h-4 w-4 text-[#c97a36]" />
+                        <span>{compactAddress}</span>
                       </div>
-                      <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-                        {formatMoney(payment.amount)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500 dark:text-zinc-400">Método</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {paymentMethodLabel[order.payment_method || ''] || order.payment_method || '-'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500 dark:text-zinc-400">Status</span>
-                    <span className={`text-sm font-semibold ${paymentStatus === 'paid' ? 'text-green-600' : paymentStatus === 'failed' ? 'text-red-600' : 'text-yellow-600'}`}>
-                      {paymentStatusLabel[paymentStatus] || paymentStatus}
-                    </span>
-                  </div>
-                  {order.pix_code && (
-                    <div className="text-xs text-gray-500 dark:text-zinc-400 break-all bg-gray-50 dark:bg-black rounded-lg p-3">
-                      <span className="font-semibold text-gray-700 dark:text-zinc-300">PIX:</span> {order.pix_code}
-                    </div>
-                  )}
-                  {paymentLink && (
-                    <a
-                      href={paymentLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center w-full px-4 py-2 rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
-                    >
-                      Abrir link de pagamento
-                    </a>
-                  )}
-                </div>
-              )}
-            </Card>
+                    )}
 
-            {/* Actions */}
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ações</h2>
-              <div className="space-y-2">
+                    {payments.length > 0 && (
+                      <div className="space-y-2">
+                        {payments.map((payment) => (
+                          <div key={payment.id} className="flex items-center justify-between gap-3 rounded-2xl border border-black/5 px-4 py-3 dark:border-white/5">
+                            <div>
+                              <p className="font-medium">
+                                {payment.payment_method === 'pix' ? 'PIX' :
+                                 payment.payment_method === 'credit_card' ? 'Cartão' :
+                                 payment.payment_method === 'cash' ? 'Dinheiro' :
+                                 payment.payment_method}
+                              </p>
+                              <p className="text-xs text-[#746b5f] dark:text-[#9d9385]">
+                                {payment.status}
+                              </p>
+                            </div>
+                            <span className="font-semibold">{formatMoney(payment.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {order.pix_code && (
+                      <div className="break-all rounded-2xl border border-dashed border-black/10 px-4 py-3 text-xs dark:border-white/10">
+                        <span className="font-semibold">PIX copia e cola:</span> {order.pix_code}
+                      </div>
+                    )}
+
+                    {paymentLink && (
+                      <a
+                        href={paymentLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex rounded-full border border-black/10 px-4 py-2 font-medium hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+                      >
+                        Abrir link de pagamento
+                      </a>
+                    )}
+                  </div>
+                </details>
+              )}
+            </div>
+          </section>
+
+          <aside className="flex flex-col gap-4 lg:sticky lg:top-6 lg:h-fit">
+            <div className="rounded-[28px] border border-black/10 bg-[#171717] p-5 text-[#f5f1e8] shadow-[0_24px_80px_rgba(15,15,15,0.18)] dark:border-white/10 dark:bg-[#111] sm:p-6">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#bda98d]">
+                Ação principal
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">
+                {nextAction ? nextAction.label : isCancelled ? 'Pedido cancelado' : 'Pedido concluído'}
+              </h2>
+              <p className="mt-2 text-sm text-[#c9bca9]">
+                Só o próximo passo operacional fica em destaque.
+              </p>
+
+              {nextAction && !isCancelled && !isCompleted && (
+                <button
+                  onClick={() => handleAction(nextAction.action)}
+                  disabled={!!actionLoading}
+                  className={`
+                    mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-semibold text-white
+                    transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50
+                    ${nextAction.color}
+                  `}
+                >
+                  {actionLoading === nextAction.action ? (
+                    <>
+                      <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckIcon className="h-5 w-5" />
+                      {nextAction.label}
+                    </>
+                  )}
+                </button>
+              )}
+
+              <div className="mt-6 grid gap-2">
                 <button
                   onClick={async () => {
                     try {
-                      // Always re-fetch the latest order data before printing
                       const freshOrder = id ? await ordersService.getOrder(id) : order;
                       printOrder(freshOrder as any, {
                         storeName: store?.name || freshOrder?.store_name || order.store_name || 'Loja',
@@ -612,7 +633,6 @@ export const OrderDetailPage: React.FC = () => {
                           : (store?.address || store?.city || store?.state || ''),
                       });
                     } catch {
-                      // Fallback to cached order if re-fetch fails
                       printOrder(order as any, {
                         storeName: store?.name || order.store_name || 'Loja',
                         storePhone: store?.phone || store?.whatsapp_number || '',
@@ -622,23 +642,48 @@ export const OrderDetailPage: React.FC = () => {
                       });
                     }
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors text-primary-700 font-medium"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 px-4 py-3 text-sm font-medium text-[#f5f1e8] transition hover:bg-white/5"
                 >
-                  <PrinterIcon className="w-5 h-5" />
-                  🖨️ Imprimir Pedido
+                  <PrinterIcon className="h-4 w-4" />
+                  Imprimir
                 </button>
+
                 {!isCancelled && !isCompleted && (
                   <button
                     onClick={() => setShowCancelModal(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 dark:bg-red-900/40 rounded-lg transition-colors text-red-600 dark:text-red-400"
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-red-400/20 px-4 py-3 text-sm font-medium text-red-300 transition hover:bg-red-500/10"
                   >
-                    <XMarkIcon className="w-5 h-5" />
-                    Cancelar Pedido
+                    <XMarkIcon className="h-4 w-4" />
+                    Cancelar pedido
                   </button>
                 )}
               </div>
-            </Card>
-          </div>
+            </div>
+
+            <div className="rounded-[28px] border border-black/10 bg-white/70 p-5 dark:border-white/10 dark:bg-white/5 sm:p-6">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#9a8f7e] dark:text-[#8b816f]">
+                Leitura rápida
+              </p>
+              <div className="mt-4 grid gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-[#746b5f] dark:text-[#9d9385]">Status</span>
+                  <span className="text-sm font-semibold">{STATUS_LABELS[order.status.toLowerCase()] || order.status}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-[#746b5f] dark:text-[#9d9385]">Itens</span>
+                  <span className="text-sm font-semibold">{order.items?.length || 0}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-[#746b5f] dark:text-[#9d9385]">Total</span>
+                  <span className="text-sm font-semibold">{formatMoney(order.total)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-[#746b5f] dark:text-[#9d9385]">Criado</span>
+                  <span className="text-sm font-semibold">{format(order.created_at ? new Date(order.created_at) : new Date(), 'HH:mm')}</span>
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
 

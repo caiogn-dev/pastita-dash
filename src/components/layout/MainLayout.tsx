@@ -2,13 +2,16 @@
  * MainLayout - Layout principal sem Chakra UI
  */
 import React, { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
 export const MainLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const location = useLocation();
+
+  const isDedicatedOrderRoute = /^\/stores\/[^/]+\/orders\/[^/]+$/.test(location.pathname);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1023px)');
@@ -17,6 +20,14 @@ export const MainLayout: React.FC = () => {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+
+  if (isDedicatedOrderRoute) {
+    return (
+      <div className="min-h-screen bg-[#f5f1e8] text-fg-primary dark:bg-[#050505]">
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-bg-secondary text-fg-primary relative">

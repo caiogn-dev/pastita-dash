@@ -509,12 +509,12 @@ export const OrdersPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex h-full flex-col gap-3">
 
       {/* ── Top bar ── */}
-      <div className="flex items-center justify-between gap-3 flex-wrap shrink-0">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/70 px-4 py-3 dark:border-white/5 dark:bg-white/5">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Pedidos</h1>
+          <h1 className="text-base font-semibold text-gray-900 dark:text-white">Pedidos</h1>
           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
             rtConnected
               ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
@@ -541,8 +541,8 @@ export const OrdersPage: React.FC = () => {
 
       {/* ── Pending strip ── */}
       {pendingOrders.length > 0 && (
-        <div className="shrink-0 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800/30 rounded-xl p-3">
-          <div className="flex items-center gap-2 mb-2.5">
+        <div className="shrink-0 rounded-2xl border border-yellow-200 bg-yellow-50/90 p-3 dark:border-yellow-800/30 dark:bg-yellow-950/20">
+          <div className="mb-2 flex items-center gap-2">
             <BellAlertIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400 animate-pulse" />
             <span className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">
               {pendingOrders.length} novo{pendingOrders.length > 1 ? 's' : ''} pedido{pendingOrders.length > 1 ? 's' : ''} aguardando
@@ -552,7 +552,7 @@ export const OrdersPage: React.FC = () => {
             {pendingOrders.map(order => (
               <div
                 key={order.id}
-                className="shrink-0 flex items-center gap-3 bg-white dark:bg-zinc-900 border border-yellow-200 dark:border-yellow-800/30 rounded-lg px-3 py-2"
+                className="flex shrink-0 items-center gap-3 rounded-xl border border-yellow-200 bg-white px-3 py-2 dark:border-yellow-800/30 dark:bg-zinc-900"
               >
                 <div>
                   <p className="text-xs font-bold text-gray-900 dark:text-white">#{order.order_number}</p>
@@ -576,26 +576,26 @@ export const OrdersPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── 2×2 grid ── */}
-      <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+      {/* ── 4 stage rail ── */}
+      <div className="grid min-h-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
         {columnData.map(col => (
           <div
             key={col.id}
-            className="flex flex-col rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950/40 overflow-hidden"
+            className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/85 dark:border-zinc-800 dark:bg-zinc-950/40"
           >
-            <div className={`flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-b-2 ${col.borderColor}`}>
+            <div className={`flex items-center justify-between border-b bg-white/85 px-3 py-2.5 dark:bg-zinc-900 ${col.borderColor}`}>
               <div className="flex items-center gap-2">
                 <span className={`h-2 w-2 rounded-full ${col.dotColor}`} />
-                <span className={`text-sm font-semibold ${col.labelColor}`}>{col.label}</span>
+                <span className={`text-xs font-semibold uppercase tracking-wide ${col.labelColor}`}>{col.label}</span>
               </div>
               <span className="text-xs font-bold text-gray-400 dark:text-zinc-500 bg-gray-100 dark:bg-zinc-800 w-6 h-6 rounded-full flex items-center justify-center">
                 {col.orders.length}
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
               {col.orders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="flex flex-col items-center justify-center py-8 text-center">
                   <ShoppingCartIcon className="h-7 w-7 text-gray-200 dark:text-zinc-700 mb-2" />
                   <p className="text-xs text-gray-300 dark:text-zinc-700">Vazio</p>
                 </div>
