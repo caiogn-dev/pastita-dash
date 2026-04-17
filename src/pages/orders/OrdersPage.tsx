@@ -20,9 +20,14 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Button, Modal, PageLoading } from '../../components/common';
-import { ordersService } from '../../services';
+import {
+  getOrders,
+  updateOrderStatus,
+  markOrderPaid,
+  cancelOrder,
+  StoreOrder,
+} from '../../services/storesApi';
 import { useNotificationSound, useOrdersWebSocket, useStore } from '../../hooks';
-import { Order } from '../../types';
 import { useOrderPrint } from '../../components/orders/OrderPrint';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -35,9 +40,6 @@ const COLUMNS = [
     borderColor: 'border-t-blue-400',
     dotColor: 'bg-blue-400',
     labelColor: 'text-blue-700 dark:text-blue-300',
-    nextStatus: 'preparing',
-    nextLabel: 'Iniciar Preparo',
-    advanceColor: 'bg-orange-500 hover:bg-orange-600',
   },
   {
     id: 'preparing',
@@ -46,9 +48,6 @@ const COLUMNS = [
     borderColor: 'border-t-orange-400',
     dotColor: 'bg-orange-400',
     labelColor: 'text-orange-700 dark:text-orange-300',
-    nextStatus: null, // dynamic per order
-    nextLabel: '',
-    advanceColor: 'bg-indigo-500 hover:bg-indigo-600',
   },
   {
     id: 'dispatch',
@@ -57,9 +56,6 @@ const COLUMNS = [
     borderColor: 'border-t-indigo-400',
     dotColor: 'bg-indigo-400',
     labelColor: 'text-indigo-700 dark:text-indigo-300',
-    nextStatus: 'delivered',
-    nextLabel: 'Entregue ✓',
-    advanceColor: 'bg-green-500 hover:bg-green-600',
   },
   {
     id: 'done',
@@ -68,9 +64,6 @@ const COLUMNS = [
     borderColor: 'border-t-green-400',
     dotColor: 'bg-green-400',
     labelColor: 'text-green-700 dark:text-green-300',
-    nextStatus: null,
-    nextLabel: '',
-    advanceColor: '',
   },
 ] as const;
 
@@ -87,7 +80,7 @@ const timeAgo = (date?: string | null) => {
   catch { return ''; }
 };
 
-const getNextAction = (order: Order): { status: string; label: string; color: string } | null => {
+const getNextAction = (order: StoreOrder): { status: string; label: string; color: string } | null => {
   switch (order.status) {
     case 'confirmed':
     case 'processing':
@@ -106,31 +99,24 @@ const getNextAction = (order: Order): { status: string; label: string; color: st
   }
 };
 
-const needsPayment = (order: Order) =>
+const needsPayment = (order: StoreOrder) =>
   order.payment_status !== 'paid' &&
   ['cash', 'money', 'dinheiro', 'pagar_na_retirada', 'pay_on_pickup', 'pix_on_delivery'].some(
-    m => order.payment_method?.toLowerCase().includes(m) ?? false
+    m => (order.payment_method ?? '').toLowerCase().includes(m)
   );
 
-const parseAddress = (addr: unknown): string => {
+const parseAddress = (addr: Record<string, string> | null | undefined): string => {
   if (!addr) return '';
-  if (typeof addr === 'string') {
-    try {
-      const a = JSON.parse(addr);
-      return [a.street, a.number, a.neighborhood, a.city].filter(Boolean).join(', ');
-    } catch { return addr; }
-  }
-  const a = addr as Record<string, string>;
-  return [a.street, a.number, a.neighborhood, a.city].filter(Boolean).join(', ');
+  return [addr.street, addr.number, addr.neighborhood, addr.city].filter(Boolean).join(', ');
 };
 
 // ─── OrderDetailModal ─────────────────────────────────────────────────────────
 
 interface DetailModalProps {
-  order: Order;
+  order: StoreOrder;
   onClose: () => void;
-  onAdvance: (order: Order) => void;
-  onPay: (order: Order) => void;
+  onAdvance: (order: StoreOrder) => void;
+  onPay: (order: StoreOrder) => void;
 }
 
 const OrderDetailModal: React.FC<DetailModalProps> = ({ order, onClose, onAdvance, onPay }) => {
@@ -186,7 +172,7 @@ const OrderDetailModal: React.FC<DetailModalProps> = ({ order, onClose, onAdvanc
                   <span>{parseAddress(order.delivery_address)}</span>
                 </div>
               )}
-              {order.delivery_fee && Number(order.delivery_fee) > 0 && (
+              {order.delivery_fee > 0 && (
                 <p className="text-xs text-gray-400 dark:text-zinc-500">Taxa: R$ {fmt(order.delivery_fee)}</p>
               )}
             </div>
@@ -265,14 +251,14 @@ const OrderDetailModal: React.FC<DetailModalProps> = ({ order, onClose, onAdvanc
 // ─── OrderCard ────────────────────────────────────────────────────────────────
 
 interface CardProps {
-  order: Order;
+  order: StoreOrder;
   advancing: boolean;
   paying: boolean;
   cancelling: boolean;
-  onAdvance: (o: Order) => void;
-  onPay: (o: Order) => void;
-  onCancel: (o: Order) => void;
-  onDetail: (o: Order) => void;
+  onAdvance: (o: StoreOrder) => void;
+  onPay: (o: StoreOrder) => void;
+  onCancel: (o: StoreOrder) => void;
+  onDetail: (o: StoreOrder) => void;
 }
 
 const OrderCard: React.FC<CardProps> = ({
@@ -282,28 +268,28 @@ const OrderCard: React.FC<CardProps> = ({
   const hasPendingPayment = needsPayment(order);
 
   const itemsSummary = useMemo(() => {
-    if (!order.items?.length) return `${order.items_count ?? 0} item(s)`;
+    if (!order.items?.length) return '—';
     return order.items.map(i => `${i.quantity}× ${i.product_name}`).join(' · ');
-  }, [order.items, order.items_count]);
+  }, [order.items]);
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 space-y-2 hover:shadow-sm transition-shadow">
 
-      {/* Header row */}
+      {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-sm font-bold text-gray-900 dark:text-white">#{order.order_number}</span>
           {order.delivery_method === 'pickup' ? (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-medium whitespace-nowrap">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-medium">
               Retirada
             </span>
           ) : (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium whitespace-nowrap">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium">
               Delivery
             </span>
           )}
           {hasPendingPayment && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-medium whitespace-nowrap">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-medium">
               $ Pend.
             </span>
           )}
@@ -327,17 +313,16 @@ const OrderCard: React.FC<CardProps> = ({
       {/* Total */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-bold text-gray-900 dark:text-white">R$ {fmt(order.total)}</span>
-        {order.delivery_fee && Number(order.delivery_fee) > 0 && (
+        {order.delivery_fee > 0 && (
           <span className="text-[10px] text-gray-400 dark:text-zinc-600">
             +R$ {fmt(order.delivery_fee)} entrega
           </span>
         )}
       </div>
 
-      {/* Action buttons */}
+      {/* Buttons */}
       <div className="flex items-center gap-1.5 pt-1.5 border-t border-gray-100 dark:border-zinc-800">
 
-        {/* Details eye */}
         <button
           onClick={() => onDetail(order)}
           title="Ver detalhes"
@@ -346,7 +331,6 @@ const OrderCard: React.FC<CardProps> = ({
           <EyeIcon className="h-4 w-4" />
         </button>
 
-        {/* Advance status */}
         {action ? (
           <button
             onClick={() => onAdvance(order)}
@@ -363,7 +347,6 @@ const OrderCard: React.FC<CardProps> = ({
           <div className="flex-1" />
         )}
 
-        {/* Pay */}
         {hasPendingPayment && (
           <button
             onClick={() => onPay(order)}
@@ -378,7 +361,6 @@ const OrderCard: React.FC<CardProps> = ({
           </button>
         )}
 
-        {/* Cancel */}
         <button
           onClick={() => onCancel(order)}
           disabled={cancelling}
@@ -399,13 +381,13 @@ export const OrdersPage: React.FC = () => {
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
 
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [advancingId, setAdvancingId] = useState<string | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+  const [detailOrder, setDetailOrder] = useState<StoreOrder | null>(null);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const timerRef = useRef<number | null>(null);
 
@@ -415,7 +397,7 @@ export const OrdersPage: React.FC = () => {
     if (!storeQuery) { setLoading(false); return; }
     bg ? setRefreshing(true) : setLoading(true);
     try {
-      const res = await ordersService.getOrders({ store_slug: storeQuery });
+      const res = await getOrders({ store: storeQuery });
       setOrders(res.results ?? []);
       setLastSync(new Date());
     } catch {
@@ -453,18 +435,18 @@ export const OrdersPage: React.FC = () => {
     },
   });
 
-  const patchOrder = useCallback((id: string, patch: Partial<Order>) => {
+  const patchOrder = useCallback((id: string, patch: Partial<StoreOrder>) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o));
     setLastSync(new Date());
   }, []);
 
-  const handleAdvance = useCallback(async (order: Order) => {
+  const handleAdvance = useCallback(async (order: StoreOrder) => {
     const action = getNextAction(order);
     if (!action) return;
     setAdvancingId(order.id);
     try {
-      await ordersService.updateStatus(order.id, action.status);
-      patchOrder(order.id, { status: action.status as Order['status'] });
+      await updateOrderStatus(order.id, action.status);
+      patchOrder(order.id, { status: action.status });
       toast.success(`#${order.order_number} → ${action.label}`);
     } catch {
       toast.error('Erro ao atualizar status');
@@ -473,10 +455,10 @@ export const OrdersPage: React.FC = () => {
     }
   }, [patchOrder]);
 
-  const handlePay = useCallback(async (order: Order) => {
+  const handlePay = useCallback(async (order: StoreOrder) => {
     setPayingId(order.id);
     try {
-      await ordersService.markPaid(order.id, storeQuery || undefined);
+      await markOrderPaid(order.id);
       patchOrder(order.id, { payment_status: 'paid' });
       toast.success(`Pagamento lançado #${order.order_number}`);
     } catch {
@@ -484,13 +466,13 @@ export const OrdersPage: React.FC = () => {
     } finally {
       setPayingId(null);
     }
-  }, [patchOrder, storeQuery]);
+  }, [patchOrder]);
 
-  const handleCancel = useCallback(async (order: Order) => {
+  const handleCancel = useCallback(async (order: StoreOrder) => {
     if (!window.confirm(`Cancelar pedido #${order.order_number}?`)) return;
     setCancellingId(order.id);
     try {
-      await ordersService.cancelOrder(order.id, storeQuery || undefined);
+      await cancelOrder(order.id);
       patchOrder(order.id, { status: 'cancelled' });
       toast.success(`Pedido #${order.order_number} cancelado`);
     } catch {
@@ -498,7 +480,7 @@ export const OrdersPage: React.FC = () => {
     } finally {
       setCancellingId(null);
     }
-  }, [patchOrder, storeQuery]);
+  }, [patchOrder]);
 
   const pendingOrders = useMemo(
     () => orders.filter(o => o.status === 'pending'),
@@ -592,14 +574,13 @@ export const OrdersPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── 2×2 Kanban grid ── */}
+      {/* ── 2×2 grid ── */}
       <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
         {columnData.map(col => (
           <div
             key={col.id}
             className="flex flex-col rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950/40 overflow-hidden"
           >
-            {/* Column header */}
             <div className={`flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-b-2 ${col.borderColor}`}>
               <div className="flex items-center gap-2">
                 <span className={`h-2 w-2 rounded-full ${col.dotColor}`} />
@@ -610,7 +591,6 @@ export const OrdersPage: React.FC = () => {
               </span>
             </div>
 
-            {/* Cards */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
               {col.orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -637,7 +617,6 @@ export const OrdersPage: React.FC = () => {
         ))}
       </div>
 
-      {/* ── Detail modal ── */}
       {detailOrder && (
         <OrderDetailModal
           order={detailOrder}
