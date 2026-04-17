@@ -9,7 +9,6 @@ import {
   PrinterIcon,
   TruckIcon,
   ShoppingBagIcon,
-  BellAlertIcon,
   SignalIcon,
   SignalSlashIcon,
   ShoppingCartIcon,
@@ -278,107 +277,78 @@ const OrderCard: React.FC<CardProps> = ({
   const action = getNextAction(order);
   const hasPendingPayment = needsPayment(order);
 
-  const itemsSummary = useMemo(() => {
-    if (!order.items?.length) return '—';
-    return order.items.map(i => `${i.quantity}× ${i.product_name}`).join(' · ');
-  }, [order.items]);
-
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 space-y-2 hover:shadow-sm transition-shadow">
-
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-sm font-bold text-gray-900 dark:text-white">#{order.order_number}</span>
-          {order.delivery_method === 'pickup' ? (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-medium">
-              Retirada
-            </span>
-          ) : (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium">
-              Delivery
-            </span>
-          )}
-          {hasPendingPayment && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-medium">
-              $ Pend.
-            </span>
-          )}
+    <div className="rounded-2xl border border-black/5 bg-white/92 p-2.5 transition-shadow hover:shadow-[0_10px_30px_rgba(15,15,15,0.06)] dark:border-white/5 dark:bg-zinc-900">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold leading-tight text-gray-900 dark:text-white">
+            {order.customer_name || 'Cliente'}
+          </p>
+          <p className="mt-0.5 text-lg font-bold tracking-[-0.03em] text-gray-900 dark:text-white">
+            R$ {fmt(order.total)}
+          </p>
         </div>
-        <span className="text-[10px] text-gray-400 dark:text-zinc-600 shrink-0 mt-0.5">{timeAgo(order.created_at)}</span>
+
+        <div className="flex items-center gap-1">
+          {hasPendingPayment && (
+            <button
+              onClick={() => onPay(order)}
+              disabled={paying}
+              title="Lançar pagamento"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-600 transition-colors hover:bg-green-100 disabled:opacity-60 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40"
+            >
+              {paying
+                ? <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                : <CurrencyDollarIcon className="h-4 w-4" />
+              }
+            </button>
+          )}
+
+          {action && (
+            <button
+              onClick={() => onAdvance(order)}
+              disabled={advancing}
+              className={`flex h-8 min-w-[92px] items-center justify-center gap-1 rounded-xl px-2.5 text-[11px] font-semibold text-white transition-colors disabled:opacity-60 ${action.color}`}
+            >
+              {advancing
+                ? <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                : <CheckIcon className="h-3.5 w-3.5" />
+              }
+              <span className="truncate">{action.label}</span>
+            </button>
+          )}
+
+          {!action && <div className="w-2" />}
+
+          <button
+            onClick={() => onDetail(order)}
+            title="Ver detalhes"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          >
+            <EyeIcon className="h-4 w-4" />
+          </button>
+
+          <button
+            onClick={() => onCancel(order)}
+            disabled={cancelling}
+            title="Cancelar pedido"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-100 text-red-400 transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 dark:hover:bg-red-900/20"
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
       </div>
-
-      {/* Customer */}
-      <div>
-        <p className="text-xs font-semibold text-gray-800 dark:text-zinc-200 leading-tight truncate">
-          {order.customer_name || 'Cliente'}
-        </p>
-        {order.customer_phone && (
-          <p className="text-[11px] text-gray-400 dark:text-zinc-500">{order.customer_phone}</p>
-        )}
+      <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-gray-400 dark:text-zinc-600">
+        <span>{timeAgo(order.created_at)}</span>
+        <span>{hasPendingPayment ? 'Pagamento pendente' : ' '}</span>
       </div>
-
-      {/* Items */}
-      <p className="text-[11px] text-gray-500 dark:text-zinc-500 leading-snug line-clamp-2">{itemsSummary}</p>
-
-      {/* Total */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-bold text-gray-900 dark:text-white">R$ {fmt(order.total)}</span>
-        {order.delivery_fee > 0 && (
-          <span className="text-[10px] text-gray-400 dark:text-zinc-600">
-            +R$ {fmt(order.delivery_fee)} entrega
-          </span>
-        )}
-      </div>
-
-      {/* Buttons */}
-      <div className="flex items-center gap-1.5 pt-1.5 border-t border-gray-100 dark:border-zinc-800">
-
+      <div className="hidden">
         <button
           onClick={() => onDetail(order)}
           title="Ver detalhes"
-          className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg border border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+          className="hidden"
         >
           <EyeIcon className="h-4 w-4" />
-        </button>
-
-        {action ? (
-          <button
-            onClick={() => onAdvance(order)}
-            disabled={advancing}
-            className={`flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-white text-xs font-semibold transition-colors disabled:opacity-60 ${action.color}`}
-          >
-            {advancing
-              ? <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-              : <CheckIcon className="h-3.5 w-3.5" />
-            }
-            <span className="truncate">{action.label}</span>
-          </button>
-        ) : (
-          <div className="flex-1" />
-        )}
-
-        {hasPendingPayment && (
-          <button
-            onClick={() => onPay(order)}
-            disabled={paying}
-            title="Lançar pagamento"
-            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors disabled:opacity-60"
-          >
-            {paying
-              ? <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-              : <CurrencyDollarIcon className="h-4 w-4" />
-            }
-          </button>
-        )}
-
-        <button
-          onClick={() => onCancel(order)}
-          disabled={cancelling}
-          title="Cancelar pedido"
-          className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg border border-red-100 dark:border-red-900/30 text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-60"
-        >
-          <XMarkIcon className="h-4 w-4" />
         </button>
       </div>
     </div>
@@ -516,11 +486,6 @@ export const OrdersPage: React.FC = () => {
     }
   }, [patchOrder]);
 
-  const pendingOrders = useMemo(
-    () => orders.filter(o => o.status === 'pending' || o.status === 'processing'),
-    [orders]
-  );
-
   const columnData = useMemo(
     () => COLUMNS.map(col => ({
       ...col,
@@ -541,12 +506,10 @@ export const OrdersPage: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col gap-4 bg-[#f5f1e8] px-3 py-3 text-fg-primary dark:bg-[#050505] md:px-4 md:py-4">
-
-      {/* ── Top bar ── */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/70 px-4 py-3 dark:border-white/5 dark:bg-white/5">
-        <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold text-gray-900 dark:text-white">Pedidos</h1>
+    <div className="flex min-h-screen flex-col gap-3 bg-[#f5f1e8] px-2 py-2 text-fg-primary dark:bg-[#050505] sm:px-3 sm:py-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/70 px-3 py-2 dark:border-white/5 dark:bg-white/5">
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-gray-900 dark:text-white">Pedidos</h1>
           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
             rtConnected
               ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
@@ -571,51 +534,13 @@ export const OrdersPage: React.FC = () => {
         </button>
       </div>
 
-      {/* ── Pending strip ── */}
-      {pendingOrders.length > 0 && (
-        <div className="shrink-0 rounded-2xl border border-yellow-200 bg-yellow-50/90 p-3 dark:border-yellow-800/30 dark:bg-yellow-950/20">
-          <div className="mb-2 flex items-center gap-2">
-            <BellAlertIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400 animate-pulse" />
-            <span className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">
-              {pendingOrders.length} novo{pendingOrders.length > 1 ? 's' : ''} pedido{pendingOrders.length > 1 ? 's' : ''} aguardando
-            </span>
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
-            {pendingOrders.map(order => (
-              <div
-                key={order.id}
-                className="flex shrink-0 items-center gap-3 rounded-xl border border-yellow-200 bg-white px-3 py-2 dark:border-yellow-800/30 dark:bg-zinc-900"
-              >
-                <div>
-                  <p className="text-xs font-bold text-gray-900 dark:text-white">#{order.order_number}</p>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-500">{order.customer_name}</p>
-                </div>
-                <span className="text-sm font-bold text-gray-900 dark:text-white">R$ {fmt(order.total)}</span>
-                <button
-                  onClick={() => handleAdvance(order)}
-                  disabled={advancingId === order.id}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors disabled:opacity-60"
-                >
-                  {advancingId === order.id
-                    ? <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                    : <CheckIcon className="h-3 w-3" />
-                  }
-                  Confirmar
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── 4 stage rail ── */}
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2">
+      <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-2 2xl:grid-cols-4">
         {columnData.map(col => (
           <div
             key={col.id}
-            className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/85 dark:border-zinc-800 dark:bg-zinc-950/40 lg:min-h-[calc((100vh-13rem)/2)]"
+            className="flex min-h-[220px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/85 dark:border-zinc-800 dark:bg-zinc-950/40 lg:min-h-[calc(100vh-5.75rem)]"
           >
-            <div className={`flex items-center justify-between border-b bg-white/85 px-3 py-2.5 dark:bg-zinc-900 ${col.borderColor}`}>
+            <div className={`flex items-center justify-between border-b bg-white/85 px-3 py-2 dark:bg-zinc-900 ${col.borderColor}`}>
               <div className="flex items-center gap-2">
                 <span className={`h-2 w-2 rounded-full ${col.dotColor}`} />
                 <span className={`text-xs font-semibold uppercase tracking-wide ${col.labelColor}`}>{col.label}</span>
@@ -625,7 +550,7 @@ export const OrdersPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+            <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
               {col.orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <ShoppingCartIcon className="h-7 w-7 text-gray-200 dark:text-zinc-700 mb-2" />
