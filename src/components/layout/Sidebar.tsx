@@ -1,37 +1,24 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   HomeIcon,
   DevicePhoneMobileIcon,
   ChatBubbleLeftRightIcon,
-  InboxIcon,
   ShoppingCartIcon,
   CreditCardIcon,
   CpuChipIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   BoltIcon,
-  BuildingOfficeIcon,
   UserGroupIcon,
-  DocumentTextIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  ClockIcon,
-  DocumentChartBarIcon,
   TagIcon,
   Squares2X2Icon,
-  CubeIcon,
   XMarkIcon,
   BuildingStorefrontIcon,
-  PresentationChartLineIcon,
   MegaphoneIcon,
-  EnvelopeIcon,
-  PlusIcon,
-  MagnifyingGlassIcon,
-  ChatBubbleBottomCenterTextIcon,
   SparklesIcon,
-  ReceiptPercentIcon,
-  QueueListIcon,
   LinkIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
@@ -62,42 +49,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { store } = useStore();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const totalUnreadCount = useTotalUnreadCount();
   const wsConnected = useWsConnected();
 
-  const storeKey = store?.id || null;
+  const storeKey = store?.slug || store?.id || null;
   const storeRoot = storeKey ? `/stores/${storeKey}` : '/stores';
   const storeHref = useMemo(() => {
     return (path: string) => (storeKey ? `${storeRoot}/${path}` : '/stores');
   }, [storeKey, storeRoot]);
 
-  // Menu reorganizado - ATUALIZADO COM TODAS FUNCIONALIDADES DO BACKEND
   const navigationSections: NavSection[] = useMemo(() => [
     {
-      title: 'Principal',
+      title: 'Loja',
       items: [
         { name: 'Dashboard', href: '/', icon: HomeIcon },
         { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon },
         { name: 'Clientes', href: storeHref('customers'), icon: UserGroupIcon },
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
-        { name: 'Combos', href: storeHref('combos'), icon: CubeIcon },
         { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
       ]
     },
     {
       title: 'Comunicação',
       items: [
-        { 
-          name: 'Conversas', 
-          href: '/conversations', 
+        {
+          name: 'Conversas',
+          href: '/conversations',
           icon: ChatBubbleLeftRightIcon,
           badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
-        },
-        { 
-          name: 'Conexões', 
-          href: '/connections', 
-          icon: LinkIcon,
         },
         {
           name: 'WhatsApp',
@@ -105,45 +84,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           icon: DevicePhoneMobileIcon,
           children: [
             { name: 'Caixa de Entrada', href: '/whatsapp/inbox', icon: ChatBubbleLeftRightIcon },
-            { name: 'Chat', href: '/whatsapp/chat', icon: ChatBubbleLeftRightIcon },
-            { name: 'Handover', href: '/whatsapp/handover', icon: UserGroupIcon },
             { name: 'Contas', href: '/accounts', icon: UserGroupIcon },
-            { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-            { name: 'Debug/Logs', href: '/whatsapp/debug', icon: DocumentChartBarIcon },
             { name: 'Diagnóstico', href: '/whatsapp/diagnostics', icon: Cog6ToothIcon },
           ]
         },
-        { 
-          name: 'Instagram', 
-          href: '/instagram/inbox', 
-          icon: ChatBubbleLeftRightIcon,
-          children: [
-            { name: 'Mensagens', href: '/instagram/inbox', icon: InboxIcon },
-            { name: 'Contas', href: '/instagram/accounts', icon: UserGroupIcon },
-          ]
-        },
-        { 
-          name: 'Messenger', 
-          href: '/messenger/inbox', 
-          icon: ChatBubbleBottomCenterTextIcon,
-          children: [
-            { name: 'Mensagens', href: '/messenger/inbox', icon: InboxIcon },
-            { name: 'Contas', href: '/messenger/accounts', icon: UserGroupIcon },
-          ]
-        },
-        { 
-          name: 'Marketing', 
-          href: '/marketing', 
+        {
+          name: 'Marketing',
+          href: '/marketing',
           icon: MegaphoneIcon,
           children: [
-            { name: 'Dashboard', href: '/marketing', icon: MegaphoneIcon },
-            { name: 'Campanhas Email', href: '/marketing/email/campaigns', icon: EnvelopeIcon },
             { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
-            { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
             { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
-            { name: 'Automações', href: '/marketing/automations', icon: BoltIcon },
           ]
         },
+        { name: 'Conexões', href: '/connections', icon: LinkIcon },
       ]
     },
     {
@@ -153,104 +107,90 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           name: 'Agentes IA',
           href: '/agents',
           icon: CpuChipIcon,
-          children: [
-            { name: 'Lista de Agentes', href: '/agents', icon: CpuChipIcon },
-            { name: 'Novo Agente', href: '/agents/new', icon: PlusIcon },
-            { name: 'Testar Orquestrador', href: '/agents/test/orchestrator', icon: SparklesIcon },
-          ]
+          badge: 'Novo',
         },
         {
           name: 'Automação',
           href: '/automation/companies',
           icon: BoltIcon,
           children: [
-            { name: 'Flows de Agente', href: '/automation/flows', icon: CpuChipIcon },
-            { name: 'Perfis & Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
-            { name: 'Mensagens Automáticas', href: '/automation/messages', icon: ChatBubbleBottomCenterTextIcon },
-            { name: 'Sessões Clientes', href: '/automation/sessions', icon: UserGroupIcon },
-            { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
-            { name: 'Relatórios Agendados', href: '/automation/reports', icon: DocumentChartBarIcon },
-            { name: 'Logs Automação', href: '/automation/logs', icon: DocumentChartBarIcon },
-            { name: 'Logs Intenções', href: '/automation/intents/logs', icon: SparklesIcon },
-            { name: 'Estatísticas IA', href: '/automation/intents/stats', icon: PresentationChartLineIcon },
+            { name: 'Intenções', href: '/automation/intents/stats', icon: SparklesIcon },
+            { name: 'Sessões', href: '/automation/sessions', icon: UserGroupIcon },
           ]
         },
       ]
     },
     {
-      title: 'Analytics & Dados',
+      title: 'Configurações',
       items: [
-        { name: 'Analytics', href: storeHref('analytics'), icon: PresentationChartLineIcon },
-        { name: 'Relatórios', href: '/analytics', icon: DocumentChartBarIcon },
         {
           name: 'Lojas',
           href: '/stores',
           icon: BuildingStorefrontIcon,
           children: [
-            { name: 'Todas Lojas', href: '/stores', icon: BuildingStorefrontIcon },
-            { name: 'Zonas de Entrega', href: storeHref('delivery'), icon: QueueListIcon },
+            { name: 'Todas as Lojas', href: '/stores', icon: BuildingStorefrontIcon },
             { name: 'Configurações', href: storeHref('settings'), icon: Cog6ToothIcon },
             { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
           ]
         },
-      ]
-    },
-    {
-      title: 'Sistema',
-      items: [
-        { 
-          name: 'Configurações Gerais', 
-          href: '/settings', 
-          icon: Cog6ToothIcon 
-        },
+        { name: 'Sistema', href: '/settings', icon: Cog6ToothIcon },
       ]
     },
   ], [storeHref, totalUnreadCount]);
-  
-  
-  // Filter items by search
-  const filteredSections = useMemo(() => {
-    if (!searchQuery.trim()) return navigationSections;
-    
-    const query = searchQuery.toLowerCase();
-    return navigationSections
-      .map(section => ({
-        ...section,
-        items: section.items.filter(item => 
-          item.name.toLowerCase().includes(query) ||
-          item.children?.some(child => child.name.toLowerCase().includes(query))
-        )
-      }))
-      .filter(section => section.items.length > 0);
-  }, [navigationSections, searchQuery]);
+
+  const filteredSections = navigationSections;
 
   // Dynamic brand info based on selected store
   const brandInfo = useMemo(() => {
-    if (!store) {
+    // Default Pastita branding with local SVG logo
+    const defaultBrand = {
+      name: 'Pastita',
+      logo: '/pastita-logo.svg',
+      primaryColor: '#722F37',
+      secondaryColor: '#8B3A42',
+      initial: 'P',
+    };
+
+    if (!store) return defaultBrand;
+
+    // Check if it's Agrião based on store name or slug
+    const isAgriao = store.name?.toLowerCase().includes('agriao') || 
+                     store.slug?.toLowerCase().includes('agriao');
+
+    if (isAgriao) {
       return {
-        name: 'Pastita',
-        logo: '/pastita-logo.svg',
-        primaryColor: '#722F37', // marsala
-        initial: 'P',
+        name: store.name || 'Agrião',
+        logo: store.logo_url || null,
+        primaryColor: '#4A5D23',
+        secondaryColor: '#6B8E23',
+        initial: 'A',
       };
     }
 
-    const isPastita = store.name?.toLowerCase().includes('pastita') ||
+    // For Pastita stores, use local SVG logo
+    const isPastita = store.name?.toLowerCase().includes('pastita') || 
                       store.slug?.toLowerCase().includes('pastita');
 
     return {
       name: store.name || 'Pastita',
       logo: isPastita ? '/pastita-logo.svg' : (store.logo_url || null),
-      // usa o hex da API diretamente — fonte de verdade
       primaryColor: store.primary_color || '#722F37',
+      secondaryColor: store.secondary_color || '#8B3A42',
       initial: store.name?.[0]?.toUpperCase() || 'P',
     };
   }, [store]);
 
-  // Seta --primary-500 com o hex da API → o CSS deriva toda a paleta via color-mix()
+  // Apply theme based on store
   useEffect(() => {
-    document.documentElement.style.setProperty('--primary-500', brandInfo.primaryColor);
-  }, [brandInfo.primaryColor]);
+    const isAgriao = store?.name?.toLowerCase().includes('agriao') || 
+                     store?.slug?.toLowerCase().includes('agriao');
+    
+    if (isAgriao) {
+      document.documentElement.setAttribute('data-theme', 'agriao');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [store]);
 
   const handleLogout = () => {
     logout();
@@ -375,7 +315,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           <div 
             className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 ${brandInfo.logo ? 'hidden' : ''}`}
             style={{ 
-              background: `linear-gradient(135deg, ${brandInfo.primaryColor} 0%, color-mix(in srgb, ${brandInfo.primaryColor} 60%, black) 100%)` 
+              background: `linear-gradient(135deg, ${brandInfo.primaryColor} 0%, ${brandInfo.secondaryColor} 100%)` 
             }}
           >
             <span className="text-white font-bold text-lg">{brandInfo.initial}</span>
@@ -397,37 +337,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         )}
       </div>
 
-      <div className="px-3 py-3 border-b border-gray-100 dark:border-zinc-800">
-        <div className="flex items-center justify-between rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 px-3 py-2 mb-3">
-          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Sistema online</span>
-          <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-        </div>
-
-        {/* Quick Search */}
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-zinc-500" />
-          <input
-            type="text"
-            placeholder="Buscar menu..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn(
-              'w-full pl-9 pr-3 py-2 text-sm',
-              'bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800',
-              'rounded-lg placeholder-gray-400 dark:placeholder-zinc-500',
-              'text-gray-900 dark:text-zinc-100',
-              'focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500',
-              'transition-all duration-200'
-            )}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300"
-            >
-              <XMarkIcon className="w-4 h-4" />
-            </button>
-          )}
+      <div className="px-4 py-2.5 border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-gray-500 dark:text-zinc-500">
+            {store?.name || 'Loja'}
+          </span>
+          <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} title={wsConnected ? 'Conectado' : 'Desconectado'} />
         </div>
       </div>
 
@@ -443,7 +358,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             </div>
           </div>
         ))}
-        {filteredSections.length === 0 && searchQuery && (
+        {filteredSections.length === 0 && (
           <div className="px-3 py-8 text-center">
             <p className="text-sm text-gray-500 dark:text-zinc-400">
               Nenhum item encontrado

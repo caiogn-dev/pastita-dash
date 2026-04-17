@@ -1,768 +1,490 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  ArrowDownTrayIcon,
   ArrowPathIcon,
-  BanknotesIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  FireIcon,
+  TruckIcon,
+  XCircleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   SignalIcon,
   SignalSlashIcon,
-  Squares2X2Icon,
-  TruckIcon,
-  UserGroupIcon,
-  ListBulletIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Button, Card, OrderStatusBadge, PageLoading } from '../../components/common';
-import { OrdersKanban } from '../../components/orders/OrdersKanban';
-import { exportService, getErrorMessage, ordersService } from '../../services';
+import { OrderStatusBadge, PageLoading } from '../../components/common';
+import { getErrorMessage, ordersService } from '../../services';
 import { useNotificationSound, useOrdersWebSocket, useStore } from '../../hooks';
-import { useStoreContextStore } from '../../stores/storeContextStore';
 import { Order } from '../../types';
 
-type ViewMode = 'kanban' | 'table';
-type OrderStatus = Order['status'];
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-// Grouped status filters — maps UI tabs to one or more DB status values.
-// Legacy statuses (processing, paid, shipped, completed, failed, refunded) are
-// folded into their canonical group so the UI stays clean.
-const STATUS_GROUPS = [
-  {
-    id: 'pending' as const,
-    label: 'Recebidos',
-    includes: ['pending', 'processing'] as string[],
-    colorClass: 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300',
-  },
-  {
-    id: 'confirmed' as const,
-    label: 'Confirmados',
-    includes: ['confirmed', 'paid'] as string[],
-    colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  },
-  {
-    id: 'preparing' as const,
-    label: 'Preparando',
-    includes: ['preparing'] as string[],
-    colorClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  },
-  {
-    id: 'ready' as const,
-    label: 'Prontos',
-    includes: ['ready'] as string[],
-    colorClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  },
-  {
-    id: 'out_for_delivery' as const,
-    label: 'Em entrega',
-    includes: ['out_for_delivery', 'shipped'] as string[],
-    colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-  },
-  {
-    id: 'delivered' as const,
-    label: 'Entregues',
-    includes: ['delivered', 'completed'] as string[],
-    colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  },
-  {
-    id: 'cancelled' as const,
-    label: 'Cancelados',
-    includes: ['cancelled', 'refunded', 'failed'] as string[],
-    colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  },
+const STATUS_TABS = [
+  { key: '',                label: 'Todos',       icon: null },
+  { key: 'pending',         label: 'Pendentes',   icon: ClockIcon },
+  { key: 'confirmed',       label: 'Confirmados', icon: CheckCircleIcon },
+  { key: 'preparing',       label: 'Preparando',  icon: FireIcon },
+  { key: 'out_for_delivery',label: 'A caminho',   icon: TruckIcon },
+  { key: 'delivered',       label: 'Entregues',   icon: CheckCircleIcon },
+  { key: 'cancelled',       label: 'Cancelados',  icon: XCircleIcon },
 ] as const;
 
-type StatusFilterKey = typeof STATUS_GROUPS[number]['id'] | 'all';
-
-const PAYMENT_STATUS_COLOR: Record<string, string> = {
-  paid: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  refunded: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  pending: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+const NEXT_ACTION: Record<string, { label: string; next: string; color: string }> = {
+  pending:          { label: 'Confirmar',       next: 'confirmed',       color: 'bg-blue-600 hover:bg-blue-700' },
+  confirmed:        { label: 'Iniciar preparo', next: 'preparing',       color: 'bg-orange-600 hover:bg-orange-700' },
+  preparing:        { label: 'Despachar',       next: 'out_for_delivery',color: 'bg-indigo-600 hover:bg-indigo-700' },
+  out_for_delivery: { label: 'Entregue',        next: 'delivered',       color: 'bg-green-600 hover:bg-green-700' },
 };
 
-const TRANSPORT_LABELS: Record<string, string> = {
-  websocket: 'WebSocket',
-  sse: 'SSE',
-  polling: 'Polling',
-};
+const PAGE_SIZE = 25;
 
-const ACTIONABLE_STATUSES = new Set<OrderStatus>([
-  'pending',
-  'processing',
-  'confirmed',
-  'preparing',
-]);
-
-const DELIVERY_QUEUE_STATUSES = new Set<OrderStatus>([
-  'ready',
-  'shipped',
-  'out_for_delivery',
-]);
-
-const isStatusFilterKey = (value: unknown): value is StatusFilterKey =>
-  value === 'all' || STATUS_GROUPS.some((g) => g.id === value);
-
-const isUuidLike = (value: string) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatMoney = (value: number | string | null | undefined) => {
-  const numericValue = typeof value === 'string' ? Number(value) : value ?? 0;
-  return numericValue.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const n = typeof value === 'string' ? Number(value) : (value ?? 0);
+  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const paymentStatusLabel = (status?: string) => {
-  const normalizedStatus = String(status || 'pending').toLowerCase();
-  switch (normalizedStatus) {
-    case 'paid':
-      return 'Pago';
-    case 'failed':
-      return 'Falhou';
-    case 'refunded':
-      return 'Reembolsado';
-    default:
-      return 'Pendente';
-  }
+const formatTime = (value?: string | null) => {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '—';
+  return format(d, 'dd/MM HH:mm', { locale: ptBR });
 };
 
-const mergeOrder = (currentOrders: Order[], incomingOrder: Order) => {
-  const existingIndex = currentOrders.findIndex((order) => order.id === incomingOrder.id);
-  if (existingIndex === -1) {
-    return [incomingOrder, ...currentOrders];
-  }
-
-  const nextOrders = [...currentOrders];
-  nextOrders[existingIndex] = {
-    ...nextOrders[existingIndex],
-    ...Object.fromEntries(
-      Object.entries(incomingOrder).filter(([, value]) => value !== undefined)
-    ),
-  };
-  return nextOrders;
+const mergeOrder = (list: Order[], incoming: Order) => {
+  const idx = list.findIndex((o) => o.id === incoming.id);
+  if (idx === -1) return [incoming, ...list];
+  const next = [...list];
+  next[idx] = { ...next[idx], ...incoming };
+  return next;
 };
 
-const patchOrder = (
-  currentOrders: Order[],
-  orderId: string | undefined,
-  patch: Partial<Order>
-) => {
-  if (!orderId) {
-    return currentOrders;
+const patchOrder = (list: Order[], id: string | undefined, patch: Partial<Order>) => {
+  if (!id) return list;
+  return list.map((o) => (o.id === id ? { ...o, ...patch } : o));
+};
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+const KpiCard: React.FC<{ label: string; value: string | number; sub?: string; dot: string }> = ({
+  label, value, sub, dot,
+}) => (
+  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+    <div className="flex items-center gap-2 mb-2">
+      <span className={`h-2 w-2 rounded-full ${dot}`} />
+      <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">{label}</span>
+    </div>
+    <p className="text-2xl font-bold text-white">{value}</p>
+    {sub && <p className="text-xs text-zinc-500 mt-1">{sub}</p>}
+  </div>
+);
+
+const Pagination: React.FC<{
+  page: number; total: number; pageSize: number; onChange: (p: number) => void;
+}> = ({ page, total, pageSize, onChange }) => {
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return null;
+
+  const pages: (number | '...')[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (page > 3) pages.push('...');
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+    if (page < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
   }
 
-  return currentOrders.map((order) =>
-    order.id === orderId
-      ? {
-          ...order,
-          ...Object.fromEntries(
-            Object.entries(patch).filter(([, value]) => value !== undefined)
-          ),
-        }
-      : order
+  return (
+    <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-800">
+      <span className="text-xs text-zinc-500">
+        {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} de {total}
+      </span>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onChange(page - 1)}
+          disabled={page === 1}
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronLeftIcon className="h-4 w-4" />
+        </button>
+        {pages.map((p, i) =>
+          p === '...' ? (
+            <span key={`ellipsis-${i}`} className="px-2 text-zinc-600 text-sm">…</span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => onChange(p as number)}
+              className={`min-w-[2rem] h-8 rounded-lg text-sm font-medium transition-colors ${
+                p === page
+                  ? 'bg-brand-600 text-white'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              {p}
+            </button>
+          )
+        )}
+        <button
+          onClick={() => onChange(page + 1)}
+          disabled={page === totalPages}
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronRightIcon className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 };
 
-const formatOrderDateTime = (value?: string | null) => {
-  if (!value) {
-    return '--';
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return '--';
-  }
-
-  return format(parsed, 'dd/MM HH:mm', { locale: ptBR });
-};
-
-const MetricCard: React.FC<{
-  label: string;
-  value: string;
-  helper: string;
-  accentClass: string;
-  icon: React.ReactNode;
-}> = ({ label, value, helper, accentClass, icon }) => (
-  <Card>
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className={`rounded-full ${accentClass} p-2.5 inline-flex items-center justify-center`}>
-          {icon}
-        </div>
-        <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide">
-          {label}
-        </span>
-      </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-          {value}
-        </span>
-        <span className="text-sm text-gray-500 dark:text-zinc-400">
-          {helper}
-        </span>
-      </div>
-    </div>
-  </Card>
-);
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { storeId: routeStoreParam } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeSlug, storeName, stores } = useStore();
-  const selectStoreById = useStoreContextStore((state) => state.selectStoreById);
-  const selectStoreBySlug = useStoreContextStore((state) => state.selectStoreBySlug);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { storeId, storeSlug } = useStore();
 
-  const routeStore = useMemo(() => {
-    if (!routeStoreParam) {
-      return null;
-    }
+  const statusFilter = searchParams.get('status') ?? '';
+  const pageParam = parseInt(searchParams.get('page') ?? '1', 10);
 
-    return (
-      stores.find((store) => store.id === routeStoreParam || store.slug === routeStoreParam) || null
-    );
-  }, [routeStoreParam, stores]);
+  const setStatusFilter = (s: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (s) next.set('status', s); else next.delete('status');
+      next.delete('page');
+      return next;
+    });
+  };
 
-  const effectiveStoreId =
-    routeStore?.id ||
-    contextStoreId ||
-    (routeStoreParam && isUuidLike(routeStoreParam) ? routeStoreParam : null);
-  const effectiveStoreSlug =
-    routeStore?.slug ||
-    storeSlug ||
-    (routeStoreParam && !isUuidLike(routeStoreParam) ? routeStoreParam : null);
-  const effectiveStoreQuery = effectiveStoreId || effectiveStoreSlug;
-  const effectiveStoreName = routeStore?.name || storeName || 'Loja selecionada';
+  const setPage = (p: number) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (p > 1) next.set('page', String(p)); else next.delete('page');
+      return next;
+    });
+  };
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilterKey>('all');
-  const [isExporting, setIsExporting] = useState(false);
-  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
-  const refreshTimeoutRef = useRef<number | null>(null);
+  const [advancingId, setAdvancingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const refreshTimer = useRef<number | null>(null);
   const { playNotificationSound } = useNotificationSound();
 
-  useEffect(() => {
-    if (!routeStoreParam || stores.length === 0) {
-      return;
-    }
-
-    const matchedStore = stores.find(
-      (store) => store.id === routeStoreParam || store.slug === routeStoreParam
-    );
-
-    if (!matchedStore) {
-      return;
-    }
-
-    if (matchedStore.id !== contextStoreId) {
-      if (matchedStore.id === routeStoreParam) {
-        selectStoreById(matchedStore.id);
-      } else {
-        selectStoreBySlug(matchedStore.slug);
-      }
-    }
-  }, [contextStoreId, routeStoreParam, selectStoreById, selectStoreBySlug, stores]);
+  const storeQuery = storeSlug || storeId;
 
   const loadOrders = useCallback(
     async (background = false) => {
-      if (!effectiveStoreQuery) {
-        setOrders([]);
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
-
-      if (background) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
+      if (!storeQuery) { setLoading(false); return; }
+      background ? setRefreshing(true) : setLoading(true);
       try {
-        const response = await ordersService.getOrders({ store: effectiveStoreQuery });
-        setOrders(response.results || []);
-        setLastSyncedAt(new Date());
-      } catch (error) {
-        toast.error(getErrorMessage(error));
+        const res = await ordersService.getOrders({ store: storeQuery });
+        setOrders(res.results || []);
+        setLastSync(new Date());
+      } catch (err) {
+        toast.error(getErrorMessage(err));
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [effectiveStoreQuery]
+    [storeQuery]
   );
 
-  const scheduleReload = useCallback(
-    (delay = 1200) => {
-      if (refreshTimeoutRef.current) {
-        window.clearTimeout(refreshTimeoutRef.current);
-      }
-
-      refreshTimeoutRef.current = window.setTimeout(() => {
-        loadOrders(true);
-      }, delay);
-    },
-    [loadOrders]
-  );
-
-  useEffect(() => {
-    loadOrders(false);
+  const scheduleReload = useCallback((delay = 1200) => {
+    if (refreshTimer.current) window.clearTimeout(refreshTimer.current);
+    refreshTimer.current = window.setTimeout(() => loadOrders(true), delay);
   }, [loadOrders]);
 
-  useEffect(() => {
-    return () => {
-      if (refreshTimeoutRef.current) {
-        window.clearTimeout(refreshTimeoutRef.current);
-      }
-    };
-  }, []);
+  useEffect(() => { loadOrders(false); }, [loadOrders]);
+  useEffect(() => () => { if (refreshTimer.current) window.clearTimeout(refreshTimer.current); }, []);
 
-  const applyRealtimePatch = useCallback((payload: { order_id?: string; status?: string; payment_status?: string; updated_at?: string }) => {
-    setOrders((currentOrders) =>
-      patchOrder(currentOrders, payload.order_id, {
-        status: payload.status as OrderStatus | undefined,
-        payment_status: payload.payment_status as Order['payment_status'] | undefined,
-        updated_at: payload.updated_at,
-      })
-    );
-    setLastSyncedAt(new Date());
+  const applyPatch = useCallback((payload: { order_id?: string; status?: string; payment_status?: string; updated_at?: string }) => {
+    setOrders((cur) => patchOrder(cur, payload.order_id, {
+      status: payload.status as Order['status'] | undefined,
+      payment_status: payload.payment_status as Order['payment_status'] | undefined,
+      updated_at: payload.updated_at,
+    }));
+    setLastSync(new Date());
   }, []);
 
   const {
-    isConnected: realtimeConnected,
+    isConnected: rtConnected,
     connectionError,
-    transport,
-    status: connectionStatus,
     reconnect,
   } = useOrdersWebSocket({
-    enabled: Boolean(effectiveStoreSlug || effectiveStoreQuery),
-    onOrderCreated: (payload) => {
+    enabled: Boolean(storeQuery),
+    onOrderCreated: (p) => {
       playNotificationSound();
-      toast.success(`Novo pedido #${payload.order_number || payload.order_id?.slice(0, 8)}`);
+      toast.success(`Novo pedido #${p.order_number || p.order_id?.slice(0, 8)}`);
       scheduleReload(250);
     },
-    onOrderUpdated: (payload) => {
-      applyRealtimePatch(payload);
+    onOrderUpdated: (p) => { applyPatch(p); scheduleReload(1400); },
+    onOrderCancelled: (p) => {
+      applyPatch(p);
+      toast.error(`Pedido cancelado #${p.order_number || p.order_id?.slice(0, 8)}`);
       scheduleReload(1400);
     },
-    onOrderCancelled: (payload) => {
-      applyRealtimePatch(payload);
-      toast.error(`Pedido #${payload.order_number || payload.order_id?.slice(0, 8)} cancelado`);
-      scheduleReload(1400);
-    },
-    onPaymentReceived: (payload) => {
+    onPaymentReceived: (p) => {
       playNotificationSound();
-      applyRealtimePatch({
-        ...payload,
-        payment_status: 'paid',
-      });
-      toast.success(`Pagamento confirmado para o pedido #${payload.order_number || payload.order_id?.slice(0, 8)}`);
+      applyPatch({ ...p, payment_status: 'paid' });
+      toast.success(`Pagamento confirmado #${p.order_number || p.order_id?.slice(0, 8)}`);
       scheduleReload(900);
     },
   });
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
-      const matchesSearch =
-        !searchQuery ||
-        order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer_phone?.includes(searchQuery);
+  const filtered = useMemo(() =>
+    orders.filter((o) => {
+      const matchStatus = !statusFilter || o.status === statusFilter;
+      const q = search.toLowerCase();
+      const matchSearch = !q ||
+        o.order_number?.toLowerCase().includes(q) ||
+        o.customer_name?.toLowerCase().includes(q) ||
+        o.customer_phone?.includes(q);
+      return matchStatus && matchSearch;
+    }),
+    [orders, statusFilter, search]
+  );
 
-      if (statusFilter !== 'all') {
-        const group = STATUS_GROUPS.find((g) => g.id === statusFilter);
-        if (!group?.includes.includes(order.status)) return false;
-      }
-      return matchesSearch;
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { '': orders.length };
+    STATUS_TABS.forEach(({ key }) => {
+      if (key) c[key] = orders.filter((o) => o.status === key).length;
     });
-  }, [orders, searchQuery, statusFilter]);
-
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: orders.length };
-    STATUS_GROUPS.forEach((group) => {
-      counts[group.id] = orders.filter((o) => group.includes.includes(o.status)).length;
-    });
-    return counts;
+    return c;
   }, [orders]);
 
-  const metrics = useMemo(() => {
-    const actionableOrders = orders.filter((order) => ACTIONABLE_STATUSES.has(order.status));
-    const deliveryQueue = orders.filter((order) => DELIVERY_QUEUE_STATUSES.has(order.status));
-    const paidRevenue = orders
-      .filter((order) => order.payment_status === 'paid')
-      .reduce((total, order) => total + Number(order.total || 0), 0);
-    const uniqueCustomers = new Set(
-      orders
-        .map((order) => order.customer_phone || order.customer_email || order.customer_name)
-        .filter(Boolean)
-    ).size;
+  const kpis = useMemo(() => ({
+    pending: orders.filter((o) => o.status === 'pending').length,
+    active: orders.filter((o) => ['confirmed', 'preparing'].includes(o.status)).length,
+    enRoute: orders.filter((o) => o.status === 'out_for_delivery').length,
+    revenue: orders
+      .filter((o) => o.payment_status === 'paid')
+      .reduce((sum, o) => sum + Number(o.total || 0), 0),
+  }), [orders]);
 
-    return {
-      total: orders.length,
-      actionable: actionableOrders.length,
-      deliveryQueue: deliveryQueue.length,
-      revenue: paidRevenue,
-      customers: uniqueCustomers,
-    };
-  }, [orders]);
+  const page = Math.max(1, pageParam);
+  const paginated = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
 
-  const handleExport = async () => {
-    setIsExporting(true);
+  const handleAdvance = async (e: React.MouseEvent, order: Order) => {
+    e.stopPropagation();
+    const action = NEXT_ACTION[order.status];
+    if (!action) return;
+    setAdvancingId(order.id);
     try {
-      await exportService.exportOrders({
-        store: effectiveStoreQuery || undefined,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-      });
-      toast.success('Exportacao iniciada');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
+      const updated = await ordersService.updateStatus(order.id, action.next as Order['status']);
+      setOrders((cur) => mergeOrder(cur, updated));
+      setLastSync(new Date());
+      toast.success(`Pedido #${order.order_number} → ${action.label}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
-      setIsExporting(false);
+      setAdvancingId(null);
     }
   };
 
-  const handleUpdateOrder = async (orderId: string, newStatus: OrderStatus) => {
-    try {
-      const updatedOrder = await ordersService.updateStatus(orderId, newStatus);
-      setOrders((currentOrders) => mergeOrder(currentOrders, updatedOrder));
-      setLastSyncedAt(new Date());
-      toast.success('Status do pedido atualizado');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-      throw error;
-    }
-  };
+  if (loading) return <PageLoading />;
 
-  if (loading) {
-    return <PageLoading />;
-  }
-
-  if (!effectiveStoreQuery) {
+  if (!storeQuery) {
     return (
-      <div className="p-4 md:p-6">
-        <Card>
-          <div className="flex flex-col gap-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pedidos</h2>
-            <p className="text-gray-500 dark:text-zinc-400">
-              Selecione uma loja para visualizar os pedidos e ativar o realtime.
-            </p>
-            <div>
-              <Button onClick={() => navigate('/stores')}>Ir para lojas</Button>
-            </div>
-          </div>
-        </Card>
+      <div className="p-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
+          <p className="text-zinc-400 mb-4">Selecione uma loja para ver os pedidos.</p>
+          <button
+            onClick={() => navigate('/stores')}
+            className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Ir para lojas
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Realtime badge classes
-  const realtimeBadgeClass = realtimeConnected
-    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-    : connectionStatus === 'connecting'
-    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-    : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400';
-
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col gap-6">
-        {/* Header Card */}
-        <Card variant="filled">
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pedidos</h1>
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${realtimeBadgeClass}`}>
-                    {realtimeConnected ? (
-                      <SignalIcon className="h-3.5 w-3.5" />
-                    ) : (
-                      <SignalSlashIcon className="h-3.5 w-3.5" />
-                    )}
-                    {realtimeConnected
-                      ? 'Tempo real ativo'
-                      : connectionStatus === 'connecting'
-                      ? 'Reconectando'
-                      : 'Sem tempo real'}
-                  </span>
-                  {transport && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                      {TRANSPORT_LABELS[transport] || transport}
-                    </span>
-                  )}
-                </div>
-                <p className="text-gray-500 dark:text-zinc-400">
-                  {effectiveStoreName} • {orders.length} pedido(s) carregado(s)
-                  {lastSyncedAt ? ` • Ultima sincronia ${format(lastSyncedAt, 'HH:mm:ss', { locale: ptBR })}` : ''}
-                </p>
-                {!realtimeConnected && connectionError && (
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-sm text-orange-600 dark:text-orange-400">
-                      {connectionError}
-                    </span>
-                    <Button variant="outline" size="xs" onClick={() => reconnect()}>
-                      Reconectar
-                    </Button>
-                  </div>
-                )}
-              </div>
+    <div className="p-6 space-y-5">
 
-              <div className="flex gap-3 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  isLoading={isExporting}
-                  leftIcon={<ArrowDownTrayIcon className="h-4 w-4" />}
-                  onClick={handleExport}
-                >
-                  Exportar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<ArrowPathIcon className="h-4 w-4" />}
-                  onClick={() => loadOrders(true)}
-                  isLoading={refreshing}
-                >
-                  Atualizar
-                </Button>
-                <Button
-                  size="sm"
-                  leftIcon={<PlusIcon className="h-4 w-4" />}
-                  onClick={() => navigate(`/stores/${effectiveStoreId || 'default'}/orders/new`)}
-                >
-                  Novo pedido
-                </Button>
-              </div>
-            </div>
+      {/* ── KPIs ── */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <KpiCard label="Pendentes" value={kpis.pending} sub="Aguardando confirmação" dot="bg-yellow-400" />
+        <KpiCard label="Em produção" value={kpis.active} sub="Confirmados + preparando" dot="bg-orange-400" />
+        <KpiCard label="A caminho" value={kpis.enRoute} sub="Saiu para entrega" dot="bg-indigo-400" />
+        <KpiCard label="Receita paga" value={`R$ ${formatMoney(kpis.revenue)}`} sub="Pedidos com pagamento confirmado" dot="bg-green-400" />
+      </div>
 
-            {/* Metric Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              <MetricCard
-                label="Pedidos ativos"
-                value={String(metrics.actionable)}
-                helper="Fila que exige acao operacional"
-                accentClass="bg-blue-500 text-white"
-                icon={<Squares2X2Icon className="h-5 w-5" />}
-              />
-              <MetricCard
-                label="Em entrega"
-                value={String(metrics.deliveryQueue)}
-                helper="Pedidos prontos, enviados ou em rota"
-                accentClass="bg-purple-500 text-white"
-                icon={<TruckIcon className="h-5 w-5" />}
-              />
-              <MetricCard
-                label="Receita paga"
-                value={`R$ ${formatMoney(metrics.revenue)}`}
-                helper="Total confirmado no periodo carregado"
-                accentClass="bg-green-500 text-white"
-                icon={<BanknotesIcon className="h-5 w-5" />}
-              />
-              <MetricCard
-                label="Clientes"
-                value={String(metrics.customers)}
-                helper="Base unica de clientes na lista atual"
-                accentClass="bg-orange-500 text-white"
-                icon={<UserGroupIcon className="h-5 w-5" />}
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Filter / Search Card */}
-        <Card>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-              {/* Search */}
-              <div className="flex-1 relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-zinc-500" />
-                <input
-                  type="text"
-                  placeholder="Buscar por numero do pedido, cliente ou telefone"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                {/* View mode toggle */}
-                <div className="flex bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
-                  <button
-                    aria-label="Kanban"
-                    onClick={() => setViewMode('kanban')}
-                    className={`p-1.5 rounded-md transition-colors ${
-                      viewMode === 'kanban'
-                        ? 'bg-white dark:bg-zinc-700 shadow-sm text-gray-900 dark:text-white'
-                        : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300'
-                    }`}
-                  >
-                    <Squares2X2Icon className="h-4 w-4" />
-                  </button>
-                  <button
-                    aria-label="Tabela"
-                    onClick={() => setViewMode('table')}
-                    className={`p-1.5 rounded-md transition-colors ${
-                      viewMode === 'table'
-                        ? 'bg-white dark:bg-zinc-700 shadow-sm text-gray-900 dark:text-white'
-                        : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300'
-                    }`}
-                  >
-                    <ListBulletIcon className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <span className="text-sm text-gray-500 dark:text-zinc-400">
-                  {filteredOrders.length} pedido(s) visivel(is)
-                </span>
-              </div>
-            </div>
-
-            {/* Status Tabs */}
-            <div
-              className="overflow-x-auto pb-2"
-              style={{ scrollbarWidth: 'thin' }}
+      {/* ── Header bar ── */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-white">Pedidos</h1>
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            rtConnected ? 'bg-green-500/10 text-green-400' : 'bg-zinc-800 text-zinc-500'
+          }`}>
+            {rtConnected ? <SignalIcon className="h-3 w-3" /> : <SignalSlashIcon className="h-3 w-3" />}
+            {rtConnected ? 'Ao vivo' : 'Offline'}
+          </span>
+          {lastSync && (
+            <span className="text-xs text-zinc-600">
+              {format(lastSync, 'HH:mm:ss', { locale: ptBR })}
+            </span>
+          )}
+          {!rtConnected && connectionError && (
+            <button
+              onClick={() => reconnect()}
+              className="text-xs text-orange-400 hover:text-orange-300 underline"
             >
-              <div className="flex gap-1.5 min-w-max py-1">
-                {(['all', ...STATUS_GROUPS.map((g) => g.id)] as const).map((key) => {
-                  const group = STATUS_GROUPS.find((g) => g.id === key);
-                  const tabLabel = key === 'all' ? 'Todos' : (group?.label ?? key);
-                  const tabColor = key === 'all'
-                    ? 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300'
-                    : (group?.colorClass ?? 'bg-gray-100 text-gray-600');
-                  const count = statusCounts[key] ?? 0;
-                  const isActive = statusFilter === key;
+              Reconectar
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar pedido ou cliente…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-56 bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-brand-500 transition-colors"
+            />
+          </div>
+          <button
+            onClick={() => loadOrders(true)}
+            disabled={refreshing}
+            className="p-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors disabled:opacity-50"
+          >
+            <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Status tabs ── */}
+      <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        {STATUS_TABS.map(({ key, label, icon: Icon }) => {
+          const count = counts[key] ?? 0;
+          const active = statusFilter === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setStatusFilter(key)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                active
+                  ? 'bg-brand-600 text-white'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              {Icon && <Icon className="h-3.5 w-3.5" />}
+              {label}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+                active ? 'bg-white/20 text-white' : 'bg-zinc-800 text-zinc-500'
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Table ── */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        {filtered.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-zinc-500 text-sm">Nenhum pedido encontrado.</p>
+          </div>
+        ) : (
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800 bg-zinc-800/20">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Pedido</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Cliente</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden md:table-cell">Entrega</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden lg:table-cell">Total</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden xl:table-cell">Horário</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/50">
+                {paginated.map((order) => {
+                  const action = NEXT_ACTION[order.status];
+                  const isAdvancing = advancingId === order.id;
                   return (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        if (isStatusFilterKey(key)) setStatusFilter(key);
-                      }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                        isActive
-                          ? 'bg-primary-600 text-white shadow-sm'
-                          : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
-                      }`}
+                    <tr
+                      key={order.id}
+                      onClick={() => navigate(`/stores/${storeId || storeSlug}/orders/${order.id}`)}
+                      className="cursor-pointer hover:bg-zinc-800/40 transition-colors group"
                     >
-                      {tabLabel}
-                      <span
-                        className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-xs font-semibold ${
-                          isActive ? 'bg-white/20 text-white' : tabColor
-                        }`}
-                      >
-                        {count}
-                      </span>
-                    </button>
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-white">#{order.order_number}</span>
+                        <p className="text-xs text-zinc-500 mt-0.5">
+                          {order.items_count ?? order.items?.length ?? 0} item(s)
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-white">{order.customer_name || '—'}</span>
+                        <p className="text-xs text-zinc-500 mt-0.5">{order.customer_phone || ''}</p>
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <span className="text-xs text-zinc-400">
+                          {order.delivery_address ? 'Entrega' : 'Retirada'}
+                        </span>
+                        {order.delivery_fee ? (
+                          <p className="text-xs text-zinc-600 mt-0.5">R$ {formatMoney(order.delivery_fee)}</p>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3">
+                        <OrderStatusBadge status={order.status} />
+                      </td>
+                      <td className="px-4 py-3 text-right hidden lg:table-cell">
+                        <span className="font-semibold text-white">R$ {formatMoney(order.total)}</span>
+                      </td>
+                      <td className="px-4 py-3 hidden xl:table-cell">
+                        <span className="text-xs text-zinc-500">{formatTime(order.created_at)}</span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {action ? (
+                          <button
+                            onClick={(e) => handleAdvance(e, order)}
+                            disabled={isAdvancing}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-colors disabled:opacity-60 ${action.color}`}
+                          >
+                            {isAdvancing ? (
+                              <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <CheckIcon className="h-3.5 w-3.5" />
+                            )}
+                            {action.label}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-zinc-600">—</span>
+                        )}
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Content */}
-        {filteredOrders.length === 0 ? (
-          <Card>
-            <div className="flex flex-col gap-2 py-8 text-center">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                Nenhum pedido encontrado
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-zinc-400">
-                Ajuste os filtros ou aguarde novos eventos em tempo real.
-              </p>
-            </div>
-          </Card>
-        ) : viewMode === 'kanban' ? (
-          <Card noPadding>
-            <div className="p-3 md:p-4">
-              <OrdersKanban
-                orders={filteredOrders}
-                visibleStatuses={statusFilter === 'all' ? undefined : [statusFilter]}
-                onOrderClick={(order) =>
-                  navigate(`/stores/${effectiveStoreId || 'default'}/orders/${order.id}`)
-                }
-                onStatusChange={handleUpdateOrder}
-              />
-            </div>
-          </Card>
-        ) : (
-          <Card noPadding>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b border-gray-200 dark:border-zinc-800">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pedido</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Cliente</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pagamento</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Atualizado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
-                  {filteredOrders.map((order) => {
-                    const payStatus = String(order.payment_status || 'pending').toLowerCase();
-                    const payColorClass = PAYMENT_STATUS_COLOR[payStatus] || PAYMENT_STATUS_COLOR.pending;
-                    return (
-                      <tr
-                        key={order.id}
-                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
-                        onClick={() =>
-                          navigate(`/stores/${effectiveStoreId || 'default'}/orders/${order.id}`)
-                        }
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              #{order.order_number}
-                            </span>
-                            <span className="text-xs text-gray-500 dark:text-zinc-400">
-                              {order.items_count ?? order.items?.length ?? 0} item(ns)
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-gray-900 dark:text-white">{order.customer_name || 'Cliente'}</span>
-                            <span className="text-xs text-gray-500 dark:text-zinc-400">
-                              {order.customer_phone || 'Telefone nao informado'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <OrderStatusBadge status={order.status} />
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${payColorClass}`}>
-                            {paymentStatusLabel(order.payment_status)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            R$ {formatMoney(order.total)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-gray-500 dark:text-zinc-400">
-                            {formatOrderDateTime(order.updated_at || order.created_at)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+              </tbody>
+            </table>
+            <Pagination
+              page={page}
+              total={filtered.length}
+              pageSize={PAGE_SIZE}
+              onChange={setPage}
+            />
+          </>
         )}
       </div>
+
     </div>
   );
 };

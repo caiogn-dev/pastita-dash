@@ -37,6 +37,7 @@ const UnifiedOrchestratorTest = lazy(() => import('./pages/agents').then(m => ({
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
 const ProductsPage = lazy(() => import('./pages/products/ProductsPageNew').then(m => ({ default: m.ProductsPageNew })));
 const CombosPage = lazy(() => import('./pages/products/CombosPage').then(m => ({ default: m.CombosPage })));
+const CustomersPage = lazy(() => import('./pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 
 // Automation Pages
 const CompanyProfilesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CompanyProfilesPage })));
@@ -196,7 +197,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/products" element={<Suspense fallback={<FullPageLoading />}><ProductsPage /></Suspense>} />
         <Route path="stores/:storeId/combos" element={<Suspense fallback={<FullPageLoading />}><CombosPage /></Suspense>} />
         <Route path="stores/:storeId/orders" element={<Suspense fallback={<FullPageLoading />}><OrdersPage /></Suspense>} />
-        <Route path="stores/:storeId/customers" element={<Suspense fallback={<FullPageLoading />}><SubscribersPage /></Suspense>} />
+        <Route path="stores/:storeId/customers" element={<Suspense fallback={<FullPageLoading />}><CustomersPage /></Suspense>} />
         <Route path="stores/:storeId/orders/new" element={<Suspense fallback={<FullPageLoading />}><OrderNewPage /></Suspense>} />
         <Route path="stores/:storeId/orders/:id" element={<Suspense fallback={<FullPageLoading />}><OrderDetailPage /></Suspense>} />
         <Route path="stores/:storeId/coupons" element={<Suspense fallback={<FullPageLoading />}><CouponsPage /></Suspense>} />
