@@ -4,6 +4,8 @@ import {
   HomeIcon,
   DevicePhoneMobileIcon,
   ChatBubbleLeftRightIcon,
+  ChatBubbleBottomCenterTextIcon,
+  InboxIcon,
   ShoppingCartIcon,
   CreditCardIcon,
   CpuChipIcon,
@@ -20,6 +22,12 @@ import {
   MegaphoneIcon,
   SparklesIcon,
   LinkIcon,
+  DocumentTextIcon,
+  DocumentChartBarIcon,
+  EnvelopeIcon,
+  PlusIcon,
+  BuildingOfficeIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -78,14 +86,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           icon: ChatBubbleLeftRightIcon,
           badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
         },
+        { name: 'Conexões', href: '/connections', icon: LinkIcon },
         {
           name: 'WhatsApp',
           href: '/whatsapp/inbox',
           icon: DevicePhoneMobileIcon,
           children: [
-            { name: 'Caixa de Entrada', href: '/whatsapp/inbox', icon: ChatBubbleLeftRightIcon },
+            { name: 'Caixa de Entrada', href: '/whatsapp/inbox', icon: InboxIcon },
+            { name: 'Chat', href: '/whatsapp/chat', icon: ChatBubbleLeftRightIcon },
+            { name: 'Handover', href: '/whatsapp/handover', icon: UserGroupIcon },
             { name: 'Contas', href: '/accounts', icon: UserGroupIcon },
+            { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
             { name: 'Diagnóstico', href: '/whatsapp/diagnostics', icon: Cog6ToothIcon },
+          ]
+        },
+        {
+          name: 'Instagram',
+          href: '/instagram/accounts',
+          icon: ChatBubbleLeftRightIcon,
+          children: [
+            { name: 'Mensagens', href: '/instagram/inbox', icon: InboxIcon },
+            { name: 'Contas', href: '/instagram/accounts', icon: UserGroupIcon },
+          ]
+        },
+        {
+          name: 'Messenger',
+          href: '/messenger/inbox',
+          icon: ChatBubbleBottomCenterTextIcon,
+          children: [
+            { name: 'Mensagens', href: '/messenger/inbox', icon: InboxIcon },
+            { name: 'Contas', href: '/messenger/accounts', icon: UserGroupIcon },
           ]
         },
         {
@@ -93,11 +123,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           href: '/marketing',
           icon: MegaphoneIcon,
           children: [
+            { name: 'Campanhas Email', href: '/marketing/email/campaigns', icon: EnvelopeIcon },
             { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
+            { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
             { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
+            { name: 'Automações', href: '/marketing/automations', icon: BoltIcon },
           ]
         },
-        { name: 'Conexões', href: '/connections', icon: LinkIcon },
       ]
     },
     {
@@ -108,14 +140,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           href: '/agents',
           icon: CpuChipIcon,
           badge: 'Novo',
+          children: [
+            { name: 'Lista de Agentes', href: '/agents', icon: CpuChipIcon },
+            { name: 'Novo Agente', href: '/agents/new', icon: PlusIcon },
+            { name: 'Testar Orquestrador', href: '/agents/test/orchestrator', icon: SparklesIcon },
+          ]
         },
         {
           name: 'Automação',
           href: '/automation/companies',
           icon: BoltIcon,
           children: [
-            { name: 'Intenções', href: '/automation/intents/stats', icon: SparklesIcon },
+            { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
             { name: 'Sessões', href: '/automation/sessions', icon: UserGroupIcon },
+            { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
+            { name: 'Logs', href: '/automation/logs', icon: DocumentChartBarIcon },
+            { name: 'Intenções', href: '/automation/intents/stats', icon: SparklesIcon },
           ]
         },
       ]
