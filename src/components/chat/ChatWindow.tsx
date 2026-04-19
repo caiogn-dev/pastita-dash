@@ -10,7 +10,7 @@ import { ContactList, Contact } from './ContactList';
 import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { MediaViewer } from './MediaViewer';
-import { useWhatsAppWS, MessageReceivedEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
+import { useWhatsAppWS, MessageReceivedEvent, MessageSentEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
 import { sendFile as sendFileApi } from '../../services/whatsapp';
 import { handoverService } from '../../services/handover';
@@ -83,6 +83,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       accountId,
       enabled: !!accountId,
       onMessageReceived: handleMessageReceived,
+      onMessageSent: handleMessageSent,
       onMessage: (msg) => {
         const converted: Message = { ...msg, timestamp: msg.created_at, account: accountId, updated_at: msg.created_at } as unknown as Message;
         handleNewMessage(converted);
@@ -162,6 +163,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
         return [...prev, msg];
       });
       if (msg.direction === 'inbound') handleAutoScroll(true);
+    }
+  }
+
+  function handleMessageSent(event: MessageSentEvent) {
+    const msg = event.message;
+    if (selectedConversation && event.conversation_id === selectedConversation.id) {
+      const converted: Message = { ...msg, account: accountId, updated_at: msg.created_at } as unknown as Message;
+      setMessages(prev => {
+        if (prev.some(m => m.id === converted.id || m.whatsapp_message_id === converted.whatsapp_message_id)) return prev;
+        return [...prev, converted];
+      });
     }
   }
 
