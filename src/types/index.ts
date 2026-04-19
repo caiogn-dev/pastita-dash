@@ -74,7 +74,7 @@ export interface Message {
   from_number: string;
   to_number: string;
   direction: 'inbound' | 'outbound';
-  message_type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'template' | 'interactive' | 'location' | 'contacts';
+  message_type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'sticker' | 'template' | 'interactive' | 'location' | 'contacts';
   text_body?: string;
   content?: string;
   text?: string;
@@ -257,6 +257,33 @@ export interface OrderEvent {
   created_at: string;
 }
 
+export interface DeliveryAddress {
+  [key: string]: unknown;
+  // Structured fields (from HERE Maps geocode/reverse_geocode)
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  // WhatsApp/geo routing extras
+  raw_address?: string;
+  lat?: number;
+  lng?: number;
+  distance_km?: number;
+  duration_minutes?: number;
+  // Legacy aliases kept for backward compatibility
+  rua?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  address?: string;
+}
+
 export interface Order {
   id: string;
   order_number: string;
@@ -267,7 +294,7 @@ export interface Order {
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
-  delivery_address?: string;
+  delivery_address?: DeliveryAddress;
   shipping_address?: Record<string, unknown>;
   delivery_instructions?: string;
   items: OrderItem[];
@@ -315,7 +342,7 @@ export interface CreateOrder {
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
-  delivery_address?: string;
+  delivery_address?: DeliveryAddress | string;
   items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
   payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card';
   notes?: string;
