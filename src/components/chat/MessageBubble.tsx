@@ -434,6 +434,88 @@ const MediaPreview: React.FC<{
   return null;
 };
 
+const InteractiveContent: React.FC<{
+  content: string | Record<string, unknown>;
+  isInbound: boolean;
+}> = ({ content, isInbound }) => {
+  const raw: Record<string, unknown> = typeof content === 'string'
+    ? (() => { try { return JSON.parse(content); } catch { return {}; } })()
+    : content;
+
+  // Inbound messages from WhatsApp are wrapped: { interactive: { type, button_reply|list_reply } }
+  const data: Record<string, unknown> = (raw.interactive as Record<string, unknown>) || raw;
+
+  const interactiveType = data.type as string | undefined;
+
+  // Inbound: customer replied to a button
+  const buttonReply = (data.button_reply || raw.button_reply) as Record<string, string> | undefined;
+  if (buttonReply) {
+    return (
+      <div className="px-3 pb-2 pt-1">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
+          ↩ {buttonReply.title || buttonReply.id}
+        </div>
+      </div>
+    );
+  }
+
+  // Inbound: customer selected a list item
+  const listReply = (data.list_reply || raw.list_reply) as Record<string, string> | undefined;
+  if (listReply) {
+    return (
+      <div className="px-3 pb-2 pt-1">
+        <div className="inline-flex flex-col px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-300">
+          <span>☰ {listReply.title || listReply.id}</span>
+          {listReply.description && (
+            <span className="font-normal text-blue-500 dark:text-blue-400 mt-0.5">{listReply.description}</span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Outbound: buttons message
+  if ((interactiveType === 'buttons' || interactiveType === 'button') && Array.isArray(data.buttons)) {
+    const buttons = data.buttons as Array<Record<string, string>>;
+    return (
+      <div className="border-t border-gray-100 dark:border-zinc-700">
+        {buttons.map((btn, i) => (
+          <div
+            key={btn.id || i}
+            className="px-3 py-2.5 text-center text-sm font-medium text-blue-600 dark:text-blue-400 border-t border-gray-100 dark:border-zinc-700 first:border-t-0 cursor-default select-none"
+          >
+            {btn.title || btn.id}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Outbound: list message
+  if (interactiveType === 'list') {
+    const buttonText = (data.button as string) || 'Ver opções';
+    const sections = (data.sections as Array<Record<string, unknown>>) || [];
+    const totalItems = sections.reduce((acc, s) => {
+      const rows = (s.rows as unknown[]) || [];
+      return acc + rows.length;
+    }, 0);
+    return (
+      <div className="border-t border-gray-100 dark:border-zinc-700 px-3 py-2">
+        <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400">
+          <span>☰</span>
+          <span>{buttonText}</span>
+          {totalItems > 0 && (
+            <span className="text-xs text-gray-400 dark:text-zinc-500">({totalItems} opções)</span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback: unknown interactive type — don't show raw JSON, text_body is already rendered above
+  return null;
+};
+
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   id,
   direction,
@@ -493,11 +575,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {/* Conteúdo especial (botões, listas, etc) */}
         {content && messageType === 'interactive' && (
-          <div className="px-3 py-2 border-t border-gray-100 dark:border-zinc-700">
-            <pre className="text-xs text-gray-600 dark:text-zinc-400 overflow-x-auto">
-              {typeof content === 'string' ? content : JSON.stringify(content, null, 2)}
-            </pre>
-          </div>
+          <InteractiveContent content={content} isInbound={isInbound} />
         )}
 
         {/* Footer com timestamp e status */}
