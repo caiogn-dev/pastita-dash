@@ -81,7 +81,13 @@ function previewText(message: Message) {
     return message.text_body;
   }
   if (message.content) {
-    return message.content;
+    if (typeof message.content === 'string') return message.content;
+    if (message.message_type === 'audio') return '🎵 Áudio';
+    if (message.message_type === 'image') return '📷 Imagem';
+    if (message.message_type === 'video') return '🎬 Vídeo';
+    if (message.message_type === 'document') return '📄 Documento';
+    if (message.message_type === 'sticker') return '🏷️ Sticker';
+    return '';
   }
   if (message.media_filename) {
     return `Arquivo: ${message.media_filename}`;
