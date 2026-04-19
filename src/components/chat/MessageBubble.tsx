@@ -76,7 +76,7 @@ const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
 };
 
 // Componente de player de áudio inline
-const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileName }) => {
+const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string }> = ({ url, mimeType, fileName }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -186,7 +186,6 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
     <div className="w-[280px] bg-gray-100 dark:bg-zinc-800 rounded-lg p-3 mb-2">
       <audio
         ref={audioRef}
-        src={url}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onError={handleError}
@@ -195,7 +194,9 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
         onEnded={() => setIsPlaying(false)}
         preload="metadata"
         crossOrigin="anonymous"
-      />
+      >
+        <source src={url} type={mimeType?.split(';')[0].trim() || 'audio/ogg'} />
+      </audio>
 
       {error ? (
         <div className="flex items-center gap-2 text-amber-600 text-sm">
@@ -261,10 +262,11 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
 const MediaPreview: React.FC<{
   type: string;
   url?: string;
+  mimeType?: string;
   fileName?: string;
   content?: string | Record<string, unknown>;
   onClick?: () => void;
-}> = ({ type, url, fileName, content, onClick }) => {
+}> = ({ type, url, mimeType, fileName, content, onClick }) => {
   // Imagem
   if ((type === 'image' || type === 'sticker') && url) {
     return (
@@ -308,7 +310,7 @@ const MediaPreview: React.FC<{
 
   // Áudio - Usar player customizado
   if (type === 'audio' && url) {
-    return <AudioPlayer url={url} fileName={fileName} />;
+    return <AudioPlayer url={url} mimeType={mimeType} fileName={fileName} />;
   }
 
   // Documento
@@ -553,6 +555,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <MediaPreview
             type={messageType}
             url={mediaUrl}
+            mimeType={mimeType}
             fileName={fileName}
             content={content}
             onClick={() => onMediaClick?.(mediaUrl!, messageType, fileName)}
