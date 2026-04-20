@@ -368,6 +368,7 @@ export const OrdersPage: React.FC = () => {
   const { storeId, storeSlug, store, stores } = useStore();
   const { storeId: routeStoreId } = useParams<{ storeId: string }>();
   const storeQuery = storeSlug || storeId;
+  const orderCreateRoute = storeQuery ? `/stores/${storeQuery}/orders/new` : null;
 
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -492,6 +493,14 @@ export const OrdersPage: React.FC = () => {
     }
   }, [patchOrder]);
 
+  const handleNewOrder = useCallback(() => {
+    if (!orderCreateRoute) return;
+    const newTab = window.open(orderCreateRoute, '_blank', 'noopener,noreferrer');
+    if (!newTab) {
+      navigate(orderCreateRoute);
+    }
+  }, [navigate, orderCreateRoute]);
+
   const columnData = useMemo(
     () => COLUMNS.map(col => ({
       ...col,
@@ -530,14 +539,25 @@ export const OrdersPage: React.FC = () => {
             </span>
           )}
         </div>
-        <button
-          onClick={() => loadOrders(true)}
-          disabled={refreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
-        >
-          <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          {orderCreateRoute && (
+            <button
+              onClick={handleNewOrder}
+              className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-black dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            >
+              <ShoppingCartIcon className="h-4 w-4" />
+              Novo pedido
+            </button>
+          )}
+          <button
+            onClick={() => loadOrders(true)}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+          >
+            <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Atualizar
+          </button>
+        </div>
       </div>
 
       <div className="grid min-h-0 flex-1 gap-2 md:grid-cols-2 xl:grid-cols-5">

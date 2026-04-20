@@ -73,6 +73,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sendLockRef = useRef(false);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -207,9 +208,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const handleSendMessage = async (text: string) => {
     if (!selectedConversation || !accountId) return;
     if (!text.trim() && !selectedFile) return;
+    if (sendLockRef.current) return;
 
+    sendLockRef.current = true;
     const fileToSend = selectedFile;
     setSelectedFile(null);
+    const clientRequestId = crypto.randomUUID();
 
     const optimistic: Message = {
       id: `temp-${Date.now()}`, conversation_id: selectedConversation.id, account: accountId,
@@ -230,13 +234,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       if (fileToSend) {
         res = await sendFileApi(accountId, selectedConversation.phone_number, fileToSend, text || undefined);
       } else {
-        res = await whatsappService.sendTextMessage({ account_id: accountId, to: selectedConversation.phone_number, text });
+        res = await whatsappService.sendTextMessage({
+          account_id: accountId,
+          to: selectedConversation.phone_number,
+          text,
+          metadata: {
+            client_request_id: clientRequestId,
+            source: 'chat_window',
+          },
+        });
       }
       setMessages(prev => prev.map(m => m.id === optimistic.id ? res.data : m));
     } catch (error) {
       setMessages(prev => prev.filter(m => m.id !== optimistic.id));
       toast.error(getErrorMessage(error));
-    } finally { setIsSending(false); }
+    } finally {
+      sendLockRef.current = false;
+      setIsSending(false);
+    }
   };
 
   const handleSwitchMode = async () => {

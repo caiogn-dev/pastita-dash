@@ -74,6 +74,7 @@ const WhatsAppInboxPage: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sendLockRef = useRef(false);
 
   // WebSocket context para atualizações em tempo real
   const ws = useWhatsAppWsContext();
@@ -131,13 +132,19 @@ const WhatsAppInboxPage: React.FC = () => {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || !selectedConversation) return;
+    if (sendLockRef.current) return;
 
+    sendLockRef.current = true;
     setSending(true);
     try {
       await whatsappService.sendMessage({
         account_id: selectedConversation.account,
         to: selectedConversation.phone_number,
         text: messageText.trim(),
+        metadata: {
+          client_request_id: crypto.randomUUID(),
+          source: 'whatsapp_inbox_page',
+        },
       });
       setMessageText('');
       toast.success('Mensagem enviada');
@@ -147,6 +154,7 @@ const WhatsAppInboxPage: React.FC = () => {
       console.error('Erro ao enviar mensagem:', error);
       toast.error(error?.response?.data?.detail || 'Erro ao enviar mensagem');
     } finally {
+      sendLockRef.current = false;
       setSending(false);
     }
   };
