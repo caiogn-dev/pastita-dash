@@ -22,6 +22,7 @@ import { Card, Button, PageLoading } from '../../components/common';
 import { ordersService, productsService, getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
 import type { CalculatedDeliveryFee } from '../../services/orders';
+import { getStore } from '../../services/storesApi';
 
 interface Product {
   id: string;
@@ -87,6 +88,7 @@ export const OrderNewPage: React.FC = () => {
   const [deliveryInfo, setDeliveryInfo] = useState<CalculatedDeliveryFee | null>(null);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  const [resolvedStoreSlug, setResolvedStoreSlug] = useState<string | null>(effectiveStoreSlug);
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
@@ -124,17 +126,76 @@ export const OrderNewPage: React.FC = () => {
     load();
   }, [effectiveStoreId]);
 
+  useEffect(() => {
+    setResolvedStoreSlug(effectiveStoreSlug);
+  }, [effectiveStoreSlug]);
+
+  useEffect(() => {
+    if (effectiveStoreSlug || !effectiveStoreId) return;
+
+    let cancelled = false;
+    const loadStoreSlug = async () => {
+      try {
+        const storeData = await getStore(effectiveStoreId);
+        if (!cancelled) {
+          setResolvedStoreSlug(storeData.slug || null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setDeliveryError(getErrorMessage(error));
+        }
+      }
+    };
+
+    void loadStoreSlug();
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveStoreId, effectiveStoreSlug]);
+
+  const ensureStoreSlug = useCallback(async () => {
+    if (resolvedStoreSlug) {
+      return resolvedStoreSlug;
+    }
+
+    const candidateStoreId = effectiveStoreId || routeStoreId || contextStoreId;
+    if (!candidateStoreId) {
+      setDeliveryError('Loja não identificada para calcular a entrega');
+      return null;
+    }
+
+    try {
+      const storeData = await getStore(candidateStoreId);
+      const slug = storeData.slug || null;
+      setResolvedStoreSlug(slug);
+      if (!slug) {
+        setDeliveryError('Loja sem slug configurado para cálculo de entrega');
+      }
+      return slug;
+    } catch (error) {
+      const message = getErrorMessage(error);
+      setDeliveryError(message);
+      return null;
+    }
+  }, [contextStoreId, effectiveStoreId, resolvedStoreSlug, routeStoreId]);
+
   const calculateDeliveryFee = useCallback(async (address: string) => {
-    if (!effectiveStoreSlug || !address.trim() || deliveryMethod !== 'delivery') {
+    if (!address.trim() || deliveryMethod !== 'delivery') {
       setDeliveryInfo(null);
       setDeliveryError(null);
+      return null;
+    }
+
+    const storeSlug = await ensureStoreSlug();
+    if (!storeSlug) {
+      setDeliveryInfo(null);
       return null;
     }
 
     setDeliveryLoading(true);
     setDeliveryError(null);
     try {
-      const result = await ordersService.calculateDeliveryFee(effectiveStoreSlug, address.trim());
+      const result = await ordersService.calculateDeliveryFee(storeSlug, address.trim());
       if (result.error) {
         setDeliveryInfo(null);
         setDeliveryError(result.error);
@@ -155,7 +216,7 @@ export const OrderNewPage: React.FC = () => {
     } finally {
       setDeliveryLoading(false);
     }
-  }, [deliveryMethod, effectiveStoreSlug]);
+  }, [deliveryMethod, ensureStoreSlug]);
 
   useEffect(() => {
     if (deliveryMethod !== 'delivery') {
@@ -165,7 +226,7 @@ export const OrderNewPage: React.FC = () => {
     }
 
     const address = typeof deliveryAddress === 'string' ? deliveryAddress.trim() : '';
-    if (address.length < 10 || !effectiveStoreSlug) {
+    if (address.length < 10) {
       setDeliveryInfo(null);
       setDeliveryError(null);
       return;
@@ -176,7 +237,7 @@ export const OrderNewPage: React.FC = () => {
     }, 700);
 
     return () => window.clearTimeout(timer);
-  }, [calculateDeliveryFee, deliveryAddress, deliveryMethod, effectiveStoreSlug]);
+  }, [calculateDeliveryFee, deliveryAddress, deliveryMethod]);
 
   const handleAddItem = () => {
     if (!selectedProduct || quantity < 1) return;
@@ -403,7 +464,7 @@ export const OrderNewPage: React.FC = () => {
                           type="button"
                           variant="secondary"
                           onClick={() => void calculateDeliveryFee(typeof deliveryAddress === 'string' ? deliveryAddress : '')}
-                          disabled={deliveryLoading || !effectiveStoreSlug || !(typeof deliveryAddress === 'string' && deliveryAddress.trim())}
+                          disabled={deliveryLoading || !(typeof deliveryAddress === 'string' && deliveryAddress.trim())}
                         >
                           Calcular taxa
                         </Button>
