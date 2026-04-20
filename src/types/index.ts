@@ -347,6 +347,8 @@ export interface CreateOrder {
   customer_phone: string;
   customer_email?: string;
   delivery_address?: DeliveryAddress | string;
+  delivery_method?: 'delivery' | 'pickup' | 'digital';
+  delivery_fee?: number;
   items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
   payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card';
   notes?: string;

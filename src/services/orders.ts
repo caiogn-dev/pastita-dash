@@ -31,6 +31,22 @@ const normalizeOrder = (order: Order): Order => ({
   items_count: order.items_count ?? order.items?.length ?? 0,
 });
 
+export interface CalculatedDeliveryFee {
+  fee: number;
+  distance_km?: number | null;
+  duration_minutes?: number | null;
+  is_within_area?: boolean;
+  zone?: {
+    id?: string | null;
+    name?: string | null;
+    min_distance?: number | null;
+    max_distance?: number | null;
+  } | null;
+  message?: string;
+  polyline?: string;
+  error?: string;
+}
+
 export const ordersService = {
   getOrders: async (params?: Record<string, string> & { store_slug?: string }): Promise<PaginatedResponse<Order>> => {
     const storeSlug = params?.store_slug;
@@ -48,6 +64,22 @@ export const ordersService = {
   createOrder: async (data: CreateOrder, storeSlug?: string): Promise<Order> => {
     const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/`, data);
     return normalizeOrder(response.data);
+  },
+
+  calculateDeliveryFee: async (storeSlug: string, address: string): Promise<CalculatedDeliveryFee> => {
+    const response = await api.post<CalculatedDeliveryFee>(`/stores/${storeSlug}/delivery-fee/`, {
+      address,
+    });
+    return {
+      ...response.data,
+      fee: toNumber(response.data.fee),
+      distance_km: response.data.distance_km !== undefined && response.data.distance_km !== null
+        ? toNumber(response.data.distance_km)
+        : response.data.distance_km,
+      duration_minutes: response.data.duration_minutes !== undefined && response.data.duration_minutes !== null
+        ? toNumber(response.data.duration_minutes)
+        : response.data.duration_minutes,
+    };
   },
 
   updateOrder: async (id: string, data: Partial<Order>, storeSlug?: string): Promise<Order> => {
