@@ -54,6 +54,13 @@ export const useOrderPrint = () => {
       return `R$ ${num.toFixed(2).replace('.', ',')}`;
     };
 
+    const escapeHtml = (value: string) => value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
     const formatAddress = () => {
       const legacyAddress = (pedido as unknown as { endereco_entrega?: unknown }).endereco_entrega;
       const addr = legacyAddress || pedido.delivery_address;
@@ -67,6 +74,32 @@ export const useOrderPrint = () => {
       if (addrAny.bairro || addrAny.neighborhood) parts.push(addrAny.bairro || addrAny.neighborhood);
       
       return parts.join(', ') || addrAny.raw_address || '';
+    };
+
+    const formatAddressLines = () => {
+      const legacyAddress = (pedido as unknown as { endereco_entrega?: unknown }).endereco_entrega;
+      const addr = legacyAddress || pedido.delivery_address;
+      if (!addr || typeof addr !== 'object') {
+        const fallback = formatAddress();
+        return fallback ? [fallback] : [];
+      }
+
+      const addrAny = addr as unknown as Record<string, string>;
+      const line1 = [
+        addrAny.rua || addrAny.street,
+        (addrAny.numero || addrAny.number) ? `nº ${addrAny.numero || addrAny.number}` : '',
+      ].filter(Boolean).join(', ');
+      const line2 = [
+        addrAny.complemento || addrAny.complement,
+        addrAny.bairro || addrAny.neighborhood,
+      ].filter(Boolean).join(' - ');
+      const line3 = [
+        addrAny.cidade || addrAny.city,
+        addrAny.estado || addrAny.state,
+        addrAny.cep || addrAny.zip_code,
+      ].filter(Boolean).join(' / ');
+
+      return [line1, line2, line3].filter(Boolean);
     };
 
     const getDeliveryMethod = () => {
@@ -108,24 +141,64 @@ export const useOrderPrint = () => {
     const storeName = options?.storeName || (pedido as unknown as { store_name?: string }).store_name || 'LOJA';
     const storePhone = options?.storePhone || '';
     const storeAddress = options?.storeAddress || '';
+    const formatIngredients = (ingredients: Array<{ name: string; role?: string; price?: number }>) => ingredients
+      .map((ingredient) => {
+        const role = ingredient.role ? `${ingredient.role}: ` : '';
+        const price = ingredient.price && ingredient.price > 0 ? ` (+${formatMoney(ingredient.price)})` : '';
+        return `${role}${ingredient.name}${price}`;
+      });
 
-    // Build items HTML
+    const renderDetailLines = (lines: string[], className = 'item-detail') => lines
+      .map((line) => `<div class="${className}">${escapeHtml(line)}</div>`)
+      .join('');
+
     const itemsHtml = pedido.items?.map((item) => {
       const itemAny = item as unknown as Record<string, unknown>;
       const variantName = itemAny.variant_name as string | undefined;
       const itemNotes = itemAny.notes as string | undefined;
       const itemTotal = item.total_price || (item.quantity * Number(item.unit_price));
+      const ingredientLines = Array.isArray(item.options?.ingredients)
+        ? formatIngredients(item.options.ingredients)
+        : [];
+      const detailLines = [
+        variantName,
+        ...ingredientLines,
+      ].filter((line): line is string => Boolean(line));
+
       return `
-      <tr>
-        <td class="item-qty">${item.quantity}x</td>
-        <td class="item-name">
-          ${item.product_name}
-          ${variantName ? `<br><small>${variantName}</small>` : ''}
-          ${itemNotes ? `<br><small class="item-notes">Obs.: ${itemNotes}</small>` : ''}
-        </td>
-        <td class="item-price">${formatMoney(itemTotal)}</td>
-      </tr>
-    `;
+        <div class="item-card">
+          <div class="item-row">
+            <div class="item-main">
+              <span class="item-qty">${item.quantity}x</span>
+              <span class="item-name">${escapeHtml(item.product_name)}</span>
+            </div>
+            <div class="item-price">${formatMoney(itemTotal)}</div>
+          </div>
+          ${detailLines.length ? renderDetailLines(detailLines) : ''}
+          ${itemNotes ? `<div class="item-note-box">OBS. ITEM: ${escapeHtml(itemNotes)}</div>` : ''}
+        </div>
+      `;
+    }).join('') || '';
+
+    const comboItemsHtml = pedido.combo_items?.map((combo) => {
+      const customizationLines = Array.isArray(combo.customizations?.ingredients)
+        ? formatIngredients(combo.customizations.ingredients)
+        : [];
+
+      return `
+        <div class="item-card combo-card">
+          <div class="item-row">
+            <div class="item-main">
+              <span class="item-qty">${combo.quantity}x</span>
+              <span class="item-name">${escapeHtml(combo.combo_name)}</span>
+            </div>
+            <div class="item-price">${formatMoney(combo.subtotal)}</div>
+          </div>
+          <div class="item-detail">COMBO</div>
+          ${customizationLines.length ? renderDetailLines(customizationLines) : ''}
+          ${combo.notes ? `<div class="item-note-box">OBS. COMBO: ${escapeHtml(combo.notes)}</div>` : ''}
+        </div>
+      `;
     }).join('') || '';
 
     // Build notes HTML
@@ -136,9 +209,28 @@ export const useOrderPrint = () => {
     const notesHtml = notes ? `
       <div class="notes-section">
         <div class="notes-title">OBSERVACOES</div>
-        <div class="notes-text">${notes}</div>
+        <div class="notes-text">${escapeHtml(notes)}</div>
       </div>
     ` : '';
+
+    const internalNotes = typeof pedido.internal_notes === 'string' ? pedido.internal_notes : '';
+    const deliveryInstructions = typeof pedido.delivery_instructions === 'string' ? pedido.delivery_instructions : '';
+    const prepNotesHtml = [internalNotes, deliveryInstructions]
+      .filter(Boolean)
+      .map((entry) => `<div class="notes-text">${escapeHtml(entry)}</div>`)
+      .join('');
+
+    const kitchenNotesHtml = prepNotesHtml ? `
+      <div class="notes-section kitchen-notes">
+        <div class="notes-title">ATENCAO DA LOJA</div>
+        ${prepNotesHtml}
+      </div>
+    ` : '';
+
+    const addressLines = formatAddressLines();
+    const scheduledLabel = [pedido.scheduled_date, pedido.scheduled_time]
+      .filter(Boolean)
+      .join(' ');
 
     const html = `
       <!DOCTYPE html>
@@ -280,55 +372,71 @@ export const useOrderPrint = () => {
             margin-bottom: 3px;
           }
           
-          /* ===== ITEMS TABLE ===== */
-          .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-            font-size: 10px;
-          }
-          
-          .items-table td {
-            padding: 4px 1px;
-            vertical-align: top;
-            font-weight: 700;
-            word-wrap: break-word;
-            overflow-wrap: anywhere;
+          /* ===== ITEMS ===== */
+          .items-list {
+            display: grid;
+            gap: 8px;
           }
 
-          .items-table tr:not(:last-child) td {
-            border-bottom: 1px dotted #999;
+          .item-card {
+            border: 1px solid #000;
+            padding: 6px;
           }
-          
+
+          .combo-card {
+            border-style: dashed;
+          }
+
+          .item-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+          }
+
+          .item-main {
+            flex: 1;
+            min-width: 0;
+          }
+
           .item-qty {
-            width: 24px;
+            display: inline-block;
+            min-width: 28px;
             font-weight: 900;
-            font-size: 11px;
+            font-size: 14px;
+            vertical-align: top;
           }
           
           .item-name {
-            font-weight: 700;
-            padding-right: 4px;
-            line-height: 1.3;
-          }
-          
-          .item-name small {
-            font-size: 9px;
-            font-weight: 600;
-            color: #333;
-          }
-          
-          .item-notes {
-            font-style: italic;
-            display: inline-block;
-            margin-top: 2px;
+            display: inline;
+            font-weight: 900;
+            font-size: 13px;
+            line-height: 1.25;
           }
           
           .item-price {
-            width: 60px;
             text-align: right;
-            font-weight: 800;
+            font-weight: 900;
+            font-size: 12px;
             white-space: nowrap;
+          }
+
+          .item-detail {
+            margin-top: 4px;
+            padding-left: 28px;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.3;
+          }
+
+          .item-note-box {
+            margin-top: 5px;
+            padding: 4px 5px;
+            border: 1px dashed #000;
+            font-size: 10px;
+            font-weight: 900;
+            line-height: 1.3;
+            background: #f7f7f7;
           }
           
           /* ===== TOTALS ===== */
@@ -421,6 +529,23 @@ export const useOrderPrint = () => {
             white-space: pre-wrap;
             word-break: break-word;
           }
+
+          .kitchen-notes {
+            border-width: 2px;
+          }
+
+          .meta-strip {
+            display: grid;
+            gap: 4px;
+            margin: 8px 0;
+          }
+
+          .meta-chip {
+            border: 1px solid #000;
+            padding: 4px 6px;
+            font-size: 10px;
+            font-weight: 800;
+          }
           
           /* ===== FOOTER ===== */
           .footer {
@@ -470,25 +595,40 @@ export const useOrderPrint = () => {
           <div class="delivery-badge">${getDeliveryMethod()}</div>
         </div>
 
+        ${scheduledLabel ? `
+          <div class="meta-strip">
+            <div class="meta-chip">AGENDADO PARA: ${escapeHtml(scheduledLabel)}</div>
+          </div>
+        ` : ''}
+
         <!-- Customer Info -->
         <div class="section">
           <div class="section-title">CLIENTE</div>
-          <div class="customer-name">${pedido.customer_name || (pedidoAny.cliente_nome as string) || ''}</div>
-          <div class="customer-phone">${pedido.customer_phone || (pedidoAny.cliente_telefone as string) || ''}</div>
-          ${formatAddress() ? `
+          <div class="customer-name">${escapeHtml(pedido.customer_name || (pedidoAny.cliente_nome as string) || '')}</div>
+          <div class="customer-phone">${escapeHtml(pedido.customer_phone || (pedidoAny.cliente_telefone as string) || '')}</div>
+          ${getDeliveryMethod() === 'RETIRADA' ? `
+            <div class="customer-address">
+              <div class="address-label">ENTREGA</div>
+              PEDIDO PARA RETIRADA
+            </div>
+          ` : addressLines.length ? `
             <div class="customer-address">
               <div class="address-label">ENDERECO DE ENTREGA</div>
-              ${formatAddress()}
+              ${addressLines.map((line) => `<div>${escapeHtml(line)}</div>`).join('')}
             </div>
           ` : ''}
         </div>
 
+        ${kitchenNotesHtml}
+        ${notesHtml}
+
         <!-- Items -->
         <div class="section">
           <div class="section-title">ITENS DO PEDIDO</div>
-          <table class="items-table">
+          <div class="items-list">
             ${itemsHtml}
-          </table>
+            ${comboItemsHtml}
+          </div>
         </div>
 
         <!-- Totals -->
@@ -526,8 +666,6 @@ export const useOrderPrint = () => {
             <span class="payment-status">${getPaymentStatus()}</span>
           </div>
         </div>
-
-        ${notesHtml}
 
         <!-- Footer -->
         <div class="footer">
