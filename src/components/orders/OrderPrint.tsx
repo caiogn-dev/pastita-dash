@@ -24,7 +24,7 @@ export const useOrderPrint = () => {
       iframe.style.position = 'absolute';
       iframe.style.top = '-9999px';
       iframe.style.left = '-9999px';
-      iframe.style.width = '80mm';
+      iframe.style.width = '76mm';
       iframe.style.height = '0';
       document.body.appendChild(iframe);
       printFrameRef.current = iframe;
@@ -72,19 +72,19 @@ export const useOrderPrint = () => {
     const getDeliveryMethod = () => {
       const pedidoAny = pedido as unknown as Record<string, unknown>;
       const method = (pedidoAny.delivery_method as string) || 'delivery';
-      return method === 'pickup' ? '🏪 RETIRADA' : '🛵 ENTREGA';
+      return method === 'pickup' ? 'RETIRADA' : 'ENTREGA';
     };
 
     const getPaymentMethod = () => {
       const pedidoAny = pedido as unknown as Record<string, unknown>;
       const method = (pedidoAny.payment_method as string) || 'pix';
       const methods: Record<string, string> = {
-        pix: '💠 PIX',
-        credit_card: '💳 Crédito',
-        debit_card: '💳 Débito',
-        cash: '💵 Dinheiro',
-        card: '💳 Cartão',
-        mercadopago: '💠 Mercado Pago',
+        pix: 'PIX',
+        credit_card: 'CREDITO',
+        debit_card: 'DEBITO',
+        cash: 'DINHEIRO',
+        card: 'CARTAO',
+        mercadopago: 'MERCADO PAGO',
       };
       return methods[method] || method.toUpperCase();
     };
@@ -92,10 +92,10 @@ export const useOrderPrint = () => {
     const getPaymentStatus = () => {
       const status = pedido.payment_status || 'pending';
       const statuses: Record<string, string> = {
-        pending: '⏳ AGUARDANDO',
-        paid: '✅ PAGO',
-        failed: '❌ FALHOU',
-        refunded: '↩️ REEMBOLSADO',
+        pending: 'AGUARDANDO',
+        paid: 'PAGO',
+        failed: 'FALHOU',
+        refunded: 'REEMBOLSADO',
       };
       return statuses[status] || status.toUpperCase();
     };
@@ -121,7 +121,7 @@ export const useOrderPrint = () => {
         <td class="item-name">
           ${item.product_name}
           ${variantName ? `<br><small>${variantName}</small>` : ''}
-          ${itemNotes ? `<br><small class="item-notes">📝 ${itemNotes}</small>` : ''}
+          ${itemNotes ? `<br><small class="item-notes">Obs.: ${itemNotes}</small>` : ''}
         </td>
         <td class="item-price">${formatMoney(itemTotal)}</td>
       </tr>
@@ -135,7 +135,7 @@ export const useOrderPrint = () => {
       || (pedidoAny.delivery_notes as string);
     const notesHtml = notes ? `
       <div class="notes-section">
-        <div class="notes-title">📝 OBSERVAÇÕES</div>
+        <div class="notes-title">OBSERVACOES</div>
         <div class="notes-text">${notes}</div>
       </div>
     ` : '';
@@ -149,14 +149,15 @@ export const useOrderPrint = () => {
         <style>
           @page {
             size: 80mm auto;
-            margin: 0;
+            margin: 3mm;
           }
           
           @media print {
             html, body {
-              width: 80mm;
+              width: auto;
               margin: 0;
               padding: 0;
+              background: #fff;
             }
           }
           
@@ -167,36 +168,41 @@ export const useOrderPrint = () => {
           }
           
           body {
-            width: 80mm;
-            max-width: 80mm;
-            font-family: 'Lucida Console', 'Courier New', monospace;
+            width: 72mm;
+            max-width: 72mm;
+            margin: 0 auto;
+            font-family: 'Courier New', 'Liberation Mono', monospace;
             font-size: 12px;
-            line-height: 1.4;
-            padding: 3mm;
+            line-height: 1.35;
+            padding: 0;
             color: #000;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            text-rendering: optimizeLegibility;
+            overflow-wrap: anywhere;
           }
           
           /* ===== HEADER ===== */
           .header {
             text-align: center;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
             margin-bottom: 8px;
-            border-bottom: 2px dashed #000;
+            border-bottom: 1px dashed #000;
           }
           
           .store-name {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 900;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             text-transform: uppercase;
+            line-height: 1.15;
           }
           
           .store-info {
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 10px;
+            font-weight: 700;
             margin-top: 4px;
+            word-break: break-word;
           }
           
           /* ===== ORDER NUMBER ===== */
@@ -204,95 +210,106 @@ export const useOrderPrint = () => {
             background: #000;
             color: #fff;
             text-align: center;
-            padding: 8px 4px;
+            padding: 7px 4px;
             margin: 8px 0;
           }
           
           .order-number {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 900;
             letter-spacing: 1px;
           }
           
           .order-date {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             margin-top: 4px;
           }
           
           .delivery-badge {
             display: inline-block;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 800;
             margin-top: 6px;
-            padding: 2px 8px;
+            padding: 2px 6px;
             background: #fff;
             color: #000;
+            border: 1px solid #000;
           }
           
           /* ===== SECTIONS ===== */
           .section {
-            margin: 10px 0;
-            padding: 8px 0;
+            margin: 8px 0;
+            padding: 6px 0;
             border-bottom: 1px dashed #000;
           }
           
           .section-title {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 900;
             text-transform: uppercase;
-            margin-bottom: 6px;
-            letter-spacing: 1px;
+            margin-bottom: 5px;
+            letter-spacing: 0.6px;
           }
           
           /* ===== CUSTOMER ===== */
           .customer-name {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 800;
           }
           
           .customer-phone {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             margin-top: 2px;
           }
           
           .customer-address {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             margin-top: 6px;
-            padding: 6px;
-            background: #f0f0f0;
-            border: 1px solid #000;
+            padding: 5px 6px;
+            border: 1px dashed #000;
+            word-break: break-word;
           }
           
           .address-label {
             font-weight: 900;
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
+            margin-bottom: 3px;
           }
           
           /* ===== ITEMS TABLE ===== */
           .items-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
+            table-layout: fixed;
+            font-size: 10px;
           }
           
           .items-table td {
-            padding: 4px 2px;
+            padding: 4px 1px;
             vertical-align: top;
             font-weight: 700;
+            word-wrap: break-word;
+            overflow-wrap: anywhere;
+          }
+
+          .items-table tr:not(:last-child) td {
+            border-bottom: 1px dotted #999;
           }
           
           .item-qty {
-            width: 25px;
+            width: 24px;
             font-weight: 900;
-            font-size: 12px;
+            font-size: 11px;
           }
           
           .item-name {
             font-weight: 700;
+            padding-right: 4px;
+            line-height: 1.3;
           }
           
           .item-name small {
@@ -303,26 +320,39 @@ export const useOrderPrint = () => {
           
           .item-notes {
             font-style: italic;
+            display: inline-block;
+            margin-top: 2px;
           }
           
           .item-price {
-            width: 70px;
+            width: 60px;
             text-align: right;
             font-weight: 800;
+            white-space: nowrap;
           }
           
           /* ===== TOTALS ===== */
           .totals-section {
-            margin: 10px 0;
-            padding: 8px 0;
+            margin: 8px 0;
+            padding: 6px 0;
           }
           
           .total-row {
             display: flex;
             justify-content: space-between;
-            padding: 3px 0;
-            font-size: 12px;
+            gap: 8px;
+            padding: 2px 0;
+            font-size: 11px;
             font-weight: 700;
+          }
+
+          .total-row span:first-child {
+            flex: 1;
+            min-width: 0;
+          }
+
+          .total-row span:last-child {
+            white-space: nowrap;
           }
           
           .total-row.discount {
@@ -332,17 +362,17 @@ export const useOrderPrint = () => {
           .grand-total {
             display: flex;
             justify-content: space-between;
-            margin-top: 8px;
-            padding-top: 8px;
+            gap: 8px;
+            margin-top: 6px;
+            padding-top: 6px;
             border-top: 3px double #000;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 900;
           }
           
           /* ===== PAYMENT ===== */
           .payment-section {
-            background: #f5f5f5;
-            padding: 8px;
+            padding: 7px 6px;
             margin: 8px 0;
             border: 1px solid #000;
           }
@@ -350,53 +380,68 @@ export const useOrderPrint = () => {
           .payment-row {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
+            gap: 8px;
+            font-size: 11px;
             font-weight: 700;
             padding: 2px 0;
+          }
+
+          .payment-row span:first-child {
+            flex: 1;
+            min-width: 0;
+          }
+
+          .payment-row span:last-child {
+            text-align: right;
+            white-space: nowrap;
           }
           
           .payment-status {
             font-weight: 900;
-            font-size: 13px;
+            font-size: 11px;
           }
           
           /* ===== NOTES ===== */
           .notes-section {
-            margin: 10px 0;
-            padding: 8px;
-            background: #fff8dc;
-            border: 2px solid #000;
+            margin: 8px 0;
+            padding: 7px 6px;
+            border: 1px solid #000;
           }
           
           .notes-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 900;
             margin-bottom: 4px;
           }
           
           .notes-text {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            font-style: italic;
+            line-height: 1.35;
+            white-space: pre-wrap;
+            word-break: break-word;
           }
           
           /* ===== FOOTER ===== */
           .footer {
             text-align: center;
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 2px dashed #000;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #000;
           }
           
           .footer-thanks {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 800;
+            line-height: 1.3;
           }
           
           .footer-divider {
-            font-size: 10px;
-            margin: 6px 0;
-            letter-spacing: -1px;
+            font-size: 9px;
+            margin: 5px 0;
+            letter-spacing: 0;
+            white-space: nowrap;
+            overflow: hidden;
           }
           
           .footer-time {
@@ -413,9 +458,9 @@ export const useOrderPrint = () => {
       <body>
         <!-- Header -->
         <div class="header">
-          <div class="store-name">🍝 ${storeName}</div>
-          <div class="store-info">${storePhone}</div>
-          <div class="store-info">${storeAddress}</div>
+          <div class="store-name">${storeName}</div>
+          ${storePhone ? `<div class="store-info">${storePhone}</div>` : ''}
+          ${storeAddress ? `<div class="store-info">${storeAddress}</div>` : ''}
         </div>
 
         <!-- Order Info -->
@@ -427,12 +472,12 @@ export const useOrderPrint = () => {
 
         <!-- Customer Info -->
         <div class="section">
-          <div class="section-title">👤 CLIENTE</div>
+          <div class="section-title">CLIENTE</div>
           <div class="customer-name">${pedido.customer_name || (pedidoAny.cliente_nome as string) || ''}</div>
-          <div class="customer-phone">📞 ${pedido.customer_phone || (pedidoAny.cliente_telefone as string) || ''}</div>
+          <div class="customer-phone">${pedido.customer_phone || (pedidoAny.cliente_telefone as string) || ''}</div>
           ${formatAddress() ? `
             <div class="customer-address">
-              <div class="address-label">📍 Endereço de Entrega:</div>
+              <div class="address-label">ENDERECO DE ENTREGA</div>
               ${formatAddress()}
             </div>
           ` : ''}
@@ -440,7 +485,7 @@ export const useOrderPrint = () => {
 
         <!-- Items -->
         <div class="section">
-          <div class="section-title">🛒 ITENS DO PEDIDO</div>
+          <div class="section-title">ITENS DO PEDIDO</div>
           <table class="items-table">
             ${itemsHtml}
           </table>
@@ -486,8 +531,8 @@ export const useOrderPrint = () => {
 
         <!-- Footer -->
         <div class="footer">
-          <div class="footer-thanks">😋 Obrigado pela preferência!</div>
-          <div class="footer-divider">════════════════════════════════</div>
+          <div class="footer-thanks">Obrigado pela preferencia!</div>
+          <div class="footer-divider">------------------------------------------</div>
           <div class="footer-time">Impresso em ${new Date().toLocaleString('pt-BR')}</div>
         </div>
       </body>
