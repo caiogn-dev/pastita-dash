@@ -111,11 +111,11 @@ const getInitials = (name?: string | null) => {
 };
 
 const buildCompactAddress = (address: Record<string, string>) => {
-  return [
-    [address.street || address.address, address.number].filter(Boolean).join(', '),
-    [address.neighborhood, address.city, address.state].filter(Boolean).join(' • '),
-    address.zip_code || address.cep || '',
-  ].filter(Boolean).join(' · ');
+  const line1 = [address.street || address.address, address.number].filter(Boolean).join(', ');
+  const line2 = [address.neighborhood, address.city, address.state].filter(Boolean).join(' • ');
+  const line3 = address.zip_code || address.cep || '';
+  const structured = [line1, line2, line3].filter(Boolean).join(' · ');
+  return structured || address.raw_address || '';
 };
 
 const formatOrderCreatedAt = (value?: string | null) => {

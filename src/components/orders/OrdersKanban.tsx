@@ -169,7 +169,7 @@ const formatAddress = (address: Order['delivery_address']) => {
     addr.city || addr.cidade,
     addr.state || addr.estado,
   ].filter(Boolean);
-  return parts.join(', ');
+  return parts.join(', ') || addr.raw_address || null;
 };
 
 interface OrderCardProps {

@@ -4,6 +4,7 @@
  */
 import api from './api';
 import logger from './logger';
+import type { DeliveryAddress } from '../types';
 
 // =============================================================================
 // HELPERS
@@ -346,7 +347,7 @@ export interface StoreOrder {
   pix_qr_code: string;
   delivery_method: 'delivery' | 'pickup' | 'digital';
   delivery_method_display: string;
-  delivery_address: Record<string, string>;
+  delivery_address: DeliveryAddress;
   delivery_notes: string;
   scheduled_date?: string;
   scheduled_time: string;

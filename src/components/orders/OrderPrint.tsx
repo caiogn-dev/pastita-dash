@@ -66,7 +66,7 @@ export const useOrderPrint = () => {
       if (addrAny.complemento || addrAny.complement) parts.push(addrAny.complemento || addrAny.complement);
       if (addrAny.bairro || addrAny.neighborhood) parts.push(addrAny.bairro || addrAny.neighborhood);
       
-      return parts.join(', ');
+      return parts.join(', ') || addrAny.raw_address || '';
     };
 
     const getDeliveryMethod = () => {

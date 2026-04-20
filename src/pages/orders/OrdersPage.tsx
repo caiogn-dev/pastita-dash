@@ -114,9 +114,11 @@ const needsPayment = (order: StoreOrder) =>
     m => (order.payment_method ?? '').toLowerCase().includes(m)
   );
 
-const parseAddress = (addr: Record<string, string> | null | undefined): string => {
+const parseAddress = (addr: Record<string, unknown> | null | undefined): string => {
   if (!addr) return '';
-  return [addr.street, addr.number, addr.neighborhood, addr.city].filter(Boolean).join(', ');
+  const s = (k: string) => (typeof addr[k] === 'string' ? (addr[k] as string) : '');
+  const structured = [s('street'), s('number'), s('neighborhood'), s('city')].filter(Boolean).join(', ');
+  return structured || s('raw_address') || s('address') || '';
 };
 
 // ─── OrderDetailModal ─────────────────────────────────────────────────────────
