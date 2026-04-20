@@ -74,11 +74,12 @@ export interface Message {
   from_number: string;
   to_number: string;
   direction: 'inbound' | 'outbound';
-  message_type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'sticker' | 'template' | 'interactive' | 'location' | 'contacts';
+  message_type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'sticker' | 'template' | 'interactive' | 'location' | 'contacts' | 'reaction' | 'button' | 'order' | 'system' | 'unknown';
   text_body?: string;
-  content?: string;
+  content?: string | Record<string, unknown>;
   text?: string;
   media_url?: string;
+  media_id?: string;
   media_caption?: string;
   media_mime_type?: string;
   media_type?: string;
@@ -94,8 +95,11 @@ export interface Message {
   error_message?: string;
   webhook_event?: string;
   conversation_id?: string;
+  conversation?: string;
   account: string;
   account_name?: string;
+  processed_by_agent?: boolean;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }

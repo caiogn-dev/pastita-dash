@@ -12,12 +12,13 @@ export const conversationsService = {
     return response.data;
   },
 
-  getMessages: async (conversationId: string): Promise<Message[]> => {
+  getMessages: async (conversationId: string, pageSize = 200): Promise<Message[]> => {
     const response = await api.get<{ results: Message[] } | Message[]>('/whatsapp/messages/', {
-      params: { conversation: conversationId, page_size: 100 }
+      params: { conversation: conversationId, page_size: pageSize, ordering: '-created_at' }
     });
     const data = response.data as any;
-    return Array.isArray(data) ? data : (data?.results ?? []);
+    const msgs = Array.isArray(data) ? data : (data?.results ?? []);
+    return [...msgs].reverse(); // oldest → newest for display
   },
 
   switchToHuman: async (id: string, agentId?: number): Promise<Conversation> => {

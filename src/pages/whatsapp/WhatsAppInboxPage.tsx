@@ -4,28 +4,61 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import {
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
   PhoneIcon,
   EllipsisVerticalIcon,
-  CheckIcon,
-  ClockIcon,
 } from '@heroicons/react/24/outline';
 import { conversationsService } from '../../services/conversations';
 import * as whatsappService from '../../services/whatsapp';
 import { handoverService } from '../../services/handover';
 import { useWhatsAppWsContext } from '../../context/WhatsAppWsContext';
 import { useChatStore } from '../../stores/chatStore';
+import { MessageBubble, MessageBubbleProps } from '../../components/chat/MessageBubble';
+import { MediaViewer } from '../../components/chat/MediaViewer';
 import toast from 'react-hot-toast';
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
 
-// Type-safe helper to ensure value is array
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
+}
+
+const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
+  id: msg.id,
+  direction: msg.direction as 'inbound' | 'outbound',
+  messageType: msg.message_type,
+  status: msg.status as 'pending' | 'sent' | 'delivered' | 'read' | 'failed',
+  textBody: msg.text_body || msg.media_caption || msg.caption,
+  content: msg.content,
+  mediaUrl: msg.media_url,
+  mediaType: msg.media_mime_type || msg.media_type,
+  mimeType: msg.media_mime_type,
+  fileName: msg.media_filename || msg.file_name,
+  createdAt: msg.created_at,
+  sentAt: msg.sent_at ?? undefined,
+  deliveredAt: msg.delivered_at ?? undefined,
+  readAt: msg.read_at ?? undefined,
+  errorMessage: msg.error_message,
+});
+
+function messagePreviewText(msg: Message | string | undefined): string {
+  if (!msg) return 'Sem mensagens';
+  if (typeof msg === 'string') return msg;
+  if (msg.text_body) return msg.text_body;
+  switch (msg.message_type) {
+    case 'audio': return '🎵 Áudio';
+    case 'image': return '📷 Imagem';
+    case 'video': return '🎬 Vídeo';
+    case 'document': return `📄 ${msg.media_filename || 'Documento'}`;
+    case 'sticker': return '🏷️ Sticker';
+    case 'location': return '📍 Localização';
+    case 'contacts': return '👤 Contato';
+    case 'order': return '🛒 Pedido';
+    case 'reaction': return '👍 Reação';
+    default: return msg.message_type || 'Mensagem';
+  }
 }
 
 interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
@@ -39,6 +72,7 @@ const WhatsAppInboxPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sending, setSending] = useState(false);
+  const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // WebSocket context para atualizações em tempo real
@@ -177,14 +211,6 @@ const WhatsAppInboxPage: React.FC = () => {
     conv.phone_number.includes(searchTerm)
   );
 
-  const getStatusIcon = (message: Message) => {
-    if (message.direction === 'inbound') return null;
-    if (message.status === 'read') return <CheckIcon className="w-4 h-4 text-blue-500 fill-blue-500" />;
-    if (message.status === 'delivered') return <CheckIcon className="w-4 h-4 text-gray-400" />;
-    if (message.status === 'sent') return <CheckIcon className="w-4 h-4 text-gray-400" />;
-    return <ClockIcon className="w-4 h-4 text-gray-300" />;
-  };
-
   return (
     <div className="whatsapp-inbox">
       {/* Conversations List */}
@@ -283,25 +309,24 @@ const WhatsAppInboxPage: React.FC = () => {
               ) : (
                 <div className="messages-list">
                   {messages.map((msg) => (
-                    <div
+                    <MessageBubble
                       key={msg.id}
-                      className={`message ${msg.direction === 'inbound' ? 'inbound' : 'outbound'}`}
-                    >
-                      <div className="message-bubble">
-                        <p>{msg.text_body}</p>
-                        <span className="message-time">
-                          {format(new Date(msg.created_at), 'HH:mm', { locale: ptBR })}
-                        </span>
-                      </div>
-                      {msg.direction === 'outbound' && (
-                        <div className="message-status">
-                          {getStatusIcon(msg)}
-                        </div>
-                      )}
-                    </div>
+                      {...messageToBubbleProps(msg)}
+                      onMediaClick={(url, type, fileName) =>
+                        setMediaViewer({ url, type, fileName })
+                      }
+                    />
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
+              )}
+              {mediaViewer && (
+                <MediaViewer
+                  url={mediaViewer.url}
+                  type={mediaViewer.type}
+                  fileName={mediaViewer.fileName}
+                  onClose={() => setMediaViewer(null)}
+                />
               )}
             </div>
 
