@@ -338,23 +338,35 @@ const MediaPreview: React.FC<{
 
   // Localização
   if (type === 'location') {
-    const location = typeof content === 'string' ? JSON.parse(content) : content;
+    const raw = typeof content === 'string' ? JSON.parse(content) : content;
+    const location = (raw as any)?.location ?? raw;
+    const lat = location?.latitude;
+    const lng = location?.longitude;
+    const name = location?.name || location?.address || 'Localização';
+    const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null;
     return (
-      <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg mb-2 max-w-[280px]">
+      <a
+        href={mapsUrl ?? '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg mb-2 max-w-[280px] hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+        onClick={mapsUrl ? undefined : (e) => e.preventDefault()}
+      >
         <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
           <MapPinIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 dark:text-white">
-            Localização
+            {name}
           </p>
-          {location?.latitude && location?.longitude && (
+          {lat && lng && (
             <p className="text-xs text-gray-500 dark:text-zinc-400">
-              {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+              {Number(lat).toFixed(6)}, {Number(lng).toFixed(6)}
             </p>
           )}
+          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Abrir no Maps</p>
         </div>
-      </div>
+      </a>
     );
   }
 
