@@ -379,3 +379,77 @@ export interface DashboardActivity {
   orders: ActivityOrder[];
   conversations: ActivityConversation[];
 }
+
+// ============================================
+// PROJECT HEALTH (/core/dashboard/project-health/)
+// ============================================
+
+export type ProjectHealthStatus = 'ok' | 'attention' | 'critical' | 'unknown';
+export type ProjectHealthIssueLevel = 'info' | 'warning' | 'critical';
+
+export interface ProjectHealthIssue {
+  level: ProjectHealthIssueLevel;
+  area: string;
+  title: string;
+  detail: string;
+}
+
+export interface ProjectHealth {
+  status: ProjectHealthStatus;
+  generated_at: string;
+  scope: {
+    stores: number;
+    accounts: number;
+    store_filter?: string | null;
+    account_filter?: string | null;
+  };
+  api: {
+    status: string;
+    summary: string;
+    checks: Record<string, { ok?: boolean; detail?: string; [key: string]: unknown }>;
+  };
+  commerce: {
+    orders_today: number;
+    orders_24h: number;
+    orders_7d: number;
+    pending_orders: number;
+    payment_pending: number;
+    cancelled_7d: number;
+    revenue_today: number;
+    revenue_month: number;
+    avg_ticket_month: number;
+  };
+  catalog: {
+    active_products: number;
+    low_stock_products: number;
+    out_of_stock_products: number;
+  };
+  messaging: {
+    messages_24h: number;
+    inbound_24h: number;
+    outbound_24h: number;
+    failed_24h: number;
+    open_conversations: number;
+    human_conversations: number;
+  };
+  automation: {
+    ai_enabled_profiles: number;
+    active_agents: number;
+    agent_messages_24h: number;
+    pipeline: {
+      period_hours: number;
+      total_messages: number;
+      by_source: Record<string, number>;
+      dropped: number;
+      timeouts: number;
+      intent_log_summary: Array<{ intent_type: string; count: number }>;
+      generated_at: string;
+    };
+  };
+  webhooks: {
+    received_24h: number;
+    failed_24h: number;
+    pending: number;
+  };
+  issues: ProjectHealthIssue[];
+}

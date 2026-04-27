@@ -16,12 +16,16 @@ import {
   ArrowPathIcon,
   FireIcon,
   TruckIcon,
+  ServerStackIcon,
+  CubeIcon,
+  BoltIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Badge, Button, Loading } from '../../components/common';
 import { useStore } from '../../hooks';
 import { getOrders, getOrderStats, updateOrderStatus, StoreOrder } from '../../services/storesApi';
 import { dashboardService } from '../../services';
+import type { ProjectHealth } from '../../types/dashboard';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -55,6 +59,20 @@ const STATUS_BADGE: Record<string, 'warning' | 'info' | 'success' | 'danger' | '
   completed:        'success',
   cancelled:        'danger',
   failed:           'danger',
+};
+
+const healthVariant: Record<string, 'success' | 'warning' | 'danger' | 'gray'> = {
+  ok: 'success',
+  attention: 'warning',
+  critical: 'danger',
+  unknown: 'gray',
+};
+
+const healthLabel: Record<string, string> = {
+  ok: 'Estável',
+  attention: 'Atenção',
+  critical: 'Crítico',
+  unknown: 'Indefinido',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -169,6 +187,7 @@ export const DashboardPage: React.FC = () => {
   const [conversationsOpen, setConversationsOpen] = useState(0);
   const [recentOrders, setRecentOrders]         = useState<StoreOrder[]>([]);
   const [pipelineCounts, setPipelineCounts]     = useState<Record<string, number>>({});
+  const [projectHealth, setProjectHealth]       = useState<ProjectHealth | null>(null);
   const [loading, setLoading]                   = useState(true);
   const [advancing, setAdvancing]               = useState<string | null>(null);
   const [refreshedAt, setRefreshedAt]           = useState(new Date());
@@ -177,10 +196,11 @@ export const DashboardPage: React.FC = () => {
     if (!storeId) return;
     setLoading(true);
     try {
-      const [ordersResp, statsResp, overviewResp] = await Promise.allSettled([
+      const [ordersResp, statsResp, overviewResp, healthResp] = await Promise.allSettled([
         getOrders({ store: storeId }),
         getOrderStats(storeId),
         dashboardService.getOverview({ store: storeId }),
+        dashboardService.getProjectHealth({ store: storeId }),
       ]);
 
       if (ordersResp.status === 'fulfilled') {
@@ -211,6 +231,10 @@ export const DashboardPage: React.FC = () => {
             setOrdersToday(Number(ov.today ?? 0));
           }
         }
+      }
+
+      if (healthResp.status === 'fulfilled') {
+        setProjectHealth(healthResp.value);
       }
 
       setRefreshedAt(new Date());
@@ -412,6 +436,98 @@ export const DashboardPage: React.FC = () => {
         </Card>
 
       </div>
+
+      {/* ── Project health ── */}
+      <Card noPadding>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <ServerStackIcon className="h-4 w-4 text-primary-500" />
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Saúde do projeto</h2>
+            <Badge variant={healthVariant[projectHealth?.status || 'unknown'] || 'gray'}>
+              {healthLabel[projectHealth?.status || 'unknown'] || 'Indefinido'}
+            </Badge>
+          </div>
+          <button
+            onClick={() => navigate('/analytics')}
+            className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline font-medium"
+          >
+            Ver analytics <ArrowRightIcon className="h-3 w-3" />
+          </button>
+        </div>
+
+        {loading && !projectHealth ? (
+          <div className="flex justify-center items-center h-32"><Loading /></div>
+        ) : projectHealth ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+            <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-zinc-800">
+              <div className="p-4 border-r border-b md:border-b-0 border-gray-100 dark:border-zinc-800">
+                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">API</p>
+                <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{projectHealth.api.status}</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{Object.values(projectHealth.api.checks || {}).filter((c) => c?.ok === false).length} checks falhando</p>
+              </div>
+              <div className="p-4 md:border-r border-b md:border-b-0 border-gray-100 dark:border-zinc-800">
+                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Pedidos 24h</p>
+                <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{projectHealth.commerce.orders_24h}</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
+              </div>
+              <div className="p-4 border-r border-gray-100 dark:border-zinc-800">
+                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Mensagens 24h</p>
+                <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.messages_24h}</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{projectHealth.messaging.failed_24h} falhas</p>
+              </div>
+              <div className="p-4">
+                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Webhooks</p>
+                <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{projectHealth.webhooks.received_24h}</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{projectHealth.webhooks.pending} pendentes</p>
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 p-4 space-y-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-3">
+                  <CubeIcon className="h-4 w-4 mx-auto mb-1 text-gray-400" />
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{projectHealth.catalog.low_stock_products}</p>
+                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Estoque baixo</p>
+                </div>
+                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-3">
+                  <BoltIcon className="h-4 w-4 mx-auto mb-1 text-gray-400" />
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{projectHealth.automation.active_agents}</p>
+                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Agentes</p>
+                </div>
+                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-3">
+                  <ExclamationTriangleIcon className="h-4 w-4 mx-auto mb-1 text-gray-400" />
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{projectHealth.issues.length}</p>
+                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Alertas</p>
+                </div>
+              </div>
+
+              {projectHealth.issues.length > 0 ? (
+                <div className="space-y-2">
+                  {projectHealth.issues.slice(0, 3).map((issue, idx) => (
+                    <button
+                      key={`${issue.area}-${idx}`}
+                      onClick={() => {
+                        if (issue.area === 'orders' || issue.area === 'payments') navigate(`/stores/${storeRoute}/orders`);
+                        else if (issue.area === 'catalog') navigate(`/stores/${storeRoute}/products`);
+                        else if (issue.area === 'messages') navigate('/whatsapp/inbox');
+                        else navigate('/analytics');
+                      }}
+                      className="w-full text-left rounded-lg border border-gray-100 dark:border-zinc-800 p-3 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors"
+                    >
+                      <p className="text-xs font-semibold text-gray-900 dark:text-white">{issue.title}</p>
+                      <p className="mt-0.5 text-[11px] text-gray-500 dark:text-zinc-400 line-clamp-2">{issue.detail}</p>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-zinc-400">Nenhum alerta operacional no escopo atual.</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="p-5 text-sm text-gray-500 dark:text-zinc-400">Saúde do projeto indisponível.</div>
+        )}
+      </Card>
 
       {/* Footer */}
       <p className="text-right text-xs text-gray-400 dark:text-zinc-600">

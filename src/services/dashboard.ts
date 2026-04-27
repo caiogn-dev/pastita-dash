@@ -8,6 +8,7 @@ import {
   DailyConversationChart,
   DashboardStats,
   DashboardActivity,
+  ProjectHealth,
 } from '../types/dashboard';
 
 /**
@@ -206,6 +207,22 @@ export const dashboardService = {
       return response.data ?? null;
     } catch (error) {
       console.error('[Dashboard] Failed to fetch activity:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Fetch project-wide operational health for API, commerce, messaging,
+   * automation, catalog and webhooks.
+   */
+  getProjectHealth: async (options: DashboardQueryOptions = {}): Promise<ProjectHealth | null> => {
+    try {
+      const response = await api.get<ProjectHealth>('/core/dashboard/project-health/', {
+        params: buildParams(options),
+      });
+      return response.data ?? null;
+    } catch (error) {
+      console.error('[Dashboard] Failed to fetch project health:', error);
       return null;
     }
   },
