@@ -49,9 +49,10 @@ const conversationToContact = (conv: Conversation): Contact => ({
   contactName: conv.contact_name || '',
   lastMessagePreview: conv.last_message_preview || conv.last_message || '',
   lastMessageAt: conv.last_message_at ?? undefined,
-  unreadCount: 0,
+  unreadCount: conv.unread_count || 0,
   status: conv.status,
   mode: conv.mode as 'auto' | 'human' | 'hybrid',
+  profilePictureUrl: conv.profile_picture || conv.profile_picture_url || undefined,
 });
 
 const getInitials = (name?: string, phone?: string) => {
@@ -109,9 +110,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     if (!selectedConversation || !accountId) return;
     setIsLoadingMessages(true);
     try {
-      const historyRes = await whatsappService.getConversationHistory(accountId, selectedConversation.phone_number, 100);
-      const history = ensureArray<Message>((historyRes.data as { results?: Message[] })?.results || historyRes.data);
-      setMessages(history.reverse());
+      const historyRes = await conversationsService.getMessages(selectedConversation.id, 100);
+      setMessages(ensureArray<Message>(historyRes.results));
     } catch (error) { toast.error(getErrorMessage(error)); }
     finally { setIsLoadingMessages(false); }
   }, [accountId, selectedConversation]);
@@ -197,7 +197,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     setConversations(prev => {
       if (prev.some(c => c.id === wsConv.id)) {
         return prev.map(c => c.id === wsConv.id
-          ? { ...c, phone_number: wsConv.phone_number, contact_name: wsConv.contact_name, status: wsConv.status as Conversation['status'], mode: wsConv.mode as Conversation['mode'] }
+          ? {
+              ...c,
+              phone_number: wsConv.phone_number,
+              contact_name: wsConv.contact_name,
+              wa_id: wsConv.wa_id,
+              profile_picture: wsConv.profile_picture,
+              profile_picture_url: wsConv.profile_picture_url,
+              status: wsConv.status as Conversation['status'],
+              mode: wsConv.mode as Conversation['mode'],
+            }
           : c);
       }
       loadConversations();
@@ -325,7 +334,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
             <div className="flex items-center justify-between px-4 py-3 bg-bg-card border-b border-border-primary">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white ${selectedConversation.mode === 'human' ? 'bg-blue-500' : 'bg-green-500'}`}>
-                  {getInitials(selectedConversation.contact_name, selectedConversation.phone_number)}
+                  {selectedConversation.profile_picture || selectedConversation.profile_picture_url ? (
+                    <img
+                      src={selectedConversation.profile_picture || selectedConversation.profile_picture_url}
+                      alt={selectedConversation.contact_name || selectedConversation.phone_number}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    getInitials(selectedConversation.contact_name, selectedConversation.phone_number)
+                  )}
                 </div>
                 <div>
                   <p className="font-semibold text-fg-primary">{selectedConversation.contact_name || selectedConversation.phone_number}</p>

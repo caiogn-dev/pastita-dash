@@ -195,7 +195,7 @@ export const ConversationsPage: React.FC = () => {
       ]);
 
       setWhatsAppConversation(detail);
-      setWhatsAppMessages(messages);
+      setWhatsAppMessages(messages.results);
       setWhatsAppNotes(notes);
       setNoteDraft('');
     } catch (error) {
@@ -219,7 +219,7 @@ export const ConversationsPage: React.FC = () => {
         conversationsService.getNotes(selectedWhatsAppId),
       ]);
       setWhatsAppConversation(detail);
-      setWhatsAppMessages(messages);
+      setWhatsAppMessages(messages.results);
       setWhatsAppNotes(notes);
     } catch (error) {
       toast.error(getErrorMessage(error));

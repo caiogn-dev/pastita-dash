@@ -47,7 +47,7 @@ const DebugDashboardPage: React.FC = () => {
   const loadMessages = async (conversationId: string) => {
     try {
       const msgs = await conversationsService.getMessages(conversationId);
-      setMessages(msgs);
+      setMessages(msgs.results);
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
       toast.error('Erro ao carregar mensagens');

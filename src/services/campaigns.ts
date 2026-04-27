@@ -83,8 +83,24 @@ export const campaignsService = {
     audience_filters?: Record<string, unknown>;
     contact_list?: Array<{ phone: string; name?: string; variables?: Record<string, unknown> }>;
     scheduled_at?: string;
+    messages_per_minute?: number;
+    delay_between_messages?: number;
   }): Promise<Campaign> => {
     const response = await api.post<Campaign>('/campaigns/campaigns/', data);
+    return response.data;
+  },
+
+  uploadCampaignMedia: async (file: File): Promise<{
+    media_url: string;
+    media_type: 'image' | 'document';
+    filename: string;
+    mime_type: string;
+  }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/campaigns/campaigns/upload-media/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
   },
 

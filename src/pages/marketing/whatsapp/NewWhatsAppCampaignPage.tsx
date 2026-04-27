@@ -23,6 +23,8 @@ import {
   TrashIcon,
   ArrowUpTrayIcon,
   ChatBubbleLeftRightIcon,
+  PhotoIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Modal, Input } from '../../../components/common';
@@ -56,6 +58,9 @@ interface CampaignFormData {
   templateName: string;
   templateLanguage: string;
   textContent: string;
+  mediaUrl: string;
+  mediaType: 'image' | 'document' | '';
+  mediaFilename: string;
   contacts: Array<{ phone: string; name?: string }>;
   scheduledAt: string;
   messagesPerMinute: number;
@@ -94,6 +99,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   const [systemContacts, setSystemContacts] = useState<SystemContact[]>([]);
   const [loadingSystemContacts, setLoadingSystemContacts] = useState(false);
   const [selectedSystemContacts, setSelectedSystemContacts] = useState<Set<string>>(new Set());
+  const [selectedMediaFile, setSelectedMediaFile] = useState<File | null>(null);
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string>('');
 
   const [formData, setFormData] = useState<CampaignFormData>({
     name: '',
@@ -104,6 +111,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     templateName: '',
     templateLanguage: 'pt_BR',
     textContent: '',
+    mediaUrl: '',
+    mediaType: '',
+    mediaFilename: '',
     contacts: [],
     scheduledAt: '',
     messagesPerMinute: 60,
@@ -144,6 +154,14 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
     loadData();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (mediaPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(mediaPreviewUrl);
+      }
+    };
+  }, [mediaPreviewUrl]);
 
   // Load templates when account is selected
   useEffect(() => {
@@ -385,8 +403,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       return;
     }
 
-    if (formData.messageType === 'text' && !formData.textContent.trim()) {
-      toast.error('Digite o conteúdo da mensagem');
+    if (formData.messageType === 'text' && !formData.textContent.trim() && !selectedMediaFile && !formData.mediaUrl) {
+      toast.error('Digite o conteúdo da mensagem ou adicione uma imagem');
       return;
     }
 
@@ -402,6 +420,21 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
     setSending(true);
     try {
+      let mediaPayload = {
+        media_url: formData.mediaUrl,
+        media_type: formData.mediaType,
+        filename: formData.mediaFilename,
+      };
+
+      if (formData.messageType === 'text' && selectedMediaFile && !mediaPayload.media_url) {
+        const uploaded = await campaignsService.uploadCampaignMedia(selectedMediaFile);
+        mediaPayload = {
+          media_url: uploaded.media_url,
+          media_type: uploaded.media_type,
+          filename: uploaded.filename,
+        };
+      }
+
       // Build campaign payload
       const payload = {
         account_id: formData.accountId,
@@ -410,7 +443,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         campaign_type: 'broadcast' as const,
         template_id: formData.messageType === 'template' ? formData.templateId : undefined,
         message_content: formData.messageType === 'text' 
-          ? { text: formData.textContent }
+          ? {
+              text: formData.textContent,
+              caption: formData.textContent,
+              ...(mediaPayload.media_url ? mediaPayload : {}),
+            }
           : { template_name: formData.templateName, language: formData.templateLanguage },
         contact_list: formData.contacts,
         scheduled_at: schedule ? formData.scheduledAt : undefined,
@@ -454,7 +491,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       case 'message':
         return formData.messageType === 'template' 
           ? !!formData.templateId 
-          : !!formData.textContent.trim();
+          : !!formData.textContent.trim() || !!selectedMediaFile || !!formData.mediaUrl;
       case 'recipients':
         return formData.contacts.length > 0;
       case 'review':
@@ -727,21 +764,101 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
             {/* Text Content */}
             {formData.messageType === 'text' && (
-              <Card className="p-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
-                  Mensagem
-                </label>
-                <textarea
-                  value={formData.textContent}
-                  onChange={(e) => setFormData(prev => ({ ...prev, textContent: e.target.value }))}
-                  placeholder="Digite sua mensagem aqui..."
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Use {"{{nome}}"} para personalizar com o nome do contato
-                </p>
-              </Card>
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
+                    Mensagem
+                  </label>
+                  <textarea
+                    value={formData.textContent}
+                    onChange={(e) => setFormData(prev => ({ ...prev, textContent: e.target.value }))}
+                    placeholder="Digite sua mensagem aqui..."
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Use {"{{nome}}"} para personalizar com o nome do contato
+                  </p>
+                </Card>
+
+                <Card className="p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                        Card promocional
+                      </label>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
+                        Anexe uma imagem para enviar junto com a legenda.
+                      </p>
+                    </div>
+                    {(selectedMediaFile || formData.mediaUrl) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (mediaPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(mediaPreviewUrl);
+                          setSelectedMediaFile(null);
+                          setMediaPreviewUrl('');
+                          setFormData(prev => ({ ...prev, mediaUrl: '', mediaType: '', mediaFilename: '' }));
+                        }}
+                        className="p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        title="Remover imagem"
+                      >
+                        <XMarkIcon className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {mediaPreviewUrl ? (
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={mediaPreviewUrl}
+                        alt="Preview do card promocional"
+                        className="w-40 h-40 rounded-lg object-cover border border-gray-200 dark:border-zinc-700"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-white truncate">
+                          {formData.mediaFilename || selectedMediaFile?.name || 'Imagem da campanha'}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+                          Será enviada como imagem no WhatsApp.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors">
+                      <PhotoIcon className="w-10 h-10 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">
+                        Selecionar imagem
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-zinc-400">
+                        PNG, JPG ou WEBP
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+                          if (!file.type.startsWith('image/')) {
+                            toast.error('Selecione uma imagem válida');
+                            return;
+                          }
+                          if (mediaPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(mediaPreviewUrl);
+                          setSelectedMediaFile(file);
+                          setMediaPreviewUrl(URL.createObjectURL(file));
+                          setFormData(prev => ({
+                            ...prev,
+                            mediaUrl: '',
+                            mediaType: 'image',
+                            mediaFilename: file.name,
+                          }));
+                        }}
+                      />
+                    </label>
+                  )}
+                </Card>
+              </div>
             )}
           </div>
         )}
@@ -915,8 +1032,18 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                 <div className="pt-4 border-t">
                   <p className="text-sm text-gray-500 dark:text-zinc-400 mb-1">Mensagem</p>
                   <p className="text-gray-900 dark:text-white whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                    {formData.textContent}
+                    {formData.textContent || 'Imagem sem legenda'}
                   </p>
+                  {(mediaPreviewUrl || formData.mediaUrl) && (
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-1">Imagem</p>
+                      <img
+                        src={mediaPreviewUrl || formData.mediaUrl}
+                        alt="Card promocional"
+                        className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-zinc-700"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -48,6 +48,9 @@ export interface WhatsAppConversation {
   id: string;
   phone_number: string;
   contact_name: string;
+  wa_id?: string;
+  profile_picture?: string;
+  profile_picture_url?: string;
   status: string;
   mode: string;
   created_at: string;

@@ -170,6 +170,11 @@ export interface Conversation {
   id: string;
   phone_number: string;
   contact_name?: string;
+  wa_id?: string;
+  profile_picture_url?: string;
+  profile_picture_file?: string;
+  profile_picture?: string;
+  profile_name_last_seen_at?: string | null;
   account: string;
   status: 'open' | 'closed' | 'pending' | 'resolved';
   mode?: 'auto' | 'human' | 'hybrid';
