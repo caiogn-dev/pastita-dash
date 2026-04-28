@@ -85,9 +85,7 @@ export const sendFile = (accountId: string, to: string, file: File, caption?: st
   formData.append('to', to);
   formData.append('file', file);
   if (caption) formData.append('caption', caption);
-  return api.post('/whatsapp/messages/send_file/', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  return api.post('/whatsapp/messages/send_file/', formData);
 };
 
 // Estatísticas de mensagens (backend: POST /whatsapp/messages/stats/)

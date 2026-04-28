@@ -471,9 +471,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
       navigate('/marketing/whatsapp');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } } };
+      const err = error as { response?: { data?: { error?: string; detail?: string } } };
       logger.error('Failed to create campaign', error);
-      toast.error(err.response?.data?.error || 'Erro ao criar campanha');
+      toast.error(err.response?.data?.error || err.response?.data?.detail || 'Erro ao criar campanha');
     } finally {
       setSending(false);
       setShowScheduleModal(false);
