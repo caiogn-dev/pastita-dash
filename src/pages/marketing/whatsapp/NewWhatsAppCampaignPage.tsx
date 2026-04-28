@@ -28,6 +28,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Modal, Input } from '../../../components/common';
+import { getErrorMessage } from '../../../services';
 import whatsappService from '../../../services/whatsapp';
 import { campaignsService, Campaign, ContactList } from '../../../services/campaigns';
 import { WhatsAppAccount, MessageTemplate, PaginatedResponse } from '../../../types';
@@ -471,9 +472,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
       navigate('/marketing/whatsapp');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string; detail?: string } } };
       logger.error('Failed to create campaign', error);
-      toast.error(err.response?.data?.error || err.response?.data?.detail || 'Erro ao criar campanha');
+      toast.error(getErrorMessage(error) || 'Erro ao criar campanha');
     } finally {
       setSending(false);
       setShowScheduleModal(false);

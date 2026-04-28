@@ -110,24 +110,45 @@ export const setAuthToken = (token: string | null): void => {
 };
 
 // Helper function to handle API errors
+const stringifyApiErrorValue = (value: unknown): string | null => {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) {
+    const parts = value
+      .map((item) => stringifyApiErrorValue(item))
+      .filter((item): item is string => Boolean(item));
+    return parts.length > 0 ? parts.join(', ') : null;
+  }
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const nestedMessage =
+      stringifyApiErrorValue(record.message) ||
+      stringifyApiErrorValue(record.detail) ||
+      stringifyApiErrorValue(record.error) ||
+      stringifyApiErrorValue(record.details);
+    if (nestedMessage) return nestedMessage;
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;
-    if (typeof data?.error === 'string') {
-      return data.error;
-    }
-    if (data?.error?.message) {
-      return data.error.message;
-    }
-    if (typeof data?.message === 'string') {
-      return data.message;
-    }
-    if (data?.detail) {
-      return data.detail;
-    }
-    if (typeof data === 'string') {
-      return data;
-    }
+    return (
+      stringifyApiErrorValue(data?.error) ||
+      stringifyApiErrorValue(data?.message) ||
+      stringifyApiErrorValue(data?.detail) ||
+      stringifyApiErrorValue(data) ||
+      error.message ||
+      'An unexpected error occurred'
+    );
   }
   if (error instanceof Error) {
     return error.message;

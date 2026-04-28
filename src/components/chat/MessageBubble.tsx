@@ -29,6 +29,23 @@ import {
 } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckIconSolid } from '@heroicons/react/24/solid';
 
+const renderText = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const message = record.message || record.detail || record.error || record.details;
+    if (message && message !== value) return renderText(message);
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
 export interface MessageBubbleProps {
   id: string;
   direction: 'inbound' | 'outbound';
@@ -615,7 +632,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         {/* Erro */}
         {errorMessage && (
           <div className="px-3 pb-2">
-            <p className="text-xs text-red-500">{errorMessage}</p>
+            <p className="text-xs text-red-500">{renderText(errorMessage)}</p>
           </div>
         )}
       </div>

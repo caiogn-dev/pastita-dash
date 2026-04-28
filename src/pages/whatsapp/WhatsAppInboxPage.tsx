@@ -10,6 +10,7 @@ import {
   PhoneIcon,
   EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
+import { getErrorMessage } from '../../services';
 import { conversationsService } from '../../services/conversations';
 import * as whatsappService from '../../services/whatsapp';
 import { handoverService } from '../../services/handover';
@@ -150,9 +151,9 @@ const WhatsAppInboxPage: React.FC = () => {
       toast.success('Mensagem enviada');
       // Recarrega mensagens uma vez para garantir sync (WS já atualiza em tempo real)
       void loadMessages(selectedConversation.id);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao enviar mensagem:', error);
-      toast.error(error?.response?.data?.detail || 'Erro ao enviar mensagem');
+      toast.error(getErrorMessage(error) || 'Erro ao enviar mensagem');
     } finally {
       sendLockRef.current = false;
       setSending(false);
