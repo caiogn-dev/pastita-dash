@@ -55,6 +55,11 @@ api.interceptors.request.use(
       }
     }
 
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    }
+
     return config;
   },
   (error) => {
