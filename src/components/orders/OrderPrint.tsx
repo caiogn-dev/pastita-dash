@@ -136,6 +136,12 @@ export const useOrderPrint = () => {
     const subtotal = Number(pedido.subtotal || pedido.total || 0);
     const deliveryFee = Number(pedido.delivery_fee || (pedido as unknown as { taxa_entrega?: number | string }).taxa_entrega || 0);
     const discount = Number(pedido.discount || (pedido as unknown as { desconto?: number | string }).desconto || 0);
+    const metadata = pedido.metadata || {};
+    const rawSurcharge = metadata.manual_surcharge
+      || (metadata.manual_adjustment && typeof metadata.manual_adjustment === 'object'
+        ? (metadata.manual_adjustment as Record<string, unknown>).surcharge
+        : 0);
+    const surcharge = typeof rawSurcharge === 'number' ? rawSurcharge : Number(rawSurcharge || 0);
     const total = Number(pedido.total || 0);
 
     const storeName = options?.storeName || (pedido as unknown as { store_name?: string }).store_name || 'LOJA';
@@ -647,6 +653,12 @@ export const useOrderPrint = () => {
             <div class="total-row discount">
               <span>Desconto:</span>
               <span>- ${formatMoney(discount)}</span>
+            </div>
+          ` : ''}
+          ${surcharge > 0 ? `
+            <div class="total-row">
+              <span>Acréscimo:</span>
+              <span>${formatMoney(surcharge)}</span>
             </div>
           ` : ''}
           <div class="grand-total">

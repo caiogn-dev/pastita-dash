@@ -341,6 +341,7 @@ export interface Order {
   shipped_at?: string | null;
   delivered_at?: string | null;
   cancelled_at?: string | null;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   events?: OrderEvent[];
@@ -354,6 +355,9 @@ export interface CreateOrder {
   delivery_address?: DeliveryAddress | string;
   delivery_method?: 'delivery' | 'pickup' | 'digital';
   delivery_fee?: number;
+  discount?: number;
+  surcharge?: number;
+  adjustment_reason?: string;
   items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
   payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card';
   notes?: string;

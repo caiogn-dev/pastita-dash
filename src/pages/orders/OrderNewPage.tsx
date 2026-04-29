@@ -47,6 +47,9 @@ const orderSchema = z.object({
   delivery_method: z.enum(['delivery', 'pickup', 'digital']),
   delivery_address: z.string().optional(),
   payment_method: z.enum(['pix', 'cash', 'credit_card', 'debit_card']),
+  adjustment_type: z.enum(['none', 'discount', 'surcharge']),
+  adjustment_amount: z.number().min(0, 'Valor inválido'),
+  adjustment_reason: z.string().optional(),
   notes: z.string().optional(),
   items: z.array(z.object({
     product_id: z.string(),
@@ -95,20 +98,32 @@ export const OrderNewPage: React.FC = () => {
     defaultValues: {
       customer_name: '', customer_phone: '', customer_email: '',
       delivery_method: 'delivery', delivery_address: '',
-      payment_method: 'pix', notes: '', items: [],
+      payment_method: 'pix', adjustment_type: 'none', adjustment_amount: 0, adjustment_reason: '',
+      notes: '', items: [],
     },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const deliveryMethod = watch('delivery_method');
+  const adjustmentType = watch('adjustment_type');
+  const adjustmentAmount = watch('adjustment_amount') || 0;
   const items = watch('items');
   const deliveryAddress = watch('delivery_address');
 
   const totals = useMemo(() => {
     const subtotal = items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
     const deliveryFee = deliveryMethod === 'delivery' ? (deliveryInfo?.fee || 0) : 0;
-    return { subtotal, deliveryFee, total: subtotal + deliveryFee };
-  }, [deliveryInfo?.fee, items, deliveryMethod]);
+    const cleanAdjustment = Math.max(0, toNumber(adjustmentAmount));
+    const discount = adjustmentType === 'discount' ? Math.min(cleanAdjustment, subtotal + deliveryFee) : 0;
+    const surcharge = adjustmentType === 'surcharge' ? cleanAdjustment : 0;
+    return {
+      subtotal,
+      deliveryFee,
+      discount,
+      surcharge,
+      total: Math.max(0, subtotal + deliveryFee + surcharge - discount),
+    };
+  }, [adjustmentAmount, adjustmentType, deliveryInfo?.fee, items, deliveryMethod]);
 
   useEffect(() => {
     if (!effectiveStoreId) return;
@@ -281,6 +296,9 @@ export const OrderNewPage: React.FC = () => {
         delivery_method: data.delivery_method,
         delivery_address: data.delivery_method === 'delivery' ? data.delivery_address : undefined,
         delivery_fee: data.delivery_method === 'delivery' ? (resolvedDeliveryInfo?.fee || 0) : 0,
+        discount: data.adjustment_type === 'discount' ? totals.discount : 0,
+        surcharge: data.adjustment_type === 'surcharge' ? totals.surcharge : 0,
+        adjustment_reason: data.adjustment_reason,
         payment_method: data.payment_method,
         notes: data.notes,
         items: data.items.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
@@ -506,6 +524,46 @@ export const OrderNewPage: React.FC = () => {
                 </div>
               </Card>
 
+              {/* Ajuste */}
+              <Card>
+                <div className="flex flex-col gap-4">
+                  <h2 className="text-base font-semibold text-fg-primary">Ajuste do pedido</h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-3">
+                    <div>
+                      <label className={labelCls}>Tipo</label>
+                      <select {...register('adjustment_type')} className={selectCls}>
+                        <option value="none">Sem ajuste</option>
+                        <option value="discount">Desconto</option>
+                        <option value="surcharge">Acréscimo</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Valor</label>
+                      <input
+                        {...register('adjustment_amount', { valueAsNumber: true })}
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        disabled={adjustmentType === 'none'}
+                        className={inputCls}
+                      />
+                      {errors.adjustment_amount && <p className={errorCls}>{errors.adjustment_amount.message}</p>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>Motivo</label>
+                    <input
+                      {...register('adjustment_reason')}
+                      placeholder="Ex: embalagem extra, cortesia, ajuste manual"
+                      disabled={adjustmentType === 'none'}
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+              </Card>
+
               {/* Resumo */}
               <Card>
                 <div className="flex flex-col gap-4">
@@ -530,6 +588,18 @@ export const OrderNewPage: React.FC = () => {
                         {deliveryInfo.distance_km.toFixed(2)} km
                         {deliveryInfo.duration_minutes ? ` • ${Math.round(deliveryInfo.duration_minutes)} min` : ''}
                       </span>
+                    </div>
+                  )}
+                  {totals.discount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-fg-muted">Desconto</span>
+                      <span className="text-green-600 dark:text-green-400">- R$ {formatPrice(totals.discount)}</span>
+                    </div>
+                  )}
+                  {totals.surcharge > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-fg-muted">Acréscimo</span>
+                      <span className="text-fg-primary">R$ {formatPrice(totals.surcharge)}</span>
                     </div>
                   )}
 

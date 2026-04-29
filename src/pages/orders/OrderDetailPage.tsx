@@ -104,6 +104,19 @@ const formatMoney = (value: number | undefined | null) => {
   return `R$ ${(value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 };
 
+const getManualSurcharge = (metadata?: Record<string, unknown>) => {
+  const raw = metadata?.manual_surcharge;
+  if (typeof raw === 'number') return raw;
+  if (typeof raw === 'string') return Number(raw) || 0;
+  if (metadata?.manual_adjustment && typeof metadata.manual_adjustment === 'object') {
+    const adjustment = metadata.manual_adjustment as Record<string, unknown>;
+    const value = adjustment.surcharge;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') return Number(value) || 0;
+  }
+  return 0;
+};
+
 const getInitials = (name?: string | null) => {
   if (!name) return 'CL';
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -337,6 +350,7 @@ export const OrderDetailPage: React.FC = () => {
   const paymentLink = order.pix_ticket_url || order.payment_url || order.payment_link || order.init_point || null;
   const compactAddress = buildCompactAddress(address);
   const customerInitials = getInitials(order.customer_name);
+  const manualSurcharge = getManualSurcharge(order.metadata);
 
   return (
     <div className="min-h-screen bg-[#f5f1e8] text-[#171717] dark:bg-[#050505] dark:text-[#f4efe6]">
@@ -505,6 +519,12 @@ export const OrderDetailPage: React.FC = () => {
                     <div className="flex items-center justify-between gap-3 sm:col-span-2">
                       <span className="text-[#746b5f] dark:text-[#9d9385]">Desconto</span>
                       <span className="font-semibold text-green-600 dark:text-green-400">-{formatMoney(order.discount)}</span>
+                    </div>
+                  ) : null}
+                  {manualSurcharge > 0 ? (
+                    <div className="flex items-center justify-between gap-3 sm:col-span-2">
+                      <span className="text-[#746b5f] dark:text-[#9d9385]">Acréscimo</span>
+                      <span className="font-semibold">{formatMoney(manualSurcharge)}</span>
                     </div>
                   ) : null}
                   <div className="flex items-center justify-between gap-3 border-t border-black/10 pt-3 text-base sm:col-span-2 dark:border-white/10">
