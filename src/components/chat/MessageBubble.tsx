@@ -355,11 +355,19 @@ const MediaPreview: React.FC<{
 
   // Localização
   if (type === 'location') {
-    const raw = typeof content === 'string' ? JSON.parse(content) : content;
+    const raw = typeof content === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(content);
+          } catch {
+            return {};
+          }
+        })()
+      : content;
     const location = (raw as any)?.location ?? raw;
     const lat = location?.latitude;
     const lng = location?.longitude;
-    const name = location?.name || location?.address || 'Localização';
+    const name = location?.name || location?.address || 'Localização enviada';
     const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null;
     return (
       <a
@@ -376,6 +384,11 @@ const MediaPreview: React.FC<{
           <p className="text-sm font-medium text-gray-900 dark:text-white">
             {name}
           </p>
+          {location?.address && location.address !== name && (
+            <p className="text-xs text-gray-600 dark:text-zinc-300 mt-0.5 break-words">
+              {location.address}
+            </p>
+          )}
           {lat && lng && (
             <p className="text-xs text-gray-500 dark:text-zinc-400">
               {Number(lat).toFixed(6)}, {Number(lng).toFixed(6)}
@@ -567,6 +580,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 }) => {
   const isInbound = direction === 'inbound';
   const hasMedia = mediaUrl && ['image', 'video', 'audio', 'document'].includes(messageType);
+  const hasLocation = messageType === 'location';
 
   return (
     <div
@@ -591,8 +605,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           />
         )}
 
+        {hasLocation && (
+          <MediaPreview
+            type="location"
+            content={content}
+          />
+        )}
+
         {/* Texto (só mostra se não for caption de mídia já exibida via mediaUrl) */}
-        {textBody && !(hasMedia && ['image', 'video', 'document'].includes(messageType)) && (
+        {textBody && !hasLocation && !(hasMedia && ['image', 'video', 'document'].includes(messageType)) && (
           <div className="px-3 py-2">
             <p className="text-sm whitespace-pre-wrap break-words">{textBody}</p>
           </div>
