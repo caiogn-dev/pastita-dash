@@ -180,17 +180,13 @@ class ProductsService {
 
   async createProduct(data: CreateProduct): Promise<Product> {
     const formData = await buildProductFormData(data, true);
-    const response = await api.post<Product>(`${this.baseUrl}/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post<Product>(`${this.baseUrl}/`, formData);
     return response.data;
   }
 
   async updateProduct(id: string, data: UpdateProduct): Promise<Product> {
     const formData = await buildProductFormData(data, false);
-    const response = await api.patch<Product>(`${this.baseUrl}/${id}/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.patch<Product>(`${this.baseUrl}/${id}/`, formData);
     return response.data;
   }
 

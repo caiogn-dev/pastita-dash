@@ -31,9 +31,12 @@ export const activateAccount = (id: string) =>
 export const syncTemplates = (id: string) =>
   api.post(`/whatsapp/accounts/${id}/sync_templates/`);
 
+const unsupportedFeature = <T = any>(feature: string): Promise<{ data: T }> =>
+  Promise.reject(new Error(`${feature} ainda não tem endpoint no backend.`));
+
 // rotateToken não tem endpoint no backend
-export const rotateToken = (id: string, token: string) =>
-  Promise.resolve({ data: { success: true, message: 'Token rotacionado' } });
+export const rotateToken = (_id: string, _token: string) =>
+  unsupportedFeature('Rotação de token');
 
 // QR e Status
 export const getQRCode = (accountId: string) =>
@@ -51,14 +54,14 @@ export const getTemplates = (accountId: string) =>
   api.get('/whatsapp/templates/', { params: { account: accountId } });
 
 // Templates são somente leitura no backend (sincronizados via syncTemplates)
-export const createTemplate = (data: any) =>
-  Promise.resolve({ data: { id: 'mock', ...data } });
+export const createTemplate = (_data: any) =>
+  unsupportedFeature('Criação de template');
 
-export const updateTemplate = (id: string, data: any) =>
-  Promise.resolve({ data: { id, ...data } });
+export const updateTemplate = (_id: string, _data: any) =>
+  unsupportedFeature('Edição de template');
 
-export const deleteTemplate = (id: string) =>
-  Promise.resolve({ data: { success: true } });
+export const deleteTemplate = (_id: string) =>
+  unsupportedFeature('Remoção de template');
 
 // Mensagens
 export const sendMessage = (data: any) =>
@@ -103,12 +106,12 @@ export const getAccountStats = (accountId: string, startDate?: string, endDate?:
 export const getMessageStats = (accountId?: any, dateParams?: any) =>
   getAccountStats(accountId as string);
 
-// getBillingInfo e getBusinessProfile não têm endpoints — manter mock até implementação
-export const getBillingInfo = (accountId: string) =>
-  Promise.resolve({ data: { plan: 'free', credits: 0, used: 0, remaining: 0 } });
+// getBillingInfo e getBusinessProfile não têm endpoints no backend.
+export const getBillingInfo = (_accountId: string) =>
+  unsupportedFeature('Informações de cobrança');
 
-export const getBusinessProfile = (accountId: string) =>
-  Promise.resolve({ data: { id: accountId, name: '', description: '', address: '', email: '', websites: [] } });
+export const getBusinessProfile = (_accountId: string) =>
+  unsupportedFeature('Perfil comercial');
 
 // Mensagens paginadas via /whatsapp/messages/?account_id=...
 export const getMessages = (params?: Record<string, any>) =>

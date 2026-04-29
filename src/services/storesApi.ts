@@ -691,9 +691,7 @@ export const createCategory = async (data: StoreCategoryInput): Promise<StoreCat
     const payload = { ...data, slug: data.slug || generateSlug(data.name) };
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(payload);
-      const response = await api.post(`${BASE_URL}/categories/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.post(`${BASE_URL}/categories/`, formData);
       return response.data;
     }
     const response = await api.post(`${BASE_URL}/categories/`, payload);
@@ -708,9 +706,7 @@ export const updateCategory = async (id: string, data: Partial<StoreCategoryInpu
   try {
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(data);
-      const response = await api.patch(`${BASE_URL}/categories/${id}/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.patch(`${BASE_URL}/categories/${id}/`, formData);
       return response.data;
     }
     const response = await api.patch(`${BASE_URL}/categories/${id}/`, data);
@@ -766,9 +762,7 @@ export const createProduct = async (data: StoreProductInput): Promise<StoreProdu
     const payload = { ...data, slug: data.slug || generateSlug(data.name) };
     if (data.main_image && isFile(data.main_image)) {
       const formData = buildFormData(payload);
-      const response = await api.post(`${BASE_URL}/products/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.post(`${BASE_URL}/products/`, formData);
       return response.data;
     }
     const response = await api.post(`${BASE_URL}/products/`, payload);
@@ -783,9 +777,7 @@ export const updateProduct = async (id: string, data: Partial<StoreProductInput>
   try {
     if (data.main_image && isFile(data.main_image)) {
       const formData = buildFormData(data);
-      const response = await api.patch(`${BASE_URL}/products/${id}/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.patch(`${BASE_URL}/products/${id}/`, formData);
       return response.data;
     }
     const response = await api.patch(`${BASE_URL}/products/${id}/`, data);
@@ -1500,9 +1492,7 @@ export const createProductType = async (data: StoreProductTypeInput): Promise<St
     const payload = { ...data, slug: data.slug || generateSlug(data.name) };
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(payload);
-      const response = await api.post(`${BASE_URL}/product-types/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.post(`${BASE_URL}/product-types/`, formData);
       return response.data;
     }
     const response = await api.post(`${BASE_URL}/product-types/`, payload);
@@ -1517,9 +1507,7 @@ export const updateProductType = async (id: string, data: Partial<StoreProductTy
   try {
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(data);
-      const response = await api.patch(`${BASE_URL}/product-types/${id}/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.patch(`${BASE_URL}/product-types/${id}/`, formData);
       return response.data;
     }
     const response = await api.patch(`${BASE_URL}/product-types/${id}/`, data);
