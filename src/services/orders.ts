@@ -137,8 +137,8 @@ export const ordersService = {
     return normalizeOrder(response.data);
   },
 
-  getPaymentStatus: async (id: string, storeSlug?: string): Promise<{ status: string; payment_url?: string }> => {
-    const response = await api.get(`${getBaseUrl(storeSlug)}/${id}/payment/`);
+  getPaymentStatus: async (id: string): Promise<{ status: string; payment_url?: string }> => {
+    const response = await api.get(`/stores/orders/${id}/payment-status/`);
     return response.data;
   },
 
