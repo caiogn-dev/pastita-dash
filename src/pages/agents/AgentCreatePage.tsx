@@ -14,6 +14,7 @@ interface WhatsAppAccount {
 export const AgentCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [whatsappAccounts, setWhatsappAccounts] = useState<WhatsAppAccount[]>([]);
 
   useEffect(() => {
@@ -33,11 +34,13 @@ export const AgentCreatePage: React.FC = () => {
 
   const handleSubmit = async (data: CreateAgentData) => {
     setIsLoading(true);
+    setSubmitError(null);
     try {
       const newAgent = await agentsService.createAgent(data);
       navigate(`/agents/${newAgent.id}`);
     } catch (error) {
       console.error('Erro ao criar agente:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Erro ao criar agente');
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +65,13 @@ export const AgentCreatePage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Erro de submissão */}
+      {submitError && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+          {submitError}
+        </div>
+      )}
 
       {/* Form */}
       <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">

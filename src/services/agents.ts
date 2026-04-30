@@ -20,7 +20,7 @@ export const PROVIDER_CONFIGS = {
   },
   anthropic: {
     name: 'Anthropic',
-    models: ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'],
+    models: ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
     defaultBaseUrl: 'https://api.anthropic.com',
     requiresApiKey: true,
     apiStyle: 'anthropic',
@@ -133,16 +133,16 @@ export interface AgentMessage {
 }
 
 // Default values for new agent - synced with backend
-// Using Kimi Coding API with Anthropic style
+// Using Anthropic/Claude as default provider
 // NOTE: base_url is loaded from backend via getProviderConfig() to avoid hardcoding
 export const DEFAULT_AGENT_VALUES: Partial<CreateAgentData> = {
-  provider: 'kimi',
-  model_name: 'kimi-for-coding',
+  provider: 'anthropic',
+  model_name: 'claude-sonnet-4-6',
   // base_url is loaded from backend - do not hardcode
   temperature: 0.7,
-  max_tokens: 32768, // Max for kimi-for-coding
+  max_tokens: 8192,
   timeout: 30,
-  system_prompt: 'Você é o assistente virtual da Pastita, uma loja de massas artesanais.\n\nSuas responsabilidades:\n- Responder dúvidas sobre o cardápio e produtos\n- Ajudar clientes a fazer pedidos\n- Informar sobre horário de funcionamento e entregas\n- Ser sempre educado, prestativo e gentil\n\nSe não souber responder algo específico, direcione o cliente para falar com um atendente humano.',
+  system_prompt: 'Você é um assistente virtual útil e educado.\n\nResponda sempre em português, de forma clara e objetiva.',
   context_prompt: '',
   status: 'draft',
   use_memory: true,

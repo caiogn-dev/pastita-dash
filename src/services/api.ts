@@ -101,6 +101,14 @@ api.interceptors.response.use(
 
 export default api;
 
+// Helpers para uploads multipart — o interceptor de request já remove Content-Type
+// automaticamente quando config.data é uma instância de FormData
+export const postForm = (url: string, data: FormData, config?: Parameters<typeof api.post>[2]) =>
+  api.post(url, data, config);
+
+export const patchForm = (url: string, data: FormData, config?: Parameters<typeof api.patch>[2]) =>
+  api.patch(url, data, config);
+
 // Allow immediate setting/clearing of the Authorization header
 export const setAuthToken = (token: string | null): void => {
   if (token) {
