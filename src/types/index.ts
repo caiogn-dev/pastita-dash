@@ -268,7 +268,7 @@ export interface OrderEvent {
 
 export interface DeliveryAddress {
   [key: string]: unknown;
-  // Structured fields (from HERE Maps geocode/reverse_geocode)
+  // Structured fields from backend geocode/reverse_geocode
   street?: string;
   number?: string;
   complement?: string;
@@ -715,7 +715,7 @@ export interface IntentStats {
   by_type: Partial<Record<IntentType, number>>;
   by_method: { regex: number; llm: number };
   avg_response_time_ms: number;
-  top_intents: Array<{ intent: IntentType; count: number }>;
+  top_intents: Array<{ intent?: IntentType; intent_type?: IntentType; count: number }>;
   period: { start: string; end: string };
 }
 

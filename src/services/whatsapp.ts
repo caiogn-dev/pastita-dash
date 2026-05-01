@@ -34,9 +34,8 @@ export const syncTemplates = (id: string) =>
 const unsupportedFeature = <T = any>(feature: string): Promise<{ data: T }> =>
   Promise.reject(new Error(`${feature} ainda não tem endpoint no backend.`));
 
-// rotateToken não tem endpoint no backend
-export const rotateToken = (_id: string, _token: string) =>
-  unsupportedFeature('Rotação de token');
+export const rotateToken = (id: string, accessToken: string) =>
+  api.post(`/whatsapp/accounts/${id}/rotate_token/`, { access_token: accessToken });
 
 // QR e Status
 export const getQRCode = (accountId: string) =>
@@ -106,12 +105,12 @@ export const getAccountStats = (accountId: string, startDate?: string, endDate?:
 export const getMessageStats = (accountId?: any, dateParams?: any) =>
   getAccountStats(accountId as string);
 
-// getBillingInfo e getBusinessProfile não têm endpoints no backend.
+// Billing is not exposed by the backend; business profile is proxied by WhatsAppAccountViewSet.
 export const getBillingInfo = (_accountId: string) =>
   unsupportedFeature('Informações de cobrança');
 
-export const getBusinessProfile = (_accountId: string) =>
-  unsupportedFeature('Perfil comercial');
+export const getBusinessProfile = (accountId: string) =>
+  api.get(`/whatsapp/accounts/${accountId}/business_profile/`);
 
 // Mensagens paginadas via /whatsapp/messages/?account_id=...
 export const getMessages = (params?: Record<string, any>) =>

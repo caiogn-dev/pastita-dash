@@ -162,13 +162,14 @@ export const IntentStatsPage: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-zinc-800">
                     {stats.top_intents.map((item, idx) => {
+                      const intent = (item.intent_type || item.intent) as IntentType;
                       const pct = totalIntents > 0 ? (item.count / totalIntents) * 100 : 0;
                       return (
-                        <tr key={item.intent} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
+                        <tr key={intent} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
                           <td className="px-6 py-4 text-sm text-gray-500 dark:text-zinc-400">{idx + 1}</td>
                           <td className="px-6 py-4">
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {intentTypeLabels[item.intent as IntentType] || item.intent}
+                              {intentTypeLabels[intent] || intent}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">

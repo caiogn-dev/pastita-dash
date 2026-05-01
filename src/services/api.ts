@@ -195,3 +195,43 @@ export function normalizePaginatedResponse<T>(data: unknown): T[] {
   console.error('[API] Unexpected response format (type:', typeof data, ')');
   return [];
 }
+
+export function normalizePaginatedEnvelope<T>(data: unknown): {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+} {
+  if (typeof data === 'object' && data !== null && 'results' in data) {
+    const envelope = data as {
+      count?: unknown;
+      next?: unknown;
+      previous?: unknown;
+      results?: unknown;
+    };
+    const results = Array.isArray(envelope.results) ? envelope.results as T[] : [];
+    return {
+      count: typeof envelope.count === 'number' ? envelope.count : results.length,
+      next: typeof envelope.next === 'string' ? envelope.next : null,
+      previous: typeof envelope.previous === 'string' ? envelope.previous : null,
+      results,
+    };
+  }
+
+  if (Array.isArray(data)) {
+    return {
+      count: data.length,
+      next: null,
+      previous: null,
+      results: data as T[],
+    };
+  }
+
+  console.error('[API] Unexpected paginated response format (type:', typeof data, ')');
+  return {
+    count: 0,
+    next: null,
+    previous: null,
+    results: [],
+  };
+}

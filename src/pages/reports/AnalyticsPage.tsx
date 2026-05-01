@@ -323,6 +323,133 @@ const AnalyticsPage: React.FC = () => {
     </div>
   );
 
+  const renderRevenue = () => (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Faturamento" value={formatCurrency(revenueReport?.summary.total_revenue || 0)} icon={CurrencyDollarIcon} iconClass="text-green-500" loading={loading} />
+        <StatCard title="Pedidos" value={revenueReport?.summary.total_orders || 0} icon={ShoppingCartIcon} iconClass="text-blue-500" loading={loading} />
+        <StatCard title="Ticket Médio" value={formatCurrency(revenueReport?.summary.avg_order_value || 0)} icon={ArrowTrendingUpIcon} iconClass="text-indigo-500" loading={loading} />
+        <StatCard title="Taxas de Entrega" value={formatCurrency(revenueReport?.summary.total_delivery_fees || 0)} icon={TruckIcon} iconClass="text-orange-500" loading={loading} />
+      </div>
+      <Card>
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+          <h2 className="text-lg font-semibold text-fg-primary">Faturamento por Período</h2>
+          <div className="flex gap-2">
+            {(['day', 'week', 'month'] as GroupBy[]).map((g) => (
+              <button
+                key={g}
+                onClick={() => setGroupBy(g)}
+                className={`px-3 py-1 text-sm rounded-lg border transition-colors ${groupBy === g ? 'bg-brand-600 text-white border-brand-600' : 'border-border-primary text-fg-secondary hover:bg-bg-hover'}`}
+              >
+                {g === 'day' ? 'Dia' : g === 'week' ? 'Semana' : 'Mês'}
+              </button>
+            ))}
+          </div>
+        </div>
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={350}>
+            <AreaChart data={revenueReport?.data || []}>
+              <defs>
+                <linearGradient id="colorRevenueTab" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="period" tickFormatter={(v) => { try { return format(parseISO(v), 'dd/MM', { locale: ptBR }); } catch { return v; } }} stroke="#6b7280" fontSize={12} />
+              <YAxis tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} stroke="#6b7280" fontSize={12} />
+              <RechartsTooltip formatter={(v) => [formatCurrency(Number(v) || 0), 'Faturamento']} />
+              <Area type="monotone" dataKey="total_revenue" stroke="#16a34a" strokeWidth={2} fill="url(#colorRevenueTab)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </Card>
+    </div>
+  );
+
+  const renderProducts = () => (
+    <Card>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-fg-primary">Performance de Produtos</h2>
+        <Badge variant="subtle">{productsReport?.top_products.length || 0} produtos</Badge>
+      </div>
+      {loading ? (
+        <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border-primary">
+                <th className="pb-2 text-left text-fg-muted font-medium px-2">Produto</th>
+                <th className="pb-2 text-right text-fg-muted font-medium px-2">Qtd</th>
+                <th className="pb-2 text-right text-fg-muted font-medium px-2">Pedidos</th>
+                <th className="pb-2 text-right text-fg-muted font-medium px-2">Receita</th>
+                <th className="pb-2 text-right text-fg-muted font-medium px-2">Estoque</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(productsReport?.top_products || []).map((p, i) => (
+                <tr key={p.product_id || `${p.product_name}-${i}`} className="border-b border-border-primary last:border-0">
+                  <td className="py-2 px-2 font-medium text-fg-primary">{p.product_name}</td>
+                  <td className="py-2 px-2 text-right text-fg-primary">{p.total_quantity}</td>
+                  <td className="py-2 px-2 text-right text-fg-primary">{p.order_count}</td>
+                  <td className="py-2 px-2 text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(p.total_revenue)}</td>
+                  <td className="py-2 px-2 text-right text-fg-muted">{p.current_stock ?? '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+
+  const renderCustomers = () => (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Clientes" value={customersReport?.summary.total_customers || 0} icon={CheckCircleIcon} iconClass="text-blue-500" loading={loading} />
+        <StatCard title="Novos" value={customersReport?.summary.new_customers || 0} icon={ArrowTrendingUpIcon} iconClass="text-green-500" loading={loading} />
+        <StatCard title="Recorrentes" value={customersReport?.summary.returning_customers || 0} icon={StarIcon} iconClass="text-yellow-500" loading={loading} />
+        <StatCard title="Retenção" value={`${customersReport?.summary.retention_rate || 0}%`} icon={ArrowTrendingUpIcon} iconClass="text-indigo-500" loading={loading} />
+      </div>
+      <Card>
+        <h2 className="text-lg font-semibold text-fg-primary mb-4">Melhores Clientes</h2>
+        {loading ? (
+          <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border-primary">
+                  <th className="pb-2 text-left text-fg-muted font-medium px-2">Cliente</th>
+                  <th className="pb-2 text-left text-fg-muted font-medium px-2">Contato</th>
+                  <th className="pb-2 text-right text-fg-muted font-medium px-2">Pedidos</th>
+                  <th className="pb-2 text-right text-fg-muted font-medium px-2">Total</th>
+                  <th className="pb-2 text-right text-fg-muted font-medium px-2">Ticket Médio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(customersReport?.top_customers || []).map((c, i) => (
+                  <tr key={c.email || c.phone || `${c.name}-${i}`} className="border-b border-border-primary last:border-0">
+                    <td className="py-2 px-2 font-medium text-fg-primary">{c.name || 'Cliente'}</td>
+                    <td className="py-2 px-2 text-fg-muted">{c.phone || c.email || '-'}</td>
+                    <td className="py-2 px-2 text-right text-fg-primary">{c.order_count}</td>
+                    <td className="py-2 px-2 text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(c.total_spent)}</td>
+                    <td className="py-2 px-2 text-right text-fg-primary">{formatCurrency(c.avg_order_value)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -377,7 +504,11 @@ const AnalyticsPage: React.FC = () => {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'stock' ? renderStock() : renderOverview()}
+      {activeTab === 'stock' && renderStock()}
+      {activeTab === 'revenue' && renderRevenue()}
+      {activeTab === 'products' && renderProducts()}
+      {activeTab === 'customers' && renderCustomers()}
+      {activeTab === 'overview' && renderOverview()}
     </div>
   );
 };

@@ -1,10 +1,10 @@
-import api from './api';
+import api, { normalizePaginatedEnvelope } from './api';
 import { Conversation, ConversationNote, PaginatedResponse, Message, UniversalConversation } from '../types';
 
 export const conversationsService = {
   getConversations: async (params?: Record<string, string>): Promise<PaginatedResponse<Conversation>> => {
-    const response = await api.get<PaginatedResponse<Conversation>>('/conversations/', { params });
-    return response.data;
+    const response = await api.get<PaginatedResponse<Conversation> | Conversation[]>('/conversations/', { params });
+    return normalizePaginatedEnvelope<Conversation>(response.data);
   },
 
   getConversation: async (id: string): Promise<Conversation> => {
@@ -103,7 +103,7 @@ export const conversationsService = {
   },
 
   getUniversalConversations: async (): Promise<PaginatedResponse<UniversalConversation>> => {
-    const response = await api.get<PaginatedResponse<UniversalConversation>>('/conversations/universal/');
-    return response.data;
+    const response = await api.get<PaginatedResponse<UniversalConversation> | UniversalConversation[]>('/conversations/universal/');
+    return normalizePaginatedEnvelope<UniversalConversation>(response.data);
   },
 };

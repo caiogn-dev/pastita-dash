@@ -1,4 +1,4 @@
-import api from './api';
+import api, { normalizePaginatedEnvelope } from './api';
 import { Order, OrderItem, OrderEvent, CreateOrder, PaginatedResponse } from '../types';
 
 /**
@@ -52,8 +52,8 @@ export const ordersService = {
     const storeSlug = params?.store_slug;
     const { store_slug, ...apiParams } = params || {};
     const response = await api.get<PaginatedResponse<Order>>(`${getBaseUrl(storeSlug)}/`, { params: apiParams });
-    const results = response.data.results?.map(normalizeOrder) || [];
-    return { ...response.data, results };
+    const page = normalizePaginatedEnvelope<Order>(response.data);
+    return { ...page, results: page.results.map(normalizeOrder) };
   },
 
   getOrder: async (id: string, storeSlug?: string): Promise<Order> => {
@@ -128,8 +128,8 @@ export const ordersService = {
   },
 
   getByCustomer: async (customerId: string, storeSlug?: string): Promise<Order[]> => {
-    const response = await api.get<PaginatedResponse<Order>>(`${getBaseUrl(storeSlug)}/`, { params: { customer: customerId } });
-    return (response.data.results || []).map(normalizeOrder);
+    const response = await api.get<PaginatedResponse<Order> | Order[]>(`${getBaseUrl(storeSlug)}/`, { params: { customer: customerId } });
+    return normalizePaginatedEnvelope<Order>(response.data).results.map(normalizeOrder);
   },
 
   updateStatus: async (id: string, status: string, storeSlug?: string): Promise<Order> => {

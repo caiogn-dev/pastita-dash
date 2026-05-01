@@ -64,13 +64,13 @@ export const automationDashboardService = {
     end_date?: string;
     company_id?: string;
   }): Promise<AutomationStats> => {
-    const response = await api.get('/automation/dashboard/stats/', { params });
+    const response = await api.get('/whatsapp/automation/dashboard/stats/', { params });
     return response.data;
   },
 
   // Configurações de automação
   getSettings: async (companyId?: string): Promise<AutomationSettings> => {
-    const response = await api.get('/automation/settings/', {
+    const response = await api.get('/whatsapp/automation/settings/', {
       params: companyId ? { company_id: companyId } : undefined,
     });
     return response.data;
@@ -80,7 +80,7 @@ export const automationDashboardService = {
     data: Partial<AutomationSettings>,
     companyId?: string
   ): Promise<AutomationSettings> => {
-    const response = await api.patch('/automation/settings/', {
+    const response = await api.patch('/whatsapp/automation/settings/', {
       ...data,
       company_id: companyId,
     });

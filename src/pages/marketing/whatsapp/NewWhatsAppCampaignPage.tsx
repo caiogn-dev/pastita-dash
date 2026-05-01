@@ -436,6 +436,14 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         };
       }
 
+      const mediaContent = mediaPayload.media_url
+        ? {
+            ...mediaPayload,
+            ...(mediaPayload.media_type === 'image' ? { image_url: mediaPayload.media_url } : {}),
+            ...(mediaPayload.media_type === 'document' ? { document_url: mediaPayload.media_url } : {}),
+          }
+        : {};
+
       // Build campaign payload
       const payload = {
         account_id: formData.accountId,
@@ -447,7 +455,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           ? {
               text: formData.textContent,
               caption: formData.textContent,
-              ...(mediaPayload.media_url ? mediaPayload : {}),
+              ...mediaContent,
             }
           : { template_name: formData.templateName, language: formData.templateLanguage },
         contact_list: formData.contacts,

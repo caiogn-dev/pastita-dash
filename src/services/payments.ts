@@ -1,4 +1,4 @@
-import api from './api';
+import api, { normalizePaginatedEnvelope } from './api';
 import { Payment, PaymentGateway, PaginatedResponse } from '../types';
 
 /**
@@ -22,8 +22,8 @@ export const paymentsService = {
    * Get all payments with optional filtering
    */
   getPayments: async (params?: Record<string, string>): Promise<PaginatedResponse<Payment>> => {
-    const response = await api.get<PaginatedResponse<Payment>>(`${BASE_URL}/`, { params });
-    return response.data;
+    const response = await api.get<PaginatedResponse<Payment> | Payment[]>(`${BASE_URL}/`, { params });
+    return normalizePaginatedEnvelope<Payment>(response.data);
   },
 
   /**
@@ -149,8 +149,8 @@ export const paymentsService = {
    * Get all payment gateways
    */
   getGateways: async (params?: Record<string, string>): Promise<PaginatedResponse<PaymentGateway>> => {
-    const response = await api.get<PaginatedResponse<PaymentGateway>>(`${GATEWAYS_URL}/`, { params });
-    return response.data;
+    const response = await api.get<PaginatedResponse<PaymentGateway> | PaymentGateway[]>(`${GATEWAYS_URL}/`, { params });
+    return normalizePaginatedEnvelope<PaymentGateway>(response.data);
   },
 
   /**
