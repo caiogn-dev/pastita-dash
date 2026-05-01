@@ -9,7 +9,10 @@ import {
   PaperAirplaneIcon,
   PhoneIcon,
   EllipsisVerticalIcon,
+  DocumentTextIcon,
+  BoltIcon,
 } from '@heroicons/react/24/outline';
+import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
 import { getErrorMessage } from '../../services';
 import { conversationsService } from '../../services/conversations';
 import * as whatsappService from '../../services/whatsapp';
@@ -74,6 +77,7 @@ const WhatsAppInboxPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sending, setSending] = useState(false);
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
+  const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sendLockRef = useRef(false);
 
@@ -128,6 +132,10 @@ const WhatsAppInboxPage: React.FC = () => {
     setSelectedConversation(conversation);
     setMessageText('');
     await loadMessages(conversation.id);
+  };
+
+  const togglePanel = (panel: 'templates' | 'tools') => {
+    setActivePanel(prev => prev === panel ? null : panel);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -186,6 +194,20 @@ const WhatsAppInboxPage: React.FC = () => {
       console.error('Erro ao retornar para modo automático:', error);
       toast.error('Erro ao alternar modo');
     }
+  };
+
+  const handleDirectSend = async (text: string) => {
+    if (!text.trim() || !selectedConversation) return;
+    await whatsappService.sendMessage({
+      account_id: selectedConversation.account,
+      to: selectedConversation.phone_number,
+      text: text.trim(),
+      metadata: {
+        client_request_id: crypto.randomUUID(),
+        source: 'whatsapp_inbox_tools',
+      },
+    });
+    void loadMessages(selectedConversation.id);
   };
 
   const scrollToBottom = () => {
@@ -273,7 +295,7 @@ const WhatsAppInboxPage: React.FC = () => {
       </div>
 
       {/* Chat Panel */}
-      <div className="chat-panel">
+      <div className={`chat-panel ${activePanel ? 'panel-open' : ''}`}>
         {selectedConversation ? (
           <>
             {/* Chat Header */}
@@ -283,9 +305,6 @@ const WhatsAppInboxPage: React.FC = () => {
                 <p className="phone-number">{selectedConversation.phone_number}</p>
               </div>
               <div className="chat-actions">
-                <button title="Chamada" disabled className="icon-btn">
-                  <PhoneIcon className="w-5 h-5" />
-                </button>
                 <div className="mode-selector">
                   <button
                     className={`mode-btn ${selectedConversation.mode === 'auto' ? 'active' : ''}`}
@@ -302,6 +321,25 @@ const WhatsAppInboxPage: React.FC = () => {
                     👤
                   </button>
                 </div>
+                <button
+                  className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
+                  onClick={() => togglePanel('templates')}
+                  title="Templates"
+                >
+                  <DocumentTextIcon className="w-4 h-4" />
+                  <span>Templates</span>
+                </button>
+                <button
+                  className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
+                  onClick={() => togglePanel('tools')}
+                  title="Ferramentas rápidas"
+                >
+                  <BoltIcon className="w-4 h-4" />
+                  <span>Ferramentas</span>
+                </button>
+                <button title="Chamada" disabled className="icon-btn">
+                  <PhoneIcon className="w-5 h-5" />
+                </button>
                 <button className="icon-btn" title="Mais opções">
                   <EllipsisVerticalIcon className="w-5 h-5" />
                 </button>
@@ -368,6 +406,16 @@ const WhatsAppInboxPage: React.FC = () => {
           </div>
         )}
       </div>
+      {selectedConversation && activePanel && (
+        <ChatToolsPanel
+          key={activePanel}
+          conversation={selectedConversation}
+          onInsertText={(text) => setMessageText(text)}
+          onSendMessage={handleDirectSend}
+          onClose={() => setActivePanel(null)}
+          defaultTab={activePanel}
+        />
+      )}
     </div>
   );
 };
