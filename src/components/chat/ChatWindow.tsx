@@ -302,7 +302,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       )}
 
       {/* Contact list sidebar */}
-      <div className={`w-full md:w-[360px] h-full bg-bg-card border-r border-border-primary flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-[360px] md:flex-shrink-0 h-full bg-bg-card border-r border-border-primary flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
         <ContactList
           contacts={contacts}
           selectedContactId={selectedConversation?.id}
@@ -313,7 +313,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       </div>
 
       {/* Chat area */}
-      <div className={`flex-1 flex flex-col bg-bg-muted ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`flex-1 min-w-0 flex flex-col bg-bg-muted ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
         {!selectedConversation ? (
           // Empty state
           <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 bg-bg-card">
