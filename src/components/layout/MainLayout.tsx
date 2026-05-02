@@ -6,11 +6,23 @@ export const MainLayout: React.FC = () => {
   const location = useLocation();
 
   const isDedicatedOrderRoute = /^\/stores\/[^/]+\/orders(?:\/.*)?$/.test(location.pathname);
+  const isFullscreenRoute = /^\/(whatsapp\/(inbox|chat)|conversations)/.test(location.pathname);
 
   if (isDedicatedOrderRoute) {
     return (
       <div className="min-h-screen bg-[#f5f1e8] text-fg-primary dark:bg-[#050505]">
         <Outlet />
+      </div>
+    );
+  }
+
+  if (isFullscreenRoute) {
+    return (
+      <div className="min-h-screen bg-bg-secondary text-fg-primary flex flex-col relative">
+        <Navbar />
+        <div className="flex-1 overflow-hidden">
+          <Outlet />
+        </div>
       </div>
     );
   }
