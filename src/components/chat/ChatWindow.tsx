@@ -1,20 +1,27 @@
 /**
- * ChatWindow - Interface de Chat WhatsApp (sem Chakra UI)
+ * ChatWindow - Interface de Chat WhatsApp estilo WhatsApp Web
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import {
+  MagnifyingGlassIcon,
+  DocumentTextIcon,
+  BoltIcon,
+  EllipsisVerticalIcon,
+} from '@heroicons/react/24/outline';
 
-import { ContactList, Contact } from './ContactList';
 import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { MediaViewer } from './MediaViewer';
+import { ChatToolsPanel } from './ChatToolsPanel';
 import { useWhatsAppWS, MessageReceivedEvent, MessageSentEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
 import { sendFile as sendFileApi } from '../../services/whatsapp';
 import { handoverService } from '../../services/handover';
 import { Message, Conversation } from '../../types';
+import '../../pages/whatsapp/WhatsAppInbox.css';
 
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
@@ -35,24 +42,13 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   content: msg.content,
   mediaUrl: msg.media_url,
   mediaType: msg.media_mime_type || msg.media_type,
+  mimeType: msg.media_mime_type,
   fileName: msg.media_filename || msg.file_name,
   createdAt: msg.created_at,
   sentAt: msg.sent_at ?? undefined,
   deliveredAt: msg.delivered_at ?? undefined,
   readAt: msg.read_at ?? undefined,
   errorMessage: msg.error_message,
-});
-
-const conversationToContact = (conv: Conversation): Contact => ({
-  id: conv.id,
-  phoneNumber: conv.phone_number,
-  contactName: conv.contact_name || '',
-  lastMessagePreview: conv.last_message_preview || conv.last_message || '',
-  lastMessageAt: conv.last_message_at ?? undefined,
-  unreadCount: conv.unread_count || 0,
-  status: conv.status,
-  mode: conv.mode as 'auto' | 'human' | 'hybrid',
-  profilePictureUrl: conv.profile_picture || conv.profile_picture_url || undefined,
 });
 
 const getInitials = (name?: string, phone?: string) => {
@@ -70,6 +66,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
+  const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
+  const [insertText, setInsertText] = useState<string | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
@@ -197,16 +196,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     setConversations(prev => {
       if (prev.some(c => c.id === wsConv.id)) {
         return prev.map(c => c.id === wsConv.id
-          ? {
-              ...c,
-              phone_number: wsConv.phone_number,
-              contact_name: wsConv.contact_name,
-              wa_id: wsConv.wa_id,
-              profile_picture: wsConv.profile_picture,
-              profile_picture_url: wsConv.profile_picture_url,
-              status: wsConv.status as Conversation['status'],
-              mode: wsConv.mode as Conversation['mode'],
-            }
+          ? { ...c, phone_number: wsConv.phone_number, contact_name: wsConv.contact_name, wa_id: wsConv.wa_id, profile_picture: wsConv.profile_picture, profile_picture_url: wsConv.profile_picture_url, status: wsConv.status as Conversation['status'], mode: wsConv.mode as Conversation['mode'] }
           : c);
       }
       loadConversations();
@@ -247,10 +237,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
           account_id: accountId,
           to: selectedConversation.phone_number,
           text,
-          metadata: {
-            client_request_id: clientRequestId,
-            source: 'chat_window',
-          },
+          metadata: { client_request_id: clientRequestId, source: 'chat_window' },
         });
       }
       setMessages(prev => prev.map(m => m.id === optimistic.id ? res.data : m));
@@ -261,6 +248,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       sendLockRef.current = false;
       setIsSending(false);
     }
+  };
+
+  const handleToolsSend = async (text: string) => {
+    if (!selectedConversation || !text.trim()) return;
+    await whatsappService.sendTextMessage({
+      account_id: accountId,
+      to: selectedConversation.phone_number,
+      text: text.trim(),
+      metadata: { client_request_id: crypto.randomUUID(), source: 'chat_window_tools' },
+    });
+    void loadMessages();
   };
 
   const handleSwitchMode = async () => {
@@ -275,10 +273,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     } catch (error) { toast.error(getErrorMessage(error)); }
   };
 
-  const contacts: Contact[] = ensureArray<Conversation>(conversations).map(conv => ({
-    ...conversationToContact(conv),
-    isTyping: typingContacts.has(conv.id),
-  }));
+  const togglePanel = (panel: 'templates' | 'tools') => {
+    setActivePanel(prev => prev === panel ? null : panel);
+  };
+
+  const handleInsertText = (text: string) => {
+    setInsertText(text);
+    setTimeout(() => setInsertText(undefined), 100);
+  };
 
   const groupedMessages = ensureArray<Message>(messages).reduce((groups, message) => {
     if (!message.created_at) return groups;
@@ -290,8 +292,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     return groups;
   }, {} as Record<string, Message[]>);
 
+  const filteredConversations = ensureArray<Conversation>(conversations).filter(conv =>
+    conv.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conv.phone_number.includes(searchTerm)
+  );
+
   return (
-    <div className="flex h-full w-full bg-bg-subtle overflow-hidden">
+    <div className="whatsapp-inbox">
       {mediaViewer && (
         <MediaViewer
           url={mediaViewer.url}
@@ -301,116 +308,182 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
         />
       )}
 
-      {/* Contact list sidebar */}
-      <div className={`w-full md:w-[360px] md:flex-shrink-0 h-full bg-bg-card border-r border-border-primary flex flex-col ${selectedConversation ? 'flex max-md:hidden' : 'flex'}`}>
-        <ContactList
-          contacts={contacts}
-          selectedContactId={selectedConversation?.id}
-          onSelectContact={(c) => setSelectedConversation(conversations.find(conv => conv.id === c.id) || null)}
-          isLoading={isLoadingConversations}
-          emptyMessage="Nenhuma conversa encontrada"
-        />
+      {/* ── Painel de Conversas ── */}
+      <div className="conversations-panel">
+        <div className="conversations-header">
+          <h1>{accountName || 'WhatsApp'}</h1>
+          <div className="search-box">
+            <MagnifyingGlassIcon className="w-4 h-4" style={{ flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder="Buscar conversa..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="conversations-list">
+          {isLoadingConversations ? (
+            <div className="empty-state">Carregando...</div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="empty-state">
+              {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa'}
+            </div>
+          ) : (
+            filteredConversations.map(conv => (
+              <div
+                key={conv.id}
+                className={`conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
+                onClick={() => setSelectedConversation(conv)}
+              >
+                <div className="conversation-avatar">
+                  {conv.profile_picture || conv.profile_picture_url ? (
+                    <img
+                      src={conv.profile_picture || conv.profile_picture_url}
+                      alt={conv.contact_name || conv.phone_number}
+                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    getInitials(conv.contact_name, conv.phone_number)
+                  )}
+                </div>
+                <div className="conversation-info">
+                  <h3>{conv.contact_name || conv.phone_number}</h3>
+                  <p className="conversation-preview">
+                    {typingContacts.has(conv.id)
+                      ? <span style={{ color: '#10b981', fontStyle: 'italic' }}>digitando...</span>
+                      : (conv.last_message_preview || conv.last_message || 'Sem mensagens')}
+                  </p>
+                </div>
+                <div className="conversation-meta">
+                  <span className="mode-badge">{conv.mode === 'human' ? '👤' : '🤖'}</span>
+                  {conv.unread_count && conv.unread_count > 0 && (
+                    <span className="unread-badge">{conv.unread_count}</span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      {/* Chat area */}
-      <div className={`flex-1 min-w-0 flex flex-col bg-bg-muted ${selectedConversation ? 'flex' : 'flex max-md:hidden'}`}>
+      {/* ── Painel de Chat ── */}
+      <div className={`chat-panel ${activePanel ? 'panel-open' : ''}`}>
         {!selectedConversation ? (
-          // Empty state
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 bg-bg-card">
-            <div className="p-8 rounded-full bg-green-50 dark:bg-green-900/30">
-              <span className="text-6xl">💬</span>
+          <div className="no-conversation-selected">
+            <div className="empty-message">
+              <span style={{ fontSize: '4rem' }}>💬</span>
+              <h2>{accountName || 'WhatsApp Business'}</h2>
+              <p>Selecione uma conversa para começar a atender</p>
+              {!isConnected && (
+                <p style={{ color: '#ef4444', fontSize: '0.85rem' }}>⚠️ Desconectado</p>
+              )}
             </div>
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-fg-primary">{accountName || 'WhatsApp Business'}</h2>
-              <p className="text-fg-muted mt-1 max-w-md">Selecione uma conversa ao lado para começar a atender seus clientes</p>
-            </div>
-            {!isConnected && (
-              <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-sm font-medium">⚠️ Desconectado</span>
-            )}
           </div>
         ) : (
           <>
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-bg-card border-b border-border-primary">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white ${selectedConversation.mode === 'human' ? 'bg-blue-500' : 'bg-green-500'}`}>
-                  {selectedConversation.profile_picture || selectedConversation.profile_picture_url ? (
-                    <img
-                      src={selectedConversation.profile_picture || selectedConversation.profile_picture_url}
-                      alt={selectedConversation.contact_name || selectedConversation.phone_number}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    getInitials(selectedConversation.contact_name, selectedConversation.phone_number)
-                  )}
-                </div>
-                <div>
-                  <p className="font-semibold text-fg-primary">{selectedConversation.contact_name || selectedConversation.phone_number}</p>
-                  <p className="text-sm text-fg-muted">
-                    {typingContacts.has(selectedConversation.id)
-                      ? <span className="text-green-500 font-medium">digitando...</span>
-                      : isConnected ? '🟢 Online' : '🔴 Offline'}
-                  </p>
-                </div>
+            <div className="chat-header">
+              <div className="chat-info">
+                <h2>{selectedConversation.contact_name || selectedConversation.phone_number}</h2>
+                <p className="phone-number">
+                  {typingContacts.has(selectedConversation.id)
+                    ? <span style={{ color: '#10b981' }}>digitando...</span>
+                    : selectedConversation.phone_number}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="chat-actions">
+                <div className="mode-selector">
+                  <button
+                    className={`mode-btn ${selectedConversation.mode !== 'human' ? 'active' : ''}`}
+                    onClick={handleSwitchMode}
+                    title="Modo Automático"
+                  >
+                    🤖
+                  </button>
+                  <button
+                    className={`mode-btn ${selectedConversation.mode === 'human' ? 'active' : ''}`}
+                    onClick={handleSwitchMode}
+                    title="Modo Humano"
+                  >
+                    👤
+                  </button>
+                </div>
                 <button
-                  onClick={handleSwitchMode}
-                  className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-opacity hover:opacity-80 ${selectedConversation.mode === 'human' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}
+                  className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
+                  onClick={() => togglePanel('templates')}
                 >
-                  {selectedConversation.mode === 'human' ? '👤 Humano' : '🤖 Auto'}
+                  <DocumentTextIcon className="w-4 h-4" />
+                  <span>Templates</span>
                 </button>
-                <button onClick={loadMessages} disabled={isLoadingMessages} className="p-2 rounded hover:bg-bg-hover transition-colors text-fg-muted">
-                  {isLoadingMessages ? <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" /> : '🔄'}
+                <button
+                  className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
+                  onClick={() => togglePanel('tools')}
+                >
+                  <BoltIcon className="w-4 h-4" />
+                  <span>Ferramentas</span>
+                </button>
+                <button
+                  className="icon-btn"
+                  onClick={loadMessages}
+                  disabled={isLoadingMessages}
+                  title="Recarregar mensagens"
+                >
+                  {isLoadingMessages
+                    ? <span style={{ fontSize: '0.75rem' }}>⏳</span>
+                    : <EllipsisVerticalIcon className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
-            {/* Connection error banner */}
+            {/* Banner de erro de conexão */}
             {connectionError && (
-              <div className="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
-                <p className="text-sm text-yellow-700 dark:text-yellow-400">⚠️ {connectionError}</p>
+              <div style={{ padding: '0.5rem 1rem', background: '#fef9c3', borderBottom: '1px solid #fde047', fontSize: '0.82rem', color: '#854d0e' }}>
+                ⚠️ {connectionError}
               </div>
             )}
 
-            {/* Messages */}
-            <div ref={messagesContainerRef} onScroll={handleContainerScroll} className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-bg-muted">
+            {/* Mensagens */}
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleContainerScroll}
+              className="messages-container"
+            >
               {isLoadingMessages ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+                <div className="messages-empty">
+                  <p>Carregando mensagens...</p>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-4 text-fg-muted">
-                  <span className="text-5xl">👋</span>
-                  <p className="text-lg">Inicie a conversa</p>
-                  <p className="text-sm text-center max-w-[300px]">Envie uma mensagem para começar o atendimento</p>
+                <div className="messages-empty">
+                  <p>Nenhuma mensagem</p>
+                  <small>Comece enviando uma mensagem</small>
                 </div>
               ) : (
-                Object.entries(groupedMessages).map(([date, dayMessages]) => (
-                  <div key={date} className="flex flex-col gap-4">
-                    {/* Date separator */}
-                    <div className="flex items-center justify-center">
-                      <span className="px-3 py-0.5 bg-bg-card border border-border-primary rounded-full text-xs text-fg-muted">
-                        {(() => { try { return format(new Date(date), "d 'de' MMMM", { locale: ptBR }); } catch { return date; } })()}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      {dayMessages.map((message) => (
+                <div className="messages-list">
+                  {Object.entries(groupedMessages).map(([date, dayMessages]) => (
+                    <React.Fragment key={date}>
+                      <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}>
+                        <span style={{ padding: '0.2rem 0.75rem', background: 'rgba(255,255,255,0.8)', borderRadius: '20px', fontSize: '0.75rem', color: '#6b7280', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+                          {(() => { try { return format(new Date(date), "d 'de' MMMM", { locale: ptBR }); } catch { return date; } })()}
+                        </span>
+                      </div>
+                      {dayMessages.map(message => (
                         <MessageBubble
                           key={message.id}
                           {...messageToBubbleProps(message)}
                           onMediaClick={(url, type, fileName) => setMediaViewer({ url, type, fileName })}
                         />
                       ))}
-                    </div>
-                  </div>
-                ))
+                    </React.Fragment>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
-            <div className="p-4 bg-bg-card border-t border-border-primary">
+            {/* Input */}
+            <div style={{ borderTop: '1px solid var(--border-default, #e5e7eb)', background: 'var(--bg-card, white)', flexShrink: 0 }}>
               <MessageInput
                 onSend={handleSendMessage}
                 onTyping={(isTyping) => { if (selectedConversation) sendTypingIndicator(selectedConversation.id, isTyping); }}
@@ -420,11 +493,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
                 disabled={!isConnected}
                 isLoading={isSending}
                 placeholder={isConnected ? 'Digite uma mensagem...' : 'Conectando...'}
+                insertText={insertText}
               />
             </div>
           </>
         )}
       </div>
+
+      {/* ── Painel de Ferramentas ── */}
+      {selectedConversation && activePanel && (
+        <ChatToolsPanel
+          key={activePanel}
+          conversation={selectedConversation}
+          onInsertText={handleInsertText}
+          onSendMessage={handleToolsSend}
+          onClose={() => setActivePanel(null)}
+          defaultTab={activePanel}
+        />
+      )}
     </div>
   );
 };

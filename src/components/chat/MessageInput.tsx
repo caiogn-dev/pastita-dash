@@ -31,6 +31,7 @@ export interface MessageInputProps {
   maxLength?: number;
   selectedFile?: File | null;
   onClearFile?: () => void;
+  insertText?: string;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -44,12 +45,20 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   maxLength = 4096,
   selectedFile,
   onClearFile,
+  insertText,
 }) => {
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<number | undefined>(undefined);
   const wasTypingRef = useRef(false);
+
+  useEffect(() => {
+    if (insertText) {
+      setText(insertText);
+      textareaRef.current?.focus();
+    }
+  }, [insertText]);
 
   // Auto-resize textarea
   const adjustHeight = useCallback(() => {
