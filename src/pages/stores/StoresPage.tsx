@@ -116,7 +116,7 @@ const StoresPage: React.FC = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4 mb-6">
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
@@ -181,7 +181,7 @@ const StoresPage: React.FC = () => {
           </Button>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
           {stores.map(store => {
             const stats = storeStats[store.id];
             return (

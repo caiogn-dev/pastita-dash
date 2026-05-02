@@ -263,7 +263,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         <button
           type="button"
           disabled={disabled}
-          className="p-2.5 text-gray-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-full disabled:opacity-50 transition-colors hidden sm:block"
+          className="p-2.5 text-gray-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-full disabled:opacity-50 transition-colors block max-sm:hidden"
           title="Emoji"
         >
           <FaceSmileIcon className="w-5 h-5" />
@@ -292,7 +292,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       </div>
 
       {/* Hint */}
-      <p className="text-[10px] text-gray-400 pb-2 px-4 text-center hidden sm:block">
+      <p className="text-[10px] text-gray-400 pb-2 px-4 text-center block max-sm:hidden">
         Enter para enviar • Shift+Enter para nova linha
       </p>
     </div>

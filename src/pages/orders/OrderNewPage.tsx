@@ -340,7 +340,7 @@ export const OrderNewPage: React.FC = () => {
                     <h2 className="text-base font-semibold text-fg-primary">Dados do Cliente</h2>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
                     <div>
                       <label className={labelCls}>Nome *</label>
                       <input {...register('customer_name')} placeholder="Nome do cliente" className={inputCls} />
@@ -368,7 +368,7 @@ export const OrderNewPage: React.FC = () => {
                     <h2 className="text-base font-semibold text-fg-primary">Produtos</h2>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 items-end">
+                  <div className="flex flex-row max-sm:flex-col gap-3 items-end">
                     <div className="flex-1">
                       <label className={labelCls}>Produto</label>
                       <select

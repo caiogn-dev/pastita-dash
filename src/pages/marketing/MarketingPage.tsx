@@ -266,7 +266,7 @@ export const MarketingPage: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Marketing</h1>
           <p className="text-gray-500 dark:text-zinc-400">
@@ -287,7 +287,7 @@ export const MarketingPage: React.FC = () => {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 gap-4">
           <StatCard
             title="Emails Enviados"
             value={stats.email.total_sent.toLocaleString()}
@@ -322,7 +322,7 @@ export const MarketingPage: React.FC = () => {
       {/* Quick Actions */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ações Rápidas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 gap-4">
           <QuickAction
             title="Enviar Cupom"
             description="Crie e envie cupons de desconto"
@@ -362,7 +362,7 @@ export const MarketingPage: React.FC = () => {
             Ver Todos
           </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           {templates.slice(0, 4).map((template) => (
             <TemplateCard
               key={template.id}

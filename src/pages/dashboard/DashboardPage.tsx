@@ -305,7 +305,7 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* ── KPI row ── */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 max-xl:grid-cols-2 gap-3">
         <KpiCard
           icon={<ShoppingCartIcon className="h-5 w-5" />}
           label="Pedidos hoje"
@@ -336,7 +336,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* ── Orders + Pipeline ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 max-xl:grid-cols-1 gap-4">
 
         {/* Recent orders — 2/3 */}
         <Card className="xl:col-span-2">
@@ -458,8 +458,8 @@ export const DashboardPage: React.FC = () => {
         {loading && !projectHealth ? (
           <div className="flex justify-center items-center h-32"><Loading /></div>
         ) : projectHealth ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-            <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-zinc-800">
+          <div className="grid grid-cols-12 max-lg:grid-cols-1 gap-0">
+            <div className="lg:col-span-8 grid grid-cols-4 max-md:grid-cols-2 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-zinc-800">
               <div className="p-4 border-r border-b md:border-b-0 border-gray-100 dark:border-zinc-800">
                 <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">API</p>
                 <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{projectHealth.api.status}</p>

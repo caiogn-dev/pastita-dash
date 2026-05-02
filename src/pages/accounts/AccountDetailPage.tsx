@@ -153,7 +153,7 @@ export const AccountDetailPage: React.FC = () => {
 
         {/* Status and Actions */}
         <Card>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-row max-md:flex-col md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
               <StatusBadge status={account.status} />
               <span className="text-sm text-gray-500 dark:text-zinc-400">
@@ -192,7 +192,7 @@ export const AccountDetailPage: React.FC = () => {
 
         {/* Stats */}
         {messageStats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4">
             <Card className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
@@ -240,7 +240,7 @@ export const AccountDetailPage: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
           {/* Account Details */}
           <Card title="Detalhes da Conta">
             <div className="space-y-4">

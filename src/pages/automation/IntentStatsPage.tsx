@@ -50,7 +50,7 @@ export const IntentStatsPage: React.FC = () => {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl">
             <ChartBarIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />

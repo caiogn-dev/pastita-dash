@@ -149,7 +149,7 @@ const AnalyticsPage: React.FC = () => {
   const renderOverview = () => (
     <div className="flex flex-col gap-6">
       {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
         <StatCard title="Faturamento Hoje" value={formatCurrency(dashboardStats?.today.revenue || 0)} change={dashboardStats?.today.revenue_change_percent} icon={CurrencyDollarIcon} iconClass="text-green-500" loading={loading} />
         <StatCard title="Pedidos Hoje" value={dashboardStats?.today.orders || 0} subtitle={`${dashboardStats?.week.orders || 0} esta semana`} icon={ShoppingCartIcon} iconClass="text-blue-500" loading={loading} />
         <StatCard title="Pedidos Pendentes" value={dashboardStats?.alerts.pending_orders || 0} subtitle="Aguardando ação" icon={TruckIcon} iconClass="text-orange-500" loading={loading} />
@@ -200,7 +200,7 @@ const AnalyticsPage: React.FC = () => {
       </Card>
 
       {/* Bottom two columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
         {/* Top Products */}
         <Card>
           <div className="flex justify-between items-center mb-4">
@@ -270,7 +270,7 @@ const AnalyticsPage: React.FC = () => {
 
   const renderStock = () => (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 max-sm:grid-cols-1 gap-4">
         <StatCard title="Total de Produtos" value={stockReport?.summary.total_products || 0} icon={CubeIcon} iconClass="text-blue-500" loading={loading} />
         <StatCard title="Estoque Baixo" value={stockReport?.summary.low_stock_count || 0} subtitle={`Limite: ${stockReport?.summary.low_stock_threshold || 10} unidades`} icon={ExclamationTriangleIcon} iconClass="text-orange-500" loading={loading} />
         <StatCard title="Sem Estoque" value={stockReport?.summary.out_of_stock_count || 0} subtitle="Reposição urgente" icon={ExclamationTriangleIcon} iconClass="text-red-500" loading={loading} />
@@ -325,7 +325,7 @@ const AnalyticsPage: React.FC = () => {
 
   const renderRevenue = () => (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
         <StatCard title="Faturamento" value={formatCurrency(revenueReport?.summary.total_revenue || 0)} icon={CurrencyDollarIcon} iconClass="text-green-500" loading={loading} />
         <StatCard title="Pedidos" value={revenueReport?.summary.total_orders || 0} icon={ShoppingCartIcon} iconClass="text-blue-500" loading={loading} />
         <StatCard title="Ticket Médio" value={formatCurrency(revenueReport?.summary.avg_order_value || 0)} icon={ArrowTrendingUpIcon} iconClass="text-indigo-500" loading={loading} />
@@ -410,7 +410,7 @@ const AnalyticsPage: React.FC = () => {
 
   const renderCustomers = () => (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
         <StatCard title="Clientes" value={customersReport?.summary.total_customers || 0} icon={CheckCircleIcon} iconClass="text-blue-500" loading={loading} />
         <StatCard title="Novos" value={customersReport?.summary.new_customers || 0} icon={ArrowTrendingUpIcon} iconClass="text-green-500" loading={loading} />
         <StatCard title="Recorrentes" value={customersReport?.summary.returning_customers || 0} icon={StarIcon} iconClass="text-yellow-500" loading={loading} />

@@ -178,7 +178,7 @@ export const CustomersPage: React.FC = () => {
     <div className="p-6 space-y-5">
 
       {/* ── KPIs ── */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-xl:grid-cols-2 gap-4">
         <KpiCard label="Total" value={kpis.total} dot="bg-blue-400" />
         <KpiCard label="Ativos" value={kpis.active} dot="bg-green-400" />
         <KpiCard label="Com pedidos" value={kpis.withOrders} dot="bg-orange-400" />

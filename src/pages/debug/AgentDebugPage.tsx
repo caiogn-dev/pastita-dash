@@ -70,7 +70,7 @@ export default function AgentDebugPage() {
       {/* Query */}
       <Card className="mb-6">
         <h2 className="text-base font-semibold text-fg-primary mb-4">Verificar Status</h2>
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="flex flex-row max-sm:flex-col gap-3 mb-4">
           <div className="flex-1">
             <label className="block text-sm font-medium text-fg-secondary mb-1">ID da Conversa</label>
             <input
@@ -143,7 +143,7 @@ export default function AgentDebugPage() {
           </div>
 
           {/* Details grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-2 max-md:grid-cols-1 gap-6 mb-6">
             {/* Agent info */}
             {result.agent && (
               <div className="p-4 bg-bg-subtle border border-border-primary rounded-lg">

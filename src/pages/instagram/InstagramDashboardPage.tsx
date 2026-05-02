@@ -126,7 +126,7 @@ export const InstagramDashboardPage: React.FC = () => {
       {/* Header com Info da Conta */}
       <Card className="overflow-hidden">
         <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 p-6">
-          <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="flex flex-row max-md:flex-col items-center gap-6">
             {/* Avatar */}
             <div className="relative">
               {account.profile_picture_url ? (
@@ -315,8 +315,8 @@ const MediaGrid: React.FC<MediaGridProps> = ({ media, type, onRefresh }) => {
     <div className={`
       grid gap-4
       ${type === 'stories' 
-        ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
-        : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+        ? 'grid-cols-3 sm:grid-cols-8 max-lg:grid-cols-6 max-md:grid-cols-4' 
+        : 'grid-cols-4 max-xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1'
       }
     `}>
       {media.map((item) => (
@@ -423,7 +423,7 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4">
             <Card className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-orange-100 dark:bg-orange-900/40 rounded-lg">

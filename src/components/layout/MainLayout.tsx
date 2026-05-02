@@ -22,7 +22,7 @@ export const MainLayout: React.FC = () => {
         style={{ background: 'radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 55%)' }}
       />
       <Navbar />
-      <main className="flex-1 overflow-auto bg-transparent px-3 py-3 md:px-5 md:py-5 xl:px-7 z-10">
+      <main className="flex-1 overflow-auto bg-transparent px-7 py-5 max-xl:px-5 max-md:px-3 max-md:py-3 z-10">
         <Outlet />
       </main>
     </div>

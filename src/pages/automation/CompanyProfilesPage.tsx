@@ -65,7 +65,7 @@ const CompanyProfilesPage: React.FC = () => {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Automação & Perfis</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
@@ -121,7 +121,7 @@ const CompanyProfilesPage: React.FC = () => {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 max-xl:grid-cols-2">
           {profiles.map((profile) => (
             <div
               key={profile.id}

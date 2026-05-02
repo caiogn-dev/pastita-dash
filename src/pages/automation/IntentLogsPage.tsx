@@ -101,7 +101,7 @@ const IntentLogsPage: React.FC = () => {
   return (
     <div className="space-y-5 p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl">
             <DocumentChartBarIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -182,7 +182,7 @@ const IntentLogsPage: React.FC = () => {
         </div>
 
         {showFilters && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-200 dark:border-zinc-800">
+          <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-3 pt-2 border-t border-gray-200 dark:border-zinc-800">
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">
                 Intenção

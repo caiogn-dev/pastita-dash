@@ -90,7 +90,7 @@ export const AgentsPage: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
             Agentes IA
@@ -133,7 +133,7 @@ export const AgentsPage: React.FC = () => {
       </div>
 
       {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-row max-sm:flex-col gap-4 mb-6">
         {/* Search */}
         <div className="relative flex-1">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
@@ -188,7 +188,7 @@ export const AgentsPage: React.FC = () => {
       {/* Filters Panel */}
       {showFilters && (
         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Status
@@ -244,7 +244,7 @@ export const AgentsPage: React.FC = () => {
 
       {/* Agents Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
           {[...Array(6)].map((_, i) => (
             <div 
               key={i}
@@ -287,7 +287,7 @@ export const AgentsPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
           {filteredAgents.map(agent => (
             <AgentCard
               key={agent.id}

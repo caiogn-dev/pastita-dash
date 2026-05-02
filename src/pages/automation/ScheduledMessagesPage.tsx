@@ -169,7 +169,7 @@ export default function ScheduledMessagesPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 max-lg:grid-cols-4 max-md:grid-cols-2 gap-4">
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>

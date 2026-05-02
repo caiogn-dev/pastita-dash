@@ -295,13 +295,13 @@ export const Navbar: React.FC = () => {
           <div className="w-px h-5 bg-gray-200 dark:bg-zinc-700 flex-shrink-0" />
 
           {/* Desktop nav — no overflow scroll */}
-          <nav className="hidden lg:flex items-center gap-0.5 flex-1 min-w-0">
+          <nav className="flex max-lg:hidden items-center gap-0.5 flex-1 min-w-0">
             {sections.map((s) => <NavBtn key={s.label} section={s} />)}
           </nav>
 
           {/* Right side */}
           <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
-            <div className="hidden sm:block">
+            <div className="block max-sm:hidden">
               <StoreSelector />
             </div>
 
@@ -309,7 +309,7 @@ export const Navbar: React.FC = () => {
               <select
                 value={selectedAccount?.id || ''}
                 onChange={(e) => setSelectedAccount(accounts.find((a) => a.id === e.target.value) || null)}
-                className="hidden xl:block rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 outline-none focus:border-primary-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 max-w-[130px]"
+                className="block max-xl:hidden rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 outline-none focus:border-primary-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 max-w-[130px]"
               >
                 <option value="">Todas as contas</option>
                 {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -326,7 +326,7 @@ export const Navbar: React.FC = () => {
                   {user?.first_name?.[0] || user?.username?.[0] || 'U'}
                 </span>
               </div>
-              <span className="hidden md:block text-xs font-medium text-gray-900 dark:text-white truncate max-w-[70px]">
+              <span className="block max-md:hidden text-xs font-medium text-gray-900 dark:text-white truncate max-w-[70px]">
                 {user?.first_name || user?.username}
               </span>
               <button
@@ -340,7 +340,7 @@ export const Navbar: React.FC = () => {
 
             <button
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-1.5 text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+              className="hidden max-lg:block p-1.5 text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
             >
               <Bars3Icon className="w-5 h-5" />
             </button>
@@ -351,8 +351,8 @@ export const Navbar: React.FC = () => {
       {/* Mobile drawer */}
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
-          <div className="fixed top-0 left-0 bottom-0 w-72 bg-white dark:bg-zinc-900 z-50 lg:hidden flex flex-col shadow-2xl">
+          <div className="fixed inset-0 bg-black/60 z-40 hidden max-lg:block" onClick={() => setMobileOpen(false)} />
+          <div className="fixed top-0 left-0 bottom-0 w-72 bg-white dark:bg-zinc-900 z-50 hidden max-lg:flex flex-col shadow-2xl">
             <div className="flex items-center justify-between px-4 h-12 border-b border-gray-200 dark:border-zinc-700 flex-shrink-0">
               <span className="font-bold text-sm text-gray-900 dark:text-white">{brandInfo.name}</span>
               <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400">

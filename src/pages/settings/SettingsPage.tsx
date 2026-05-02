@@ -216,7 +216,7 @@ export const SettingsPage: React.FC = () => {
 
       {/* User Info */}
       <Card title="Informações do Usuário">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Usuário</label>
             <p className="text-gray-900 dark:text-white">{user?.username}</p>

@@ -114,7 +114,7 @@ export const AccountFormPage: React.FC = () => {
 
       <Card>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 max-md:grid-cols-1 gap-6">
             <Input
               label="Nome da Conta"
               value={formData.name}

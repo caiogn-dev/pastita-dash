@@ -265,7 +265,7 @@ export const DeliveryZonesPage: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Zonas de Entrega</h1>
           <p className="text-sm md:text-base text-gray-500 dark:text-zinc-400">Calcule frete por quilometragem e gerencie faixas de preço</p>
@@ -296,7 +296,7 @@ export const DeliveryZonesPage: React.FC = () => {
 
         {storeLocation ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
               <div className="sm:col-span-2">
                 <p className="text-sm font-medium text-gray-500 dark:text-zinc-400">Nome da Loja</p>
                 <p className="text-base text-gray-900 dark:text-white">{storeLocation.name || '-'}</p>
@@ -358,7 +358,7 @@ export const DeliveryZonesPage: React.FC = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 gap-3 md:gap-4">
           <Card className="p-3 md:p-4">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg shrink-0">
@@ -408,7 +408,7 @@ export const DeliveryZonesPage: React.FC = () => {
 
       {/* Filters */}
       <Card className="p-3 md:p-4">
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+        <div className="flex flex-row max-sm:flex-col gap-3 md:gap-4">
           <div className="flex-1">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -498,7 +498,7 @@ export const DeliveryZonesPage: React.FC = () => {
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="block max-md:hidden overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 dark:bg-black">
               <tr>
@@ -651,7 +651,7 @@ export const DeliveryZonesPage: React.FC = () => {
             placeholder="0.00"
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
             <Input
               label="Prazo de Entrega (dias) *"
               type="number"
@@ -673,7 +673,7 @@ export const DeliveryZonesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex flex-row max-sm:flex-col-reverse justify-end gap-3 pt-4 border-t border-gray-100">
             <Button variant="secondary" onClick={handleCloseModal} className="w-full sm:w-auto">
               Cancelar
             </Button>
@@ -702,7 +702,7 @@ export const DeliveryZonesPage: React.FC = () => {
             Tem certeza que deseja excluir a faixa <strong className="text-gray-900 dark:text-white">{deletingZone?.name}</strong>?
             Esta ação não pode ser desfeita.
           </p>
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex flex-row max-sm:flex-col-reverse justify-end gap-3 pt-4 border-t border-gray-100">
             <Button
               variant="secondary"
               onClick={() => {

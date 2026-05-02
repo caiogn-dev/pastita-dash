@@ -139,7 +139,7 @@ export const AgentFlowsPage: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4">
         <Card className="p-4 text-center">
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{flows.length}</p>
           <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>
@@ -178,7 +178,7 @@ export const AgentFlowsPage: React.FC = () => {
           </Button>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-4">
           {flows.map(flow => (
             <Card key={flow.id} className="p-5 flex flex-col gap-4">
               <div className="flex items-start justify-between gap-2">

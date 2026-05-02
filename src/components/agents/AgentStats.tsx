@@ -47,7 +47,7 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ stats, isLoading }) => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-lg:grid-cols-2 gap-4">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="bg-white dark:bg-zinc-900 rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 animate-pulse">
             <div className="w-10 h-10 rounded-lg bg-zinc-200 dark:bg-zinc-700 mb-3" />
@@ -60,7 +60,7 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ stats, isLoading }) => {
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-4 max-lg:grid-cols-2 gap-4">
       {statItems.map((item, index) => (
         <div 
           key={index}

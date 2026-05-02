@@ -690,7 +690,7 @@ export const CombosPage: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Combos</h1>
           <p className="text-gray-500 dark:text-zinc-400">
@@ -709,7 +709,7 @@ export const CombosPage: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-5 max-md:grid-cols-2 gap-4">
         {[
           { label: 'Total', value: stats.total, color: 'text-gray-900 dark:text-white' },
           { label: 'Ativos', value: stats.active, color: 'text-green-600 dark:text-green-400' },
@@ -725,7 +725,7 @@ export const CombosPage: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-row max-sm:flex-col gap-3">
         <div className="relative flex-1 max-w-sm">
           <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -773,7 +773,7 @@ export const CombosPage: React.FC = () => {
           )}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 max-xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           {filtered.map(combo => (
             <ComboCard
               key={combo.id}

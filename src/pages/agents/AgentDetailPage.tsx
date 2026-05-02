@@ -292,7 +292,7 @@ export const AgentDetailPage: React.FC = () => {
           {stats && <AgentStats stats={stats} />}
           
           {/* Config Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
             {/* Model Config */}
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
               <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">
@@ -386,7 +386,7 @@ export const AgentDetailPage: React.FC = () => {
       )}
 
       {activeTab === 'conversations' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 max-lg:grid-cols-1 gap-6">
           {/* Conversation List */}
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">

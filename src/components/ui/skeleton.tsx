@@ -95,7 +95,7 @@ export const CardSkeleton: React.FC<{
 // Stats cards skeleton
 export const StatsSkeleton: React.FC<{ count?: number }> = ({ count = 4 }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
       {Array.from({ length: count }).map((_, i) => (
         <CardSkeleton key={i} hasHeader={false} lines={2} />
       ))}

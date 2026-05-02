@@ -353,7 +353,7 @@ const CustomerSessionsPage: React.FC = () => {
                 Próximo
               </button>
             </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div className="flex max-sm:hidden-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700 dark:text-zinc-300">
                   Mostrando <span className="font-medium">{(page - 1) * 20 + 1}</span> a{' '}

@@ -625,7 +625,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
               {accounts.map((account) => (
                 <button
                   key={account.id}
@@ -748,7 +748,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3">
                     {templates.map((template) => (
                       <button
                         key={template.id}

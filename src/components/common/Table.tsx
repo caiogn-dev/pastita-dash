@@ -116,7 +116,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           Próximo
         </button>
       </div>
-      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div className="flex max-sm:hidden-1 sm:flex sm:items-center sm:justify-between">
         <div>
           {totalItems && (
             <p className="text-sm text-gray-700 dark:text-zinc-300">

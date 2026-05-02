@@ -118,7 +118,7 @@ export default function MessengerAccounts() {
           <Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-4 h-4" />}>Adicionar Conta</Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
           {filtered.map((account) => (
             <div key={account.id} className="bg-bg-card border border-border-primary rounded-xl p-5 hover:shadow-lg transition-shadow">
               {/* Header */}

@@ -229,7 +229,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Campanhas WhatsApp</h1>
           <p className="text-gray-500 dark:text-zinc-400">
