@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   XMarkIcon,
   DocumentTextIcon,
@@ -8,6 +9,9 @@ import {
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import { whatsappTemplates, WhatsAppTemplate } from '../../data/whatsappTemplates';
+import { getErrorMessage, ordersService, productsService, whatsappService } from '../../services';
+import { Product } from '../../services/products';
+import { Order } from '../../types';
 
 type Tab = 'templates' | 'tools';
 type ToolId = 'route' | 'catalog' | 'order' | null;
@@ -19,16 +23,55 @@ interface ConversationRef {
 }
 
 interface Props {
+  accountId: string;
+  storeId?: string;
+  storeSlug?: string;
+  storeName?: string;
   conversation: ConversationRef;
   onInsertText: (text: string) => void;
   onSendMessage: (text: string) => Promise<void>;
+  onAfterSend?: () => void;
   onClose: () => void;
   defaultTab?: Tab;
+}
+
+interface OfficialTemplate {
+  id: string;
+  name: string;
+  language?: string;
+  category?: string;
+  status?: string;
+  components?: Array<Record<string, unknown>>;
 }
 
 function fillTemplate(content: string, vars: Record<string, string>): string {
   return content.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] || `{{${key}}}`);
 }
+
+const formatCurrency = (value: number | string | null | undefined) => {
+  const numeric = typeof value === 'number' ? value : Number(value || 0);
+  return numeric.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+const onlyDigits = (value: string) => value.replace(/\D/g, '');
+
+const getBodyTextFromComponents = (components?: Array<Record<string, unknown>>) => {
+  const body = components?.find(c => String(c.type || '').toUpperCase() === 'BODY');
+  return typeof body?.text === 'string' ? body.text : '';
+};
+
+const extractTemplateVariables = (content: string) => {
+  const matches = content.match(/\{\{\d+\}\}/g) || [];
+  return Array.from(new Set(matches.map(m => m.replace(/[{}]/g, ''))));
+};
+
+const buildTemplateComponents = (variables: string[], values: Record<string, string>) => {
+  if (variables.length === 0) return [];
+  return [{
+    type: 'body',
+    parameters: variables.map(v => ({ type: 'text', text: values[v] || '-' })),
+  }];
+};
 
 // ─── Templates Tab ───────────────────────────────────────────────────────────
 
@@ -41,16 +84,33 @@ const CATEGORY_LABELS: Record<TemplateCategory, string> = {
   support: 'Suporte',
 };
 
-function TemplatesTab({ conversation, onInsertText, onSendMessage }: {
+function TemplatesTab({ accountId, conversation, onInsertText, onSendMessage, onAfterSend }: {
+  accountId: string;
   conversation: ConversationRef;
   onInsertText: (text: string) => void;
   onSendMessage: (text: string) => Promise<void>;
+  onAfterSend?: () => void;
 }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<TemplateCategory>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [officialExpandedId, setOfficialExpandedId] = useState<string | null>(null);
   const [vars, setVars] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
+  const [officialTemplates, setOfficialTemplates] = useState<OfficialTemplate[]>([]);
+  const [isLoadingOfficial, setIsLoadingOfficial] = useState(false);
+
+  useEffect(() => {
+    if (!accountId) return;
+    setIsLoadingOfficial(true);
+    whatsappService.getTemplates(accountId)
+      .then(response => {
+        const data = response.data?.results || response.data || [];
+        setOfficialTemplates(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setOfficialTemplates([]))
+      .finally(() => setIsLoadingOfficial(false));
+  }, [accountId]);
 
   const filtered = useMemo(() => whatsappTemplates.filter(t => {
     const matchCat = category === 'all' || t.category === category;
@@ -74,11 +134,39 @@ function TemplatesTab({ conversation, onInsertText, onSendMessage }: {
       initial[v] = v === 'nome' ? (conversation.contact_name || '') : '';
     });
     setVars(initial);
+    setOfficialExpandedId(null);
+  };
+
+  const handleOfficialExpand = (template: OfficialTemplate) => {
+    if (officialExpandedId === template.id) {
+      setOfficialExpandedId(null);
+      setVars({});
+      return;
+    }
+    const body = getBodyTextFromComponents(template.components);
+    const variables = extractTemplateVariables(body);
+    const initial: Record<string, string> = {};
+    variables.forEach(v => {
+      initial[v] = v === '1' ? (conversation.contact_name || '') : '';
+    });
+    setOfficialExpandedId(template.id);
+    setExpandedId(null);
+    setVars(initial);
   };
 
   const filledContent = expandedTemplate
     ? fillTemplate(expandedTemplate.content, vars)
     : '';
+
+  const officialTemplate = officialExpandedId
+    ? officialTemplates.find(t => t.id === officialExpandedId)
+    : null;
+  const officialBody = getBodyTextFromComponents(officialTemplate?.components);
+  const officialVariables = extractTemplateVariables(officialBody);
+  const filledOfficialBody = officialVariables.reduce(
+    (text, key) => text.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), vars[key] || `{{${key}}}`),
+    officialBody
+  );
 
   const handleInsert = () => {
     onInsertText(filledContent);
@@ -96,8 +184,101 @@ function TemplatesTab({ conversation, onInsertText, onSendMessage }: {
     }
   };
 
+  const handleSendOfficial = async () => {
+    if (!officialTemplate || sending) return;
+    setSending(true);
+    try {
+      await whatsappService.sendTemplate({
+        account_id: accountId,
+        to: conversation.phone_number,
+        template_name: officialTemplate.name,
+        language_code: officialTemplate.language || 'pt_BR',
+        components: buildTemplateComponents(officialVariables, vars),
+        metadata: {
+          source: 'chat_window_templates',
+          template_id: officialTemplate.id,
+        },
+      });
+      toast.success('Template enviado');
+      setOfficialExpandedId(null);
+      onAfterSend?.();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div className="tools-tab-content">
+      <div className="tools-section-title">
+        <span>Templates oficiais</span>
+        <small>{isLoadingOfficial ? 'Carregando...' : `${officialTemplates.length} sincronizados`}</small>
+      </div>
+
+      <div className="templates-list">
+        {officialTemplates.slice(0, 8).map(template => {
+          const isExpanded = officialExpandedId === template.id;
+          const body = getBodyTextFromComponents(template.components);
+          const variables = extractTemplateVariables(body);
+          return (
+            <div key={template.id} className="template-card official">
+              <button
+                className={`template-header ${isExpanded ? 'expanded' : ''}`}
+                onClick={() => handleOfficialExpand(template)}
+              >
+                <div className="template-info">
+                  <span className="template-name">{template.name}</span>
+                  <span className="template-desc">
+                    {template.status || 'template'} · {template.language || 'pt_BR'} · {template.category || 'WhatsApp'}
+                  </span>
+                </div>
+                {isExpanded
+                  ? <ChevronUpIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                  : <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />}
+              </button>
+
+              {isExpanded && (
+                <div className="template-form">
+                  <div className="template-preview">
+                    {filledOfficialBody || 'Template sem corpo de texto no payload sincronizado.'}
+                  </div>
+                  {variables.length > 0 && (
+                    <div className="template-vars">
+                      {variables.map(v => (
+                        <div key={v} className="template-var">
+                          <label>Variável {v}</label>
+                          <input
+                            value={vars[v] || ''}
+                            placeholder={`{{${v}}}`}
+                            onChange={e => setVars(prev => ({ ...prev, [v]: e.target.value }))}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    className="tp-btn tp-btn-primary w-full"
+                    onClick={() => void handleSendOfficial()}
+                    disabled={sending}
+                  >
+                    {sending ? 'Enviando...' : 'Enviar template oficial'}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {!isLoadingOfficial && officialTemplates.length === 0 && (
+          <p className="tools-empty compact">Nenhum template oficial sincronizado nesta conta.</p>
+        )}
+      </div>
+
+      <div className="tools-section-title">
+        <span>Respostas rápidas</span>
+        <small>editáveis antes de enviar</small>
+      </div>
+
       <div className="tools-search">
         <MagnifyingGlassIcon className="w-4 h-4" />
         <input
@@ -183,22 +364,40 @@ function TemplatesTab({ conversation, onInsertText, onSendMessage }: {
 
 // ─── Route Tool ──────────────────────────────────────────────────────────────
 
-function RouteTool({ onSendMessage }: { onSendMessage: (text: string) => Promise<void> }) {
+function RouteTool({ storeSlug, onSendMessage }: { storeSlug?: string; onSendMessage: (text: string) => Promise<void> }) {
   const [address, setAddress] = useState('');
+  const [quote, setQuote] = useState<{ fee?: number; distance_km?: number | null; duration_minutes?: number | null; message?: string } | null>(null);
+  const [calculating, setCalculating] = useState(false);
   const [sending, setSending] = useState(false);
 
   const mapsUrl = address.trim()
     ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address.trim())}`
     : '';
 
+  const handleCalculate = async () => {
+    if (!address.trim() || !storeSlug || calculating) return;
+    setCalculating(true);
+    try {
+      const data = await ordersService.calculateDeliveryFee(storeSlug, address.trim());
+      setQuote(data);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+      setQuote(null);
+    } finally {
+      setCalculating(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!address.trim() || sending) return;
     setSending(true);
     try {
-      await onSendMessage(
-        `📍 *Rota calculada para:*\n${address.trim()}\n\n🗺️ Abra no Google Maps:\n${mapsUrl}`
-      );
+      const quoteText = quote?.fee !== undefined
+        ? `\n\n🚚 Taxa estimada: *${formatCurrency(quote.fee)}*${quote.distance_km ? `\n📏 Distância: ${Number(quote.distance_km).toFixed(1)} km` : ''}${quote.duration_minutes ? `\n⏱️ Tempo: ${Math.round(Number(quote.duration_minutes))} min` : ''}`
+        : '';
+      await onSendMessage(`📍 *Rota para entrega*\n${address.trim()}${quoteText}\n\n🗺️ Abrir no Google Maps:\n${mapsUrl}`);
       setAddress('');
+      setQuote(null);
     } finally {
       setSending(false);
     }
@@ -219,6 +418,21 @@ function RouteTool({ onSendMessage }: { onSendMessage: (text: string) => Promise
           🔗 Pré-visualizar rota
         </a>
       )}
+      {storeSlug && (
+        <button
+          className="tp-btn tp-btn-secondary w-full"
+          onClick={() => void handleCalculate()}
+          disabled={!address.trim() || calculating}
+        >
+          {calculating ? 'Calculando...' : 'Calcular taxa'}
+        </button>
+      )}
+      {quote && (
+        <div className="tool-result">
+          <strong>{formatCurrency(quote.fee || 0)}</strong>
+          <span>{quote.message || 'Entrega calculada pelo backend'}</span>
+        </div>
+      )}
       <button
         className="tp-btn tp-btn-primary w-full"
         onClick={() => void handleSend()}
@@ -232,74 +446,89 @@ function RouteTool({ onSendMessage }: { onSendMessage: (text: string) => Promise
 
 // ─── Catalog Tool ─────────────────────────────────────────────────────────────
 
-const CATALOGS = [
-  {
-    id: 'saladas',
-    label: '🥗 Cê Saladas',
-    message: `🥗 *CARDÁPIO — Cê Saladas*
-
-*Saladas Especiais:*
-• Caesar Clássica — R$ 32,00
-• Grega Tradicional — R$ 28,00
-• Tropical com Frango — R$ 35,00
-• Caprese com Burrata — R$ 42,00
-
-*Bowls Proteicos:*
-• Bowl Grão & Proteína — R$ 38,00
-• Bowl Mediterrâneo — R$ 36,00
-
-*Adicionais:*
-• Proteína extra — R$ 8,00
-• Molho especial — R$ 5,00
-
-🚚 Entrega grátis acima de R$ 80,00
-📱 Peça agora pelo WhatsApp!`,
-  },
-  {
-    id: 'massas',
-    label: '🍝 Pastita',
-    message: `🍝 *CARDÁPIO — Pastita Massas Artesanais*
-
-*Massas Frescas:*
-• Fettuccine ao Molho Branco — R$ 34,00
-• Penne ao Pesto — R$ 32,00
-• Tagliatelle Bolonhesa — R$ 36,00
-• Gnocchi ao Sugo — R$ 30,00
-• Ravioli de Ricota — R$ 38,00
-
-*Combos:*
-• Massa + Salada + Bebida — R$ 45,00
-
-📍 Palmas/TO | ⏰ Ter–Dom 11h–21h
-🛵 Delivery | 🏠 Retire no local
-
-Faça seu pedido! 👆`,
-  },
-];
-
-function CatalogTool({ onSendMessage }: { onSendMessage: (text: string) => Promise<void> }) {
-  const [selectedId, setSelectedId] = useState(CATALOGS[0].id);
+function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessage, onAfterSend }: {
+  accountId: string;
+  storeId?: string;
+  storeName?: string;
+  conversation: ConversationRef;
+  onSendMessage: (text: string) => Promise<void>;
+  onAfterSend?: () => void;
+}) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [editing, setEditing] = useState(false);
   const [customMsg, setCustomMsg] = useState('');
+  const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const catalog = CATALOGS.find(c => c.id === selectedId)!;
+  useEffect(() => {
+    setLoading(true);
+    productsService.getProducts({ store: storeId, is_active: true, page_size: 50, ordering: 'category__name,name' })
+      .then(data => setProducts(data.results || []))
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+  }, [storeId]);
 
-  const handleSelectCatalog = (id: string) => {
-    setSelectedId(id);
-    setEditing(false);
-  };
+  const categories = useMemo(() => {
+    const set = new Set(products.map(p => p.category_name || p.category || 'Outros'));
+    return ['all', ...Array.from(set)];
+  }, [products]);
+
+  const visibleProducts = useMemo(() => (
+    selectedCategory === 'all'
+      ? products
+      : products.filter(p => (p.category_name || p.category || 'Outros') === selectedCategory)
+  ), [products, selectedCategory]);
+
+  const catalogMessage = useMemo(() => {
+    const title = storeName || 'Cardápio';
+    const list = visibleProducts.slice(0, 12);
+    if (list.length === 0) {
+      return `📋 *${title}*\n\nToque em *Ver opções* para escolher pelo catálogo.`;
+    }
+    const lines = list.map(p => `• *${p.name}* — ${formatCurrency(p.price)}${p.description ? `\n  ${String(p.description).slice(0, 90)}` : ''}`);
+    return `📋 *${title}*\n\n${lines.join('\n')}\n\nResponda com o nome do item ou toque em *Ver opções* para escolher.`;
+  }, [storeName, visibleProducts]);
 
   const handleEdit = () => {
-    setCustomMsg(catalog.message);
+    setCustomMsg(catalogMessage);
     setEditing(true);
   };
 
   const handleSend = async () => {
     setSending(true);
     try {
-      await onSendMessage(editing ? customMsg : catalog.message);
+      await onSendMessage(editing ? customMsg : catalogMessage);
       setEditing(false);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSendOptions = async () => {
+    setSending(true);
+    try {
+      await whatsappService.sendInteractiveList({
+        account_id: accountId,
+        to: conversation.phone_number,
+        header: storeName || 'Cardápio',
+        body_text: 'Escolha uma opção para continuar o atendimento:',
+        button_text: 'Ver opções',
+        sections: [{
+          title: 'Atendimento',
+          rows: [
+            { id: 'view_menu', title: 'Ver Cardápio', description: 'Produtos e preços disponíveis' },
+            { id: 'montar_salada', title: 'Montar Salada', description: 'Escolher itens da salada' },
+            { id: 'start_order', title: 'Fazer Pedido', description: 'Começar pedido pelo WhatsApp' },
+            { id: 'contact_support', title: 'Atendente', description: 'Continuar com atendimento humano' },
+          ],
+        }],
+        metadata: { source: 'chat_window_catalog_options' },
+      });
+      toast.success('Opções enviadas');
+      onAfterSend?.();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     } finally {
       setSending(false);
     }
@@ -308,16 +537,17 @@ function CatalogTool({ onSendMessage }: { onSendMessage: (text: string) => Promi
   return (
     <div className="quick-tool-body">
       <div className="catalog-tabs">
-        {CATALOGS.map(c => (
+        {categories.map(c => (
           <button
-            key={c.id}
-            className={`catalog-tab ${selectedId === c.id ? 'active' : ''}`}
-            onClick={() => handleSelectCatalog(c.id)}
+            key={c}
+            className={`catalog-tab ${selectedCategory === c ? 'active' : ''}`}
+            onClick={() => { setSelectedCategory(c); setEditing(false); }}
           >
-            {c.label}
+            {c === 'all' ? 'Todos' : c}
           </button>
         ))}
       </div>
+      {loading && <p className="tools-empty compact">Carregando produtos...</p>}
 
       <div className="catalog-preview">
         {editing ? (
@@ -328,9 +558,17 @@ function CatalogTool({ onSendMessage }: { onSendMessage: (text: string) => Promi
             rows={10}
           />
         ) : (
-          <pre className="catalog-text">{catalog.message}</pre>
+          <pre className="catalog-text">{catalogMessage}</pre>
         )}
       </div>
+
+      <button
+        className="tp-btn tp-btn-secondary w-full"
+        onClick={() => void handleSendOptions()}
+        disabled={sending}
+      >
+        Enviar opções interativas
+      </button>
 
       <div className="tool-btn-row">
         <button
@@ -354,18 +592,32 @@ function CatalogTool({ onSendMessage }: { onSendMessage: (text: string) => Promi
 // ─── Order Tool ───────────────────────────────────────────────────────────────
 
 interface OrderItem {
+  product_id?: string;
   name: string;
   qty: number;
   price: string;
 }
 
-function OrderTool({ conversation, onSendMessage }: {
+function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
   conversation: ConversationRef;
+  storeId?: string;
+  storeSlug?: string;
   onSendMessage: (text: string) => Promise<void>;
 }) {
   const [items, setItems] = useState<OrderItem[]>([{ name: '', qty: 1, price: '' }]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [notes, setNotes] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'cash'>('pix');
+  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
   const [sending, setSending] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    productsService.getProducts({ store: storeId, is_active: true, page_size: 80, ordering: 'name' })
+      .then(data => setProducts(data.results || []))
+      .catch(() => setProducts([]));
+  }, [storeId]);
 
   const addItem = () => setItems(prev => [...prev, { name: '', qty: 1, price: '' }]);
 
@@ -374,6 +626,17 @@ function OrderTool({ conversation, onSendMessage }: {
 
   const updateItem = (i: number, field: keyof OrderItem, value: string | number) =>
     setItems(prev => prev.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
+
+  const selectProduct = (i: number, productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    setItems(prev => prev.map((item, idx) => idx === i ? {
+      ...item,
+      product_id: product.id,
+      name: product.name,
+      price: String(product.price),
+    } : item));
+  };
 
   const total = items.reduce((sum, item) => {
     const price = parseFloat(item.price) || 0;
@@ -409,6 +672,36 @@ function OrderTool({ conversation, onSendMessage }: {
     }
   };
 
+  const handleCreateOrder = async () => {
+    const validItems = items.filter(item => item.product_id && item.qty > 0);
+    if (!validItems.length || creating) return;
+    setCreating(true);
+    try {
+      const order = await ordersService.createOrder({
+        store: storeId,
+        customer_name: conversation.contact_name || 'Cliente WhatsApp',
+        customer_phone: onlyDigits(conversation.phone_number),
+        customer_email: `${onlyDigits(conversation.phone_number) || 'cliente'}@whatsapp.chat`,
+        delivery_method: deliveryMethod,
+        delivery_address: deliveryMethod === 'delivery' ? deliveryAddress : undefined,
+        payment_method: paymentMethod,
+        items: validItems.map(item => ({ product_id: item.product_id!, quantity: item.qty })),
+        notes,
+      }, storeSlug) as Order;
+      await onSendMessage(
+        `✅ *Pedido criado no painel!*\n\nPedido: *#${order.order_number || order.id}*\nTotal: *${formatCurrency(order.total)}*\nPagamento: *${paymentMethod === 'pix' ? 'PIX' : 'Dinheiro'}*\n\nVou acompanhar por aqui.`
+      );
+      setItems([{ name: '', qty: 1, price: '' }]);
+      setNotes('');
+      setDeliveryAddress('');
+      toast.success('Pedido criado');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="quick-tool-body order-tool">
       <div className="order-customer">
@@ -425,12 +718,27 @@ function OrderTool({ conversation, onSendMessage }: {
         </div>
         {items.map((item, i) => (
           <div key={i} className="order-item-row">
-            <input
-              className="item-name"
-              placeholder="Item"
-              value={item.name}
-              onChange={e => updateItem(i, 'name', e.target.value)}
-            />
+            {products.length > 0 ? (
+              <select
+                className="item-name"
+                value={item.product_id || ''}
+                onChange={e => selectProduct(i, e.target.value)}
+              >
+                <option value="">Selecionar produto</option>
+                {products.map(product => (
+                  <option key={product.id} value={product.id}>
+                    {product.name} · {formatCurrency(product.price)}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="item-name"
+                placeholder="Item"
+                value={item.name}
+                onChange={e => updateItem(i, 'name', e.target.value)}
+              />
+            )}
             <input
               className="item-qty"
               type="number"
@@ -467,12 +775,41 @@ function OrderTool({ conversation, onSendMessage }: {
         />
       </div>
 
+      <div className="segmented-row">
+        <button className={`segment-btn ${deliveryMethod === 'pickup' ? 'active' : ''}`} onClick={() => setDeliveryMethod('pickup')}>Retirada</button>
+        <button className={`segment-btn ${deliveryMethod === 'delivery' ? 'active' : ''}`} onClick={() => setDeliveryMethod('delivery')}>Entrega</button>
+      </div>
+
+      {deliveryMethod === 'delivery' && (
+        <div className="order-notes">
+          <label className="tool-label">Endereço</label>
+          <input
+            className="tool-input"
+            value={deliveryAddress}
+            onChange={e => setDeliveryAddress(e.target.value)}
+            placeholder="Endereço de entrega"
+          />
+        </div>
+      )}
+
+      <div className="segmented-row">
+        <button className={`segment-btn ${paymentMethod === 'pix' ? 'active' : ''}`} onClick={() => setPaymentMethod('pix')}>PIX</button>
+        <button className={`segment-btn ${paymentMethod === 'cash' ? 'active' : ''}`} onClick={() => setPaymentMethod('cash')}>Dinheiro</button>
+      </div>
+
       <button
-        className="tp-btn tp-btn-primary w-full"
+        className="tp-btn tp-btn-secondary w-full"
         onClick={() => void handleSend()}
         disabled={!hasItems || sending}
       >
-        {sending ? 'Enviando...' : '📤 Enviar Resumo do Pedido'}
+        {sending ? 'Enviando...' : 'Enviar resumo'}
+      </button>
+      <button
+        className="tp-btn tp-btn-primary w-full"
+        onClick={() => void handleCreateOrder()}
+        disabled={!items.some(i => i.product_id) || creating || (deliveryMethod === 'delivery' && !deliveryAddress.trim())}
+      >
+        {creating ? 'Criando...' : 'Criar pedido no painel'}
       </button>
     </div>
   );
@@ -486,9 +823,14 @@ const TOOLS = [
   { id: 'order' as const,   icon: '🛒', name: 'Criar Pedido',    desc: 'Monte e envie um resumo de pedido' },
 ];
 
-function ToolsTab({ conversation, onSendMessage }: {
+function ToolsTab({ accountId, conversation, storeId, storeSlug, storeName, onSendMessage, onAfterSend }: {
+  accountId: string;
   conversation: ConversationRef;
+  storeId?: string;
+  storeSlug?: string;
+  storeName?: string;
   onSendMessage: (text: string) => Promise<void>;
+  onAfterSend?: () => void;
 }) {
   const [activeTool, setActiveTool] = useState<ToolId>(null);
 
@@ -512,13 +854,25 @@ function ToolsTab({ conversation, onSendMessage }: {
             </button>
 
             {isActive && tool.id === 'route' && (
-              <RouteTool onSendMessage={onSendMessage} />
+              <RouteTool storeSlug={storeSlug} onSendMessage={onSendMessage} />
             )}
             {isActive && tool.id === 'catalog' && (
-              <CatalogTool onSendMessage={onSendMessage} />
+              <CatalogTool
+                accountId={accountId}
+                storeId={storeId}
+                storeName={storeName}
+                conversation={conversation}
+                onSendMessage={onSendMessage}
+                onAfterSend={onAfterSend}
+              />
             )}
             {isActive && tool.id === 'order' && (
-              <OrderTool conversation={conversation} onSendMessage={onSendMessage} />
+              <OrderTool
+                conversation={conversation}
+                storeId={storeId}
+                storeSlug={storeSlug}
+                onSendMessage={onSendMessage}
+              />
             )}
           </div>
         );
@@ -530,9 +884,14 @@ function ToolsTab({ conversation, onSendMessage }: {
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 
 export const ChatToolsPanel: React.FC<Props> = ({
+  accountId,
+  storeId,
+  storeSlug,
+  storeName,
   conversation,
   onInsertText,
   onSendMessage,
+  onAfterSend,
   onClose,
   defaultTab = 'templates',
 }) => {
@@ -565,14 +924,21 @@ export const ChatToolsPanel: React.FC<Props> = ({
       <div className="tools-panel-body">
         {tab === 'templates' ? (
           <TemplatesTab
+            accountId={accountId}
             conversation={conversation}
             onInsertText={onInsertText}
             onSendMessage={onSendMessage}
+            onAfterSend={onAfterSend}
           />
         ) : (
           <ToolsTab
+            accountId={accountId}
             conversation={conversation}
+            storeId={storeId}
+            storeSlug={storeSlug}
+            storeName={storeName}
             onSendMessage={onSendMessage}
+            onAfterSend={onAfterSend}
           />
         )}
       </div>

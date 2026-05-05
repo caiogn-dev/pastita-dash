@@ -21,6 +21,7 @@ import { whatsappService, conversationsService, getErrorMessage } from '../../se
 import { sendFile as sendFileApi } from '../../services/whatsapp';
 import { handoverService } from '../../services/handover';
 import { Message, Conversation } from '../../types';
+import { useStore } from '../../hooks/useStore';
 import '../../pages/whatsapp/WhatsAppInbox.css';
 
 function ensureArray<T>(value: unknown): T[] {
@@ -69,6 +70,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
   const [insertText, setInsertText] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
+  const { storeId, storeSlug, storeName } = useStore();
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
@@ -504,9 +506,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       {selectedConversation && activePanel && (
         <ChatToolsPanel
           key={activePanel}
+          accountId={accountId}
+          storeId={storeId || undefined}
+          storeSlug={storeSlug || undefined}
+          storeName={storeName || undefined}
           conversation={selectedConversation}
           onInsertText={handleInsertText}
           onSendMessage={handleToolsSend}
+          onAfterSend={() => void loadMessages()}
           onClose={() => setActivePanel(null)}
           defaultTab={activePanel}
         />

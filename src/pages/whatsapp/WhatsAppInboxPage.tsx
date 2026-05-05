@@ -19,6 +19,7 @@ import * as whatsappService from '../../services/whatsapp';
 import { handoverService } from '../../services/handover';
 import { useWhatsAppWsContext } from '../../context/WhatsAppWsContext';
 import { useChatStore } from '../../stores/chatStore';
+import { useStore } from '../../hooks/useStore';
 import { MessageBubble, MessageBubbleProps } from '../../components/chat/MessageBubble';
 import { MediaViewer } from '../../components/chat/MediaViewer';
 import toast from 'react-hot-toast';
@@ -71,6 +72,7 @@ interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
 
 const WhatsAppInboxPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const { storeId, storeSlug, storeName } = useStore();
   const [selectedConversation, setSelectedConversation] = useState<ConversationWithMessages | null>(null);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -409,9 +411,14 @@ const WhatsAppInboxPage: React.FC = () => {
       {selectedConversation && activePanel && (
         <ChatToolsPanel
           key={activePanel}
+          accountId={selectedConversation.account}
+          storeId={storeId || undefined}
+          storeSlug={storeSlug || undefined}
+          storeName={storeName || undefined}
           conversation={selectedConversation}
           onInsertText={(text) => setMessageText(text)}
           onSendMessage={handleDirectSend}
+          onAfterSend={() => void loadMessages(selectedConversation.id)}
           onClose={() => setActivePanel(null)}
           defaultTab={activePanel}
         />

@@ -468,7 +468,7 @@
 
 /* ─── Tools Panel (painel lateral direito) ───────────────────────────────── */
 .chat-tools-panel {
-  width: 300px;
+  width: 368px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -542,6 +542,28 @@
   padding: 0.75rem;
 }
 
+.tools-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.tools-section-title span {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--fg-primary, #1f2937);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tools-section-title small {
+  font-size: 0.72rem;
+  color: var(--fg-muted, #9ca3af);
+  white-space: nowrap;
+}
+
 /* ─── Search + Pills ─────────────────────────────────────────────────────── */
 .tools-search {
   display: flex;
@@ -599,6 +621,11 @@
   padding: 1rem 0;
 }
 
+.tools-empty.compact {
+  padding: 0.5rem 0;
+  font-size: 0.78rem;
+}
+
 /* ─── Template Cards ─────────────────────────────────────────────────────── */
 .templates-list {
   display: flex;
@@ -610,6 +637,11 @@
   border: 1px solid var(--border-default, #e5e7eb);
   border-radius: 8px;
   overflow: hidden;
+  background: var(--bg-card, white);
+}
+
+.template-card.official {
+  border-color: #bfdbfe;
 }
 
 .template-header {
@@ -818,6 +850,26 @@
 
 .tool-preview-link:hover { text-decoration: underline; }
 
+.tool-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 7px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 0.78rem;
+}
+
+.tool-result strong {
+  font-size: 0.95rem;
+}
+
+.tool-result span {
+  color: #047857;
+}
+
 .tool-btn-row {
   display: flex;
   gap: 0.5rem;
@@ -916,6 +968,11 @@
   color: var(--fg-primary, #374151);
 }
 
+select.item-name {
+  height: 34px;
+  appearance: auto;
+}
+
 .item-qty {
   width: 42px;
   padding: 0.35rem 0.25rem;
@@ -978,6 +1035,37 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+
+.segmented-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 8px;
+  background: var(--bg-card, white);
+  border: 1px solid var(--border-default, #e5e7eb);
+}
+
+.segment-btn {
+  border: none;
+  background: transparent;
+  color: var(--fg-secondary, #6b7280);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.45rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.segment-btn:hover {
+  background: var(--bg-secondary, #f9fafb);
+}
+
+.segment-btn.active {
+  background: #2563eb;
+  color: white;
 }
 
 /* ─── Shared Buttons ─────────────────────────────────────────────────────── */

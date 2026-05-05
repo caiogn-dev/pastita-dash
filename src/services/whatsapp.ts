@@ -69,6 +69,32 @@ export const sendMessage = (data: any) =>
 export const sendTemplate = (data: any) =>
   api.post('/whatsapp/messages/send_template/', data);
 
+export const sendInteractiveButtons = (data: {
+  account_id: string;
+  to: string;
+  body_text: string;
+  buttons: Array<{ id?: string; title: string }>;
+  header?: Record<string, unknown>;
+  footer?: string;
+  reply_to?: string;
+  metadata?: Record<string, unknown>;
+}) => api.post('/whatsapp/messages/send_interactive_buttons/', data);
+
+export const sendInteractiveList = (data: {
+  account_id: string;
+  to: string;
+  body_text: string;
+  button_text: string;
+  sections: Array<{
+    title?: string;
+    rows: Array<{ id: string; title: string; description?: string }>;
+  }>;
+  header?: string;
+  footer?: string;
+  reply_to?: string;
+  metadata?: Record<string, unknown>;
+}) => api.post('/whatsapp/messages/send_interactive_list/', data);
+
 export const sendImage = (data: { account_id: string; to: string; image_url?: string; image_id?: string; caption?: string; reply_to?: string }) =>
   api.post('/whatsapp/messages/send_image/', data);
 
@@ -153,6 +179,8 @@ export default {
   sendMessage,
   sendTextMessage, // alias de compatibilidade
   sendTemplate,
+  sendInteractiveButtons,
+  sendInteractiveList,
   getMessages,
   getConversationHistory,
   getBusinessProfile,
