@@ -61,8 +61,10 @@ export const ordersService = {
     return normalizeOrder(response.data);
   },
 
-  createOrder: async (data: CreateOrder, storeSlug?: string): Promise<Order> => {
-    const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/`, data);
+  createOrder: async (data: CreateOrder): Promise<Order> => {
+    // Dashboard/admin order creation is registered at /stores/orders/.
+    // Storefront checkout uses /stores/{slug}/checkout/, not /stores/{slug}/orders/.
+    const response = await api.post<Order>('/stores/orders/', data);
     return normalizeOrder(response.data);
   },
 

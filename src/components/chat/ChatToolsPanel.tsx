@@ -690,10 +690,9 @@ interface OrderItem {
   price: string;
 }
 
-function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
+function OrderTool({ conversation, storeId, onSendMessage }: {
   conversation: ConversationRef;
   storeId?: string;
-  storeSlug?: string;
   onSendMessage: (text: string) => Promise<void>;
 }) {
   const [items, setItems] = useState<OrderItem[]>([{ name: '', qty: 1, price: '' }]);
@@ -790,7 +789,7 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
         payment_method: paymentMethod,
         items: validItems.map(item => ({ product_id: item.product_id!, quantity: item.qty })),
         notes,
-      }, storeSlug) as Order;
+      }) as Order;
       await onSendMessage(
         `✅ *Pedido criado no painel!*\n\nPedido: *#${order.order_number || order.id}*\nTotal: *${formatCurrency(order.total)}*\nPagamento: *${paymentMethod === 'pix' ? 'PIX' : 'Dinheiro'}*\n\nVou acompanhar por aqui.`
       );
@@ -980,7 +979,6 @@ function ToolsTab({ accountId, conversation, storeId, storeSlug, storeName, onSe
               <OrderTool
                 conversation={conversation}
                 storeId={storeId}
-                storeSlug={storeSlug}
                 onSendMessage={onSendMessage}
               />
             )}
