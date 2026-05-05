@@ -27,6 +27,11 @@ interface Props {
   storeId?: string;
   storeSlug?: string;
   storeName?: string;
+  storeDescription?: string;
+  storeAddress?: string;
+  storeCity?: string;
+  storeState?: string;
+  storeUrl?: string;
   conversation: ConversationRef;
   onInsertText: (text: string) => void;
   onSendMessage: (text: string) => Promise<void>;
@@ -55,6 +60,11 @@ const formatCurrency = (value: number | string | null | undefined) => {
 
 const onlyDigits = (value: string) => value.replace(/\D/g, '');
 
+const truncate = (value: string, max: number) => {
+  const clean = value.trim();
+  return clean.length > max ? `${clean.slice(0, Math.max(0, max - 1)).trim()}…` : clean;
+};
+
 const getBodyTextFromComponents = (components?: Array<Record<string, unknown>>) => {
   const body = components?.find(c => String(c.type || '').toUpperCase() === 'BODY');
   return typeof body?.text === 'string' ? body.text : '';
@@ -73,6 +83,9 @@ const buildTemplateComponents = (variables: string[], values: Record<string, str
   }];
 };
 
+const compactLocation = (...parts: Array<string | null | undefined>) =>
+  parts.map(part => part?.trim()).filter(Boolean).join(' | ');
+
 // ─── Templates Tab ───────────────────────────────────────────────────────────
 
 type TemplateCategory = 'all' | WhatsAppTemplate['category'];
@@ -84,8 +97,26 @@ const CATEGORY_LABELS: Record<TemplateCategory, string> = {
   support: 'Suporte',
 };
 
-function TemplatesTab({ accountId, conversation, onInsertText, onSendMessage, onAfterSend }: {
+function TemplatesTab({
+  accountId,
+  storeName,
+  storeDescription,
+  storeAddress,
+  storeCity,
+  storeState,
+  storeUrl,
+  conversation,
+  onInsertText,
+  onSendMessage,
+  onAfterSend,
+}: {
   accountId: string;
+  storeName?: string;
+  storeDescription?: string;
+  storeAddress?: string;
+  storeCity?: string;
+  storeState?: string;
+  storeUrl?: string;
   conversation: ConversationRef;
   onInsertText: (text: string) => void;
   onSendMessage: (text: string) => Promise<void>;
@@ -99,6 +130,34 @@ function TemplatesTab({ accountId, conversation, onInsertText, onSendMessage, on
   const [sending, setSending] = useState(false);
   const [officialTemplates, setOfficialTemplates] = useState<OfficialTemplate[]>([]);
   const [isLoadingOfficial, setIsLoadingOfficial] = useState(false);
+  const storeLabel = storeName?.trim() || 'loja selecionada';
+  const storeLocation = compactLocation(storeAddress, compactLocation(storeCity, storeState)) || 'atendimento local';
+  const storeSpecialty = storeDescription?.trim() || 'produtos selecionados com carinho';
+  const orderChannel = storeUrl?.trim()
+    ? `Acesse: ${storeUrl.trim()}`
+    : 'Pode fazer seu pedido por aqui mesmo no WhatsApp.';
+
+  const getDefaultVar = (key: string) => {
+    switch (key) {
+      case 'nome':
+      case 'customer_name':
+      case 'first_name':
+        return conversation.contact_name || '';
+      case 'loja':
+      case 'store_name':
+        return storeLabel;
+      case 'especialidade':
+        return storeSpecialty;
+      case 'localizacao':
+        return storeLocation;
+      case 'canal_pedido':
+      case 'link':
+      case 'store_url':
+        return orderChannel;
+      default:
+        return '';
+    }
+  };
 
   useEffect(() => {
     if (!accountId) return;
@@ -131,7 +190,7 @@ function TemplatesTab({ accountId, conversation, onInsertText, onSendMessage, on
     setExpandedId(template.id);
     const initial: Record<string, string> = {};
     template.variables.forEach(v => {
-      initial[v] = v === 'nome' ? (conversation.contact_name || '') : '';
+      initial[v] = getDefaultVar(v);
     });
     setVars(initial);
     setOfficialExpandedId(null);
@@ -460,12 +519,21 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
   const [customMsg, setCustomMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    setProducts([]);
+    setSelectedCategory('all');
+    setEditing(false);
+    setLoadError(null);
+    if (!storeId) return;
     setLoading(true);
     productsService.getProducts({ store: storeId, is_active: true, page_size: 50, ordering: 'category__name,name' })
       .then(data => setProducts(data.results || []))
-      .catch(() => setProducts([]))
+      .catch(error => {
+        setProducts([]);
+        setLoadError(getErrorMessage(error));
+      })
       .finally(() => setLoading(false));
   }, [storeId]);
 
@@ -483,12 +551,15 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
   const catalogMessage = useMemo(() => {
     const title = storeName || 'Cardápio';
     const list = visibleProducts.slice(0, 12);
+    if (!storeId) {
+      return 'Selecione uma loja no painel para carregar o cardápio real antes de enviar.';
+    }
     if (list.length === 0) {
-      return `📋 *${title}*\n\nToque em *Ver opções* para escolher pelo catálogo.`;
+      return `📋 *${title}*\n\nNenhum produto ativo encontrado para esta loja.`;
     }
     const lines = list.map(p => `• *${p.name}* — ${formatCurrency(p.price)}${p.description ? `\n  ${String(p.description).slice(0, 90)}` : ''}`);
-    return `📋 *${title}*\n\n${lines.join('\n')}\n\nResponda com o nome do item ou toque em *Ver opções* para escolher.`;
-  }, [storeName, visibleProducts]);
+    return `📋 *${title}*\n\n${lines.join('\n')}\n\nResponda com o nome do item ou toque nas opções do cardápio para escolher.`;
+  }, [storeId, storeName, visibleProducts]);
 
   const handleEdit = () => {
     setCustomMsg(catalogMessage);
@@ -496,6 +567,7 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
   };
 
   const handleSend = async () => {
+    if (!storeId || visibleProducts.length === 0) return;
     setSending(true);
     try {
       await onSendMessage(editing ? customMsg : catalogMessage);
@@ -506,26 +578,37 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
   };
 
   const handleSendOptions = async () => {
+    if (!storeId || visibleProducts.length === 0) return;
     setSending(true);
     try {
+      const byCategory = visibleProducts.slice(0, 10).reduce<Record<string, Product[]>>((acc, product) => {
+        const category = String(product.category_name || product.category || 'Produtos');
+        acc[category] = [...(acc[category] || []), product];
+        return acc;
+      }, {});
+      const sections = Object.entries(byCategory).map(([category, items]) => ({
+        title: truncate(category, 24),
+        rows: items.map(product => ({
+          id: `product_${product.id}`,
+          title: truncate(product.name, 24),
+          description: truncate(`${formatCurrency(product.price)}${product.description ? ` - ${product.description}` : ''}`, 72),
+        })),
+      }));
+
       await whatsappService.sendInteractiveList({
         account_id: accountId,
         to: conversation.phone_number,
-        header: storeName || 'Cardápio',
-        body_text: 'Escolha uma opção para continuar o atendimento:',
-        button_text: 'Ver opções',
-        sections: [{
-          title: 'Atendimento',
-          rows: [
-            { id: 'view_menu', title: 'Ver Cardápio', description: 'Produtos e preços disponíveis' },
-            { id: 'montar_salada', title: 'Montar Salada', description: 'Escolher itens da salada' },
-            { id: 'start_order', title: 'Fazer Pedido', description: 'Começar pedido pelo WhatsApp' },
-            { id: 'contact_support', title: 'Atendente', description: 'Continuar com atendimento humano' },
-          ],
-        }],
-        metadata: { source: 'chat_window_catalog_options' },
+        header: truncate(storeName || 'Cardápio', 60),
+        body_text: `Escolha um item do cardápio de ${storeName || 'nossa loja'}. Ao tocar no produto, eu continuo o pedido por aqui.`,
+        button_text: 'Ver cardápio',
+        sections,
+        metadata: {
+          source: 'chat_window_catalog_products',
+          store_id: storeId,
+          product_count: visibleProducts.length,
+        },
       });
-      toast.success('Opções enviadas');
+      toast.success('Cardápio interativo enviado');
       onAfterSend?.();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -536,6 +619,12 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
 
   return (
     <div className="quick-tool-body">
+      {!storeId && (
+        <p className="tools-empty compact">Selecione a loja correta no painel para carregar o cardápio real.</p>
+      )}
+      {loadError && (
+        <p className="tools-empty compact">Erro ao carregar produtos: {loadError}</p>
+      )}
       <div className="catalog-tabs">
         {categories.map(c => (
           <button
@@ -548,6 +637,9 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
         ))}
       </div>
       {loading && <p className="tools-empty compact">Carregando produtos...</p>}
+      {!loading && storeId && products.length === 0 && (
+        <p className="tools-empty compact">Nenhum produto ativo encontrado para esta loja.</p>
+      )}
 
       <div className="catalog-preview">
         {editing ? (
@@ -565,9 +657,9 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
       <button
         className="tp-btn tp-btn-secondary w-full"
         onClick={() => void handleSendOptions()}
-        disabled={sending}
+        disabled={!storeId || visibleProducts.length === 0 || sending}
       >
-        Enviar opções interativas
+        Enviar cardápio interativo
       </button>
 
       <div className="tool-btn-row">
@@ -580,7 +672,7 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
         <button
           className="tp-btn tp-btn-primary"
           onClick={() => void handleSend()}
-          disabled={sending}
+          disabled={!storeId || visibleProducts.length === 0 || sending}
         >
           {sending ? '...' : '📤 Enviar'}
         </button>
@@ -610,13 +702,24 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'cash'>('pix');
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
+    setItems([{ name: '', qty: 1, price: '' }]);
+    setProducts([]);
+    setLoadError(null);
+    if (!storeId) return;
+    setLoadingProducts(true);
     productsService.getProducts({ store: storeId, is_active: true, page_size: 80, ordering: 'name' })
       .then(data => setProducts(data.results || []))
-      .catch(() => setProducts([]));
+      .catch(error => {
+        setProducts([]);
+        setLoadError(getErrorMessage(error));
+      })
+      .finally(() => setLoadingProducts(false));
   }, [storeId]);
 
   const addItem = () => setItems(prev => [...prev, { name: '', qty: 1, price: '' }]);
@@ -658,10 +761,10 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
     return lines.join('\n');
   };
 
-  const hasItems = items.some(i => i.name.trim());
+  const hasSelectedProducts = items.some(i => i.product_id);
 
   const handleSend = async () => {
-    if (!hasItems || sending) return;
+    if (!storeId || !hasSelectedProducts || sending) return;
     setSending(true);
     try {
       await onSendMessage(buildSummary());
@@ -674,7 +777,7 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
 
   const handleCreateOrder = async () => {
     const validItems = items.filter(item => item.product_id && item.qty > 0);
-    if (!validItems.length || creating) return;
+    if (!storeId || !validItems.length || creating) return;
     setCreating(true);
     try {
       const order = await ordersService.createOrder({
@@ -704,6 +807,18 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
 
   return (
     <div className="quick-tool-body order-tool">
+      {!storeId && (
+        <p className="tools-empty compact">Selecione uma loja para carregar produtos reais e criar pedido.</p>
+      )}
+      {loadingProducts && (
+        <p className="tools-empty compact">Carregando produtos da loja...</p>
+      )}
+      {loadError && (
+        <p className="tools-empty compact">Erro ao carregar produtos: {loadError}</p>
+      )}
+      {!loadingProducts && storeId && products.length === 0 && (
+        <p className="tools-empty compact">Nenhum produto ativo encontrado para criar pedido nesta loja.</p>
+      )}
       <div className="order-customer">
         <span className="tool-label">Cliente:</span>
         <span className="order-customer-name">
@@ -714,43 +829,38 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
       <div className="order-items">
         <div className="tool-label-row">
           <span className="tool-label">Itens</span>
-          <button className="btn-add-item" onClick={addItem}>+ Adicionar item</button>
+          <button className="btn-add-item" onClick={addItem} disabled={!storeId || products.length === 0}>
+            + Adicionar item
+          </button>
         </div>
         {items.map((item, i) => (
           <div key={i} className="order-item-row">
-            {products.length > 0 ? (
-              <select
-                className="item-name"
-                value={item.product_id || ''}
-                onChange={e => selectProduct(i, e.target.value)}
-              >
-                <option value="">Selecionar produto</option>
-                {products.map(product => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} · {formatCurrency(product.price)}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                className="item-name"
-                placeholder="Item"
-                value={item.name}
-                onChange={e => updateItem(i, 'name', e.target.value)}
-              />
-            )}
+            <select
+              className="item-name"
+              value={item.product_id || ''}
+              onChange={e => selectProduct(i, e.target.value)}
+              disabled={!storeId || products.length === 0}
+            >
+              <option value="">Selecionar produto real</option>
+              {products.map(product => (
+                <option key={product.id} value={product.id}>
+                  {product.name} · {formatCurrency(product.price)}
+                </option>
+              ))}
+            </select>
             <input
               className="item-qty"
               type="number"
               min={1}
               value={item.qty}
+              disabled={!item.product_id}
               onChange={e => updateItem(i, 'qty', Math.max(1, parseInt(e.target.value) || 1))}
             />
             <input
               className="item-price"
               placeholder="R$"
               value={item.price}
-              onChange={e => updateItem(i, 'price', e.target.value)}
+              readOnly
             />
             {items.length > 1 && (
               <button className="btn-remove-item" onClick={() => removeItem(i)}>×</button>
@@ -800,14 +910,14 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
       <button
         className="tp-btn tp-btn-secondary w-full"
         onClick={() => void handleSend()}
-        disabled={!hasItems || sending}
+        disabled={!storeId || !hasSelectedProducts || sending}
       >
         {sending ? 'Enviando...' : 'Enviar resumo'}
       </button>
       <button
         className="tp-btn tp-btn-primary w-full"
         onClick={() => void handleCreateOrder()}
-        disabled={!items.some(i => i.product_id) || creating || (deliveryMethod === 'delivery' && !deliveryAddress.trim())}
+        disabled={!storeId || !hasSelectedProducts || creating || (deliveryMethod === 'delivery' && !deliveryAddress.trim())}
       >
         {creating ? 'Criando...' : 'Criar pedido no painel'}
       </button>
@@ -888,6 +998,11 @@ export const ChatToolsPanel: React.FC<Props> = ({
   storeId,
   storeSlug,
   storeName,
+  storeDescription,
+  storeAddress,
+  storeCity,
+  storeState,
+  storeUrl,
   conversation,
   onInsertText,
   onSendMessage,
@@ -925,6 +1040,12 @@ export const ChatToolsPanel: React.FC<Props> = ({
         {tab === 'templates' ? (
           <TemplatesTab
             accountId={accountId}
+            storeName={storeName}
+            storeDescription={storeDescription}
+            storeAddress={storeAddress}
+            storeCity={storeCity}
+            storeState={storeState}
+            storeUrl={storeUrl}
             conversation={conversation}
             onInsertText={onInsertText}
             onSendMessage={onSendMessage}

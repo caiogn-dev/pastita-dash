@@ -57,6 +57,11 @@ const getInitials = (name?: string, phone?: string) => {
   return phone?.slice(-2) || '?';
 };
 
+const getStoreUrl = (metadata?: Record<string, unknown>) => {
+  const value = metadata?.website_url || metadata?.store_url || metadata?.public_url;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+
 export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, onConversationSelect }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -70,7 +75,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
   const [insertText, setInsertText] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
-  const { storeId, storeSlug, storeName } = useStore();
+  const { storeId, storeSlug, storeName, store } = useStore();
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
@@ -510,6 +515,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
           storeId={storeId || undefined}
           storeSlug={storeSlug || undefined}
           storeName={storeName || undefined}
+          storeDescription={store?.description || undefined}
+          storeAddress={store?.address || undefined}
+          storeCity={store?.city || undefined}
+          storeState={store?.state || undefined}
+          storeUrl={getStoreUrl(store?.metadata)}
           conversation={selectedConversation}
           onInsertText={handleInsertText}
           onSendMessage={handleToolsSend}

@@ -1,8 +1,8 @@
 import api from './api';
 import { PaginatedResponse } from '../types';
 
-// Store slug for filtering products
-const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
+// Store slug for legacy operations. Never default to a specific tenant.
+const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || '';
 
 export interface Product {
   id: string;

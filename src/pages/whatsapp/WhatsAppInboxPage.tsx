@@ -66,13 +66,18 @@ function messagePreviewText(msg: Message | string | undefined): string {
   }
 }
 
+const getStoreUrl = (metadata?: Record<string, unknown>) => {
+  const value = metadata?.website_url || metadata?.store_url || metadata?.public_url;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+
 interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
   last_message?: Message | string;
 }
 
 const WhatsAppInboxPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { storeId, storeSlug, storeName } = useStore();
+  const { storeId, storeSlug, storeName, store } = useStore();
   const [selectedConversation, setSelectedConversation] = useState<ConversationWithMessages | null>(null);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -415,6 +420,11 @@ const WhatsAppInboxPage: React.FC = () => {
           storeId={storeId || undefined}
           storeSlug={storeSlug || undefined}
           storeName={storeName || undefined}
+          storeDescription={store?.description || undefined}
+          storeAddress={store?.address || undefined}
+          storeCity={store?.city || undefined}
+          storeState={store?.state || undefined}
+          storeUrl={getStoreUrl(store?.metadata)}
           conversation={selectedConversation}
           onInsertText={(text) => setMessageText(text)}
           onSendMessage={handleDirectSend}

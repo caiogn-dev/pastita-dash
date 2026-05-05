@@ -13,15 +13,15 @@ export const whatsappTemplates: WhatsAppTemplate[] = [
     name: 'Boas-vindas',
     description: 'Mensagem de boas-vindas para novos clientes',
     category: 'transactional',
-    content: `Olá {{nome}}! 👋\n\nSeja bem-vindo(a) à *Pastita - Massas Artesanais*!\n\n🍝 Aqui você encontra as melhores massas frescas feitas com carinho.\n\n📍 Palmas/TO | ⏰ Ter-Dom 11h-21h\n\nAcesse: https://pastita.com.br`,
-    variables: ['nome']
+    content: `Olá {{nome}}! 👋\n\nSeja bem-vindo(a) à *{{loja}}*!\n\nAqui você encontra {{especialidade}}.\n\n📍 {{localizacao}}\n\n{{canal_pedido}}`,
+    variables: ['nome', 'loja', 'especialidade', 'localizacao', 'canal_pedido']
   },
   {
     id: 'order_confirmed',
     name: 'Confirmação de Pedido',
     description: 'Confirmação recebimento do pedido',
     category: 'transactional',
-    content: `✅ *Pedido Confirmado!*\n\nOlá {{nome}}, recebemos seu pedido #{{pedido}}.\n\n💰 *Total:* R$ {{valor}}\n⏱️ *Tempo:* {{tempo}} min\n\nVamos preparar com carinho! 🍝`,
+    content: `✅ *Pedido Confirmado!*\n\nOlá {{nome}}, recebemos seu pedido #{{pedido}}.\n\n💰 *Total:* R$ {{valor}}\n⏱️ *Tempo:* {{tempo}} min\n\nVamos preparar com carinho!`,
     variables: ['nome', 'pedido', 'valor', 'tempo']
   },
   {
@@ -69,7 +69,7 @@ export const whatsappTemplates: WhatsAppTemplate[] = [
     name: 'Aniversário',
     description: 'Parabeniza cliente com desconto especial',
     category: 'marketing',
-    content: `🎂 *Feliz Aniversário, {{nome}}!*\n\n🎁 *PARABENS{{idade}}*\n*{{desconto}}% OFF* válido hoje!\n\nComemore com nossas massas 🍝\n{{link}}`,
+    content: `🎂 *Feliz Aniversário, {{nome}}!*\n\n🎁 *PARABENS{{idade}}*\n*{{desconto}}% OFF* válido hoje!\n\nComemore com a gente.\n{{link}}`,
     variables: ['nome', 'idade', 'desconto', 'link']
   },
   {
