@@ -391,6 +391,7 @@ export type InstagramMessage = {
   direction: 'inbound' | 'outbound';
   message_type?: string;
   media_url?: string;
+  is_from_business?: boolean;
   is_read?: boolean;
   status?: string;
   sent_at?: string;

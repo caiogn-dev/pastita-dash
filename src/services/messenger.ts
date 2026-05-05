@@ -22,9 +22,11 @@ export interface MessengerConversation {
   psid: string;
   participant_name?: string;
   participant_profile_pic?: string;
+  status?: string;
   is_active: boolean;
   unread_count: number;
   last_message_at?: string;
+  last_message_preview?: string;
   last_message?: { type: string; content: string; created_at: string } | null;
   created_at: string;
   updated_at: string;
@@ -36,12 +38,14 @@ export interface MessengerMessage {
   conversation: string;
   message_type: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE' | 'STICKER' | 'TEMPLATE' | 'POSTBACK' | 'QUICK_REPLY';
   content: string;
+  direction?: 'inbound' | 'outbound';
   attachment_url?: string;
   attachment_type?: string;
   template_payload?: Record<string, unknown>;
   quick_replies?: Array<{ title: string; payload: string }>;
   is_from_page: boolean;
   is_read: boolean;
+  status?: string;
   delivered_at?: string;
   read_at?: string;
   sent_at: string;

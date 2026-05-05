@@ -1,7 +1,7 @@
 /**
  * ConnectionsPage - Conexões de mensagens (sem Chakra UI)
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon,
   CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
@@ -11,6 +11,8 @@ import toast from 'react-hot-toast';
 import { Card, Button, Badge } from '../../components/common';
 import * as whatsappService from '../../services/whatsapp';
 import { messengerService } from '../../services/messenger';
+import { instagramAccountService } from '../../services/instagram';
+import { channelsApi } from '../../features/channels';
 
 // ─── Platform config ──────────────────────────────────────────────────────────
 
@@ -42,14 +44,12 @@ const PLATFORMS: Record<string, PlatformConfig> = {
   },
   instagram: {
     name: 'Instagram', icon: '📸',
-    description: 'Conecte sua conta do Instagram (em breve)',
-    fields: [
-      { name: 'name', label: 'Nome da Conexão', type: 'text', required: true, placeholder: 'Ex: Instagram Pastita' },
-      { name: 'access_token', label: 'Access Token', type: 'password', required: true, placeholder: 'Token de acesso do Instagram' },
-    ],
-    disabled: true,
+    description: 'Conecte sua conta profissional via Facebook OAuth',
+    fields: [],
   },
 };
+
+const OAUTH_PLATFORMS = new Set(['instagram']);
 
 interface Connection {
   id: string;
@@ -61,6 +61,8 @@ interface Connection {
   phone_number?: string;
   page_name?: string;
   page_id?: string;
+  username?: string;
+  profile_picture_url?: string;
   created_at: string;
 }
 
@@ -130,15 +132,18 @@ export default function ConnectionsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const instagramPopupRef = useRef<Window | null>(null);
+  const instagramMessageHandlerRef = useRef<((event: MessageEvent) => void) | null>(null);
 
   useEffect(() => { loadConnections(); }, []);
 
   const loadConnections = async () => {
     try {
       setLoading(true);
-      const [whatsappRes, messengerRes] = await Promise.allSettled([
+      const [whatsappRes, messengerRes, instagramRes] = await Promise.allSettled([
         whatsappService.getAccounts(),
         messengerService.getAccounts(),
+        channelsApi.listAccounts('instagram'),
       ]);
       const all: Connection[] = [];
       if (whatsappRes.status === 'fulfilled') {
@@ -149,13 +154,74 @@ export default function ConnectionsPage() {
         const d = messengerRes.value.data as any;
         (d?.results || d || []).forEach((acc: any) => all.push({ ...acc, platform: 'messenger' }));
       }
+      if (instagramRes.status === 'fulfilled') {
+        instagramRes.value.forEach(acc => all.push({
+          id: acc.id,
+          platform: 'instagram',
+          name: acc.name,
+          status: acc.isActive ? 'active' : 'inactive',
+          is_active: acc.isActive,
+          webhook_verified: acc.webhookVerified,
+          username: acc.handle,
+          profile_picture_url: acc.avatarUrl,
+          page_id: acc.externalId,
+          created_at: acc.lastSyncAt || '',
+        }));
+      }
       setConnections(all);
       setError(null);
     } catch { setError('Erro ao carregar conexões'); }
     finally { setLoading(false); }
   };
 
+  const handleInstagramConnect = () => {
+    const popup = window.open('about:blank', 'instagram_oauth', 'width=600,height=700,scrollbars=yes,resizable=yes');
+    instagramPopupRef.current = popup;
+
+    if (!popup) {
+      toast.error('Popup bloqueado. Permita popups para conectar o Instagram.');
+      return;
+    }
+
+    if (instagramMessageHandlerRef.current) {
+      window.removeEventListener('message', instagramMessageHandlerRef.current);
+      instagramMessageHandlerRef.current = null;
+    }
+
+    channelsApi.getInstagramConnectUrl()
+      .then(url => {
+        popup.location.href = url;
+      })
+      .catch(error => {
+        popup.close();
+        toast.error(error?.response?.data?.error || 'Erro ao gerar URL de conexão do Instagram');
+      });
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if ((event.data as { type?: string })?.type !== 'instagram_oauth') return;
+
+      window.removeEventListener('message', handleMessage);
+      instagramMessageHandlerRef.current = null;
+
+      const payload = event.data as { success?: boolean; error?: string };
+      if (payload.success) {
+        toast.success('Instagram conectado com sucesso');
+        void loadConnections();
+      } else {
+        toast.error(payload.error || 'Erro ao conectar Instagram');
+      }
+    };
+
+    instagramMessageHandlerRef.current = handleMessage;
+    window.addEventListener('message', handleMessage);
+  };
+
   const openDialog = (platform?: string, conn?: Connection) => {
+    if (platform === 'instagram' && !conn) {
+      handleInstagramConnect();
+      return;
+    }
     setEditingConnection(conn || null);
     setSelectedPlatform(platform || conn?.platform || null);
     setFormData(conn ? { name: conn.name || '', ...(conn.phone_number && { phone_number: conn.phone_number }), ...(conn.page_id && { page_id: conn.page_id }), ...(conn.page_name && { page_name: conn.page_name }) } : {});
@@ -174,10 +240,16 @@ export default function ConnectionsPage() {
       if (editingConnection) {
         if (selectedPlatform === 'whatsapp') await whatsappService.updateAccount(editingConnection.id, formData as any);
         else if (selectedPlatform === 'messenger') await messengerService.updateAccount(editingConnection.id, formData as any);
+        else if (selectedPlatform === 'instagram') await instagramAccountService.update(editingConnection.id, { is_active: formData.is_active !== 'false' } as any);
         toast.success('Conexão atualizada!');
       } else {
         if (selectedPlatform === 'whatsapp') await whatsappService.createAccount(formData as any);
         else if (selectedPlatform === 'messenger') await messengerService.createAccount(formData as any);
+        else if (selectedPlatform === 'instagram') {
+          handleInstagramConnect();
+          closeDialog();
+          return;
+        }
         toast.success('Conexão criada!');
       }
       closeDialog();
@@ -192,6 +264,7 @@ export default function ConnectionsPage() {
     try {
       if (conn.platform === 'whatsapp') await whatsappService.deleteAccount(conn.id);
       else if (conn.platform === 'messenger') await messengerService.deleteAccount(conn.id);
+      else if (conn.platform === 'instagram') await instagramAccountService.delete(conn.id);
       toast.success('Conexão excluída!');
       loadConnections();
     } catch { toast.error('Erro ao excluir conexão'); }
@@ -205,6 +278,8 @@ export default function ConnectionsPage() {
         else await whatsappService.deactivateAccount(conn.id);
       } else if (conn.platform === 'messenger') {
         await messengerService.updateAccount(conn.id, { is_active: newStatus });
+      } else if (conn.platform === 'instagram') {
+        await instagramAccountService.update(conn.id, { is_active: newStatus } as any);
       }
       toast.success(`Conexão ${newStatus ? 'ativada' : 'desativada'}!`);
       loadConnections();
@@ -232,12 +307,17 @@ export default function ConnectionsPage() {
     if (activeTab !== 'all' && c.platform !== activeTab) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return c.name?.toLowerCase().includes(q) || c.phone_number?.toLowerCase().includes(q) || c.page_name?.toLowerCase().includes(q) || c.page_id?.toLowerCase().includes(q);
+    return c.name?.toLowerCase().includes(q)
+      || c.phone_number?.toLowerCase().includes(q)
+      || c.page_name?.toLowerCase().includes(q)
+      || c.page_id?.toLowerCase().includes(q)
+      || c.username?.toLowerCase().includes(q);
   });
 
   const TABS = [
     { value: 'all', label: `Todas (${connections.length})` },
     { value: 'whatsapp', label: `📱 WhatsApp (${connections.filter(c => c.platform === 'whatsapp').length})` },
+    { value: 'instagram', label: `📸 Instagram (${connections.filter(c => c.platform === 'instagram').length})` },
     { value: 'messenger', label: `💬 Messenger (${connections.filter(c => c.platform === 'messenger').length})` },
   ];
 
@@ -267,9 +347,9 @@ export default function ConnectionsPage() {
       <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4 mb-8">
         {[
           { icon: '📱', label: 'WhatsApp', count: connections.filter(c => c.platform === 'whatsapp').length },
+          { icon: '📸', label: 'Instagram', count: connections.filter(c => c.platform === 'instagram').length },
           { icon: '💬', label: 'Messenger', count: connections.filter(c => c.platform === 'messenger').length },
           { icon: <CheckCircleIcon className="w-6 h-6" />, label: 'Ativas', count: connections.filter(c => c.is_active).length, iconClass: 'text-green-600 bg-green-100 dark:bg-green-900/30' },
-          { icon: <XCircleIcon className="w-6 h-6" />, label: 'Inativas', count: connections.filter(c => !c.is_active).length, iconClass: 'text-gray-500 bg-gray-100 dark:bg-gray-700' },
         ].map((s, i) => (
           <div key={i} className="bg-bg-card border border-border-primary rounded-xl p-4 flex items-center gap-3">
             <div className={`p-2.5 rounded-xl text-2xl ${(s as any).iconClass || 'bg-bg-secondary'}`}>
@@ -314,7 +394,7 @@ export default function ConnectionsPage() {
             {searchQuery ? 'Nenhuma conexão encontrada' : 'Nenhuma conexão configurada'}
           </h3>
           <p className="text-sm text-fg-muted mb-6 max-w-md mx-auto">
-            {searchQuery ? 'Tente ajustar sua busca ou filtros' : 'Adicione uma conexão de WhatsApp ou Messenger para começar'}
+            {searchQuery ? 'Tente ajustar sua busca ou filtros' : 'Adicione uma conexão de WhatsApp, Instagram ou Messenger para começar'}
           </p>
           {!searchQuery && <Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-4 h-4" />}>Adicionar Conexão</Button>}
         </div>
@@ -325,9 +405,13 @@ export default function ConnectionsPage() {
               {/* Card header */}
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white ${conn.platform === 'whatsapp' ? 'bg-green-500' : 'bg-blue-500'}`}>
-                    {initials(conn.name)}
-                  </div>
+                  {conn.profile_picture_url ? (
+                    <img src={conn.profile_picture_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white ${conn.platform === 'whatsapp' ? 'bg-green-500' : conn.platform === 'instagram' ? 'bg-pink-500' : 'bg-blue-500'}`}>
+                      {initials(conn.name)}
+                    </div>
+                  )}
                   <div>
                     <p className="font-semibold text-fg-primary truncate max-w-[140px]">{conn.name}</p>
                     <p className="text-xs text-fg-muted">{PLATFORMS[conn.platform].icon} {PLATFORMS[conn.platform].name}</p>
@@ -347,6 +431,7 @@ export default function ConnectionsPage() {
               {/* Info */}
               <div className="text-sm text-fg-muted mb-4 flex flex-col gap-0.5">
                 {conn.phone_number && <span>📞 {conn.phone_number}</span>}
+                {conn.username && <span>@{conn.username}</span>}
                 {conn.page_name && <span>📄 {conn.page_name}</span>}
                 {conn.page_id && <span className="text-xs">ID: {conn.page_id}</span>}
               </div>
@@ -363,9 +448,15 @@ export default function ConnectionsPage() {
                     <LinkIcon className="w-4 h-4" />
                   </button>
                 )}
-                <button onClick={() => openDialog(conn.platform, conn)} title="Editar" className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors">
-                  <PencilIcon className="w-4 h-4" />
-                </button>
+                {conn.platform === 'instagram' ? (
+                  <button onClick={handleInstagramConnect} title="Reconectar Instagram" className="p-1.5 rounded hover:bg-bg-hover text-pink-600 transition-colors">
+                    <LinkIcon className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button onClick={() => openDialog(conn.platform, conn)} title="Editar" className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors">
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                )}
                 <button onClick={() => handleDelete(conn)} title="Excluir" className="p-1.5 rounded hover:bg-bg-hover text-red-500 transition-colors">
                   <TrashIcon className="w-4 h-4" />
                 </button>
@@ -383,7 +474,15 @@ export default function ConnectionsPage() {
             <button
               key={key}
               disabled={p.disabled}
-              onClick={() => !p.disabled && setSelectedPlatform(key)}
+              onClick={() => {
+                if (p.disabled) return;
+                if (OAUTH_PLATFORMS.has(key)) {
+                  closeDialog();
+                  handleInstagramConnect();
+                  return;
+                }
+                setSelectedPlatform(key);
+              }}
               className={`flex items-center gap-4 p-4 border-2 rounded-xl text-left transition-colors ${p.disabled ? 'opacity-50 cursor-not-allowed border-border-primary' : 'border-border-primary hover:border-brand-500 cursor-pointer'}`}
             >
               <span className="text-4xl">{p.icon}</span>
@@ -410,7 +509,7 @@ export default function ConnectionsPage() {
           <Button onClick={handleSubmit} isLoading={submitting}>{editingConnection ? 'Salvar Alterações' : 'Criar Conexão'}</Button>
         </>}
       >
-        {selectedPlatform && (
+        {selectedPlatform && PLATFORMS[selectedPlatform as keyof typeof PLATFORMS].fields.length > 0 && (
           <div className="flex flex-col gap-4">
             {PLATFORMS[selectedPlatform as keyof typeof PLATFORMS].fields.map((f) => (
               <div key={f.name}>
