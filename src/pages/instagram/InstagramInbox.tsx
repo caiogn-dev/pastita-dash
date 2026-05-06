@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   ArrowPathIcon,
+  BoltIcon,
   CheckCircleIcon,
   CheckIcon,
   ClockIcon,
+  DocumentTextIcon,
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
   PhotoIcon,
@@ -20,6 +22,8 @@ import {
   instagramDirectService,
 } from '../../services/instagram';
 import { getErrorMessage, normalizePaginatedResponse } from '../../services/api';
+import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
+import '../whatsapp/WhatsAppInbox.css';
 
 const inputCls =
   'w-full rounded-xl border border-border-primary bg-bg-card px-3 py-2 text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500';
@@ -56,6 +60,8 @@ export default function InstagramInbox() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
+  const [insertText, setInsertText] = useState<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const markingConversationIdRef = useRef<string | null>(null);
 
@@ -312,6 +318,42 @@ export default function InstagramInbox() {
     }
   }
 
+  function togglePanel(panel: 'templates' | 'tools') {
+    setActivePanel((prev) => (prev === panel ? null : panel));
+  }
+
+  function handleInsertText(text: string) {
+    setInsertText(text);
+    setMessageText(text);
+    setTimeout(() => setInsertText(undefined), 100);
+  }
+
+  async function handleToolsSend(message: string) {
+    if (!selectedConversation || !message.trim()) return;
+    setSending(true);
+    try {
+      const response = await instagramDirectService.sendMessage(selectedConversation.id, {
+        content: message.trim(),
+        message_type: 'TEXT',
+      });
+      const sentMessage = response.data;
+      setMessages((prev) => [...prev, sentMessage]);
+      setConversations((prev) =>
+        sortByLatest(
+          prev.map((item) =>
+            item.id === selectedConversation.id
+              ? { ...item, unread_count: 0, last_message_at: sentMessage.created_at }
+              : item
+          )
+        )
+      );
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSending(false);
+    }
+  }
+
   function formatConversationTime(value?: string | null) {
     if (!value) {
       return '';
@@ -340,8 +382,8 @@ export default function InstagramInbox() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-88px)] gap-4 p-4">
-      <section className="flex w-[360px] shrink-0 flex-col overflow-hidden rounded-2xl border border-border-primary bg-bg-card">
+    <div className="whatsapp-inbox">
+      <div className="conversations-panel">
         <div className="border-b border-border-primary p-4">
           <div className="mb-4 flex items-center gap-3">
             <div className="rounded-2xl bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 p-2 text-white">
@@ -463,9 +505,9 @@ export default function InstagramInbox() {
             })
           )}
         </div>
-      </section>
+      </div>
 
-      <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border-primary bg-bg-card">
+      <div className={`chat-panel ${activePanel ? 'panel-open' : ''}`}>
         {!selectedConversation ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
             <div className="mb-4 rounded-3xl bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 p-4 text-white/90">
@@ -478,8 +520,8 @@ export default function InstagramInbox() {
           </div>
         ) : (
           <>
-            <header className="flex items-center gap-3 border-b border-border-primary px-5 py-4">
-              <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-pink-500 to-purple-600 text-white">
+            <div className="chat-header">
+              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-pink-500 to-purple-600 text-white">
                 {selectedConversation.participant_profile_pic ? (
                   <img
                     src={selectedConversation.participant_profile_pic}
@@ -509,9 +551,25 @@ export default function InstagramInbox() {
               <span className="rounded-full bg-pink-100 px-3 py-1 text-xs font-medium text-pink-700 dark:bg-pink-900/30 dark:text-pink-300">
                 Instagram DM
               </span>
-            </header>
+              <button
+                type="button"
+                className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
+                onClick={() => togglePanel('templates')}
+                title="Templates"
+              >
+                <DocumentTextIcon className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
+                onClick={() => togglePanel('tools')}
+                title="Ferramentas"
+              >
+                <BoltIcon className="h-5 w-5" />
+              </button>
+            </div>
 
-            <div className="flex-1 overflow-y-auto bg-bg-subtle px-5 py-4">
+            <div className="messages-container">
               {loadingMessages ? (
                 <div className="py-10 text-center text-sm text-fg-muted">Carregando mensagens...</div>
               ) : messages.length === 0 ? (
@@ -519,7 +577,7 @@ export default function InstagramInbox() {
                   Nenhuma mensagem sincronizada nesta conversa ainda.
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
+                <div className="messages-list">
                   {messages.map((message) => {
                     const isOutbound = message.direction === 'outbound';
                     return (
@@ -571,7 +629,7 @@ export default function InstagramInbox() {
               )}
             </div>
 
-            <footer className="border-t border-border-primary px-5 py-4">
+            <div className="border-t border-border-primary px-5 py-4">
               <div className="flex gap-3">
                 <input
                   value={messageText}
@@ -594,10 +652,23 @@ export default function InstagramInbox() {
                   <PaperAirplaneIcon className="h-5 w-5" />
                 </button>
               </div>
-            </footer>
+            </div>
           </>
         )}
-      </section>
+      </div>
+
+      {selectedConversation && activePanel && (
+        <ChatToolsPanel
+          key={activePanel}
+          accountId={selectedAccountId}
+          conversation={selectedConversation as any}
+          onInsertText={handleInsertText}
+          onSendMessage={handleToolsSend}
+          onAfterSend={() => void loadMessages(selectedConversationId, true)}
+          onClose={() => setActivePanel(null)}
+          defaultTab={activePanel}
+        />
+      )}
 
       {error && (
         <div className="fixed bottom-4 right-4 z-50 rounded-xl border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 shadow-lg dark:bg-red-900/20 dark:text-red-300">
