@@ -124,7 +124,7 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
 
       ws.onmessage = (event) => {
         try {
-          const data: MessengerWSEvent & { type: string } = JSON.parse(event.data);
+          const data = JSON.parse(event.data) as { type: string };
 
           switch (data.type) {
             case 'connection_established':
