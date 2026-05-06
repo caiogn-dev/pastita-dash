@@ -10,6 +10,9 @@
  * - Acesso rápido a Lives e Shopping
  */
 import React, { useState, useEffect } from 'react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   PhotoIcon,
@@ -470,13 +473,37 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
             </Card>
       </div>
 
-      {/* Chart placeholder - would use Chart.js in real implementation */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Visão Geral</h3>
-          <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">Gráfico de desempenho (implementar com Chart.js)</p>
-          </div>
+          <h3 className="text-lg font-semibold mb-4">Desempenho por Dia</h3>
+          {insights && insights.length > 0 ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={insights} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-primary, #e5e7eb)" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v) => {
+                    const d = new Date(v);
+                    return `${d.getDate()}/${d.getMonth() + 1}`;
+                  }}
+                />
+                <YAxis tick={{ fontSize: 11 }} width={48} />
+                <Tooltip
+                  labelFormatter={(v) => new Date(v).toLocaleDateString('pt-BR')}
+                  contentStyle={{ fontSize: 12 }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Line type="monotone" dataKey="reach" name="Alcance" stroke="#ec4899" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="impressions" name="Impressões" stroke="#a855f7" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="engagement" name="Engajamento" stroke="#f59e0b" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-64 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800">
+              <p className="text-sm text-gray-400">Sem dados de insights para o período selecionado.</p>
+            </div>
+          )}
         </div>
       </Card>
     </div>
