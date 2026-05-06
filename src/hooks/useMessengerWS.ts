@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getWebSocketUrl } from '../services/websocket';
+import { useAuthStore } from '../stores/authStore';
 
 interface MessengerMessageEvent {
   type: 'message';
@@ -37,6 +38,7 @@ interface UseMessengerWSOptions {
 
 export const useMessengerWS = (options: UseMessengerWSOptions) => {
   const { accountId, onMessage, onConversationUpdate, onConnect, onDisconnect, onError } = options;
+  const { token } = useAuthStore();
   
   // WebSocket reference
   const wsRef = useRef<WebSocket | null>(null);
@@ -112,23 +114,30 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
       wsRef.current = ws;
       
       ws.onopen = () => {
-        console.log('[MessengerWS] Connected');
-        setIsConnected(true);
+        console.log('[MessengerWS] Open, sending auth...');
         setIsConnecting(false);
-        reconnectAttemptsRef.current = 0;
-        onConnect?.();
+        const currentToken = useAuthStore.getState().token;
+        if (currentToken) {
+          ws.send(JSON.stringify({ type: 'auth', token: currentToken }));
+        }
       };
-      
+
       ws.onmessage = (event) => {
         try {
-          const data: MessengerWSEvent = JSON.parse(event.data);
-          
+          const data: MessengerWSEvent & { type: string } = JSON.parse(event.data);
+
           switch (data.type) {
+            case 'connection_established':
+              console.log('[MessengerWS] Authenticated ✓');
+              setIsConnected(true);
+              reconnectAttemptsRef.current = 0;
+              onConnect?.();
+              break;
             case 'message':
-              onMessage?.(data);
+              onMessage?.(data as MessengerMessageEvent);
               break;
             case 'conversation_update':
-              onConversationUpdate?.(data);
+              onConversationUpdate?.(data as MessengerConversationEvent);
               break;
             default:
               console.log('[MessengerWS] Unknown event type:', data);

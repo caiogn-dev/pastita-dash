@@ -246,7 +246,23 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
         }
         
         case 'connection_established':
-          console.log('[WhatsAppWS] Connection established:', data.message);
+          console.log('[WhatsAppWS] Authenticated ✓');
+          isConnecting.current = false;
+          attempts.current = 0;
+          setIsConnected(true);
+          setConnectionError(null);
+          chatStore.setWsConnected(true);
+          subscribedConversations.current.forEach((convId) => {
+            ws.current?.send(JSON.stringify({
+              type: 'subscribe_conversation',
+              conversation_id: convId,
+            }));
+          });
+          pingTimer.current = window.setInterval(() => {
+            if (ws.current?.readyState === WebSocket.OPEN) {
+              ws.current.send(JSON.stringify({ type: 'ping' }));
+            }
+          }, 30000);
           break;
           
         case 'pong':
@@ -277,27 +293,11 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
       ws.current = new WebSocket(url);
       
       ws.current.onopen = () => {
-        console.log('[WhatsAppWS] Connected');
-        isConnecting.current = false;
-        attempts.current = 0;
-        setIsConnected(true);
-        setConnectionError(null);
-        chatStore.setWsConnected(true);
-        
-        // Re-subscribe to previously subscribed conversations
-        subscribedConversations.current.forEach((convId) => {
-          ws.current?.send(JSON.stringify({
-            type: 'subscribe_conversation',
-            conversation_id: convId,
-          }));
-        });
-        
-        // Start ping interval
-        pingTimer.current = window.setInterval(() => {
-          if (ws.current?.readyState === WebSocket.OPEN) {
-            ws.current.send(JSON.stringify({ type: 'ping' }));
-          }
-        }, 30000);
+        console.log('[WhatsAppWS] Open, sending auth...');
+        const token = useAuthStore.getState().token;
+        if (token) {
+          ws.current?.send(JSON.stringify({ type: 'auth', token }));
+        }
       };
       
       ws.current.onmessage = handleMessage;
