@@ -339,13 +339,24 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
       setLoadingProducts(true);
       try {
-        const response = await getStoreProducts({
-          store: storeId,
-          status: 'active',
-          page_size: 200,
-          ordering: 'category__name,name',
-        });
-        const saleProducts = (response.results || []).filter(product =>
+        const allProducts: StoreProduct[] = [];
+        let page = 1;
+        let hasNextPage = true;
+
+        while (hasNextPage && page <= 10) {
+          const response = await getStoreProducts({
+            store: storeId,
+            status: 'active',
+            page,
+            page_size: 200,
+            ordering: 'category__name,name',
+          });
+          allProducts.push(...(response.results || []));
+          hasNextPage = Boolean(response.next);
+          page += 1;
+        }
+
+        const saleProducts = allProducts.filter(product =>
           String(product.category_name || '').toLowerCase().includes('salada') &&
           !(product.tags || []).some(tag => String(tag).toLowerCase() === 'ingrediente')
         );
