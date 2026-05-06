@@ -54,6 +54,12 @@ export interface ContactList {
   updated_at: string;
 }
 
+export interface SystemContact {
+  phone: string;
+  name: string;
+  source?: 'conversation' | 'order' | 'subscriber' | 'session';
+}
+
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -208,6 +214,15 @@ export const campaignsService = {
     csv_content: string;
   }): Promise<ContactList> => {
     const response = await api.post<ContactList>('/campaigns/contacts/import_csv/', data);
+    return response.data;
+  },
+
+  getSystemContacts: async (params?: {
+    account_id?: string;
+    source?: 'all' | 'conversations' | 'orders' | 'subscribers' | 'sessions';
+    limit?: number;
+  }): Promise<{ count: number; results: SystemContact[] }> => {
+    const response = await api.get('/campaigns/system-contacts/', { params });
     return response.data;
   },
 };
