@@ -9,7 +9,7 @@
  * - Estatísticas
  * - Acesso rápido a Lives e Shopping
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
@@ -50,16 +50,17 @@ export const InstagramDashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('feed');
   const [isCreating, setIsCreating] = useState(false);
 
-  // Fetch account data
+  const fetchAccount = useCallback(
+    () => instagramAccountService.get(accountId!).then((r: any) => r.data ?? r),
+    [accountId]
+  );
+
   const {
     data: account,
     loading: accountLoading
-  } = useFetch<InstagramAccount>(
-    () => instagramAccountService.get(accountId!).then((r: any) => r.data ?? r)
-  );
+  } = useFetch<InstagramAccount>(fetchAccount);
 
-  // Fetch media based on tab
-  const fetchMedia = async (): Promise<InstagramMedia[]> => {
+  const fetchMedia = useCallback(async (): Promise<InstagramMedia[]> => {
     if (!accountId) return [];
     const extract = (r: any): InstagramMedia[] => r?.data?.results ?? r?.data ?? r ?? [];
     switch (activeTab) {
@@ -72,7 +73,7 @@ export const InstagramDashboardPage: React.FC = () => {
       default:
         return [];
     }
-  };
+  }, [accountId, activeTab]);
 
   const {
     data: media,
@@ -402,11 +403,13 @@ const MediaGrid: React.FC<MediaGridProps> = ({ media, type, onRefresh }) => {
 
 const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
   const [days, setDays] = useState(30);
-  
-  const { data: insights, loading } = useFetch(
+
+  const fetchInsights = useCallback(
     () => instagramAccountService.getInsights(accountId, days),
-    { deps: [accountId, days] }
+    [accountId, days]
   );
+
+  const { data: insights, loading } = useFetch(fetchInsights);
 
   if (loading) return <Loading />;
 
