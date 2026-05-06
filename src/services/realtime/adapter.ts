@@ -4,7 +4,7 @@
  * A lightweight, framework-agnostic WebSocket adapter with:
  *  - Auto-reconnect with exponential backoff
  *  - Multiple subscribers per instance (pub/sub)
- *  - Token passed as ?token= query param
+ *  - First-message auth: token sent as {"type":"auth","token":"..."} — never in URLs
  *  - Clean disconnect() that cancels all timers
  *
  * This is an additive foundation — existing hooks/contexts are NOT changed.
@@ -79,10 +79,14 @@ export function createRealtimeAdapter(
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
-  function buildUrl(url: string, token?: string): string {
-    if (!token) return url;
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}token=${token}`;
+  function buildUrl(url: string): string {
+    return url;
+  }
+
+  function sendAuth(socket: WebSocket, token?: string): void {
+    if (token && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'auth', token }));
+    }
   }
 
   function clearReconnectTimer(): void {
@@ -110,7 +114,7 @@ export function createRealtimeAdapter(
 
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
-      openSocket(currentUrl, currentToken);
+      openSocket(currentUrl, currentToken!);
     }, delay);
   }
 
@@ -124,7 +128,7 @@ export function createRealtimeAdapter(
       return;
     }
 
-    const fullUrl = buildUrl(url, token);
+    const fullUrl = buildUrl(url);
 
     try {
       ws = new WebSocket(fullUrl);
@@ -135,8 +139,9 @@ export function createRealtimeAdapter(
     }
 
     ws.onopen = () => {
-      console.log('[RealtimeAdapter] Connected');
-      attemptCount = 0; // reset backoff on success
+      console.log('[RealtimeAdapter] Open, sending auth...');
+      sendAuth(ws!, token);
+      attemptCount = 0;
     };
 
     ws.onmessage = (event: MessageEvent) => {
