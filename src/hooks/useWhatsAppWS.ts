@@ -256,7 +256,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     }
 
     isConnecting.current = true;
-    console.log('[WhatsApp WS] Connecting to:', url.replace(/token=.*/, 'token=***'));
+    console.log('[WhatsApp WS] Connecting to:', url);
 
     try {
       const socket = new WebSocket(url);
