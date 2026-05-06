@@ -256,7 +256,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       try {
         const templatesRes = await whatsappService.getTemplates(formData.accountId);
         const templatesList = templatesRes.data.results || [];
-        setTemplates(templatesList.filter((t: any) => t.status === 'approved'));
+        setTemplates(templatesList.filter((t: any) =>
+          t.status === 'approved' && String(t.category || '').toLowerCase() !== 'authentication'
+        ));
       } catch (error) {
         logger.error('Failed to load templates', error);
         setTemplates([]);
@@ -343,7 +345,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           page_size: 200,
           ordering: 'category__name,name',
         });
-        setProducts(response.results || []);
+        const saleProducts = (response.results || []).filter(product =>
+          String(product.category_name || '').toLowerCase().includes('salada') &&
+          !(product.tags || []).some(tag => String(tag).toLowerCase() === 'ingrediente')
+        );
+        setProducts(saleProducts);
       } catch (error) {
         logger.error('Failed to load campaign products', error);
         toast.error('Erro ao carregar produtos da loja');
@@ -379,7 +385,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       });
       const contacts: SystemContact[] = response.results.map(contact => ({
         phone: contact.phone,
-        name: contact.name || contact.phone,
+        name: contact.name || '',
         source: contact.source,
       }));
       setSystemContacts(contacts);
@@ -915,7 +921,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         toast.success('Templates sincronizados');
                         // Reload templates
                         whatsappService.getTemplates(formData.accountId)
-                          .then(res => setTemplates(res.data.results.filter((t: any) => t.status === 'approved')));
+                          .then(res => setTemplates(res.data.results.filter((t: any) =>
+                            t.status === 'approved' && String(t.category || '').toLowerCase() !== 'authentication'
+                          )));
                       })}
                     >
                       Sincronizar Templates
@@ -954,7 +962,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                           Produtos da oferta
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
-                          Selecione 2 itens do cardápio. O preço promocional vem do campo preço de venda; o comparativo vem do preço comparativo do produto.
+                          Selecione 2 saladas do cardápio. O preço promocional vem do campo preço de venda; o comparativo vem do preço comparativo do produto.
                         </p>
                       </div>
                       <span className="text-sm text-gray-500 dark:text-zinc-400 whitespace-nowrap">
@@ -972,7 +980,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                       </div>
                     ) : products.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
-                        Nenhum produto ativo encontrado para {storeName || 'esta loja'}.
+                        Nenhuma salada ativa encontrada para {storeName || 'esta loja'}.
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3 max-h-96 overflow-y-auto pr-1">
