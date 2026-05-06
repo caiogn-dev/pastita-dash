@@ -75,6 +75,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
   const [insertText, setInsertText] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const { storeId, storeSlug, storeName, store } = useStore();
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -106,11 +107,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     if (!accountId) return;
     setIsLoadingConversations(true);
     try {
-      const response = await conversationsService.getConversations({ account: accountId });
+      const search = debouncedSearchTerm.trim();
+      const response = await conversationsService.getConversations({
+        account: accountId,
+        page_size: search ? 100 : 50,
+        search: search || undefined,
+      });
       setConversations(ensureArray<Conversation>(response?.results || response));
     } catch (error) { toast.error(getErrorMessage(error)); }
     finally { setIsLoadingConversations(false); }
-  }, [accountId]);
+  }, [accountId, debouncedSearchTerm]);
 
   const loadMessages = useCallback(async () => {
     if (!selectedConversation || !accountId) return;
@@ -121,6 +127,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     } catch (error) { toast.error(getErrorMessage(error)); }
     finally { setIsLoadingMessages(false); }
   }, [accountId, selectedConversation]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm]);
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
 
@@ -299,10 +312,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     return groups;
   }, {} as Record<string, Message[]>);
 
-  const filteredConversations = ensureArray<Conversation>(conversations).filter(conv =>
-    conv.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.phone_number.includes(searchTerm)
-  );
+  const filteredConversations = ensureArray<Conversation>(conversations);
 
   return (
     <div className="whatsapp-inbox">

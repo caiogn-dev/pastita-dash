@@ -2,7 +2,9 @@ import api, { normalizePaginatedEnvelope } from './api';
 import { Conversation, ConversationNote, PaginatedResponse, Message, UniversalConversation } from '../types';
 
 export const conversationsService = {
-  getConversations: async (params?: Record<string, string>): Promise<PaginatedResponse<Conversation>> => {
+  getConversations: async (
+    params?: Record<string, string | number | undefined>
+  ): Promise<PaginatedResponse<Conversation>> => {
     const response = await api.get<PaginatedResponse<Conversation> | Conversation[]>('/conversations/', { params });
     return normalizePaginatedEnvelope<Conversation>(response.data);
   },
