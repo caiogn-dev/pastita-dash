@@ -48,7 +48,9 @@ export interface CalculatedDeliveryFee {
 }
 
 export const ordersService = {
-  getOrders: async (params?: Record<string, string> & { store_slug?: string }): Promise<PaginatedResponse<Order>> => {
+  getOrders: async (
+    params?: Record<string, string | number | undefined> & { store_slug?: string }
+  ): Promise<PaginatedResponse<Order>> => {
     const storeSlug = params?.store_slug;
     const { store_slug, ...apiParams } = params || {};
     const response = await api.get<PaginatedResponse<Order>>(`${getBaseUrl(storeSlug)}/`, { params: apiParams });
@@ -142,6 +144,13 @@ export const ordersService = {
   getPaymentStatus: async (id: string): Promise<{ status: string; payment_url?: string }> => {
     const response = await api.get(`/stores/orders/${id}/payment-status/`);
     return response.data;
+  },
+
+  generatePayment: async (orderId: string, paymentMethod?: string): Promise<{ payment: Record<string, unknown>; order: Order }> => {
+    const response = await api.post(`/stores/orders/${orderId}/generate_payment/`, {
+      payment_method: paymentMethod,
+    });
+    return { ...response.data, order: normalizeOrder(response.data.order) };
   },
 
   addEvent: async (orderId: string, event: { type: string; description: string }, storeSlug?: string): Promise<OrderEvent> => {

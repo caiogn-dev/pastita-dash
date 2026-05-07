@@ -1,24 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   EyeIcon,
   CheckIcon,
   CurrencyDollarIcon,
   XMarkIcon,
   ArrowPathIcon,
-  PrinterIcon,
-  TruckIcon,
-  ShoppingBagIcon,
   SignalIcon,
   SignalSlashIcon,
   ShoppingCartIcon,
-  PhoneIcon,
-  MapPinIcon,
 } from '@heroicons/react/24/outline';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Button, Modal, PageLoading } from '../../components/common';
+import { Button, PageLoading } from '../../components/common';
 import {
   getOrders,
   updateOrderStatus,
@@ -27,7 +22,6 @@ import {
   StoreOrder,
 } from '../../services/storesApi';
 import { useNotificationSound, useOrdersWebSocket, useStore } from '../../hooks';
-import { useOrderPrint } from '../../components/orders/OrderPrint';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -113,160 +107,6 @@ const needsPayment = (order: StoreOrder) =>
   ['cash', 'money', 'dinheiro', 'pagar_na_retirada', 'pay_on_pickup', 'pix_on_delivery'].some(
     m => (order.payment_method ?? '').toLowerCase().includes(m)
   );
-
-const parseAddress = (addr: Record<string, unknown> | null | undefined): string => {
-  if (!addr) return '';
-  const s = (k: string) => (typeof addr[k] === 'string' ? (addr[k] as string) : '');
-  const structured = [s('street'), s('number'), s('neighborhood'), s('city')].filter(Boolean).join(', ');
-  return structured || s('raw_address') || s('address') || '';
-};
-
-// ─── OrderDetailModal ─────────────────────────────────────────────────────────
-
-interface DetailModalProps {
-  order: StoreOrder;
-  onClose: () => void;
-  onAdvance: (order: StoreOrder) => void;
-  onPay: (order: StoreOrder) => void;
-  printOptions?: {
-    storeName?: string;
-    storePhone?: string;
-    storeAddress?: string;
-  };
-}
-
-const OrderDetailModal: React.FC<DetailModalProps> = ({ order, onClose, onAdvance, onPay, printOptions }) => {
-  const { printOrder } = useOrderPrint();
-  const action = getNextAction(order);
-  const hasPendingPayment = needsPayment(order);
-  const orderStoreName = (order as StoreOrder & { store_name?: string }).store_name;
-
-  return (
-    <Modal isOpen onClose={onClose} title={`Pedido #${order.order_number}`} size="md">
-      <div className="space-y-4 -mt-2">
-
-        {/* Print + time */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-400 dark:text-zinc-500">{timeAgo(order.created_at)}</span>
-          <button
-            onClick={() => printOrder(order as any, {
-              ...printOptions,
-              storeName: printOptions?.storeName || orderStoreName || undefined,
-            })}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-xs font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-          >
-            <PrinterIcon className="h-3.5 w-3.5" />
-            Imprimir comanda
-          </button>
-        </div>
-
-        {/* Customer */}
-        <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-3 space-y-1">
-          <p className="text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wide">Cliente</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">{order.customer_name || '—'}</p>
-          {order.customer_phone && (
-            <a href={`tel:${order.customer_phone}`} className="flex items-center gap-1.5 text-xs text-primary-600 dark:text-primary-400">
-              <PhoneIcon className="h-3 w-3" />
-              {order.customer_phone}
-            </a>
-          )}
-        </div>
-
-        {/* Delivery */}
-        <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-3 space-y-1.5">
-          <p className="text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wide">Entrega</p>
-          {order.delivery_method === 'pickup' ? (
-            <div className="flex items-center gap-1.5 text-sm font-medium text-purple-700 dark:text-purple-400">
-              <ShoppingBagIcon className="h-4 w-4" />
-              Retirada no local
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-sm font-medium text-blue-700 dark:text-blue-400">
-                <TruckIcon className="h-4 w-4" />
-                Delivery
-              </div>
-              {order.delivery_address && (
-                <div className="flex items-start gap-1.5 text-xs text-gray-500 dark:text-zinc-400">
-                  <MapPinIcon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  <span>{parseAddress(order.delivery_address)}</span>
-                </div>
-              )}
-              {order.delivery_fee > 0 && (
-                <p className="text-xs text-gray-400 dark:text-zinc-500">Taxa: R$ {fmt(order.delivery_fee)}</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Items */}
-        <div>
-          <p className="text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wide mb-2">Itens do pedido</p>
-          <div className="space-y-1.5">
-            {order.items?.map((item, i) => (
-              <div key={i} className="flex items-start justify-between text-sm gap-2">
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {item.quantity}× {item.product_name}
-                  </span>
-                  {item.notes && (
-                    <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5 pl-3">↳ {item.notes}</p>
-                  )}
-                </div>
-                <span className="text-gray-600 dark:text-zinc-400 shrink-0 tabular-nums text-xs">
-                  R$ {fmt(item.subtotal)}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
-            <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Total</span>
-            <span className="text-base font-bold text-gray-900 dark:text-white">R$ {fmt(order.total)}</span>
-          </div>
-        </div>
-
-        {/* Payment */}
-        <div className="flex items-center justify-between bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-3">
-          <div>
-            <p className="text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wide mb-1">Pagamento</p>
-            <p className="text-xs text-gray-600 dark:text-zinc-300 capitalize">{order.payment_method || 'Não informado'}</p>
-          </div>
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-            order.payment_status === 'paid'
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-          }`}>
-            {order.payment_status === 'paid' ? 'Pago' : 'Pendente'}
-          </span>
-        </div>
-
-        {/* Actions */}
-        {(action || hasPendingPayment) && (
-          <div className="flex gap-2 pt-1">
-            {hasPendingPayment && (
-              <button
-                onClick={() => { onPay(order); onClose(); }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors"
-              >
-                <CurrencyDollarIcon className="h-4 w-4" />
-                Marcar como Pago
-              </button>
-            )}
-            {action && (
-              <button
-                onClick={() => { onAdvance(order); onClose(); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-semibold transition-colors ${action.color}`}
-              >
-                <CheckIcon className="h-4 w-4" />
-                {action.label}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </Modal>
-  );
-};
 
 // ─── OrderCard ────────────────────────────────────────────────────────────────
 
@@ -365,8 +205,7 @@ const OrderCard: React.FC<CardProps> = ({
 
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { storeId, storeSlug, store, stores } = useStore();
-  const { storeId: routeStoreId } = useParams<{ storeId: string }>();
+  const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
   const orderCreateRoute = storeQuery ? `/stores/${storeQuery}/orders/new` : null;
 
@@ -376,39 +215,16 @@ export const OrdersPage: React.FC = () => {
   const [advancingId, setAdvancingId] = useState<string | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [detailOrder, setDetailOrder] = useState<StoreOrder | null>(null);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const timerRef = useRef<number | null>(null);
 
   const { playNotificationSound } = useNotificationSound();
 
-  const activeStore = useMemo(() => {
-    if (routeStoreId) {
-      const matchedStore = stores.find(
-        candidate => candidate.id === routeStoreId || candidate.slug === routeStoreId
-      );
-      if (matchedStore) return matchedStore;
-    }
-    return store;
-  }, [routeStoreId, store, stores]);
-
-  const printOptions = useMemo(() => {
-    const storeAddress = activeStore?.address && activeStore?.city && activeStore?.state
-      ? `${activeStore.address} - ${activeStore.city}/${activeStore.state}`
-      : (activeStore?.address || activeStore?.city || activeStore?.state || '');
-
-    return {
-      storeName: activeStore?.name || undefined,
-      storePhone: activeStore?.phone || activeStore?.whatsapp_number || undefined,
-      storeAddress: storeAddress || undefined,
-    };
-  }, [activeStore]);
-
   const loadOrders = useCallback(async (bg = false) => {
     if (!storeQuery) { setLoading(false); return; }
     bg ? setRefreshing(true) : setLoading(true);
     try {
-      const res = await getOrders({ store: storeQuery });
+      const res = await getOrders({ store: storeQuery, page_size: 500 });
       setOrders(res.results ?? []);
       setLastSync(new Date());
     } catch {
@@ -593,7 +409,7 @@ export const OrdersPage: React.FC = () => {
                     onAdvance={handleAdvance}
                     onPay={handlePay}
                     onCancel={handleCancel}
-                    onDetail={setDetailOrder}
+                    onDetail={(o) => navigate(`/stores/${storeQuery}/orders/${o.id}`)}
                   />
                 ))
               )}
@@ -602,15 +418,6 @@ export const OrdersPage: React.FC = () => {
         ))}
       </div>
 
-      {detailOrder && (
-        <OrderDetailModal
-          order={detailOrder}
-          onClose={() => setDetailOrder(null)}
-          onAdvance={(o) => { handleAdvance(o); setDetailOrder(null); }}
-          onPay={(o) => { handlePay(o); setDetailOrder(null); }}
-          printOptions={printOptions}
-        />
-      )}
     </div>
   );
 };

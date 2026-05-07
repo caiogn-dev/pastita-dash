@@ -303,7 +303,16 @@ export const OrderNewPage: React.FC = () => {
         notes: data.notes,
         items: data.items.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
       });
-      toast.success(`Pedido #${order.order_number} criado com sucesso!`);
+      if (['pix', 'credit_card', 'debit_card'].includes(data.payment_method)) {
+        try {
+          await ordersService.generatePayment(order.id, data.payment_method);
+          toast.success(`Pedido #${order.order_number} criado com link de pagamento!`);
+        } catch {
+          toast.success(`Pedido #${order.order_number} criado. Gere o pagamento na próxima tela.`);
+        }
+      } else {
+        toast.success(`Pedido #${order.order_number} criado com sucesso!`);
+      }
       navigate(`/stores/${effectiveStoreId}/orders/${order.id}`);
     } catch (error) {
       toast.error(getErrorMessage(error));

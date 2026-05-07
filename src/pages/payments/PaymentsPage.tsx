@@ -90,7 +90,7 @@ export const PaymentsPage: React.FC = () => {
     setIsLoading(true);
     try {
       // Get all orders from store, ordered by most recent
-      const params: Record<string, string> = { ordering: '-created_at' };
+      const params: Record<string, string | number> = { ordering: '-created_at', page_size: 500 };
       if (effectiveStoreId) params.store = effectiveStoreId;
       const ordersData = await ordersService.getOrders(params);
       setOrders(ordersData.results);

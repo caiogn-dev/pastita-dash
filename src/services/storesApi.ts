@@ -854,6 +854,9 @@ export const getOrders = async (params?: {
   status?: string;
   payment_status?: string;
   search?: string;
+  ordering?: string;
+  page?: number;
+  page_size?: number;
 }): Promise<PaginatedResponse<StoreOrder>> => {
   try {
     const response = await api.get(`${BASE_URL}/orders/`, { params });
@@ -998,6 +1001,8 @@ export const getOrderStats = async (storeId?: string): Promise<{
 export const getCustomers = async (params?: {
   store?: string;
   search?: string;
+  page?: number;
+  page_size?: number;
 }): Promise<PaginatedResponse<StoreCustomer>> => {
   try {
     const response = await api.get(`${BASE_URL}/customers/`, { params });

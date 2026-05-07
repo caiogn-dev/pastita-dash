@@ -135,7 +135,7 @@ export const CustomersPage: React.FC = () => {
       if (!storeQuery) { setLoading(false); return; }
       background ? setRefreshing(true) : setLoading(true);
       try {
-        const res = await storesApi.getCustomers({ store: storeQuery });
+        const res = await storesApi.getCustomers({ store: storeQuery, page_size: 500 });
         setCustomers(res.results || []);
       } catch (err) {
         toast.error(getErrorMessage(err));
