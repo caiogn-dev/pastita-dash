@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ArrowPathIcon,
   MagnifyingGlassIcon,
@@ -69,18 +69,25 @@ interface CustomerDrawerProps {
 }
 
 const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) => {
+  const { storeId, storeSlug } = useStore();
+  const storeQuery = storeSlug || storeId;
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
   useEffect(() => {
-    if (!customer) return;
+    if (!customer || !storeQuery) return;
     setOrders([]);
     setLoadingOrders(true);
-    storesApi.getCustomerOrders(customer.id)
-      .then(setOrders)
+    // getCustomerOrders endpoint is unreliable — fetch all store orders and filter by customer.user
+    storesApi.getOrders({ store: storeQuery, page_size: 200 })
+      .then(res => {
+        const all = res.results || [];
+        setOrders(all.filter(o => o.customer === customer.user));
+      })
       .catch(() => {})
       .finally(() => setLoadingOrders(false));
-  }, [customer?.id]);
+  }, [customer?.id, storeQuery]);
 
   const avgTicket = useMemo(() => {
     if (!customer || !customer.total_orders) return 0;
@@ -96,12 +103,12 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) =>
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-40 transition-opacity"
+        className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-[9998] transition-opacity"
         onClick={onClose}
       />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl flex flex-col animate-slide-in-right">
+      <div className="fixed inset-y-0 right-0 z-[9999] w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl flex flex-col animate-slide-in-right">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-zinc-800">
@@ -250,15 +257,16 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) =>
         {/* Footer actions */}
         {cleanPhone && (
           <div className="px-6 py-4 border-t border-gray-100 dark:border-zinc-800">
-            <a
-              href={`https://wa.me/55${cleanPhone}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => {
+                onClose();
+                navigate(`/whatsapp/inbox?search=${encodeURIComponent(cleanPhone)}`);
+              }}
               className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors"
             >
               <ChatBubbleLeftRightIcon className="h-4 w-4" />
-              Enviar mensagem no WhatsApp
-            </a>
+              Abrir conversa no WhatsApp
+            </button>
           </div>
         )}
       </div>

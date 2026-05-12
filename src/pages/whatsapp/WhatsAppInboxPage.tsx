@@ -81,7 +81,7 @@ const WhatsAppInboxPage: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<ConversationWithMessages | null>(null);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
   const [sending, setSending] = useState(false);
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
   const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
