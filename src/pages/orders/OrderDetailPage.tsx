@@ -52,19 +52,20 @@ import { useStore } from '../../hooks';
 // =============================================================================
 
 const STATUS_FLOW = [
-  { id: 'pending', label: 'Pendente', icon: ClockIcon, color: 'yellow' },
-  { id: 'confirmed', label: 'Confirmado', icon: CheckIcon, color: 'blue' },
-  { id: 'preparing', label: 'Preparando', icon: TruckIcon, color: 'orange' },
-  { id: 'delivered', label: 'Entregue', icon: HomeIcon, color: 'green' },
+  { id: 'pending', label: 'Pendente', icon: ClockIcon },
+  { id: 'confirmed', label: 'Confirmado', icon: CheckIcon },
+  { id: 'preparing', label: 'Preparando', icon: TruckIcon },
+  { id: 'dispatched', label: 'Pronto/Entrega', icon: TruckIcon },
+  { id: 'delivered', label: 'Entregue', icon: HomeIcon },
 ];
 
-// Status aliases for progress tracking (intermediate states map to flow steps)
+// Status aliases for progress tracking
 const STATUS_FLOW_ALIAS: Record<string, string> = {
   processing: 'pending',
   paid: 'confirmed',
-  ready: 'preparing',
-  out_for_delivery: 'preparing',
-  shipped: 'preparing',
+  ready: 'dispatched',
+  out_for_delivery: 'dispatched',
+  shipped: 'dispatched',
   completed: 'delivered',
 };
 
@@ -534,32 +535,36 @@ export const OrderDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {(order.notes || compactAddress || paymentLink || order.pix_code || payments.length > 0) && (
+              {/* Notes — always visible, critical for kitchen ops */}
+              {order.notes && (
+                <div className="rounded-[24px] border border-amber-200/80 bg-[#f8edd0] px-4 py-4 text-[#6a5731] dark:border-amber-800/40 dark:bg-[#2b2417] dark:text-[#d8c18c] sm:px-5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.24em] mb-2 text-[#9a7c3a] dark:text-[#b8962e]">Observações do cliente</p>
+                  <p className="text-sm leading-relaxed">{order.notes}</p>
+                </div>
+              )}
+
+              {/* Delivery address — always visible for delivery orders */}
+              {compactAddress && order.delivery_method !== 'pickup' && (
+                <div className="rounded-[24px] border border-black/10 bg-white/70 px-4 py-4 dark:border-white/10 dark:bg-white/5 sm:px-5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.24em] mb-2 text-[#9a8f7e] dark:text-[#8b816f]">Endereço de entrega</p>
+                  <div className="flex items-start gap-2 text-sm">
+                    <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#c97a36]" />
+                    <span>{compactAddress}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment details — secondary info in collapsible */}
+              {(paymentLink || order.pix_code || payments.length > 0) && (
                 <details className="group rounded-[24px] border border-black/10 bg-white/55 px-4 py-4 dark:border-white/10 dark:bg-white/5 sm:px-5">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                     <div>
-                      <h2 className="text-base font-semibold">Detalhes adicionais</h2>
-                      <p className="text-sm text-[#746b5f] dark:text-[#9d9385]">
-                        Endereço, observações e dados de pagamento em segundo plano.
-                      </p>
+                      <h2 className="text-base font-semibold">Dados de pagamento</h2>
                     </div>
                     <ChevronDownIcon className="h-5 w-5 text-[#746b5f] transition group-open:rotate-180 dark:text-[#9d9385]" />
                   </summary>
 
                   <div className="mt-4 space-y-4 text-sm">
-                    {order.notes && (
-                      <div className="rounded-2xl bg-[#f8edd0] px-4 py-3 text-[#6a5731] dark:bg-[#2b2417] dark:text-[#d8c18c]">
-                        {order.notes}
-                      </div>
-                    )}
-
-                    {compactAddress && (
-                      <div className="flex items-start gap-2 rounded-2xl border border-black/5 px-4 py-3 dark:border-white/5">
-                        <MapPinIcon className="mt-0.5 h-4 w-4 text-[#c97a36]" />
-                        <span>{compactAddress}</span>
-                      </div>
-                    )}
-
                     {payments.length > 0 && (
                       <div className="space-y-2">
                         {payments.map((payment) => (
@@ -571,9 +576,7 @@ export const OrderDetailPage: React.FC = () => {
                                  payment.payment_method === 'cash' ? 'Dinheiro' :
                                  payment.payment_method}
                               </p>
-                              <p className="text-xs text-[#746b5f] dark:text-[#9d9385]">
-                                {payment.status}
-                              </p>
+                              <p className="text-xs text-[#746b5f] dark:text-[#9d9385]">{payment.status}</p>
                             </div>
                             <span className="font-semibold">{formatMoney(payment.amount)}</span>
                           </div>

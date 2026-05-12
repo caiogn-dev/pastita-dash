@@ -9,6 +9,9 @@ import {
   SignalIcon,
   SignalSlashIcon,
   ShoppingCartIcon,
+  TruckIcon,
+  HomeIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -81,6 +84,26 @@ const timeAgo = (date?: string | null) => {
   catch { return ''; }
 };
 
+const getElapsedMinutes = (createdAt?: string | null): number => {
+  if (!createdAt) return 0;
+  return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
+};
+
+type ElapsedUrgency = 'ok' | 'warning' | 'critical';
+const getElapsedUrgency = (minutes: number, status: string): ElapsedUrgency => {
+  if (['delivered', 'completed', 'cancelled'].includes(status)) return 'ok';
+  if (minutes >= 40) return 'critical';
+  if (minutes >= 20) return 'warning';
+  return 'ok';
+};
+
+const formatElapsed = (minutes: number): string => {
+  if (minutes < 60) return `${minutes}min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h${m}m` : `${h}h`;
+};
+
 const getNextAction = (order: StoreOrder): { status: string; label: string; color: string } | null => {
   switch (order.status) {
     case 'pending':
@@ -124,77 +147,95 @@ interface CardProps {
 const OrderCard: React.FC<CardProps> = ({
   order, advancing, paying, cancelling, onAdvance, onPay, onCancel, onDetail,
 }) => {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 60000);
+    return () => clearInterval(t);
+  }, []);
+
   const action = getNextAction(order);
   const hasPendingPayment = needsPayment(order);
+  const elapsed = getElapsedMinutes(order.created_at);
+  const urgency = getElapsedUrgency(elapsed, order.status);
+  const isPickup = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
+
+  const urgencyBorder =
+    urgency === 'critical' ? 'border-red-400 dark:border-red-700' :
+    urgency === 'warning'  ? 'border-yellow-400 dark:border-yellow-600' :
+    'border-black/5 dark:border-white/5';
 
   return (
-    <div className="rounded-xl border border-black/5 bg-white/92 p-1.5 transition-shadow hover:shadow-[0_10px_30px_rgba(15,15,15,0.06)] dark:border-white/5 dark:bg-zinc-900">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[12px] font-semibold leading-tight text-gray-900 dark:text-white">
-            {order.customer_name || 'Cliente'}
-          </p>
-          <p className="mt-0.5 text-[15px] font-bold tracking-[-0.03em] text-gray-900 dark:text-white">
-            R$ {fmt(order.total)}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1">
-          {hasPendingPayment && (
-            <button
-              onClick={() => onPay(order)}
-              disabled={paying}
-              title="Lançar pagamento"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-green-50 text-green-600 transition-colors hover:bg-green-100 disabled:opacity-60 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40"
-            >
-              {paying
-                ? <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                : <CurrencyDollarIcon className="h-3.5 w-3.5" />
-              }
-            </button>
+    <div
+      onClick={() => onDetail(order)}
+      className={`cursor-pointer rounded-xl border-2 bg-white/92 p-2 transition-shadow hover:shadow-[0_10px_30px_rgba(15,15,15,0.08)] dark:bg-zinc-900 ${urgencyBorder} ${urgency === 'critical' ? 'animate-pulse' : ''}`}
+    >
+      {/* top row: order # + elapsed + delivery type */}
+      <div className="flex items-center justify-between gap-1 mb-1.5">
+        <span className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 font-mono">
+          #{order.order_number}
+        </span>
+        <div className="flex items-center gap-1.5">
+          {elapsed > 0 && (
+            <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+              urgency === 'critical' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
+              urgency === 'warning'  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+              'bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
+            }`}>
+              <ClockIcon className="h-2.5 w-2.5" />
+              {formatElapsed(elapsed)}
+            </span>
           )}
-
-          {action && (
-            <button
-              onClick={() => onAdvance(order)}
-              disabled={advancing}
-              className={`flex h-7 min-w-[74px] items-center justify-center gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition-colors disabled:opacity-60 ${action.color}`}
-            >
-              {advancing
-                ? <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                : <CheckIcon className="h-3 w-3" />
-              }
-              <span className="truncate">{action.label}</span>
-            </button>
-          )}
-
-          {!action && <div className="w-2" />}
-
-          <button
-            onClick={() => onDetail(order)}
-            title="Ver detalhes"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-          >
-            <EyeIcon className="h-3.5 w-3.5" />
-          </button>
-
-          <button
-            onClick={() => onCancel(order)}
-            disabled={cancelling}
-            title="Cancelar pedido"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-red-100 text-red-400 transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 dark:hover:bg-red-900/20"
-          >
-            <XMarkIcon className="h-3.5 w-3.5" />
-          </button>
+          <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+            isPickup ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                       'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+          }`}>
+            {isPickup ? <HomeIcon className="h-2.5 w-2.5" /> : <TruckIcon className="h-2.5 w-2.5" />}
+            {isPickup ? 'Retirada' : 'Delivery'}
+          </span>
         </div>
       </div>
-      <div className="hidden">
+
+      {/* customer + value */}
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <p className="truncate text-[12px] font-semibold leading-tight text-gray-900 dark:text-white">
+          {order.customer_name || 'Cliente'}
+        </p>
+        <p className="shrink-0 text-[14px] font-bold tracking-[-0.03em] text-gray-900 dark:text-white">
+          R$ {fmt(order.total)}
+        </p>
+      </div>
+
+      {/* action buttons row — stop click propagation so card click (detail) doesn't fire */}
+      <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+        {hasPendingPayment && (
+          <button
+            onClick={() => onPay(order)}
+            disabled={paying}
+            title="Lançar pagamento"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-green-50 text-green-600 transition-colors hover:bg-green-100 disabled:opacity-60 dark:bg-green-900/20 dark:text-green-400"
+          >
+            {paying ? <ArrowPathIcon className="h-3 w-3 animate-spin" /> : <CurrencyDollarIcon className="h-3.5 w-3.5" />}
+          </button>
+        )}
+
+        {action && (
+          <button
+            onClick={() => onAdvance(order)}
+            disabled={advancing}
+            className={`flex h-7 flex-1 items-center justify-center gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition-colors disabled:opacity-60 ${action.color}`}
+          >
+            {advancing ? <ArrowPathIcon className="h-3 w-3 animate-spin" /> : <CheckIcon className="h-3 w-3" />}
+            <span className="truncate">{action.label}</span>
+          </button>
+        )}
+
         <button
-          onClick={() => onDetail(order)}
-          title="Ver detalhes"
-          className="hidden"
+          onClick={() => onCancel(order)}
+          disabled={cancelling}
+          title="Cancelar pedido"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-red-100 text-red-400 transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-900/30 dark:text-red-500"
         >
-          <EyeIcon className="h-4 w-4" />
+          <XMarkIcon className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
@@ -310,11 +351,7 @@ export const OrdersPage: React.FC = () => {
   }, [patchOrder]);
 
   const handleNewOrder = useCallback(() => {
-    if (!orderCreateRoute) return;
-    const newTab = window.open(orderCreateRoute, '_blank', 'noopener,noreferrer');
-    if (!newTab) {
-      navigate(orderCreateRoute);
-    }
+    if (orderCreateRoute) navigate(orderCreateRoute);
   }, [navigate, orderCreateRoute]);
 
   const columnData = useMemo(
