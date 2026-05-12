@@ -157,6 +157,31 @@ const getOrderTimestamp = (value?: string | null) => {
   return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
 };
 
+// Elapsed time helpers
+const getElapsedMinutes = (createdAt?: string | null): number => {
+  if (!createdAt) return 0;
+  const ms = Date.now() - new Date(createdAt).getTime();
+  return Math.floor(ms / 60000);
+};
+
+const formatElapsed = (minutes: number): string => {
+  if (minutes < 1) return 'agora';
+  if (minutes < 60) return `${minutes}min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+};
+
+type ElapsedUrgency = 'ok' | 'warning' | 'critical';
+
+const getElapsedUrgency = (minutes: number, status: string): ElapsedUrgency => {
+  // Delivered/cancelled orders don't show urgency
+  if (['delivered', 'cancelled'].includes(status)) return 'ok';
+  if (minutes >= 40) return 'critical';
+  if (minutes >= 20) return 'warning';
+  return 'ok';
+};
+
 const formatAddress = (address: Order['delivery_address']) => {
   if (!address) return null;
   if (typeof address === 'string') return address;
@@ -234,10 +259,24 @@ const PaymentBadge: React.FC<{ paymentStatus?: string; paymentMethod?: string }>
 
 // Order Card Component
 const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpdating, isSuccess }) => {
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const elapsedMin = getElapsedMinutes(order.created_at);
+  const urgency = getElapsedUrgency(elapsedMin, order.status);
+
   const derivedPaymentStatus = order.payment_status
     || (['paid', 'confirmed'].includes(order.status?.toLowerCase?.() || '')
       ? 'paid'
       : undefined);
+
+  const urgencyBorder =
+    urgency === 'critical' ? 'border-red-400 dark:border-red-700' :
+    urgency === 'warning'  ? 'border-yellow-400 dark:border-yellow-700' :
+    'border-slate-200 dark:border-zinc-700';
 
   return (
     <div
@@ -246,7 +285,8 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
         transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary-300 dark:hover:border-primary-500
         ${isDragging ? 'shadow-lg ring-2 ring-primary-500 scale-105' : ''}
         ${isUpdating ? 'opacity-70 border-primary-300' : ''}
-        ${isSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/30 animate-pulse' : 'border-slate-200 dark:border-zinc-700'}
+        ${isSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/30 animate-pulse' : urgencyBorder}
+        ${urgency === 'critical' && !isSuccess && !isUpdating ? 'animate-pulse' : ''}
       `}
       onClick={() => !isUpdating && onClick?.(order)}
     >
@@ -277,8 +317,14 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
             </div>
           )}
           {!isUpdating && !isSuccess && (
-            <span className="text-xs text-gray-500 dark:text-zinc-400">
-              {formatOrderTime(order.created_at)}
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+              urgency === 'critical'
+                ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
+                : urgency === 'warning'
+                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300'
+                : 'bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
+            }`}>
+              ⏱ {formatElapsed(elapsedMin)}
             </span>
           )}
         </div>

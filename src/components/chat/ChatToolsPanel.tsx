@@ -577,38 +577,17 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
     }
   };
 
-  const handleSendOptions = async () => {
-    if (!storeId || visibleProducts.length === 0) return;
+  const handleSendCatalog = async () => {
+    if (!storeId) return;
     setSending(true);
     try {
-      const byCategory = visibleProducts.slice(0, 10).reduce<Record<string, Product[]>>((acc, product) => {
-        const category = String(product.category_name || product.category || 'Produtos');
-        acc[category] = [...(acc[category] || []), product];
-        return acc;
-      }, {});
-      const sections = Object.entries(byCategory).map(([category, items]) => ({
-        title: truncate(category, 24),
-        rows: items.map(product => ({
-          id: `product_${product.id}`,
-          title: truncate(product.name, 24),
-          description: truncate(`${formatCurrency(product.price)}${product.description ? ` - ${product.description}` : ''}`, 72),
-        })),
-      }));
-
-      await whatsappService.sendInteractiveList({
+      await whatsappService.sendCatalogMenu({
         account_id: accountId,
         to: conversation.phone_number,
-        header: truncate(storeName || 'Cardápio', 60),
-        body_text: `Escolha um item do cardápio de ${storeName || 'nossa loja'}. Ao tocar no produto, eu continuo o pedido por aqui.`,
-        button_text: 'Ver cardápio',
-        sections,
-        metadata: {
-          source: 'chat_window_catalog_products',
-          store_id: storeId,
-          product_count: visibleProducts.length,
-        },
+        store_id: Number(storeId),
+        metadata: { source: 'chat_window_catalog_native' },
       });
-      toast.success('Cardápio interativo enviado');
+      toast.success('Catálogo WhatsApp enviado');
       onAfterSend?.();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -656,10 +635,10 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
 
       <button
         className="tp-btn tp-btn-secondary w-full"
-        onClick={() => void handleSendOptions()}
-        disabled={!storeId || visibleProducts.length === 0 || sending}
+        onClick={() => void handleSendCatalog()}
+        disabled={!storeId || sending}
       >
-        Enviar cardápio interativo
+        Enviar catálogo WhatsApp
       </button>
 
       <div className="tool-btn-row">

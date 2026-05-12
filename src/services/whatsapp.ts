@@ -95,6 +95,16 @@ export const sendInteractiveList = (data: {
   metadata?: Record<string, unknown>;
 }) => api.post('/whatsapp/messages/send_interactive_list/', data);
 
+export const sendCatalogMenu = (data: {
+  account_id: string;
+  to: string;
+  store_id?: number | null;
+  header_text?: string;
+  body_text?: string;
+  footer?: string;
+  metadata?: Record<string, unknown>;
+}) => api.post('/whatsapp/messages/send_catalog_menu/', data);
+
 export const sendImage = (data: { account_id: string; to: string; image_url?: string; image_id?: string; caption?: string; reply_to?: string }) =>
   api.post('/whatsapp/messages/send_image/', data);
 
@@ -181,6 +191,7 @@ export default {
   sendTemplate,
   sendInteractiveButtons,
   sendInteractiveList,
+  sendCatalogMenu,
   getMessages,
   getConversationHistory,
   getBusinessProfile,

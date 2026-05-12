@@ -68,56 +68,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   const navigationSections: NavSection[] = useMemo(() => [
     {
-      title: 'Loja',
+      title: 'Operação',
       items: [
         { name: 'Dashboard', href: '/', icon: HomeIcon },
         { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon },
+        {
+          name: 'WhatsApp',
+          href: '/whatsapp/inbox',
+          icon: DevicePhoneMobileIcon,
+          badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
+        },
+        {
+          name: 'Conversas',
+          href: '/conversations',
+          icon: ChatBubbleLeftRightIcon,
+        },
         { name: 'Clientes', href: storeHref('customers'), icon: UserGroupIcon },
+      ]
+    },
+    {
+      title: 'Catálogo',
+      items: [
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
         { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
       ]
     },
     {
-      title: 'Comunicação',
+      title: 'Ferramentas',
       items: [
-        {
-          name: 'Conversas',
-          href: '/conversations',
-          icon: ChatBubbleLeftRightIcon,
-          badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
-        },
-        { name: 'Conexões', href: '/connections', icon: LinkIcon },
-        {
-          name: 'WhatsApp',
-          href: '/whatsapp/inbox',
-          icon: DevicePhoneMobileIcon,
-          children: [
-            { name: 'Caixa de Entrada', href: '/whatsapp/inbox', icon: InboxIcon },
-            { name: 'Chat', href: '/whatsapp/chat', icon: ChatBubbleLeftRightIcon },
-            { name: 'Handover', href: '/whatsapp/handover', icon: UserGroupIcon },
-            { name: 'Contas', href: '/accounts', icon: UserGroupIcon },
-            { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-            { name: 'Diagnóstico', href: '/whatsapp/diagnostics', icon: Cog6ToothIcon },
-          ]
-        },
-        {
-          name: 'Instagram',
-          href: '/instagram/accounts',
-          icon: ChatBubbleLeftRightIcon,
-          children: [
-            { name: 'Mensagens', href: '/instagram/inbox', icon: InboxIcon },
-            { name: 'Contas', href: '/instagram/accounts', icon: UserGroupIcon },
-          ]
-        },
-        {
-          name: 'Messenger',
-          href: '/messenger/inbox',
-          icon: ChatBubbleBottomCenterTextIcon,
-          children: [
-            { name: 'Mensagens', href: '/messenger/inbox', icon: InboxIcon },
-            { name: 'Contas', href: '/messenger/accounts', icon: UserGroupIcon },
-          ]
-        },
         {
           name: 'Marketing',
           href: '/marketing',
@@ -127,53 +105,42 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
             { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
             { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
-            { name: 'Automações', href: '/marketing/automations', icon: BoltIcon },
           ]
         },
-      ]
-    },
-    {
-      title: 'Automação & IA',
-      items: [
         {
           name: 'Agentes IA',
           href: '/agents',
           icon: CpuChipIcon,
-          badge: 'Novo',
+          badge: 'IA',
           children: [
             { name: 'Lista de Agentes', href: '/agents', icon: CpuChipIcon },
             { name: 'Novo Agente', href: '/agents/new', icon: PlusIcon },
-            { name: 'Testar Orquestrador', href: '/agents/test/orchestrator', icon: SparklesIcon },
-          ]
-        },
-        {
-          name: 'Automação',
-          href: '/automation/companies',
-          icon: BoltIcon,
-          children: [
-            { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
-            { name: 'Sessões', href: '/automation/sessions', icon: UserGroupIcon },
-            { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
-            { name: 'Logs', href: '/automation/logs', icon: DocumentChartBarIcon },
             { name: 'Intenções', href: '/automation/intents/stats', icon: SparklesIcon },
+            { name: 'Logs', href: '/automation/logs', icon: DocumentChartBarIcon },
           ]
         },
-      ]
-    },
-    {
-      title: 'Configurações',
-      items: [
         {
-          name: 'Lojas',
-          href: '/stores',
-          icon: BuildingStorefrontIcon,
+          name: 'Canais',
+          href: '/connections',
+          icon: LinkIcon,
           children: [
-            { name: 'Todas as Lojas', href: '/stores', icon: BuildingStorefrontIcon },
-            { name: 'Configurações', href: storeHref('settings'), icon: Cog6ToothIcon },
-            { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
+            { name: 'Conexões', href: '/connections', icon: LinkIcon },
+            { name: 'Instagram', href: '/instagram/inbox', icon: ChatBubbleLeftRightIcon },
+            { name: 'Messenger', href: '/messenger/inbox', icon: ChatBubbleBottomCenterTextIcon },
+            { name: 'Handover', href: '/whatsapp/handover', icon: UserGroupIcon },
           ]
         },
-        { name: 'Sistema', href: '/settings', icon: Cog6ToothIcon },
+        {
+          name: 'Configurações',
+          href: '/stores',
+          icon: Cog6ToothIcon,
+          children: [
+            { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
+            { name: 'Configurações da Loja', href: storeHref('settings'), icon: Cog6ToothIcon },
+            { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
+            { name: 'Sistema', href: '/settings', icon: Cog6ToothIcon },
+          ]
+        },
       ]
     },
   ], [storeHref, totalUnreadCount]);
@@ -267,42 +234,45 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     return false;
   };
 
-  const renderNavItem = (item: NavItem, depth = 0) => {
+  const renderNavItem = (item: NavItem, depth = 0, isPrimary = false) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.name);
     const isActive = isItemActive(item);
 
+    const primaryActive = 'bg-primary-50 dark:bg-zinc-900 text-primary-700 dark:text-primary-400 font-semibold';
+    const primaryIdle   = 'text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800';
+    const secondaryActive = 'bg-primary-50 dark:bg-zinc-900 text-primary-700 dark:text-primary-400';
+    const secondaryIdle   = 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white';
+
+    const itemClass = (active: boolean) => [
+      'w-full flex items-center justify-between rounded-lg transition-colors',
+      isPrimary ? 'px-3 py-2.5 text-sm' : 'px-3 py-2 text-sm',
+      active ? (isPrimary ? primaryActive : secondaryActive) : (isPrimary ? primaryIdle : secondaryIdle),
+    ].join(' ');
+
     if (hasChildren) {
       return (
         <div key={item.name}>
-          <button
-            onClick={() => toggleExpand(item.name)}
-            className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-              isActive 
-                ? 'bg-primary-50 dark:bg-zinc-900 text-primary-700 dark:text-primary-400' 
-                : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <div className="flex items-center">
-              <item.icon className="w-5 h-5 mr-3" />
-              {item.name}
+          <button onClick={() => toggleExpand(item.name)} className={itemClass(isActive)}>
+            <div className="flex items-center gap-3">
+              <item.icon className={isPrimary ? 'w-5 h-5' : 'w-4 h-4'} />
+              <span>{item.name}</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {item.badge && (
-                <span className="text-xs bg-primary-100 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold bg-primary-100 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded-full">
                   {item.badge}
                 </span>
               )}
-              {isExpanded ? (
-                <ChevronDownIcon className="w-4 h-4" />
-              ) : (
-                <ChevronRightIcon className="w-4 h-4" />
-              )}
+              {isExpanded
+                ? <ChevronDownIcon className="w-3.5 h-3.5 opacity-50" />
+                : <ChevronRightIcon className="w-3.5 h-3.5 opacity-50" />
+              }
             </div>
           </button>
           {isExpanded && (
-            <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-zinc-800 pl-2">
-              {item.children!.map(child => renderNavItem(child, depth + 1))}
+            <div className="ml-3 mt-0.5 space-y-0.5 border-l-2 border-gray-100 dark:border-zinc-800 pl-3">
+              {item.children!.map(child => renderNavItem(child, depth + 1, false))}
             </div>
           )}
         </div>
@@ -315,20 +285,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         to={item.href}
         end={item.href === '/'}
         onClick={handleNavClick}
-        className={({ isActive }) =>
-          `flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-            isActive
-              ? 'bg-primary-50 dark:bg-zinc-900 text-primary-700 dark:text-primary-400'
-              : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
-          }`
-        }
+        className={({ isActive: active }) => itemClass(active)}
       >
-        <div className="flex items-center">
-          <item.icon className="w-5 h-5 mr-3" />
-          {item.name}
+        <div className="flex items-center gap-3">
+          <item.icon className={isPrimary ? 'w-5 h-5' : 'w-4 h-4'} />
+          <span>{item.name}</span>
         </div>
         {item.badge && (
-          <span className="text-xs bg-primary-100 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded">
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+            /^\d+$/.test(item.badge)
+              ? 'bg-red-500 text-white min-w-[18px] text-center'
+              : 'bg-primary-100 dark:bg-zinc-800 text-primary-700 dark:text-primary-400'
+          }`}>
             {item.badge}
           </span>
         )}
@@ -388,16 +356,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-2 overflow-y-auto smooth-scroll">
-        {filteredSections.map((section, index) => (
-          <div key={section.title} className={cn('animate-fade-up', index > 0 ? 'mt-5' : '')}>
-            <h3 className="px-3 mb-2 text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">
-              {section.title}
-            </h3>
-            <div className="space-y-0.5">
-              {section.items.map((item) => renderNavItem(item))}
+        {filteredSections.map((section, index) => {
+          const isPrimary = section.title === 'Operação';
+          return (
+            <div key={section.title} className={cn('animate-fade-up', index > 0 ? 'mt-4' : '')}>
+              <h3 className="px-3 mb-1.5 text-[10px] font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-widest">
+                {section.title}
+              </h3>
+              <div className={isPrimary ? 'space-y-0.5' : 'space-y-0.5'}>
+                {section.items.map((item) => renderNavItem(item, 0, isPrimary))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {filteredSections.length === 0 && (
           <div className="px-3 py-8 text-center">
             <p className="text-sm text-gray-500 dark:text-zinc-400">
