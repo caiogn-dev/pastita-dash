@@ -332,62 +332,145 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
         />
       )}
 
-      {/* ── Painel de Conversas ── */}
-      <div className="conversations-panel">
-        <div className="conversations-header">
-          <h1>{accountName || 'WhatsApp'}</h1>
-          <div className="search-box">
-            <MagnifyingGlassIcon className="w-4 h-4" style={{ flexShrink: 0 }} />
+      {/* ── Painel Esquerdo ── */}
+      <div className="w-80 flex-shrink-0 flex flex-col border-r border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-card,#fff)] dark:bg-[var(--dark-bg-card,#1a1a1a)]">
+        {/* Header */}
+        <div className="p-4 space-y-3 border-b border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)]">
+          <div className="flex items-center justify-between">
+            <h1 className="font-display text-lg font-bold text-[var(--fg-primary,#111)] dark:text-[var(--dark-text-primary,#FAF9F7)]">
+              {accountName || 'WhatsApp'}
+            </h1>
+            <button
+              onClick={() => setShowNewConvModal(true)}
+              className="p-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white transition-colors"
+              title="Nova conversa"
+            >
+              <PlusIcon className="w-4 h-4" />
+            </button>
+          </div>
+          {/* Search */}
+          <div className="flex items-center gap-2 bg-[var(--bg-hover,#f9fafb)] dark:bg-[var(--dark-bg-hover,#161616)] rounded-lg px-3 py-2">
+            <MagnifyingGlassIcon className="w-4 h-4 text-[var(--fg-muted,#9ca3af)] flex-shrink-0" />
             <input
               type="text"
               placeholder="Buscar conversa..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-[var(--fg-primary,#111)] dark:text-[var(--dark-text-primary,#FAF9F7)] placeholder-[var(--fg-muted,#9ca3af)] outline-none"
             />
+          </div>
+          {/* Filter chips */}
+          <div className="flex gap-1.5 flex-wrap">
+            {(['all', 'unread', 'human', 'bot'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                  filter === f
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-[var(--bg-hover,#f3f4f6)] dark:bg-[var(--dark-bg-hover,#161616)] text-[var(--fg-secondary,#6b7280)] dark:text-[var(--dark-text-secondary,#a1a1aa)] hover:bg-[var(--bg-card,#fff)] dark:hover:bg-[var(--dark-bg-card,#1a1a1a)]'
+                }`}
+              >
+                {f === 'all' ? 'Todos' : f === 'unread' ? 'Não lidos' : f === 'human' ? 'Humano' : 'Bot'}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="conversations-list">
+        {/* Lista */}
+        <div className="flex-1 overflow-y-auto">
           {isLoadingConversations ? (
-            <div className="empty-state">Carregando...</div>
+            <div className="p-4 space-y-3">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full animate-shimmer bg-gradient-to-r from-[var(--bg-hover,#f3f4f6)] via-[var(--bg-card,#fff)] to-[var(--bg-hover,#f3f4f6)] bg-[length:200%_100%] flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 rounded bg-gradient-to-r from-[var(--bg-hover,#f3f4f6)] via-[var(--bg-card,#fff)] to-[var(--bg-hover,#f3f4f6)] animate-shimmer bg-[length:200%_100%] w-3/4" />
+                    <div className="h-2.5 rounded bg-gradient-to-r from-[var(--bg-hover,#f3f4f6)] via-[var(--bg-card,#fff)] to-[var(--bg-hover,#f3f4f6)] animate-shimmer bg-[length:200%_100%] w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : filteredConversations.length === 0 ? (
-            <div className="empty-state">
-              {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa'}
+            <div className="flex flex-col items-center justify-center h-32 gap-2 text-[var(--fg-muted,#9ca3af)] text-sm">
+              <p>{searchTerm ? 'Nenhuma conversa encontrada' : filter !== 'all' ? 'Nenhuma conversa nesse filtro' : 'Nenhuma conversa'}</p>
             </div>
           ) : (
-            filteredConversations.map(conv => (
-              <div
-                key={conv.id}
-                className={`conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
-                onClick={() => setSelectedConversation(conv)}
-              >
-                <div className="conversation-avatar">
-                  {conv.profile_picture || conv.profile_picture_url ? (
-                    <img
-                      src={conv.profile_picture || conv.profile_picture_url}
-                      alt={conv.contact_name || conv.phone_number}
-                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    getInitials(conv.contact_name, conv.phone_number)
-                  )}
+            filteredConversations.map(conv => {
+              const isActive = selectedConversation?.id === conv.id;
+              const avatarBg = getAvatarColor(conv.contact_name || conv.phone_number);
+              const initials = getInitials(conv.contact_name, conv.phone_number);
+              const profilePic = conv.profile_picture || conv.profile_picture_url;
+              const timestamp = conv.last_message_at
+                ? (() => {
+                    try {
+                      const d = new Date(conv.last_message_at);
+                      const now = new Date();
+                      const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+                      if (diffDays === 0) return format(d, 'HH:mm');
+                      if (diffDays === 1) return 'Ontem';
+                      if (diffDays < 7) return format(d, 'EEE', { locale: ptBR });
+                      return format(d, 'dd/MM');
+                    } catch { return ''; }
+                  })()
+                : '';
+              return (
+                <div
+                  key={conv.id}
+                  onClick={() => setSelectedConversation(conv)}
+                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                    isActive
+                      ? 'bg-primary-50 dark:bg-primary-950/20 border-l-2 border-primary-600'
+                      : 'hover:bg-[var(--bg-hover,#f9fafb)] dark:hover:bg-[var(--dark-bg-hover,#161616)] border-l-2 border-transparent'
+                  }`}
+                >
+                  {/* Avatar */}
+                  <div className="relative flex-shrink-0">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white overflow-hidden"
+                      style={{ backgroundColor: profilePic ? undefined : avatarBg }}
+                    >
+                      {profilePic
+                        ? <img src={profilePic} alt={conv.contact_name} className="w-full h-full object-cover" />
+                        : initials}
+                    </div>
+                    {/* Mode dot */}
+                    <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card,#fff)] dark:border-[var(--dark-bg-card,#1a1a1a)] ${
+                      conv.mode === 'human' ? 'bg-emerald-400' : 'bg-zinc-400'
+                    }`} />
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[var(--fg-primary,#111)] dark:text-[var(--dark-text-primary,#FAF9F7)] truncate">
+                      {conv.contact_name || conv.phone_number}
+                    </p>
+                    <p className="text-xs text-[var(--fg-secondary,#6b7280)] dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate mt-0.5">
+                      {typingContacts.has(conv.id) ? (
+                        <span className="text-emerald-500 italic flex items-center gap-1">
+                          <span className="flex gap-0.5 items-center">
+                            {[0,1,2].map(i => (
+                              <span key={i} className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                            ))}
+                          </span>
+                          digitando...
+                        </span>
+                      ) : (conv.last_message_preview || conv.last_message || 'Sem mensagens')}
+                    </p>
+                  </div>
+                  {/* Meta */}
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    {timestamp && (
+                      <span className="text-[10px] text-[var(--fg-muted,#9ca3af)]">{timestamp}</span>
+                    )}
+                    {(conv.unread_count ?? 0) > 0 && (
+                      <span className="px-1.5 py-0.5 min-w-[18px] text-center bg-primary-600 text-white text-[10px] font-bold rounded-full">
+                        {conv.unread_count}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="conversation-info">
-                  <h3>{conv.contact_name || conv.phone_number}</h3>
-                  <p className="conversation-preview">
-                    {typingContacts.has(conv.id)
-                      ? <span style={{ color: '#10b981', fontStyle: 'italic' }}>digitando...</span>
-                      : (conv.last_message_preview || conv.last_message || 'Sem mensagens')}
-                  </p>
-                </div>
-                <div className="conversation-meta">
-                  <span className="mode-badge">{conv.mode === 'human' ? '👤' : '🤖'}</span>
-                  {conv.unread_count && conv.unread_count > 0 && (
-                    <span className="unread-badge">{conv.unread_count}</span>
-                  )}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
