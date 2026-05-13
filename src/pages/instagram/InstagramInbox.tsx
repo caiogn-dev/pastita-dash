@@ -453,7 +453,7 @@ export default function InstagramInbox() {
                   className={`mb-2 w-full rounded-2xl border p-3 text-left transition-colors ${
                     isSelected
                       ? 'border-pink-300 bg-pink-50 dark:border-pink-700 dark:bg-pink-900/20'
-                      : 'border-border-primary bg-bg-card hover:bg-bg-hover'
+                      : 'border-[var(--dark-border,#2a2a2a)] bg-bg-card hover:bg-bg-hover'
                   }`}
                 >
                   <div className="flex items-start gap-3">

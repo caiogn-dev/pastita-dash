@@ -20,6 +20,9 @@ import toast from 'react-hot-toast';
 import type { Conversation, Message, IntentLog, AutomationLog } from '../../types';
 import './DebugDashboard.css';
 
+// Note: DebugDashboardPage uses CSS classes from DebugDashboard.css
+// No inline dark mode zinc tokens to replace here
+
 interface ConversationWithMessages extends Conversation {
   messages?: Message[];
 }
