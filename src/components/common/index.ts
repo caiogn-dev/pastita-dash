@@ -44,3 +44,4 @@ export {
 } from './StatusFilter';
 
 export { Textarea } from './Textarea';
+export { SkeletonLoader } from './SkeletonLoader';
