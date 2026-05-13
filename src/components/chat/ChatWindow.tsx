@@ -491,12 +491,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {!selectedConversation ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 text-[var(--fg-muted,#9ca3af)] bg-[#f0ebe3] dark:bg-[#0d0907]">
-            <div className="empty-message">
-              <span style={{ fontSize: '4rem' }}>💬</span>
-              <h2>{accountName || 'WhatsApp Business'}</h2>
-              <p>Selecione uma conversa para começar a atender</p>
+            <div className="flex flex-col items-center justify-center gap-3">
+              <span className="text-6xl">💬</span>
+              <h2 className="text-lg font-semibold text-[var(--fg-primary,#111)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{accountName || 'WhatsApp Business'}</h2>
+              <p className="text-sm text-[var(--fg-muted,#9ca3af)]">Selecione uma conversa para começar a atender</p>
               {!isConnected && (
-                <p style={{ color: '#ef4444', fontSize: '0.85rem' }}>⚠️ Desconectado</p>
+                <p className="text-red-500 text-xs">⚠️ Desconectado</p>
               )}
             </div>
           </div>
@@ -591,7 +591,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
 
             {/* Banner de erro de conexão */}
             {connectionError && (
-              <div style={{ padding: '0.5rem 1rem', background: '#fef9c3', borderBottom: '1px solid #fde047', fontSize: '0.82rem', color: '#854d0e' }}>
+              <div className="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-300 text-xs text-center">
                 ⚠️ {connectionError}
               </div>
             )}
@@ -635,7 +635,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
             </div>
 
             {/* Input */}
-            <div style={{ borderTop: '1px solid var(--border-default, #e5e7eb)', background: 'var(--bg-card, white)', flexShrink: 0 }}>
+            <div className="border-t border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-card,#fff)] dark:bg-[var(--dark-bg-card,#1a1a1a)] flex-shrink-0">
               <MessageInput
                 onSend={handleSendMessage}
                 onTyping={(isTyping) => { if (selectedConversation) sendTypingIndicator(selectedConversation.id, isTyping); }}
