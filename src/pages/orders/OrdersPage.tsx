@@ -45,7 +45,7 @@ import {
   cancelOrder,
   StoreOrder,
 } from '../../services/storesApi';
-import { useNotificationSound, useOrdersWebSocket, useStore } from '../../hooks';
+import { useNotificationSound, useOrdersWebSocket, useStore, useConfirm } from '../../hooks';
 
 // ─── Column config ────────────────────────────────────────────────────────────
 
@@ -381,6 +381,7 @@ const LOCAL_TTL = 60000;
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId, storeSlug } = useStore();
+  const [ConfirmDialog, confirm] = useConfirm();
   const storeQuery = storeSlug || storeId;
   const orderCreateRoute = storeQuery ? `/stores/${storeQuery}/orders/new` : null;
 
@@ -502,7 +503,12 @@ export const OrdersPage: React.FC = () => {
   }, [patchOrder]);
 
   const handleCancel = useCallback(async (order: StoreOrder) => {
-    if (!window.confirm(`Cancelar pedido #${order.order_number}?`)) return;
+    const confirmed = await confirm({
+      title: 'Cancelar pedido',
+      message: `Cancelar pedido #${order.order_number}? Esta ação não pode ser desfeita.`,
+      variant: 'warning',
+    });
+    if (!confirmed) return;
     setCancellingId(order.id);
     try {
       await cancelOrder(order.id);
@@ -714,6 +720,7 @@ export const OrdersPage: React.FC = () => {
           </div>
         ) : null}
       </DragOverlay>
+      {ConfirmDialog}
     </DndContext>
   );
 };

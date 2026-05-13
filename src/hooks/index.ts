@@ -1,3 +1,6 @@
+// Confirmation dialog hook
+export { useConfirm } from './useConfirm';
+
 // Theme hook
 export { useTheme } from './useTheme';
 

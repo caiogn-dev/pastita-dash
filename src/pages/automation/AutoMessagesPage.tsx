@@ -17,9 +17,11 @@ import {
 import { AutoMessage, CompanyProfile, AutoMessageEventType, CreateAutoMessage } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../hooks';
 
 const AutoMessagesPage: React.FC = () => {
   const { companyId } = useParams<{ companyId: string }>();
+  const [ConfirmDialog, confirm] = useConfirm();
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [messages, setMessages] = useState<AutoMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,11 @@ const AutoMessagesPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta mensagem?')) return;
+    const confirmed = await confirm({
+      title: 'Excluir mensagem',
+      message: 'Tem certeza que deseja excluir esta mensagem?',
+    });
+    if (!confirmed) return;
     try {
       await autoMessageService.delete(id);
       toast.success('Mensagem excluída!');
@@ -527,6 +533,8 @@ const AutoMessagesPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {ConfirmDialog}
 
       {/* Test Modal */}
       {testModal && (

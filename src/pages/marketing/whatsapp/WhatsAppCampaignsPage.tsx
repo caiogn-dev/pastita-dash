@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge } from '../../../components/common';
+import { useConfirm } from '../../../hooks';
 import whatsappService from '../../../services/whatsapp';
 import { campaignsService, Campaign } from '../../../services/campaigns';
 import logger from '../../../services/logger';
@@ -44,6 +45,7 @@ type CampaignStats = {
 
 export const WhatsAppCampaignsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [ConfirmDialog, confirm] = useConfirm();
 
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -128,8 +130,13 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   };
 
   const handleCancelCampaign = async (campaign: Campaign) => {
-    if (!confirm('Tem certeza que deseja cancelar esta campanha?')) return;
-    
+    const confirmed = await confirm({
+      title: 'Cancelar campanha',
+      message: 'Tem certeza que deseja cancelar esta campanha?',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
+
     setActionLoading(campaign.id);
     try {
       await campaignsService.cancelCampaign(campaign.id);
@@ -489,6 +496,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
           </Card>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };

@@ -87,7 +87,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  const { isConnected, connectionError, subscribeToConversation, unsubscribeFromConversation, sendTypingIndicator } =
+  const { isConnected, connectionError, retry, subscribeToConversation, unsubscribeFromConversation, sendTypingIndicator } =
     useWhatsAppWS({
       accountId,
       enabled: !!accountId,
@@ -456,8 +456,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
 
             {/* Banner de erro de conexão */}
             {connectionError && (
-              <div style={{ padding: '0.5rem 1rem', background: '#fef9c3', borderBottom: '1px solid #fde047', fontSize: '0.82rem', color: '#854d0e' }}>
-                ⚠️ {connectionError}
+              <div style={{ padding: '0.5rem 1rem', background: '#fef9c3', borderBottom: '1px solid #fde047', fontSize: '0.82rem', color: '#854d0e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <span>⚠️ {connectionError}</span>
+                <button
+                  type="button"
+                  onClick={retry}
+                  style={{ padding: '0.2rem 0.6rem', background: '#854d0e', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, flexShrink: 0 }}
+                >
+                  Reconectar
+                </button>
               </div>
             )}
 

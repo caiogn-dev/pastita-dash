@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useConfirm } from '../../hooks';
 import logger from '../../services/logger';
 import { Link } from 'react-router-dom';
 import {
@@ -18,6 +19,7 @@ import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
 
 const CompanyProfilesPage: React.FC = () => {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [profiles, setProfiles] = useState<CompanyProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -42,7 +44,12 @@ const CompanyProfilesPage: React.FC = () => {
   };
 
   const handleRegenerateApiKey = async (id: string) => {
-    if (!confirm('Tem certeza que deseja gerar uma nova API key? A chave atual será invalidada.')) return;
+    const confirmed = await confirm({
+      title: 'Regenerar API key',
+      message: 'A chave atual será invalidada.',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
     try {
       const result = await companyProfileService.regenerateApiKey(id);
       toast.success('Nova API key gerada!');
@@ -266,6 +273,7 @@ const CompanyProfilesPage: React.FC = () => {
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };

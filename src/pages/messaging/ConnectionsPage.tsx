@@ -2,6 +2,7 @@
  * ConnectionsPage - Conexões de mensagens (sem Chakra UI)
  */
 import React, { useState, useEffect, useRef } from 'react';
+import { useConfirm } from '../../hooks';
 import {
   PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon,
   CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
@@ -120,6 +121,7 @@ const Toggle: React.FC<{ checked: boolean; onChange: () => void }> = ({ checked,
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function ConnectionsPage() {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -260,7 +262,11 @@ export default function ConnectionsPage() {
   };
 
   const handleDelete = async (conn: Connection) => {
-    if (!confirm(`Excluir conexão "${conn.name}"?`)) return;
+    const confirmed = await confirm({
+      title: 'Excluir conexão',
+      message: `Excluir conexão "${conn.name}"?`,
+    });
+    if (!confirmed) return;
     try {
       if (conn.platform === 'whatsapp') await whatsappService.deleteAccount(conn.id);
       else if (conn.platform === 'messenger') await messengerService.deleteAccount(conn.id);
@@ -558,6 +564,7 @@ export default function ConnectionsPage() {
           </div>
         </div>
       </Modal>
+      {ConfirmDialog}
     </div>
   );
 }

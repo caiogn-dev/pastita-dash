@@ -9,8 +9,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { Card, Button, Badge } from '../../components/common';
 import { messengerService, MessengerAccount } from '../../services/messenger';
+import { useConfirm } from '../../hooks';
 
 export default function MessengerAccounts() {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [accounts, setAccounts] = useState<MessengerAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,11 @@ export default function MessengerAccounts() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Excluir esta conta?')) return;
+    const confirmed = await confirm({
+      title: 'Excluir conta',
+      message: 'Excluir esta conta? Esta ação não pode ser desfeita.',
+    });
+    if (!confirmed) return;
     try { await messengerService.deleteAccount(id); loadAccounts(); }
     catch { setError('Erro ao excluir conta'); }
   };
@@ -163,6 +169,8 @@ export default function MessengerAccounts() {
           ))}
         </div>
       )}
+
+      {ConfirmDialog}
 
       {/* Modal */}
       {dialogOpen && (
