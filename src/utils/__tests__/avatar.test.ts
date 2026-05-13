@@ -27,4 +27,10 @@ describe('getInitials', () => {
   it('retorna ? quando sem nome e sem telefone', () => {
     expect(getInitials()).toBe('?');
   });
+  it('funciona com nome de uma palavra', () => {
+    expect(getInitials('Maria')).toBe('M');
+  });
+  it('retorna ? com telefone vazio', () => {
+    expect(getInitials(undefined, '')).toBe('?');
+  });
 });

@@ -9,6 +9,6 @@ export function getAvatarColor(name: string): string {
 }
 
 export function getInitials(name?: string, phone?: string): string {
-  if (name) return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  if (name) return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2);
   return phone?.slice(-2) || '?';
 }
