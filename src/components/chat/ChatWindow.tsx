@@ -10,12 +10,17 @@ import {
   DocumentTextIcon,
   BoltIcon,
   EllipsisVerticalIcon,
+  PlusIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
 
 import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { MediaViewer } from './MediaViewer';
 import { ChatToolsPanel } from './ChatToolsPanel';
+import { ContactInfoPanel } from './ContactInfoPanel';
+import { NewConversationModal } from './NewConversationModal';
+import { getAvatarColor, getInitials } from '../../utils/avatar';
 import { useWhatsAppWS, MessageReceivedEvent, MessageSentEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
 import { sendFile as sendFileApi } from '../../services/whatsapp';
@@ -52,11 +57,6 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   errorMessage: msg.error_message,
 });
 
-const getInitials = (name?: string, phone?: string) => {
-  if (name) return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  return phone?.slice(-2) || '?';
-};
-
 const getStoreUrl = (metadata?: Record<string, unknown>) => {
   const value = metadata?.website_url || metadata?.store_url || metadata?.public_url;
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -72,7 +72,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
-  const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
+  const [rightPanel, setRightPanel] = useState<'info' | 'templates' | 'tools' | null>(null);
+  const [showNewConvModal, setShowNewConvModal] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'unread' | 'human' | 'bot'>('all');
   const [insertText, setInsertText] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -293,8 +295,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     } catch (error) { toast.error(getErrorMessage(error)); }
   };
 
-  const togglePanel = (panel: 'templates' | 'tools') => {
-    setActivePanel(prev => prev === panel ? null : panel);
+  const toggleRightPanel = (panel: 'info' | 'templates' | 'tools') => {
+    setRightPanel(prev => prev === panel ? null : panel);
   };
 
   const handleInsertText = (text: string) => {
@@ -312,7 +314,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     return groups;
   }, {} as Record<string, Message[]>);
 
-  const filteredConversations = ensureArray<Conversation>(conversations);
+  const filteredConversations = ensureArray<Conversation>(conversations).filter(conv => {
+    if (filter === 'unread') return (conv.unread_count ?? 0) > 0;
+    if (filter === 'human') return conv.mode === 'human';
+    if (filter === 'bot') return conv.mode !== 'human';
+    return true;
+  });
 
   return (
     <div className="whatsapp-inbox">
