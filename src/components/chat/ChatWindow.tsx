@@ -17,7 +17,6 @@ import {
 import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { MediaViewer } from './MediaViewer';
-import { ChatToolsPanel } from './ChatToolsPanel';
 import { ContactInfoPanel } from './ContactInfoPanel';
 import { NewConversationModal } from './NewConversationModal';
 import { getAvatarColor, getInitials } from '../../utils/avatar';
@@ -27,7 +26,6 @@ import { sendFile as sendFileApi } from '../../services/whatsapp';
 import { handoverService } from '../../services/handover';
 import { Message, Conversation } from '../../types';
 import { useStore } from '../../hooks/useStore';
-import '../../pages/whatsapp/WhatsAppInbox.css';
 
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
@@ -322,13 +320,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   });
 
   return (
-    <div className="whatsapp-inbox">
+    <div className="flex h-[calc(100vh-56px)] overflow-hidden bg-[var(--bg-primary,#fff)] dark:bg-[var(--dark-bg-primary,#0D0907)]">
       {mediaViewer && (
         <MediaViewer
           url={mediaViewer.url}
           type={mediaViewer.type}
           fileName={mediaViewer.fileName}
           onClose={() => setMediaViewer(null)}
+        />
+      )}
+      {showNewConvModal && (
+        <NewConversationModal
+          accountId={accountId}
+          onClose={() => setShowNewConvModal(false)}
+          onConversationCreated={(conv) => {
+            setConversations(prev => {
+              const exists = prev.some(c => c.id === conv.id);
+              return exists ? prev : [conv, ...prev];
+            });
+            setSelectedConversation(conv);
+            setShowNewConvModal(false);
+          }}
         />
       )}
 
@@ -476,9 +488,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       </div>
 
       {/* ── Painel de Chat ── */}
-      <div className={`chat-panel ${activePanel ? 'panel-open' : ''}`}>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {!selectedConversation ? (
-          <div className="no-conversation-selected">
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-[var(--fg-muted,#9ca3af)] bg-[#f0ebe3] dark:bg-[#0d0907]">
             <div className="empty-message">
               <span style={{ fontSize: '4rem' }}>💬</span>
               <h2>{accountName || 'WhatsApp Business'}</h2>
@@ -491,55 +503,88 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
         ) : (
           <>
             {/* Header */}
-            <div className="chat-header">
-              <div className="chat-info">
-                <h2>{selectedConversation.contact_name || selectedConversation.phone_number}</h2>
-                <p className="phone-number">
-                  {typingContacts.has(selectedConversation.id)
-                    ? <span style={{ color: '#10b981' }}>digitando...</span>
-                    : selectedConversation.phone_number}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-card,#fff)] dark:bg-[var(--dark-bg-card,#1a1a1a)] flex-shrink-0">
+              {/* Avatar clicável → abre Info */}
+              <button
+                onClick={() => toggleRightPanel('info')}
+                className="relative flex-shrink-0"
+                title="Ver info do contato"
+              >
+                {(() => {
+                  const pic = selectedConversation.profile_picture || selectedConversation.profile_picture_url;
+                  const bg = getAvatarColor(selectedConversation.contact_name || selectedConversation.phone_number);
+                  const ini = getInitials(selectedConversation.contact_name, selectedConversation.phone_number);
+                  return (
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white overflow-hidden" style={{ backgroundColor: pic ? undefined : bg }}>
+                      {pic ? <img src={pic} alt={selectedConversation.contact_name} className="w-full h-full object-cover" /> : ini}
+                    </div>
+                  );
+                })()}
+              </button>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[var(--fg-primary,#111)] dark:text-[var(--dark-text-primary,#FAF9F7)] truncate">
+                  {selectedConversation.contact_name || selectedConversation.phone_number}
+                </p>
+                <p className="text-xs text-[var(--fg-secondary,#6b7280)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                  {typingContacts.has(selectedConversation.id) ? (
+                    <span className="text-emerald-500 flex items-center gap-1">
+                      <span className="flex gap-0.5">
+                        {[0,1,2].map(i => (
+                          <span key={i} className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                        ))}
+                      </span>
+                      digitando...
+                    </span>
+                  ) : selectedConversation.phone_number}
                 </p>
               </div>
-              <div className="chat-actions">
-                <div className="mode-selector">
-                  <button
-                    className={`mode-btn ${selectedConversation.mode !== 'human' ? 'active' : ''}`}
-                    onClick={handleSwitchMode}
-                    title="Modo Automático"
-                  >
-                    🤖
-                  </button>
-                  <button
-                    className={`mode-btn ${selectedConversation.mode === 'human' ? 'active' : ''}`}
-                    onClick={handleSwitchMode}
-                    title="Modo Humano"
-                  >
-                    👤
-                  </button>
-                </div>
+              {/* Ações */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {/* Pill modo */}
                 <button
-                  className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
-                  onClick={() => togglePanel('templates')}
+                  onClick={handleSwitchMode}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors border ${
+                    selectedConversation.mode === 'human'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800'
+                      : 'bg-zinc-50 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
+                  }`}
+                  title={selectedConversation.mode === 'human' ? 'Mudar para Bot' : 'Mudar para Humano'}
+                >
+                  {selectedConversation.mode === 'human' ? '👤 Humano' : '🤖 Bot'}
+                </button>
+                {/* Botão Info */}
+                <button
+                  onClick={() => toggleRightPanel('info')}
+                  className={`p-1.5 rounded-lg transition-colors ${rightPanel === 'info' ? 'bg-primary-600 text-white' : 'hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] text-[var(--fg-secondary)]'}`}
+                  title="Info do contato"
+                >
+                  <UserCircleIcon className="w-4 h-4" />
+                </button>
+                {/* Botão Templates */}
+                <button
+                  onClick={() => toggleRightPanel('templates')}
+                  className={`p-1.5 rounded-lg transition-colors ${rightPanel === 'templates' ? 'bg-primary-600 text-white' : 'hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] text-[var(--fg-secondary)]'}`}
+                  title="Templates"
                 >
                   <DocumentTextIcon className="w-4 h-4" />
-                  <span>Templates</span>
                 </button>
+                {/* Botão Ferramentas */}
                 <button
-                  className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
-                  onClick={() => togglePanel('tools')}
+                  onClick={() => toggleRightPanel('tools')}
+                  className={`p-1.5 rounded-lg transition-colors ${rightPanel === 'tools' ? 'bg-primary-600 text-white' : 'hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] text-[var(--fg-secondary)]'}`}
+                  title="Ferramentas"
                 >
                   <BoltIcon className="w-4 h-4" />
-                  <span>Ferramentas</span>
                 </button>
+                {/* Reload */}
                 <button
-                  className="icon-btn"
+                  className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] transition-colors"
                   onClick={loadMessages}
                   disabled={isLoadingMessages}
                   title="Recarregar mensagens"
                 >
-                  {isLoadingMessages
-                    ? <span style={{ fontSize: '0.75rem' }}>⏳</span>
-                    : <EllipsisVerticalIcon className="w-5 h-5" />}
+                  <EllipsisVerticalIcon className="w-4 h-4 text-[var(--fg-secondary)]" />
                 </button>
               </div>
             </div>
@@ -555,23 +600,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
             <div
               ref={messagesContainerRef}
               onScroll={handleContainerScroll}
-              className="messages-container"
+              className="flex-1 overflow-y-auto p-4 bg-[#f0ebe3] dark:bg-[#0d0907]"
             >
               {isLoadingMessages ? (
-                <div className="messages-empty">
+                <div className="flex flex-col items-center justify-center h-full gap-2 text-[var(--fg-muted,#9ca3af)] text-sm">
                   <p>Carregando mensagens...</p>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="messages-empty">
+                <div className="flex flex-col items-center justify-center h-full gap-2 text-[var(--fg-muted,#9ca3af)] text-sm">
                   <p>Nenhuma mensagem</p>
                   <small>Comece enviando uma mensagem</small>
                 </div>
               ) : (
-                <div className="messages-list">
+                <div className="flex flex-col gap-1">
                   {Object.entries(groupedMessages).map(([date, dayMessages]) => (
                     <React.Fragment key={date}>
-                      <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}>
-                        <span style={{ padding: '0.2rem 0.75rem', background: 'rgba(255,255,255,0.8)', borderRadius: '20px', fontSize: '0.75rem', color: '#6b7280', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+                      <div className="flex justify-center my-2">
+                        <span className="px-3 py-0.5 bg-white/80 dark:bg-black/40 backdrop-blur-sm rounded-full text-xs text-[var(--fg-secondary,#6b7280)] shadow-sm">
                           {(() => { try { return format(new Date(date), "d 'de' MMMM", { locale: ptBR }); } catch { return date; } })()}
                         </span>
                       </div>
@@ -607,10 +652,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
         )}
       </div>
 
-      {/* ── Painel de Ferramentas ── */}
-      {selectedConversation && activePanel && (
-        <ChatToolsPanel
-          key={activePanel}
+      {/* ── Painel Direito ── */}
+      {selectedConversation && rightPanel && (
+        <ContactInfoPanel
+          conversation={selectedConversation}
           accountId={accountId}
           storeId={storeId || undefined}
           storeSlug={storeSlug || undefined}
@@ -620,12 +665,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
           storeCity={store?.city || undefined}
           storeState={store?.state || undefined}
           storeUrl={getStoreUrl(store?.metadata)}
-          conversation={selectedConversation}
+          activeTab={rightPanel}
+          onTabChange={setRightPanel}
+          onClose={() => setRightPanel(null)}
           onInsertText={handleInsertText}
           onSendMessage={handleToolsSend}
           onAfterSend={() => void loadMessages()}
-          onClose={() => setActivePanel(null)}
-          defaultTab={activePanel}
         />
       )}
     </div>
