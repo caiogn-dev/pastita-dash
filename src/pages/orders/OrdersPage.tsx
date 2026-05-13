@@ -58,7 +58,7 @@ const COLUMNS = [
     headerBg: 'bg-slate-600',
     borderTop: 'border-t-slate-400',
     dotColor: 'bg-slate-400',
-    colBg: 'bg-slate-50/80 dark:bg-zinc-950/40',
+    colBg: 'bg-slate-50/80 dark:bg-[var(--dark-bg-card,#1a1a1a)]/40',
     Icon: ClockIcon,
   },
   {
@@ -69,7 +69,7 @@ const COLUMNS = [
     headerBg: 'bg-blue-600',
     borderTop: 'border-t-blue-400',
     dotColor: 'bg-blue-400',
-    colBg: 'bg-blue-50/60 dark:bg-zinc-950/40',
+    colBg: 'bg-blue-50/60 dark:bg-[var(--dark-bg-card,#1a1a1a)]/40',
     Icon: CheckCircleIcon,
   },
   {
@@ -80,7 +80,7 @@ const COLUMNS = [
     headerBg: 'bg-orange-500',
     borderTop: 'border-t-orange-400',
     dotColor: 'bg-orange-400',
-    colBg: 'bg-orange-50/60 dark:bg-zinc-950/40',
+    colBg: 'bg-orange-50/60 dark:bg-[var(--dark-bg-card,#1a1a1a)]/40',
     Icon: FireIcon,
   },
   {
@@ -91,7 +91,7 @@ const COLUMNS = [
     headerBg: 'bg-indigo-600',
     borderTop: 'border-t-indigo-400',
     dotColor: 'bg-indigo-400',
-    colBg: 'bg-indigo-50/60 dark:bg-zinc-950/40',
+    colBg: 'bg-indigo-50/60 dark:bg-[var(--dark-bg-card,#1a1a1a)]/40',
     Icon: TruckIcon,
   },
   {
@@ -102,7 +102,7 @@ const COLUMNS = [
     headerBg: 'bg-emerald-600',
     borderTop: 'border-t-emerald-400',
     dotColor: 'bg-emerald-400',
-    colBg: 'bg-emerald-50/60 dark:bg-zinc-950/40',
+    colBg: 'bg-emerald-50/60 dark:bg-[var(--dark-bg-card,#1a1a1a)]/40',
     Icon: HomeIcon,
   },
 ] as const;
@@ -234,18 +234,18 @@ const OrderCard: React.FC<CardProps> = ({
     <div
       onClick={() => !isUpdating && onDetail(order)}
       className={`
-        cursor-pointer rounded-xl border-2 bg-white/95 dark:bg-zinc-900 p-2.5
+        cursor-pointer rounded-xl border-2 bg-white/95 dark:bg-[var(--dark-bg-card,#1a1a1a)] p-2.5
         transition-all duration-200
         hover:-translate-y-0.5 hover:shadow-md
         ${isDragging ? 'shadow-2xl ring-2 ring-primary-500 scale-105 rotate-1' : ''}
         ${isUpdating ? 'opacity-70' : ''}
-        ${urgency === 'critical' && !isSuccess && !isUpdating ? 'animate-pulse' : ''}
+        ${urgency === 'critical' && !isSuccess && !isUpdating ? 'ring-2 ring-red-500 animate-pulse-soft' : ''}
         ${urgencyBorder}
       `}
     >
       {/* Row 1: order number + elapsed + delivery badge */}
       <div className="flex items-center justify-between gap-1 mb-1.5">
-        <span className="font-mono text-[10px] font-bold text-gray-400 dark:text-zinc-500">
+        <span className="font-mono text-[10px] font-bold text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
           #{order.order_number}
         </span>
         <div className="flex items-center gap-1">
@@ -255,7 +255,7 @@ const OrderCard: React.FC<CardProps> = ({
             <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
               urgency === 'critical' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
               urgency === 'warning'  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-              'bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
+              'bg-gray-100 text-gray-500 dark:bg-[var(--dark-bg-hover,#161616)] dark:text-[var(--dark-text-secondary,#a1a1aa)]'
             }`}>
               <ClockIcon className="h-2.5 w-2.5" />
               {formatElapsed(elapsed)}
@@ -274,10 +274,10 @@ const OrderCard: React.FC<CardProps> = ({
 
       {/* Row 2: customer name + value */}
       <div className="flex items-start justify-between gap-2 mb-1.5">
-        <p className="truncate text-[12px] font-semibold leading-tight text-gray-900 dark:text-white">
+        <p className="truncate text-[12px] font-semibold leading-tight text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
           {order.customer_name || 'Cliente'}
         </p>
-        <p className="shrink-0 text-[14px] font-bold tracking-tight text-gray-900 dark:text-white">
+        <p className="shrink-0 text-[14px] font-bold tracking-tight text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
           R$ {fmt(order.total)}
         </p>
       </div>
@@ -285,14 +285,14 @@ const OrderCard: React.FC<CardProps> = ({
       {/* Row 3: phone + payment + items */}
       <div className="flex items-center gap-1.5 mb-2 flex-wrap">
         {order.customer_phone && (
-          <span className="flex items-center gap-0.5 text-[10px] text-gray-400 dark:text-zinc-500">
+          <span className="flex items-center gap-0.5 text-[10px] text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             <PhoneIcon className="h-2.5 w-2.5" />
             {order.customer_phone}
           </span>
         )}
         <PaymentBadge status={order.payment_status} method={order.payment_method} />
         {order.items?.length > 0 && (
-          <span className="text-[10px] text-gray-400 dark:text-zinc-500">
+          <span className="text-[10px] text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             {order.items.length} item(ns)
           </span>
         )}
@@ -596,7 +596,7 @@ export const OrdersPage: React.FC = () => {
   if (!storeQuery) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <p className="text-gray-500 dark:text-zinc-400">Selecione uma loja para ver os pedidos.</p>
+        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Selecione uma loja para ver os pedidos.</p>
         <Button onClick={() => navigate('/stores')}>Selecionar loja</Button>
       </div>
     );
@@ -609,17 +609,17 @@ export const OrdersPage: React.FC = () => {
         {/* Header */}
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/70 px-3 py-2 dark:border-white/5 dark:bg-white/5">
           <div className="flex items-center gap-2.5">
-            <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-gray-900 dark:text-white">Pedidos</h1>
+            <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Pedidos</h1>
             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
               rtConnected
                 ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500'
+                : 'bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]'
             }`}>
               {rtConnected ? <SignalIcon className="h-3 w-3" /> : <SignalSlashIcon className="h-3 w-3" />}
               {rtConnected ? 'Ao vivo' : 'Offline'}
             </span>
             {lastSync && (
-              <span className="text-xs text-gray-400 dark:text-zinc-600 hidden sm:block">
+              <span className="text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] hidden sm:block">
                 {format(lastSync, 'HH:mm:ss', { locale: ptBR })}
               </span>
             )}
@@ -628,7 +628,7 @@ export const OrdersPage: React.FC = () => {
             {orderCreateRoute && (
               <button
                 onClick={() => navigate(orderCreateRoute)}
-                className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-black dark:bg-white dark:text-black dark:hover:bg-zinc-200 transition-colors"
+                className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-black dark:bg-[var(--dark-text-primary,#FAF9F7)] dark:text-black dark:hover:bg-white/80 transition-colors"
               >
                 <ShoppingCartIcon className="h-4 w-4" />
                 Novo pedido
@@ -637,7 +637,7 @@ export const OrdersPage: React.FC = () => {
             <button
               onClick={() => loadOrders(true)}
               disabled={refreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] text-sm text-gray-600 dark:text-[var(--dark-text-primary,#FAF9F7)] hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors disabled:opacity-50"
             >
               <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               Atualizar
@@ -652,14 +652,14 @@ export const OrdersPage: React.FC = () => {
             return (
               <div
                 key={col.id}
-                className={`flex min-h-[220px] flex-col overflow-hidden rounded-2xl border border-gray-200/80 dark:border-zinc-800 xl:min-h-[calc(100vh-5.75rem)] ${col.colBg}`}
+                className={`flex min-h-[220px] flex-col overflow-hidden rounded-2xl border border-gray-200/80 dark:border-[var(--dark-border,#2a2a2a)] xl:min-h-[calc(100vh-5.75rem)] ${col.colBg}`}
               >
                 {/* Column header */}
                 <div className={`${col.headerBg} text-white px-3 py-2.5 border-t-0 rounded-t-2xl`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Icon className="h-4 w-4 opacity-90" />
-                      <span className="text-xs font-bold uppercase tracking-wide">{col.label}</span>
+                      <span className="text-xs font-bold uppercase tracking-wide">{col.label} <span className="text-[10px] font-normal opacity-60">· {col.orders.length}</span></span>
                     </div>
                     <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold min-w-[22px] text-center">
                       {col.orders.length}
@@ -672,9 +672,9 @@ export const OrdersPage: React.FC = () => {
                 <SortableContext items={col.orders.map(o => o.id)} strategy={verticalListSortingStrategy}>
                   <DroppableColumn id={col.id}>
                     {col.orders.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-gray-200/60 dark:border-zinc-700/60 rounded-xl">
-                        <ShoppingCartIcon className="h-6 w-6 text-gray-200 dark:text-zinc-700 mb-1.5" />
-                        <p className="text-xs text-gray-300 dark:text-zinc-700">Arraste aqui</p>
+                      <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-gray-200/60 dark:border-[var(--dark-border,#2a2a2a)]/60 rounded-xl">
+                        <ShoppingCartIcon className="h-6 w-6 text-gray-200 dark:text-[var(--dark-border,#2a2a2a)] mb-1.5" />
+                        <p className="text-xs text-gray-300 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Arraste aqui</p>
                       </div>
                     ) : (
                       col.orders.map(order => (
