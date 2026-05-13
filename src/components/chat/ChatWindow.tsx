@@ -34,6 +34,7 @@ function ensureArray<T>(value: unknown): T[] {
 export interface ChatWindowProps {
   accountId: string;
   accountName?: string;
+  initialPhone?: string;
   onConversationSelect?: (conversation: Conversation | null) => void;
 }
 
@@ -60,7 +61,7 @@ const getStoreUrl = (metadata?: Record<string, unknown>) => {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 };
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, onConversationSelect }) => {
+export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, initialPhone, onConversationSelect }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -136,6 +137,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   }, [searchTerm]);
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
+
+  useEffect(() => {
+    if (!initialPhone || conversations.length === 0) return;
+    const match = conversations.find(c =>
+      c.phone_number.replace(/\D/g, '').includes(initialPhone) ||
+      initialPhone.includes(c.phone_number.replace(/\D/g, ''))
+    );
+    if (match) {
+      setSelectedConversation(match);
+      onConversationSelect?.(match);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPhone, conversations]);
 
   useEffect(() => {
     if (selectedConversation) {
