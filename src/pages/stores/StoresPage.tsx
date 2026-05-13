@@ -106,8 +106,8 @@ const StoresPage: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Lojas</h1>
-          <p className="text-gray-600 dark:text-zinc-400">Gerencie todas as suas lojas e integrações</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Lojas</h1>
+          <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Gerencie todas as suas lojas e integrações</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
@@ -123,7 +123,7 @@ const StoresPage: React.FC = () => {
               <Store className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-zinc-400">Total de Lojas</p>
+              <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total de Lojas</p>
               <p className="text-2xl font-bold">{stores.length}</p>
             </div>
           </div>
@@ -134,7 +134,7 @@ const StoresPage: React.FC = () => {
               <Package className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-zinc-400">Total de Produtos</p>
+              <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total de Produtos</p>
               <p className="text-2xl font-bold">
                 {stores.reduce((acc, s) => acc + s.products_count, 0)}
               </p>
@@ -147,7 +147,7 @@ const StoresPage: React.FC = () => {
               <ShoppingCart className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-zinc-400">Total de Pedidos</p>
+              <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total de Pedidos</p>
               <p className="text-2xl font-bold">
                 {stores.reduce((acc, s) => acc + s.orders_count, 0)}
               </p>
@@ -160,7 +160,7 @@ const StoresPage: React.FC = () => {
               <Zap className="w-6 h-6 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-zinc-400">Integrações Ativas</p>
+              <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Integrações Ativas</p>
               <p className="text-2xl font-bold">
                 {stores.reduce((acc, s) => acc + s.integrations_count, 0)}
               </p>
@@ -173,8 +173,8 @@ const StoresPage: React.FC = () => {
       {stores.length === 0 ? (
         <Card className="p-12 text-center">
           <Store className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhuma loja cadastrada</h3>
-          <p className="text-gray-600 dark:text-zinc-400 mb-4">Crie sua primeira loja para começar a vender</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">Nenhuma loja cadastrada</h3>
+          <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">Crie sua primeira loja para começar a vender</p>
           <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Criar Loja
@@ -197,13 +197,13 @@ const StoresPage: React.FC = () => {
                           className="w-12 h-12 rounded-lg object-cover"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] flex items-center justify-center">
                           <Store className="w-6 h-6 text-gray-400" />
                         </div>
                       )}
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{store.name}</h3>
-                        <p className="text-sm text-gray-500 dark:text-zinc-400">{getStoreTypeLabel(store.store_type)}</p>
+                        <h3 className="font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{store.name}</h3>
+                        <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{getStoreTypeLabel(store.store_type)}</p>
                       </div>
                     </div>
                     {getStatusBadge(store.status)}
@@ -213,31 +213,31 @@ const StoresPage: React.FC = () => {
                 {/* Store Stats */}
                 <div className="p-4 grid grid-cols-3 gap-4 text-center border-b">
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{store.products_count}</p>
-                    <p className="text-xs text-gray-500 dark:text-zinc-400">Produtos</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{store.products_count}</p>
+                    <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Produtos</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{store.orders_count}</p>
-                    <p className="text-xs text-gray-500 dark:text-zinc-400">Pedidos</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{store.orders_count}</p>
+                    <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Pedidos</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{store.integrations_count}</p>
-                    <p className="text-xs text-gray-500 dark:text-zinc-400">Integrações</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{store.integrations_count}</p>
+                    <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Integrações</p>
                   </div>
                 </div>
 
                 {/* Revenue Stats */}
                 {stats && (
-                  <div className="p-4 bg-gray-50 dark:bg-black border-b">
+                  <div className="p-4 bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] border-b">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600 dark:text-zinc-400">Receita Total</span>
+                      <span className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Receita Total</span>
                       <span className="font-semibold text-green-600 dark:text-green-400">
                         R$ {stats.revenue.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="flex justify-between items-center mt-1">
-                      <span className="text-sm text-gray-600 dark:text-zinc-400">Hoje</span>
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Hoje</span>
+                      <span className="font-medium text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
                         R$ {stats.revenue.today.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
@@ -393,11 +393,11 @@ const CreateStoreModal: React.FC<CreateStoreModalProps> = ({ isOpen, onClose, on
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Tipo de Loja</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">Tipo de Loja</label>
           <select
             value={formData.store_type}
             onChange={e => setFormData(prev => ({ ...prev, store_type: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-blue-500"
           >
             <option value="food">🍕 Alimentação</option>
             <option value="retail">🛍️ Varejo</option>
@@ -408,12 +408,12 @@ const CreateStoreModal: React.FC<CreateStoreModalProps> = ({ isOpen, onClose, on
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Descrição</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">Descrição</label>
           <textarea
             value={formData.description}
             onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
