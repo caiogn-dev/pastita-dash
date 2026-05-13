@@ -139,11 +139,11 @@ export const AgentDetailPage: React.FC = () => {
     return (
       <div className="p-6 max-w-7xl mx-auto">
         <div className="animate-pulse">
-          <div className="h-8 w-64 bg-zinc-200 dark:bg-zinc-700 rounded mb-4" />
-          <div className="h-4 w-96 bg-zinc-100 dark:bg-zinc-800 rounded mb-8" />
+          <div className="h-8 w-64 bg-zinc-200 dark:bg-[var(--dark-border,#2a2a2a)] rounded mb-4" />
+          <div className="h-4 w-96 bg-zinc-100 dark:bg-[var(--dark-bg-hover,#161616)] rounded mb-8" />
           <div className="grid grid-cols-4 gap-4 mb-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+              <div key={i} className="h-24 bg-zinc-200 dark:bg-[var(--dark-border,#2a2a2a)] rounded-xl" />
             ))}
           </div>
         </div>
@@ -155,7 +155,7 @@ export const AgentDetailPage: React.FC = () => {
     return (
       <div className="p-6 max-w-7xl mx-auto">
         <div className="text-center py-16">
-          <p className="text-xl font-medium text-zinc-900 dark:text-white mb-2">
+          <p className="text-xl font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
             Agente não encontrado
           </p>
           <button
@@ -190,14 +190,14 @@ export const AgentDetailPage: React.FC = () => {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/agents')}
-            className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5 text-zinc-500" />
           </button>
           
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+              <h1 className="text-2xl font-display font-bold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
                 {agent.name}
               </h1>
               <span className={cn(
@@ -213,7 +213,7 @@ export const AgentDetailPage: React.FC = () => {
                 {agent.provider.toUpperCase()}
               </span>
             </div>
-            <p className="text-zinc-500 dark:text-zinc-400">
+            <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
               {agent.description || `Modelo: ${agent.model_name}`}
             </p>
           </div>
@@ -246,7 +246,7 @@ export const AgentDetailPage: React.FC = () => {
             onClick={handleDuplicate}
             className={cn(
               "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+              "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-[var(--dark-bg-hover,#161616)] dark:text-zinc-300"
             )}
           >
             <DocumentDuplicateIcon className="w-4 h-4" />
@@ -267,7 +267,7 @@ export const AgentDetailPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-zinc-200 dark:border-zinc-700 mb-6">
+      <div className="flex border-b border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] mb-6">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -276,7 +276,7 @@ export const AgentDetailPage: React.FC = () => {
               "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors",
               activeTab === tab.id
                 ? "border-primary-500 text-primary-600 dark:text-primary-400"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-[var(--dark-text-secondary,#a1a1aa)]"
             )}
           >
             <tab.icon className="w-4 h-4" />
@@ -294,33 +294,33 @@ export const AgentDetailPage: React.FC = () => {
           {/* Config Overview */}
           <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
             {/* Model Config */}
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-              <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-6">
+              <h3 className="font-semibold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4">
                 Configuração do Modelo
               </h3>
               <dl className="space-y-3">
                 <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400">Provedor</dt>
-                  <dd className="font-medium text-zinc-900 dark:text-white capitalize">{agent.provider}</dd>
+                  <dt className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Provedor</dt>
+                  <dd className="font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] capitalize">{agent.provider}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400">Modelo</dt>
-                  <dd className="font-medium text-zinc-900 dark:text-white">{agent.model_name}</dd>
+                  <dt className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Modelo</dt>
+                  <dd className="font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{agent.model_name}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400">Temperatura</dt>
-                  <dd className="font-medium text-zinc-900 dark:text-white">{agent.temperature}</dd>
+                  <dt className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Temperatura</dt>
+                  <dd className="font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{agent.temperature}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400">Max Tokens</dt>
-                  <dd className="font-medium text-zinc-900 dark:text-white">{agent.max_tokens}</dd>
+                  <dt className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Max Tokens</dt>
+                  <dd className="font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{agent.max_tokens}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400">Timeout</dt>
-                  <dd className="font-medium text-zinc-900 dark:text-white">{agent.timeout}s</dd>
+                  <dt className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Timeout</dt>
+                  <dd className="font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{agent.timeout}s</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400">Memória</dt>
+                  <dt className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Memória</dt>
                   <dd className={cn(
                     "font-medium",
                     agent.use_memory ? "text-green-600" : "text-zinc-400"
@@ -332,11 +332,11 @@ export const AgentDetailPage: React.FC = () => {
             </div>
 
             {/* System Prompt Preview */}
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-              <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-6">
+              <h3 className="font-semibold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4">
                 System Prompt
               </h3>
-              <pre className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap font-mono bg-zinc-50 dark:bg-zinc-800 p-4 rounded-lg max-h-48 overflow-y-auto">
+              <pre className="text-sm text-zinc-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] whitespace-pre-wrap font-mono bg-zinc-50 dark:bg-[var(--dark-bg-hover,#161616)] p-4 rounded-lg max-h-48 overflow-y-auto">
                 {agent.system_prompt}
               </pre>
             </div>
@@ -344,15 +344,15 @@ export const AgentDetailPage: React.FC = () => {
 
           {/* Associated Accounts */}
           {agent.accounts && agent.accounts.length > 0 && (
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-              <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-6">
+              <h3 className="font-semibold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4">
                 Contas WhatsApp Associadas
               </h3>
               <div className="flex flex-wrap gap-2">
                 {agent.accounts.map(account => (
                   <span
                     key={account.id}
-                    className="px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-sm"
+                    className="px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-[var(--dark-bg-hover,#161616)] text-sm"
                   >
                     {account.name} ({account.phone_number})
                   </span>
@@ -364,7 +364,7 @@ export const AgentDetailPage: React.FC = () => {
       )}
 
       {activeTab === 'edit' && (
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] overflow-hidden">
           <AgentForm
             agent={{
               ...agent,
@@ -389,8 +389,8 @@ export const AgentDetailPage: React.FC = () => {
         <div className="grid grid-cols-3 max-lg:grid-cols-1 gap-6">
           {/* Conversation List */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
-              <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-4">
+              <h3 className="font-semibold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4">
                 Conversas ({conversations.length})
               </h3>
               <ConversationList
@@ -404,9 +404,9 @@ export const AgentDetailPage: React.FC = () => {
           {/* Conversation Detail */}
           <div className="lg:col-span-2">
             {selectedConversation ? (
-              <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+              <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-zinc-900 dark:text-white">
+                  <h3 className="font-semibold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
                     Conversa com {selectedConversation.phone_number || 'Teste'}
                   </h3>
                   <span className="text-xs text-zinc-500 font-mono">
@@ -423,7 +423,7 @@ export const AgentDetailPage: React.FC = () => {
                           "p-3 rounded-lg max-w-[80%]",
                           message.role === 'user'
                             ? "ml-auto bg-primary-600 text-white"
-                            : "bg-zinc-100 dark:bg-zinc-800"
+                            : "bg-zinc-100 dark:bg-[var(--dark-bg-hover,#161616)]"
                         )}
                       >
                         <p className="whitespace-pre-wrap">{message.content}</p>
@@ -434,15 +434,15 @@ export const AgentDetailPage: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-zinc-500 dark:text-zinc-400">
+                  <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                     Carregando mensagens...
                   </p>
                 )}
               </div>
             ) : (
-              <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-12 text-center">
+              <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-12 text-center">
                 <ChatBubbleLeftRightIcon className="w-16 h-16 mx-auto text-zinc-200 dark:text-zinc-700 mb-4" />
-                <p className="text-zinc-500 dark:text-zinc-400">
+                <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                   Selecione uma conversa para ver os detalhes
                 </p>
               </div>

@@ -241,9 +241,9 @@ export const UnifiedOrchestratorTest: React.FC = () => {
   return (
     <div className="flex flex-row max-lg:flex-col gap-6">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-[700px] bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      <div className="flex-1 flex flex-col h-[700px] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-primary-600 to-primary-700">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] bg-gradient-to-r from-primary-600 to-primary-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
               <CpuChipIcon className="w-6 h-6 text-white" />
@@ -280,13 +280,13 @@ export const UnifiedOrchestratorTest: React.FC = () => {
         </div>
 
         {/* Phone Input */}
-        <div className="px-4 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-700 flex items-center gap-2">
-          <span className="text-sm text-zinc-500 dark:text-zinc-400">Telefone:</span>
+        <div className="px-4 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] flex items-center gap-2">
+          <span className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Telefone:</span>
           <input
             type="text"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
-            className="flex-1 px-3 py-1 text-sm bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+            className="flex-1 px-3 py-1 text-sm bg-white dark:bg-[var(--dark-bg-hover,#161616)] border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg"
             placeholder="5511999999999"
           />
           {account && (
@@ -303,10 +303,10 @@ export const UnifiedOrchestratorTest: React.FC = () => {
               <div className="w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-4">
                 <ChatBubbleLeftRightIcon className="w-10 h-10 text-primary-600 dark:text-primary-400" />
               </div>
-              <h3 className="text-xl font-medium text-zinc-900 dark:text-white mb-2">
+              <h3 className="text-xl font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
                 Teste o Orquestrador Unificado
               </h3>
-              <p className="text-zinc-500 dark:text-zinc-400 max-w-md mb-6">
+              <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] max-w-md mb-6">
                 Envie uma mensagem para ver o LLM em ação com templates Jasper, 
                 AutoMessages, Handlers e respostas diretas.
               </p>
@@ -315,7 +315,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
                   <button
                     key={msg}
                     onClick={() => handleQuickTest(msg)}
-                    className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full text-sm text-zinc-700 dark:text-zinc-300 transition-colors"
+                    className="px-4 py-2 bg-zinc-100 dark:bg-[var(--dark-bg-hover,#161616)] hover:bg-zinc-200 dark:hover:bg-[var(--dark-border,#2a2a2a)] rounded-full text-sm text-zinc-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] transition-colors"
                   >
                     {msg}
                   </button>
@@ -341,7 +341,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
                   "max-w-[85%] rounded-2xl px-4 py-3",
                   message.role === 'user'
                     ? "bg-primary-600 text-white rounded-br-md"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-bl-md"
+                    : "bg-zinc-100 dark:bg-[var(--dark-bg-hover,#161616)] text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] rounded-bl-md"
                 )}>
                   {/* Source Badge */}
                   {message.role === 'assistant' && message.source && (
@@ -354,12 +354,12 @@ export const UnifiedOrchestratorTest: React.FC = () => {
                         {getSourceLabel(message.source)}
                       </span>
                       {message.metadata?.jasper_template && (
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-xs text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                           {message.metadata.jasper_template}
                         </span>
                       )}
                       {message.metadata?.template_event && (
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-xs text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                           {message.metadata.template_event}
                         </span>
                       )}
@@ -376,7 +376,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
                         <button
                           key={btn.id}
                           onClick={() => handleQuickTest(btn.title)}
-                          className="px-3 py-1.5 bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 transition-colors"
+                          className="px-3 py-1.5 bg-white dark:bg-[var(--dark-border,#2a2a2a)] border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg text-sm text-zinc-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] hover:bg-zinc-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
                         >
                           {btn.title}
                         </button>
@@ -386,14 +386,14 @@ export const UnifiedOrchestratorTest: React.FC = () => {
 
                   {/* Metadata */}
                   {message.metadata && (
-                    <div className="flex items-center gap-3 mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                    <div className="flex items-center gap-3 mt-2 pt-2 border-t border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]">
                       {message.metadata.model && (
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-xs text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                           {message.metadata.model}
                         </span>
                       )}
                       {message.metadata.processing_time_ms && (
-                        <span className="flex items-center gap-1 text-xs text-zinc-500">
+                        <span className="flex items-center gap-1 text-xs text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                           <ClockIcon className="w-3 h-3" />
                           {message.metadata.processing_time_ms}ms
                         </span>
@@ -417,12 +417,12 @@ export const UnifiedOrchestratorTest: React.FC = () => {
               <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
                 <CpuChipIcon className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               </div>
-              <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-bl-md px-4 py-3">
+              <div className="bg-zinc-100 dark:bg-[var(--dark-bg-hover,#161616)] rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" />
                   <div className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-100" />
                   <div className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-200" />
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400 ml-2">
+                  <span className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] ml-2">
                     Orquestrador processando...
                   </span>
                 </div>
@@ -434,7 +434,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+        <div className="p-4 border-t border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] bg-zinc-50 dark:bg-zinc-800/50">
           <form onSubmit={handleSubmit} className="flex gap-2">
             <textarea
               ref={inputRef}
@@ -446,9 +446,9 @@ export const UnifiedOrchestratorTest: React.FC = () => {
               rows={1}
               className={cn(
                 "flex-1 px-4 py-3 rounded-xl border resize-none",
-                "bg-white dark:bg-zinc-800",
-                "text-zinc-900 dark:text-white placeholder-zinc-400",
-                "border-zinc-200 dark:border-zinc-700",
+                "bg-white dark:bg-[var(--dark-bg-hover,#161616)]",
+                "text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] placeholder-zinc-400",
+                "border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]",
                 "focus:ring-2 focus:ring-primary-500 focus:border-transparent",
                 "disabled:opacity-50"
               )}
@@ -466,7 +466,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
               Enviar
             </button>
           </form>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-2 text-center">
+          <p className="text-xs text-zinc-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-2 text-center">
             Pressione Enter para enviar • Shift+Enter para nova linha
           </p>
         </div>
@@ -475,8 +475,8 @@ export const UnifiedOrchestratorTest: React.FC = () => {
       {/* Sidebar */}
       <div className="w-full lg:w-80 space-y-4">
         {/* Flow Steps */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
-          <h3 className="font-medium text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-4">
+          <h3 className="font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4 flex items-center gap-2">
             <PlayIcon className="w-5 h-5 text-primary-500" />
             Fluxos de Teste
           </h3>
@@ -484,15 +484,15 @@ export const UnifiedOrchestratorTest: React.FC = () => {
             {FLOW_STEPS.map((step) => (
               <div
                 key={step.id}
-                className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <step.icon className="w-4 h-4 text-zinc-500" />
-                  <span className="font-medium text-sm text-zinc-900 dark:text-white">
+                  <span className="font-medium text-sm text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
                     {step.title}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                <p className="text-xs text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2">
                   {step.description}
                 </p>
                 <div className="flex flex-wrap gap-1">
@@ -500,7 +500,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
                     <button
                       key={msg}
                       onClick={() => handleQuickTest(msg)}
-                      className="px-2 py-1 bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-600 transition-colors"
+                      className="px-2 py-1 bg-white dark:bg-[var(--dark-border,#2a2a2a)] border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] rounded text-xs text-zinc-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] hover:bg-zinc-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
                     >
                       {msg}
                     </button>
@@ -512,39 +512,39 @@ export const UnifiedOrchestratorTest: React.FC = () => {
         </div>
 
         {/* How it Works */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
-          <h3 className="font-medium text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-4">
+          <h3 className="font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4 flex items-center gap-2">
             <ServerIcon className="w-5 h-5 text-primary-500" />
             Como Funciona
           </h3>
           <div className="space-y-3 text-sm">
             <div className="flex items-start gap-2">
               <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-zinc-600 dark:text-zinc-400">
+              <span className="text-zinc-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 <strong>1. Detecta Intent:</strong> Analisa a mensagem do cliente
               </span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-zinc-600 dark:text-zinc-400">
+              <span className="text-zinc-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 <strong>2. Coleta Contexto:</strong> Busca templates, store, produtos
               </span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-zinc-600 dark:text-zinc-400">
+              <span className="text-zinc-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 <strong>3. LLM Decide:</strong> Escolhe a melhor resposta
               </span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-zinc-600 dark:text-zinc-400">
+              <span className="text-zinc-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 <strong>4. Renderiza:</strong> Aplica variáveis reais da Store
               </span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-zinc-600 dark:text-zinc-400">
+              <span className="text-zinc-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 <strong>5. Responde:</strong> Envia com botões interativos
               </span>
             </div>
@@ -552,37 +552,37 @@ export const UnifiedOrchestratorTest: React.FC = () => {
         </div>
 
         {/* Sources Info */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
-          <h3 className="font-medium text-zinc-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-4">
+          <h3 className="font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4">
             Fontes de Resposta
           </h3>
           <div className="space-y-2">
             <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
               <SparklesIcon className="w-4 h-4 text-purple-500" />
               <div>
-                <span className="text-sm font-medium text-zinc-900 dark:text-white">Jasper Template</span>
-                <p className="text-xs text-zinc-500">Templates profissionais com botões</p>
+                <span className="text-sm font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Jasper Template</span>
+                <p className="text-xs text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Templates profissionais com botões</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
               <DocumentTextIcon className="w-4 h-4 text-blue-500" />
               <div>
-                <span className="text-sm font-medium text-zinc-900 dark:text-white">AutoMessage</span>
-                <p className="text-xs text-zinc-500">Templates configuráveis do banco</p>
+                <span className="text-sm font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">AutoMessage</span>
+                <p className="text-xs text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Templates configuráveis do banco</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
               <BoltIcon className="w-4 h-4 text-yellow-500" />
               <div>
-                <span className="text-sm font-medium text-zinc-900 dark:text-white">Handler</span>
-                <p className="text-xs text-zinc-500">Lógica específica por intent</p>
+                <span className="text-sm font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Handler</span>
+                <p className="text-xs text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Lógica específica por intent</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-900/20">
               <CpuChipIcon className="w-4 h-4 text-green-500" />
               <div>
-                <span className="text-sm font-medium text-zinc-900 dark:text-white">LLM Direto</span>
-                <p className="text-xs text-zinc-500">Resposta gerada pelo modelo</p>
+                <span className="text-sm font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">LLM Direto</span>
+                <p className="text-xs text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Resposta gerada pelo modelo</p>
               </div>
             </div>
           </div>

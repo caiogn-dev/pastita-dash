@@ -42,8 +42,8 @@ export const AgentTestPage: React.FC = () => {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="animate-pulse">
-          <div className="h-8 w-64 bg-zinc-200 dark:bg-zinc-700 rounded mb-4" />
-          <div className="h-[600px] bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+          <div className="h-8 w-64 bg-zinc-200 dark:bg-[var(--dark-border,#2a2a2a)] rounded mb-4" />
+          <div className="h-[600px] bg-zinc-200 dark:bg-[var(--dark-border,#2a2a2a)] rounded-xl" />
         </div>
       </div>
     );
@@ -53,7 +53,7 @@ export const AgentTestPage: React.FC = () => {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="text-center py-16">
-          <p className="text-xl font-medium text-zinc-900 dark:text-white mb-2">
+          <p className="text-xl font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
             Agente não encontrado
           </p>
           <button
@@ -78,16 +78,16 @@ export const AgentTestPage: React.FC = () => {
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate(`/agents/${id}`)}
-          className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5 text-zinc-500" />
         </button>
         
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+          <h1 className="text-2xl font-display font-bold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
             Testar: {agentName}
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400">
+          <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             {agentProvider} / {agentModel}
           </p>
         </div>

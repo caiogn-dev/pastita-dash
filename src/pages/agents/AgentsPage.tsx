@@ -92,10 +92,10 @@ export const AgentsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+          <h1 className="text-2xl font-display font-bold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
             Agentes IA
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
             Gerencie seus agentes de inteligência artificial
           </p>
         </div>
@@ -114,21 +114,21 @@ export const AgentsPage: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
-          <div className="text-2xl font-bold text-zinc-900 dark:text-white">{stats.total}</div>
-          <div className="text-sm text-zinc-500 dark:text-zinc-400">Total de Agentes</div>
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]">
+          <div className="text-2xl font-bold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.total}</div>
+          <div className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total de Agentes</div>
         </div>
-        <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]">
           <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-          <div className="text-sm text-zinc-500 dark:text-zinc-400">Ativos</div>
+          <div className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Ativos</div>
         </div>
-        <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]">
           <div className="text-2xl font-bold text-gray-500">{stats.inactive}</div>
-          <div className="text-sm text-zinc-500 dark:text-zinc-400">Inativos</div>
+          <div className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Inativos</div>
         </div>
-        <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]">
           <div className="text-2xl font-bold text-yellow-500">{stats.draft}</div>
-          <div className="text-sm text-zinc-500 dark:text-zinc-400">Rascunhos</div>
+          <div className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Rascunhos</div>
         </div>
       </div>
 
@@ -144,9 +144,9 @@ export const AgentsPage: React.FC = () => {
             placeholder="Buscar agentes..."
             className={cn(
               "w-full pl-10 pr-4 py-2.5 rounded-lg border",
-              "bg-white dark:bg-zinc-900",
-              "text-zinc-900 dark:text-white placeholder-zinc-400",
-              "border-zinc-200 dark:border-zinc-700",
+              "bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]",
+              "text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] placeholder-zinc-400",
+              "border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]",
               "focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             )}
           />
@@ -157,11 +157,11 @@ export const AgentsPage: React.FC = () => {
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
             "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border",
-            "bg-white dark:bg-zinc-900",
-            "text-zinc-700 dark:text-zinc-300",
-            "border-zinc-200 dark:border-zinc-700",
-            "hover:bg-zinc-50 dark:hover:bg-zinc-800",
-            showFilters && "bg-zinc-100 dark:bg-zinc-800"
+            "bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]",
+            "text-zinc-700 dark:text-[var(--dark-text-secondary,#a1a1aa)]",
+            "border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]",
+            "hover:bg-zinc-50 dark:hover:bg-[var(--dark-bg-hover,#161616)]",
+            showFilters && "bg-zinc-100 dark:bg-[var(--dark-bg-hover,#161616)]"
           )}
         >
           <FunnelIcon className="w-5 h-5" />
@@ -174,10 +174,10 @@ export const AgentsPage: React.FC = () => {
           disabled={isLoading}
           className={cn(
             "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border",
-            "bg-white dark:bg-zinc-900",
-            "text-zinc-700 dark:text-zinc-300",
-            "border-zinc-200 dark:border-zinc-700",
-            "hover:bg-zinc-50 dark:hover:bg-zinc-800",
+            "bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]",
+            "text-zinc-700 dark:text-[var(--dark-text-secondary,#a1a1aa)]",
+            "border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]",
+            "hover:bg-zinc-50 dark:hover:bg-[var(--dark-bg-hover,#161616)]",
             "disabled:opacity-50"
           )}
         >
@@ -187,10 +187,10 @@ export const AgentsPage: React.FC = () => {
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 mb-6">
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] p-4 mb-6">
           <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2">
                 Status
               </label>
               <select
@@ -198,9 +198,9 @@ export const AgentsPage: React.FC = () => {
                 onChange={e => setStatusFilter(e.target.value as StatusFilter)}
                 className={cn(
                   "w-full px-3 py-2 rounded-lg border",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white",
-                  "border-zinc-200 dark:border-zinc-700"
+                  "bg-white dark:bg-[var(--dark-bg-hover,#161616)]",
+                  "text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]",
+                  "border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]"
                 )}
               >
                 <option value="all">Todos</option>
@@ -210,7 +210,7 @@ export const AgentsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2">
                 Provedor
               </label>
               <select
@@ -218,9 +218,9 @@ export const AgentsPage: React.FC = () => {
                 onChange={e => setProviderFilter(e.target.value as ProviderFilter)}
                 className={cn(
                   "w-full px-3 py-2 rounded-lg border",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white",
-                  "border-zinc-200 dark:border-zinc-700"
+                  "bg-white dark:bg-[var(--dark-bg-hover,#161616)]",
+                  "text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]",
+                  "border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]"
                 )}
               >
                 <option value="all">Todos</option>
@@ -246,9 +246,9 @@ export const AgentsPage: React.FC = () => {
       {isLoading ? (
         <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div 
+            <div
               key={i}
-              className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 h-64 animate-pulse"
+              className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] h-64 animate-pulse"
             />
           ))}
         </div>
@@ -257,10 +257,10 @@ export const AgentsPage: React.FC = () => {
           <CpuChipIcon className="w-20 h-20 mx-auto text-zinc-200 dark:text-zinc-700 mb-4" />
           {agents.length === 0 ? (
             <>
-              <p className="text-xl font-medium text-zinc-900 dark:text-white mb-2">
+              <p className="text-xl font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
                 Nenhum agente criado
               </p>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-6">
+              <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-6">
                 Crie seu primeiro agente IA para automatizar atendimentos
               </p>
               <button
@@ -277,10 +277,10 @@ export const AgentsPage: React.FC = () => {
             </>
           ) : (
             <>
-              <p className="text-xl font-medium text-zinc-900 dark:text-white mb-2">
+              <p className="text-xl font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
                 Nenhum resultado encontrado
               </p>
-              <p className="text-zinc-500 dark:text-zinc-400">
+              <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 Tente ajustar os filtros ou termo de busca
               </p>
             </>
