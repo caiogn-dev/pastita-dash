@@ -52,8 +52,8 @@ const WhatsAppTemplatesPage: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Templates WhatsApp</h1>
-        <p className="text-gray-600">Gerencie templates de mensagens para disparos automatizados</p>
+        <h1 className="font-display text-3xl font-bold text-gray-900 mb-2">Templates WhatsApp</h1>
+        <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Gerencie templates de mensagens para disparos automatizados</p>
       </div>
 
       {/* Stats */}
