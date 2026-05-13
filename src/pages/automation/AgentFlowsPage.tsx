@@ -122,8 +122,8 @@ export const AgentFlowsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Flows de Agente</h1>
-          <p className="text-sm text-gray-500 dark:text-zinc-400">
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Flows de Agente</h1>
+          <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             Configure fluxos de automação com IA
           </p>
         </div>
@@ -141,12 +141,12 @@ export const AgentFlowsPage: React.FC = () => {
       {/* Stats */}
       <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4">
         <Card className="p-4 text-center">
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{flows.length}</p>
-          <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{flows.length}</p>
+          <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-2xl font-bold text-green-600">{flows.filter(f => f.is_active).length}</p>
-          <p className="text-sm text-gray-500 dark:text-zinc-400">Ativos</p>
+          <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Ativos</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-2xl font-bold text-blue-600">

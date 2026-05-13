@@ -157,14 +157,14 @@ const CompanyProfileDetailPage: React.FC = () => {
             <ArrowLeftIcon className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.company_name}</h1>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">{profile.account_phone}</p>
+            <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{profile.company_name}</h1>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{profile.account_phone}</p>
           </div>
         </div>
         <div className="flex space-x-2">
           <Link
             to={`/automation/companies/${id}/messages`}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
           >
             Mensagens Automáticas
           </Link>
@@ -180,28 +180,28 @@ const CompanyProfileDetailPage: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4">Informações Básicas</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 Nome da Empresa
               </label>
               <input
                 type="text"
                 value={formData.company_name || ''}
                 onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 Tipo de Negócio
               </label>
               <select
                 value={formData.business_type || ''}
                 onChange={(e) => setFormData({ ...formData, business_type: e.target.value as any })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
               >
                 {Object.entries(businessTypeLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -216,7 +216,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 rows={3}
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
               />
             </div>
             <div>
@@ -227,7 +227,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="url"
                 value={formData.website_url || ''}
                 onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
               />
             </div>
             <div>
@@ -238,7 +238,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="url"
                 value={formData.menu_url || ''}
                 onChange={(e) => setFormData({ ...formData, menu_url: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
               />
             </div>
             <div>
@@ -249,7 +249,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="url"
                 value={formData.order_url || ''}
                 onChange={(e) => setFormData({ ...formData, order_url: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
               />
             </div>
           </div>
@@ -491,7 +491,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                   value={formData.default_agent || ''}
                   onChange={(e) => setFormData({ ...formData, default_agent: e.target.value || null })}
                   placeholder="UUID do Agente IA"
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
                 />
                 <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
                   <Link to="/agents" className="text-green-600 hover:text-green-700">Gerenciar Agentes IA →</Link>

@@ -158,8 +158,8 @@ export default function ScheduledMessagesPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mensagens Agendadas</h1>
-          <p className="text-gray-600 dark:text-zinc-400">Agende mensagens para envio futuro</p>
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Mensagens Agendadas</h1>
+          <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Agende mensagens para envio futuro</p>
         </div>
         <Button onClick={() => setIsModalOpen(true)}>
           <PlusIcon className="h-5 w-5 mr-2" />
@@ -171,32 +171,32 @@ export default function ScheduledMessagesPage() {
       {stats && (
         <div className="grid grid-cols-7 max-lg:grid-cols-4 max-md:grid-cols-2 gap-4">
           <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.total}</p>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total</p>
           </Card>
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.pending}</p>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">Pendentes</p>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Pendentes</p>
           </Card>
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.sent}</p>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">Enviadas</p>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Enviadas</p>
           </Card>
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.failed}</p>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">Falhas</p>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Falhas</p>
           </Card>
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-gray-600 dark:text-zinc-400">{stats.cancelled}</p>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">Canceladas</p>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Canceladas</p>
           </Card>
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-indigo-600">{stats.scheduled_today}</p>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">Agendadas Hoje</p>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Agendadas Hoje</p>
           </Card>
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-emerald-600">{stats.sent_today}</p>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">Enviadas Hoje</p>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Enviadas Hoje</p>
           </Card>
         </div>
       )}
@@ -205,7 +205,7 @@ export default function ScheduledMessagesPage() {
       <Card className="p-4">
         <div className="flex flex-wrap gap-4">
           <select
-            className="rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             value={filters.account_id}
             onChange={(e) => setFilters({ ...filters, account_id: e.target.value })}
           >
@@ -217,7 +217,7 @@ export default function ScheduledMessagesPage() {
             ))}
           </select>
           <select
-            className="rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
           >
