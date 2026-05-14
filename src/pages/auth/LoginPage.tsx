@@ -62,11 +62,12 @@ export const LoginPage: React.FC = () => {
             <div className="flex flex-col gap-6">
               <Input
                 label="Usuário"
-                type="text"
+                type="email"
                 isRequired
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="Digite seu e-mail"
+                autoComplete="email"
               />
 
               <Input
@@ -76,6 +77,7 @@ export const LoginPage: React.FC = () => {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="Digite sua senha"
+                autoComplete="current-password"
               />
 
               <Button

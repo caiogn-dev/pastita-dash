@@ -23,6 +23,9 @@ export interface InputProps {
   min?: string | number;
   max?: string | number;
   step?: string | number;
+  autoComplete?: string;
+  name?: string;
+  id?: string;
 }
 
 const sizeClasses = {
@@ -49,6 +52,9 @@ export const Input: React.FC<InputProps> = ({
   min,
   max,
   step,
+  autoComplete,
+  name,
+  id,
 }) => {
   const finalRequired = isRequired || required;
   const finalDisabled = isDisabled || disabled;
@@ -57,7 +63,7 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className={`flex flex-col gap-1.5 ${className ?? ''}`}>
       {label && (
-        <label className="text-sm font-medium text-fg-primary">
+        <label className="text-sm font-medium text-fg-primary" htmlFor={id}>
           {label}
           {finalRequired && <span className="text-danger-500 ml-0.5"> *</span>}
         </label>
@@ -65,6 +71,8 @@ export const Input: React.FC<InputProps> = ({
 
       <input
         type={type}
+        id={id}
+        name={name}
         placeholder={placeholder}
         value={stringValue}
         onChange={onChange}
@@ -74,6 +82,7 @@ export const Input: React.FC<InputProps> = ({
         min={min}
         max={max}
         step={step}
+        autoComplete={autoComplete}
         className={[
           'w-full rounded-md border bg-bg-card text-fg-primary placeholder-fg-muted',
           'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500',
