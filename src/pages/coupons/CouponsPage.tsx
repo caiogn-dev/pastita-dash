@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import logger from '../../services/logger';
 import {
   PlusIcon,
@@ -164,9 +165,11 @@ export const CouponsPage: React.FC = () => {
   const handleToggleActive = async (coupon: Coupon) => {
     try {
       await couponsService.toggleActive(coupon.id);
+      toast.success(coupon.is_active ? 'Cupom desativado' : 'Cupom ativado');
       loadCoupons();
     } catch (error) {
       logger.error('Error toggling coupon:', error);
+      toast.error('Erro ao atualizar cupom');
     }
   };
 
@@ -175,11 +178,13 @@ export const CouponsPage: React.FC = () => {
     try {
       setSaving(true);
       await couponsService.deleteCoupon(deletingCoupon.id);
+      toast.success('Cupom excluído');
       setIsDeleteModalOpen(false);
       setDeletingCoupon(null);
       loadCoupons();
     } catch (error) {
       logger.error('Error deleting coupon:', error);
+      toast.error('Erro ao excluir cupom');
     } finally {
       setSaving(false);
     }
