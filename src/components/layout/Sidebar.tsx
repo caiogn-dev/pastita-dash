@@ -28,6 +28,7 @@ import {
   PlusIcon,
   BuildingOfficeIcon,
   ClockIcon,
+  PresentationChartLineIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -92,6 +93,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
         { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
       ]
+    },
+    {
+      title: 'Análise',
+      items: [
+        {
+          name: 'Relatórios',
+          href: '/analytics',
+          icon: PresentationChartLineIcon,
+          children: [
+            { name: 'Visão Geral', href: '/analytics', icon: PresentationChartLineIcon },
+            { name: 'Ce-Saladas 🥗', href: '/analytics/saladas', icon: PresentationChartLineIcon },
+          ],
+        },
+      ],
     },
     {
       title: 'Ferramentas',
