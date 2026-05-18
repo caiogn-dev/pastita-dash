@@ -8,6 +8,7 @@ import {
   TagIcon, Squares2X2Icon, XMarkIcon, BuildingStorefrontIcon, MegaphoneIcon,
   SparklesIcon, LinkIcon, DocumentTextIcon, DocumentChartBarIcon, EnvelopeIcon,
   PlusIcon, BuildingOfficeIcon, ClockIcon, Bars3Icon, ChatBubbleBottomCenterTextIcon,
+  PresentationChartLineIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -227,6 +228,14 @@ export const Navbar: React.FC = () => {
         { name: 'Agendamentos', href: '/automation/scheduled',     icon: ClockIcon },
         { name: 'Logs',         href: '/automation/logs',          icon: DocumentChartBarIcon },
         { name: 'Intenções',    href: '/automation/intents/stats', icon: SparklesIcon },
+      ],
+    },
+    {
+      label: 'Relatórios',
+      icon: PresentationChartLineIcon,
+      items: [
+        { name: 'Visão Geral',   href: '/analytics',         icon: PresentationChartLineIcon },
+        { name: 'Ce-Saladas 🥗', href: '/analytics/saladas', icon: PresentationChartLineIcon },
       ],
     },
     {
