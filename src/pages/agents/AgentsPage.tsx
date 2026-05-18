@@ -7,10 +7,12 @@ import {
   CpuChipIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { cn } from '../../utils/cn';
 import { AgentCard } from '../../components/agents';
 import agentsService, { Agent, PROVIDER_CONFIGS } from '../../services/agents';
 import type { AgentProvider } from '../../services/agents';
+import { getErrorMessage } from '../../services';
 import { useConfirm } from '../../hooks';
 
 type StatusFilter = 'all' | 'active' | 'inactive' | 'draft';
@@ -51,14 +53,14 @@ export const AgentsPage: React.FC = () => {
     const agent = agents.find(a => a.id === id);
     if (!agent) return;
 
+    const newStatus = agent.status === 'active' ? 'inactive' : 'active';
+    setAgents(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
     try {
-      const newStatus = agent.status === 'active' ? 'inactive' : 'active';
       await agentsService.updateAgent(id, { status: newStatus });
-      setAgents(prev => prev.map(a => 
-        a.id === id ? { ...a, status: newStatus } : a
-      ));
+      toast.success(`Agente ${newStatus === 'active' ? 'ativado' : 'desativado'}`);
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
+      setAgents(prev => prev.map(a => a.id === id ? { ...a, status: agent.status } : a));
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -72,8 +74,9 @@ export const AgentsPage: React.FC = () => {
     try {
       await agentsService.deleteAgent(id);
       setAgents(prev => prev.filter(a => a.id !== id));
+      toast.success('Agente excluído');
     } catch (error) {
-      console.error('Erro ao excluir agente:', error);
+      toast.error(getErrorMessage(error));
     }
   };
 

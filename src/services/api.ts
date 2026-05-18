@@ -5,6 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://backend.pastita.co
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30_000,
   headers: {
     'Content-Type': 'application/json',
   },
