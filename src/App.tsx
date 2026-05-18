@@ -7,7 +7,8 @@ import { MainLayout } from './components/layout';
 import { FullPageLoading } from './components/common';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
-import { whatsappService, setAuthToken } from './services';
+import { setAuthToken } from './services';
+import api from './services/api';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { WhatsAppWsProvider } from './context/WhatsAppWsContext';
 import './App.css';
@@ -119,7 +120,10 @@ const AppContent: React.FC = () => {
 
       if (isAuthenticated && token) {
         try {
-          const response = await whatsappService.getAccounts();
+          // skipAutoLogout: a 401 here does NOT mean the token is invalid —
+          // the user just logged in. Without this flag the interceptor would
+          // call logout() and send the user back to /login in a loop.
+          const response = await api.get('/whatsapp/accounts/', { skipAutoLogout: true });
           setAccounts(response.data?.results || []);
         } catch (error) {
           logger.error('Error loading accounts:', error);

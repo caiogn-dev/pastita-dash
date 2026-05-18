@@ -1,6 +1,14 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
+// Allow callers to mark a request as "don't auto-logout on 401/403"
+// Use for background/initialization requests where a 401 doesn't mean the token is invalid
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    skipAutoLogout?: boolean;
+  }
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://backend.pastita.com.br/api/v1';
 
 const api: AxiosInstance = axios.create({
@@ -82,8 +90,10 @@ api.interceptors.response.use(
     // 2. It's not a login/register endpoint (those return 401 for invalid credentials)
     const hadAuthHeader = Boolean(error.config?.headers?.Authorization);
     const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+    const skipAutoLogout = Boolean(error.config?.skipAutoLogout);
 
     if (
+      !skipAutoLogout &&
       (httpStatus === 401 || httpStatus === 403 || errorCode === 'token_not_valid') &&
       hadAuthHeader &&
       !isAuthEndpoint
