@@ -18,10 +18,9 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-// Ensure cookies and CSRF token are sent for cross-site requests
-api.defaults.withCredentials = true;
-api.defaults.xsrfCookieName = 'csrftoken';
-api.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
+// Token-based auth — cookies not needed for API requests
+// withCredentials was removed: it caused cross-origin issues and is unnecessary
+// since all auth is done via Authorization header (not session cookies)
 
 // Helper to get token from localStorage directly (bypasses zustand hydration timing)
 const getTokenFromStorage = (): string | null => {
