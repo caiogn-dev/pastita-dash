@@ -1,9 +1,3 @@
-/**
- * DashboardPage — Centro de operações da loja
- *
- * Desktop-first. Responde à pergunta que importa ao abrir o painel:
- * "O que precisa da minha atenção agora?"
- */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -19,6 +13,8 @@ import {
   ServerStackIcon,
   CubeIcon,
   BoltIcon,
+  BellAlertIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Badge, Button, Loading } from '../../components/common';
@@ -79,35 +75,63 @@ const healthLabel: Record<string, string> = {
 // KPI Card
 // ─────────────────────────────────────────────────────────────────────────────
 
+type Urgency = 'none' | 'medium' | 'high';
+
 interface KpiCardProps {
   icon: React.ReactNode;
   label: string;
   value: string | number;
   sub?: string;
   accent?: string;
+  iconBg?: string;
+  iconColor?: string;
+  urgency?: Urgency;
   onClick?: () => void;
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ icon, label, value, sub, accent, onClick }) => (
+const KpiCard: React.FC<KpiCardProps> = ({
+  icon, label, value, sub, accent, iconBg, iconColor, urgency = 'none', onClick,
+}) => (
   <div onClick={onClick} className={`flex-1 min-w-0 ${onClick ? 'cursor-pointer' : ''}`}>
-  <Card
-    className="h-full"
-  >
-    <div className="flex items-start justify-between gap-3 p-4">
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide mb-1">
-          {label}
-        </p>
-        <p className={`text-2xl font-bold truncate ${accent ?? 'text-gray-900 dark:text-white'}`}>
-          {value}
-        </p>
-        {sub && <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">{sub}</p>}
+    <div className={[
+      'h-full rounded-xl border shadow-sm transition-all duration-200 overflow-hidden',
+      'bg-white dark:bg-zinc-950',
+      onClick ? 'hover:shadow-md hover:-translate-y-0.5' : '',
+      urgency === 'high'
+        ? 'border-red-200 dark:border-red-900/60'
+        : urgency === 'medium'
+        ? 'border-yellow-200 dark:border-yellow-900/60'
+        : 'border-gray-100 dark:border-zinc-800',
+    ].filter(Boolean).join(' ')}>
+      <div className="flex items-start justify-between gap-3 p-5">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2.5">
+            {label}
+          </p>
+          <p className={[
+            'text-3xl font-bold tracking-tight truncate leading-none mb-1.5',
+            accent ?? 'text-gray-900 dark:text-white',
+            urgency === 'high' ? 'animate-pulse' : '',
+          ].filter(Boolean).join(' ')}>
+            {value}
+          </p>
+          {sub && <p className="text-xs text-gray-400 dark:text-zinc-500">{sub}</p>}
+        </div>
+        <div className={[
+          'shrink-0 p-2.5 rounded-xl',
+          iconBg  || 'bg-gray-50 dark:bg-zinc-900',
+          iconColor || 'text-gray-400 dark:text-zinc-500',
+        ].join(' ')}>
+          {icon}
+        </div>
       </div>
-      <div className="shrink-0 p-2 rounded-lg bg-gray-50 dark:bg-zinc-800 text-gray-400 dark:text-zinc-400">
-        {icon}
-      </div>
+      {urgency === 'high' && (
+        <div className="h-0.5 bg-gradient-to-r from-red-500 to-orange-400" />
+      )}
+      {urgency === 'medium' && (
+        <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-amber-300" />
+      )}
     </div>
-  </Card>
   </div>
 );
 
@@ -275,31 +299,31 @@ export const DashboardPage: React.FC = () => {
     <div className="space-y-5">
 
       {/* ── Alert bar ── */}
-      {(pendingCount > 0 || conversationsOpen > 0) && !loading && (
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl
-                        bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/40">
-          <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400 shrink-0" />
-          <div className="flex flex-wrap gap-4 flex-1 text-sm font-medium text-yellow-800 dark:text-yellow-300">
-            {pendingCount > 0 && (
-              <button
-                onClick={() => navigate(`/stores/${storeRoute}/orders?status=pending`)}
-                className="hover:underline"
-              >
-                <strong>{pendingCount}</strong> pedido{pendingCount > 1 ? 's' : ''} aguardando confirmação
-              </button>
-            )}
-            {conversationsOpen > 0 && (
-              <button onClick={() => navigate('/conversations')} className="hover:underline">
-                <strong>{conversationsOpen}</strong> conversa{conversationsOpen > 1 ? 's' : ''} abertas
-              </button>
-            )}
+      {pendingCount > 0 && !loading && (
+        <div className={[
+          'flex flex-wrap items-center gap-3 px-4 py-3.5 rounded-xl border',
+          pendingCount > 3
+            ? 'bg-red-50 dark:bg-red-950/25 border-red-200 dark:border-red-900/50'
+            : 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/40',
+        ].join(' ')}>
+          <BellAlertIcon className={`h-5 w-5 shrink-0 ${pendingCount > 3 ? 'text-red-500 dark:text-red-400 animate-bounce' : 'text-orange-500 dark:text-orange-400'}`} />
+          <div className="flex-1">
+            <span className={`text-sm font-semibold ${pendingCount > 3 ? 'text-red-800 dark:text-red-300' : 'text-orange-800 dark:text-orange-300'}`}>
+              {pendingCount} pedido{pendingCount > 1 ? 's' : ''} aguardando confirmação
+            </span>
           </div>
           <button
-            onClick={loadData}
-            title="Atualizar"
-            className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 p-1 rounded transition-colors"
+            onClick={() => navigate(`/stores/${storeRoute}/orders?status=pending`)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+              pendingCount > 3
+                ? 'bg-red-600 hover:bg-red-700 text-white'
+                : 'bg-orange-500 hover:bg-orange-600 text-white'
+            }`}
           >
-            <ArrowPathIcon className="h-4 w-4" />
+            Ver agora →
+          </button>
+          <button onClick={loadData} className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+            <ArrowPathIcon className="h-4 w-4 text-gray-400" />
           </button>
         </div>
       )}
@@ -310,27 +334,37 @@ export const DashboardPage: React.FC = () => {
           icon={<ShoppingCartIcon className="h-5 w-5" />}
           label="Pedidos hoje"
           value={loading ? '—' : ordersToday}
+          sub={!loading && ordersToday === 0 ? 'Nenhum ainda' : undefined}
+          iconBg="bg-blue-50 dark:bg-blue-950/40"
+          iconColor="text-blue-500 dark:text-blue-400"
           onClick={() => navigate(`/stores/${storeRoute}/orders`)}
         />
         <KpiCard
           icon={<CurrencyDollarIcon className="h-5 w-5" />}
           label="Receita hoje"
           value={loading ? '—' : fmt(revenueToday)}
-          accent="text-green-600 dark:text-green-400"
+          accent="text-emerald-600 dark:text-emerald-400"
+          iconBg="bg-emerald-50 dark:bg-emerald-950/40"
+          iconColor="text-emerald-500 dark:text-emerald-400"
         />
         <KpiCard
           icon={<ClockIcon className="h-5 w-5" />}
-          label="Pendentes"
+          label="Aguardando"
           value={loading ? '—' : pendingCount}
-          accent={pendingCount > 0 ? 'text-yellow-600 dark:text-yellow-400' : undefined}
-          sub={pendingCount > 0 ? 'Aguardando confirmação' : 'Tudo em dia ✓'}
+          accent={pendingCount > 0 ? (pendingCount > 3 ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400') : undefined}
+          sub={pendingCount > 0 ? 'Precisam de confirmação' : 'Tudo em dia ✓'}
+          iconBg={pendingCount > 0 ? (pendingCount > 3 ? 'bg-red-50 dark:bg-red-950/40' : 'bg-orange-50 dark:bg-orange-950/40') : 'bg-gray-50 dark:bg-zinc-900'}
+          iconColor={pendingCount > 0 ? (pendingCount > 3 ? 'text-red-500 dark:text-red-400' : 'text-orange-500 dark:text-orange-400') : 'text-gray-400 dark:text-zinc-500'}
+          urgency={pendingCount > 3 ? 'high' : pendingCount > 0 ? 'medium' : 'none'}
           onClick={() => navigate(`/stores/${storeRoute}/orders?status=pending`)}
         />
         <KpiCard
           icon={<ChatBubbleLeftRightIcon className="h-5 w-5" />}
           label="Conversas abertas"
           value={loading ? '—' : conversationsOpen}
-          accent={conversationsOpen > 0 ? 'text-blue-600 dark:text-blue-400' : undefined}
+          accent={conversationsOpen > 0 ? 'text-violet-600 dark:text-violet-400' : undefined}
+          iconBg={conversationsOpen > 0 ? 'bg-violet-50 dark:bg-violet-950/40' : 'bg-gray-50 dark:bg-zinc-900'}
+          iconColor={conversationsOpen > 0 ? 'text-violet-500 dark:text-violet-400' : 'text-gray-400 dark:text-zinc-500'}
           onClick={() => navigate('/conversations')}
         />
       </div>
@@ -345,12 +379,21 @@ export const DashboardPage: React.FC = () => {
               <FireIcon className="h-4 w-4 text-orange-400" />
               Pedidos recentes
             </h2>
-            <button
-              onClick={() => navigate(`/stores/${storeRoute}/orders`)}
-              className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline font-medium"
-            >
-              Ver todos <ArrowRightIcon className="h-3 w-3" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate(`/stores/${storeRoute}/orders/new`)}
+                className="flex items-center gap-1 text-xs bg-primary-600 hover:bg-primary-700 text-white px-2.5 py-1.5 rounded-lg font-medium transition-colors"
+              >
+                <PlusIcon className="h-3.5 w-3.5" />
+                Novo pedido
+              </button>
+              <button
+                onClick={() => navigate(`/stores/${storeRoute}/orders`)}
+                className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline font-medium"
+              >
+                Ver todos <ArrowRightIcon className="h-3 w-3" />
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -394,7 +437,7 @@ export const DashboardPage: React.FC = () => {
             <TruckIcon className="h-4 w-4 text-indigo-400" />
             <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Pipeline de pedidos</h2>
           </div>
-          <div className="p-5 space-y-4">
+          <div className="p-5 space-y-3">
             {loading ? (
               <div className="flex justify-center py-6"><Loading size="sm" /></div>
             ) : (
@@ -408,16 +451,18 @@ export const DashboardPage: React.FC = () => {
                     className="w-full text-left group"
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-medium text-gray-600 dark:text-zinc-400
+                      <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400
                                        group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                         {label}
                       </span>
-                      <span className="text-xs font-bold text-gray-900 dark:text-white tabular-nums">{count}</span>
+                      <span className={`text-sm font-bold tabular-nums ${count > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-700'}`}>
+                        {count}
+                      </span>
                     </div>
-                    <div className="h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${color} rounded-full transition-all duration-500`}
-                        style={{ width: count > 0 ? `${Math.max(pct, 5)}%` : '0%' }}
+                        className={`h-full ${color} rounded-full transition-all duration-700`}
+                        style={{ width: count > 0 ? `${Math.max(pct, 6)}%` : '0%' }}
                       />
                     </div>
                   </button>
@@ -439,13 +484,20 @@ export const DashboardPage: React.FC = () => {
 
       {/* ── Project health ── */}
       <Card noPadding>
+        {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
           <div className="flex items-center gap-2">
             <ServerStackIcon className="h-4 w-4 text-primary-500" />
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Saúde do projeto</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Saúde do sistema</h2>
             <Badge variant={healthVariant[projectHealth?.status || 'unknown'] || 'gray'}>
               {healthLabel[projectHealth?.status || 'unknown'] || 'Indefinido'}
             </Badge>
+            {(projectHealth?.automation.pipeline.dropped ?? 0) > 0 && (
+              <span className="flex items-center gap-1 text-[11px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-full">
+                <ExclamationTriangleIcon className="h-3 w-3" />
+                {projectHealth!.automation.pipeline.dropped} mensagens perdidas
+              </span>
+            )}
           </div>
           <button
             onClick={() => navigate('/analytics')}
@@ -458,52 +510,115 @@ export const DashboardPage: React.FC = () => {
         {loading && !projectHealth ? (
           <div className="flex justify-center items-center h-32"><Loading /></div>
         ) : projectHealth ? (
-          <div className="grid grid-cols-12 max-lg:grid-cols-1 gap-0">
-            <div className="lg:col-span-8 grid grid-cols-4 max-md:grid-cols-2 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-zinc-800">
-              <div className="p-4 border-r border-b md:border-b-0 border-gray-100 dark:border-zinc-800">
-                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">API</p>
-                <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{projectHealth.api.status}</p>
-                <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{Object.values(projectHealth.api.checks || {}).filter((c) => c?.ok === false).length} checks falhando</p>
-              </div>
-              <div className="p-4 md:border-r border-b md:border-b-0 border-gray-100 dark:border-zinc-800">
-                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Pedidos 24h</p>
-                <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{projectHealth.commerce.orders_24h}</p>
-                <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
-              </div>
-              <div className="p-4 border-r border-gray-100 dark:border-zinc-800">
-                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Mensagens 24h</p>
-                <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.messages_24h}</p>
-                <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{projectHealth.messaging.failed_24h} falhas</p>
+          <div className="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-100 dark:divide-zinc-800">
+
+            {/* ── Commerce ── */}
+            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
+              <div className="p-4">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Pedidos 24h</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.commerce.orders_24h}</p>
+                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
               </div>
               <div className="p-4">
-                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">Webhooks</p>
-                <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{projectHealth.webhooks.received_24h}</p>
-                <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{projectHealth.webhooks.pending} pendentes</p>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Ticket médio</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{fmt(projectHealth.commerce.avg_ticket_month)}</p>
+                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                  {projectHealth.commerce.cancelled_7d > 0
+                    ? <span className="text-red-500">{projectHealth.commerce.cancelled_7d} cancel. (7d)</span>
+                    : 'sem cancelamentos'}
+                </p>
+              </div>
+              <div className="p-4">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Pag. pendentes</p>
+                <p className={`text-xl font-bold ${projectHealth.commerce.payment_pending > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
+                  {projectHealth.commerce.payment_pending}
+                </p>
+                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">aguardando</p>
               </div>
             </div>
 
-            <div className="lg:col-span-4 p-4 space-y-3">
+            {/* ── Messaging ── */}
+            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
+              <div className="p-4">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Mensagens 24h</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.messages_24h}</p>
+                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                  {projectHealth.messaging.inbound_24h}↓ · {projectHealth.messaging.outbound_24h}↑
+                </p>
+              </div>
+              <div className="p-4">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Conversas</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.open_conversations}</p>
+                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                  {projectHealth.messaging.human_conversations} c/ humano
+                </p>
+              </div>
+              <div className="p-4">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Pipeline</p>
+                <p className={`text-xl font-bold ${projectHealth.automation.pipeline.dropped > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                  {projectHealth.automation.pipeline.dropped}
+                </p>
+                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                  perdidas · {projectHealth.automation.pipeline.timeouts} timeouts
+                </p>
+              </div>
+            </div>
+
+            {/* ── Side panel: intents + issues ── */}
+            <div className="p-4 space-y-4">
+              {/* Quick stats */}
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-3">
-                  <CubeIcon className="h-4 w-4 mx-auto mb-1 text-gray-400" />
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">{projectHealth.catalog.low_stock_products}</p>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Estoque baixo</p>
+                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
+                  <CubeIcon className="h-3.5 w-3.5 mx-auto mb-1 text-gray-400" />
+                  <p className={`text-sm font-bold ${projectHealth.catalog.low_stock_products > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}`}>
+                    {projectHealth.catalog.low_stock_products}
+                  </p>
+                  <p className="text-[10px] text-gray-500 dark:text-zinc-500">Est. baixo</p>
                 </div>
-                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-3">
-                  <BoltIcon className="h-4 w-4 mx-auto mb-1 text-gray-400" />
+                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
+                  <BoltIcon className="h-3.5 w-3.5 mx-auto mb-1 text-gray-400" />
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{projectHealth.automation.active_agents}</p>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Agentes</p>
+                  <p className="text-[10px] text-gray-500 dark:text-zinc-500">Agentes</p>
                 </div>
-                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-3">
-                  <ExclamationTriangleIcon className="h-4 w-4 mx-auto mb-1 text-gray-400" />
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">{projectHealth.issues.length}</p>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Alertas</p>
+                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
+                  <ExclamationTriangleIcon className={`h-3.5 w-3.5 mx-auto mb-1 ${projectHealth.issues.length > 0 ? 'text-yellow-500' : 'text-gray-400'}`} />
+                  <p className={`text-sm font-bold ${projectHealth.issues.length > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
+                    {projectHealth.issues.length}
+                  </p>
+                  <p className="text-[10px] text-gray-500 dark:text-zinc-500">Alertas</p>
                 </div>
               </div>
 
+              {/* Top intents from pipeline */}
+              {projectHealth.automation.pipeline.intent_log_summary?.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">
+                    Top intenções ({projectHealth.automation.pipeline.period_hours}h)
+                  </p>
+                  <div className="space-y-1.5">
+                    {projectHealth.automation.pipeline.intent_log_summary.slice(0, 4).map((item) => {
+                      const total = projectHealth.automation.pipeline.total_messages || 1;
+                      const pct = Math.round((item.count / total) * 100);
+                      return (
+                        <div key={item.intent_type} className="flex items-center gap-2">
+                          <span className="text-[11px] text-gray-600 dark:text-zinc-400 truncate flex-1 capitalize">
+                            {item.intent_type.replace(/_/g, ' ')}
+                          </span>
+                          <div className="w-16 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary-400 rounded-full" style={{ width: `${Math.max(pct, 8)}%` }} />
+                          </div>
+                          <span className="text-[11px] font-bold text-gray-700 dark:text-zinc-300 tabular-nums w-5 text-right">{item.count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Issues */}
               {projectHealth.issues.length > 0 ? (
-                <div className="space-y-2">
-                  {projectHealth.issues.slice(0, 3).map((issue, idx) => (
+                <div className="space-y-1.5">
+                  {projectHealth.issues.slice(0, 2).map((issue, idx) => (
                     <button
                       key={`${issue.area}-${idx}`}
                       onClick={() => {
@@ -512,20 +627,30 @@ export const DashboardPage: React.FC = () => {
                         else if (issue.area === 'messages') navigate('/whatsapp/inbox');
                         else navigate('/analytics');
                       }}
-                      className="w-full text-left rounded-lg border border-gray-100 dark:border-zinc-800 p-3 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors"
+                      className={`w-full text-left rounded-lg border p-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-zinc-900 ${
+                        issue.level === 'critical'
+                          ? 'border-red-200 dark:border-red-900/50'
+                          : issue.level === 'warning'
+                          ? 'border-yellow-200 dark:border-yellow-900/50'
+                          : 'border-gray-100 dark:border-zinc-800'
+                      }`}
                     >
-                      <p className="text-xs font-semibold text-gray-900 dark:text-white">{issue.title}</p>
-                      <p className="mt-0.5 text-[11px] text-gray-500 dark:text-zinc-400 line-clamp-2">{issue.detail}</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1">{issue.title}</p>
+                      <p className="mt-0.5 text-[10px] text-gray-500 dark:text-zinc-400 line-clamp-1">{issue.detail}</p>
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Nenhum alerta operacional no escopo atual.</p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                  Nenhum alerta operacional
+                </p>
               )}
             </div>
+
           </div>
         ) : (
-          <div className="p-5 text-sm text-gray-500 dark:text-zinc-400">Saúde do projeto indisponível.</div>
+          <div className="p-5 text-sm text-gray-500 dark:text-zinc-400">Saúde do sistema indisponível.</div>
         )}
       </Card>
 

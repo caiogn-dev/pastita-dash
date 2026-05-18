@@ -13,12 +13,13 @@ import {
 import toast from 'react-hot-toast';
 import { Card, Button, Badge, Modal, Input, Loading } from '../../components/common';
 import { agentFlowService, AgentFlow } from '../../services/automation';
-import { useStore } from '../../hooks';
+import { useStore, useConfirm } from '../../hooks';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const AgentFlowsPage: React.FC = () => {
   const { storeId } = useStore();
+  const [ConfirmDialog, confirm] = useConfirm();
   const [flows, setFlows] = useState<AgentFlow[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -105,7 +106,11 @@ export const AgentFlowsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este flow?')) return;
+    const confirmed = await confirm({
+      title: 'Excluir flow',
+      message: 'Tem certeza que deseja excluir este flow?',
+    });
+    if (!confirmed) return;
     try {
       await agentFlowService.delete(id);
       toast.success('Flow excluído');

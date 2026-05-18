@@ -125,6 +125,7 @@ interface UseWhatsAppWSOptions {
 interface UseWhatsAppWSReturn {
   isConnected: boolean;
   connectionError: string | null;
+  retry: () => void;
   subscribeToConversation: (conversationId: string) => void;
   unsubscribeFromConversation: (conversationId: string) => void;
   sendTypingIndicator: (conversationId: string, isTyping: boolean) => void;
@@ -398,9 +399,16 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     };
   }, [connect, enabled, accountId, dashboardMode]);
 
+  const retry = useCallback(() => {
+    attempts.current = 0;
+    setConnectionError(null);
+    connect();
+  }, [connect]);
+
   const returnValue = {
     isConnected,
     connectionError,
+    retry,
     subscribeToConversation,
     unsubscribeFromConversation,
     sendTypingIndicator,

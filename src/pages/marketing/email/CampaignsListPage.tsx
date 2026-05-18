@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../../components/common';
-import { useStore } from '../../../hooks';
+import { useStore, useConfirm } from '../../../hooks';
 import api from '@/services/api';
 
 interface EmailCampaign {
@@ -74,7 +74,8 @@ const AUDIENCE_LABELS: Record<string, string> = {
 export const CampaignsListPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId } = useStore();
-  
+  const [ConfirmDialog, confirm] = useConfirm();
+
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
@@ -130,8 +131,13 @@ export const CampaignsListPage: React.FC = () => {
   };
 
   const handleSendCampaign = async (campaign: EmailCampaign) => {
-    if (!confirm(`Enviar campanha "${campaign.name}" agora?`)) return;
-    
+    const confirmed = await confirm({
+      title: 'Enviar campanha',
+      message: `Enviar campanha "${campaign.name}" agora?`,
+      variant: 'info',
+    });
+    if (!confirmed) return;
+
     try {
       setActionLoading(campaign.id);
       const response = await api.post(`/marketing/campaigns/${campaign.id}/send/`);
@@ -145,8 +151,12 @@ export const CampaignsListPage: React.FC = () => {
   };
 
   const handleDeleteCampaign = async (campaign: EmailCampaign) => {
-    if (!confirm(`Excluir campanha "${campaign.name}"?`)) return;
-    
+    const confirmed = await confirm({
+      title: 'Excluir campanha',
+      message: `Excluir campanha "${campaign.name}"?`,
+    });
+    if (!confirmed) return;
+
     try {
       setActionLoading(campaign.id);
       await api.delete(`/marketing/campaigns/${campaign.id}/`);
@@ -379,6 +389,7 @@ export const CampaignsListPage: React.FC = () => {
           </div>
         )}
       </Modal>
+      {ConfirmDialog}
     </div>
   );
 };

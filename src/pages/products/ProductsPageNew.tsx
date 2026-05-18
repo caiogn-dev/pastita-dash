@@ -1188,9 +1188,11 @@ export const ProductsPageNew: React.FC = () => {
   const handleToggleFeatured = async (product: Product) => {
     try {
       await storesApi.updateProduct(product.id, { featured: !product.featured });
+      toast.success(product.featured ? 'Removido dos destaques' : 'Adicionado aos destaques');
       loadData();
     } catch (error) {
       logger.error('Error toggling featured:', error);
+      toast.error('Erro ao atualizar destaque do produto');
     }
   };
 
@@ -1198,9 +1200,11 @@ export const ProductsPageNew: React.FC = () => {
     try {
       const nextStatus = product.status === 'active' ? 'inactive' : 'active';
       await storesApi.updateProduct(product.id, { status: nextStatus });
+      toast.success(nextStatus === 'active' ? 'Produto ativado' : 'Produto desativado');
       loadData();
     } catch (error) {
       logger.error('Error toggling status:', error);
+      toast.error('Erro ao atualizar status do produto');
     }
   };
 

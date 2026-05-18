@@ -52,6 +52,22 @@ const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: React.ReactNo
   mercadopago: { label: 'Mercado Pago', icon: <CurrencyDollarIcon className="w-4 h-4" /> },
 };
 
+const STOREFRONT_ORIGINS_BY_SLUG: Record<string, string> = {
+  pastita: 'https://pastita.com.br',
+  'ce-saladas': 'https://cesaladas.com.br',
+};
+
+const metadataString = (metadata: Record<string, unknown> | undefined, keys: string[]): string | null => {
+  if (!metadata) return null;
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim().replace(/\/$/, '');
+    }
+  }
+  return null;
+};
+
 // Payment status badge component
 const PaymentStatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const config: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
@@ -80,11 +96,32 @@ export const PaymentsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId, stores } = useStore();
+  const selectedStore = useMemo(() => {
+    if (!routeStoreId && !storeId) return null;
+    return stores.find((store) =>
+      store.id === routeStoreId ||
+      store.slug === routeStoreId ||
+      store.id === storeId
+    ) || null;
+  }, [routeStoreId, storeId, stores]);
   const effectiveStoreId = useMemo(() => {
     if (!routeStoreId) return storeId || null;
-    const match = stores.find((store) => store.id === routeStoreId || store.slug === routeStoreId);
-    return match?.id || routeStoreId;
-  }, [routeStoreId, storeId, stores]);
+    return selectedStore?.id || routeStoreId;
+  }, [routeStoreId, selectedStore, storeId]);
+  const storefrontOrigin = useMemo(() => {
+    const metadataOrigin = metadataString(selectedStore?.metadata, [
+      'storefront_url',
+      'storefront_origin',
+      'site_url',
+      'website',
+      'public_url',
+    ]);
+    if (metadataOrigin) return metadataOrigin;
+    if (selectedStore?.slug && STOREFRONT_ORIGINS_BY_SLUG[selectedStore.slug]) {
+      return STOREFRONT_ORIGINS_BY_SLUG[selectedStore.slug];
+    }
+    return STOREFRONT_ORIGINS_BY_SLUG.pastita;
+  }, [selectedStore]);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -238,7 +275,7 @@ export const PaymentsPage: React.FC = () => {
         // SECURE: Generate link using access_token (not order_number)
         // This prevents unauthorized access to order details
         const clientPaymentLink = pix_code && access_token
-          ? `https://pastita.com.br/pendente?token=${access_token}`
+          ? `${storefrontOrigin}/pendente?token=${encodeURIComponent(access_token)}`
           : null;
         
         // Priority: pix_ticket_url > client payment page (with token) > direct link > preference link

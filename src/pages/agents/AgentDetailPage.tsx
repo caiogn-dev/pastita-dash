@@ -13,13 +13,15 @@ import {
 import { cn } from '../../utils/cn';
 import { AgentForm, AgentStats, AgentChatTest, ConversationList } from '../../components/agents';
 import agentsService, { AgentDetail, AgentStats as Stats, AgentConversation } from '../../services/agents';
+import { useConfirm } from '../../hooks';
 
 type Tab = 'overview' | 'edit' | 'test' | 'conversations';
 
 export const AgentDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+  const [ConfirmDialog, confirm] = useConfirm();
+
   const [agent, setAgent] = useState<AgentDetail | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [conversations, setConversations] = useState<AgentConversation[]>([]);
@@ -82,8 +84,12 @@ export const AgentDetailPage: React.FC = () => {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!confirm('Tem certeza que deseja excluir este agente?')) return;
-    
+    const confirmed = await confirm({
+      title: 'Excluir agente',
+      message: 'Tem certeza que deseja excluir este agente?',
+    });
+    if (!confirmed) return;
+
     try {
       await agentsService.deleteAgent(id);
       navigate('/agents');
@@ -450,6 +456,7 @@ export const AgentDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };
