@@ -1,11 +1,10 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
-// Allow callers to mark a request as "don't auto-logout on 401/403"
-// Use for background/initialization requests where a 401 doesn't mean the token is invalid
 declare module 'axios' {
   interface AxiosRequestConfig {
     skipAutoLogout?: boolean;
+    _retryCount?: number;
   }
 }
 
@@ -94,10 +93,30 @@ api.interceptors.response.use(
     const hadAuthHeader = Boolean(error.config?.headers?.Authorization);
     const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
     const skipAutoLogout = Boolean(error.config?.skipAutoLogout);
+    const retryCount = error.config?._retryCount ?? 0;
 
     const { loginTimestamp } = useAuthStore.getState();
     const msSinceLogin = loginTimestamp ? Date.now() - loginTimestamp : Infinity;
     const inLoginGracePeriod = msSinceLogin < 15_000;
+
+    // During the post-login grace period, 401s are caused by DB replication lag
+    // (token written to primary but not yet synced to read replicas).
+    // Auto-retry up to 2 times with a 2s delay so data loads once the replica catches up.
+    if (
+      inLoginGracePeriod &&
+      httpStatus === 401 &&
+      hadAuthHeader &&
+      !isAuthEndpoint &&
+      retryCount < 2
+    ) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          api.request({ ...error.config, _retryCount: retryCount + 1 })
+            .then(resolve)
+            .catch(reject);
+        }, 2000);
+      });
+    }
 
     if (
       !skipAutoLogout &&
@@ -107,7 +126,6 @@ api.interceptors.response.use(
       !isAuthEndpoint
     ) {
       useAuthStore.getState().logout();
-      // clear default header immediately
       try {
         delete api.defaults.headers.common.Authorization;
       } catch {
