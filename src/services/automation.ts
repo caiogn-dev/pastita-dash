@@ -8,13 +8,13 @@ import {
   CustomerSession,
   AutomationLog,
   CompanyProfileStats,
-  AutomationLogStats,
+  AutomationStats,
   PaginatedResponse,
   AutoMessageEventType,
 } from '../types';
 
 // Company Profile API
-export const companyProfileApi = {
+export const companyProfileService = {
   list: async (params?: {
     account_id?: string;
     business_type?: string;
@@ -61,7 +61,7 @@ export const companyProfileApi = {
 };
 
 // Auto Message API
-export const autoMessageApi = {
+export const autoMessageService = {
   list: async (params?: {
     company_id?: string;
     event_type?: AutoMessageEventType;
@@ -127,7 +127,7 @@ export const autoMessageApi = {
 };
 
 // Customer Session API
-export const customerSessionApi = {
+export const customerSessionService = {
   list: async (params?: {
     company_id?: string;
     status?: string;
@@ -175,7 +175,7 @@ export const customerSessionApi = {
 };
 
 // Automation Log API
-export const automationLogApi = {
+export const automationLogService = {
   list: async (params?: {
     company_id?: string;
     action_type?: string;
@@ -195,7 +195,7 @@ export const automationLogApi = {
     return response.data;
   },
 
-  getStats: async (params?: { company_id?: string }): Promise<AutomationLogStats> => {
+  getStats: async (params?: { company_id?: string }): Promise<AutomationStats> => {
     const response = await api.get('/automation/logs/stats/', { params });
     return response.data;
   },
@@ -203,18 +203,29 @@ export const automationLogApi = {
 
 // Event type labels for display
 export const eventTypeLabels: Record<AutoMessageEventType, string> = {
+  // Welcome & General
   welcome: 'Boas-vindas',
   menu: 'Cardápio/Catálogo',
   business_hours: 'Horário de Funcionamento',
   out_of_hours: 'Fora do Horário',
+  faq: 'Perguntas Frequentes',
+  // Cart
   cart_created: 'Carrinho Criado',
   cart_abandoned: 'Carrinho Abandonado',
   cart_reminder: 'Lembrete de Carrinho',
+  cart_reminder_30: 'Lembrete Carrinho (30min)',
+  cart_reminder_2h: 'Lembrete Carrinho (2h)',
+  cart_reminder_24h: 'Lembrete Carrinho (24h)',
+  // Payment
   pix_generated: 'PIX Gerado',
   pix_reminder: 'Lembrete de PIX',
   pix_expired: 'PIX Expirado',
+  payment_reminder_1: 'Lembrete Pagamento (30min)',
+  payment_reminder_2: 'Lembrete Pagamento (2h)',
   payment_confirmed: 'Pagamento Confirmado',
   payment_failed: 'Pagamento Falhou',
+  // Order Status
+  order_received: 'Pedido Recebido',
   order_confirmed: 'Pedido Confirmado',
   order_preparing: 'Pedido em Preparo',
   order_ready: 'Pedido Pronto',
@@ -222,7 +233,12 @@ export const eventTypeLabels: Record<AutoMessageEventType, string> = {
   order_out_for_delivery: 'Saiu para Entrega',
   order_delivered: 'Pedido Entregue',
   order_cancelled: 'Pedido Cancelado',
+  // Feedback & Support
   feedback_request: 'Solicitar Avaliação',
+  feedback_received: 'Avaliação Recebida',
+  human_handoff: 'Transferido para Humano',
+  human_assigned: 'Atendente Atribuído',
+  // Custom
   custom: 'Personalizado',
 };
 
@@ -256,12 +272,146 @@ export const messageVariables = [
   { key: 'phone_number', description: 'Telefone do cliente' },
   { key: 'cart_total', description: 'Valor do carrinho' },
   { key: 'cart_items', description: 'Itens do carrinho' },
+  { key: 'cart_item_count', description: 'Quantidade de itens no carrinho' },
   { key: 'order_number', description: 'Número do pedido' },
+  { key: 'order_status', description: 'Status do pedido' },
   { key: 'amount', description: 'Valor do pagamento' },
   { key: 'pix_code', description: 'Código PIX copia e cola' },
+  { key: 'time_remaining', description: 'Tempo restante (ex: 30 minutos)' },
   { key: 'tracking_code', description: 'Código de rastreio' },
   { key: 'delivery_estimate', description: 'Previsão de entrega' },
+  { key: 'delivery_address', description: 'Endereço de entrega' },
   { key: 'company_name', description: 'Nome da empresa' },
+  { key: 'store_name', description: 'Nome da loja' },
   { key: 'website_url', description: 'URL do site' },
   { key: 'menu_url', description: 'URL do cardápio' },
+  { key: 'business_hours_today', description: 'Horário de hoje' },
+  { key: 'discount_code', description: 'Código de desconto' },
+  { key: 'discount_percentage', description: 'Porcentagem de desconto' },
 ];
+
+// Intent type labels
+export const intentTypeLabels: Record<string, string> = {
+  greeting: 'Saudação',
+  price_check: 'Consulta de Preço',
+  business_hours: 'Horário de Funcionamento',
+  delivery_info: 'Informações de Entrega',
+  menu_request: 'Solicitação de Cardápio',
+  track_order: 'Rastrear Pedido',
+  payment_status: 'Status de Pagamento',
+  location: 'Localização/Endereço',
+  contact: 'Contato',
+  faq: 'Pergunta Frequente',
+  create_order: 'Criar Pedido',
+  cancel_order: 'Cancelar Pedido',
+  modify_order: 'Modificar Pedido',
+  confirm_payment: 'Confirmar Pagamento',
+  request_pix: 'Solicitar PIX',
+  add_to_cart: 'Adicionar ao Carrinho',
+  product_inquiry: 'Consulta de Produto',
+  customization: 'Personalização',
+  comparison: 'Comparação',
+  recommendation: 'Recomendação',
+  complaint: 'Reclamação',
+  general_question: 'Pergunta Geral',
+  unknown: 'Desconhecido',
+  human_handoff: 'Transferir para Humano',
+};
+
+// =============================================================================
+// AGENT FLOW API - Flow Builder (Stub para build passar)
+// =============================================================================
+
+export interface AgentFlow {
+  id: string;
+  name: string;
+  description: string;
+  store: string;
+  store_name?: string;
+  store_slug?: string;
+  flow_json: {
+    nodes: Array<{
+      id: string;
+      type: string;
+      position: { x: number; y: number };
+      data: Record<string, unknown>;
+    }>;
+    edges: Array<{
+      id: string;
+      source: string;
+      target: string;
+    }>;
+    viewport?: {
+      x: number;
+      y: number;
+      zoom: number;
+    };
+  };
+  is_active: boolean;
+  is_default: boolean;
+  version: string;
+  total_executions: number;
+  success_rate: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAgentFlow {
+  name: string;
+  description?: string;
+  store: string;
+  flow_json?: AgentFlow['flow_json'];
+  is_active?: boolean;
+  is_default?: boolean;
+  version?: string;
+}
+
+export interface UpdateAgentFlow {
+  name?: string;
+  description?: string;
+  flow_json?: AgentFlow['flow_json'];
+  is_active?: boolean;
+  is_default?: boolean;
+  version?: string;
+}
+
+export const agentFlowService = {
+  list: async (params?: {
+    store_id?: string;
+    store_slug?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<AgentFlow>> => {
+    const response = await api.get('/automation/flows/', { params });
+    return response.data;
+  },
+
+  get: async (id: string): Promise<AgentFlow> => {
+    const response = await api.get(`/automation/flows/${id}/`);
+    return response.data;
+  },
+
+  create: async (data: CreateAgentFlow): Promise<AgentFlow> => {
+    const response = await api.post('/automation/flows/', data);
+    return response.data;
+  },
+
+  update: async (id: string, data: UpdateAgentFlow): Promise<AgentFlow> => {
+    const response = await api.patch(`/automation/flows/${id}/`, data);
+    return response.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/automation/flows/${id}/`);
+  },
+
+  duplicate: async (id: string): Promise<AgentFlow> => {
+    const response = await api.post(`/automation/flows/${id}/duplicate/`);
+    return response.data;
+  },
+
+  setDefault: async (id: string): Promise<{ status: string }> => {
+    const response = await api.post(`/automation/flows/${id}/set_default/`);
+    return response.data;
+  },
+};

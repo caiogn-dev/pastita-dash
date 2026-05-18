@@ -11,7 +11,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Card, Button, StatusBadge, Modal, Input, PageLoading, StatCard, PageTitle } from '../../components/common';
+import { Card, Button, StatusBadge, Modal, Input, PageLoading, PageTitle } from '../../components/common';
 import { whatsappService, getErrorMessage } from '../../services';
 import { WhatsAppAccount, MessageTemplate } from '../../types';
 
@@ -39,17 +39,17 @@ export const AccountDetailPage: React.FC = () => {
     if (!id) return;
     setIsLoading(true);
     try {
-      const accountData = await whatsappService.getAccount(id);
-      setAccount(accountData);
+      const accountRes = await whatsappService.getAccount(id);
+      setAccount(accountRes.data);
 
       // Load templates
       const templatesResponse = await whatsappService.getTemplates(id);
-      setTemplates(templatesResponse.results);
+      setTemplates(templatesResponse.data?.results || []);
 
       // Load business profile
       try {
-        const profile = await whatsappService.getBusinessProfile(id);
-        setBusinessProfile(profile);
+        const profileRes = await whatsappService.getBusinessProfile(id);
+        setBusinessProfile(profileRes.data);
       } catch {
         // Profile might not be available
       }
@@ -59,12 +59,11 @@ export const AccountDetailPage: React.FC = () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
       try {
-        const stats = await whatsappService.getMessageStats(
-          id,
-          startDate.toISOString().split('T')[0],
-          endDate.toISOString().split('T')[0]
-        );
-        setMessageStats(stats);
+        const statsRes = await whatsappService.getMessageStats(id, {
+          start_date: startDate.toISOString().split('T')[0],
+          end_date: endDate.toISOString().split('T')[0]
+        });
+        setMessageStats(statsRes.data);
       } catch {
         // Stats might not be available
       }
@@ -80,11 +79,12 @@ export const AccountDetailPage: React.FC = () => {
     if (!account) return;
     setActionLoading('status');
     try {
-      const updated = account.status === 'active'
+      const updatedRes = account.status === 'active'
         ? await whatsappService.deactivateAccount(account.id)
         : await whatsappService.activateAccount(account.id);
-      setAccount(updated);
-      toast.success(`Conta ${updated.status === 'active' ? 'ativada' : 'desativada'} com sucesso!`);
+      const updated = updatedRes.data;
+      setAccount(prev => prev ? { ...prev, status: updated?.status || (account.status === 'active' ? 'inactive' : 'active') } : null);
+      toast.success(`Conta ${account.status === 'active' ? 'desativada' : 'ativada'} com sucesso!`);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -97,7 +97,7 @@ export const AccountDetailPage: React.FC = () => {
     setActionLoading('sync');
     try {
       const result = await whatsappService.syncTemplates(account.id);
-      toast.success(result.message);
+      toast.success((result.data as { message?: string })?.message || 'Templates sincronizados!');
       loadAccount();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -112,7 +112,7 @@ export const AccountDetailPage: React.FC = () => {
     setActionLoading('rotate');
     try {
       const result = await whatsappService.rotateToken(account.id, newToken);
-      toast.success(result.message);
+      toast.success((result.data as { message?: string })?.message || 'Token rotacionado!');
       setRotateTokenModal(false);
       setNewToken('');
       loadAccount();
@@ -153,7 +153,7 @@ export const AccountDetailPage: React.FC = () => {
 
         {/* Status and Actions */}
         <Card>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-row max-md:flex-col md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
               <StatusBadge status={account.status} />
               <span className="text-sm text-gray-500 dark:text-zinc-400">
@@ -192,31 +192,55 @@ export const AccountDetailPage: React.FC = () => {
 
         {/* Stats */}
         {messageStats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <StatCard
-              title="Mensagens Enviadas"
-              value={(messageStats as Record<string, number>).sent || 0}
-              icon={<ChartBarIcon className="w-6 h-6" />}
-            />
-            <StatCard
-              title="Mensagens Entregues"
-              value={(messageStats as Record<string, number>).delivered || 0}
-              icon={<CheckCircleIcon className="w-6 h-6" />}
-            />
-            <StatCard
-              title="Mensagens Lidas"
-              value={(messageStats as Record<string, number>).read || 0}
-              icon={<CheckCircleIcon className="w-6 h-6" />}
-            />
-            <StatCard
-              title="Mensagens Falhas"
-              value={(messageStats as Record<string, number>).failed || 0}
-              icon={<XCircleIcon className="w-6 h-6" />}
-            />
+          <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4">
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                  <ChartBarIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Mensagens Enviadas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{(messageStats as Record<string, number>).sent || 0}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                  <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Mensagens Entregues</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{(messageStats as Record<string, number>).delivered || 0}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                  <CheckCircleIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Mensagens Lidas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{(messageStats as Record<string, number>).read || 0}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
+                  <XCircleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Mensagens Falhas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{(messageStats as Record<string, number>).failed || 0}</p>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
           {/* Account Details */}
           <Card title="Detalhes da Conta">
             <div className="space-y-4">

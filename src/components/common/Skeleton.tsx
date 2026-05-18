@@ -161,7 +161,7 @@ export const SkeletonStats: React.FC<{ items?: number; className?: string }> = (
   items = 4,
   className = '',
 }) => (
-  <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 ${className}`}>
+  <div className={`grid grid-cols-4 max-md:grid-cols-2 gap-4 ${className}`}>
     {Array.from({ length: items }).map((_, i) => (
       <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <Skeleton variant="text" height={14} width="60%" className="mb-2" />
@@ -203,7 +203,7 @@ export const SkeletonProductGrid: React.FC<{ items?: number; className?: string 
   items = 8,
   className = '',
 }) => (
-  <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${className}`}>
+  <div className={`grid grid-cols-4 max-lg:grid-cols-3 max-md:grid-cols-2 gap-4 ${className}`}>
     {Array.from({ length: items }).map((_, i) => (
       <SkeletonProduct key={i} />
     ))}

@@ -13,13 +13,15 @@ import {
 import { cn } from '../../utils/cn';
 import { AgentForm, AgentStats, AgentChatTest, ConversationList } from '../../components/agents';
 import agentsService, { AgentDetail, AgentStats as Stats, AgentConversation } from '../../services/agents';
+import { useConfirm } from '../../hooks';
 
 type Tab = 'overview' | 'edit' | 'test' | 'conversations';
 
 export const AgentDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+  const [ConfirmDialog, confirm] = useConfirm();
+
   const [agent, setAgent] = useState<AgentDetail | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [conversations, setConversations] = useState<AgentConversation[]>([]);
@@ -82,8 +84,12 @@ export const AgentDetailPage: React.FC = () => {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!confirm('Tem certeza que deseja excluir este agente?')) return;
-    
+    const confirmed = await confirm({
+      title: 'Excluir agente',
+      message: 'Tem certeza que deseja excluir este agente?',
+    });
+    if (!confirmed) return;
+
     try {
       await agentsService.deleteAgent(id);
       navigate('/agents');
@@ -175,10 +181,11 @@ export const AgentDetailPage: React.FC = () => {
     draft: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
   };
 
-  const providerColors = {
+  const providerColors: Record<string, string> = {
     kimi: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
     openai: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
     anthropic: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+    nvidia: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
     ollama: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   };
 
@@ -291,7 +298,7 @@ export const AgentDetailPage: React.FC = () => {
           {stats && <AgentStats stats={stats} />}
           
           {/* Config Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
             {/* Model Config */}
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
               <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">
@@ -385,7 +392,7 @@ export const AgentDetailPage: React.FC = () => {
       )}
 
       {activeTab === 'conversations' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 max-lg:grid-cols-1 gap-6">
           {/* Conversation List */}
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
@@ -449,6 +456,7 @@ export const AgentDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };

@@ -1,16 +1,16 @@
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
-import type { ThemeProviderProps } from 'next-themes';
+import React from 'react';
+import { ThemeProvider as ChakraThemeProvider } from '@/context/ThemeContext';
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+interface ThemeProviderProps {
+  children: React.ReactNode;
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
   return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange={false}
-      {...props}
-    >
+    <ChakraThemeProvider>
       {children}
-    </NextThemesProvider>
+    </ChakraThemeProvider>
   );
 }
+
+export { useTheme } from '@/context/ThemeContext';

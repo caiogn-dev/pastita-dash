@@ -13,23 +13,30 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import api from '../services/api';
 
 // Types
 export interface WhatsAppMessage {
   id: string;
   whatsapp_message_id: string;
+  conversation_id?: string;
   direction: 'inbound' | 'outbound';
   message_type: string;
   status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
   from_number: string;
   to_number: string;
   text_body: string;
-  content: Record<string, unknown>;
+  content: Record<string, unknown> | string;
   media_id?: string;
   media_url?: string;
   created_at: string;
+  sent_at?: string;
   delivered_at?: string;
   read_at?: string;
+  // Campos adicionais para compatibilidade com Message
+  timestamp?: string;
+  account?: string;
+  updated_at?: string;
 }
 
 export interface WhatsAppContact {
@@ -41,6 +48,9 @@ export interface WhatsAppConversation {
   id: string;
   phone_number: string;
   contact_name: string;
+  wa_id?: string;
+  profile_picture?: string;
+  profile_picture_url?: string;
   status: string;
   mode: string;
   created_at: string;
@@ -102,6 +112,7 @@ interface UseWhatsAppWSOptions {
   accountId?: string;
   dashboardMode?: boolean;
   onMessageReceived?: (event: MessageReceivedEvent) => void;
+  onMessage?: (message: WhatsAppMessage) => void;
   onMessageSent?: (event: MessageSentEvent) => void;
   onStatusUpdated?: (event: StatusUpdatedEvent) => void;
   onTyping?: (event: TypingEvent) => void;
@@ -114,10 +125,15 @@ interface UseWhatsAppWSOptions {
 interface UseWhatsAppWSReturn {
   isConnected: boolean;
   connectionError: string | null;
+  retry: () => void;
   subscribeToConversation: (conversationId: string) => void;
   unsubscribeFromConversation: (conversationId: string) => void;
   sendTypingIndicator: (conversationId: string, isTyping: boolean) => void;
+  sendMessage: (phoneNumber: string, text: string) => Promise<void>;
 }
+
+// Export the type for external use
+export type { UseWhatsAppWSReturn };
 
 export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWSReturn {
   const { token } = useAuthStore();
@@ -151,11 +167,11 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     const proto = host.includes('railway') || host.includes('vercel') || location.protocol === 'https:' ? 'wss' : 'ws';
     
     if (dashboardMode) {
-      return `${proto}://${host}/ws/whatsapp/dashboard/?token=${token}`;
+      return `${proto}://${host}/ws/whatsapp/dashboard/`;
     }
-    
+
     if (!accountId) return null;
-    return `${proto}://${host}/ws/whatsapp/${accountId}/?token=${token}`;
+    return `${proto}://${host}/ws/whatsapp/${accountId}/`;
   }, [token, accountId, dashboardMode]);
 
   // Handle incoming messages
@@ -183,6 +199,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
         case 'message_received':
           console.log('[WhatsApp WS] Calling onMessageReceived callback');
           opts.current.onMessageReceived?.(data as MessageReceivedEvent);
+          opts.current.onMessage?.(data.message);
           break;
         case 'message_sent':
           console.log('[WhatsApp WS] Calling onMessageSent callback');
@@ -240,30 +257,42 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     }
 
     isConnecting.current = true;
-    console.log('[WhatsApp WS] Connecting to:', url.replace(/token=.*/, 'token=***'));
+    console.log('[WhatsApp WS] Connecting to:', url);
 
     try {
       const socket = new WebSocket(url);
       ws.current = socket;
 
       socket.onopen = () => {
-        console.log('[WhatsApp WS] Connected ✓');
-        isConnecting.current = false;
-        setIsConnected(true);
-        setConnectionError(null);
-        attempts.current = 0;
-        opts.current.onConnectionChange?.(true);
-
-        // Ping every 25s to keep connection alive
-        if (pingTimer.current) window.clearInterval(pingTimer.current);
-        pingTimer.current = window.setInterval(() => {
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({ type: 'ping' }));
-          }
-        }, 25000);
+        console.log('[WhatsApp WS] Open, sending auth...');
+        // First-message auth — token never in URL
+        if (token) {
+          socket.send(JSON.stringify({ type: 'auth', token }));
+        }
+        // connection_established from server triggers connected state
       };
 
-      socket.onmessage = handleMessage;
+      socket.onmessage = (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data) as { type: string };
+          if (data.type === 'connection_established') {
+            console.log('[WhatsApp WS] Authenticated ✓');
+            isConnecting.current = false;
+            setIsConnected(true);
+            setConnectionError(null);
+            attempts.current = 0;
+            opts.current.onConnectionChange?.(true);
+            if (pingTimer.current) window.clearInterval(pingTimer.current);
+            pingTimer.current = window.setInterval(() => {
+              if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'ping' }));
+              }
+            }, 25000);
+            return;
+          }
+        } catch { /* fall through to handleMessage */ }
+        handleMessage(event);
+      };
 
       socket.onclose = (e) => {
         console.log('[WhatsApp WS] Closed:', e.code, e.reason);
@@ -332,6 +361,14 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     }
   }, []);
 
+  // Send message via API
+  const sendMessage = useCallback(async (phoneNumber: string, text: string) => {
+    await api.post('/whatsapp/messages/send_text/', {
+      to: phoneNumber,
+      text: text,
+    });
+  }, []);
+
   // Connect on mount and when dependencies change
   useEffect(() => {
     if (enabled && (accountId || dashboardMode)) {
@@ -362,13 +399,23 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     };
   }, [connect, enabled, accountId, dashboardMode]);
 
-  return {
+  const retry = useCallback(() => {
+    attempts.current = 0;
+    setConnectionError(null);
+    connect();
+  }, [connect]);
+
+  const returnValue = {
     isConnected,
     connectionError,
+    retry,
     subscribeToConversation,
     unsubscribeFromConversation,
     sendTypingIndicator,
+    sendMessage,
   };
+
+  return returnValue as UseWhatsAppWSReturn;
 }
 
 export default useWhatsAppWS;

@@ -12,9 +12,11 @@ export const exportService = {
   },
 
   exportOrders: async (params: ExportParams = {}): Promise<Blob> => {
-    const store = params.store || getStoreSlug();
+    const storeSlug = getStoreSlug();
+    const store = params.store || storeSlug || undefined;
+    // ATUALIZADO: Usando /stores/reports/orders/export/ (backend migrado - 2026-03-04)
     const response = await api.get('/stores/reports/orders/export/', {
-      params: { ...params, store: store || params.store },
+      params: { ...params, store },
       responseType: 'blob',
     });
     return response.data;

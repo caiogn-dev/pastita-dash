@@ -1,19 +1,12 @@
-/**
- * MediaViewer - Modal para visualizar imagens, vídeos e documentos
- */
+// MediaViewer - Versão simplificada
 import React from 'react';
-import {
-  XMarkIcon,
-  ArrowDownTrayIcon,
-  PhotoIcon,
-  DocumentIcon,
-  FilmIcon,
-} from '@heroicons/react/24/outline';
+import './MediaViewer.css';
 
 export interface MediaViewerProps {
   url: string;
   type: string;
   fileName?: string;
+  mimeType?: string;
   onClose: () => void;
 }
 
@@ -26,100 +19,40 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   const isImage = type.startsWith('image/') || ['image', 'sticker'].includes(type);
   const isVideo = type.startsWith('video/') || type === 'video';
   const isAudio = type.startsWith('audio/') || type === 'audio';
-  const isDocument = !isImage && !isVideo && !isAudio;
 
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName || 'download';
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
-        <div className="flex items-center gap-3 text-white">
-          {isImage && <PhotoIcon className="w-6 h-6" />}
-          {isVideo && <FilmIcon className="w-6 h-6" />}
-          {isDocument && <DocumentIcon className="w-6 h-6" />}
-          <span className="text-sm font-medium truncate max-w-md">
-            {fileName || 'Visualizador de Mídia'}
-          </span>
+    <div className="media-viewer-overlay" onClick={onClose}>
+      <div className="media-viewer-content" onClick={(e) => e.stopPropagation()}>
+        <div className="media-viewer-header">
+          <button onClick={handleDownload} className="viewer-btn">⬇️</button>
+          <button onClick={onClose} className="viewer-btn">✕</button>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDownload();
-            }}
-            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            title="Baixar"
-          >
-            <ArrowDownTrayIcon className="w-6 h-6" />
-          </button>
-          <button
-            onClick={onClose}
-            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            title="Fechar"
-          >
-            <XMarkIcon className="w-6 h-6" />
-          </button>
+
+        <div className="media-viewer-body">
+          {isImage && <img src={url} alt={fileName} className="viewer-image" />}
+          {isVideo && <video src={url} controls className="viewer-video" />}
+          {isAudio && (
+            <div className="viewer-audio">
+              <div className="audio-icon">🎵</div>
+              <audio src={url} controls />
+              {fileName && <div className="audio-name">{fileName}</div>}
+            </div>
+          )}
+          {!isImage && !isVideo && !isAudio && (
+            <div className="viewer-document">
+              <div className="doc-icon">📄</div>
+              <div className="doc-name">{fileName || 'Documento'}</div>
+              <a href={url} download className="doc-download">Baixar</a>
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* Conteúdo */}
-      <div 
-        className="max-w-[90vw] max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {isImage && (
-          <img
-            src={url}
-            alt={fileName || 'Imagem'}
-            className="max-w-full max-h-[85vh] object-contain rounded-lg"
-          />
-        )}
-
-        {isVideo && (
-          <video
-            src={url}
-            controls
-            className="max-w-full max-h-[85vh] rounded-lg"
-            autoPlay
-          />
-        )}
-
-        {isAudio && (
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-8">
-            <audio src={url} controls className="w-96" />
-          </div>
-        )}
-
-        {isDocument && (
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-8 text-center">
-            <DocumentIcon className="w-24 h-24 text-gray-400 mx-auto mb-4" />
-            <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {fileName || 'Documento'}
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              Este arquivo não pode ser visualizado diretamente
-            </p>
-            <button
-              onClick={handleDownload}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
-            >
-              <ArrowDownTrayIcon className="w-5 h-5" />
-              Baixar Arquivo
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

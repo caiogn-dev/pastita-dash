@@ -1085,9 +1085,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 export const ProductsPageNew: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
-  
-  const storeId = routeStoreId || contextStoreId;
+  const { storeId: contextStoreId, storeName, isStoreSelected, stores } = useStore();
+
+  const storeId = useMemo(() => {
+    if (!routeStoreId) return contextStoreId || null;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || contextStoreId || null;
+  }, [routeStoreId, contextStoreId, stores]);
 
   // State
   const [products, setProducts] = useState<Product[]>([]);
@@ -1184,9 +1188,11 @@ export const ProductsPageNew: React.FC = () => {
   const handleToggleFeatured = async (product: Product) => {
     try {
       await storesApi.updateProduct(product.id, { featured: !product.featured });
+      toast.success(product.featured ? 'Removido dos destaques' : 'Adicionado aos destaques');
       loadData();
     } catch (error) {
       logger.error('Error toggling featured:', error);
+      toast.error('Erro ao atualizar destaque do produto');
     }
   };
 
@@ -1194,9 +1200,11 @@ export const ProductsPageNew: React.FC = () => {
     try {
       const nextStatus = product.status === 'active' ? 'inactive' : 'active';
       await storesApi.updateProduct(product.id, { status: nextStatus });
+      toast.success(nextStatus === 'active' ? 'Produto ativado' : 'Produto desativado');
       loadData();
     } catch (error) {
       logger.error('Error toggling status:', error);
+      toast.error('Erro ao atualizar status do produto');
     }
   };
 
@@ -1230,7 +1238,7 @@ export const ProductsPageNew: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Produtos</h1>
           <p className="text-gray-500 dark:text-zinc-400">
@@ -1249,7 +1257,7 @@ export const ProductsPageNew: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-5 max-md:grid-cols-2 gap-4">
         <Card className="p-4 text-center">
           <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
           <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>
@@ -1274,7 +1282,7 @@ export const ProductsPageNew: React.FC = () => {
 
       {/* Filters */}
       <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-row max-md:flex-col gap-4">
           {/* Search */}
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1358,7 +1366,7 @@ export const ProductsPageNew: React.FC = () => {
           </Button>
         </Card>
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 max-xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           {products.map((product) => (
             <ProductCard
               key={product.id}

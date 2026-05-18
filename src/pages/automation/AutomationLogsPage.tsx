@@ -9,8 +9,8 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import {
-  automationLogApi,
-  companyProfileApi,
+  automationLogService,
+  companyProfileService,
 } from '../../services/automation';
 import { AutomationLog, CompanyProfile, AutomationLogStats } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
@@ -65,7 +65,7 @@ const AutomationLogsPage: React.FC = () => {
 
   const loadCompanies = async () => {
     try {
-      const response = await companyProfileApi.list({ page_size: 100 });
+      const response = await companyProfileService.list({ page_size: 100 });
       setCompanies(response.results);
     } catch (error) {
       logger.error('Error loading companies:', error);
@@ -75,13 +75,16 @@ const AutomationLogsPage: React.FC = () => {
   const loadLogs = async () => {
     try {
       setLoading(true);
-      const params: Record<string, string | number | boolean> = { page, page_size: 50 };
-      if (filters.company_id) params.company_id = filters.company_id;
-      if (filters.action_type) params.action_type = filters.action_type;
-      if (filters.is_error) params.is_error = filters.is_error === 'true';
-      if (filters.phone_number) params.phone_number = filters.phone_number;
+      const params = {
+        page,
+        page_size: 50,
+        ...(filters.company_id && { company_id: filters.company_id }),
+        ...(filters.action_type && { action_type: filters.action_type }),
+        ...(filters.is_error && { is_error: filters.is_error === 'true' }),
+        ...(filters.phone_number && { phone_number: filters.phone_number }),
+      };
 
-      const response = await automationLogApi.list(params);
+      const response = await automationLogService.list(params);
       setLogs(response.results);
       setTotalCount(response.count);
     } catch (error) {
@@ -93,7 +96,7 @@ const AutomationLogsPage: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const statsData = await automationLogApi.getStats(
+      const statsData = await automationLogService.getStats(
         filters.company_id ? { company_id: filters.company_id } : undefined
       );
       setStats(statsData);
@@ -280,9 +283,9 @@ const AutomationLogsPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        actionTypeColors[log.action_type] || 'bg-gray-100 text-gray-800'
+                        actionTypeColors[log.action_type || ''] || 'bg-gray-100 text-gray-800'
                       }`}>
-                        {actionTypeLabels[log.action_type] || log.action_type}
+                        {actionTypeLabels[log.action_type || ''] || log.action_type || '-'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
@@ -324,7 +327,7 @@ const AutomationLogsPage: React.FC = () => {
                 Próximo
               </button>
             </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div className="flex max-sm:hidden-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700 dark:text-zinc-300">
                   Mostrando <span className="font-medium">{(page - 1) * 50 + 1}</span> a{' '}
@@ -357,7 +360,7 @@ const AutomationLogsPage: React.FC = () => {
       {selectedLog && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black0 bg-opacity-75" onClick={() => setSelectedLog(null)} />
+            <div className="fixed inset-0 bg-gray-500/75 dark:bg-black/75" onClick={() => setSelectedLog(null)} />
             <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between">
@@ -365,9 +368,9 @@ const AutomationLogsPage: React.FC = () => {
                     Detalhes do Log
                   </h3>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    actionTypeColors[selectedLog.action_type] || 'bg-gray-100 text-gray-800'
+                    actionTypeColors[selectedLog.action_type || ''] || 'bg-gray-100 text-gray-800'
                   }`}>
-                    {actionTypeLabels[selectedLog.action_type] || selectedLog.action_type}
+                    {actionTypeLabels[selectedLog.action_type || ''] || selectedLog.action_type || '-'}
                   </span>
                 </div>
               </div>
@@ -403,7 +406,7 @@ const AutomationLogsPage: React.FC = () => {
                   </div>
                 )}
 
-                {Object.keys(selectedLog.request_data).length > 0 && (
+                {selectedLog.request_data && Object.keys(selectedLog.request_data || {}).length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Dados da Requisição</label>
                     <pre className="bg-gray-50 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
@@ -412,7 +415,7 @@ const AutomationLogsPage: React.FC = () => {
                   </div>
                 )}
 
-                {Object.keys(selectedLog.response_data).length > 0 && (
+                {selectedLog.response_data && Object.keys(selectedLog.response_data || {}).length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Dados da Resposta</label>
                     <pre className="bg-gray-50 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
@@ -438,7 +441,7 @@ const AutomationLogsPage: React.FC = () => {
       {showStats && stats && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black0 bg-opacity-75" onClick={() => setShowStats(false)} />
+            <div className="fixed inset-0 bg-gray-500/75 dark:bg-black/75" onClick={() => setShowStats(false)} />
             <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-lg w-full">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -470,7 +473,7 @@ const AutomationLogsPage: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Por Tipo de Ação</h4>
                   <div className="space-y-2">
-                    {stats.by_action_type.map((item) => (
+                    {stats.by_action_type?.map((item) => (
                       <div key={item.action_type} className="flex items-center justify-between">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           actionTypeColors[item.action_type] || 'bg-gray-100 text-gray-800'
@@ -487,13 +490,13 @@ const AutomationLogsPage: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Últimos 7 Dias</h4>
                   <div className="space-y-2">
-                    {stats.by_day.map((item) => (
+                    {stats.by_day?.map((item) => (
                       <div key={item.date} className="flex items-center justify-between">
                         <span className="text-sm text-gray-500 dark:text-zinc-400">{item.date}</span>
                         <div className="flex items-center">
                           <div
                             className="h-2 bg-green-500 rounded"
-                            style={{ width: `${Math.max(4, (item.count / Math.max(...stats.by_day.map(d => d.count))) * 100)}px` }}
+                            style={{ width: `${Math.max(4, (item.count / Math.max(...(stats.by_day?.map(d => d.count) || [1]))) * 100)}px` }}
                           />
                           <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">{item.count}</span>
                         </div>

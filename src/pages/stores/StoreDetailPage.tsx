@@ -196,7 +196,7 @@ export const StoreDetailPage: React.FC = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4 mb-6">
           <Card className="p-4">
             <p className="text-sm text-gray-600 dark:text-zinc-400">Receita Total</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -258,7 +258,7 @@ export const StoreDetailPage: React.FC = () => {
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
           {/* Quick Actions */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>

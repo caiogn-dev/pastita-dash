@@ -1,180 +1,206 @@
 import api from './api';
-import {
-  WhatsAppAccount,
-  CreateWhatsAppAccount,
-  Message,
-  MessageTemplate,
-  PaginatedResponse,
-  SendTextMessage,
-  SendTemplateMessage,
-  SendInteractiveButtons,
-  SendInteractiveList,
-  Conversation,
-} from '../types';
 
 /**
- * WhatsApp Service
- * 
- * Handles WhatsApp-specific operations:
- * - Account management
- * - Message sending
- * - Template management
- * 
- * NOTE: Campaigns, scheduled messages, and contact lists have been moved to campaigns.ts
- * to avoid duplication and use the unified marketing API endpoints.
+ * Whatsapp Service - API V2
+ * ATUALIZADO: Usando /whatsapp/accounts/ (endpoint correto - 2026-03-04)
  */
-export const whatsappService = {
-  // Accounts
-  getAccounts: async (): Promise<PaginatedResponse<WhatsAppAccount>> => {
-    const response = await api.get<PaginatedResponse<WhatsAppAccount>>('/whatsapp/accounts/');
-    return response.data;
-  },
 
-  getAccount: async (id: string): Promise<WhatsAppAccount> => {
-    const response = await api.get<WhatsAppAccount>(`/whatsapp/accounts/${id}/`);
-    return response.data;
-  },
+// Contas
+export const getAccounts = (params?: { store?: string }) =>
+  api.get('/whatsapp/accounts/', { params });
 
-  createAccount: async (data: CreateWhatsAppAccount): Promise<WhatsAppAccount> => {
-    const response = await api.post<WhatsAppAccount>('/whatsapp/accounts/', data);
-    return response.data;
-  },
+export const getAccount = (id: string) =>
+  api.get(`/whatsapp/accounts/${id}/`);
 
-  updateAccount: async (id: string, data: Partial<CreateWhatsAppAccount>): Promise<WhatsAppAccount> => {
-    const response = await api.patch<WhatsAppAccount>(`/whatsapp/accounts/${id}/`, data);
-    return response.data;
-  },
+export const createAccount = (data: any) =>
+  api.post('/whatsapp/accounts/', data);
 
-  deleteAccount: async (id: string): Promise<void> => {
-    await api.delete(`/whatsapp/accounts/${id}/`);
-  },
+export const updateAccount = (id: string, data: any) =>
+  api.patch(`/whatsapp/accounts/${id}/`, data);
 
-  activateAccount: async (id: string): Promise<WhatsAppAccount> => {
-    const response = await api.post<WhatsAppAccount>(`/whatsapp/accounts/${id}/activate/`);
-    return response.data;
-  },
+export const deleteAccount = (id: string) =>
+  api.delete(`/whatsapp/accounts/${id}/`);
 
-  deactivateAccount: async (id: string): Promise<WhatsAppAccount> => {
-    const response = await api.post<WhatsAppAccount>(`/whatsapp/accounts/${id}/deactivate/`);
-    return response.data;
-  },
+// Compatibilidade legado
+export const deactivateAccount = (id: string) =>
+  api.patch(`/whatsapp/accounts/${id}/`, { is_active: false });
 
-  rotateToken: async (id: string, accessToken: string): Promise<{ message: string; token_version: number }> => {
-    const response = await api.post(`/whatsapp/accounts/${id}/rotate_token/`, { access_token: accessToken });
-    return response.data;
-  },
+export const activateAccount = (id: string) =>
+  api.patch(`/whatsapp/accounts/${id}/`, { is_active: true });
 
-  // Messages
-  getMessages: async (accountId?: string, params?: Record<string, string>): Promise<PaginatedResponse<Message>> => {
-    const queryParams: Record<string, string> = { ...params };
-    if (accountId) queryParams.account = accountId;
-    const response = await api.get<PaginatedResponse<Message>>('/whatsapp/messages/', { params: queryParams });
-    return response.data;
-  },
+export const syncTemplates = (id: string) =>
+  api.post(`/whatsapp/accounts/${id}/sync_templates/`);
 
-  getMessage: async (id: string): Promise<Message> => {
-    const response = await api.get<Message>(`/whatsapp/messages/${id}/`);
-    return response.data;
-  },
+const unsupportedFeature = <T = any>(feature: string): Promise<{ data: T }> =>
+  Promise.reject(new Error(`${feature} ainda não tem endpoint no backend.`));
 
-  sendTextMessage: async (data: SendTextMessage): Promise<Message> => {
-    const response = await api.post<Message>('/whatsapp/messages/send_text/', data);
-    return response.data;
-  },
+export const rotateToken = (id: string, accessToken: string) =>
+  api.post(`/whatsapp/accounts/${id}/rotate_token/`, { access_token: accessToken });
 
-  sendTemplateMessage: async (data: SendTemplateMessage): Promise<Message> => {
-    const response = await api.post<Message>('/whatsapp/messages/send_template/', data);
-    return response.data;
-  },
+// QR e Status
+export const getQRCode = (accountId: string) =>
+  api.get(`/whatsapp/accounts/${accountId}/qr/`);
 
-  sendInteractiveButtons: async (data: SendInteractiveButtons): Promise<Message> => {
-    const response = await api.post<Message>('/whatsapp/messages/send_interactive_buttons/', data);
-    return response.data;
-  },
+export const getConnectionStatus = (accountId: string) =>
+  api.get(`/whatsapp/accounts/${accountId}/status/`);
 
-  sendInteractiveList: async (data: SendInteractiveList): Promise<Message> => {
-    const response = await api.post<Message>('/whatsapp/messages/send_interactive_list/', data);
-    return response.data;
-  },
+// CORREÇÃO: Usando deactivate em vez de disconnect (endpoint que existe no backend)
+export const disconnectAccount = (accountId: string) =>
+  api.post(`/whatsapp/accounts/${accountId}/deactivate/`);
 
-  markAsRead: async (messageId: string): Promise<void> => {
-    await api.post(`/whatsapp/messages/${messageId}/mark_as_read/`);
-  },
+// Templates — ReadOnly (gerenciados pelo WhatsApp Business Manager)
+export const getTemplates = (accountId: string) =>
+  api.get('/whatsapp/templates/', { params: { account: accountId } });
 
-  // Templates
-  getTemplates: async (accountId?: string): Promise<PaginatedResponse<MessageTemplate>> => {
-    const params: Record<string, string> = {};
-    if (accountId) params.account = accountId;
-    const response = await api.get<PaginatedResponse<MessageTemplate>>('/whatsapp/templates/', { params });
-    return response.data;
-  },
+// Templates são somente leitura no backend (sincronizados via syncTemplates)
+export const createTemplate = (_data: any) =>
+  unsupportedFeature('Criação de template');
 
-  getTemplate: async (id: string): Promise<MessageTemplate> => {
-    const response = await api.get<MessageTemplate>(`/whatsapp/templates/${id}/`);
-    return response.data;
-  },
+export const updateTemplate = (_id: string, _data: any) =>
+  unsupportedFeature('Edição de template');
 
-  syncTemplates: async (accountId: string): Promise<{ message: string; synced: number }> => {
-    const response = await api.post('/whatsapp/templates/sync/', { account_id: accountId });
-    return response.data;
-  },
+export const deleteTemplate = (_id: string) =>
+  unsupportedFeature('Remoção de template');
 
-  // Business Profile
-  getBusinessProfile: async (accountId: string): Promise<Record<string, unknown>> => {
-    const response = await api.get<Record<string, unknown>>(`/whatsapp/accounts/${accountId}/business_profile/`);
-    return response.data;
-  },
+// Mensagens
+export const sendMessage = (data: any) =>
+  api.post('/whatsapp/messages/send_text/', data);
 
-  // Message Stats
-  getMessageStats: async (accountId: string, startDate?: string, endDate?: string): Promise<Record<string, number>> => {
-    const params: Record<string, string> = {};
-    if (startDate) params.start_date = startDate;
-    if (endDate) params.end_date = endDate;
-    const response = await api.get<Record<string, number>>('/whatsapp/messages/stats/', { 
-      params: { ...params, account_id: accountId }
-    });
-    return response.data;
-  },
+export const sendTemplate = (data: any) =>
+  api.post('/whatsapp/messages/send_template/', data);
 
-  // Conversation History
-  getConversationHistory: async (accountId: string, phoneNumber: string, limit: number = 100): Promise<Message[]> => {
-    const response = await api.get<PaginatedResponse<Message> | Message[]>('/whatsapp/messages/', {
-      params: {
-        account: accountId,
-        phone_number: phoneNumber,
-        limit: limit.toString(),
-        ordering: '-created_at',
-      },
-    });
-    // Handle both paginated and array responses
-    if (response.data && 'results' in response.data) {
-      return response.data.results || [];
-    }
-    return Array.isArray(response.data) ? response.data : [];
-  },
+export const sendInteractiveButtons = (data: {
+  account_id: string;
+  to: string;
+  body_text: string;
+  buttons: Array<{ id?: string; title: string }>;
+  header?: Record<string, unknown>;
+  footer?: string;
+  reply_to?: string;
+  metadata?: Record<string, unknown>;
+}) => api.post('/whatsapp/messages/send_interactive_buttons/', data);
 
-  // Send Media Message
-  sendMediaMessage: async (data: {
-    account_id: string;
-    to: string;
-    file: File;
-    caption?: string;
-  }): Promise<Message> => {
-    const formData = new FormData();
-    formData.append('account_id', data.account_id);
-    formData.append('to', data.to);
-    formData.append('file', data.file);
-    if (data.caption) {
-      formData.append('caption', data.caption);
-    }
+export const sendInteractiveList = (data: {
+  account_id: string;
+  to: string;
+  body_text: string;
+  button_text: string;
+  sections: Array<{
+    title?: string;
+    rows: Array<{ id: string; title: string; description?: string }>;
+  }>;
+  header?: string;
+  footer?: string;
+  reply_to?: string;
+  metadata?: Record<string, unknown>;
+}) => api.post('/whatsapp/messages/send_interactive_list/', data);
 
-    const response = await api.post<Message>('/whatsapp/messages/send_media/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  },
+export const sendCatalogMenu = (data: {
+  account_id: string;
+  to: string;
+  store_id?: number | null;
+  header_text?: string;
+  body_text?: string;
+  footer?: string;
+  metadata?: Record<string, unknown>;
+}) => api.post('/whatsapp/messages/send_catalog_menu/', data);
+
+export const sendImage = (data: { account_id: string; to: string; image_url?: string; image_id?: string; caption?: string; reply_to?: string }) =>
+  api.post('/whatsapp/messages/send_image/', data);
+
+export const sendAudio = (data: { account_id: string; to: string; audio_url?: string; audio_id?: string; reply_to?: string }) =>
+  api.post('/whatsapp/messages/send_audio/', data);
+
+export const sendVideo = (data: { account_id: string; to: string; video_url?: string; video_id?: string; caption?: string; reply_to?: string }) =>
+  api.post('/whatsapp/messages/send_video/', data);
+
+export const sendDocument = (data: { account_id: string; to: string; document_url?: string; document_id?: string; filename?: string; caption?: string; reply_to?: string }) =>
+  api.post('/whatsapp/messages/send_document/', data);
+
+export const sendFile = (accountId: string, to: string, file: File, caption?: string) => {
+  const formData = new FormData();
+  formData.append('account_id', accountId);
+  formData.append('to', to);
+  formData.append('file', file);
+  if (caption) formData.append('caption', caption);
+  return api.post('/whatsapp/messages/send_file/', formData);
 };
 
-export default whatsappService;
+// Estatísticas de mensagens (backend: POST /whatsapp/messages/stats/)
+export const getAccountStats = (accountId: string, startDate?: string, endDate?: string) => {
+  const now = new Date();
+  const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const end = endDate || now.toISOString();
+  return api.post('/whatsapp/messages/stats/', {
+    account_id: accountId,
+    start_date: start,
+    end_date: end,
+  });
+};
+
+export const getMessageStats = (accountId?: any, dateParams?: any) =>
+  getAccountStats(accountId as string);
+
+// Billing is not exposed by the backend; business profile is proxied by WhatsAppAccountViewSet.
+export const getBillingInfo = (_accountId: string) =>
+  unsupportedFeature('Informações de cobrança');
+
+export const getBusinessProfile = (accountId: string) =>
+  api.get(`/whatsapp/accounts/${accountId}/business_profile/`);
+
+// Mensagens paginadas via /whatsapp/messages/?account_id=...
+export const getMessages = (params?: Record<string, any>) =>
+  api.get('/whatsapp/messages/', { params });
+
+export const getConversationHistory = async (accountId: string, phoneNumber: string, limit: number = 100) => {
+  try {
+    const response = await api.post('/whatsapp/messages/conversation_history/', {
+      account_id: accountId,
+      phone_number: phoneNumber,
+      limit: limit
+    });
+    return response;
+  } catch (error) {
+    console.error('Error fetching conversation history:', error);
+    return { data: { results: [] } };
+  }
+};
+
+export const sendTextMessage = sendMessage;
+
+// Export
+export default {
+  getAccounts,
+  getAccount,
+  createAccount,
+  updateAccount,
+  deleteAccount,
+  deactivateAccount,
+  activateAccount,
+  syncTemplates,
+  rotateToken,
+  getQRCode,
+  getConnectionStatus,
+  disconnectAccount,
+  getTemplates,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
+  sendMessage,
+  sendTextMessage, // alias de compatibilidade
+  sendTemplate,
+  sendInteractiveButtons,
+  sendInteractiveList,
+  sendCatalogMenu,
+  getMessages,
+  getConversationHistory,
+  getBusinessProfile,
+  getAccountStats,
+  getMessageStats, // alias de compatibilidade
+  getBillingInfo,
+  sendImage,
+  sendAudio,
+  sendVideo,
+  sendDocument,
+  sendFile,
+};

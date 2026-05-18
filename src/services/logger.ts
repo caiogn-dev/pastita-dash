@@ -50,7 +50,8 @@ function sendToMonitoring(error: Error | string, context: LogContext = {}): void
   //   (window as any).Sentry.captureException(error, { extra: context });
   // }
   
-  // For now, store in sessionStorage for debugging
+  // Store minimal error info in sessionStorage for debugging
+  // SECURITY: never store context — it may contain API responses, tokens, or user data
   if (typeof window !== 'undefined' && !isTest) {
     try {
       const errors: StoredError[] = JSON.parse(sessionStorage.getItem('app_errors') || '[]');
@@ -58,8 +59,8 @@ function sendToMonitoring(error: Error | string, context: LogContext = {}): void
       errors.push({
         timestamp: new Date().toISOString(),
         message: errorObj.message || String(error),
-        stack: errorObj.stack,
-        context,
+        stack: isDevelopment ? errorObj.stack : undefined,
+        context: {},
       });
       // Keep only last 50 errors
       if (errors.length > 50) errors.shift();

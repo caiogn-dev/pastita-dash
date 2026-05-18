@@ -67,6 +67,11 @@ export const AgentTestPage: React.FC = () => {
     );
   }
 
+  // Garantir que valores sejam strings
+  const agentName = typeof agent.name === 'string' ? agent.name : JSON.stringify(agent.name);
+  const agentProvider = typeof agent.provider === 'string' ? agent.provider : JSON.stringify(agent.provider);
+  const agentModel = typeof agent.model_name === 'string' ? agent.model_name : JSON.stringify(agent.model_name);
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
@@ -80,17 +85,17 @@ export const AgentTestPage: React.FC = () => {
         
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
-            Testar: {agent.name}
+            Testar: {agentName}
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400">
-            {agent.provider} / {agent.model_name}
+            {agentProvider} / {agentModel}
           </p>
         </div>
       </div>
 
       {/* Chat Test */}
       <AgentChatTest
-        agentName={agent.name}
+        agentName={agentName}
         onSendMessage={handleSendMessage}
         onClearChat={() => {}}
       />

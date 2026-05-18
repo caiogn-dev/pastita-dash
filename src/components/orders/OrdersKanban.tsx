@@ -8,7 +8,7 @@
  * to enable smooth drag-and-drop with optimistic updates. External order
  * changes are merged carefully to avoid overwriting local updates.
  */
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -46,80 +46,72 @@ import {
 } from '@heroicons/react/24/outline';
 import { Order } from '../../types';
 
-// Order status configuration - SEMANTIC FLOW
-// Separates "order received" from "payment confirmed" for clarity
+// 7-column Kanban flow for a food-delivery restaurant
+// Legacy statuses (processing, paid, shipped, completed, failed, refunded)
+// are normalised into the canonical column via `aliases`.
 export const ORDER_STATUSES = [
-  { 
-    id: 'pending', 
-    label: 'Recebido', 
-    color: 'bg-gray-50 border-gray-300',
+  {
+    id: 'pending',
+    label: 'Recebido',
+    color: 'bg-slate-50/95 border-slate-200',
     headerColor: 'bg-gray-500',
     icon: ClockIcon,
-    aliases: ['pendente', 'received'],
-    description: 'Pedido recebido, aguardando ação'
+    aliases: ['pendente', 'received', 'processing', 'awaiting_payment', 'payment_pending'],
+    description: 'Pedido recebido, aguardando confirmação',
   },
-  { 
-    id: 'processing', 
-    label: 'Processando', 
-    color: 'bg-amber-50 border-amber-300',
-    headerColor: 'bg-amber-500',
-    icon: CurrencyDollarIcon,
-    aliases: ['awaiting_payment', 'payment_pending'],
-    description: 'Pagamento em processamento'
-  },
-  { 
-    id: 'confirmed', 
-    label: 'Confirmado', 
-    color: 'bg-blue-50 border-blue-200',
+  {
+    id: 'confirmed',
+    label: 'Confirmado',
+    color: 'bg-blue-50/95 border-blue-200',
     headerColor: 'bg-blue-500',
     icon: CheckCircleIcon,
     aliases: ['confirmado', 'aprovado', 'paid', 'payment_confirmed'],
-    description: 'Pagamento confirmado - Pronto para produção'
+    description: 'Pagamento confirmado — pronto para produção',
   },
-  { 
-    id: 'preparing', 
-    label: 'Preparando', 
-    color: 'bg-orange-50 border-orange-200',
+  {
+    id: 'preparing',
+    label: 'Preparando',
+    color: 'bg-orange-50/95 border-orange-200',
     headerColor: 'bg-orange-500',
     icon: FireIcon,
     aliases: ['preparando', 'in_production'],
-    description: 'Em produção na cozinha'
+    description: 'Em produção na cozinha',
   },
-  { 
-    id: 'ready', 
-    label: 'Pronto', 
-    color: 'bg-purple-50 border-purple-200',
+  {
+    id: 'ready',
+    label: 'Pronto',
+    color: 'bg-purple-50/95 border-purple-200',
     headerColor: 'bg-purple-500',
     icon: CheckCircleIcon,
     aliases: ['pronto', 'ready_for_pickup', 'ready_for_delivery'],
-    description: 'Pronto para entrega/retirada'
+    description: 'Pronto para entrega ou retirada',
   },
-  { 
-    id: 'out_for_delivery', 
-    label: 'Em Entrega', 
-    color: 'bg-indigo-50 border-indigo-200',
+  {
+    id: 'out_for_delivery',
+    label: 'Em Entrega',
+    color: 'bg-indigo-50/95 border-indigo-200',
     headerColor: 'bg-indigo-500',
     icon: TruckIcon,
     aliases: ['shipped', 'enviado', 'em_entrega', 'delivering'],
-    description: 'Saiu para entrega'
+    description: 'Saiu para entrega',
   },
-  { 
-    id: 'delivered', 
-    label: 'Entregue', 
-    color: 'bg-green-50 border-green-200',
+  {
+    id: 'delivered',
+    label: 'Entregue',
+    color: 'bg-emerald-50/95 border-emerald-200',
     headerColor: 'bg-green-500',
     icon: HomeIcon,
-    aliases: ['entregue', 'completed'],
-    description: 'Pedido finalizado'
+    aliases: ['completed', 'entregue', 'picked_up'],
+    description: 'Pedido finalizado',
   },
-  { 
-    id: 'cancelled', 
-    label: 'Cancelado', 
-    color: 'bg-red-50 border-red-200',
+  {
+    id: 'cancelled',
+    label: 'Cancelado',
+    color: 'bg-rose-50/95 border-rose-200',
     headerColor: 'bg-red-500',
     icon: XCircleIcon,
     aliases: ['cancelado', 'refunded', 'failed'],
-    description: 'Pedido cancelado'
+    description: 'Pedido cancelado ou reembolsado',
   },
 ];
 
@@ -136,18 +128,59 @@ const normalizeStatus = (status: string): OrderStatus => {
   return 'pending';
 };
 
-// Get status config
-const getStatusConfig = (status: string) => {
-  const normalized = normalizeStatus(status);
-  return ORDER_STATUSES.find(s => s.id === normalized) || ORDER_STATUSES[0];
-};
-
 const formatCurrency = (value: number | string | null | undefined) => {
   const num = typeof value === 'string' ? Number(value) : value ?? 0;
   return num.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 };
 
 const getItemsCount = (order: Order) => order.items_count ?? order.items?.length ?? 0;
+
+const formatOrderTime = (value?: string | null) => {
+  if (!value) {
+    return '--:--';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return '--:--';
+  }
+
+  return format(parsed, 'HH:mm', { locale: ptBR });
+};
+
+const getOrderTimestamp = (value?: string | null) => {
+  if (!value) {
+    return 0;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+};
+
+// Elapsed time helpers
+const getElapsedMinutes = (createdAt?: string | null): number => {
+  if (!createdAt) return 0;
+  const ms = Date.now() - new Date(createdAt).getTime();
+  return Math.floor(ms / 60000);
+};
+
+const formatElapsed = (minutes: number): string => {
+  if (minutes < 1) return 'agora';
+  if (minutes < 60) return `${minutes}min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+};
+
+type ElapsedUrgency = 'ok' | 'warning' | 'critical';
+
+const getElapsedUrgency = (minutes: number, status: string): ElapsedUrgency => {
+  // Delivered/cancelled orders don't show urgency
+  if (['delivered', 'cancelled'].includes(status)) return 'ok';
+  if (minutes >= 40) return 'critical';
+  if (minutes >= 20) return 'warning';
+  return 'ok';
+};
 
 const formatAddress = (address: Order['delivery_address']) => {
   if (!address) return null;
@@ -161,7 +194,7 @@ const formatAddress = (address: Order['delivery_address']) => {
     addr.city || addr.cidade,
     addr.state || addr.estado,
   ].filter(Boolean);
-  return parts.join(', ');
+  return parts.join(', ') || addr.raw_address || null;
 };
 
 interface OrderCardProps {
@@ -226,27 +259,53 @@ const PaymentBadge: React.FC<{ paymentStatus?: string; paymentMethod?: string }>
 
 // Order Card Component
 const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpdating, isSuccess }) => {
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const elapsedMin = getElapsedMinutes(order.created_at);
+  const urgency = getElapsedUrgency(elapsedMin, order.status);
+
   const derivedPaymentStatus = order.payment_status
     || (['paid', 'confirmed'].includes(order.status?.toLowerCase?.() || '')
       ? 'paid'
       : undefined);
 
+  const urgencyBorder =
+    urgency === 'critical' ? 'border-red-400 dark:border-red-700' :
+    urgency === 'warning'  ? 'border-yellow-400 dark:border-yellow-700' :
+    'border-slate-200 dark:border-zinc-700';
+
   return (
     <div
       className={`
-        bg-white dark:bg-zinc-900 rounded-lg shadow-sm border-2 p-3 mb-2 cursor-pointer
-        transition-all duration-300 hover:shadow-md hover:border-primary-300 dark:hover:border-primary-500
+        bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border p-4 mb-3 cursor-pointer
+        transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary-300 dark:hover:border-primary-500
         ${isDragging ? 'shadow-lg ring-2 ring-primary-500 scale-105' : ''}
         ${isUpdating ? 'opacity-70 border-primary-300' : ''}
-        ${isSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/30 animate-pulse' : 'border-gray-100 dark:border-zinc-800'}
+        ${isSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/30 animate-pulse' : urgencyBorder}
+        ${urgency === 'critical' && !isSuccess && !isUpdating ? 'animate-pulse' : ''}
       `}
       onClick={() => !isUpdating && onClick?.(order)}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-bold text-gray-900 dark:text-white text-sm">
-          #{order.order_number}
-        </span>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-gray-900 dark:text-white text-sm">
+            #{order.order_number}
+          </span>
+          {order.delivery_method === 'pickup' ? (
+            <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 rounded-full font-medium">
+              🏪 Retirada
+            </span>
+          ) : (
+            <span className="text-xs px-1.5 py-0.5 bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 rounded-full font-medium">
+              🛵 Entrega
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {isUpdating && (
             <ArrowPathIcon className="w-4 h-4 text-primary-500 animate-spin" />
@@ -258,15 +317,21 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
             </div>
           )}
           {!isUpdating && !isSuccess && (
-            <span className="text-xs text-gray-500 dark:text-zinc-400">
-              {format(new Date(order.created_at), 'HH:mm', { locale: ptBR })}
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+              urgency === 'critical'
+                ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
+                : urgency === 'warning'
+                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300'
+                : 'bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
+            }`}>
+              ⏱ {formatElapsed(elapsedMin)}
             </span>
           )}
         </div>
       </div>
 
       {/* Payment Status Badge - NEW */}
-      <div className="mb-2">
+      <div className="mb-3">
         <PaymentBadge 
           paymentStatus={derivedPaymentStatus} 
           paymentMethod={order.payment_method} 
@@ -274,16 +339,16 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       </div>
 
       {/* Customer */}
-      <div className="flex items-center gap-1.5 mb-2">
-        <UserIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-        <span className="text-sm text-gray-700 dark:text-zinc-300 truncate">
-          {order.customer_name || 'Cliente'}
-        </span>
-      </div>
+        <div className="flex items-center gap-1.5 mb-3">
+          <UserIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+          <span className="text-sm font-medium text-gray-800 dark:text-zinc-300 truncate">
+            {order.customer_name || 'Cliente'}
+          </span>
+        </div>
 
       {/* Phone */}
       {order.customer_phone && (
-        <div className="flex items-center gap-1.5 mb-2">
+        <div className="flex items-center gap-1.5 mb-3">
           <PhoneIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
           <span className="text-xs text-gray-500 dark:text-zinc-400">{order.customer_phone}</span>
         </div>
@@ -291,7 +356,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
 
       {/* Delivery Address */}
       {order.delivery_address && (
-        <div className="flex items-start gap-1.5 mb-2">
+        <div className="flex items-start gap-1.5 mb-3">
           <MapPinIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5" />
           <span className="text-xs text-gray-500 dark:text-zinc-400 line-clamp-2">
             {formatAddress(order.delivery_address) || 'Endereço não informado'}
@@ -300,7 +365,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       )}
 
       {/* Items count */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-zinc-700">
         <span className="text-xs text-gray-500 dark:text-zinc-400">
           {getItemsCount(order)} item(ns)
         </span>
@@ -315,7 +380,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
       {/* Store badge */}
       {order.store_name && (
         <div className="mt-2">
-          <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-300 rounded-full">
+          <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-gray-600 dark:text-zinc-300 rounded-full">
             {order.store_name}
           </span>
         </div>
@@ -346,17 +411,20 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
     <div 
       ref={setNodeRef}
       className={`
-        flex flex-col min-w-[280px] max-w-[320px] rounded-xl border-2 transition-all duration-300
+        snap-start flex flex-col min-w-[290px] md:min-w-[320px] max-w-[320px] rounded-2xl border shadow-sm transition-all duration-300
         ${status.color} dark:bg-zinc-900/50 dark:border-zinc-800
         ${isOver ? 'ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-gray-900 scale-[1.02] border-primary-400 shadow-lg' : ''}
       `}
     >
       {/* Column Header */}
-      <div className={`${status.headerColor} text-white px-4 py-3 rounded-t-xl`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Icon className="w-5 h-5" />
-            <span className="font-semibold">{status.label}</span>
+      <div className={`${status.headerColor} text-white px-4 py-3 rounded-t-2xl shadow-sm`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Icon className="w-5 h-5" />
+              <span className="font-semibold">{status.label}</span>
+            </div>
+            <p className="text-xs text-white/80">{status.description}</p>
           </div>
           <span className="bg-white/20 px-2.5 py-1 rounded-full text-xs font-bold min-w-[28px] text-center">
             {orders.length}
@@ -366,7 +434,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
 
       {/* Column Content */}
       <div className={`
-        flex-1 p-3 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[200px]
+        flex-1 p-4 overflow-y-auto max-h-[calc(100vh-300px)] min-h-[220px]
         transition-all duration-300
         ${isOver ? 'bg-primary-50/50 dark:bg-primary-900/20' : ''}
       `}>
@@ -530,7 +598,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     // Sort by created_at within each column
     Object.keys(grouped).forEach(status => {
       grouped[status].sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        getOrderTimestamp(b.created_at) - getOrderTimestamp(a.created_at)
       );
     });
 
@@ -688,7 +756,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4 px-1">
+      <div className="flex gap-4 overflow-x-auto pb-4 px-1 snap-x snap-mandatory">
         {displayStatuses.map((status) => (
           <KanbanColumn
             key={status.id}

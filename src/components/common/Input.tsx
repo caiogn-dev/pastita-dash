@@ -1,114 +1,105 @@
+/**
+ * Input - Componente de input sem Chakra UI
+ */
 import React from 'react';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps {
   label?: string;
+  placeholder?: string;
+  value?: string | number;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: 'text' | 'password' | 'email' | 'number' | 'tel' | 'url' | 'date';
+  size?: 'sm' | 'md' | 'lg';
+  isDisabled?: boolean;
+  disabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  required?: boolean;
   error?: string;
   helperText?: string;
+  leftElement?: React.ReactNode;
+  rightElement?: React.ReactNode;
+  className?: string;
+  min?: string | number;
+  max?: string | number;
+  step?: string | number;
+  autoComplete?: string;
+  name?: string;
+  id?: string;
 }
+
+const sizeClasses = {
+  sm: 'px-2.5 py-1.5 text-sm',
+  md: 'px-3 py-2 text-sm',
+  lg: 'px-4 py-3 text-base',
+};
 
 export const Input: React.FC<InputProps> = ({
   label,
+  placeholder,
+  value,
+  onChange,
+  type = 'text',
+  size = 'md',
+  isDisabled = false,
+  disabled = false,
+  isReadOnly = false,
+  isRequired = false,
+  required = false,
   error,
   helperText,
-  className = '',
+  className,
+  min,
+  max,
+  step,
+  autoComplete,
+  name,
   id,
-  ...props
 }) => {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+  const finalRequired = isRequired || required;
+  const finalDisabled = isDisabled || disabled;
+  const stringValue = value !== undefined && value !== null ? String(value) : '';
 
   return (
-    <div className="w-full">
+    <div className={`flex flex-col gap-1.5 ${className ?? ''}`}>
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+        <label className="text-sm font-medium text-fg-primary" htmlFor={id}>
           {label}
+          {finalRequired && <span className="text-danger-500 ml-0.5"> *</span>}
         </label>
       )}
+
       <input
-        id={inputId}
-        className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-          error ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-zinc-700'
-        } ${className}`}
-        {...props}
+        type={type}
+        id={id}
+        name={name}
+        placeholder={placeholder}
+        value={stringValue}
+        onChange={onChange}
+        disabled={finalDisabled}
+        readOnly={isReadOnly}
+        required={finalRequired}
+        min={min}
+        max={max}
+        step={step}
+        autoComplete={autoComplete}
+        className={[
+          'w-full rounded-md border bg-bg-card text-fg-primary placeholder-fg-muted',
+          'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          sizeClasses[size],
+          error ? 'border-danger-500' : 'border-border-primary',
+        ].join(' ')}
       />
-      {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
-      {helperText && !error && <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">{helperText}</p>}
-    </div>
-  );
-};
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-}
-
-export const Textarea: React.FC<TextareaProps> = ({
-  label,
-  error,
-  helperText,
-  className = '',
-  id,
-  ...props
-}) => {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
-
-  return (
-    <div className="w-full">
-      {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          {label}
-        </label>
+      {helperText && !error && (
+        <p className="text-xs text-fg-muted">{helperText}</p>
       )}
-      <textarea
-        id={inputId}
-        className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors resize-none ${
-          error ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-zinc-700'
-        } ${className}`}
-        {...props}
-      />
-      {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
-      {helperText && !error && <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">{helperText}</p>}
-    </div>
-  );
-};
-
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  error?: string;
-  options: Array<{ value: string; label: string }>;
-}
-
-export const Select: React.FC<SelectProps> = ({
-  label,
-  error,
-  options,
-  className = '',
-  id,
-  ...props
-}) => {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
-
-  return (
-    <div className="w-full">
-      {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          {label}
-        </label>
+      {error && (
+        <p className="text-xs text-danger-500">{error}</p>
       )}
-      <select
-        id={inputId}
-        className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-          error ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-zinc-700'
-        } ${className}`}
-        {...props}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
     </div>
   );
 };
+
+export default Input;

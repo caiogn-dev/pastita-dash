@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button } from './atoms/Button';
+import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './molecules/Card';
 
 interface Props {

@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Store, Settings, Package, ShoppingCart, Users, BarChart3, Zap, RefreshCw } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge, Modal, Input } from '../../components/common';
 import logger from '../../services/logger';
 import storesApi, { Store as StoreType, StoreInput, StoreStats } from '../../services/storesApi';
@@ -38,6 +39,7 @@ const StoresPage: React.FC = () => {
       }
     } catch (error) {
       logger.error('Failed to load stores', error);
+      toast.error('Erro ao carregar lojas');
     } finally {
       setLoading(false);
     }
@@ -48,8 +50,10 @@ const StoresPage: React.FC = () => {
       const newStore = await storesApi.createStore(data);
       setStores(prev => [newStore, ...prev]);
       setShowCreateModal(false);
+      toast.success('Loja criada com sucesso!');
     } catch (error) {
       logger.error('Failed to create store', error);
+      toast.error('Erro ao criar loja');
     }
   };
 
@@ -57,22 +61,26 @@ const StoresPage: React.FC = () => {
     try {
       if (store.status === 'active') {
         await storesApi.deactivateStore(store.id);
+        toast.success('Loja desativada');
       } else {
         await storesApi.activateStore(store.id);
+        toast.success('Loja ativada');
       }
       loadStores();
     } catch (error) {
       logger.error('Failed to toggle store status', error);
+      toast.error('Erro ao alterar status da loja');
     }
   };
 
   const handleSyncPastita = async (storeId: string) => {
     try {
-      const result = await storesApi.syncPastitaToStore(storeId);
-      alert(`Sincronização concluída!\n${JSON.stringify(result.synced, null, 2)}`);
+      await storesApi.syncPastitaToStore(storeId);
+      toast.success('Sincronização concluída!');
       loadStores();
     } catch (error) {
       logger.error('Failed to sync Pastita', error);
+      toast.error('Erro ao sincronizar loja');
     }
   };
 
@@ -116,7 +124,7 @@ const StoresPage: React.FC = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4 mb-6">
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
@@ -181,7 +189,7 @@ const StoresPage: React.FC = () => {
           </Button>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
           {stores.map(store => {
             const stats = storeStats[store.id];
             return (

@@ -124,25 +124,33 @@ export interface InstagramScheduledPost {
 // ACCOUNTS
 // ============================================================================
 
-export const instagramAccountApi = {
+export const instagramAccountService = {
   list: () => api.get<InstagramAccount[]>('/instagram/accounts/'),
-  
-  create: (data: Partial<InstagramAccount>) => 
+
+  create: (data: Partial<InstagramAccount>) =>
     api.post<InstagramAccount>('/instagram/accounts/', data),
-  
-  get: (id: string) => 
+
+  get: (id: string) =>
     api.get<InstagramAccount>(`/instagram/accounts/${id}/`),
-  
-  update: (id: string, data: Partial<InstagramAccount>) => 
+
+  update: (id: string, data: Partial<InstagramAccount>) =>
     api.patch<InstagramAccount>(`/instagram/accounts/${id}/`, data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     api.delete(`/instagram/accounts/${id}/`),
-  
-  sync: (id: string) => 
+
+  sync: (id: string) =>
     api.post<{ status: string; message: string }>(`/instagram/accounts/${id}/sync/`),
-  
-  getInsights: (id: string, days: number = 30) => 
+
+  /** Retorna a URL OAuth do Instagram Business Login com state assinado server-side. */
+  getConnectUrl: () =>
+    api.get<{ url: string }>('/instagram/accounts/connect-url/'),
+
+  /** Envia o authorization code do Instagram Business Login para o servidor criar/atualizar a conta. */
+  connect: (data: { code: string }) =>
+    api.post<InstagramAccount>('/instagram/accounts/connect/', data),
+
+  getInsights: (id: string, days: number = 30) =>
     api.get<InstagramInsight[]>(`/instagram/accounts/${id}/insights/?days=${days}`),
 };
 
@@ -150,7 +158,7 @@ export const instagramAccountApi = {
 // MEDIA (Posts, Stories, Reels)
 // ============================================================================
 
-export const instagramMediaApi = {
+export const instagramMediaService = {
   list: (params?: { account?: string; media_type?: string }) => 
     api.get<PaginatedResponse<InstagramMedia>>('/instagram/media/', { params }),
   
@@ -199,7 +207,7 @@ export const instagramMediaApi = {
 // SHOPPING
 // ============================================================================
 
-export const instagramShoppingApi = {
+export const instagramShoppingService = {
   // Catálogos
   getCatalogs: (accountId: string) => 
     api.get<InstagramCatalog[]>(`/instagram/shopping/catalogs/?account_id=${accountId}`),
@@ -221,7 +229,7 @@ export const instagramShoppingApi = {
 // LIVE
 // ============================================================================
 
-export const instagramLiveApi = {
+export const instagramLiveService = {
   list: (accountId: string) => 
     api.get<InstagramLive[]>(`/instagram/live/?account_id=${accountId}`),
   
@@ -254,7 +262,7 @@ export const instagramLiveApi = {
 // SCHEDULED POSTS
 // ============================================================================
 
-export const instagramScheduledPostApi = {
+export const instagramScheduledPostService = {
   list: (accountId: string) => 
     api.get<InstagramScheduledPost[]>(`/instagram/scheduled-posts/?account_id=${accountId}`),
   
@@ -279,22 +287,31 @@ export const instagramScheduledPostApi = {
 // DIRECT MESSAGES (Já existe, mas atualizando)
 // ============================================================================
 
-export const instagramDirectApi = {
+export const instagramDirectService = {
   // Conversas
-  getConversations: (accountId: string) => 
-    api.get(`/instagram/conversations/?account_id=${accountId}`),
+  getConversations: (accountId?: string) =>
+    api.get<PaginatedResponse<InstagramConversation> | InstagramConversation[]>('/instagram/conversations/', {
+      params: accountId ? { account: accountId } : undefined,
+    }),
   
   // Mensagens
-  getMessages: (conversationId: string) => 
-    api.get(`/instagram/conversations/${conversationId}/messages/`),
+  getMessages: (conversationId: string) =>
+    api.get<InstagramMessage[]>(`/instagram/conversations/${conversationId}/messages/`),
   
   // Enviar mensagem
-  sendMessage: (conversationId: string, content: string) => 
-    api.post(`/instagram/conversations/${conversationId}/send_message/`, { content }),
+  sendMessage: (
+    conversationId: string,
+    data: {
+      content: string;
+      message_type?: string;
+      media_url?: string;
+      reply_to?: string;
+    }
+  ) => api.post<InstagramMessage>(`/instagram/conversations/${conversationId}/send_message/`, data),
   
   // Marcar como lida
-  markAsRead: (conversationId: string) => 
-    api.post(`/instagram/conversations/${conversationId}/mark_as_read/`),
+  markAsRead: (conversationId: string) =>
+    api.post<InstagramConversation>(`/instagram/conversations/${conversationId}/mark_as_read/`),
 };
 
 // ============================================================================
@@ -303,42 +320,42 @@ export const instagramDirectApi = {
 
 export const instagramService = {
   // Accounts
-  getAccounts: () => instagramAccountApi.list(),
-  getAccount: (id: string) => instagramAccountApi.get(id),
-  createAccount: (data: Partial<InstagramAccount>) => instagramAccountApi.create(data),
-  updateAccount: (id: string, data: Partial<InstagramAccount>) => instagramAccountApi.update(id, data),
-  deleteAccount: (id: string) => instagramAccountApi.delete(id),
-  syncAccount: (id: string) => instagramAccountApi.sync(id),
+  getAccounts: () => instagramAccountService.list(),
+  getAccount: (id: string) => instagramAccountService.get(id),
+  createAccount: (data: Partial<InstagramAccount>) => instagramAccountService.create(data),
+  updateAccount: (id: string, data: Partial<InstagramAccount>) => instagramAccountService.update(id, data),
+  deleteAccount: (id: string) => instagramAccountService.delete(id),
+  syncAccount: (id: string) => instagramAccountService.sync(id),
   
   // Media
-  getMedia: (accountId: string) => instagramMediaApi.list({ account: accountId }),
+  getMedia: (accountId: string) => instagramMediaService.list({ account: accountId }),
   createPost: (data: { account: string; caption?: string; media_urls: string[]; tags?: string[] }) => 
-    instagramMediaApi.create(data as Partial<InstagramMedia>),
+    instagramMediaService.create(data as Partial<InstagramMedia>),
   createCarousel: (data: { account: string; caption?: string; media_urls: string[]; tags?: string[] }) =>
-    instagramMediaApi.create({ ...data, media_type: 'CAROUSEL_ALBUM' } as Partial<InstagramMedia>),
+    instagramMediaService.create({ ...data, media_type: 'CAROUSEL_ALBUM' } as Partial<InstagramMedia>),
   
   // Stories
-  getStories: (accountId: string) => instagramMediaApi.getStories(),
+  getStories: (accountId: string) => instagramMediaService.getStories(),
   createStory: (data: { account: string; media_url: string; caption?: string }) =>
-    instagramMediaApi.create({ ...data, media_type: 'STORY' } as Partial<InstagramMedia>),
+    instagramMediaService.create({ ...data, media_type: 'STORY' } as Partial<InstagramMedia>),
   
   // Reels
-  getReels: (accountId: string) => instagramMediaApi.getReels(),
+  getReels: (accountId: string) => instagramMediaService.getReels(),
   createReel: (data: { account: string; video_url: string; caption?: string; cover_url?: string }) =>
-    instagramMediaApi.create({ ...data, media_type: 'REELS' } as Partial<InstagramMedia>),
+    instagramMediaService.create({ ...data, media_type: 'REELS' } as Partial<InstagramMedia>),
   
   // Catalogs
-  getCatalogs: (accountId: string) => instagramShoppingApi.getCatalogs(accountId),
+  getCatalogs: (accountId: string) => instagramShoppingService.getCatalogs(accountId),
   
   // Products
-  getProducts: (catalogId: string) => instagramShoppingApi.getProducts(catalogId),
+  getProducts: (catalogId: string) => instagramShoppingService.getProducts(catalogId),
   createProduct: (data: { catalog: string; name: string; price: number; currency: string; image_url: string; description?: string }) =>
     api.post<InstagramProduct>('/instagram/shopping/products/', data),
   
   // Lives
-  getLives: (accountId: string) => instagramLiveApi.list(accountId),
+  getLives: (accountId: string) => instagramLiveService.list(accountId),
   createLive: (data: { account: string; title?: string; description?: string; scheduled_start?: string }) =>
-    instagramLiveApi.create(data.account, data),
+    instagramLiveService.create(data.account, data),
 };
 
 // Type aliases for backward compatibility
@@ -354,25 +371,39 @@ export type InstagramAccountStats = {
 export type InstagramConversation = {
   id: string;
   account: string;
+  instagram_conversation_id?: string;
   participant_id: string;
-  participant_username: string;
+  participant_username?: string;
+  participant_name?: string;
+  participant_profile_pic?: string;
   last_message_at?: string;
+  last_message_preview?: string;
+  last_message?: { type: string; content?: string | null; created_at: string } | null;
   unread_count: number;
+  status: 'active' | 'closed';
+  is_active?: boolean;
 };
 export type InstagramMessage = {
   id: string;
   conversation: string;
-  content: string;
+  instagram_message_id?: string;
+  content?: string;
   direction: 'inbound' | 'outbound';
-  sent_at: string;
+  message_type?: string;
+  media_url?: string;
+  is_from_business?: boolean;
+  is_read?: boolean;
+  status?: string;
+  sent_at?: string;
+  created_at: string;
 };
 
 // Export all
 export default {
-  accounts: instagramAccountApi,
-  media: instagramMediaApi,
-  shopping: instagramShoppingApi,
-  live: instagramLiveApi,
-  scheduledPosts: instagramScheduledPostApi,
-  direct: instagramDirectApi,
+  accounts: instagramAccountService,
+  media: instagramMediaService,
+  shopping: instagramShoppingService,
+  live: instagramLiveService,
+  scheduledPosts: instagramScheduledPostService,
+  direct: instagramDirectService,
 };

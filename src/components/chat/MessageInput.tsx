@@ -15,6 +15,8 @@ import {
   DocumentIcon,
   XMarkIcon,
   FaceSmileIcon,
+  MusicalNoteIcon,
+  FilmIcon,
 } from '@heroicons/react/24/outline';
 
 export interface MessageInputProps {
@@ -29,6 +31,7 @@ export interface MessageInputProps {
   maxLength?: number;
   selectedFile?: File | null;
   onClearFile?: () => void;
+  insertText?: string;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -42,12 +45,20 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   maxLength = 4096,
   selectedFile,
   onClearFile,
+  insertText,
 }) => {
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<number | undefined>(undefined);
   const wasTypingRef = useRef(false);
+
+  useEffect(() => {
+    if (insertText) {
+      setText(insertText);
+      textareaRef.current?.focus();
+    }
+  }, [insertText]);
 
   // Auto-resize textarea
   const adjustHeight = useCallback(() => {
@@ -139,33 +150,60 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
   const canSend = (text.trim().length > 0 || selectedFile) && !disabled && !isLoading;
 
-  // Preview do arquivo selecionado
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedFile) { setImagePreviewUrl(null); return; }
+    if (selectedFile.type.startsWith('image/')) {
+      const url = URL.createObjectURL(selectedFile);
+      setImagePreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setImagePreviewUrl(null);
+  }, [selectedFile]);
+
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) return <PhotoIcon className="w-8 h-8 text-violet-500" />;
+    if (file.type.startsWith('audio/')) return <MusicalNoteIcon className="w-8 h-8 text-green-500" />;
+    if (file.type.startsWith('video/')) return <FilmIcon className="w-8 h-8 text-blue-500" />;
+    return <DocumentIcon className="w-8 h-8 text-orange-500" />;
+  };
+
   const renderFilePreview = () => {
     if (!selectedFile) return null;
 
-    const isImage = selectedFile.type.startsWith('image/');
-
     return (
-      <div className="flex items-center gap-3 p-3 mx-4 mb-2 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-        {isImage ? (
-          <PhotoIcon className="w-8 h-8 text-violet-500" />
+      <div className="mx-4 mb-2 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700 overflow-hidden">
+        {imagePreviewUrl ? (
+          <div className="relative">
+            <img
+              src={imagePreviewUrl}
+              alt="preview"
+              className="w-full max-h-40 object-cover"
+            />
+            <button
+              onClick={onClearFile}
+              className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </button>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-3 py-2">
+              <p className="text-xs text-white truncate">{selectedFile.name}</p>
+              <p className="text-xs text-white/70">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+            </div>
+          </div>
         ) : (
-          <DocumentIcon className="w-8 h-8 text-blue-500" />
+          <div className="flex items-center gap-3 p-3">
+            {getFileIcon(selectedFile)}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{selectedFile.name}</p>
+              <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+            </div>
+            <button onClick={onClearFile} className="p-1 text-gray-400 hover:text-red-500 transition-colors">
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
         )}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
-            {selectedFile.name}
-          </p>
-          <p className="text-xs text-gray-500">
-            {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-          </p>
-        </div>
-        <button
-          onClick={onClearFile}
-          className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-        >
-          <XMarkIcon className="w-5 h-5" />
-        </button>
       </div>
     );
   };
@@ -206,7 +244,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             value={text}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
+            placeholder={selectedFile ? 'Adicionar legenda (opcional)...' : placeholder}
             disabled={disabled}
             rows={1}
             className="
@@ -234,7 +272,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         <button
           type="button"
           disabled={disabled}
-          className="p-2.5 text-gray-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-full disabled:opacity-50 transition-colors hidden sm:block"
+          className="p-2.5 text-gray-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-full disabled:opacity-50 transition-colors block max-sm:hidden"
           title="Emoji"
         >
           <FaceSmileIcon className="w-5 h-5" />
@@ -263,7 +301,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       </div>
 
       {/* Hint */}
-      <p className="text-[10px] text-gray-400 pb-2 px-4 text-center hidden sm:block">
+      <p className="text-[10px] text-gray-400 pb-2 px-4 text-center block max-sm:hidden">
         Enter para enviar • Shift+Enter para nova linha
       </p>
     </div>

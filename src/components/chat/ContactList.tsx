@@ -19,6 +19,11 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 
+// Type-safe helper to ensure value is array
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
 export interface Contact {
   id: string;
   phoneNumber: string;
@@ -166,7 +171,7 @@ export const ContactList: React.FC<ContactListProps> = ({
   emptyMessage = 'Nenhuma conversa encontrada',
 }) => {
   // Garantir que contacts sempre seja um array
-  const contacts = rawContacts || [];
+  const contacts = ensureArray<Contact>(rawContacts);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [modeFilter, setModeFilter] = useState<string | null>(null);

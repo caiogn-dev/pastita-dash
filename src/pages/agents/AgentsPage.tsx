@@ -1,23 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  PlusIcon, 
+import {
+  PlusIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   CpuChipIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { cn } from '../../utils/cn';
 import { AgentCard } from '../../components/agents';
-import agentsService, { Agent } from '../../services/agents';
+import agentsService, { Agent, PROVIDER_CONFIGS } from '../../services/agents';
+import type { AgentProvider } from '../../services/agents';
+import { getErrorMessage } from '../../services';
+import { useConfirm } from '../../hooks';
 
 type StatusFilter = 'all' | 'active' | 'inactive' | 'draft';
-type ProviderFilter = 'all' | 'kimi' | 'openai' | 'anthropic' | 'ollama';
+type ProviderFilter = 'all' | AgentProvider;
 
 export const AgentsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [ConfirmDialog, confirm] = useConfirm();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>('all');
@@ -25,11 +31,15 @@ export const AgentsPage: React.FC = () => {
 
   const loadAgents = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const data = await agentsService.getAgents();
-      setAgents(data);
-    } catch (error) {
-      console.error('Erro ao carregar agentes:', error);
+      setAgents(Array.isArray(data) ? data : []);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('[AgentsPage] Erro ao carregar agentes:', error);
+      setLoadError(msg);
+      setAgents([]);
     } finally {
       setIsLoading(false);
     }
@@ -43,25 +53,30 @@ export const AgentsPage: React.FC = () => {
     const agent = agents.find(a => a.id === id);
     if (!agent) return;
 
+    const newStatus = agent.status === 'active' ? 'inactive' : 'active';
+    setAgents(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
     try {
-      const newStatus = agent.status === 'active' ? 'inactive' : 'active';
       await agentsService.updateAgent(id, { status: newStatus });
-      setAgents(prev => prev.map(a => 
-        a.id === id ? { ...a, status: newStatus } : a
-      ));
+      toast.success(`Agente ${newStatus === 'active' ? 'ativado' : 'desativado'}`);
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
+      setAgents(prev => prev.map(a => a.id === id ? { ...a, status: agent.status } : a));
+      toast.error(getErrorMessage(error));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este agente?')) return;
+    const confirmed = await confirm({
+      title: 'Excluir agente',
+      message: 'Tem certeza que deseja excluir este agente?',
+    });
+    if (!confirmed) return;
 
     try {
       await agentsService.deleteAgent(id);
       setAgents(prev => prev.filter(a => a.id !== id));
+      toast.success('Agente excluído');
     } catch (error) {
-      console.error('Erro ao excluir agente:', error);
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -84,7 +99,7 @@ export const AgentsPage: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
             Agentes IA
@@ -127,7 +142,7 @@ export const AgentsPage: React.FC = () => {
       </div>
 
       {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-row max-sm:flex-col gap-4 mb-6">
         {/* Search */}
         <div className="relative flex-1">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
@@ -182,7 +197,7 @@ export const AgentsPage: React.FC = () => {
       {/* Filters Panel */}
       {showFilters && (
         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Status
@@ -218,19 +233,27 @@ export const AgentsPage: React.FC = () => {
                 )}
               >
                 <option value="all">Todos</option>
-                <option value="kimi">Kimi</option>
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="ollama">Ollama</option>
+                {(Object.entries(PROVIDER_CONFIGS) as [AgentProvider, { name: string }][]).map(([key, cfg]) => (
+                  <option key={key} value={key}>{cfg.name}</option>
+                ))}
               </select>
             </div>
           </div>
         </div>
       )}
 
+      {/* Error banner — mostra o erro real em vez de lista vazia silenciosa */}
+      {loadError && (
+        <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
+          <p className="font-semibold">Erro ao carregar agentes:</p>
+          <p className="text-sm mt-1 font-mono">{loadError}</p>
+          <p className="text-xs mt-2 text-red-500">Abra o DevTools (F12) → Network → veja o request GET /api/v1/agents/ para detalhes.</p>
+        </div>
+      )}
+
       {/* Agents Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
           {[...Array(6)].map((_, i) => (
             <div 
               key={i}
@@ -273,7 +296,7 @@ export const AgentsPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
           {filteredAgents.map(agent => (
             <AgentCard
               key={agent.id}
@@ -287,6 +310,7 @@ export const AgentsPage: React.FC = () => {
           ))}
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };

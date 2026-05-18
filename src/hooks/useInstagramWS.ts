@@ -171,7 +171,7 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsBaseUrl = import.meta.env.VITE_WS_URL || `${protocol}//${window.location.host}`;
     const baseUrl = wsBaseUrl.replace(/^http/, 'ws');
-    return `${baseUrl}/ws/instagram/${accountId}/?token=${token}`;
+    return `${baseUrl}/ws/instagram/${accountId}/`;
   }, [accountId, token]);
 
   const sendMessage = useCallback((data: Record<string, unknown>) => {
@@ -222,12 +222,12 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
       wsRef.current = new WebSocket(url);
 
       wsRef.current.onopen = () => {
-        setIsConnected(true);
-        setIsConnecting(false);
-        setError(null);
-        reconnectAttemptsRef.current = 0;
-        startPingInterval();
-        onConnected?.();
+        console.log('[Instagram WS] Open, sending auth...');
+        // First-message auth — token never in URL
+        if (token) {
+          wsRef.current!.send(JSON.stringify({ type: 'auth', token }));
+        }
+        // connection_established from server triggers connected state
       };
 
       wsRef.current.onclose = (event) => {
@@ -286,7 +286,13 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
               onStoryReply?.(data);
               break;
             case 'connection_established':
-              console.log('[Instagram WS] Connected:', data.message);
+              console.log('[Instagram WS] Authenticated ✓');
+              setIsConnected(true);
+              setIsConnecting(false);
+              setError(null);
+              reconnectAttemptsRef.current = 0;
+              startPingInterval();
+              onConnected?.();
               break;
             case 'pong':
               // Keep-alive response

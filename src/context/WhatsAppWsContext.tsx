@@ -58,12 +58,21 @@ interface WsError {
   message_id?: string;
 }
 
-type WsEvent = 
-  | WsMessageReceived 
-  | WsMessageSent 
-  | WsStatusUpdated 
-  | WsTyping 
-  | WsConversationUpdated 
+interface WsHandoverModeChanged {
+  type: 'handover_mode_changed';
+  conversation_id: string;
+  handover_status: 'bot' | 'human' | 'pending';
+  assigned_to?: string;
+  assigned_to_name?: string;
+}
+
+type WsEvent =
+  | WsMessageReceived
+  | WsMessageSent
+  | WsStatusUpdated
+  | WsTyping
+  | WsConversationUpdated
+  | WsHandoverModeChanged
   | WsError
   | { type: 'pong' }
   | { type: 'connection_established'; account_id?: string; accounts?: string[]; message?: string }
@@ -135,14 +144,9 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
     const protocol = host.includes('localhost') || host.includes('127.0.0.1')
       ? 'ws'
       : 'wss';
-    
-    // Use dashboard mode for multi-account or specific account
-    let endpoint = '/ws/whatsapp/dashboard/';
-    if (!dashboardMode && selectedAccount) {
-      endpoint = `/ws/whatsapp/${selectedAccount.id}/`;
-    }
-    
-    return `${protocol}://${host}${endpoint}?token=${token}`;
+    // WebSocket endpoint: /ws/whatsapp/{account_id}/
+    if (!selectedAccount) return null;
+    return `${protocol}://${host}/ws/whatsapp/${selectedAccount.id}/?token=${token}`;
   }, [token, dashboardMode, selectedAccount]);
   
   // Cleanup function
@@ -219,6 +223,17 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
           chatStore.updateConversation(data.conversation);
           break;
         }
+
+        case 'handover_mode_changed': {
+          // Map handover_status to conversation mode and update store
+          const newMode = data.handover_status === 'human' ? 'human' : 'auto';
+          chatStore.updateConversation({
+            id: data.conversation_id,
+            mode: newMode as Conversation['mode'],
+            assigned_to: data.assigned_to,
+          });
+          break;
+        }
         
         case 'typing': {
           // Could add typing indicators to store if needed
@@ -231,7 +246,23 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
         }
         
         case 'connection_established':
-          console.log('[WhatsAppWS] Connection established:', data.message);
+          console.log('[WhatsAppWS] Authenticated ✓');
+          isConnecting.current = false;
+          attempts.current = 0;
+          setIsConnected(true);
+          setConnectionError(null);
+          chatStore.setWsConnected(true);
+          subscribedConversations.current.forEach((convId) => {
+            ws.current?.send(JSON.stringify({
+              type: 'subscribe_conversation',
+              conversation_id: convId,
+            }));
+          });
+          pingTimer.current = window.setInterval(() => {
+            if (ws.current?.readyState === WebSocket.OPEN) {
+              ws.current.send(JSON.stringify({ type: 'ping' }));
+            }
+          }, 30000);
           break;
           
         case 'pong':
@@ -262,27 +293,11 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
       ws.current = new WebSocket(url);
       
       ws.current.onopen = () => {
-        console.log('[WhatsAppWS] Connected');
-        isConnecting.current = false;
-        attempts.current = 0;
-        setIsConnected(true);
-        setConnectionError(null);
-        chatStore.setWsConnected(true);
-        
-        // Re-subscribe to previously subscribed conversations
-        subscribedConversations.current.forEach((convId) => {
-          ws.current?.send(JSON.stringify({
-            type: 'subscribe_conversation',
-            conversation_id: convId,
-          }));
-        });
-        
-        // Start ping interval
-        pingTimer.current = window.setInterval(() => {
-          if (ws.current?.readyState === WebSocket.OPEN) {
-            ws.current.send(JSON.stringify({ type: 'ping' }));
-          }
-        }, 30000);
+        console.log('[WhatsAppWS] Open, sending auth...');
+        const token = useAuthStore.getState().token;
+        if (token) {
+          ws.current?.send(JSON.stringify({ type: 'auth', token }));
+        }
       };
       
       ws.current.onmessage = handleMessage;
@@ -371,20 +386,35 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
   }, []);
   
   // Connect on mount, cleanup on unmount
+  // Use a ref to track if we've initiated connection to prevent double connections
+  const hasConnected = useRef(false);
+  
   useEffect(() => {
-    if (token) {
+    if (token && !hasConnected.current) {
+      hasConnected.current = true;
       connect();
     }
     
-    return cleanup;
-  }, [token, connect, cleanup]);
+    return () => {
+      hasConnected.current = false;
+      cleanup();
+    };
+  }, [token]); // Only depend on token, not on connect/cleanup to avoid reconnection loops
   
   // Reconnect when account changes (in non-dashboard mode)
+  // Use a ref to track the previous account to avoid unnecessary reconnections
+  const prevAccountId = useRef<string | null>(null);
+  
   useEffect(() => {
     if (!dashboardMode && selectedAccount && token) {
-      reconnect();
+      const newAccountId = selectedAccount.id;
+      // Only reconnect if the account actually changed
+      if (prevAccountId.current && prevAccountId.current !== newAccountId) {
+        reconnect();
+      }
+      prevAccountId.current = newAccountId;
     }
-  }, [dashboardMode, selectedAccount, token, reconnect]);
+  }, [dashboardMode, selectedAccount?.id, token]); // Use selectedAccount.id instead of whole object
   
   const value: WhatsAppWsContextValue = {
     isConnected,

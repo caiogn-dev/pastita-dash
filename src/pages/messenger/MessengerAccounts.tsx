@@ -1,53 +1,28 @@
+/**
+ * MessengerAccounts - Contas do Messenger (sem Chakra UI)
+ */
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Chip,
-  Tooltip,
-  Alert,
-  CircularProgress,
-  Grid,
-  InputAdornment,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Refresh as RefreshIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
-  Chat as ChatIcon,
-  Search as SearchIcon,
-} from '@mui/icons-material';
+  PlusIcon, PencilIcon, TrashIcon, ArrowPathIcon,
+  CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
+  MagnifyingGlassIcon, XMarkIcon,
+} from '@heroicons/react/24/outline';
+import { Card, Button, Badge } from '../../components/common';
 import { messengerService, MessengerAccount } from '../../services/messenger';
+import { useConfirm } from '../../hooks';
 
 export default function MessengerAccounts() {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [accounts, setAccounts] = useState<MessengerAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<MessengerAccount | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    page_id: '',
-    page_name: '',
-    page_access_token: '',
-  });
+  const [formData, setFormData] = useState({ name: '', page_id: '', page_name: '', page_access_token: '' });
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadAccounts();
-  }, []);
+  useEffect(() => { loadAccounts(); }, []);
 
   const loadAccounts = async () => {
     try {
@@ -55,278 +30,190 @@ export default function MessengerAccounts() {
       const response = await messengerService.getAccounts();
       setAccounts(response.data || []);
       setError(null);
-    } catch (err) {
-      console.error('Error loading accounts:', err);
-      setError('Erro ao carregar contas do Messenger');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError('Erro ao carregar contas do Messenger'); }
+    finally { setLoading(false); }
   };
 
-  const handleOpenDialog = (account?: MessengerAccount) => {
-    if (account) {
-      setEditingAccount(account);
-      setFormData({
-        name: account.name || account.page_name,
-        page_id: account.page_id,
-        page_name: account.page_name,
-        page_access_token: '',
-      });
-    } else {
-      setEditingAccount(null);
-      setFormData({
-        name: '',
-        page_id: '',
-        page_name: '',
-        page_access_token: '',
-      });
-    }
+  const openDialog = (account?: MessengerAccount) => {
+    setEditingAccount(account || null);
+    setFormData(account
+      ? { name: account.name || account.page_name, page_id: account.page_id, page_name: account.page_name, page_access_token: '' }
+      : { name: '', page_id: '', page_name: '', page_access_token: '' });
     setDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingAccount(null);
-    setFormData({
-      name: '',
-      page_id: '',
-      page_name: '',
-      page_access_token: '',
-    });
-  };
+  const closeDialog = () => { setDialogOpen(false); setEditingAccount(null); setFormData({ name: '', page_id: '', page_name: '', page_access_token: '' }); };
 
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      if (editingAccount) {
-        await messengerService.updateAccount(editingAccount.id, formData);
-      } else {
-        await messengerService.createAccount(formData);
-      }
-      handleCloseDialog();
+      if (editingAccount) await messengerService.updateAccount(editingAccount.id, formData);
+      else await messengerService.createAccount(formData);
+      closeDialog();
       loadAccounts();
-    } catch (err) {
-      console.error('Error saving account:', err);
-      setError('Erro ao salvar conta');
-    } finally {
-      setSubmitting(false);
-    }
+    } catch { setError('Erro ao salvar conta'); }
+    finally { setSubmitting(false); }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta conta?')) return;
-    
-    try {
-      await messengerService.deleteAccount(id);
-      loadAccounts();
-    } catch (err) {
-      console.error('Error deleting account:', err);
-      setError('Erro ao excluir conta');
-    }
+    const confirmed = await confirm({
+      title: 'Excluir conta',
+      message: 'Excluir esta conta? Esta ação não pode ser desfeita.',
+    });
+    if (!confirmed) return;
+    try { await messengerService.deleteAccount(id); loadAccounts(); }
+    catch { setError('Erro ao excluir conta'); }
   };
 
   const handleVerifyWebhook = async (id: string) => {
-    try {
-      await messengerService.verifyWebhook(id);
-      loadAccounts();
-    } catch (err) {
-      console.error('Error verifying webhook:', err);
-      setError('Erro ao verificar webhook');
-    }
+    try { await messengerService.verifyWebhook(id); loadAccounts(); }
+    catch { setError('Erro ao verificar webhook'); }
   };
 
-  const filteredAccounts = accounts.filter((acc) => {
+  const filtered = accounts.filter((a) => {
     if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      acc.page_name?.toLowerCase().includes(query) ||
-      acc.page_id?.toLowerCase().includes(query)
-    );
+    const q = searchQuery.toLowerCase();
+    return a.page_name?.toLowerCase().includes(q) || a.page_id?.toLowerCase().includes(q);
   });
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold">
-          Contas do Messenger
-        </Typography>
-        <Box display="flex" gap={2}>
-          <TextField
-            size="small"
-            placeholder="Buscar contas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-          >
-            Adicionar Conta
-          </Button>
-        </Box>
-      </Box>
+    <div className="p-6">
+      {/* Header card */}
+      <div className="bg-bg-card border border-border-primary rounded-xl p-5 mb-6 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
+            <ChatBubbleLeftIcon className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-fg-primary">Contas do Messenger</h1>
+            <p className="text-sm text-fg-muted">Gerencie suas páginas do Facebook Messenger</p>
+          </div>
+        </div>
+        <div className="flex gap-2 flex-wrap items-center">
+          <div className="relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
+            <input
+              className="pl-9 pr-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500 w-56"
+              placeholder="Buscar contas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-4 h-4" />}>Adicionar Conta</Button>
+        </div>
+      </div>
 
+      {/* Error */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 dark:bg-red-900/20 rounded-lg border-l-4 border-red-500 text-red-700 dark:text-red-400">
+          <XCircleIcon className="w-5 h-5 flex-shrink-0" />
+          <span className="font-medium">{error}</span>
+        </div>
       )}
 
+      {/* Content */}
       {loading ? (
-        <Box display="flex" justifyContent="center" py={8}>
-          <CircularProgress />
-        </Box>
-      ) : filteredAccounts.length === 0 ? (
-        <Card>
-          <CardContent sx={{ textAlign: 'center', py: 8 }}>
-            <ChatIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Nenhuma conta configurada
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={3}>
-              Adicione uma página do Facebook para começar a receber mensagens
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
-            >
-              Adicionar Conta
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="flex justify-center py-16">
+          <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-bg-card border border-border-primary rounded-xl p-16 text-center">
+          <ChatBubbleLeftIcon className="w-16 h-16 text-fg-muted mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-fg-muted mb-2">Nenhuma conta configurada</h3>
+          <p className="text-sm text-fg-muted mb-6">Adicione uma página do Facebook para começar</p>
+          <Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-4 h-4" />}>Adicionar Conta</Button>
+        </div>
       ) : (
-        <Grid container spacing={3}>
-          {filteredAccounts.map((account) => (
-            <Grid item xs={12} md={6} lg={4} key={account.id}>
-              <Card>
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                    <Box>
-                      <Typography variant="h6" fontWeight="bold">
-                        {account.page_name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        ID: {account.page_id}
-                      </Typography>
-                    </Box>
-                    <Box display="flex" gap={1}>
-                      <Tooltip title="Editar">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(account)}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Excluir">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(account.id)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </Box>
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
+          {filtered.map((account) => (
+            <div key={account.id} className="bg-bg-card border border-border-primary rounded-xl p-5 hover:shadow-lg transition-shadow">
+              {/* Header */}
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="font-semibold text-fg-primary">{account.page_name}</p>
+                  <p className="text-xs text-fg-muted">ID: {account.page_id}</p>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => openDialog(account)} className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors">
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => handleDelete(account.id)} className="p-1.5 rounded hover:bg-bg-hover text-red-500 transition-colors">
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
-                  <Box display="flex" gap={1} mb={2}>
-                    <Chip
-                      size="small"
-                      icon={account.is_active ? <CheckCircleIcon /> : <ErrorIcon />}
-                      label={account.is_active ? 'Ativo' : 'Inativo'}
-                      color={account.is_active ? 'success' : 'default'}
-                    />
-                    <Chip
-                      size="small"
-                      icon={account.webhook_verified ? <CheckCircleIcon /> : <ErrorIcon />}
-                      label={account.webhook_verified ? 'Webhook OK' : 'Webhook Pendente'}
-                      color={account.webhook_verified ? 'success' : 'warning'}
-                    />
-                  </Box>
+              {/* Badges */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Badge variant={account.is_active ? 'success' : 'gray'}>
+                  <span className="flex items-center gap-1">
+                    {account.is_active ? <CheckCircleIcon className="w-3 h-3" /> : <XCircleIcon className="w-3 h-3" />}
+                    {account.is_active ? 'Ativo' : 'Inativo'}
+                  </span>
+                </Badge>
+                <Badge variant={account.webhook_verified ? 'success' : 'warning'}>
+                  <span className="flex items-center gap-1">
+                    {account.webhook_verified ? <CheckCircleIcon className="w-3 h-3" /> : <XCircleIcon className="w-3 h-3" />}
+                    {account.webhook_verified ? 'Webhook OK' : 'Webhook Pendente'}
+                  </span>
+                </Badge>
+              </div>
 
-                  {!account.webhook_verified && (
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      startIcon={<RefreshIcon />}
-                      onClick={() => handleVerifyWebhook(account.id)}
-                    >
-                      Verificar Webhook
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
+              {!account.webhook_verified && (
+                <Button variant="outline" size="sm" className="w-full" onClick={() => handleVerifyWebhook(account.id)}
+                  leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
+                  Verificar Webhook
+                </Button>
+              )}
+            </div>
           ))}
-        </Grid>
+        </div>
       )}
 
-      {/* Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingAccount ? 'Editar Conta' : 'Adicionar Conta do Messenger'}
-        </DialogTitle>
-        <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2} mt={1}>
-            <TextField
-              label="Nome da Conta"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              fullWidth
-              required
-              helperText="Nome para identificar esta conta no painel"
-            />
+      {ConfirmDialog}
 
-            <TextField
-              label="Page ID"
-              value={formData.page_id}
-              onChange={(e) => setFormData({ ...formData, page_id: e.target.value })}
-              fullWidth
-              required
-              disabled={!!editingAccount}
-            />
-            
-            <TextField
-              label="Nome da Página"
-              value={formData.page_name}
-              onChange={(e) => setFormData({ ...formData, page_name: e.target.value })}
-              fullWidth
-              required
-            />
-            
-            <TextField
-              label="Page Access Token"
-              value={formData.page_access_token}
-              onChange={(e) => setFormData({ ...formData, page_access_token: e.target.value })}
-              fullWidth
-              required
-              type="password"
-              helperText="Token de acesso da página do Facebook"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={submitting || !formData.name || !formData.page_id || !formData.page_name || !formData.page_access_token}
-          >
-            {submitting ? <CircularProgress size={24} /> : 'Salvar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      {/* Modal */}
+      {dialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={closeDialog} />
+          <div className="relative bg-bg-card border border-border-primary rounded-xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-border-primary">
+              <h2 className="text-lg font-semibold text-fg-primary">{editingAccount ? 'Editar Conta' : 'Adicionar Conta do Messenger'}</h2>
+              <button onClick={closeDialog} className="p-1 rounded hover:bg-bg-hover"><XMarkIcon className="w-5 h-5 text-fg-muted" /></button>
+            </div>
+            <div className="p-5 flex flex-col gap-4">
+              {[
+                { key: 'name', label: 'Nome da Conta', type: 'text', placeholder: 'Nome para identificar esta conta' },
+                { key: 'page_id', label: 'Page ID', type: 'text', placeholder: 'ID da página do Facebook', disabled: !!editingAccount },
+                { key: 'page_name', label: 'Nome da Página', type: 'text', placeholder: 'Ex: Pastita Oficial' },
+                { key: 'page_access_token', label: 'Page Access Token', type: 'password', placeholder: 'Token de acesso da página' },
+              ].map(({ key, label, type, placeholder, disabled }) => (
+                <div key={key}>
+                  <label className="block text-sm font-medium text-fg-secondary mb-1">{label}</label>
+                  <input
+                    type={type}
+                    value={(formData as any)[key]}
+                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                    placeholder={placeholder}
+                    disabled={disabled}
+                    className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-3 p-5 border-t border-border-primary">
+              <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
+              <Button
+                onClick={handleSubmit}
+                isLoading={submitting}
+                disabled={!formData.name || !formData.page_id || !formData.page_name || !formData.page_access_token}
+              >
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

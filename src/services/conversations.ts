@@ -1,15 +1,33 @@
-import api from './api';
-import { Conversation, ConversationNote, PaginatedResponse } from '../types';
+import api, { normalizePaginatedEnvelope } from './api';
+import { Conversation, ConversationNote, PaginatedResponse, Message, UniversalConversation } from '../types';
 
 export const conversationsService = {
-  getConversations: async (params?: Record<string, string>): Promise<PaginatedResponse<Conversation>> => {
-    const response = await api.get<PaginatedResponse<Conversation>>('/conversations/', { params });
-    return response.data;
+  getConversations: async (
+    params?: Record<string, string | number | undefined>
+  ): Promise<PaginatedResponse<Conversation>> => {
+    const response = await api.get<PaginatedResponse<Conversation> | Conversation[]>('/conversations/', { params });
+    return normalizePaginatedEnvelope<Conversation>(response.data);
   },
 
   getConversation: async (id: string): Promise<Conversation> => {
     const response = await api.get<Conversation>(`/conversations/${id}/`);
     return response.data;
+  },
+
+  getMessages: async (
+    conversationId: string,
+    pageSize = 100,
+    beforeId?: string
+  ): Promise<{ results: Message[]; has_more: boolean; next_before_id: string | null }> => {
+    const response = await api.get<{ results: Message[]; has_more?: boolean; next_before_id?: string | null }>(
+      `/conversations/${conversationId}/messages/`,
+      { params: { limit: pageSize, before_id: beforeId } }
+    );
+    return {
+      results: response.data.results ?? [],
+      has_more: Boolean(response.data.has_more),
+      next_before_id: response.data.next_before_id ?? null,
+    };
   },
 
   switchToHuman: async (id: string, agentId?: number): Promise<Conversation> => {
@@ -84,5 +102,10 @@ export const conversationsService = {
   markAsRead: async (id: string): Promise<Conversation> => {
     const response = await api.post<Conversation>(`/conversations/${id}/mark_as_read/`);
     return response.data;
+  },
+
+  getUniversalConversations: async (): Promise<PaginatedResponse<UniversalConversation>> => {
+    const response = await api.get<PaginatedResponse<UniversalConversation> | UniversalConversation[]>('/conversations/universal/');
+    return normalizePaginatedEnvelope<UniversalConversation>(response.data);
   },
 };

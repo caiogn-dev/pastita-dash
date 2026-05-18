@@ -17,13 +17,21 @@ interface OrderUpdate {
 interface UseOrdersWebSocketOptions {
   onOrderCreated?: (data: OrderUpdate) => void;
   onOrderUpdated?: (data: OrderUpdate) => void;
+  onOrderCancelled?: (data: OrderUpdate) => void;
   onStatusChanged?: (data: OrderUpdate) => void;
   onPaymentReceived?: (data: OrderUpdate) => void;
   enabled?: boolean;
 }
 
 export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
-  const { isConnected, error: connectionError, on } = useWS();
+  const {
+    isConnected,
+    error: connectionError,
+    on,
+    transport,
+    status,
+    reconnect,
+  } = useWS();
   const opts = useRef(options);
   opts.current = options;
 
@@ -36,14 +44,18 @@ export const useOrdersWebSocket = (options: UseOrdersWebSocketOptions = {}) => {
         opts.current.onOrderUpdated?.(d);
         opts.current.onStatusChanged?.(d);
       }),
-      on('order_cancelled', (d) => opts.current.onStatusChanged?.({ ...d, status: 'cancelled' })),
+      on('order_cancelled', (d) => {
+        const payload = { ...d, status: 'cancelled' };
+        opts.current.onOrderCancelled?.(payload);
+        opts.current.onStatusChanged?.(payload);
+      }),
       on('payment_received', (d) => opts.current.onPaymentReceived?.(d)),
     ];
 
     return () => unsubs.forEach(u => u());
   }, [on, options.enabled]);
 
-  return { isConnected, connectionError };
+  return { isConnected, connectionError, transport, status, reconnect };
 };
 
 export default useOrdersWebSocket;

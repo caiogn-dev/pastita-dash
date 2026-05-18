@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useConfirm } from '../../hooks';
 import logger from '../../services/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,6 +42,7 @@ const messageTypeLabels: Record<string, string> = {
 };
 
 export default function ScheduledMessagesPage() {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [messages, setMessages] = useState<ScheduledMessage[]>([]);
   const [stats, setStats] = useState<ScheduledMessageStats | null>(null);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
@@ -54,7 +56,7 @@ export default function ScheduledMessagesPage() {
     status: '',
   });
   const [formData, setFormData] = useState<CreateScheduledMessage>({
-    account_id: '',
+    account: '',
     to_number: '',
     contact_name: '',
     message_type: 'text',
@@ -74,7 +76,7 @@ export default function ScheduledMessagesPage() {
       ]);
       setMessages(messagesRes.results);
       setStats(statsRes);
-      setAccounts(accountsRes.results);
+      setAccounts(accountsRes.data.results || []);
     } catch (error) {
       toast.error('Erro ao carregar mensagens agendadas');
       logger.error('Failed to load scheduled messages', error);
@@ -88,7 +90,7 @@ export default function ScheduledMessagesPage() {
   }, [fetchData]);
 
   const handleCreate = async () => {
-    if (!formData.account_id || !formData.to_number || !formData.scheduled_at) {
+    if (!formData.account || !formData.to_number || !formData.scheduled_at) {
       toast.error('Preencha os campos obrigatórios');
       return;
     }
@@ -98,7 +100,7 @@ export default function ScheduledMessagesPage() {
       toast.success('Mensagem agendada com sucesso');
       setIsModalOpen(false);
       setFormData({
-        account_id: '',
+        account: '',
         to_number: '',
         contact_name: '',
         message_type: 'text',
@@ -115,7 +117,12 @@ export default function ScheduledMessagesPage() {
   };
 
   const handleCancel = async (id: string) => {
-    if (!confirm('Deseja cancelar esta mensagem agendada?')) return;
+    const confirmed = await confirm({
+      title: 'Cancelar mensagem',
+      message: 'Deseja cancelar esta mensagem agendada?',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
 
     try {
       await scheduledMessagesService.cancel(id);
@@ -145,7 +152,7 @@ export default function ScheduledMessagesPage() {
 
   const openRescheduleModal = (message: ScheduledMessage) => {
     setSelectedMessage(message);
-    setNewScheduledAt(message.scheduled_at.slice(0, 16));
+    setNewScheduledAt(message.scheduled_at?.slice(0, 16) || '');
     setIsRescheduleModalOpen(true);
   };
 
@@ -169,7 +176,7 @@ export default function ScheduledMessagesPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 max-lg:grid-cols-4 max-md:grid-cols-2 gap-4">
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>
@@ -278,9 +285,9 @@ export default function ScheduledMessagesPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900 dark:text-white">
                       <CalendarIcon className="h-4 w-4 mr-1 text-gray-400" />
-                      {format(parseISO(message.scheduled_at), "dd/MM/yyyy 'às' HH:mm", {
+                      {message.scheduled_at ? format(parseISO(message.scheduled_at), "dd/MM/yyyy 'às' HH:mm", {
                         locale: ptBR,
-                      })}
+                      }) : '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -347,8 +354,8 @@ export default function ScheduledMessagesPage() {
             <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Conta WhatsApp *</label>
             <select
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              value={formData.account_id}
-              onChange={(e) => setFormData({ ...formData, account_id: e.target.value })}
+              value={formData.account}
+              onChange={(e) => setFormData({ ...formData, account: e.target.value })}
             >
               <option value="">Selecione uma conta</option>
               {accounts.map((account) => (
@@ -466,6 +473,7 @@ export default function ScheduledMessagesPage() {
           </div>
         </div>
       </Modal>
+      {ConfirmDialog}
     </div>
   );
 }

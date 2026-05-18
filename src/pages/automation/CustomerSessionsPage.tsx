@@ -12,8 +12,8 @@ import {
   BellIcon,
 } from '@heroicons/react/24/outline';
 import {
-  customerSessionApi,
-  companyProfileApi,
+  customerSessionService,
+  companyProfileService,
   sessionStatusLabels,
 } from '../../services/automation';
 import { CustomerSession, CompanyProfile, SessionStatus } from '../../types';
@@ -58,7 +58,7 @@ const CustomerSessionsPage: React.FC = () => {
 
   const loadCompanies = async () => {
     try {
-      const response = await companyProfileApi.list({ page_size: 100 });
+      const response = await companyProfileService.list({ page_size: 100 });
       setCompanies(response.results);
     } catch (error) {
       logger.error('Error loading companies:', error);
@@ -73,7 +73,7 @@ const CustomerSessionsPage: React.FC = () => {
       if (filters.status) params.status = filters.status;
       if (filters.phone_number) params.phone_number = filters.phone_number;
 
-      const response = await customerSessionApi.list(params);
+      const response = await customerSessionService.list(params);
       setSessions(response.results);
       setTotalCount(response.count);
     } catch (error) {
@@ -85,7 +85,7 @@ const CustomerSessionsPage: React.FC = () => {
 
   const handleSendNotification = async (sessionId: string, eventType: string) => {
     try {
-      await customerSessionApi.sendNotification(sessionId, { event_type: eventType as any });
+      await customerSessionService.sendNotification(sessionId, { event_type: eventType as any });
       toast.success('Notificação enviada!');
       loadSessions();
     } catch (error) {
@@ -282,13 +282,13 @@ const CustomerSessionsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {session.cart_items_count > 0 ? (
+                      {(session.cart_items_count || 0) > 0 ? (
                         <div>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {formatCurrency(session.cart_total)}
+                            {formatCurrency(session.cart_total || 0)}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-zinc-400">
-                            {session.cart_items_count} {session.cart_items_count === 1 ? 'item' : 'itens'}
+                            {session.cart_items_count} {(session.cart_items_count || 0) === 1 ? 'item' : 'itens'}
                           </div>
                         </div>
                       ) : (
@@ -296,7 +296,7 @@ const CustomerSessionsPage: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
-                      {formatDate(session.last_activity_at)}
+                      {session.last_activity_at ? formatDate(session.last_activity_at) : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
@@ -353,7 +353,7 @@ const CustomerSessionsPage: React.FC = () => {
                 Próximo
               </button>
             </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div className="flex max-sm:hidden-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700 dark:text-zinc-300">
                   Mostrando <span className="font-medium">{(page - 1) * 20 + 1}</span> a{' '}
@@ -386,7 +386,7 @@ const CustomerSessionsPage: React.FC = () => {
       {selectedSession && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black0 bg-opacity-75" onClick={() => setSelectedSession(null)} />
+            <div className="fixed inset-0 bg-gray-500/75 dark:bg-black/75" onClick={() => setSelectedSession(null)} />
             <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -423,16 +423,16 @@ const CustomerSessionsPage: React.FC = () => {
                 </div>
 
                 {/* Cart Info */}
-                {selectedSession.cart_items_count > 0 && (
+                {(selectedSession.cart_items_count || 0) > 0 && (
                   <div className="border-t pt-4">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Carrinho</h4>
                     <div className="bg-gray-50 dark:bg-black rounded-lg p-4">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-500 dark:text-zinc-400">
-                          {selectedSession.cart_items_count} {selectedSession.cart_items_count === 1 ? 'item' : 'itens'}
+                          {selectedSession.cart_items_count} {(selectedSession.cart_items_count || 0) === 1 ? 'item' : 'itens'}
                         </span>
                         <span className="text-lg font-medium text-gray-900 dark:text-white">
-                          {formatCurrency(selectedSession.cart_total)}
+                          {formatCurrency(selectedSession.cart_total || 0)}
                         </span>
                       </div>
                       {selectedSession.cart_created_at && (
@@ -463,11 +463,11 @@ const CustomerSessionsPage: React.FC = () => {
                 )}
 
                 {/* Notifications */}
-                {selectedSession.notifications_sent.length > 0 && (
+                {(selectedSession.notifications_sent || []).length > 0 && (
                   <div className="border-t pt-4">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Notificações Enviadas</h4>
                     <ul className="space-y-2">
-                      {selectedSession.notifications_sent.map((notification, index) => (
+                      {(selectedSession.notifications_sent || []).map((notification, index) => (
                         <li key={index} className="flex items-center justify-between text-sm">
                           <span className="text-gray-600 dark:text-zinc-400">{notification.type}</span>
                           <span className="text-gray-400">{formatDate(notification.sent_at)}</span>

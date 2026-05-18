@@ -41,30 +41,6 @@ export interface CampaignRecipient {
   variables: Record<string, unknown>;
 }
 
-export interface ScheduledMessage {
-  id: string;
-  account: string;
-  to_number: string;
-  contact_name: string;
-  message_type: string;
-  content: Record<string, unknown>;
-  template: string | null;
-  template_variables: Record<string, unknown>;
-  scheduled_at: string;
-  timezone: string;
-  status: 'scheduled' | 'processing' | 'sent' | 'failed' | 'cancelled';
-  message_id: string;
-  whatsapp_message_id: string;
-  sent_at: string | null;
-  error_code: string;
-  error_message: string;
-  is_recurring: boolean;
-  recurrence_rule: string;
-  next_occurrence: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface ContactList {
   id: string;
   account: string;
@@ -76,6 +52,12 @@ export interface ContactList {
   imported_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface SystemContact {
+  phone: string;
+  name: string;
+  source?: 'conversation' | 'order' | 'subscriber' | 'session';
 }
 
 export interface PaginatedResponse<T> {
@@ -107,8 +89,22 @@ export const campaignsService = {
     audience_filters?: Record<string, unknown>;
     contact_list?: Array<{ phone: string; name?: string; variables?: Record<string, unknown> }>;
     scheduled_at?: string;
+    messages_per_minute?: number;
+    delay_between_messages?: number;
   }): Promise<Campaign> => {
     const response = await api.post<Campaign>('/campaigns/campaigns/', data);
+    return response.data;
+  },
+
+  uploadCampaignMedia: async (file: File): Promise<{
+    media_url: string;
+    media_type: 'image' | 'document';
+    filename: string;
+    mime_type: string;
+  }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/campaigns/campaigns/upload-media/', formData);
     return response.data;
   },
 
@@ -182,59 +178,6 @@ export const campaignsService = {
     return response.data;
   },
 
-  // Scheduled Messages (WhatsApp) - usando /campaigns/scheduled/ endpoint
-  getScheduledMessages: async (params?: Record<string, string>): Promise<PaginatedResponse<ScheduledMessage>> => {
-    const response = await api.get<PaginatedResponse<ScheduledMessage>>('/campaigns/scheduled/', { params });
-    return response.data;
-  },
-
-  getScheduledMessage: async (id: string): Promise<ScheduledMessage> => {
-    const response = await api.get<ScheduledMessage>(`/campaigns/scheduled/${id}/`);
-    return response.data;
-  },
-
-  createScheduledMessage: async (data: {
-    account_id: string;
-    to_number: string;
-    contact_name?: string;
-    message_type?: string;
-    content?: Record<string, unknown>;
-    template_id?: string;
-    template_variables?: Record<string, unknown>;
-    scheduled_at: string;
-    timezone?: string;
-    is_recurring?: boolean;
-    recurrence_rule?: string;
-    metadata?: Record<string, unknown>;
-  }): Promise<ScheduledMessage> => {
-    const response = await api.post<ScheduledMessage>('/campaigns/scheduled/', data);
-    return response.data;
-  },
-
-  updateScheduledMessage: async (id: string, data: Partial<ScheduledMessage>): Promise<ScheduledMessage> => {
-    const response = await api.patch<ScheduledMessage>(`/campaigns/scheduled/${id}/`, data);
-    return response.data;
-  },
-
-  cancelScheduledMessage: async (id: string): Promise<ScheduledMessage> => {
-    const response = await api.post<ScheduledMessage>(`/campaigns/scheduled/${id}/cancel/`);
-    return response.data;
-  },
-
-  getScheduledMessagesStats: async (accountId?: string): Promise<{
-    total: number;
-    scheduled: number;
-    sent: number;
-    failed: number;
-    cancelled: number;
-    recurring: number;
-  }> => {
-    const params: Record<string, string> = {};
-    if (accountId) params.account_id = accountId;
-    const response = await api.get('/campaigns/scheduled/stats/', { params });
-    return response.data;
-  },
-
   // Contact Lists (WhatsApp) - usando /campaigns/contacts/ endpoint
   getContactLists: async (params?: Record<string, string>): Promise<PaginatedResponse<ContactList>> => {
     const response = await api.get<PaginatedResponse<ContactList>>('/campaigns/contacts/', { params });
@@ -273,4 +216,16 @@ export const campaignsService = {
     const response = await api.post<ContactList>('/campaigns/contacts/import_csv/', data);
     return response.data;
   },
+
+  getSystemContacts: async (params?: {
+    account_id?: string;
+    source?: 'all' | 'conversations' | 'orders' | 'subscribers' | 'sessions';
+    limit?: number;
+  }): Promise<{ count: number; results: SystemContact[] }> => {
+    const response = await api.get('/campaigns/system-contacts/', { params });
+    return response.data;
+  },
 };
+
+// NOTE: Scheduled messages moved to automation service
+// Use automation.scheduledMessagesService for scheduled message operations

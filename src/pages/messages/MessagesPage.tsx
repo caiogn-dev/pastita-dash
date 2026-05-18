@@ -3,7 +3,7 @@ import { PaperAirplaneIcon, TableCellsIcon, ChatBubbleLeftRightIcon, MagnifyingG
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Card, Button, Input, Textarea, Select, Modal, PageLoading, StatusBadge, Table, PageTitle } from '../../components/common';
+import { Card, Button, Input, Textarea, Modal, PageLoading, StatusBadge, Table, PageTitle } from '../../components/common';
 import { ChatWindow } from '../../components/chat';
 import { whatsappService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
@@ -49,8 +49,8 @@ export const MessagesPage: React.FC = () => {
       if (dateRange.end) {
         params.created_before = dateRange.end;
       }
-      const response = await whatsappService.getMessages(selectedAccount.id, params);
-      setMessages(response.results || []);
+      const response = await whatsappService.getMessages({ account_id: selectedAccount.id, ...params });
+      setMessages(response.data.results || []);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -238,7 +238,7 @@ export const MessagesPage: React.FC = () => {
               const account = accounts.find((a) => a.id === e.target.value);
               setSelectedAccount(account || null);
             }}
-            className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#722F37] focus:border-[#722F37]"
+            className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316]"
           >
             <option value="">Todas as contas</option>
             {accounts.map((account) => (
@@ -345,16 +345,20 @@ export const MessagesPage: React.FC = () => {
         size="md"
       >
         <form onSubmit={handleSendMessage} className="space-y-4">
-          <Select
-            label="Conta WhatsApp"
-            required
-            value={messageForm.account_id}
-            onChange={(e) => setMessageForm({ ...messageForm, account_id: e.target.value })}
-            options={[
-              { value: '', label: 'Selecione uma conta' },
-              ...accounts.map((acc) => ({ value: acc.id, label: acc.name })),
-            ]}
-          />
+          <div>
+            <label className="block text-sm font-medium mb-1">Conta WhatsApp *</label>
+            <select
+              className="w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-600"
+              required
+              value={messageForm.account_id}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMessageForm({ ...messageForm, account_id: e.target.value })}
+            >
+              <option value="">Selecione uma conta</option>
+              {accounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>{acc.name}</option>
+              ))}
+            </select>
+          </div>
           <Input
             label="Número de Destino"
             required
@@ -363,14 +367,16 @@ export const MessagesPage: React.FC = () => {
             placeholder="5511999999999"
             helperText="Digite o número com código do país (ex: 5511999999999)"
           />
-          <Textarea
-            label="Mensagem"
-            required
-            rows={4}
-            value={messageForm.text}
-            onChange={(e) => setMessageForm({ ...messageForm, text: e.target.value })}
-            placeholder="Digite sua mensagem..."
-          />
+          <div>
+            <label className="block text-sm font-medium mb-1">Mensagem *</label>
+            <Textarea
+              required
+              rows={4}
+              value={messageForm.text}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMessageForm({ ...messageForm, text: e.target.value })}
+              placeholder="Digite sua mensagem..."
+            />
+          </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="secondary" onClick={() => setSendModal(false)}>
               Cancelar

@@ -1,17 +1,17 @@
-import api from './api';
+import api, { normalizePaginatedEnvelope } from './api';
 import { Payment, PaymentGateway, PaginatedResponse } from '../types';
 
 /**
  * Payment Service
  * 
- * Updated to use the unified stores API:
- * Base URL: /api/v1/stores/payments/
+ * ATUALIZADO: Usando /stores/payments/ (backend migrado - 2026-03-04)
  * 
  * All payment operations are now integrated with the stores app,
  * maintaining compatibility with StoreOrder while supporting
  * multiple payments per order.
  */
 
+// ATUALIZADO: BASE_URL alterado de /commerce/payments para /stores/payments
 const BASE_URL = '/stores/payments';
 const GATEWAYS_URL = `${BASE_URL}/gateways`;
 
@@ -22,8 +22,8 @@ export const paymentsService = {
    * Get all payments with optional filtering
    */
   getPayments: async (params?: Record<string, string>): Promise<PaginatedResponse<Payment>> => {
-    const response = await api.get<PaginatedResponse<Payment>>(`${BASE_URL}/`, { params });
-    return response.data;
+    const response = await api.get<PaginatedResponse<Payment> | Payment[]>(`${BASE_URL}/`, { params });
+    return normalizePaginatedEnvelope<Payment>(response.data);
   },
 
   /**
@@ -149,8 +149,8 @@ export const paymentsService = {
    * Get all payment gateways
    */
   getGateways: async (params?: Record<string, string>): Promise<PaginatedResponse<PaymentGateway>> => {
-    const response = await api.get<PaginatedResponse<PaymentGateway>>(`${GATEWAYS_URL}/`, { params });
-    return response.data;
+    const response = await api.get<PaginatedResponse<PaymentGateway> | PaymentGateway[]>(`${GATEWAYS_URL}/`, { params });
+    return normalizePaginatedEnvelope<PaymentGateway>(response.data);
   },
 
   /**

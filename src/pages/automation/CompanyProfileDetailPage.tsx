@@ -7,10 +7,11 @@ import {
   KeyIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import { companyProfileApi, businessTypeLabels } from '../../services/automation';
+import { companyProfileService, businessTypeLabels } from '../../services/automation';
 import { CompanyProfile, UpdateCompanyProfile, BusinessHours } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../hooks';
 
 const daysOfWeek = [
   { key: 'monday', label: 'Segunda-feira' },
@@ -25,6 +26,7 @@ const daysOfWeek = [
 const CompanyProfileDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [ConfirmDialog, confirm] = useConfirm();
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,26 +42,26 @@ const CompanyProfileDetailPage: React.FC = () => {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const data = await companyProfileApi.get(id!);
+      const data = await companyProfileService.get(id!);
       setProfile(data);
       setFormData({
-        company_name: data.company_name,
-        business_type: data.business_type,
-        description: data.description,
-        website_url: data.website_url,
-        menu_url: data.menu_url,
-        order_url: data.order_url,
-        auto_reply_enabled: data.auto_reply_enabled,
-        welcome_message_enabled: data.welcome_message_enabled,
-        menu_auto_send: data.menu_auto_send,
-        abandoned_cart_notification: data.abandoned_cart_notification,
-        abandoned_cart_delay_minutes: data.abandoned_cart_delay_minutes,
-        pix_notification_enabled: data.pix_notification_enabled,
-        payment_confirmation_enabled: data.payment_confirmation_enabled,
-        order_status_notification_enabled: data.order_status_notification_enabled,
-        delivery_notification_enabled: data.delivery_notification_enabled,
-        use_ai_agent: data.use_ai_agent,
-        default_agent: data.default_agent,
+        company_name: data.company_name || '',
+        business_type: data.business_type || '',
+        description: data.description || '',
+        website_url: data.website_url || '',
+        menu_url: data.menu_url || '',
+        order_url: data.order_url || '',
+        auto_reply_enabled: data.auto_reply_enabled ?? false,
+        welcome_message_enabled: data.welcome_message_enabled ?? false,
+        menu_auto_send: data.menu_auto_send ?? false,
+        abandoned_cart_notification: data.abandoned_cart_notification ?? false,
+        abandoned_cart_delay_minutes: data.abandoned_cart_delay_minutes || 30,
+        pix_notification_enabled: data.pix_notification_enabled ?? false,
+        payment_confirmation_enabled: data.payment_confirmation_enabled ?? false,
+        order_status_notification_enabled: data.order_status_notification_enabled ?? false,
+        delivery_notification_enabled: data.delivery_notification_enabled ?? false,
+        use_ai_agent: data.use_ai_agent ?? false,
+        default_agent: data.default_agent || null,
       });
       setBusinessHours(data.business_hours || {});
     } catch (error) {
@@ -74,7 +76,7 @@ const CompanyProfileDetailPage: React.FC = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      await companyProfileApi.update(id!, {
+      await companyProfileService.update(id!, {
         ...formData,
         business_hours: businessHours,
       });
@@ -88,11 +90,13 @@ const CompanyProfileDetailPage: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Tem certeza que deseja excluir este perfil? Esta ação não pode ser desfeita.')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Excluir perfil',
+      message: 'Tem certeza que deseja excluir este perfil? Esta ação não pode ser desfeita.',
+    });
+    if (!confirmed) return;
     try {
-      await companyProfileApi.delete(id!);
+      await companyProfileService.delete(id!);
       toast.success('Perfil excluído com sucesso');
       navigate('/automation/companies');
     } catch (error) {
@@ -108,9 +112,14 @@ const CompanyProfileDetailPage: React.FC = () => {
   };
 
   const handleRegenerateApiKey = async () => {
-    if (!confirm('Tem certeza? A chave atual será invalidada.')) return;
+    const confirmed = await confirm({
+      title: 'Regenerar API key',
+      message: 'A chave atual será invalidada.',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
     try {
-      const result = await companyProfileApi.regenerateApiKey(id!);
+      const result = await companyProfileService.regenerateApiKey(id!);
       toast.success('Nova API key gerada!');
       navigator.clipboard.writeText(result.api_key);
       loadProfile();
@@ -518,6 +527,7 @@ const CompanyProfileDetailPage: React.FC = () => {
           </button>
         </div>
       </form>
+      {ConfirmDialog}
     </div>
   );
 };

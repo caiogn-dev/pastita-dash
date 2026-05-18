@@ -1,12 +1,18 @@
-import api from './api';
+import api, { normalizePaginatedEnvelope } from './api';
 import { Order, OrderItem, OrderEvent, CreateOrder, PaginatedResponse } from '../types';
 
 /**
- * Orders Service - Uses ONLY /stores/orders/ API (unified system)
- * No legacy fallbacks - all orders go through the stores system
+ * Orders Service - API V2
+ * 
+ * ATUALIZADO: Endpoint migrado de /commerce/ para /stores/ (2026-03-04)
  */
 
-const BASE_URL = '/stores/orders';
+const getBaseUrl = (storeSlug?: string) => {
+  if (storeSlug) {
+    return `/stores/${storeSlug}/orders`;
+  }
+  return '/stores/orders';
+};
 
 const toNumber = (value: number | string | null | undefined) => {
   if (value === null || value === undefined) return 0;
@@ -25,147 +31,161 @@ const normalizeOrder = (order: Order): Order => ({
   items_count: order.items_count ?? order.items?.length ?? 0,
 });
 
+export interface CalculatedDeliveryFee {
+  fee: number;
+  distance_km?: number | null;
+  duration_minutes?: number | null;
+  is_within_area?: boolean;
+  zone?: {
+    id?: string | null;
+    name?: string | null;
+    min_distance?: number | null;
+    max_distance?: number | null;
+  } | null;
+  message?: string;
+  polyline?: string;
+  error?: string;
+}
+
 export const ordersService = {
-  getOrders: async (params?: Record<string, string>): Promise<PaginatedResponse<Order>> => {
-    const response = await api.get<PaginatedResponse<Order>>(`${BASE_URL}/`, { params });
-    const results = response.data.results?.map(normalizeOrder) || [];
-    return { ...response.data, results };
+  getOrders: async (
+    params?: Record<string, string | number | undefined> & { store_slug?: string }
+  ): Promise<PaginatedResponse<Order>> => {
+    const storeSlug = params?.store_slug;
+    const { store_slug, ...apiParams } = params || {};
+    const response = await api.get<PaginatedResponse<Order>>(`${getBaseUrl(storeSlug)}/`, { params: apiParams });
+    const page = normalizePaginatedEnvelope<Order>(response.data);
+    return { ...page, results: page.results.map(normalizeOrder) };
   },
 
-  getOrder: async (id: string): Promise<Order> => {
-    const response = await api.get<Order>(`${BASE_URL}/${id}/`);
+  getOrder: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.get<Order>(`${getBaseUrl(storeSlug)}/${id}/`);
     return normalizeOrder(response.data);
   },
 
   createOrder: async (data: CreateOrder): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/`, data);
+    // Dashboard/admin order creation is registered at /stores/orders/.
+    // Storefront checkout uses /stores/{slug}/checkout/, not /stores/{slug}/orders/.
+    const response = await api.post<Order>('/stores/orders/', data);
     return normalizeOrder(response.data);
   },
 
-  updateOrder: async (id: string, data: Partial<Order>): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, data);
+  calculateDeliveryFee: async (storeSlug: string, address: string): Promise<CalculatedDeliveryFee> => {
+    const response = await api.post<CalculatedDeliveryFee>(`/stores/${storeSlug}/delivery-fee/`, {
+      address,
+    });
+    return {
+      ...response.data,
+      fee: toNumber(response.data.fee),
+      distance_km: response.data.distance_km !== undefined && response.data.distance_km !== null
+        ? toNumber(response.data.distance_km)
+        : response.data.distance_km,
+      duration_minutes: response.data.duration_minutes !== undefined && response.data.duration_minutes !== null
+        ? toNumber(response.data.duration_minutes)
+        : response.data.duration_minutes,
+    };
+  },
+
+  updateOrder: async (id: string, data: Partial<Order>, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, data);
     return normalizeOrder(response.data);
   },
 
-  deleteOrder: async (id: string): Promise<void> => {
-    await api.delete(`${BASE_URL}/${id}/`);
+  deleteOrder: async (id: string, storeSlug?: string): Promise<void> => {
+    await api.delete(`${getBaseUrl(storeSlug)}/${id}/`);
   },
 
-  confirmOrder: async (id: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status: 'confirmed' });
+  // Métodos de compatibilidade legado
+  confirmOrder: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'confirmed' });
     return normalizeOrder(response.data);
   },
 
-  markAwaitingPayment: async (id: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status: 'processing' });
+  startPreparing: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'preparing' });
     return normalizeOrder(response.data);
   },
 
-  markPaid: async (id: string, paymentReference?: string, paymentMethod?: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/mark_paid/`, {
-      payment_id: paymentReference,
+  markReady: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'ready' });
+    return normalizeOrder(response.data);
+  },
+
+  markOutForDelivery: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'out_for_delivery' });
+    return normalizeOrder(response.data);
+  },
+
+  deliverOrder: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'delivered' });
+    return normalizeOrder(response.data);
+  },
+
+  cancelOrder: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'cancelled' });
+    return normalizeOrder(response.data);
+  },
+
+  markPaid: async (id: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { payment_status: 'paid' });
+    return normalizeOrder(response.data);
+  },
+
+  getByCustomer: async (customerId: string, storeSlug?: string): Promise<Order[]> => {
+    const response = await api.get<PaginatedResponse<Order> | Order[]>(`${getBaseUrl(storeSlug)}/`, { params: { customer: customerId } });
+    return normalizePaginatedEnvelope<Order>(response.data).results.map(normalizeOrder);
+  },
+
+  updateStatus: async (id: string, status: string, storeSlug?: string): Promise<Order> => {
+    const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/${id}/update_status/`, { status });
+    return normalizeOrder(response.data);
+  },
+
+  getPaymentStatus: async (id: string): Promise<{ status: string; payment_url?: string }> => {
+    const response = await api.get(`/stores/orders/${id}/payment-status/`);
+    return response.data;
+  },
+
+  generatePayment: async (orderId: string, paymentMethod?: string): Promise<{ payment: Record<string, unknown>; order: Order }> => {
+    const response = await api.post(`/stores/orders/${orderId}/generate_payment/`, {
       payment_method: paymentMethod,
     });
-    return normalizeOrder(response.data);
+    return { ...response.data, order: normalizeOrder(response.data.order) };
   },
 
-  shipOrder: async (id: string, trackingCode?: string, carrier?: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/add_tracking/`, {
-      tracking_code: trackingCode,
-      carrier: carrier,
-    });
-    return normalizeOrder(response.data);
-  },
-
-  deliverOrder: async (id: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status: 'delivered' });
-    return normalizeOrder(response.data);
-  },
-
-  startProcessing: async (id: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status: 'processing' });
-    return normalizeOrder(response.data);
-  },
-
-  startPreparing: async (id: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status: 'preparing' });
-    return normalizeOrder(response.data);
-  },
-
-  markReady: async (id: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status: 'ready' });
-    return normalizeOrder(response.data);
-  },
-
-  markOutForDelivery: async (id: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status: 'out_for_delivery' });
-    return normalizeOrder(response.data);
-  },
-
-  cancelOrder: async (id: string, reason?: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/cancel/`, { reason });
-    return normalizeOrder(response.data);
-  },
-
-  updateStatus: async (id: string, status: string): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/update_status/`, { status });
-    return normalizeOrder(response.data);
-  },
-
-  addItem: async (
-    _id: string,
-    _item: {
-      product_name: string;
-      product_id?: string;
-      product_sku?: string;
-      quantity: number;
-      unit_price: number;
-      notes?: string;
-    }
-  ): Promise<OrderItem> => {
-    throw new Error('addItem is not supported by the current stores API.');
-  },
-
-  removeItem: async (_orderId: string, _itemId: string): Promise<void> => {
-    throw new Error('removeItem is not supported by the current stores API.');
-  },
-
-  updateShipping: async (
-    id: string,
-    shippingAddress: Record<string, unknown>,
-    shippingCost?: number
-  ): Promise<Order> => {
-    const response = await api.patch<Order>(`${BASE_URL}/${id}/`, {
-      delivery_address: shippingAddress,
-      delivery_fee: shippingCost,
-    });
-    return normalizeOrder(response.data);
-  },
-
-  addNote: async (id: string, note: string, isInternal?: boolean): Promise<Order> => {
-    const response = await api.post<Order>(`${BASE_URL}/${id}/add_note/`, {
-      note,
-      is_internal: isInternal,
-    });
-    return normalizeOrder(response.data);
-  },
-
-  getEvents: async (id: string): Promise<OrderEvent[]> => {
-    const response = await api.get<OrderEvent[]>(`${BASE_URL}/${id}/history/`);
+  addEvent: async (orderId: string, event: { type: string; description: string }, storeSlug?: string): Promise<OrderEvent> => {
+    const response = await api.post<OrderEvent>(`${getBaseUrl(storeSlug)}/${orderId}/events/`, event);
     return response.data;
   },
 
-  getStats: async (storeId?: string): Promise<Record<string, unknown>> => {
-    const params: Record<string, string> = {};
-    if (storeId) params.store = storeId;
-    const response = await api.get(`${BASE_URL}/stats/`, { params });
+  getEvents: async (orderId: string, storeSlug?: string): Promise<OrderEvent[]> => {
+    const response = await api.get<OrderEvent[]>(`${getBaseUrl(storeSlug)}/${orderId}/events/`);
     return response.data;
   },
 
-  getByCustomer: async (phone: string, storeId?: string): Promise<Order[]> => {
-    const params: Record<string, string> = { search: phone };
-    if (storeId) params.store = storeId;
-    const response = await api.get<PaginatedResponse<Order>>(`${BASE_URL}/`, { params });
-    return response.data.results?.map(normalizeOrder) || [];
+  exportOrders: async (params?: Record<string, string> & { store_slug?: string }): Promise<Blob> => {
+    const storeSlug = params?.store_slug;
+    const { store_slug, ...apiParams } = params || {};
+    const response = await api.get(`${getBaseUrl(storeSlug)}/export/`, {
+      params: apiParams,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  getStats: async (params?: Record<string, string> & { store_slug?: string }): Promise<{
+    total: number;
+    pending: number;
+    confirmed: number;
+    delivered: number;
+    cancelled: number;
+    revenue: number;
+  }> => {
+    const storeSlug = params?.store_slug;
+    const { store_slug, ...apiParams } = params || {};
+    const response = await api.get(`${getBaseUrl(storeSlug)}/stats/`, { params: apiParams });
+    return response.data;
   },
 };
+
+export default ordersService;

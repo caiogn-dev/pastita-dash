@@ -1,6 +1,6 @@
 export { Button } from './Button';
-export { Input, Textarea, Select } from './Input';
-export { Card, StatCard } from './Card';
+export { Input } from './Input';
+export { Card } from './Card';
 export { Tabs } from './Tabs';
 export { Switch } from './Switch';
 export { EmptyState } from './EmptyState';
@@ -42,3 +42,5 @@ export {
   OrderStatusTabs,
   QuickFilterPills,
 } from './StatusFilter';
+
+export { Textarea } from './Textarea';

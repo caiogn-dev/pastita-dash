@@ -1,41 +1,32 @@
 /**
- * ChatWindow - Interface de Chat WhatsApp Moderna
- * 
- * Features:
- * - Correção do erro reverse()
- * - Upload de imagens/documentos
- * - Visualização de mídia com modal
- * - Interface responsiva
- * - Preview de anexos
+ * ChatWindow - Interface de Chat WhatsApp estilo WhatsApp Web
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import {
-  ChatBubbleLeftRightIcon,
-  ArrowPathIcon,
-  UserIcon,
-  CpuChipIcon,
-  WifiIcon,
-  ExclamationTriangleIcon,
-  PaperClipIcon,
-  PhotoIcon,
-  DocumentIcon,
-  XMarkIcon,
-  CheckIcon,
   MagnifyingGlassIcon,
-  PhoneIcon,
+  DocumentTextIcon,
+  BoltIcon,
   EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
 
-import { ContactList, Contact } from './ContactList';
 import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { MediaViewer } from './MediaViewer';
-import { useWhatsAppWS } from '../../hooks/useWhatsAppWS';
+import { ChatToolsPanel } from './ChatToolsPanel';
+import { useWhatsAppWS, MessageReceivedEvent, MessageSentEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
+import { sendFile as sendFileApi } from '../../services/whatsapp';
+import { handoverService } from '../../services/handover';
 import { Message, Conversation } from '../../types';
+import { useStore } from '../../hooks/useStore';
+import '../../pages/whatsapp/WhatsAppInbox.css';
+
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value : [];
+}
 
 export interface ChatWindowProps {
   accountId: string;
@@ -43,17 +34,17 @@ export interface ChatWindowProps {
   onConversationSelect?: (conversation: Conversation | null) => void;
 }
 
-// Converter mensagem da API para props do bubble
 const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   id: msg.id,
   direction: msg.direction as 'inbound' | 'outbound',
   messageType: msg.message_type,
   status: msg.status as 'pending' | 'sent' | 'delivered' | 'read' | 'failed',
-  textBody: msg.text_body,
+  textBody: msg.text_body || msg.media_caption || msg.caption,
   content: msg.content,
   mediaUrl: msg.media_url,
-  mediaType: msg.media_type,
-  fileName: msg.file_name,
+  mediaType: msg.media_mime_type || msg.media_type,
+  mimeType: msg.media_mime_type,
+  fileName: msg.media_filename || msg.file_name,
   createdAt: msg.created_at,
   sentAt: msg.sent_at ?? undefined,
   deliveredAt: msg.delivered_at ?? undefined,
@@ -61,569 +52,497 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   errorMessage: msg.error_message,
 });
 
-// Converter conversa da API para contato
-const conversationToContact = (conv: Conversation): Contact => ({
-  id: conv.id,
-  phoneNumber: conv.phone_number,
-  contactName: conv.contact_name || '',
-  lastMessagePreview: conv.last_message_preview || '',
-  lastMessageAt: conv.last_message_at ?? undefined,
-  unreadCount: conv.unread_count || 0,
-  status: conv.status,
-  mode: conv.mode as 'auto' | 'human' | 'hybrid',
-});
+const getInitials = (name?: string, phone?: string) => {
+  if (name) return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  return phone?.slice(-2) || '?';
+};
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({
-  accountId,
-  accountName,
-  onConversationSelect,
-}) => {
-  // State
+const getStoreUrl = (metadata?: Record<string, unknown>) => {
+  const value = metadata?.website_url || metadata?.store_url || metadata?.public_url;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+
+export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, onConversationSelect }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; fileName?: string } | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
+  const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
+  const [insertText, setInsertText] = useState<string | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const { storeId, storeSlug, storeName, store } = useStore();
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sendLockRef = useRef(false);
 
-  // WebSocket
-  const {
-    isConnected,
-    connectionError,
-    subscribeToConversation,
-    unsubscribeFromConversation,
-    sendTypingIndicator,
-  } = useWhatsAppWS({
-    accountId,
-    enabled: !!accountId,
-    onMessageReceived: handleMessageReceived,
-    onStatusUpdated: handleStatusUpdated,
-    onTyping: handleTyping,
-    onConversationUpdated: handleConversationUpdated,
-    onError: (event) => {
-      toast.error(`Erro: ${event.error_message}`);
-    },
-  });
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
-  // Carregar conversas
+  const { isConnected, connectionError, retry, subscribeToConversation, unsubscribeFromConversation, sendTypingIndicator } =
+    useWhatsAppWS({
+      accountId,
+      enabled: !!accountId,
+      onMessageReceived: handleMessageReceived,
+      onMessageSent: handleMessageSent,
+      onMessage: (msg) => {
+        const converted: Message = { ...msg, timestamp: msg.created_at, account: accountId, updated_at: msg.created_at } as unknown as Message;
+        handleNewMessage(converted);
+      },
+      onStatusUpdated: handleStatusUpdated,
+      onTyping: handleTyping,
+      onConversationUpdated: handleConversationUpdated,
+      onError: (event) => { toast.error(`Erro: ${event.error_message}`); },
+    });
+
   const loadConversations = useCallback(async () => {
     if (!accountId) return;
-    
     setIsLoadingConversations(true);
     try {
-      console.log('[ChatWindow] Loading conversations for accountId:', accountId);
-      const response = await conversationsService.getConversations({ account: accountId });
-      console.log('[ChatWindow] Conversations response:', response);
-      setConversations(response.results || []);
-    } catch (error) {
-      console.error('[ChatWindow] Error loading conversations:', error);
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsLoadingConversations(false);
-    }
-  }, [accountId]);
+      const search = debouncedSearchTerm.trim();
+      const response = await conversationsService.getConversations({
+        account: accountId,
+        page_size: search ? 100 : 50,
+        search: search || undefined,
+      });
+      setConversations(ensureArray<Conversation>(response?.results || response));
+    } catch (error) { toast.error(getErrorMessage(error)); }
+    finally { setIsLoadingConversations(false); }
+  }, [accountId, debouncedSearchTerm]);
 
-  // Carregar mensagens
   const loadMessages = useCallback(async () => {
     if (!selectedConversation || !accountId) return;
-    
     setIsLoadingMessages(true);
     try {
-      console.log('[ChatWindow] Loading messages for:', selectedConversation.phone_number);
-      const history = await whatsappService.getConversationHistory(
-        accountId,
-        selectedConversation.phone_number,
-        100
-      );
-      
-      console.log('[ChatWindow] Messages loaded:', history.length);
-      
-      // Messages come ordered by -created_at (newest first), reverse for chat display (oldest first)
-      if (Array.isArray(history)) {
-        // Sort by created_at ascending (oldest first)
-        const sortedMessages = [...history].sort((a, b) => 
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
-        setMessages(sortedMessages);
-      } else {
-        console.warn('[ChatWindow] History não é um array:', history);
-        setMessages([]);
-      }
-
-      // Mark conversation as read after loading messages
-      if (selectedConversation.unread_count && selectedConversation.unread_count > 0) {
-        try {
-          const updated = await conversationsService.markAsRead(selectedConversation.id);
-          setSelectedConversation(updated);
-          setConversations(prev => prev.map(c => c.id === updated.id ? updated : c));
-        } catch (error) {
-          console.error('[ChatWindow] Error marking as read:', error);
-        }
-      }
-    } catch (error) {
-      console.error('[ChatWindow] Error loading messages:', error);
-      toast.error(getErrorMessage(error));
-      setMessages([]);
-    } finally {
-      setIsLoadingMessages(false);
-    }
+      const historyRes = await conversationsService.getMessages(selectedConversation.id, 100);
+      setMessages(ensureArray<Message>(historyRes.results));
+    } catch (error) { toast.error(getErrorMessage(error)); }
+    finally { setIsLoadingMessages(false); }
   }, [accountId, selectedConversation]);
 
-  // Handlers WebSocket
-  function handleMessageReceived(event: any) {
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm]);
+
+  useEffect(() => { loadConversations(); }, [loadConversations]);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages();
+      subscribeToConversation(selectedConversation.id);
+      onConversationSelect?.(selectedConversation);
+    } else {
+      setMessages([]);
+      onConversationSelect?.(null);
+    }
+    return () => { if (selectedConversation) unsubscribeFromConversation(selectedConversation.id); };
+  }, [selectedConversation, loadMessages, subscribeToConversation, unsubscribeFromConversation, onConversationSelect]);
+
+  const handleAutoScroll = useCallback((isReceived = true) => {
+    if (isReceived && shouldAutoScrollRef.current) setTimeout(() => scrollToBottom(), 100);
+  }, [scrollToBottom]);
+
+  const handleContainerScroll = useCallback(() => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      shouldAutoScrollRef.current = scrollHeight - (scrollTop + clientHeight) < 100;
+    }
+  }, []);
+
+  function handleMessageReceived(event: MessageReceivedEvent) {
     const newMessage = event.message;
-    const messageConversationId = event.conversation_id;
-    
-    console.log('[ChatWindow] Message received:', {
-      messageConversationId,
-      selectedConversationId: selectedConversation?.id,
-      match: messageConversationId === selectedConversation?.id,
-      direction: newMessage.direction
-    });
-    
-    // CRÍTICO: Só adicionar mensagens da conversa atualmente selecionada
-    if (selectedConversation && messageConversationId === selectedConversation.id) {
+    if (selectedConversation && event.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        // Verificar duplicatas por ID ou whatsapp_message_id
-        const isDuplicate = prev.some(m => 
-          m.id === newMessage.id || 
-          (m.whatsapp_message_id && m.whatsapp_message_id === newMessage.whatsapp_message_id)
-        );
-        
-        if (isDuplicate) {
-          console.log('[ChatWindow] Duplicate message ignored:', newMessage.id);
-          return prev;
-        }
-        
-        console.log('[ChatWindow] Adding message to chat:', newMessage.id);
-        // Add and re-sort to ensure correct order
-        const updated = [...prev, newMessage as Message];
-        return updated.sort((a, b) => 
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
+        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) return prev;
+        return [...prev, newMessage as unknown as Message];
       });
-
-      // If receiving inbound message while this conversation is open, mark as read immediately
-      if (newMessage.direction === 'inbound') {
-        conversationsService.markAsRead(selectedConversation.id).catch(err => {
-          console.error('[ChatWindow] Error marking as read:', err);
-        });
-      }
+      handleAutoScroll(true);
     }
-
-    // Update conversations list
-    setConversations(prev => {
-      const updated = prev.map(conv => {
-        if (conv.id === event.conversation_id) {
-          const isSelectedConv = selectedConversation?.id === conv.id;
-          return {
-            ...conv,
-            last_message_at: newMessage.created_at,
-            last_message_preview: newMessage.text_body?.substring(0, 50) || 'Mídia',
-            // Don't increment unread if this conversation is currently open and it's an inbound message
-            unread_count: (isSelectedConv && newMessage.direction === 'inbound') 
-              ? 0 
-              : (newMessage.direction === 'inbound' ? (conv.unread_count || 0) + 1 : conv.unread_count),
-          };
-        }
-        return conv;
-      });
-      
-      // Sort by last message time (most recent first)
-      return [...updated].sort((a, b) => {
-        const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-        const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-        return dateB - dateA;
-      });
-    });
-
-    // Show toast only if message is not from the currently open conversation
+    setConversations(prev => prev.map(c => c.id === event.conversation_id ? { ...c, last_message_at: newMessage.created_at } : c)
+      .sort((a, b) => new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()));
     if (!selectedConversation || event.conversation_id !== selectedConversation.id) {
-      if (newMessage.direction === 'inbound') {
-        const contactName = event.contact?.name || newMessage.from_number;
-        toast(`Nova mensagem de ${contactName}`, { icon: '💬' });
-      }
+      toast(`Nova mensagem de ${event.contact?.name || newMessage.from_number}`, { icon: '💬' });
     }
   }
 
-  function handleStatusUpdated(event: any) {
-    setMessages(prev => prev.map(msg => {
-      const isMatch = msg.id === event.message_id || 
-        (event.whatsapp_message_id && msg.whatsapp_message_id === event.whatsapp_message_id);
-      
-      if (isMatch) {
-        const updates: Partial<Message> = { status: event.status };
-        if (event.status === 'delivered' && event.timestamp) {
-          updates.delivered_at = event.timestamp;
-        } else if (event.status === 'read' && event.timestamp) {
-          updates.read_at = event.timestamp;
-        }
-        return { ...msg, ...updates };
-      }
-      return msg;
-    }));
+  function handleNewMessage(msg: Message) {
+    if (selectedConversation && msg.conversation_id === selectedConversation.id) {
+      setMessages(prev => {
+        if (prev.some(m => m.id === msg.id || m.whatsapp_message_id === msg.whatsapp_message_id)) return prev;
+        return [...prev, msg];
+      });
+      if (msg.direction === 'inbound') handleAutoScroll(true);
+    }
   }
 
-  function handleTyping(event: any) {
+  function handleMessageSent(event: MessageSentEvent) {
+    const msg = event.message;
+    if (selectedConversation && event.conversation_id === selectedConversation.id) {
+      const converted: Message = { ...msg, account: accountId, updated_at: msg.created_at } as unknown as Message;
+      setMessages(prev => {
+        if (prev.some(m => m.id === converted.id || m.whatsapp_message_id === converted.whatsapp_message_id)) return prev;
+        return [...prev, converted];
+      });
+    }
+  }
+
+  function handleStatusUpdated(event: StatusUpdatedEvent) {
+    setMessages(prev => prev.map(m =>
+      (m.id === event.message_id || m.whatsapp_message_id === event.whatsapp_message_id) ? { ...m, status: event.status } : m
+    ));
+  }
+
+  function handleTyping(event: TypingEvent) {
     setTypingContacts(prev => {
       const next = new Set(prev);
-      if (event.is_typing) {
-        next.add(event.conversation_id);
-      } else {
-        next.delete(event.conversation_id);
-      }
+      if (event.is_typing) next.add(event.conversation_id); else next.delete(event.conversation_id);
       return next;
     });
   }
 
-  function handleConversationUpdated(event: any) {
-    loadConversations();
+  function handleConversationUpdated(event: ConversationUpdatedEvent) {
+    const wsConv = event.conversation;
+    setConversations(prev => {
+      if (prev.some(c => c.id === wsConv.id)) {
+        return prev.map(c => c.id === wsConv.id
+          ? { ...c, phone_number: wsConv.phone_number, contact_name: wsConv.contact_name, wa_id: wsConv.wa_id, profile_picture: wsConv.profile_picture, profile_picture_url: wsConv.profile_picture_url, status: wsConv.status as Conversation['status'], mode: wsConv.mode as Conversation['mode'] }
+          : c);
+      }
+      loadConversations();
+      return prev;
+    });
   }
 
-  // Enviar mensagem de texto
   const handleSendMessage = async (text: string) => {
     if (!selectedConversation || !accountId) return;
+    if (!text.trim() && !selectedFile) return;
+    if (sendLockRef.current) return;
 
+    sendLockRef.current = true;
+    const fileToSend = selectedFile;
+    setSelectedFile(null);
+    const clientRequestId = crypto.randomUUID();
+
+    const optimistic: Message = {
+      id: `temp-${Date.now()}`, conversation_id: selectedConversation.id, account: accountId,
+      text_body: text || (fileToSend ? fileToSend.name : ''),
+      direction: 'outbound',
+      message_type: fileToSend
+        ? (fileToSend.type.startsWith('image/') ? 'image' : fileToSend.type.startsWith('audio/') ? 'audio' : fileToSend.type.startsWith('video/') ? 'video' : 'document')
+        : 'text',
+      status: 'pending', created_at: new Date().toISOString(),
+      whatsapp_message_id: '', from_number: '', to_number: selectedConversation.phone_number,
+      timestamp: new Date().toISOString(), updated_at: new Date().toISOString(),
+    } as unknown as Message;
+    setMessages(prev => [...prev, optimistic]);
     setIsSending(true);
+
     try {
-      const message = await whatsappService.sendTextMessage({
-        account_id: accountId,
-        to: selectedConversation.phone_number,
-        text,
-      });
-      
-      setMessages(prev => {
-        // Check for duplicates
-        const isDuplicate = prev.some(m => m.id === message.id);
-        if (isDuplicate) return prev;
-        
-        // Add and sort
-        const updated = [...prev, message];
-        return updated.sort((a, b) => 
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
-      });
+      let res;
+      if (fileToSend) {
+        res = await sendFileApi(accountId, selectedConversation.phone_number, fileToSend, text || undefined);
+      } else {
+        res = await whatsappService.sendTextMessage({
+          account_id: accountId,
+          to: selectedConversation.phone_number,
+          text,
+          metadata: { client_request_id: clientRequestId, source: 'chat_window' },
+        });
+      }
+      setMessages(prev => prev.map(m => m.id === optimistic.id ? res.data : m));
     } catch (error) {
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
       toast.error(getErrorMessage(error));
     } finally {
+      sendLockRef.current = false;
       setIsSending(false);
     }
   };
 
-  // Upload de arquivo
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedConversation || !accountId) return;
-
-    // Validar tamanho (16MB max)
-    if (file.size > 16 * 1024 * 1024) {
-      toast.error('Arquivo muito grande. Máximo 16MB.');
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const message = await whatsappService.sendMediaMessage({
-        account_id: accountId,
-        to: selectedConversation.phone_number,
-        file: file,
-        caption: '',
-      });
-      
-      setMessages(prev => {
-        // Check for duplicates
-        const isDuplicate = prev.some(m => m.id === message.id);
-        if (isDuplicate) return prev;
-        
-        // Add and sort
-        const updated = [...prev, message];
-        return updated.sort((a, b) => 
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
-      });
-      toast.success('Arquivo enviado!');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
+  const handleToolsSend = async (text: string) => {
+    if (!selectedConversation || !text.trim()) return;
+    await whatsappService.sendTextMessage({
+      account_id: accountId,
+      to: selectedConversation.phone_number,
+      text: text.trim(),
+      metadata: { client_request_id: crypto.randomUUID(), source: 'chat_window_tools' },
+    });
+    void loadMessages();
   };
 
-  // Alternar modo (humano/auto)
   const handleSwitchMode = async () => {
     if (!selectedConversation) return;
-
     try {
-      const newMode = selectedConversation.mode === 'human' ? 'auto' : 'human';
-      const updated = newMode === 'human'
-        ? await conversationsService.switchToHuman(selectedConversation.id)
-        : await conversationsService.switchToAuto(selectedConversation.id);
-      
-      setSelectedConversation(updated);
-      setConversations(prev => prev.map(c => c.id === updated.id ? updated : c));
+      const currentStatus = selectedConversation.mode === 'human' ? 'human' : 'bot';
+      const res = await handoverService.toggle(selectedConversation.id, currentStatus);
+      const newMode = res.handover_status === 'human' ? 'human' : 'auto';
+      setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
+      setConversations(prev => prev.map(c => c.id === selectedConversation.id ? { ...c, mode: newMode } : c));
       toast.success(`Modo alterado para ${newMode === 'human' ? 'humano' : 'automático'}`);
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
+    } catch (error) { toast.error(getErrorMessage(error)); }
   };
 
-  // Scroll automático
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const togglePanel = (panel: 'templates' | 'tools') => {
+    setActivePanel(prev => prev === panel ? null : panel);
+  };
 
-  // NOVO: Scroll imediato ao carregar mensagens (sem animação)
-  useEffect(() => {
-    if (!isLoadingMessages && messages.length > 0) {
-      // Scroll imediato para o bottom na primeira carga
-      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-    }
-  }, [isLoadingMessages, messages.length]);
+  const handleInsertText = (text: string) => {
+    setInsertText(text);
+    setTimeout(() => setInsertText(undefined), 100);
+  };
 
-  // Carregar inicial
-  useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
-
-  // Referência para a conversa anterior (para unsubscribe)
-  const previousConversationRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    // Unsubscribe da conversa anterior PRIMEIRO
-    if (previousConversationRef.current && previousConversationRef.current !== selectedConversation?.id) {
-      unsubscribeFromConversation(previousConversationRef.current);
-    }
-    
-    // LIMPAR MENSAGENS IMEDIATAMENTE ao trocar de conversa
-    setMessages([]);
-    
-    if (selectedConversation) {
-      // Atualizar referência
-      previousConversationRef.current = selectedConversation.id;
-      
-      // Subscribe e carregar mensagens da nova conversa
-      subscribeToConversation(selectedConversation.id);
-      loadMessages();
-      onConversationSelect?.(selectedConversation);
-    } else {
-      previousConversationRef.current = null;
-      onConversationSelect?.(null);
-    }
-
-    return () => {
-      if (selectedConversation) {
-        unsubscribeFromConversation(selectedConversation.id);
-      }
-    };
-  }, [selectedConversation?.id]); // Apenas reage a mudança de ID
-
-  // Agrupar mensagens por data
-  const groupedMessages = messages.reduce((groups, message) => {
-    const date = format(new Date(message.created_at), 'yyyy-MM-dd');
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(message);
+  const groupedMessages = ensureArray<Message>(messages).reduce((groups, message) => {
+    if (!message.created_at) return groups;
+    try {
+      const date = format(new Date(message.created_at), 'yyyy-MM-dd');
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(message);
+    } catch { /* ignore invalid dates */ }
     return groups;
   }, {} as Record<string, Message[]>);
 
-  const contacts: Contact[] = conversations.map(conv => ({
-    ...conversationToContact(conv),
-    isTyping: typingContacts.has(conv.id),
-  }));
+  const filteredConversations = ensureArray<Conversation>(conversations);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-gray-100 dark:bg-zinc-950 rounded-xl overflow-hidden shadow-2xl">
-      {/* Sidebar de Contatos */}
-      <div className={`${showSidebar ? 'w-80' : 'w-0'} transition-all duration-300 flex-shrink-0 border-r border-gray-200 dark:border-zinc-800`}>
-        <ContactList
-          contacts={contacts}
-          selectedContactId={selectedConversation?.id}
-          onSelectContact={(contact) => {
-            const conversation = conversations.find(c => c.id === contact.id);
-            setSelectedConversation(conversation || null);
-          }}
-          isLoading={isLoadingConversations}
-          emptyMessage="Nenhuma conversa encontrada"
+    <div className="whatsapp-inbox">
+      {mediaViewer && (
+        <MediaViewer
+          url={mediaViewer.url}
+          type={mediaViewer.type}
+          fileName={mediaViewer.fileName}
+          onClose={() => setMediaViewer(null)}
         />
+      )}
+
+      {/* ── Painel de Conversas ── */}
+      <div className="conversations-panel">
+        <div className="conversations-header">
+          <h1>{accountName || 'WhatsApp'}</h1>
+          <div className="search-box">
+            <MagnifyingGlassIcon className="w-4 h-4" style={{ flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder="Buscar conversa..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="conversations-list">
+          {isLoadingConversations ? (
+            <div className="empty-state">Carregando...</div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="empty-state">
+              {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa'}
+            </div>
+          ) : (
+            filteredConversations.map(conv => (
+              <div
+                key={conv.id}
+                className={`conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
+                onClick={() => setSelectedConversation(conv)}
+              >
+                <div className="conversation-avatar">
+                  {conv.profile_picture || conv.profile_picture_url ? (
+                    <img
+                      src={conv.profile_picture || conv.profile_picture_url}
+                      alt={conv.contact_name || conv.phone_number}
+                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    getInitials(conv.contact_name, conv.phone_number)
+                  )}
+                </div>
+                <div className="conversation-info">
+                  <h3>{conv.contact_name || conv.phone_number}</h3>
+                  <p className="conversation-preview">
+                    {typingContacts.has(conv.id)
+                      ? <span style={{ color: '#10b981', fontStyle: 'italic' }}>digitando...</span>
+                      : (conv.last_message_preview || conv.last_message || 'Sem mensagens')}
+                  </p>
+                </div>
+                <div className="conversation-meta">
+                  <span className="mode-badge">{conv.mode === 'human' ? '👤' : '🤖'}</span>
+                  {conv.unread_count && conv.unread_count > 0 && (
+                    <span className="unread-badge">{conv.unread_count}</span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      {/* Área do Chat */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-zinc-900">
+      {/* ── Painel de Chat ── */}
+      <div className={`chat-panel ${activePanel ? 'panel-open' : ''}`}>
         {!selectedConversation ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8">
-            <div className="w-32 h-32 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-6">
-              <ChatBubbleLeftRightIcon className="w-16 h-16 text-gray-300" />
+          <div className="no-conversation-selected">
+            <div className="empty-message">
+              <span style={{ fontSize: '4rem' }}>💬</span>
+              <h2>{accountName || 'WhatsApp Business'}</h2>
+              <p>Selecione uma conversa para começar a atender</p>
+              {!isConnected && (
+                <p style={{ color: '#ef4444', fontSize: '0.85rem' }}>⚠️ Desconectado</p>
+              )}
             </div>
-            <h3 className="text-xl font-medium text-gray-600 dark:text-gray-300 mb-2">
-              Selecione uma conversa
-            </h3>
-            <p className="text-sm text-center max-w-md">
-              Escolha uma conversa da lista ao lado para começar a interagir com seus clientes
-            </p>
           </div>
         ) : (
           <>
-            {/* Header do Chat */}
-            <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowSidebar(!showSidebar)}
-                  className="lg:hidden p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  <MagnifyingGlassIcon className="w-5 h-5" />
-                </button>
-                
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                  {selectedConversation.contact_name?.[0]?.toUpperCase() || 
-                   selectedConversation.phone_number.slice(-2)}
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    {selectedConversation.contact_name || selectedConversation.phone_number}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-500 dark:text-zinc-400">
-                      {selectedConversation.phone_number}
-                    </span>
-                    {typingContacts.has(selectedConversation.id) && (
-                      <span className="text-violet-500 text-xs animate-pulse">
-                        digitando...
-                      </span>
-                    )}
-                  </div>
-                </div>
+            {/* Header */}
+            <div className="chat-header">
+              <div className="chat-info">
+                <h2>{selectedConversation.contact_name || selectedConversation.phone_number}</h2>
+                <p className="phone-number">
+                  {typingContacts.has(selectedConversation.id)
+                    ? <span style={{ color: '#10b981' }}>digitando...</span>
+                    : selectedConversation.phone_number}
+                </p>
               </div>
-
-              <div className="flex items-center gap-2">
-                {/* Status Conexão */}
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-                  isConnected 
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                }`}>
-                  <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                  {isConnected ? 'Online' : 'Offline'}
+              <div className="chat-actions">
+                <div className="mode-selector">
+                  <button
+                    className={`mode-btn ${selectedConversation.mode !== 'human' ? 'active' : ''}`}
+                    onClick={handleSwitchMode}
+                    title="Modo Automático"
+                  >
+                    🤖
+                  </button>
+                  <button
+                    className={`mode-btn ${selectedConversation.mode === 'human' ? 'active' : ''}`}
+                    onClick={handleSwitchMode}
+                    title="Modo Humano"
+                  >
+                    👤
+                  </button>
                 </div>
-
-                {/* Modo Toggle */}
                 <button
-                  onClick={handleSwitchMode}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    selectedConversation.mode === 'human'
-                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
-                      : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
-                  }`}
+                  className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
+                  onClick={() => togglePanel('templates')}
                 >
-                  {selectedConversation.mode === 'human' ? (
-                    <><UserIcon className="w-4 h-4" /> Humano</>
-                  ) : (
-                    <><CpuChipIcon className="w-4 h-4" /> Auto</>
-                  )}
+                  <DocumentTextIcon className="w-4 h-4" />
+                  <span>Templates</span>
                 </button>
-
-                {/* Refresh */}
                 <button
+                  className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
+                  onClick={() => togglePanel('tools')}
+                >
+                  <BoltIcon className="w-4 h-4" />
+                  <span>Ferramentas</span>
+                </button>
+                <button
+                  className="icon-btn"
                   onClick={loadMessages}
                   disabled={isLoadingMessages}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
-                  title="Atualizar"
+                  title="Recarregar mensagens"
                 >
-                  <ArrowPathIcon className={`w-5 h-5 ${isLoadingMessages ? 'animate-spin' : ''}`} />
+                  {isLoadingMessages
+                    ? <span style={{ fontSize: '0.75rem' }}>⏳</span>
+                    : <EllipsisVerticalIcon className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
-            {/* Erro de Conexão */}
+            {/* Banner de erro de conexão */}
             {connectionError && (
-              <div className="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 flex items-center gap-2 text-yellow-700 dark:text-yellow-400 text-sm">
-                <ExclamationTriangleIcon className="w-4 h-4" />
-                {connectionError}
+              <div style={{ padding: '0.5rem 1rem', background: '#fef9c3', borderBottom: '1px solid #fde047', fontSize: '0.82rem', color: '#854d0e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <span>⚠️ {connectionError}</span>
+                <button
+                  type="button"
+                  onClick={retry}
+                  style={{ padding: '0.2rem 0.6rem', background: '#854d0e', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, flexShrink: 0 }}
+                >
+                  Reconectar
+                </button>
               </div>
             )}
 
             {/* Mensagens */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f0f2f5] dark:bg-zinc-950">
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleContainerScroll}
+              className="messages-container"
+            >
               {isLoadingMessages ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500" />
+                <div className="messages-empty">
+                  <p>Carregando mensagens...</p>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <ChatBubbleLeftRightIcon className="w-16 h-16 mb-4 opacity-50" />
-                  <p className="text-lg font-medium">Nenhuma mensagem ainda</p>
-                  <p className="text-sm">Envie a primeira mensagem!</p>
+                <div className="messages-empty">
+                  <p>Nenhuma mensagem</p>
+                  <small>Comece enviando uma mensagem</small>
                 </div>
               ) : (
-                Object.entries(groupedMessages).map(([date, dayMessages]) => (
-                  <div key={date}>
-                    <div className="flex items-center justify-center my-4">
-                      <span className="px-4 py-1.5 bg-white dark:bg-zinc-800 rounded-full text-xs text-gray-500 dark:text-zinc-400 shadow-sm">
-                        {format(new Date(date), "d 'de' MMMM", { locale: ptBR })}
-                      </span>
-                    </div>
-                    {dayMessages.map((message) => (
-                      <MessageBubble
-                        key={message.id}
-                        {...messageToBubbleProps(message)}
-                        onMediaClick={(url, type, fileName) => setSelectedMedia({ url, type, fileName })}
-                      />
-                    ))}
-                  </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input de Mensagem */}
-            <div className="bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800">
-              {/* Preview de Upload */}
-              {isUploading && (
-                <div className="px-4 py-2 bg-violet-50 dark:bg-violet-900/20 flex items-center gap-2 text-violet-700 dark:text-violet-400">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-violet-500" />
-                  <span className="text-sm">Enviando arquivo...</span>
+                <div className="messages-list">
+                  {Object.entries(groupedMessages).map(([date, dayMessages]) => (
+                    <React.Fragment key={date}>
+                      <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}>
+                        <span style={{ padding: '0.2rem 0.75rem', background: 'rgba(255,255,255,0.8)', borderRadius: '20px', fontSize: '0.75rem', color: '#6b7280', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+                          {(() => { try { return format(new Date(date), "d 'de' MMMM", { locale: ptBR }); } catch { return date; } })()}
+                        </span>
+                      </div>
+                      {dayMessages.map(message => (
+                        <MessageBubble
+                          key={message.id}
+                          {...messageToBubbleProps(message)}
+                          onMediaClick={(url, type, fileName) => setMediaViewer({ url, type, fileName })}
+                        />
+                      ))}
+                    </React.Fragment>
+                  ))}
+                  <div ref={messagesEndRef} />
                 </div>
               )}
-              
+            </div>
+
+            {/* Input */}
+            <div style={{ borderTop: '1px solid var(--border-default, #e5e7eb)', background: 'var(--bg-card, white)', flexShrink: 0 }}>
               <MessageInput
                 onSend={handleSendMessage}
-                onTyping={(isTyping) => selectedConversation && sendTypingIndicator(selectedConversation.id, isTyping)}
-                disabled={!isConnected || isUploading}
+                onTyping={(isTyping) => { if (selectedConversation) sendTypingIndicator(selectedConversation.id, isTyping); }}
+                onFileSelect={(file) => setSelectedFile(file)}
+                onClearFile={() => setSelectedFile(null)}
+                selectedFile={selectedFile}
+                disabled={!isConnected}
                 isLoading={isSending}
-                showAttachment={true}
-                onAttachmentClick={() => fileInputRef.current?.click()}
-              />
-              
-              {/* Input de arquivo oculto */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
-                onChange={handleFileSelect}
-                className="hidden"
+                placeholder={isConnected ? 'Digite uma mensagem...' : 'Conectando...'}
+                insertText={insertText}
               />
             </div>
           </>
         )}
       </div>
 
-      {/* Visualizador de Mídia */}
-      {selectedMedia && (
-        <MediaViewer
-          url={selectedMedia.url}
-          type={selectedMedia.type}
-          fileName={selectedMedia.fileName}
-          onClose={() => setSelectedMedia(null)}
+      {/* ── Painel de Ferramentas ── */}
+      {selectedConversation && activePanel && (
+        <ChatToolsPanel
+          key={activePanel}
+          accountId={accountId}
+          storeId={storeId || undefined}
+          storeSlug={storeSlug || undefined}
+          storeName={storeName || undefined}
+          storeDescription={store?.description || undefined}
+          storeAddress={store?.address || undefined}
+          storeCity={store?.city || undefined}
+          storeState={store?.state || undefined}
+          storeUrl={getStoreUrl(store?.metadata)}
+          conversation={selectedConversation}
+          onInsertText={handleInsertText}
+          onSendMessage={handleToolsSend}
+          onAfterSend={() => void loadMessages()}
+          onClose={() => setActivePanel(null)}
+          defaultTab={activePanel}
         />
       )}
     </div>

@@ -9,17 +9,19 @@ import {
   ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import {
-  autoMessageApi,
-  companyProfileApi,
+  autoMessageService,
+  companyProfileService,
   eventTypeLabels,
   messageVariables,
 } from '../../services/automation';
 import { AutoMessage, CompanyProfile, AutoMessageEventType, CreateAutoMessage } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../hooks';
 
 const AutoMessagesPage: React.FC = () => {
   const { companyId } = useParams<{ companyId: string }>();
+  const [ConfirmDialog, confirm] = useConfirm();
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [messages, setMessages] = useState<AutoMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,10 +32,12 @@ const AutoMessagesPage: React.FC = () => {
   const [testResult, setTestResult] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CreateAutoMessage>({
+    account: '',
     company_id: companyId || '',
     event_type: 'welcome',
     name: '',
     message_text: '',
+    message_type: 'text',
     is_active: true,
     delay_seconds: 0,
     priority: 100,
@@ -41,17 +45,16 @@ const AutoMessagesPage: React.FC = () => {
   });
 
   useEffect(() => {
-    if (companyId) {
-      loadData();
-    }
+    loadData();
   }, [companyId]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [companyData, messagesData] = await Promise.all([
-        companyProfileApi.get(companyId!),
-        autoMessageApi.list({ company_id: companyId }),
+      const params: Record<string, string | undefined> = companyId ? { company_id: companyId } : {};
+      const [messagesData, companyData] = await Promise.all([
+        autoMessageService.list(params),
+        companyId ? companyProfileService.get(companyId) : Promise.resolve(null),
       ]);
       setCompany(companyData);
       setMessages(messagesData.results);
@@ -66,10 +69,10 @@ const AutoMessagesPage: React.FC = () => {
     e.preventDefault();
     try {
       if (editingMessage) {
-        await autoMessageApi.update(editingMessage.id, formData);
+        await autoMessageService.update(editingMessage.id, formData);
         toast.success('Mensagem atualizada!');
       } else {
-        await autoMessageApi.create(formData);
+        await autoMessageService.create(formData);
         toast.success('Mensagem criada!');
       }
       setShowModal(false);
@@ -84,10 +87,12 @@ const AutoMessagesPage: React.FC = () => {
   const handleEdit = (message: AutoMessage) => {
     setEditingMessage(message);
     setFormData({
+      account: message.account,
       company_id: companyId || '',
       event_type: message.event_type,
       name: message.name,
       message_text: message.message_text,
+      message_type: message.message_type,
       media_url: message.media_url || undefined,
       media_type: message.media_type || undefined,
       buttons: message.buttons,
@@ -99,9 +104,13 @@ const AutoMessagesPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta mensagem?')) return;
+    const confirmed = await confirm({
+      title: 'Excluir mensagem',
+      message: 'Tem certeza que deseja excluir esta mensagem?',
+    });
+    if (!confirmed) return;
     try {
-      await autoMessageApi.delete(id);
+      await autoMessageService.delete(id);
       toast.success('Mensagem excluída!');
       loadData();
     } catch (error) {
@@ -111,7 +120,7 @@ const AutoMessagesPage: React.FC = () => {
 
   const handleToggleActive = async (message: AutoMessage) => {
     try {
-      await autoMessageApi.update(message.id, { is_active: !message.is_active });
+      await autoMessageService.update(message.id, { is_active: !message.is_active });
       toast.success(message.is_active ? 'Mensagem desativada' : 'Mensagem ativada');
       loadData();
     } catch (error) {
@@ -122,7 +131,7 @@ const AutoMessagesPage: React.FC = () => {
   const handleTest = async () => {
     if (!testModal || !testPhone) return;
     try {
-      const result = await autoMessageApi.test(testModal.id, {
+      const result = await autoMessageService.test(testModal.id, {
         phone_number: testPhone,
         send: false,
       });
@@ -135,7 +144,7 @@ const AutoMessagesPage: React.FC = () => {
   const handleSendTest = async () => {
     if (!testModal || !testPhone) return;
     try {
-      await autoMessageApi.test(testModal.id, {
+      await autoMessageService.test(testModal.id, {
         phone_number: testPhone,
         send: true,
       });
@@ -150,10 +159,12 @@ const AutoMessagesPage: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
+      account: '',
       company_id: companyId || '',
       event_type: 'welcome',
       name: '',
       message_text: '',
+      message_type: 'text',
       is_active: true,
       delay_seconds: 0,
       priority: 100,
@@ -209,13 +220,13 @@ const AutoMessagesPage: React.FC = () => {
   }, {} as Record<string, AutoMessage[]>);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-4">
           <Link
             to={`/automation/companies/${companyId}`}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:text-zinc-400"
+            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Link>
@@ -230,9 +241,9 @@ const AutoMessagesPage: React.FC = () => {
             setEditingMessage(null);
             setShowModal(true);
           }}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium shadow-sm transition-colors"
         >
-          <PlusIcon className="h-5 w-5 mr-2" />
+          <PlusIcon className="h-5 w-5" />
           Nova Mensagem
         </button>
       </div>
@@ -263,9 +274,9 @@ const AutoMessagesPage: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-gray-200 dark:divide-zinc-800">
                 {eventMessages.map((message) => (
-                  <li key={message.id} className="px-6 py-4">
+                  <li key={message.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3">
@@ -279,7 +290,7 @@ const AutoMessagesPage: React.FC = () => {
                           }`}>
                             {message.is_active ? 'Ativo' : 'Inativo'}
                           </span>
-                          {message.delay_seconds > 0 && (
+                          {message.delay_seconds && message.delay_seconds > 0 && (
                             <span className="text-xs text-gray-500 dark:text-zinc-400">
                               Delay: {message.delay_seconds}s
                             </span>
@@ -350,7 +361,7 @@ const AutoMessagesPage: React.FC = () => {
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black0 bg-opacity-75" onClick={() => setShowModal(false)} />
+            <div className="fixed inset-0 bg-gray-50 dark:bg-black/75 bg-opacity-75" onClick={() => setShowModal(false)} />
             <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <form onSubmit={handleSubmit}>
                 <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
@@ -523,11 +534,13 @@ const AutoMessagesPage: React.FC = () => {
         </div>
       )}
 
+      {ConfirmDialog}
+
       {/* Test Modal */}
       {testModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black0 bg-opacity-75" onClick={() => {
+            <div className="fixed inset-0 bg-gray-50 dark:bg-black/75 bg-opacity-75" onClick={() => {
               setTestModal(null);
               setTestPhone('');
               setTestResult(null);

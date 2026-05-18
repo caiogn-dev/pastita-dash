@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Store, getStores } from '../services/storesApi';
 import logger from '../services/logger';
+import { DEFAULT_STORE_SLUG } from '../config/storeConfig';
 
 interface StoreContextState {
   // State
@@ -51,9 +52,10 @@ export const useStoreContextStore = create<StoreContextState>()(
           // Auto-select first store if none selected and stores exist
           const { selectedStore } = get();
           if (!selectedStore && stores.length > 0) {
-            // Try to find Pastita store first
-            const pastitaStore = stores.find(s => s.slug === 'pastita');
-            set({ selectedStore: pastitaStore || stores[0] });
+            const preferredStore = DEFAULT_STORE_SLUG
+              ? stores.find(s => s.slug === DEFAULT_STORE_SLUG)
+              : null;
+            set({ selectedStore: preferredStore || stores[0] });
           } else if (selectedStore) {
             // Verify selected store still exists
             const stillExists = stores.find(s => s.id === selectedStore.id);

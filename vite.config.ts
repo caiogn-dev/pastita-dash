@@ -6,10 +6,14 @@ export default defineConfig({
   base: '/',
   server: {
     host: '0.0.0.0',
-    port: 12001,
+    port: 3010,
     strictPort: true,
     allowedHosts: true,
     cors: true,
+    hmr: {
+      host: '0.0.0.0',
+      port: 3010,
+    },
   },
   resolve: {
     alias: {
@@ -25,8 +29,7 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-ui': ['@headlessui/react', '@heroicons/react', 'lucide-react'],
           'vendor-charts': ['chart.js', 'react-chartjs-2', 'recharts'],
-          'vendor-mui': ['@mui/material', '@mui/icons-material'],
-          'vendor-utils': ['axios', 'date-fns', 'zustand'],
+'vendor-utils': ['axios', 'date-fns', 'zustand'],
           
           // Feature chunks
           'feature-automation': [
@@ -40,8 +43,8 @@ export default defineConfig({
         },
       },
     },
-    // Increase chunk size warning limit
-    chunkSizeWarningLimit: 600,
+    // Increase chunk size warning limit (automation chunk is ~720kb, compresses to ~180kb)
+    chunkSizeWarningLimit: 800,
     // Enable source maps for debugging
     sourcemap: false,
     // Minification

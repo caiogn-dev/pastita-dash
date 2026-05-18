@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../../components/common';
-import { useStore } from '../../../hooks';
+import { useStore, useConfirm } from '../../../hooks';
 import api from '@/services/api';
 
 interface EmailCampaign {
@@ -74,7 +74,8 @@ const AUDIENCE_LABELS: Record<string, string> = {
 export const CampaignsListPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId } = useStore();
-  
+  const [ConfirmDialog, confirm] = useConfirm();
+
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
@@ -96,7 +97,7 @@ export const CampaignsListPage: React.FC = () => {
       const response = await api.get(`/marketing/campaigns/`, { params });
       console.log('Campaigns response:', response.data);
       
-      const data = response.data.results || response.data || [];
+      const data = response.data?.results || response.data || [];
       setCampaigns(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading campaigns:', error);
@@ -114,7 +115,7 @@ export const CampaignsListPage: React.FC = () => {
     try {
       setLoadingRecipients(true);
       const response = await api.get(`/marketing/campaigns/${campaignId}/recipients/`);
-      setRecipients(response.data.results || response.data || []);
+      setRecipients(response.data?.results || response.data || []);
     } catch (error) {
       console.error('Error loading recipients:', error);
       toast.error('Erro ao carregar destinatários');
@@ -130,8 +131,13 @@ export const CampaignsListPage: React.FC = () => {
   };
 
   const handleSendCampaign = async (campaign: EmailCampaign) => {
-    if (!confirm(`Enviar campanha "${campaign.name}" agora?`)) return;
-    
+    const confirmed = await confirm({
+      title: 'Enviar campanha',
+      message: `Enviar campanha "${campaign.name}" agora?`,
+      variant: 'info',
+    });
+    if (!confirmed) return;
+
     try {
       setActionLoading(campaign.id);
       const response = await api.post(`/marketing/campaigns/${campaign.id}/send/`);
@@ -145,8 +151,12 @@ export const CampaignsListPage: React.FC = () => {
   };
 
   const handleDeleteCampaign = async (campaign: EmailCampaign) => {
-    if (!confirm(`Excluir campanha "${campaign.name}"?`)) return;
-    
+    const confirmed = await confirm({
+      title: 'Excluir campanha',
+      message: `Excluir campanha "${campaign.name}"?`,
+    });
+    if (!confirmed) return;
+
     try {
       setActionLoading(campaign.id);
       await api.delete(`/marketing/campaigns/${campaign.id}/`);
@@ -176,7 +186,7 @@ export const CampaignsListPage: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Campanhas de Email</h1>
           <p className="text-gray-500 dark:text-zinc-400">{campaigns.length} campanha(s)</p>
@@ -205,7 +215,7 @@ export const CampaignsListPage: React.FC = () => {
             
             return (
               <Card key={campaign.id} className="p-4 hover:shadow-md transition-shadow">
-                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                <div className="flex flex-row max-lg:flex-col lg:items-center gap-4">
                   {/* Campaign Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
@@ -379,6 +389,7 @@ export const CampaignsListPage: React.FC = () => {
           </div>
         )}
       </Modal>
+      {ConfirmDialog}
     </div>
   );
 };

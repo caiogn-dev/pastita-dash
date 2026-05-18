@@ -33,13 +33,13 @@ const defaultDeliveryConfig: DeliveryConfig = {
 
 export const StoreSettingsPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeSlug, stores } = useStore();
+  const { storeId: contextStoreId, stores } = useStore();
 
   const effectiveStoreId = useMemo(() => {
-    if (!routeStoreId) return storeSlug || contextStoreId || null;
+    if (!routeStoreId) return contextStoreId || null;
     const match = stores.find((store) => store.id === routeStoreId || store.slug === routeStoreId);
-    return match?.id || match?.slug || routeStoreId;
-  }, [routeStoreId, storeSlug, contextStoreId, stores]);
+    return match?.id || routeStoreId;
+  }, [routeStoreId, contextStoreId, stores]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -239,7 +239,7 @@ export const StoreSettingsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
           <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <BuildingStorefrontIcon className="w-5 h-5 text-gray-600 dark:text-zinc-300" />
@@ -372,7 +372,7 @@ export const StoreSettingsPage: React.FC = () => {
             <TruckIcon className="w-5 h-5 text-gray-600 dark:text-zinc-300" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Entrega</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 max-md:grid-cols-1 gap-6">
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-600 dark:text-zinc-400">Taxa Base</label>
@@ -442,7 +442,7 @@ export const StoreSettingsPage: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 max-md:grid-cols-1 gap-4">
           <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-2">
               <Cog6ToothIcon className="w-5 h-5 text-gray-500" />

@@ -18,7 +18,7 @@ export const NotificationDropdown: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await notificationsService.getNotifications();
-      setNotifications(response.results);
+      setNotifications(response.data.results || []);
     } catch (error) {
       logger.error('Error loading notifications:', error);
     } finally {
@@ -29,7 +29,7 @@ export const NotificationDropdown: React.FC = () => {
   const loadUnreadCount = useCallback(async () => {
     try {
       const response = await notificationsService.getUnreadCount();
-      setUnreadCount(response.count);
+      setUnreadCount(response.data.count || 0);
     } catch (error) {
       logger.error('Error loading unread count:', error);
     }
@@ -68,7 +68,9 @@ export const NotificationDropdown: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationsService.markAsRead(undefined, true);
+      // markAsRead accepts string[] — pass all unread IDs at once
+      const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
+      if (unreadIds.length > 0) await notificationsService.markAsRead(unreadIds);
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
       );

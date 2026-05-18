@@ -7,7 +7,7 @@
  * - Templates management
  * - Analytics
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   EnvelopeIcon,
@@ -102,12 +102,12 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
     <Card className="overflow-hidden hover:shadow-lg transition-shadow group">
       {/* Preview Area */}
       <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-        {/* SECURITY: HTML preview is sandboxed in iframe to prevent XSS */}
+        {/* sandbox="" blocks all scripts, plugins, forms — safe for untrusted HTML */}
         <iframe
-          srcDoc={`<!DOCTYPE html><html><head><style>body{margin:0;transform:scale(0.3);transform-origin:top left;pointer-events:none;}</style></head><body>${template.html_content.slice(0, 2000)}</body></html>`}
           sandbox=""
-          className="absolute inset-0 w-[333%] h-[333%] border-0"
-          title="Template Preview"
+          srcDoc={template.html_content.slice(0, 2000)}
+          className="absolute inset-0 scale-[0.3] origin-top-left pointer-events-none border-0 w-full h-full"
+          title="Email template preview"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent" />
         
@@ -202,9 +202,13 @@ interface Campaign {
 export const MarketingPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName } = useStore();
-  
-  const storeId = routeStoreId || contextStoreId;
+  const { storeId: contextStoreId, storeName, stores } = useStore();
+
+  const storeId = useMemo(() => {
+    if (!routeStoreId) return contextStoreId || null;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || contextStoreId || null;
+  }, [routeStoreId, contextStoreId, stores]);
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<MarketingStats | null>(null);
@@ -262,7 +266,7 @@ export const MarketingPage: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Marketing</h1>
           <p className="text-gray-500 dark:text-zinc-400">
@@ -283,7 +287,7 @@ export const MarketingPage: React.FC = () => {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 gap-4">
           <StatCard
             title="Emails Enviados"
             value={stats.email.total_sent.toLocaleString()}
@@ -318,7 +322,7 @@ export const MarketingPage: React.FC = () => {
       {/* Quick Actions */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ações Rápidas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 gap-4">
           <QuickAction
             title="Enviar Cupom"
             description="Crie e envie cupons de desconto"
@@ -358,7 +362,7 @@ export const MarketingPage: React.FC = () => {
             Ver Todos
           </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           {templates.slice(0, 4).map((template) => (
             <TemplateCard
               key={template.id}
@@ -446,9 +450,11 @@ export const MarketingPage: React.FC = () => {
               className="border rounded-lg overflow-hidden"
               style={{ height: '500px' }}
             >
+              {/* sandbox="" blocks scripts, forms, plugins — safe for untrusted email HTML */}
               <iframe
+                sandbox=""
                 srcDoc={previewTemplate.html_content}
-                className="w-full h-full"
+                className="w-full h-full border-0"
                 title="Email Preview"
               />
             </div>
