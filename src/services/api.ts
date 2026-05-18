@@ -88,12 +88,20 @@ api.interceptors.response.use(
     // Only logout on 401/403 if:
     // 1. The request actually had an Authorization header (token was sent)
     // 2. It's not a login/register endpoint (those return 401 for invalid credentials)
+    // 3. skipAutoLogout flag is not set on the request
+    // 4. We're outside the post-login grace period (15s) — handles DB replication lag
+    //    where the token exists on the write DB but hasn't synced to read replicas yet
     const hadAuthHeader = Boolean(error.config?.headers?.Authorization);
     const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
     const skipAutoLogout = Boolean(error.config?.skipAutoLogout);
 
+    const { loginTimestamp } = useAuthStore.getState();
+    const msSinceLogin = loginTimestamp ? Date.now() - loginTimestamp : Infinity;
+    const inLoginGracePeriod = msSinceLogin < 15_000;
+
     if (
       !skipAutoLogout &&
+      !inLoginGracePeriod &&
       (httpStatus === 401 || httpStatus === 403 || errorCode === 'token_not_valid') &&
       hadAuthHeader &&
       !isAuthEndpoint
