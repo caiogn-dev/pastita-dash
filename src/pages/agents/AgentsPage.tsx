@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  PlusIcon, 
+import {
+  PlusIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   CpuChipIcon,
@@ -11,12 +11,14 @@ import { cn } from '../../utils/cn';
 import { AgentCard } from '../../components/agents';
 import agentsService, { Agent, PROVIDER_CONFIGS } from '../../services/agents';
 import type { AgentProvider } from '../../services/agents';
+import { useConfirm } from '../../hooks';
 
 type StatusFilter = 'all' | 'active' | 'inactive' | 'draft';
 type ProviderFilter = 'all' | AgentProvider;
 
 export const AgentsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [ConfirmDialog, confirm] = useConfirm();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -61,7 +63,11 @@ export const AgentsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este agente?')) return;
+    const confirmed = await confirm({
+      title: 'Excluir agente',
+      message: 'Tem certeza que deseja excluir este agente?',
+    });
+    if (!confirmed) return;
 
     try {
       await agentsService.deleteAgent(id);
@@ -301,6 +307,7 @@ export const AgentsPage: React.FC = () => {
           ))}
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };

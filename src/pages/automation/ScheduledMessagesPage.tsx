@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useConfirm } from '../../hooks';
 import logger from '../../services/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,6 +42,7 @@ const messageTypeLabels: Record<string, string> = {
 };
 
 export default function ScheduledMessagesPage() {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [messages, setMessages] = useState<ScheduledMessage[]>([]);
   const [stats, setStats] = useState<ScheduledMessageStats | null>(null);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
@@ -115,7 +117,12 @@ export default function ScheduledMessagesPage() {
   };
 
   const handleCancel = async (id: string) => {
-    if (!confirm('Deseja cancelar esta mensagem agendada?')) return;
+    const confirmed = await confirm({
+      title: 'Cancelar mensagem',
+      message: 'Deseja cancelar esta mensagem agendada?',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
 
     try {
       await scheduledMessagesService.cancel(id);
@@ -466,6 +473,7 @@ export default function ScheduledMessagesPage() {
           </div>
         </div>
       </Modal>
+      {ConfirmDialog}
     </div>
   );
 }

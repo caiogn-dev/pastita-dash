@@ -11,6 +11,7 @@ import { companyProfileService, businessTypeLabels } from '../../services/automa
 import { CompanyProfile, UpdateCompanyProfile, BusinessHours } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../hooks';
 
 const daysOfWeek = [
   { key: 'monday', label: 'Segunda-feira' },
@@ -25,6 +26,7 @@ const daysOfWeek = [
 const CompanyProfileDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [ConfirmDialog, confirm] = useConfirm();
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -88,9 +90,11 @@ const CompanyProfileDetailPage: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Tem certeza que deseja excluir este perfil? Esta ação não pode ser desfeita.')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Excluir perfil',
+      message: 'Tem certeza que deseja excluir este perfil? Esta ação não pode ser desfeita.',
+    });
+    if (!confirmed) return;
     try {
       await companyProfileService.delete(id!);
       toast.success('Perfil excluído com sucesso');
@@ -108,7 +112,12 @@ const CompanyProfileDetailPage: React.FC = () => {
   };
 
   const handleRegenerateApiKey = async () => {
-    if (!confirm('Tem certeza? A chave atual será invalidada.')) return;
+    const confirmed = await confirm({
+      title: 'Regenerar API key',
+      message: 'A chave atual será invalidada.',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
     try {
       const result = await companyProfileService.regenerateApiKey(id!);
       toast.success('Nova API key gerada!');
@@ -518,6 +527,7 @@ const CompanyProfileDetailPage: React.FC = () => {
           </button>
         </div>
       </form>
+      {ConfirmDialog}
     </div>
   );
 };
