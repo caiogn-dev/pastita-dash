@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import logger from '../../services/logger';
 import {
   PlusIcon,
@@ -237,9 +238,11 @@ export const DeliveryZonesPage: React.FC = () => {
   const handleToggleActive = async (zone: DeliveryZone) => {
     try {
       await deliveryService.toggleActive(zone.id);
+      toast.success(zone.is_active ? 'Zona desativada' : 'Zona ativada');
       loadData();
     } catch (error) {
       logger.error('Error toggling zone:', error);
+      toast.error('Erro ao atualizar zona de entrega');
     }
   };
 
@@ -248,11 +251,13 @@ export const DeliveryZonesPage: React.FC = () => {
     try {
       setSaving(true);
       await deliveryService.deleteZone(deletingZone.id);
+      toast.success('Zona de entrega excluída');
       setIsDeleteModalOpen(false);
       setDeletingZone(null);
       loadData();
     } catch (error) {
       logger.error('Error deleting zone:', error);
+      toast.error('Erro ao excluir zona de entrega');
     } finally {
       setSaving(false);
     }
