@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import api from '../services/api';
+import { getWebSocketUrl } from '../services/websocket';
 
 // Types
 export interface WhatsAppMessage {
@@ -157,21 +158,13 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
   // Build WebSocket URL
   const getWsUrl = useCallback(() => {
     if (!token) return null;
-    
-    let host = import.meta.env.VITE_WS_HOST;
-    if (!host) {
-      const api = import.meta.env.VITE_API_URL;
-      host = api ? new URL(api).host : window.location.host;
-    }
-    
-    const proto = host.includes('railway') || host.includes('vercel') || location.protocol === 'https:' ? 'wss' : 'ws';
-    
+
     if (dashboardMode) {
-      return `${proto}://${host}/ws/whatsapp/dashboard/`;
+      return getWebSocketUrl('/ws/whatsapp/dashboard/');
     }
 
     if (!accountId) return null;
-    return `${proto}://${host}/ws/whatsapp/${accountId}/`;
+    return getWebSocketUrl(`/ws/whatsapp/${accountId}/`);
   }, [token, accountId, dashboardMode]);
 
   // Handle incoming messages
