@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getWebSocketUrl } from '../services/websocket';
 import { useAuthStore } from '../stores/authStore';
+import logger from '../services/logger';
 
 interface MessengerMessageEvent {
   type: 'message';
@@ -79,13 +80,13 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
   const connect = useCallback(() => {
     // Prevent multiple simultaneous connection attempts
     if (isConnecting || wsRef.current?.readyState === WebSocket.CONNECTING) {
-      console.log('[MessengerWS] Already connecting, skipping...');
+      logger.debug('[MessengerWS] Already connecting, skipping...');
       return;
     }
     
     // Prevent connection if already connected
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('[MessengerWS] Already connected, skipping...');
+      logger.debug('[MessengerWS] Already connected, skipping...');
       return;
     }
     
@@ -93,7 +94,7 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
     const now = Date.now();
     const timeSinceLastConnect = now - lastConnectTimeRef.current;
     if (timeSinceLastConnect < MIN_CONNECT_INTERVAL && reconnectAttemptsRef.current > 0) {
-      console.log(`[MessengerWS] Rate limited. Waiting ${MIN_CONNECT_INTERVAL - timeSinceLastConnect}ms...`);
+      logger.debug(`[MessengerWS] Rate limited. Waiting ${MIN_CONNECT_INTERVAL - timeSinceLastConnect}ms...`);
       clearReconnectTimeout();
       reconnectTimeoutRef.current = setTimeout(
         connect,
@@ -108,13 +109,13 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
     
     try {
       const wsUrl = getWebSocketUrl(`/ws/messenger/${accountId || 'all'}/`);
-      console.log('[MessengerWS] Connecting to:', wsUrl);
+      logger.debug(`[MessengerWS] Connecting to: ${wsUrl}`);
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
       
       ws.onopen = () => {
-        console.log('[MessengerWS] Open, sending auth...');
+        logger.debug('[MessengerWS] Open, sending auth...');
         setIsConnecting(false);
         const currentToken = useAuthStore.getState().token;
         if (currentToken) {
@@ -128,7 +129,7 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
 
           switch (data.type) {
             case 'connection_established':
-              console.log('[MessengerWS] Authenticated ✓');
+              logger.debug('[MessengerWS] Authenticated ✓');
               setIsConnected(true);
               reconnectAttemptsRef.current = 0;
               onConnect?.();
@@ -140,15 +141,15 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
               onConversationUpdate?.(data as MessengerConversationEvent);
               break;
             default:
-              console.log('[MessengerWS] Unknown event type:', data);
+              logger.debug(`[MessengerWS] Unknown event type: ${data}`);
           }
         } catch (error) {
-          console.error('[MessengerWS] Error parsing message:', error);
+          logger.error('[MessengerWS] Error parsing message:', error);
         }
       };
       
       ws.onclose = (event) => {
-        console.log('[MessengerWS] Disconnected:', event.code, event.reason);
+        logger.debug(`[MessengerWS] Disconnected: ${event.code, event.reason}`);
         setIsConnected(false);
         setIsConnecting(false);
         wsRef.current = null;
@@ -158,23 +159,23 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
         if (!intentionalCloseRef.current && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
           reconnectAttemptsRef.current++;
           const delay = getReconnectDelay();
-          console.log(`[MessengerWS] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
+          logger.debug(`[MessengerWS] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
           
           clearReconnectTimeout();
           reconnectTimeoutRef.current = setTimeout(connect, delay);
         } else if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
-          console.error('[MessengerWS] Max reconnection attempts reached');
+          logger.error('[MessengerWS] Max reconnection attempts reached');
         }
       };
       
       ws.onerror = (error) => {
-        console.error('[MessengerWS] Error:', error);
+        logger.error('[MessengerWS] Error:', error);
         setIsConnecting(false);
         onError?.(error);
       };
       
     } catch (error) {
-      console.error('[MessengerWS] Connection error:', error);
+      logger.error('[MessengerWS] Connection error:', error);
       setIsConnecting(false);
       wsRef.current = null;
     }
@@ -204,7 +205,7 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
       wsRef.current.send(JSON.stringify(message));
       return true;
     }
-    console.warn('[MessengerWS] Cannot send message, not connected');
+    logger.warn('[MessengerWS] Cannot send message, not connected');
     return false;
   }, []);
   

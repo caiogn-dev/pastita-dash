@@ -123,7 +123,7 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
       }
     } catch (err) {
       console.error('Erro ao reproduzir áudio:', err);
-      setError('Não foi possível reproduzir o áudio. Formo não suportado.');
+      setError('Não foi possível reproduzir o áudio. Formato não suportado.');
     }
   };
 

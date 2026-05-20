@@ -3,6 +3,7 @@
  * Suporte a múltiplos transportes: WebSocket → SSE → HTTP Polling
  * Fallback automático com reconexão e backoff exponencial
  */
+import logger from './logger';
 
 export type TransportType = 'websocket' | 'sse' | 'polling';
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
@@ -170,7 +171,7 @@ export class RealtimeConnection {
    */
   connect(): void {
     if (this.status === 'connecting' || this.status === 'connected') {
-      console.log('[Realtime] Already connecting or connected');
+      logger.debug('[Realtime] Already connecting or connected');
       return;
     }
 
@@ -186,7 +187,7 @@ export class RealtimeConnection {
     this.setStatus('disconnected');
     this.reconnectAttempts = 0;
     this.currentFallbackIndex = 0;
-    console.log('[Realtime] Disconnected');
+    logger.debug('[Realtime] Disconnected');
   }
 
   /**
@@ -208,11 +209,11 @@ export class RealtimeConnection {
     }
     this.listeners.get(event)!.add(callback);
     
-    console.log(`[Realtime] Subscribed to '${event}' (total: ${this.listeners.get(event)!.size})`);
+    logger.debug(`[Realtime] Subscribed to '${event}' (total: ${this.listeners.get(event)!.size})`);
     
     return () => {
       this.listeners.get(event)?.delete(callback);
-      console.log(`[Realtime] Unsubscribed from '${event}'`);
+      logger.debug(`[Realtime] Unsubscribed from '${event}'`);
     };
   }
 
@@ -251,7 +252,7 @@ export class RealtimeConnection {
    */
   emit(event: string, data?: unknown): boolean {
     if (this.transport !== 'websocket' || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('[Realtime] Cannot emit: not connected via WebSocket');
+      logger.warn('[Realtime] Cannot emit: not connected via WebSocket');
       return false;
     }
     
@@ -260,7 +261,7 @@ export class RealtimeConnection {
       this.ws.send(message);
       return true;
     } catch (err) {
-      console.error('[Realtime] Emit error:', err);
+      logger.error('[Realtime] Emit error:', err);
       return false;
     }
   }
@@ -291,20 +292,20 @@ export class RealtimeConnection {
     const transport = this.fallbackOrder[this.currentFallbackIndex];
     
     if (!transport) {
-      console.error('[Realtime] Exhausted all transport options');
+      logger.error('[Realtime] Exhausted all transport options');
       this.setStatus('error');
       this.notifyError(new Error('All transport options exhausted'), null);
       return;
     }
 
     if (!isTransportSupported(transport)) {
-      console.log(`[Realtime] Transport '${transport}' not supported, trying next...`);
+      logger.debug(`[Realtime] Transport '${transport}' not supported, trying next...`);
       this.currentFallbackIndex++;
       this.tryConnect();
       return;
     }
 
-    console.log(`[Realtime] Trying transport: ${transport}`);
+    logger.debug(`[Realtime] Trying transport: ${transport}`);
     this.transport = transport;
 
     switch (transport) {
@@ -326,12 +327,12 @@ export class RealtimeConnection {
   private connectWebSocket(): void {
     try {
       const url = this.buildUrl('websocket');
-      console.log('[Realtime] Connecting WebSocket:', url);
+      logger.debug(`[Realtime] Connecting WebSocket: ${url}`);
 
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {
-        console.log('[Realtime] WebSocket open, sending auth...');
+        logger.debug('[Realtime] WebSocket open, sending auth...');
         if (this.token) {
           this.ws!.send(JSON.stringify({ type: 'auth', token: this.token }));
         }
@@ -342,28 +343,28 @@ export class RealtimeConnection {
         try {
           const data = JSON.parse(e.data);
           if (data.type === 'connection_established') {
-            console.log('[Realtime] WebSocket authenticated ✓');
+            logger.debug('[Realtime] WebSocket authenticated ✓');
             this.onConnectSuccess();
             this.startPingInterval();
             return;
           }
           this.handleMessage(data);
         } catch (err) {
-          console.error('[Realtime] WebSocket parse error:', err);
+          logger.error('[Realtime] WebSocket parse error:', err);
         }
       };
       
       this.ws.onclose = (e) => {
-        console.log('[Realtime] WebSocket closed:', e.code, e.reason);
+        logger.debug(`[Realtime] WebSocket closed: ${e.code, e.reason}`);
         this.onConnectError(new Error(`WebSocket closed: ${e.code} ${e.reason}`));
       };
       
       this.ws.onerror = (e) => {
-        console.error('[Realtime] WebSocket error:', e);
+        logger.error('[Realtime] WebSocket error:', e);
         this.onConnectError(new Error('WebSocket error'));
       };
     } catch (err) {
-      console.error('[Realtime] WebSocket connection error:', err);
+      logger.error('[Realtime] WebSocket connection error:', err);
       this.onConnectError(err as Error);
     }
   }
@@ -374,12 +375,12 @@ export class RealtimeConnection {
   private connectSSE(): void {
     try {
       const url = this.buildUrl('sse');
-      console.log('[Realtime] Connecting SSE:', url.replace(/token=.*/, 'token=***'));
+      logger.debug(`[Realtime] Connecting SSE: ${url.replace(/token=.*/, 'token=***')}`);
       
       this.eventSource = new EventSource(url);
       
       this.eventSource.onopen = () => {
-        console.log('[Realtime] SSE connected ✓');
+        logger.debug('[Realtime] SSE connected ✓');
         this.onConnectSuccess();
       };
       
@@ -388,7 +389,7 @@ export class RealtimeConnection {
           const data = JSON.parse(e.data);
           this.handleMessage(data);
         } catch (err) {
-          console.error('[Realtime] SSE parse error:', err);
+          logger.error('[Realtime] SSE parse error:', err);
         }
       };
       
@@ -398,7 +399,7 @@ export class RealtimeConnection {
           const data = JSON.parse(e.data);
           this.emitEvent('order_created', data);
         } catch (err) {
-          console.error('[Realtime] SSE event error:', err);
+          logger.error('[Realtime] SSE event error:', err);
         }
       });
       
@@ -407,7 +408,7 @@ export class RealtimeConnection {
           const data = JSON.parse(e.data);
           this.emitEvent('order_updated', data);
         } catch (err) {
-          console.error('[Realtime] SSE event error:', err);
+          logger.error('[Realtime] SSE event error:', err);
         }
       });
       
@@ -416,16 +417,16 @@ export class RealtimeConnection {
           const data = JSON.parse(e.data);
           this.emitEvent('payment_received', data);
         } catch (err) {
-          console.error('[Realtime] SSE event error:', err);
+          logger.error('[Realtime] SSE event error:', err);
         }
       });
       
       this.eventSource.onerror = (e) => {
-        console.error('[Realtime] SSE error:', e);
+        logger.error('[Realtime] SSE error:', e);
         this.onConnectError(new Error('SSE error'));
       };
     } catch (err) {
-      console.error('[Realtime] SSE connection error:', err);
+      logger.error('[Realtime] SSE connection error:', err);
       this.onConnectError(err as Error);
     }
   }
@@ -434,7 +435,7 @@ export class RealtimeConnection {
    * Conecta via HTTP Polling
    */
   private connectPolling(): void {
-    console.log('[Realtime] Starting HTTP polling');
+    logger.debug('[Realtime] Starting HTTP polling');
     this.pollingController = new AbortController();
     this.doPoll();
   }
@@ -475,7 +476,7 @@ export class RealtimeConnection {
       if ((err as Error).name === 'AbortError') {
         return; // Polling cancelado intencionalmente
       }
-      console.error('[Realtime] Polling error:', err);
+      logger.error('[Realtime] Polling error:', err);
       this.onConnectError(err as Error);
       return;
     }
@@ -632,7 +633,7 @@ export class RealtimeConnection {
     this.currentFallbackIndex++;
     
     if (this.currentFallbackIndex < this.fallbackOrder.length) {
-      console.log(`[Realtime] Falling back to next transport...`);
+      logger.debug(`[Realtime] Falling back to next transport...`);
       this.tryConnect();
     } else {
       // Todos os transportes falharam, tentar reconexão
@@ -645,7 +646,7 @@ export class RealtimeConnection {
    */
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('[Realtime] Max reconnect attempts reached');
+      logger.error('[Realtime] Max reconnect attempts reached');
       this.setStatus('error');
       return;
     }
@@ -655,7 +656,7 @@ export class RealtimeConnection {
       this.maxReconnectDelay
     );
 
-    console.log(`[Realtime] Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
+    logger.debug(`[Realtime] Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
     this.setStatus('connecting');
 
     this.reconnectTimer = window.setTimeout(() => {
@@ -693,7 +694,7 @@ export class RealtimeConnection {
    * Emite evento para listeners
    */
   private emitEvent(event: string, data: unknown): void {
-    console.log(`[Realtime] Event: ${event}`, data);
+    logger.debug(`[Realtime] Event: ${event}`);
 
     // Listeners específicos do evento
     const eventListeners = this.listeners.get(event);
@@ -702,7 +703,7 @@ export class RealtimeConnection {
         try {
           cb(data);
         } catch (e) {
-          console.error('[Realtime] Callback error:', e);
+          logger.error('[Realtime] Callback error:', e);
         }
       });
     }
@@ -712,7 +713,7 @@ export class RealtimeConnection {
       try {
         cb(event, data);
       } catch (e) {
-        console.error('[Realtime] Global callback error:', e);
+        logger.error('[Realtime] Global callback error:', e);
       }
     });
 
@@ -723,7 +724,7 @@ export class RealtimeConnection {
         try {
           cb(data);
         } catch (e) {
-          console.error('[Realtime] Wildcard callback error:', e);
+          logger.error('[Realtime] Wildcard callback error:', e);
         }
       });
     }
@@ -738,7 +739,7 @@ export class RealtimeConnection {
       try {
         cb(status, this.transport);
       } catch (e) {
-        console.error('[Realtime] Status callback error:', e);
+        logger.error('[Realtime] Status callback error:', e);
       }
     });
   }
@@ -751,7 +752,7 @@ export class RealtimeConnection {
       try {
         cb(error, transport);
       } catch (e) {
-        console.error('[Realtime] Error callback error:', e);
+        logger.error('[Realtime] Error callback error:', e);
       }
     });
   }

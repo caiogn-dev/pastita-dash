@@ -16,6 +16,7 @@ import { useAccountStore } from '../stores/accountStore';
 import { useChatStore } from '../stores/chatStore';
 import { Message, Conversation } from '../types';
 import toast from 'react-hot-toast';
+import logger from '../services/logger';
 
 // WebSocket event types
 interface WsMessageReceived {
@@ -246,7 +247,7 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
         }
         
         case 'connection_established':
-          console.log('[WhatsAppWS] Authenticated ✓');
+          logger.debug('[WhatsAppWS] Authenticated ✓');
           isConnecting.current = false;
           attempts.current = 0;
           setIsConnected(true);
@@ -270,7 +271,7 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
           break;
       }
     } catch (error) {
-      console.error('[WhatsAppWS] Error parsing message:', error);
+      logger.error('[WhatsAppWS] Error parsing message:', error);
     }
   }, [chatStore]);
   
@@ -293,7 +294,7 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
       ws.current = new WebSocket(url);
       
       ws.current.onopen = () => {
-        console.log('[WhatsAppWS] Open, sending auth...');
+        logger.debug('[WhatsAppWS] Open, sending auth...');
         const token = useAuthStore.getState().token;
         if (token) {
           ws.current?.send(JSON.stringify({ type: 'auth', token }));
@@ -303,7 +304,7 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
       ws.current.onmessage = handleMessage;
       
       ws.current.onclose = (event) => {
-        console.log('[WhatsAppWS] Disconnected:', event.code, event.reason);
+        logger.debug(`[WhatsAppWS] Disconnected: ${event.code, event.reason}`);
         isConnecting.current = false;
         setIsConnected(false);
         chatStore.setWsConnected(false);
@@ -324,7 +325,7 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
         attempts.current += 1;
         
         if (attempts.current <= 10) {
-          console.log(`[WhatsAppWS] Reconnecting in ${delay}ms (attempt ${attempts.current})`);
+          logger.debug(`[WhatsAppWS] Reconnecting in ${delay}ms (attempt ${attempts.current})`);
           reconnectTimer.current = window.setTimeout(connect, delay);
         } else {
           setConnectionError('Falha ao reconectar após várias tentativas');
@@ -332,12 +333,12 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
       };
       
       ws.current.onerror = (error) => {
-        console.error('[WhatsAppWS] Error:', error);
+        logger.error('[WhatsAppWS] Error:', error);
         isConnecting.current = false;
       };
       
     } catch (error) {
-      console.error('[WhatsAppWS] Connection error:', error);
+      logger.error('[WhatsAppWS] Connection error:', error);
       isConnecting.current = false;
       setConnectionError('Erro ao conectar');
     }

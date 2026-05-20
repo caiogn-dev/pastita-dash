@@ -4,6 +4,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { useWS } from '../context/WebSocketContext';
+import logger from '../services/logger';
 
 interface OrderUpdate {
   type: string;

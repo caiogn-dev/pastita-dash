@@ -14,6 +14,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import logger from '../services/logger';
 
 // Types
 export interface InstagramMessage {
@@ -222,7 +223,7 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
       wsRef.current = new WebSocket(url);
 
       wsRef.current.onopen = () => {
-        console.log('[Instagram WS] Open, sending auth...');
+        logger.debug('[Instagram WS] Open, sending auth...');
         // First-message auth — token never in URL
         if (token) {
           wsRef.current!.send(JSON.stringify({ type: 'auth', token }));
@@ -286,7 +287,7 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
               onStoryReply?.(data);
               break;
             case 'connection_established':
-              console.log('[Instagram WS] Authenticated ✓');
+              logger.debug('[Instagram WS] Authenticated ✓');
               setIsConnected(true);
               setIsConnecting(false);
               setError(null);
@@ -303,7 +304,7 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
               break;
           }
         } catch (err) {
-          console.error('[Instagram WS] Failed to parse message:', err);
+          logger.error('[Instagram WS] Failed to parse message:', err);
         }
       };
     } catch (err) {

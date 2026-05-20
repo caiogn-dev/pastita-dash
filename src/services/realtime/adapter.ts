@@ -10,6 +10,7 @@
  * This is an additive foundation — existing hooks/contexts are NOT changed.
  * Consumers can migrate to this adapter incrementally.
  */
+import logger from '../logger';
 
 export type RealtimeEventHandler = (event: MessageEvent) => void;
 
@@ -53,7 +54,7 @@ export interface RealtimeAdapterOptions {
  *
  * const unsub = adapter.on((event) => {
  *   const data = JSON.parse(event.data);
- *   console.log(data);
+ *   logger.debug(data);
  * });
  *
  * adapter.connect('wss://example.com/ws/', authToken);
@@ -98,7 +99,7 @@ export function createRealtimeAdapter(
 
   function scheduleReconnect(): void {
     if (maxReconnects === 0 || attemptCount >= maxReconnects) {
-      console.warn(
+      logger.warn(
         `[RealtimeAdapter] Max reconnect attempts (${maxReconnects}) reached. Giving up.`
       );
       return;
@@ -108,7 +109,7 @@ export function createRealtimeAdapter(
     const delay = Math.min(reconnectDelay * Math.pow(2, attemptCount), 30_000);
     attemptCount += 1;
 
-    console.log(
+    logger.debug(
       `[RealtimeAdapter] Reconnecting in ${delay}ms (attempt ${attemptCount}/${maxReconnects})`
     );
 
@@ -133,13 +134,13 @@ export function createRealtimeAdapter(
     try {
       ws = new WebSocket(fullUrl);
     } catch (err) {
-      console.error('[RealtimeAdapter] Failed to create WebSocket:', err);
+      logger.error('[RealtimeAdapter] Failed to create WebSocket:', err);
       scheduleReconnect();
       return;
     }
 
     ws.onopen = () => {
-      console.log('[RealtimeAdapter] Open, sending auth...');
+      logger.debug('[RealtimeAdapter] Open, sending auth...');
       sendAuth(ws!, token);
       attemptCount = 0;
     };
@@ -149,13 +150,13 @@ export function createRealtimeAdapter(
         try {
           handler(event);
         } catch (err) {
-          console.error('[RealtimeAdapter] Subscriber error:', err);
+          logger.error('[RealtimeAdapter] Subscriber error:', err);
         }
       });
     };
 
     ws.onclose = (event) => {
-      console.log(
+      logger.debug(
         `[RealtimeAdapter] Closed (code=${event.code}, reason="${event.reason}")`
       );
       ws = null;
@@ -170,7 +171,7 @@ export function createRealtimeAdapter(
     };
 
     ws.onerror = (event) => {
-      console.error('[RealtimeAdapter] WebSocket error:', event);
+      logger.error('[RealtimeAdapter] WebSocket error:', event);
       // onclose will fire immediately after onerror; let it handle reconnect.
     };
   }
@@ -207,12 +208,12 @@ export function createRealtimeAdapter(
       }
 
       attemptCount = 0;
-      console.log('[RealtimeAdapter] Disconnected');
+      logger.debug('[RealtimeAdapter] Disconnected');
     },
 
     send(data: unknown): void {
       if (ws === null || ws.readyState !== WebSocket.OPEN) {
-        console.warn('[RealtimeAdapter] send() called while not connected — ignored');
+        logger.warn('[RealtimeAdapter] send() called while not connected — ignored');
         return;
       }
 
@@ -222,7 +223,7 @@ export function createRealtimeAdapter(
       try {
         ws.send(payload);
       } catch (err) {
-        console.error('[RealtimeAdapter] send() error:', err);
+        logger.error('[RealtimeAdapter] send() error:', err);
       }
     },
 

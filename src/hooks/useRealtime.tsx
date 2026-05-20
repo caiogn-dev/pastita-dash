@@ -15,6 +15,7 @@ import {
 } from '../services/realtime';
 import { useAuthStore } from '../stores/authStore';
 import { useStore } from './useStore';
+import logger from '../services/logger';
 
 const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
 
@@ -61,7 +62,7 @@ export function RealtimeProvider({
   // Criar conexão
   useEffect(() => {
     if (!token) {
-      console.log('[RealtimeProvider] No token, skipping connection creation');
+      logger.debug('[RealtimeProvider] No token, skipping connection creation');
       return;
     }
 
@@ -117,7 +118,7 @@ export function RealtimeProvider({
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && connectionRef.current) {
         if (!connectionRef.current.isConnected()) {
-          console.log('[RealtimeProvider] Tab visible, reconnecting...');
+          logger.debug('[RealtimeProvider] Tab visible, reconnecting...');
           connectionRef.current.reconnect();
         }
       }
@@ -184,7 +185,7 @@ interface UseRealtimeOptions {
  * ```tsx
  * const { isConnected, transport, on, emit } = useRealtime({
  *   events: ['order_created', 'order_updated'],
- *   onEvent: (event, data) => console.log(event, data),
+ *   onEvent: (event, data) => logger.debug(event, data),
  * });
  * ```
  */
@@ -250,7 +251,7 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
   // Wrapper para on (registrar evento manualmente)
   const on = useCallback((event: string, callback: (data: unknown) => void) => {
     if (!connection) {
-      console.warn('[useRealtime] No connection available');
+      logger.warn('[useRealtime] No connection available');
       return () => {};
     }
     return connection.on(event, callback);
@@ -259,7 +260,7 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
   // Wrapper para emit (enviar dados)
   const emit = useCallback((event: string, data?: unknown) => {
     if (!connection) {
-      console.warn('[useRealtime] No connection available');
+      logger.warn('[useRealtime] No connection available');
       return false;
     }
     return connection.emit(event, data);

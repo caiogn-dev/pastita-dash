@@ -1,4 +1,5 @@
 import api from './api';
+import logger from './logger';
 import {
   DashboardOverview,
   DashboardCharts,
@@ -114,13 +115,13 @@ export const dashboardService = {
       
       // Validate basic structure to prevent partial/corrupted responses
       if (!data.accounts || !data.messages || !data.conversations || !data.orders) {
-        console.warn('[Dashboard] Invalid overview response structure, using fallback');
+        logger.warn('[Dashboard] Invalid overview response structure, using fallback');
         return fallback;
       }
       
       return data;
     } catch (error) {
-      console.error('[Dashboard] Failed to fetch overview:', error);
+      logger.error('[Dashboard] Failed to fetch overview:', error);
       return fallback;
     }
   },
@@ -146,7 +147,7 @@ export const dashboardService = {
       if (!Array.isArray(data.messages_per_day) ||
           !Array.isArray(data.orders_per_day) ||
           !Array.isArray(data.conversations_per_day)) {
-        console.warn('[Dashboard] Invalid charts response structure, using fallback');
+        logger.warn('[Dashboard] Invalid charts response structure, using fallback');
         return fallback;
       }
       
@@ -172,7 +173,7 @@ export const dashboardService = {
         order_statuses: data.order_statuses || {},
       };
     } catch (error) {
-      console.error('[Dashboard] Failed to fetch charts:', error);
+      logger.error('[Dashboard] Failed to fetch charts:', error);
       return fallback;
     }
   },
@@ -188,7 +189,7 @@ export const dashboardService = {
       });
       return response.data ?? null;
     } catch (error) {
-      console.error('[Dashboard] Failed to fetch stats:', error);
+      logger.error('[Dashboard] Failed to fetch stats:', error);
       return null;
     }
   },
@@ -206,7 +207,7 @@ export const dashboardService = {
       const response = await api.get<DashboardActivity>('/core/dashboard/activity/', { params });
       return response.data ?? null;
     } catch (error) {
-      console.error('[Dashboard] Failed to fetch activity:', error);
+      logger.error('[Dashboard] Failed to fetch activity:', error);
       return null;
     }
   },
@@ -222,7 +223,7 @@ export const dashboardService = {
       });
       return response.data ?? null;
     } catch (error) {
-      console.error('[Dashboard] Failed to fetch project health:', error);
+      logger.error('[Dashboard] Failed to fetch project health:', error);
       return null;
     }
   },

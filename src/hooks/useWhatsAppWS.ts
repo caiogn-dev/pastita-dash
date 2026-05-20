@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import api from '../services/api';
+import logger from '../services/logger';
 
 // Types
 export interface WhatsAppMessage {
@@ -180,53 +181,53 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
       
       if (data.type === 'pong') return;
       if (data.type === 'connection_established') {
-        console.log('[WhatsApp WS] Connection confirmed:', data);
+        logger.debug(`[WhatsApp WS] Connection confirmed: ${data}`);
         return;
       }
       if (data.type === 'subscribed' || data.type === 'unsubscribed') {
-        console.log(`[WhatsApp WS] ${data.type}:`, data);
+        logger.debug(`[WhatsApp WS] ${data.type}:`);
         return;
       }
       if (data.type === 'read_receipt_sent') {
-        console.log('[WhatsApp WS] Read receipt sent:', data);
+        logger.debug(`[WhatsApp WS] Read receipt sent: ${data}`);
         return;
       }
 
-      console.log('[WhatsApp WS] Event received:', data.type, JSON.stringify(data, null, 2));
+      logger.debug(`[WhatsApp WS] Event received: ${data.type, JSON.stringify(data, null, 2)}`);
 
       switch (data.type) {
         case 'message_received':
-          console.log('[WhatsApp WS] Calling onMessageReceived callback');
+          logger.debug('[WhatsApp WS] Calling onMessageReceived callback');
           opts.current.onMessageReceived?.(data as MessageReceivedEvent);
           opts.current.onMessage?.(data.message);
           break;
         case 'message_sent':
-          console.log('[WhatsApp WS] Calling onMessageSent callback');
+          logger.debug('[WhatsApp WS] Calling onMessageSent callback');
           opts.current.onMessageSent?.(data as MessageSentEvent);
           break;
         case 'status_updated':
-          console.log('[WhatsApp WS] Calling onStatusUpdated callback');
+          logger.debug('[WhatsApp WS] Calling onStatusUpdated callback');
           opts.current.onStatusUpdated?.(data as StatusUpdatedEvent);
           break;
         case 'typing':
           opts.current.onTyping?.(data as TypingEvent);
           break;
         case 'conversation_updated':
-          console.log('[WhatsApp WS] Calling onConversationUpdated callback');
+          logger.debug('[WhatsApp WS] Calling onConversationUpdated callback');
           opts.current.onConversationUpdated?.(data as ConversationUpdatedEvent);
           break;
         case 'error':
-          console.error('[WhatsApp WS] Error event:', data);
+          logger.error('[WhatsApp WS] Error event:', data);
           opts.current.onError?.(data as ErrorEvent);
           break;
         default: {
           // Handle unknown event types
           const unknownData = data as { type: string };
-          console.log('[WhatsApp WS] Unknown event type:', unknownData.type, data);
+          logger.debug(`[WhatsApp WS] Unknown event type: ${unknownData.type, data}`);
         }
       }
     } catch (err) {
-      console.error('[WhatsApp WS] Parse error:', err, 'Raw data:', event.data);
+      logger.error('[WhatsApp WS] Parse error (raw data logged in debug)', err);
     }
   }, []);
 
@@ -234,17 +235,17 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
   const connect = useCallback(() => {
     const url = getWsUrl();
     if (!url || !enabled) {
-      console.log('[WhatsApp WS] Skipping connection (no URL or disabled)');
+      logger.debug('[WhatsApp WS] Skipping connection (no URL or disabled)');
       return;
     }
 
     if (isConnecting.current) {
-      console.log('[WhatsApp WS] Already connecting');
+      logger.debug('[WhatsApp WS] Already connecting');
       return;
     }
 
     if (ws.current?.readyState === WebSocket.OPEN) {
-      console.log('[WhatsApp WS] Already connected');
+      logger.debug('[WhatsApp WS] Already connected');
       return;
     }
 
@@ -256,14 +257,14 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     }
 
     isConnecting.current = true;
-    console.log('[WhatsApp WS] Connecting to:', url);
+    logger.debug(`[WhatsApp WS] Connecting to: ${url}`);
 
     try {
       const socket = new WebSocket(url);
       ws.current = socket;
 
       socket.onopen = () => {
-        console.log('[WhatsApp WS] Open, sending auth...');
+        logger.debug('[WhatsApp WS] Open, sending auth...');
         // First-message auth — token never in URL
         if (token) {
           socket.send(JSON.stringify({ type: 'auth', token }));
@@ -275,7 +276,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
         try {
           const data = JSON.parse(event.data) as { type: string };
           if (data.type === 'connection_established') {
-            console.log('[WhatsApp WS] Authenticated ✓');
+            logger.debug('[WhatsApp WS] Authenticated ✓');
             isConnecting.current = false;
             setIsConnected(true);
             setConnectionError(null);
@@ -294,7 +295,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
       };
 
       socket.onclose = (e) => {
-        console.log('[WhatsApp WS] Closed:', e.code, e.reason);
+        logger.debug(`[WhatsApp WS] Closed: ${e.code, e.reason}`);
         isConnecting.current = false;
         setIsConnected(false);
         opts.current.onConnectionChange?.(false);
@@ -307,7 +308,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
         // Reconnect on abnormal close
         if (e.code !== 1000 && attempts.current < 10 && enabled) {
           const delay = Math.min(1000 * Math.pow(1.5, attempts.current), 30000);
-          console.log(`[WhatsApp WS] Reconnecting in ${Math.round(delay)}ms (attempt ${attempts.current + 1}/10)`);
+          logger.debug(`[WhatsApp WS] Reconnecting in ${Math.round(delay)}ms (attempt ${attempts.current + 1}/10)`);
           setConnectionError('Reconectando...');
 
           reconnectTimer.current = window.setTimeout(() => {
@@ -320,11 +321,11 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
       };
 
       socket.onerror = (e) => {
-        console.error('[WhatsApp WS] Error:', e);
+        logger.error('[WhatsApp WS] Error:', e);
         isConnecting.current = false;
       };
     } catch (err) {
-      console.error('[WhatsApp WS] Connection error:', err);
+      logger.error('[WhatsApp WS] Connection error:', err);
       isConnecting.current = false;
     }
   }, [getWsUrl, enabled, handleMessage]);
@@ -378,7 +379,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     const onVisible = () => {
       if (document.visibilityState === 'visible' && enabled) {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-          console.log('[WhatsApp WS] Tab visible, reconnecting...');
+          logger.debug('[WhatsApp WS] Tab visible, reconnecting...');
           attempts.current = 0;
           connect();
         }

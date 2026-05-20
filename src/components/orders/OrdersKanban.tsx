@@ -45,6 +45,7 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import { Order } from '../../types';
+import logger from '../../services/logger';
 
 // 7-column Kanban flow for a food-delivery restaurant
 // Legacy statuses (processing, paid, shipped, completed, failed, refunded)
@@ -529,11 +530,11 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
           // External caught up! Safe to remove local state
           next.delete(orderId);
           hasChanges = true;
-          console.log(`[Kanban] External synced for ${orderId}: ${state.status}`);
+          logger.debug(`[Kanban] External synced for ${orderId}: ${state.status}`);
         } else if (now - state.timestamp > LOCAL_STATE_TTL) {
           // TTL expired but external doesn't match - keep local state anyway
           // This prevents the "snap back" issue
-          console.log(`[Kanban] TTL expired but keeping local state for ${orderId} (external: ${externalOrder.status}, local: ${state.status})`);
+          logger.debug(`[Kanban] TTL expired but keeping local state for ${orderId} (external: ${externalOrder.status}, local: ${state.status})`);
         }
       }
       
@@ -660,16 +661,16 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
 
     // Validate
     if (!sourceColumn || !destColumn) {
-      console.log('Invalid drag: source or dest column not found');
+      logger.debug('Invalid drag: source or dest column not found');
       return;
     }
     
     if (sourceColumn === destColumn) {
-      console.log('Same column, no change needed');
+      logger.debug('Same column, no change needed');
       return;
     }
 
-    console.log(`[Kanban] Moving order ${activeOrderId} from ${sourceColumn} to ${destColumn}`);
+    logger.debug(`[Kanban] Moving order ${activeOrderId} from ${sourceColumn} to ${destColumn}`);
 
     // Get current order to preserve original status for potential rollback
     const currentOrder = effectiveOrders.find(o => o.id === activeOrderId);
@@ -693,7 +694,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
     if (onStatusChange) {
       try {
         await onStatusChange(activeOrderId, nextStatus);
-        console.log(`[Kanban] ✅ Successfully updated order ${activeOrderId} to ${nextStatus}`);
+        logger.debug(`[Kanban] ✅ Successfully updated order ${activeOrderId} to ${nextStatus}`);
         
         // Mark as confirmed - keep local state active
         setLocalOrderStates(prev => {
@@ -725,7 +726,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
         
       } catch (error) {
         // ROLLBACK: Revert to original status on error
-        console.error('[Kanban] ❌ Failed to update order status:', error);
+        logger.error('[Kanban] ❌ Failed to update order status:', error);
         setLocalOrderStates(prev => {
           const next = new Map(prev);
           next.delete(activeOrderId); // Remove override, will use external status

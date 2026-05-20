@@ -3,6 +3,7 @@
  * Uses Web Audio API with proper initialization
  */
 import { useCallback, useRef, useEffect, useState } from 'react';
+import logger from '../services/logger';
 
 const ORDER_FREQUENCIES = [659.25, 783.99, 987.77, 1174.66]; // E5, G5, B5, D6
 const SUCCESS_FREQUENCIES = [523.25, 783.99]; // C5, G5
@@ -26,7 +27,7 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
       // Resume if suspended
       if (audioCtx.current.state === 'suspended') {
         audioCtx.current.resume().then(() => {
-          console.log('[Sound] AudioContext resumed');
+          logger.debug('[Sound] AudioContext resumed');
         });
       }
       return audioCtx.current;
@@ -35,10 +36,10 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
     try {
       audioCtx.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       setIsInitialized(true);
-      console.log('[Sound] AudioContext initialized, state:', audioCtx.current.state);
+      logger.debug(`[Sound] AudioContext initialized, state: ${audioCtx.current.state}`);
       return audioCtx.current;
     } catch (e) {
-      console.error('[Sound] Failed to create AudioContext:', e);
+      logger.error('[Sound] Failed to create AudioContext:', e);
       return null;
     }
   }, []);
@@ -48,7 +49,7 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
     const handleInteraction = () => {
       initAudio();
       if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission().then(p => console.log('[Sound] Notification permission:', p));
+        Notification.requestPermission().then(p => logger.debug(`[Sound] Notification permission: ${p}`));
       }
     };
 
@@ -86,7 +87,7 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
       oscillator.start(startTime);
       oscillator.stop(startTime + duration);
     } catch (e) {
-      console.error('[Sound] playTone error:', e);
+      logger.error('[Sound] playTone error:', e);
     }
   }, []);
 
@@ -96,20 +97,20 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
     if (!ctx) {
       ctx = initAudio();
       if (!ctx) {
-        console.error('[Sound] No AudioContext available');
+        logger.error('[Sound] No AudioContext available');
         return;
       }
     }
 
     // MUST resume if suspended (browser requirement)
     if (ctx.state === 'suspended') {
-      console.log('[Sound] Resuming suspended AudioContext...');
+      logger.debug('[Sound] Resuming suspended AudioContext...');
       await ctx.resume();
-      console.log('[Sound] AudioContext resumed, state:', ctx.state);
+      logger.debug(`[Sound] AudioContext resumed, state: ${ctx.state}`);
     }
 
     const now = ctx.currentTime;
-    console.log('[Sound] Playing at time:', now, 'state:', ctx.state);
+    logger.debug(`[Sound] Playing at time: ${now} state: ${ctx.state}`);
     
     // First wave - ascending (louder)
     ORDER_FREQUENCIES.forEach((freq, i) => {
@@ -121,7 +122,7 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
       playTone(freq, 0.25, now + 0.7 + i * 0.1, volume * 0.5);
     });
     
-    console.log('[Sound] Order sound scheduled');
+    logger.debug('[Sound] Order sound scheduled');
   }, [initAudio, playTone, volume]);
 
   // Stop the repeating alert
@@ -131,17 +132,17 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
       alertIntervalId.current = undefined;
     }
     setIsAlertActive(false);
-    console.log('[Sound] Alert stopped');
+    logger.debug('[Sound] Alert stopped');
   }, []);
 
   // Play order sound with optional repeat
   const playOrderSound = useCallback(() => {
     if (!enabled) {
-      console.log('[Sound] Disabled, not playing');
+      logger.debug('[Sound] Disabled, not playing');
       return;
     }
 
-    console.log('[Sound] playOrderSound called');
+    logger.debug('[Sound] playOrderSound called');
     playOrderSoundOnce();
 
     // Start repeating if not already active
@@ -165,7 +166,7 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
           requireInteraction: true,
         });
       } catch (e) {
-        console.error('[Sound] Notification error:', e);
+        logger.error('[Sound] Notification error:', e);
       }
     }
   }, [enabled, playOrderSoundOnce, isAlertActive, stopAlert]);
@@ -188,7 +189,7 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
     playTone(SUCCESS_FREQUENCIES[0], 0.15, now, volume * 0.4);
     playTone(SUCCESS_FREQUENCIES[1], 0.3, now + 0.15, volume * 0.45);
     
-    console.log('[Sound] Playing success sound');
+    logger.debug('[Sound] Playing success sound');
   }, [enabled, initAudio, playTone, volume]);
 
   // Alias for compatibility

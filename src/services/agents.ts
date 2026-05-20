@@ -1,4 +1,5 @@
 import api, { normalizePaginatedResponse } from './api';
+import logger from './logger';
 
 // Provider configurations - synced with backend
 // IMPORTANT: defaultBaseUrl is DEPRECATED - use fetchProviderConfig() to get base URLs from backend
@@ -161,7 +162,7 @@ export const fetchProviderConfig = async (): Promise<Record<string, { base_url: 
     backendProviderConfig = response.data;
     return response.data;
   } catch (error) {
-    console.error('[AgentService] Failed to fetch provider config:', error);
+    logger.error('[AgentService] Failed to fetch provider config:', error);
     return {};
   }
 };
@@ -192,7 +193,7 @@ class AgentServiceError extends Error {
 }
 
 const handleApiError = (error: unknown): never => {
-  console.error('[AgentService] API Error:', error);
+  logger.error('[AgentService] API Error:', error);
   
   if (error && typeof error === 'object' && 'response' in error) {
     const axiosError = error as { 
@@ -224,7 +225,7 @@ const handleApiError = (error: unknown): never => {
       message = axiosError.message;
     }
     
-    console.error(`[AgentService] Error ${status}: ${message}`, { data });
+    logger.error(`[AgentService] Error ${status}: ${message}`, { data });
     throw new AgentServiceError(message, status, data);
   }
   
@@ -282,7 +283,7 @@ const agentsService = {
     agentId: string,
     data: ProcessMessageRequest
   ): Promise<ProcessMessageResponse> => {
-    console.log(`[AgentService] Processing message for agent ${agentId}:`, {
+    logger.debug(`[AgentService] Processing message for agent ${agentId}:`, {
       messageLength: data.message?.length,
       sessionId: data.session_id,
       hasPhoneNumber: !!data.phone_number,
@@ -290,7 +291,7 @@ const agentsService = {
     
     try {
       const response = await api.post(`/agents/${agentId}/process/`, data);
-      console.log('[AgentService] Process message success:', {
+      logger.debug('[AgentService] Process message success:', {
         hasResponse: !!response.data?.response,
         sessionId: response.data?.session_id,
         tokensUsed: response.data?.tokens_used,
@@ -298,7 +299,7 @@ const agentsService = {
       });
       return response.data;
     } catch (error) {
-      console.error('[AgentService] Process message failed:', error);
+      logger.error('[AgentService] Process message failed:', error);
       return handleApiError(error);
     }
   },
