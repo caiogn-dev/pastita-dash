@@ -164,7 +164,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     const newMessage = event.message;
     if (selectedConversation && event.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) return prev;
+        const isDuplicate = prev.some(m =>
+          m.id === newMessage.id ||
+          (newMessage.whatsapp_message_id && m.whatsapp_message_id === newMessage.whatsapp_message_id)
+        );
+        if (isDuplicate) return prev;
         return [...prev, newMessage as unknown as Message];
       });
       handleAutoScroll(true);
@@ -179,7 +183,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   function handleNewMessage(msg: Message) {
     if (selectedConversation && msg.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        if (prev.some(m => m.id === msg.id || m.whatsapp_message_id === msg.whatsapp_message_id)) return prev;
+        const isDuplicate = prev.some(m =>
+          m.id === msg.id ||
+          (msg.whatsapp_message_id && m.whatsapp_message_id === msg.whatsapp_message_id)
+        );
+        if (isDuplicate) return prev;
         return [...prev, msg];
       });
       if (msg.direction === 'inbound') handleAutoScroll(true);
@@ -191,7 +199,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     if (selectedConversation && event.conversation_id === selectedConversation.id) {
       const converted: Message = { ...msg, account: accountId, updated_at: msg.created_at } as unknown as Message;
       setMessages(prev => {
-        if (prev.some(m => m.id === converted.id || m.whatsapp_message_id === converted.whatsapp_message_id)) return prev;
+        const isDuplicate = prev.some(m =>
+          m.id === converted.id ||
+          (converted.whatsapp_message_id && m.whatsapp_message_id === converted.whatsapp_message_id)
+        );
+        if (isDuplicate) return prev;
         return [...prev, converted];
       });
     }
