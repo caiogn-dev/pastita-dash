@@ -145,8 +145,9 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
       ? 'ws'
       : 'wss';
     // WebSocket endpoint: /ws/whatsapp/{account_id}/
+    // Token is sent via an 'auth' message immediately after onopen — não expor na URL.
     if (!selectedAccount) return null;
-    return `${protocol}://${host}/ws/whatsapp/${selectedAccount.id}/?token=${token}`;
+    return `${protocol}://${host}/ws/whatsapp/${selectedAccount.id}/`;
   }, [token, dashboardMode, selectedAccount]);
   
   // Cleanup function
