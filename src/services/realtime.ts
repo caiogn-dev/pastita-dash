@@ -585,10 +585,8 @@ export class RealtimeConnection {
    * Retorna o host WebSocket
    */
   private getWSHost(): string {
-    // @ts-ignore - Vite env
     let wsHost: string | undefined = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WS_HOST : undefined;
     if (!wsHost) {
-      // @ts-ignore - Vite env
       const apiUrl: string = typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_API_URL || '') : '';
       if (apiUrl) {
         try {
@@ -850,10 +848,8 @@ export function setGlobalConnection(connection: RealtimeConnection | null): void
  * Hook helper para obter URL WebSocket (backwards compatibility)
  */
 export function getWebSocketUrl(path: string): string {
-  // @ts-ignore - Vite env
   let wsHost: string | undefined = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WS_HOST : undefined;
   if (!wsHost) {
-    // @ts-ignore - Vite env
     const apiUrl: string = typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_API_URL || '') : '';
     if (apiUrl) {
       try {

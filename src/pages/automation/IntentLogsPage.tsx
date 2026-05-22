@@ -59,7 +59,9 @@ const IntentLogsPage: React.FC = () => {
     try {
       const statsData = await intentService.getStats();
       setStats(statsData);
-    } catch {}
+    } catch {
+      // stats are non-critical; silently ignore errors
+    }
   };
 
   useEffect(() => {

@@ -506,7 +506,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           </select>
         );
       
-      case 'multiselect':
+      case 'multiselect': {
         const selectedValues = Array.isArray(value) ? value : [];
         return (
           <div className="space-y-2">
@@ -529,6 +529,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             ))}
           </div>
         );
+      }
       
       case 'boolean':
         return (

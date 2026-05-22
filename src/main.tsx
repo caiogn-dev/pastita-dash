@@ -17,7 +17,6 @@ try {
       const token = parsed?.state?.token;
       if (token) {
         setAuthToken(token);
-        // eslint-disable-next-line no-console
         console.debug('[main] preloaded auth header from localStorage');
       }
     }
