@@ -52,6 +52,9 @@ export interface Store {
   banner_url?: string;
   primary_color: string;
   secondary_color: string;
+  template: 'fresh' | 'bold' | 'classic';
+  tagline: string;
+  custom_domain: string | null;
   email: string;
   phone: string;
   whatsapp_number: string;
@@ -101,6 +104,11 @@ export interface StoreInput {
   min_order_value?: number;
   default_delivery_fee?: number;
   metadata?: Record<string, unknown>;
+  primary_color?: string;
+  secondary_color?: string;
+  template?: 'fresh' | 'bold' | 'classic';
+  tagline?: string;
+  custom_domain?: string | null;
 }
 
 export interface StoreIntegration {

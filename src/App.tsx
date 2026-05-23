@@ -62,6 +62,7 @@ const SaladasDashboardPage = lazy(() => import('./pages/reports').then(m => ({ d
 const StoresPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoresPage })));
 const StoreDetailPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreDetailPage })));
 const StoreSettingsPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreSettingsPage })));
+const StorefrontPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StorefrontPage })));
 
 // Marketing Pages
 const MarketingPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.MarketingPage })));
@@ -210,6 +211,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
         <Route path="stores/:storeId/payments" element={<Suspense fallback={<FullPageLoading />}><PaymentsPage /></Suspense>} />
         <Route path="stores/:storeId/settings" element={<Suspense fallback={<FullPageLoading />}><StoreSettingsPage /></Suspense>} />
+        <Route path="stores/:storeId/storefront" element={<Suspense fallback={<FullPageLoading />}><StorefrontPage /></Suspense>} />
         <Route path="stores/:storeId/delivery" element={<Suspense fallback={<FullPageLoading />}><DeliveryZonesPage /></Suspense>} />
         
         {/* Marketing Routes */}
