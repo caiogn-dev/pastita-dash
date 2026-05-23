@@ -221,7 +221,7 @@ const AppContent: React.FC = () => {
         {/* Instagram Routes */}
         <Route path="instagram" element={<Navigate to="/instagram/accounts" replace />} />
         <Route path="instagram/accounts" element={<Suspense fallback={<FullPageLoading />}><InstagramAccountsPage /></Suspense>} />
-        <Route path="instagram/callback" element={<Suspense fallback={<FullPageLoading />}><InstagramCallbackPage /></Suspense>} />
+        {/* instagram/callback is outside ProtectedRoute — see public routes below */}
         <Route path="instagram/:accountId" element={<Suspense fallback={<FullPageLoading />}><InstagramDashboardPage /></Suspense>} />
         <Route path="instagram/inbox" element={<Suspense fallback={<FullPageLoading />}><InstagramInbox /></Suspense>} />
         
@@ -242,6 +242,12 @@ const AppContent: React.FC = () => {
         <Route path="whatsapp/debug" element={<Suspense fallback={<FullPageLoading />}><DebugDashboardPage /></Suspense>} />
         <Route path="whatsapp/diagnostics" element={<Suspense fallback={<FullPageLoading />}><WebhookDiagnosticsPage /></Suspense>} />
       </Route>
+
+      {/* Public OAuth callbacks — must be outside ProtectedRoute so the redirect
+          from the provider lands correctly even when the tab has no active session */}
+      <Route path="/instagram/callback" element={
+        <Suspense fallback={<FullPageLoading />}><InstagramCallbackPage /></Suspense>
+      } />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -278,7 +284,7 @@ const App: React.FC = () => {
       <div className="app">
         {appContent}
       </div>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 };
