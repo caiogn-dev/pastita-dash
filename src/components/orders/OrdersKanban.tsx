@@ -9,6 +9,7 @@
  * changes are merged carefully to avoid overwriting local updates.
  */
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import {
   DndContext,
   DragOverlay,
@@ -731,6 +732,7 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
           next.delete(activeOrderId); // Remove override, will use external status
           return next;
         });
+        toast.error('Erro ao atualizar status do pedido. Tente novamente.');
       }
     } else {
       // No onStatusChange handler - just mark as confirmed

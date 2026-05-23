@@ -34,6 +34,7 @@ export const InstagramAccountsPage: React.FC = () => {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const popupRef = useRef<Window | null>(null);
   const messageHandlerRef = useRef<((e: MessageEvent) => void) | null>(null);
+  const checkClosedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadAccounts = async () => {
     setLoading(true);
@@ -52,6 +53,15 @@ export const InstagramAccountsPage: React.FC = () => {
 
   useEffect(() => {
     void loadAccounts();
+    return () => {
+      if (checkClosedRef.current !== null) {
+        clearInterval(checkClosedRef.current);
+      }
+      if (messageHandlerRef.current) {
+        window.removeEventListener('message', messageHandlerRef.current);
+        messageHandlerRef.current = null;
+      }
+    };
   }, []);
 
   const activeAccounts = useMemo(
@@ -159,9 +169,10 @@ export const InstagramAccountsPage: React.FC = () => {
     window.addEventListener('message', handleMessage);
 
     // Fallback: popup fechou sem postMessage (usuário cancelou)
-    const checkClosed = setInterval(() => {
+    checkClosedRef.current = setInterval(() => {
       if (popup?.closed) {
-        clearInterval(checkClosed);
+        clearInterval(checkClosedRef.current!);
+        checkClosedRef.current = null;
         if (messageHandlerRef.current) {
           window.removeEventListener('message', messageHandlerRef.current);
           messageHandlerRef.current = null;
