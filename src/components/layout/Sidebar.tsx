@@ -92,6 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       items: [
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
         { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
+        { name: 'Storefront', href: storeHref('storefront'), icon: BuildingStorefrontIcon },
       ]
     },
     {
@@ -118,33 +119,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           href: '/marketing',
           icon: MegaphoneIcon,
           children: [
-            { name: 'Campanhas Email', href: '/marketing/email/campaigns', icon: EnvelopeIcon },
             { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
             { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-            { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
+            ...(user?.is_staff
+              ? [
+                  { name: 'Campanhas Email', href: '/marketing/email/campaigns', icon: EnvelopeIcon },
+                  { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
+                ]
+              : []),
           ]
         },
-        {
-          name: 'Agentes IA',
-          href: '/agents',
-          icon: CpuChipIcon,
-          badge: 'IA',
-          children: [
-            { name: 'Lista de Agentes', href: '/agents', icon: CpuChipIcon },
-            { name: 'Novo Agente', href: '/agents/new', icon: PlusIcon },
-            { name: 'Intenções', href: '/automation/intents/stats', icon: SparklesIcon },
-            { name: 'Logs', href: '/automation/logs', icon: DocumentChartBarIcon },
-          ]
-        },
+        ...(user?.is_staff
+          ? [{
+              name: 'Agentes IA',
+              href: '/agents',
+              icon: CpuChipIcon,
+              badge: 'IA',
+              children: [
+                { name: 'Lista de Agentes', href: '/agents', icon: CpuChipIcon },
+                { name: 'Novo Agente', href: '/agents/new', icon: PlusIcon },
+                { name: 'Intenções', href: '/automation/intents/stats', icon: SparklesIcon },
+                { name: 'Logs', href: '/automation/logs', icon: DocumentChartBarIcon },
+              ]
+            }]
+          : []),
         {
           name: 'Canais',
           href: '/connections',
           icon: LinkIcon,
           children: [
             { name: 'Conexões', href: '/connections', icon: LinkIcon },
-            { name: 'Instagram', href: '/instagram/inbox', icon: ChatBubbleLeftRightIcon },
-            { name: 'Messenger', href: '/messenger/inbox', icon: ChatBubbleBottomCenterTextIcon },
             { name: 'Handover', href: '/whatsapp/handover', icon: UserGroupIcon },
+            ...(user?.is_staff
+              ? [
+                  { name: 'Instagram', href: '/instagram/inbox', icon: ChatBubbleLeftRightIcon },
+                  { name: 'Messenger', href: '/messenger/inbox', icon: ChatBubbleBottomCenterTextIcon },
+                ]
+              : []),
           ]
         },
         {
