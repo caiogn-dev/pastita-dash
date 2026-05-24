@@ -19,6 +19,7 @@ import {
 import toast from 'react-hot-toast';
 import { Card, Badge, Button, Loading } from '../../components/common';
 import { useStore } from '../../hooks';
+import { useAuthStore } from '../../stores/authStore';
 import { getOrders, getOrderStats, updateOrderStatus, StoreOrder } from '../../services/storesApi';
 import { dashboardService } from '../../services';
 import type { ProjectHealth } from '../../types/dashboard';
@@ -202,6 +203,7 @@ const OrderRow: React.FC<OrderRowProps> = ({ order, storeRoute, advancing, onAdv
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const { storeId, storeSlug } = useStore();
   const storeRoute = storeSlug || storeId || '';
 
@@ -482,8 +484,8 @@ export const DashboardPage: React.FC = () => {
 
       </div>
 
-      {/* ── Project health ── */}
-      <Card noPadding>
+      {/* ── Project health (admins only) ── */}
+      {user?.is_staff && <Card noPadding>
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
           <div className="flex items-center gap-2">
@@ -652,7 +654,7 @@ export const DashboardPage: React.FC = () => {
         ) : (
           <div className="p-5 text-sm text-gray-500 dark:text-zinc-400">Saúde do sistema indisponível.</div>
         )}
-      </Card>
+      </Card>}
 
       {/* Footer */}
       <p className="text-right text-xs text-gray-400 dark:text-zinc-600">

@@ -177,54 +177,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   // Dynamic brand info based on selected store
   const brandInfo = useMemo(() => {
-    // Default Pastita branding with local SVG logo
-    const defaultBrand = {
-      name: 'Pastita',
-      logo: '/pastita-logo.svg',
-      primaryColor: '#722F37',
-      secondaryColor: '#8B3A42',
+    if (!store) return {
+      name: 'Painel',
+      logo: null,
+      primaryColor: '#6366f1',
+      secondaryColor: '#4f46e5',
       initial: 'P',
     };
-
-    if (!store) return defaultBrand;
-
-    // Check if it's Agrião based on store name or slug
-    const isAgriao = store.name?.toLowerCase().includes('agriao') || 
-                     store.slug?.toLowerCase().includes('agriao');
-
-    if (isAgriao) {
-      return {
-        name: store.name || 'Agrião',
-        logo: store.logo_url || null,
-        primaryColor: '#4A5D23',
-        secondaryColor: '#6B8E23',
-        initial: 'A',
-      };
-    }
-
-    // For Pastita stores, use local SVG logo
-    const isPastita = store.name?.toLowerCase().includes('pastita') || 
-                      store.slug?.toLowerCase().includes('pastita');
-
     return {
-      name: store.name || 'Pastita',
-      logo: isPastita ? '/pastita-logo.svg' : (store.logo_url || null),
-      primaryColor: store.primary_color || '#722F37',
-      secondaryColor: store.secondary_color || '#8B3A42',
-      initial: store.name?.[0]?.toUpperCase() || 'P',
+      name: store.name,
+      logo: store.logo_url || null,
+      primaryColor: store.primary_color || '#6366f1',
+      secondaryColor: store.secondary_color || '#4f46e5',
+      initial: store.name?.[0]?.toUpperCase() || 'L',
     };
-  }, [store]);
-
-  // Apply theme based on store
-  useEffect(() => {
-    const isAgriao = store?.name?.toLowerCase().includes('agriao') || 
-                     store?.slug?.toLowerCase().includes('agriao');
-    
-    if (isAgriao) {
-      document.documentElement.setAttribute('data-theme', 'agriao');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
   }, [store]);
 
   const handleLogout = () => {
