@@ -20,6 +20,7 @@ import toast from 'react-hot-toast';
 import { Card, Badge, Button, Loading } from '../../components/common';
 import { useStore } from '../../hooks';
 import { useAuthStore } from '../../stores/authStore';
+import { useOrderSound } from '../../hooks/useOrderSound';
 import { getOrders, getOrderStats, updateOrderStatus, StoreOrder } from '../../services/storesApi';
 import { dashboardService } from '../../services';
 import type { ProjectHealth } from '../../types/dashboard';
@@ -207,6 +208,8 @@ export const DashboardPage: React.FC = () => {
   const { storeId, storeSlug } = useStore();
   const storeRoute = storeSlug || storeId || '';
 
+  const { checkAndNotify } = useOrderSound();
+
   const [ordersToday, setOrdersToday]           = useState(0);
   const [revenueToday, setRevenueToday]         = useState(0);
   const [pendingCount, setPendingCount]         = useState(0);
@@ -229,13 +232,16 @@ export const DashboardPage: React.FC = () => {
         dashboardService.getProjectHealth({ store: storeId }),
       ]);
 
+      let resolvedPendingCount = 0;
+
       if (ordersResp.status === 'fulfilled') {
         const orders = ordersResp.value.results;
         setRecentOrders(orders.slice(0, 10));
         const counts: Record<string, number> = {};
         orders.forEach((o) => { counts[o.status] = (counts[o.status] || 0) + 1; });
         setPipelineCounts(counts);
-        setPendingCount(counts['pending'] || 0);
+        resolvedPendingCount = counts['pending'] || 0;
+        setPendingCount(resolvedPendingCount);
       }
 
       if (statsResp.status === 'fulfilled' && statsResp.value) {
@@ -249,7 +255,8 @@ export const DashboardPage: React.FC = () => {
         const ov = overview?.orders;
         if (cv) setConversationsOpen(Number(cv.by_status?.open ?? cv.active ?? 0));
         if (ov) {
-          setPendingCount(Number(ov.by_status?.pending ?? 0));
+          resolvedPendingCount = Number(ov.by_status?.pending ?? 0);
+          setPendingCount(resolvedPendingCount);
           if (!Number.isFinite(Number(statsResp.status === 'fulfilled' ? statsResp.value?.today_revenue : NaN))) {
             setRevenueToday(Number(ov.revenue_today ?? 0));
           }
@@ -263,6 +270,7 @@ export const DashboardPage: React.FC = () => {
         setProjectHealth(healthResp.value);
       }
 
+      checkAndNotify(resolvedPendingCount);
       setRefreshedAt(new Date());
     } catch {
       toast.error('Erro ao carregar dados');

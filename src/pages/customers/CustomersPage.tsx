@@ -452,10 +452,22 @@ export const CustomersPage: React.FC = () => {
       {/* ── Table ── */}
       <div className="bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
         {filtered.length === 0 ? (
-          <div className="py-16 text-center">
-            <UserGroupIcon className="h-8 w-8 mx-auto mb-3 text-gray-300 dark:text-zinc-700" />
-            <p className="text-gray-400 dark:text-zinc-500 text-sm">Nenhum cliente encontrado.</p>
-          </div>
+          customers.length === 0 && !loading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
+                <UserGroupIcon className="w-8 h-8 text-indigo-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum cliente ainda</h3>
+              <p className="text-gray-500 text-sm max-w-xs">
+                Seus clientes aparecerão aqui assim que realizarem o primeiro pedido no cardápio.
+              </p>
+            </div>
+          ) : (
+            <div className="py-16 text-center">
+              <UserGroupIcon className="h-8 w-8 mx-auto mb-3 text-gray-300 dark:text-zinc-700" />
+              <p className="text-gray-400 dark:text-zinc-500 text-sm">Nenhum cliente encontrado.</p>
+            </div>
+          )
         ) : (
           <>
             <table className="w-full text-sm">
