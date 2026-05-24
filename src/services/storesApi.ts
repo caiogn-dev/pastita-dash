@@ -73,7 +73,7 @@ export interface Store {
   min_order_value: number;
   free_delivery_threshold?: number;
   default_delivery_fee: number;
-  operating_hours: Record<string, { open: string; close: string }>;
+  operating_hours: Record<string, { open: string; close: string; is_open: boolean }>;
   is_open: boolean;
   owner: number;
   metadata: Record<string, unknown>;
@@ -104,6 +104,7 @@ export interface StoreInput {
   min_order_value?: number;
   default_delivery_fee?: number;
   metadata?: Record<string, unknown>;
+  operating_hours?: Record<string, { open: string; close: string; is_open: boolean }>;
   primary_color?: string;
   secondary_color?: string;
   template?: 'fresh' | 'bold' | 'classic';
@@ -517,6 +518,29 @@ export const updateStore = async (id: string, data: Partial<StoreInput>): Promis
     return response.data;
   } catch (error) {
     logger.error('Failed to update store', error);
+    throw error;
+  }
+};
+
+export const updateStoreWithFiles = async (
+  id: string,
+  data: Partial<StoreInput> & { logo?: File | null; banner?: File | null }
+): Promise<Store> => {
+  try {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value === null || value === undefined) return;
+      if (value instanceof File) { formData.append(key, value); return; }
+      if (typeof value === 'object') { formData.append(key, JSON.stringify(value)); return; }
+      if (typeof value === 'boolean') { formData.append(key, value ? 'true' : 'false'); return; }
+      formData.append(key, String(value));
+    });
+    const response = await api.patch(`${STORES_ADMIN_URL}/${id}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to update store with files', error);
     throw error;
   }
 };
@@ -1547,6 +1571,7 @@ export default {
   getStore,
   createStore,
   updateStore,
+  updateStoreWithFiles,
   deleteStore,
   getStoreStats,
   activateStore,

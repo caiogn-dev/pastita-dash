@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { getStore, updateStore, type Store } from '../../services/storesApi';
+import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../services/storesApi';
 import { useStore } from '../../hooks';
 
 type Template = 'fresh' | 'bold' | 'classic';
@@ -32,6 +32,11 @@ export const StorefrontPage: React.FC = () => {
     custom_domain: '',
   });
 
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState('');
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState('');
+
   const loadStore = useCallback(async () => {
     if (!effectiveStoreId) return;
     const data = await getStore(effectiveStoreId);
@@ -47,12 +52,36 @@ export const StorefrontPage: React.FC = () => {
 
   useEffect(() => { loadStore(); }, [loadStore]);
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  };
+
   const handleSave = async () => {
     if (!effectiveStoreId) return;
     setSaving(true);
     try {
-      await updateStore(effectiveStoreId, form);
+      if (logoFile || bannerFile) {
+        await updateStoreWithFiles(effectiveStoreId, {
+          ...form,
+          ...(logoFile ? { logo: logoFile } : {}),
+          ...(bannerFile ? { banner: bannerFile } : {}),
+        });
+      } else {
+        await updateStore(effectiveStoreId, form);
+      }
       toast.success('Storefront salvo com sucesso!');
+      setLogoFile(null);
+      setBannerFile(null);
     } catch {
       toast.error('Erro ao salvar. Tente novamente.');
     } finally {
@@ -68,6 +97,55 @@ export const StorefrontPage: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900">Storefront</h1>
         <p className="text-gray-500 mt-1">Configure a aparência do site da loja.</p>
       </div>
+
+      {/* Logo */}
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold text-gray-700">Logo da loja</h2>
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full border-2 border-gray-200 overflow-hidden flex items-center justify-center bg-gray-50 flex-shrink-0">
+            {logoPreview || store?.logo_url ? (
+              <img src={logoPreview || store?.logo_url || ''} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl text-gray-300">🏪</span>
+            )}
+          </div>
+          <label className="cursor-pointer">
+            <span className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              {logoFile ? 'Trocar logo' : 'Enviar logo'}
+            </span>
+            <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+          </label>
+          {logoPreview && (
+            <button onClick={() => { setLogoFile(null); setLogoPreview(''); }} className="text-sm text-red-500 hover:text-red-700">Remover</button>
+          )}
+        </div>
+        <p className="text-xs text-gray-400">PNG ou JPG. Recomendado: 400×400px.</p>
+      </section>
+
+      {/* Banner */}
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold text-gray-700">Banner do cardápio</h2>
+        <div className="relative w-full h-32 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden bg-gray-50">
+          {bannerPreview || store?.banner_url ? (
+            <img src={bannerPreview || store?.banner_url || ''} alt="Banner" className="w-full h-full object-cover" />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-300">
+              <span className="text-3xl">🖼️</span>
+              <span className="text-xs mt-1">Sem banner</span>
+            </div>
+          )}
+        </div>
+        <label className="cursor-pointer inline-block">
+          <span className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            {bannerFile ? 'Trocar banner' : 'Enviar banner'}
+          </span>
+          <input type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
+        </label>
+        {bannerPreview && (
+          <button onClick={() => { setBannerFile(null); setBannerPreview(''); }} className="ml-3 text-sm text-red-500 hover:text-red-700">Remover</button>
+        )}
+        <p className="text-xs text-gray-400">PNG ou JPG. Recomendado: 1200×300px.</p>
+      </section>
 
       {/* Template */}
       <section className="space-y-3">
