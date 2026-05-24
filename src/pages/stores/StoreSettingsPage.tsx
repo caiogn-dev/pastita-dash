@@ -23,6 +23,21 @@ interface DeliveryConfig {
   delivery_max_distance: number;
 }
 
+const DAYS = [
+  { key: 'monday',    label: 'Segunda' },
+  { key: 'tuesday',   label: 'Terça' },
+  { key: 'wednesday', label: 'Quarta' },
+  { key: 'thursday',  label: 'Quinta' },
+  { key: 'friday',    label: 'Sexta' },
+  { key: 'saturday',  label: 'Sábado' },
+  { key: 'sunday',    label: 'Domingo' },
+];
+
+type DayHours = { is_open: boolean; open: string; close: string };
+type OperatingHours = Record<string, DayHours>;
+
+const DEFAULT_HOURS: DayHours = { is_open: true, open: '08:00', close: '22:00' };
+
 const defaultDeliveryConfig: DeliveryConfig = {
   delivery_base_fee: 5.0,
   delivery_fee_per_km: 1.0,
@@ -45,6 +60,7 @@ export const StoreSettingsPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [store, setStore] = useState<Store | null>(null);
   const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig>(defaultDeliveryConfig);
+  const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
   const [storeForm, setStoreForm] = useState({
     name: '',
     email: '',
@@ -90,6 +106,13 @@ export const StoreSettingsPage: React.FC = () => {
         delivery_max_fee: Number(metadata.delivery_max_fee) || defaultDeliveryConfig.delivery_max_fee,
         delivery_max_distance: Number(metadata.delivery_max_distance) || defaultDeliveryConfig.delivery_max_distance,
       });
+
+      const stored = (data.operating_hours as OperatingHours) || {};
+      const initialized: OperatingHours = {};
+      DAYS.forEach(d => {
+        initialized[d.key] = stored[d.key] || { ...DEFAULT_HOURS, is_open: d.key !== 'sunday' };
+      });
+      setOperatingHours(initialized);
     } catch (error) {
       logger.error('Error loading store:', error);
       toast.error('Erro ao carregar configurações da loja');
@@ -192,6 +215,21 @@ export const StoreSettingsPage: React.FC = () => {
     } catch (error) {
       logger.error('Error saving location:', error);
       toast.error('Erro ao salvar localização');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveOperatingHours = async () => {
+    if (!effectiveStoreId) return;
+    setSaving(true);
+    try {
+      await updateStore(effectiveStoreId, { operating_hours: operatingHours });
+      toast.success('Horários de funcionamento atualizados!');
+      loadStore();
+    } catch (error) {
+      logger.error('Error saving operating hours:', error);
+      toast.error('Erro ao salvar horários de funcionamento');
     } finally {
       setSaving(false);
     }
@@ -439,6 +477,71 @@ export const StoreSettingsPage: React.FC = () => {
             className="mt-6 w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
           >
             {saving ? 'Salvando...' : 'Salvar Configurações de Entrega'}
+          </button>
+        </div>
+
+        {/* Horários de Funcionamento */}
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <ClockIcon className="w-5 h-5 text-gray-400" />
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Horários de funcionamento</h3>
+          </div>
+          <div className="space-y-3">
+            {DAYS.map(day => {
+              const h = operatingHours[day.key] || DEFAULT_HOURS;
+              return (
+                <div key={day.key} className="flex items-center gap-3">
+                  <div className="w-24 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setOperatingHours(prev => ({
+                        ...prev,
+                        [day.key]: { ...h, is_open: !h.is_open }
+                      }))}
+                      className={`w-full text-xs font-semibold px-2 py-1.5 rounded-lg transition-colors ${
+                        h.is_open
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-500'
+                      }`}
+                    >
+                      {h.is_open ? '✓ ' : ''}{day.label}
+                    </button>
+                  </div>
+                  {h.is_open ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="time"
+                        value={h.open}
+                        onChange={e => setOperatingHours(prev => ({
+                          ...prev,
+                          [day.key]: { ...h, open: e.target.value }
+                        }))}
+                        className="border border-gray-300 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-zinc-300 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                      <span className="text-gray-400 text-sm">até</span>
+                      <input
+                        type="time"
+                        value={h.close}
+                        onChange={e => setOperatingHours(prev => ({
+                          ...prev,
+                          [day.key]: { ...h, close: e.target.value }
+                        }))}
+                        className="border border-gray-300 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-zinc-300 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400 italic">Fechado</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <button
+            onClick={handleSaveOperatingHours}
+            disabled={saving}
+            className="mt-6 w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+          >
+            {saving ? 'Salvando...' : 'Salvar Horários'}
           </button>
         </div>
 
