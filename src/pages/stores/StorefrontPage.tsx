@@ -162,13 +162,29 @@ export const StorefrontPage: React.FC = () => {
         </p>
       </section>
 
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-      >
-        {saving ? 'Salvando...' : 'Salvar storefront'}
-      </button>
+      <div className="flex gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex-1 bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+        >
+          {saving ? 'Salvando...' : 'Salvar storefront'}
+        </button>
+        {store && (
+          <a
+            href={
+              store.custom_domain
+                ? `https://${store.custom_domain}`
+                : `${import.meta.env.VITE_STOREFRONT_BASE_URL || ''}/preview/${store.slug}`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-5 py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 font-semibold hover:bg-indigo-50 transition-colors whitespace-nowrap"
+          >
+            Ver prévia
+          </a>
+        )}
+      </div>
     </div>
   );
 };
