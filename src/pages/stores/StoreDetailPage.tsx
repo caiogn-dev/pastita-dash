@@ -30,7 +30,7 @@ import storesApi, { Store, StoreStats } from '../../services/storesApi';
 import { useStoreContextStore } from '../../stores';
 import logger from '../../services/logger';
 
-type TabId = 'overview' | 'products' | 'orders' | 'coupons' | 'delivery' | 'settings';
+type TabId = 'overview' | 'products' | 'orders' | 'coupons' | 'delivery' | 'settings' | 'storefront';
 
 interface Tab {
   id: TabId;
@@ -46,6 +46,7 @@ const TABS: Tab[] = [
   { id: 'coupons', label: 'Cupons', icon: TagIcon, path: 'coupons' },
   { id: 'delivery', label: 'Entrega', icon: TruckIcon, path: 'delivery' },
   { id: 'settings', label: 'Configurações', icon: Cog6ToothIcon, path: 'settings' },
+  { id: 'storefront', label: 'Storefront', icon: BuildingStorefrontIcon, path: 'storefront' },
 ];
 
 export const StoreDetailPage: React.FC = () => {
