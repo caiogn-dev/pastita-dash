@@ -175,7 +175,7 @@ export const StorefrontPage: React.FC = () => {
             href={
               store.custom_domain
                 ? `https://${store.custom_domain}`
-                : `${import.meta.env.VITE_STOREFRONT_BASE_URL || ''}/preview/${store.slug}`
+                : `${import.meta.env.VITE_STOREFRONT_BASE_URL || 'https://cesaladas.com.br'}/preview/${store.slug}`
             }
             target="_blank"
             rel="noopener noreferrer"
