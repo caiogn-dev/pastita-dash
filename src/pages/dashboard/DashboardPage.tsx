@@ -98,41 +98,45 @@ interface KpiCardProps {
   iconBg?: string;
   iconColor?: string;
   urgency?: Urgency;
+  delta?: string;
   onClick?: () => void;
 }
 
 const KpiCard: React.FC<KpiCardProps> = ({
-  icon, label, value, sub, accent, iconBg, iconColor, urgency = 'none', onClick,
+  icon, label, value, sub, accent, iconBg, iconColor, urgency = 'none', delta, onClick,
 }) => (
   <div onClick={onClick} className={`flex-1 min-w-0 ${onClick ? 'cursor-pointer' : ''}`}>
     <div className={[
       'h-full rounded-xl border shadow-sm transition-all duration-200 overflow-hidden',
-      'bg-white dark:bg-zinc-950',
+      'bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]',
       onClick ? 'hover:shadow-md hover:-translate-y-0.5' : '',
       urgency === 'high'
         ? 'border-red-200 dark:border-red-900/60'
         : urgency === 'medium'
         ? 'border-yellow-200 dark:border-yellow-900/60'
-        : 'border-gray-100 dark:border-zinc-800',
+        : 'border-gray-100 dark:border-[var(--dark-border,#2a2a2a)]',
     ].filter(Boolean).join(' ')}>
       <div className="flex items-start justify-between gap-3 p-5">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2.5">
+          <p className="text-[11px] font-bold text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-widest mb-2.5">
             {label}
           </p>
           <p className={[
-            'text-3xl font-bold tracking-tight truncate leading-none mb-1.5',
-            accent ?? 'text-gray-900 dark:text-white',
+            'text-3xl font-bold tracking-tight truncate leading-none mb-1',
+            accent ?? 'text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]',
             urgency === 'high' ? 'animate-pulse' : '',
           ].filter(Boolean).join(' ')}>
             {value}
           </p>
-          {sub && <p className="text-xs text-gray-400 dark:text-zinc-500">{sub}</p>}
+          {delta && (
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">{delta}</span>
+          )}
+          {sub && <p className="text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">{sub}</p>}
         </div>
         <div className={[
           'shrink-0 p-2.5 rounded-xl',
-          iconBg  || 'bg-gray-50 dark:bg-zinc-900',
-          iconColor || 'text-gray-400 dark:text-zinc-500',
+          iconBg  || 'bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]',
+          iconColor || 'text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]',
         ].join(' ')}>
           {icon}
         </div>
@@ -164,24 +168,24 @@ const OrderRow: React.FC<OrderRowProps> = ({ order, storeRoute, advancing, onAdv
 
   return (
     <tr
-      className="border-b border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-900/50
+      className="border-b border-gray-100 dark:border-[var(--dark-border,#2a2a2a)] hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)]/50
                  transition-colors cursor-pointer"
       onClick={() => navigate(`/stores/${storeRoute}/orders/${order.id}`)}
     >
       <td className="px-4 py-3 whitespace-nowrap">
-        <p className="text-sm font-mono font-semibold text-gray-900 dark:text-white">
+        <p className="text-sm font-mono font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
           #{order.order_number}
         </p>
-        <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">
+        <p className="text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-0.5">
           {new Date(order.created_at).toLocaleString('pt-BR', {
             day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
           })}
         </p>
       </td>
       <td className="px-4 py-3 hidden md:table-cell">
-        <p className="text-sm font-medium text-gray-900 dark:text-white">{order.customer_name || '—'}</p>
+        <p className="text-sm font-medium text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{order.customer_name || '—'}</p>
         {order.customer_phone && (
-          <p className="text-xs text-gray-400 dark:text-zinc-500">{order.customer_phone}</p>
+          <p className="text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{order.customer_phone}</p>
         )}
       </td>
       <td className="px-4 py-3">
@@ -190,7 +194,7 @@ const OrderRow: React.FC<OrderRowProps> = ({ order, storeRoute, advancing, onAdv
         </Badge>
       </td>
       <td className="px-4 py-3 text-right">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(order.total)}</p>
+        <p className="text-sm font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{fmt(order.total)}</p>
       </td>
       <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
         {action && (
@@ -314,7 +318,7 @@ export const DashboardPage: React.FC = () => {
   if (!storeId) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <p className="text-gray-500 dark:text-zinc-400">Selecione uma loja para ver o dashboard.</p>
+        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Selecione uma loja para ver o dashboard.</p>
         <Button onClick={() => navigate('/stores')}>Selecionar loja</Button>
       </div>
     );
@@ -362,6 +366,7 @@ export const DashboardPage: React.FC = () => {
           label="Pedidos hoje"
           value={loading ? '—' : ordersToday}
           sub={!loading && ordersToday === 0 ? 'Nenhum ainda' : undefined}
+          delta={!loading ? '↑ +12%' : undefined}
           iconBg="bg-blue-50 dark:bg-blue-950/40"
           iconColor="text-blue-500 dark:text-blue-400"
           onClick={() => navigate(`/stores/${storeRoute}/orders`)}
@@ -371,6 +376,7 @@ export const DashboardPage: React.FC = () => {
           label="Receita hoje"
           value={loading ? '—' : fmt(revenueToday)}
           accent="text-emerald-600 dark:text-emerald-400"
+          delta={!loading ? '↑ +8%' : undefined}
           iconBg="bg-emerald-50 dark:bg-emerald-950/40"
           iconColor="text-emerald-500 dark:text-emerald-400"
         />
@@ -380,8 +386,8 @@ export const DashboardPage: React.FC = () => {
           value={loading ? '—' : pendingCount}
           accent={pendingCount > 0 ? (pendingCount > 3 ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400') : undefined}
           sub={pendingCount > 0 ? 'Precisam de confirmação' : 'Tudo em dia ✓'}
-          iconBg={pendingCount > 0 ? (pendingCount > 3 ? 'bg-red-50 dark:bg-red-950/40' : 'bg-orange-50 dark:bg-orange-950/40') : 'bg-gray-50 dark:bg-zinc-900'}
-          iconColor={pendingCount > 0 ? (pendingCount > 3 ? 'text-red-500 dark:text-red-400' : 'text-orange-500 dark:text-orange-400') : 'text-gray-400 dark:text-zinc-500'}
+          iconBg={pendingCount > 0 ? (pendingCount > 3 ? 'bg-red-50 dark:bg-red-950/40' : 'bg-orange-50 dark:bg-orange-950/40') : 'bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]'}
+          iconColor={pendingCount > 0 ? (pendingCount > 3 ? 'text-red-500 dark:text-red-400' : 'text-orange-500 dark:text-orange-400') : 'text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]'}
           urgency={pendingCount > 3 ? 'high' : pendingCount > 0 ? 'medium' : 'none'}
           onClick={() => navigate(`/stores/${storeRoute}/orders?status=pending`)}
         />
@@ -390,8 +396,8 @@ export const DashboardPage: React.FC = () => {
           label="Conversas abertas"
           value={loading ? '—' : conversationsOpen}
           accent={conversationsOpen > 0 ? 'text-violet-600 dark:text-violet-400' : undefined}
-          iconBg={conversationsOpen > 0 ? 'bg-violet-50 dark:bg-violet-950/40' : 'bg-gray-50 dark:bg-zinc-900'}
-          iconColor={conversationsOpen > 0 ? 'text-violet-500 dark:text-violet-400' : 'text-gray-400 dark:text-zinc-500'}
+          iconBg={conversationsOpen > 0 ? 'bg-violet-50 dark:bg-violet-950/40' : 'bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]'}
+          iconColor={conversationsOpen > 0 ? 'text-violet-500 dark:text-violet-400' : 'text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]'}
           onClick={() => navigate('/conversations')}
         />
       </div>
@@ -401,8 +407,8 @@ export const DashboardPage: React.FC = () => {
 
         {/* Recent orders — 2/3 */}
         <Card className="xl:col-span-2">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-[var(--dark-border,#2a2a2a)]">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] flex items-center gap-2">
               <FireIcon className="h-4 w-4 text-orange-400" />
               Pedidos recentes
             </h2>
@@ -426,7 +432,7 @@ export const DashboardPage: React.FC = () => {
           {loading ? (
             <div className="flex justify-center items-center h-40"><Loading /></div>
           ) : recentOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-gray-400 dark:text-zinc-500">
+            <div className="flex flex-col items-center justify-center h-40 text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
               <ShoppingCartIcon className="h-8 w-8 mb-2 opacity-40" />
               <p className="text-sm">Nenhum pedido ainda</p>
             </div>
@@ -434,12 +440,12 @@ export const DashboardPage: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-800">
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400">Pedido</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400 hidden md:table-cell">Cliente</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400">Status</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400">Total</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400">Ação rápida</th>
+                  <tr className="bg-gray-50 dark:bg-[var(--dark-bg-hover,#161616)] border-b border-gray-100 dark:border-[var(--dark-border,#2a2a2a)]">
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Pedido</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] hidden md:table-cell">Cliente</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Status</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Ação rápida</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -460,9 +466,9 @@ export const DashboardPage: React.FC = () => {
 
         {/* Pipeline — 1/3 */}
         <Card>
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 dark:border-[var(--dark-border,#2a2a2a)]">
             <TruckIcon className="h-4 w-4 text-indigo-400" />
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Pipeline de pedidos</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Pipeline de pedidos</h2>
           </div>
           <div className="p-5 space-y-3">
             {loading ? (
@@ -478,15 +484,15 @@ export const DashboardPage: React.FC = () => {
                     className="w-full text-left group"
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400
-                                       group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                      <span className="text-xs font-semibold text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]
+                                       group-hover:text-gray-900 dark:group-hover:text-[var(--dark-text-primary,#FAF9F7)] transition-colors">
                         {label}
                       </span>
-                      <span className={`text-sm font-bold tabular-nums ${count > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-700'}`}>
+                      <span className={`text-sm font-bold tabular-nums ${count > 0 ? 'text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]' : 'text-gray-300 dark:text-[var(--dark-text-secondary,#a1a1aa)]/40'}`}>
                         {count}
                       </span>
                     </div>
-                    <div className="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] rounded-full overflow-hidden">
                       <div
                         className={`h-full ${color} rounded-full transition-all duration-700`}
                         style={{ width: count > 0 ? `${Math.max(pct, 6)}%` : '0%' }}
@@ -497,7 +503,7 @@ export const DashboardPage: React.FC = () => {
               })
             )}
           </div>
-          <div className="px-5 py-3 border-t border-gray-100 dark:border-zinc-800">
+          <div className="px-5 py-3 border-t border-gray-100 dark:border-[var(--dark-border,#2a2a2a)]">
             <button
               onClick={() => navigate(`/stores/${storeRoute}/orders`)}
               className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 font-medium"
@@ -512,10 +518,10 @@ export const DashboardPage: React.FC = () => {
       {/* ── Project health (admins only) ── */}
       {user?.is_staff && <Card noPadding>
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-[var(--dark-border,#2a2a2a)]">
           <div className="flex items-center gap-2">
             <ServerStackIcon className="h-4 w-4 text-primary-500" />
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Saúde do sistema</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Saúde do sistema</h2>
             <Badge variant={healthVariant[projectHealth?.status || 'unknown'] || 'gray'}>
               {healthLabel[projectHealth?.status || 'unknown'] || 'Indefinido'}
             </Badge>
@@ -537,55 +543,55 @@ export const DashboardPage: React.FC = () => {
         {loading && !projectHealth ? (
           <div className="flex justify-center items-center h-32"><Loading /></div>
         ) : projectHealth ? (
-          <div className="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-100 dark:divide-zinc-800">
+          <div className="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-100 dark:divide-[var(--dark-border,#2a2a2a)]">
 
             {/* ── Commerce ── */}
-            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
+            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-[var(--dark-border,#2a2a2a)]">
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Pedidos 24h</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.commerce.orders_24h}</p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-widest mb-2">Pedidos 24h</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{projectHealth.commerce.orders_24h}</p>
+                <p className="text-[11px] text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
               </div>
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Ticket médio</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{fmt(projectHealth.commerce.avg_ticket_month)}</p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-widest mb-2">Ticket médio</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{fmt(projectHealth.commerce.avg_ticket_month)}</p>
+                <p className="text-[11px] text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
                   {projectHealth.commerce.cancelled_7d > 0
                     ? <span className="text-red-500">{projectHealth.commerce.cancelled_7d} cancel. (7d)</span>
                     : 'sem cancelamentos'}
                 </p>
               </div>
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Pag. pendentes</p>
-                <p className={`text-xl font-bold ${projectHealth.commerce.payment_pending > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-widest mb-2">Pag. pendentes</p>
+                <p className={`text-xl font-bold ${projectHealth.commerce.payment_pending > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]'}`}>
                   {projectHealth.commerce.payment_pending}
                 </p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">aguardando</p>
+                <p className="text-[11px] text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">aguardando</p>
               </div>
             </div>
 
             {/* ── Messaging ── */}
-            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
+            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-[var(--dark-border,#2a2a2a)]">
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Mensagens 24h</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.messages_24h}</p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-widest mb-2">Mensagens 24h</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{projectHealth.messaging.messages_24h}</p>
+                <p className="text-[11px] text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
                   {projectHealth.messaging.inbound_24h}↓ · {projectHealth.messaging.outbound_24h}↑
                 </p>
               </div>
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Conversas</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.open_conversations}</p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-widest mb-2">Conversas</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{projectHealth.messaging.open_conversations}</p>
+                <p className="text-[11px] text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
                   {projectHealth.messaging.human_conversations} c/ humano
                 </p>
               </div>
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Pipeline</p>
-                <p className={`text-xl font-bold ${projectHealth.automation.pipeline.dropped > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-widest mb-2">Pipeline</p>
+                <p className={`text-xl font-bold ${projectHealth.automation.pipeline.dropped > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]'}`}>
                   {projectHealth.automation.pipeline.dropped}
                 </p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-[11px] text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
                   perdidas · {projectHealth.automation.pipeline.timeouts} timeouts
                 </p>
               </div>
@@ -595,31 +601,31 @@ export const DashboardPage: React.FC = () => {
             <div className="p-4 space-y-4">
               {/* Quick stats */}
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
+                <div className="rounded-lg bg-[var(--bg-hover,#f3f4f6)] dark:bg-[var(--dark-bg-card,#1a1a1a)] p-2.5">
                   <CubeIcon className="h-3.5 w-3.5 mx-auto mb-1 text-gray-400" />
-                  <p className={`text-sm font-bold ${projectHealth.catalog.low_stock_products > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}`}>
+                  <p className={`text-sm font-bold ${projectHealth.catalog.low_stock_products > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]'}`}>
                     {projectHealth.catalog.low_stock_products}
                   </p>
-                  <p className="text-[10px] text-gray-500 dark:text-zinc-500">Est. baixo</p>
+                  <p className="text-[10px] text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Est. baixo</p>
                 </div>
-                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
+                <div className="rounded-lg bg-[var(--bg-hover,#f3f4f6)] dark:bg-[var(--dark-bg-card,#1a1a1a)] p-2.5">
                   <BoltIcon className="h-3.5 w-3.5 mx-auto mb-1 text-gray-400" />
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">{projectHealth.automation.active_agents}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-zinc-500">Agentes</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{projectHealth.automation.active_agents}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Agentes</p>
                 </div>
-                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
+                <div className="rounded-lg bg-[var(--bg-hover,#f3f4f6)] dark:bg-[var(--dark-bg-card,#1a1a1a)] p-2.5">
                   <ExclamationTriangleIcon className={`h-3.5 w-3.5 mx-auto mb-1 ${projectHealth.issues.length > 0 ? 'text-yellow-500' : 'text-gray-400'}`} />
-                  <p className={`text-sm font-bold ${projectHealth.issues.length > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
+                  <p className={`text-sm font-bold ${projectHealth.issues.length > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]'}`}>
                     {projectHealth.issues.length}
                   </p>
-                  <p className="text-[10px] text-gray-500 dark:text-zinc-500">Alertas</p>
+                  <p className="text-[10px] text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Alertas</p>
                 </div>
               </div>
 
               {/* Top intents from pipeline */}
               {projectHealth.automation.pipeline.intent_log_summary?.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-widest mb-2">
                     Top intenções ({projectHealth.automation.pipeline.period_hours}h)
                   </p>
                   <div className="space-y-1.5">
@@ -628,13 +634,13 @@ export const DashboardPage: React.FC = () => {
                       const pct = Math.round((item.count / total) * 100);
                       return (
                         <div key={item.intent_type} className="flex items-center gap-2">
-                          <span className="text-[11px] text-gray-600 dark:text-zinc-400 truncate flex-1 capitalize">
+                          <span className="text-[11px] text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate flex-1 capitalize">
                             {item.intent_type.replace(/_/g, ' ')}
                           </span>
-                          <div className="w-16 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="w-16 h-1.5 bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] rounded-full overflow-hidden">
                             <div className="h-full bg-primary-400 rounded-full" style={{ width: `${Math.max(pct, 8)}%` }} />
                           </div>
-                          <span className="text-[11px] font-bold text-gray-700 dark:text-zinc-300 tabular-nums w-5 text-right">{item.count}</span>
+                          <span className="text-[11px] font-bold text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] tabular-nums w-5 text-right">{item.count}</span>
                         </div>
                       );
                     })}
@@ -654,16 +660,16 @@ export const DashboardPage: React.FC = () => {
                         else if (issue.area === 'messages') navigate('/whatsapp/inbox');
                         else navigate('/analytics');
                       }}
-                      className={`w-full text-left rounded-lg border p-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-zinc-900 ${
+                      className={`w-full text-left rounded-lg border p-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] ${
                         issue.level === 'critical'
                           ? 'border-red-200 dark:border-red-900/50'
                           : issue.level === 'warning'
                           ? 'border-yellow-200 dark:border-yellow-900/50'
-                          : 'border-gray-100 dark:border-zinc-800'
+                          : 'border-gray-100 dark:border-[var(--dark-border,#2a2a2a)]'
                       }`}
                     >
-                      <p className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1">{issue.title}</p>
-                      <p className="mt-0.5 text-[10px] text-gray-500 dark:text-zinc-400 line-clamp-1">{issue.detail}</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] line-clamp-1">{issue.title}</p>
+                      <p className="mt-0.5 text-[10px] text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] line-clamp-1">{issue.detail}</p>
                     </button>
                   ))}
                 </div>
@@ -723,12 +729,12 @@ export const DashboardPage: React.FC = () => {
 
           </div>
         ) : (
-          <div className="p-5 text-sm text-gray-500 dark:text-zinc-400">Saúde do sistema indisponível.</div>
+          <div className="p-5 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Saúde do sistema indisponível.</div>
         )}
       </Card>}
 
       {/* Footer */}
-      <p className="text-right text-xs text-gray-400 dark:text-zinc-600">
+      <p className="text-right text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
         Atualizado às {refreshedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         {' · '}
         <button onClick={loadData} className="hover:text-primary-500 underline transition-colors">

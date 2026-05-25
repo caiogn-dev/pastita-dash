@@ -195,9 +195,9 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCa
               <div 
                 className={`
                   h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300
-                  ${isCompleted 
-                    ? 'bg-[#1f1f1f] text-[#f5f1e8] shadow-lg shadow-black/15 dark:bg-[#f4efe6] dark:text-[#111]' 
-                    : 'bg-[#faf7f1] border border-black/10 text-gray-400 dark:bg-[#111] dark:border-white/10'}
+                  ${isCompleted
+                    ? 'bg-[#1f1f1f] text-[#f5f1e8] shadow-lg shadow-black/15 dark:bg-[#f4efe6] dark:text-[#111]'
+                    : 'bg-[#faf7f1] border border-black/10 text-gray-400 dark:bg-[#111] dark:border-white/10 dark:text-[var(--dark-text-secondary,#a1a1aa)]'}
                   ${isCurrent ? 'ring-4 ring-[#c97a36]/15 scale-110' : ''}
                 `}
               >
@@ -210,7 +210,7 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCa
               <span 
                 className={`
                   mt-2 text-[11px] font-medium whitespace-nowrap
-                  ${isCompleted ? 'text-[#1f1f1f] dark:text-[#f4efe6]' : 'text-gray-400 dark:text-zinc-500'}
+                  ${isCompleted ? 'text-[#1f1f1f] dark:text-[#f4efe6]' : 'text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)]'}
                 `}
               >
                 {step.label}
@@ -363,7 +363,7 @@ export const OrderDetailPage: React.FC = () => {
                 <div className="flex min-w-0 items-start gap-4">
                   <button
                     onClick={() => navigate(ordersRoute)}
-                    className="flex h-11 w-11 items-center justify-center rounded-2xl border border-black/10 bg-white/80 text-gray-700 transition hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:bg-white/10"
+                    className="flex h-11 w-11 items-center justify-center rounded-2xl border border-black/10 bg-white/80 text-gray-700 transition hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:hover:bg-white/10"
                   >
                     <ArrowLeftIcon className="h-5 w-5" />
                   </button>
@@ -719,7 +719,7 @@ export const OrderDetailPage: React.FC = () => {
         title="Cancelar Pedido"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-zinc-400">
+          <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             Tem certeza que deseja cancelar o pedido <strong>#{order.order_number}</strong>?
           </p>
           <p className="text-sm text-red-600 dark:text-red-400">

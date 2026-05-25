@@ -180,7 +180,7 @@ export default function MessengerInbox() {
                 className={`mb-2 w-full rounded-2xl border p-3 text-left transition-colors ${
                   selectedConversation?.id === conv.id
                     ? 'border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/20'
-                    : 'border-border-primary bg-bg-card hover:bg-bg-hover'
+                    : 'border-[var(--dark-border,#2a2a2a)] bg-bg-card hover:bg-bg-hover'
                 }`}
               >
                 <div className="flex items-start gap-3">

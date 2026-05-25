@@ -53,12 +53,12 @@ interface ComboItemRowProps {
 const ComboItemRow: React.FC<ComboItemRowProps> = ({ item, products, onUpdate, onRemove }) => {
   const selectedProduct = products.find(p => p.id === item.product);
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-zinc-800/60 border border-gray-200 dark:border-zinc-700">
+    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-zinc-800/60 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
       <div className="flex-1 min-w-0">
         <select
           value={item.product}
           onChange={e => onUpdate(item._key, { product: e.target.value })}
-          className="w-full text-sm rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="w-full text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="">Selecionar produto...</option>
           {products.map(p => (
@@ -68,20 +68,20 @@ const ComboItemRow: React.FC<ComboItemRowProps> = ({ item, products, onUpdate, o
           ))}
         </select>
         {selectedProduct && (
-          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{fmt(selectedProduct.price)} cada</p>
+          <p className="text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-0.5">{fmt(selectedProduct.price)} cada</p>
         )}
       </div>
       <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={() => onUpdate(item._key, { quantity: Math.max(1, item.quantity - 1) })}
-          className="w-7 h-7 flex items-center justify-center rounded-md border border-gray-300 dark:border-zinc-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-700"
+          className="w-7 h-7 flex items-center justify-center rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] text-gray-500 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)]"
         >−</button>
         <span className="w-8 text-center text-sm font-medium text-gray-900 dark:text-white">{item.quantity}</span>
         <button
           type="button"
           onClick={() => onUpdate(item._key, { quantity: item.quantity + 1 })}
-          className="w-7 h-7 flex items-center justify-center rounded-md border border-gray-300 dark:border-zinc-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-700"
+          className="w-7 h-7 flex items-center justify-center rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] text-gray-500 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)]"
         >+</button>
       </div>
       <button
@@ -254,7 +254,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-0">
         {/* Tabs */}
-        <div className="flex gap-1 mb-5 border-b border-gray-200 dark:border-zinc-700">
+        <div className="flex gap-1 mb-5 border-b border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
           {tabs.map(t => (
             <button
               key={t.key}
@@ -262,8 +262,8 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
               onClick={() => setActiveTab(t.key)}
               className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors ${
                 activeTab === t.key
-                  ? 'text-brand-700 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-500 -mb-px bg-white dark:bg-zinc-900'
-                  : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200'
+                  ? 'text-brand-700 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-500 -mb-px bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]'
+                  : 'text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] hover:text-gray-700 dark:hover:text-[var(--dark-text-primary,#FAF9F7)]'
               }`}
             >
               {t.label}
@@ -282,7 +282,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
               required
             />
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
                 Descrição
               </label>
               <textarea
@@ -290,7 +290,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
                 onChange={e => set('description', e.target.value)}
                 rows={3}
                 placeholder="Descreva o combo para o cliente..."
-                className="w-full rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                className="w-full rounded-lg border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -321,7 +321,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
             />
             {/* Savings preview */}
             {itemsTotal > 0 && form.price > 0 && (
-              <div className={`p-3 rounded-lg text-sm ${savingsPreview > 0 ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300'}`}>
+              <div className={`p-3 rounded-lg text-sm ${savingsPreview > 0 ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'}`}>
                 {savingsPreview > 0
                   ? `✓ Cliente economiza ${fmt(savingsPreview)} (${savingsPct}%) vs. comprar separado (${fmt(itemsTotal)})`
                   : `⚠ Preço do combo (${fmt(form.price)}) maior que soma dos itens (${fmt(itemsTotal)})`}
@@ -334,7 +334,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
         {activeTab === 'items' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-sm text-gray-500 dark:text-zinc-400">
+              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 Adicione os produtos que compõem este combo
               </p>
               <Button type="button" size="sm" onClick={addItem}>
@@ -343,10 +343,10 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
               </Button>
             </div>
             {form.items.length === 0 ? (
-              <div className="text-center py-10 rounded-lg border-2 border-dashed border-gray-300 dark:border-zinc-700">
-                <CubeIcon className="w-10 h-10 mx-auto text-gray-300 dark:text-zinc-600 mb-2" />
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Nenhum produto no combo ainda</p>
-                <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">
+              <div className="text-center py-10 rounded-lg border-2 border-dashed border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]">
+                <CubeIcon className="w-10 h-10 mx-auto text-gray-300 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2" />
+                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Nenhum produto no combo ainda</p>
+                <p className="text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
                   Combos sem produtos são válidos (ex: "Monte sua Salada")
                 </p>
               </div>
@@ -364,8 +364,8 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
               </div>
             )}
             {form.items.length > 0 && itemsTotal > 0 && (
-              <div className="flex justify-between text-sm font-medium pt-2 border-t border-gray-200 dark:border-zinc-700">
-                <span className="text-gray-500 dark:text-zinc-400">Valor dos itens separados:</span>
+              <div className="flex justify-between text-sm font-medium pt-2 border-t border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
+                <span className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Valor dos itens separados:</span>
                 <span className="text-gray-900 dark:text-white">{fmt(itemsTotal)}</span>
               </div>
             )}
@@ -388,7 +388,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
                   className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors ${
                     isOn
                       ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-700'
-                      : 'border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900'
+                      : 'border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]'
                   }`}
                   onClick={() => set(key, !isOn)}
                 >
@@ -396,13 +396,13 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
                     <Icon className="w-5 h-5 text-gray-500 dark:text-zinc-400" />
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{label}</p>
-                      <p className="text-xs text-gray-500 dark:text-zinc-400">{desc}</p>
+                      <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{desc}</p>
                     </div>
                   </div>
                   <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
                     isOn
                       ? 'bg-brand-600 text-white'
-                      : 'border-2 border-gray-300 dark:border-zinc-600'
+                      : 'border-2 border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]'
                   }`}>
                     {isOn && <CheckIcon className="w-3 h-3" />}
                   </div>
@@ -422,7 +422,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-5 mt-5 border-t border-gray-200 dark:border-zinc-700">
+        <div className="flex justify-end gap-3 pt-5 mt-5 border-t border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
           <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
@@ -451,10 +451,10 @@ const ComboCard: React.FC<ComboCardProps> = ({ combo, onEdit, onDelete, onToggle
   const savingsPct = combo.savings_percentage || 0;
 
   return (
-    <div className={`bg-white dark:bg-zinc-900 rounded-xl border transition-all hover:shadow-md ${
+    <div className={`bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border transition-all hover:shadow-md ${
       combo.is_active
-        ? 'border-gray-200 dark:border-zinc-700'
-        : 'border-gray-100 dark:border-zinc-800 opacity-60'
+        ? 'border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]'
+        : 'border-gray-100 dark:border-[var(--dark-border,#2a2a2a)] opacity-60'
     }`}>
       {/* Image / Placeholder */}
       <div className="relative h-40 rounded-t-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-800 dark:to-zinc-700">
@@ -484,7 +484,7 @@ const ComboCard: React.FC<ComboCardProps> = ({ combo, onEdit, onDelete, onToggle
         <div>
           <h3 className="font-semibold text-gray-900 dark:text-white truncate">{combo.name}</h3>
           {combo.description && (
-            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5 line-clamp-2">{combo.description}</p>
+            <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-0.5 line-clamp-2">{combo.description}</p>
           )}
         </div>
 
@@ -502,45 +502,45 @@ const ComboCard: React.FC<ComboCardProps> = ({ combo, onEdit, onDelete, onToggle
         {/* Items */}
         {combo.items.length > 0 ? (
           <div className="space-y-1">
-            <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">
+            <p className="text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-wide">
               {combo.items.length} produto{combo.items.length > 1 ? 's' : ''}
             </p>
             <div className="flex flex-wrap gap-1">
               {combo.items.slice(0, 4).map(item => (
-                <span key={item.id} className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300">
+                <span key={item.id} className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                   {item.quantity > 1 ? `${item.quantity}× ` : ''}{item.product_name}
                 </span>
               ))}
               {combo.items.length > 4 && (
-                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-500">
+                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] text-gray-500">
                   +{combo.items.length - 4}
                 </span>
               )}
             </div>
           </div>
         ) : (
-          <p className="text-xs text-gray-400 dark:text-zinc-500 italic">Sem produtos fixos (combo aberto)</p>
+          <p className="text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] italic">Sem produtos fixos (combo aberto)</p>
         )}
 
         {/* Stock */}
         {combo.track_stock && (
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${combo.stock_quantity > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-xs text-gray-500 dark:text-zinc-400">
+            <span className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
               {combo.stock_quantity > 0 ? `${combo.stock_quantity} em estoque` : 'Sem estoque'}
             </span>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-2 pt-1 border-t border-gray-100 dark:border-zinc-800">
+        <div className="flex items-center gap-2 pt-1 border-t border-gray-100 dark:border-[var(--dark-border,#2a2a2a)]">
           <button
             onClick={onToggleActive}
             title={combo.is_active ? 'Desativar' : 'Ativar'}
             className={`p-1.5 rounded-md transition-colors ${
               combo.is_active
                 ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
             }`}
           >
             {combo.is_active ? <EyeIcon className="w-4 h-4" /> : <EyeSlashIcon className="w-4 h-4" />}
@@ -551,7 +551,7 @@ const ComboCard: React.FC<ComboCardProps> = ({ combo, onEdit, onDelete, onToggle
             className={`p-1.5 rounded-md transition-colors ${
               combo.featured
                 ? 'text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
-                : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
             }`}
           >
             {combo.featured ? <StarIconSolid className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
@@ -559,7 +559,7 @@ const ComboCard: React.FC<ComboCardProps> = ({ combo, onEdit, onDelete, onToggle
           <div className="flex-1" />
           <button
             onClick={onEdit}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] hover:bg-gray-200 dark:hover:bg-[var(--dark-bg-card,#1a1a1a)] transition-colors"
           >
             <PencilIcon className="w-3.5 h-3.5" />
             Editar
@@ -693,7 +693,7 @@ export const CombosPage: React.FC = () => {
       <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Combos</h1>
-          <p className="text-gray-500 dark:text-zinc-400">
+          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             {storeName ? `Combos de ${storeName}` : 'Gerencie combos e kits de produtos'}
           </p>
         </div>
@@ -719,7 +719,7 @@ export const CombosPage: React.FC = () => {
         ].map(s => (
           <Card key={s.label} className="p-4 text-center">
             <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">{s.label}</p>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-0.5">{s.label}</p>
           </Card>
         ))}
       </div>
@@ -733,7 +733,7 @@ export const CombosPage: React.FC = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar combos..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
         <div className="flex gap-2">
@@ -744,7 +744,7 @@ export const CombosPage: React.FC = () => {
               className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                 filterActive === f
                   ? 'bg-brand-600 text-white border-brand-600'
-                  : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border-gray-300 dark:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                  : 'bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
               }`}
             >
               {f === 'all' ? 'Todos' : f === 'active' ? 'Ativos' : 'Inativos'}
@@ -756,11 +756,11 @@ export const CombosPage: React.FC = () => {
       {/* Grid */}
       {filtered.length === 0 ? (
         <Card className="p-12 text-center">
-          <CubeIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-zinc-600 mb-4" />
+          <CubeIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             {search || filterActive !== 'all' ? 'Nenhum combo encontrado' : 'Nenhum combo criado'}
           </h3>
-          <p className="text-gray-500 dark:text-zinc-400 mb-4">
+          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">
             {search || filterActive !== 'all'
               ? 'Tente outros filtros'
               : 'Crie combos para aumentar o ticket médio do seu cardápio'}

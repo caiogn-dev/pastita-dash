@@ -123,6 +123,7 @@ export interface SendTextMessage {
 }
 
 export interface SendTemplateMessage {
+  account_id: string;
   to: string;
   template_name: string;
   language_code: string;

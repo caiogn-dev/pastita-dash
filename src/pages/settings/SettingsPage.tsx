@@ -36,7 +36,7 @@ const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled = false, la
       disabled={disabled}
       aria-label={label}
     />
-    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-zinc-900 after:border-gray-300 dark:border-zinc-700 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] after:border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
   </label>
 );
 
@@ -218,20 +218,20 @@ export const SettingsPage: React.FC = () => {
       <Card title="Informações do Usuário">
         <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Usuário</label>
-            <p className="text-gray-900 dark:text-white">{user?.username}</p>
+            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Usuário</label>
+            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.username}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Email</label>
-            <p className="text-gray-900 dark:text-white">{user?.email || '-'}</p>
+            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Email</label>
+            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.email || '-'}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Nome</label>
-            <p className="text-gray-900 dark:text-white">{user?.first_name || '-'} {user?.last_name || ''}</p>
+            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Nome</label>
+            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.first_name || '-'} {user?.last_name || ''}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Tipo</label>
-            <p className="text-gray-900 dark:text-white">
+            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Tipo</label>
+            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
               {user?.is_superuser ? 'Superusuário' : user?.is_staff ? 'Staff' : 'Usuário'}
             </p>
           </div>
@@ -286,7 +286,7 @@ export const SettingsPage: React.FC = () => {
         {isLoadingPreferences ? (
           <div className="py-10">
             <Loading size="lg" />
-            <p className="mt-3 text-center text-sm text-gray-500 dark:text-zinc-400">
+            <p className="mt-3 text-center text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
               Carregando preferências...
             </p>
           </div>
@@ -303,8 +303,8 @@ export const SettingsPage: React.FC = () => {
                 <div key={section.id} className="rounded-lg border border-gray-100 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{section.title}</p>
-                      <p className="text-sm text-gray-500 dark:text-zinc-400">{section.description}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{section.title}</p>
+                      <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{section.description}</p>
                     </div>
                     <Toggle
                       label={`Ativar ${section.title}`}
@@ -317,8 +317,8 @@ export const SettingsPage: React.FC = () => {
                       {section.options.map((option) => (
                         <div key={String(option.key)} className="flex items-center justify-between gap-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{option.label}</p>
-                            <p className="text-xs text-gray-500 dark:text-zinc-400">{option.description}</p>
+                            <p className="text-sm font-medium text-gray-800 dark:text-[var(--dark-text-primary,#FAF9F7)]">{option.label}</p>
+                            <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{option.description}</p>
                           </div>
                           <Toggle
                             label={`${section.title} - ${option.label}`}
@@ -341,13 +341,13 @@ export const SettingsPage: React.FC = () => {
       <Card title="Informações da API">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Base URL</label>
-            <p className="text-gray-900 dark:text-white font-mono text-sm">
+            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Base URL</label>
+            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] font-mono text-sm">
               {import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Documentação</label>
+            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Documentação</label>
             <div className="flex gap-4 mt-1">
               <a
                 href={`${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}/api/docs/`}

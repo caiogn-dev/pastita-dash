@@ -727,7 +727,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       <div className="p-6 text-center">
         <DevicePhoneMobileIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma conta WhatsApp</h2>
-        <p className="text-gray-500 dark:text-zinc-400 mb-4">Configure uma conta WhatsApp para criar campanhas.</p>
+        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">Configure uma conta WhatsApp para criar campanhas.</p>
         <Button onClick={() => navigate('/accounts/new')}>Adicionar Conta</Button>
       </div>
     );
@@ -736,20 +736,20 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* Header */}
-      <div className="bg-white dark:bg-zinc-900 border-b sticky top-0 z-10">
+      <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] border-b sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/marketing/whatsapp')}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] rounded-lg transition-colors"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Nova Campanha WhatsApp</h1>
+                <h1 className="font-display text-xl font-bold text-gray-900 dark:text-white">Nova Campanha WhatsApp</h1>
                 {selectedAccount && (
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">
+                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                     {selectedAccount.name} • {selectedAccount.display_phone_number || selectedAccount.phone_number}
                   </p>
                 )}
@@ -811,7 +811,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Selecione a Conta WhatsApp
               </h2>
-              <p className="text-gray-500 dark:text-zinc-400">
+              <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 Escolha a conta que será usada para enviar as mensagens
               </p>
             </div>
@@ -837,7 +837,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-white">{account.name}</h3>
-                      <p className="text-sm text-gray-500 dark:text-zinc-400">
+                      <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                         {account.display_phone_number || account.phone_number}
                       </p>
                     </div>
@@ -864,14 +864,14 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Configure a Mensagem
               </h2>
-              <p className="text-gray-500 dark:text-zinc-400">
+              <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 Escolha o tipo de mensagem e configure o conteúdo
               </p>
             </div>
 
             {/* Campaign Name */}
             <Card className="p-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
                 Nome da Campanha
               </label>
               <Input
@@ -893,7 +893,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               >
                 <DocumentTextIcon className="w-8 h-8 text-green-600 mb-2" />
                 <h3 className="font-semibold text-gray-900 dark:text-white">Template</h3>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">
+                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                   Use um template aprovado pelo WhatsApp
                 </p>
               </button>
@@ -908,7 +908,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               >
                 <ChatBubbleLeftRightIcon className="w-8 h-8 text-blue-600 mb-2" />
                 <h3 className="font-semibold text-gray-900 dark:text-white">Texto Livre</h3>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">
+                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                   Envie uma mensagem de texto personalizada
                 </p>
               </button>
@@ -917,7 +917,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             {/* Template Selection */}
             {formData.messageType === 'template' && (
               <Card className="p-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
                   Selecione o Template
                 </label>
                 {templates.length === 0 ? (
@@ -972,11 +972,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         <h3 className="font-medium text-gray-900 dark:text-white">
                           Produtos da oferta
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
                           Selecione 2 saladas do cardápio. O preço promocional vem do campo preço de venda; o comparativo vem do preço comparativo do produto.
                         </p>
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-zinc-400 whitespace-nowrap">
+                      <span className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] whitespace-nowrap">
                         {selectedOfferProducts.length}/2 selecionados
                       </span>
                     </div>
@@ -1013,7 +1013,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                                   : 'border-gray-200 dark:border-zinc-800 hover:border-green-300'
                               }`}
                             >
-                              <div className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-zinc-800 overflow-hidden shrink-0">
+                              <div className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] overflow-hidden shrink-0">
                                 {product.main_image_url ? (
                                   <img
                                     src={product.main_image_url}
@@ -1035,7 +1035,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
+                                <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate">
                                   {product.category_name || 'Sem categoria'}
                                 </p>
                                 <div className="mt-2 flex items-baseline gap-2">
@@ -1061,11 +1061,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                     )}
 
                     {selectedOfferProducts.length > 0 && (
-                      <div className="mt-4 rounded-lg bg-gray-50 dark:bg-zinc-800 p-3">
+                      <div className="mt-4 rounded-lg bg-gray-50 dark:bg-[var(--dark-bg-hover,#161616)] p-3">
                         <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                           Variáveis que serão enviadas
                         </p>
-                        <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2 text-sm text-gray-700 dark:text-zinc-300">
+                        <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2 text-sm text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
                           <span>{'{{produto_1}}'}: {selectedOfferProducts[0]?.name || '-'}</span>
                           <span>{'{{preco_1}}'}: {selectedOfferProducts[0] ? formatMoney(selectedOfferProducts[0].price) : '-'}</span>
                           <span>{'{{produto_2}}'}: {selectedOfferProducts[1]?.name || '-'}</span>
@@ -1083,7 +1083,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         <h3 className="font-medium text-gray-900 dark:text-white">
                           Imagem do template
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
                           Esta imagem será usada no cabeçalho do template aprovado.
                         </p>
                       </div>
@@ -1108,15 +1108,15 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                       <img
                         src={mediaPreviewUrl}
                         alt="Preview da imagem do template"
-                        className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-zinc-700"
+                        className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]"
                       />
                     ) : (
-                      <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors">
+                      <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors">
                         <PhotoIcon className="w-10 h-10 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">
+                        <span className="text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
                           Selecionar imagem
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-zinc-400">
+                        <span className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                           PNG, JPG ou WEBP
                         </span>
                         <input
@@ -1152,7 +1152,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             {formData.messageType === 'text' && (
               <div className="space-y-4">
                 <Card className="p-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
                     Mensagem
                   </label>
                   <textarea
@@ -1160,7 +1160,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, textContent: e.target.value }))}
                     placeholder="Digite sua mensagem aqui..."
                     rows={6}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white"
                   />
                   <p className="text-xs text-gray-500 mt-2">
                     Use {"{{nome}}"} para personalizar com o nome do contato
@@ -1170,10 +1170,10 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                 <Card className="p-4">
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
                         Card promocional
                       </label>
-                      <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
                         Anexe uma imagem para enviar junto com a legenda.
                       </p>
                     </div>
@@ -1199,24 +1199,24 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                       <img
                         src={mediaPreviewUrl}
                         alt="Preview do card promocional"
-                        className="w-40 h-40 rounded-lg object-cover border border-gray-200 dark:border-zinc-700"
+                        className="w-40 h-40 rounded-lg object-cover border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]"
                       />
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 dark:text-white truncate">
                           {formData.mediaFilename || selectedMediaFile?.name || 'Imagem da campanha'}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
                           Será enviada como imagem no WhatsApp.
                         </p>
                       </div>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors">
+                    <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors">
                       <PhotoIcon className="w-10 h-10 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">
+                      <span className="text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
                         Selecionar imagem
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-zinc-400">
+                      <span className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                         PNG, JPG ou WEBP
                       </span>
                       <input
@@ -1256,7 +1256,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Adicione os Destinatários
               </h2>
-              <p className="text-gray-500 dark:text-zinc-400">
+              <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 Adicione os contatos que receberão a mensagem
               </p>
             </div>
@@ -1298,7 +1298,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               {contactLists.length > 0 && (
                 <select
                   onChange={(e) => e.target.value && handleLoadContactList(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg bg-white dark:bg-[var(--dark-bg-hover,#161616)] text-gray-900 dark:text-white"
                   defaultValue=""
                 >
                   <option value="">Carregar lista salva...</option>
@@ -1338,14 +1338,14 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                   {formData.contacts.map((contact, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      className="flex items-center justify-between p-2 bg-gray-50 dark:bg-[var(--dark-bg-hover,#161616)] rounded-lg"
                     >
                       <div>
                         <span className="font-medium text-gray-900 dark:text-white">
                           {contact.phone}
                         </span>
                         {contact.name && (
-                          <span className="text-gray-500 dark:text-zinc-400 ml-2">
+                          <span className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] ml-2">
                             ({contact.name})
                           </span>
                         )}
@@ -1371,7 +1371,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Revise e Envie
               </h2>
-              <p className="text-gray-500 dark:text-zinc-400">
+              <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                 Confira os detalhes da campanha antes de enviar
               </p>
             </div>
@@ -1380,25 +1380,25 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             <Card className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">Campanha</p>
+                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Campanha</p>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {formData.name || 'Sem nome'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">Conta</p>
+                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Conta</p>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {selectedAccount?.name}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">Tipo de Mensagem</p>
+                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Tipo de Mensagem</p>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {formData.messageType === 'template' ? 'Template' : 'Texto Livre'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">Destinatários</p>
+                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Destinatários</p>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {recipientCount} contatos
                   </p>
@@ -1407,12 +1407,12 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
               {formData.messageType === 'template' && selectedTemplate && (
                 <div className="pt-4 border-t">
-                  <p className="text-sm text-gray-500 dark:text-zinc-400 mb-1">Template</p>
+                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-1">Template</p>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {selectedTemplate.name}
                   </p>
                   {selectedOfferProducts.length > 0 && (
-                    <div className="mt-3 rounded-lg bg-gray-50 dark:bg-gray-700 p-3">
+                    <div className="mt-3 rounded-lg bg-gray-50 dark:bg-[var(--dark-bg-hover,#161616)] p-3">
                       <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                         Produtos da oferta
                       </p>
@@ -1428,11 +1428,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                   )}
                   {(mediaPreviewUrl || formData.mediaUrl) && (
                     <div className="mt-3">
-                      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-1">Imagem do cabeçalho</p>
+                      <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-1">Imagem do cabeçalho</p>
                       <img
                         src={mediaPreviewUrl || formData.mediaUrl}
                         alt="Imagem do template"
-                        className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-zinc-700"
+                        className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]"
                       />
                     </div>
                   )}
@@ -1441,17 +1441,17 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
               {formData.messageType === 'text' && (
                 <div className="pt-4 border-t">
-                  <p className="text-sm text-gray-500 dark:text-zinc-400 mb-1">Mensagem</p>
-                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-1">Mensagem</p>
+                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap bg-gray-50 dark:bg-[var(--dark-bg-hover,#161616)] p-3 rounded-lg">
                     {formData.textContent || 'Imagem sem legenda'}
                   </p>
                   {(mediaPreviewUrl || formData.mediaUrl) && (
                     <div className="mt-3">
-                      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-1">Imagem</p>
+                      <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-1">Imagem</p>
                       <img
                         src={mediaPreviewUrl || formData.mediaUrl}
                         alt="Card promocional"
-                        className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-zinc-700"
+                        className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]"
                       />
                     </div>
                   )}
@@ -1460,13 +1460,13 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
               {/* Rate Limiting */}
               <div className="pt-4 border-t">
-                <label className="block text-sm text-gray-500 dark:text-zinc-400 mb-2">
+                <label className="block text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2">
                   Velocidade de Envio
                 </label>
                 <select
                   value={formData.messagesPerMinute}
                   onChange={(e) => setFormData(prev => ({ ...prev, messagesPerMinute: Number(e.target.value) }))}
-                  className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg bg-white dark:bg-[var(--dark-bg-hover,#161616)] text-gray-900 dark:text-white"
                 >
                   <option value={30}>30 mensagens/minuto (Conservador)</option>
                   <option value={60}>60 mensagens/minuto (Recomendado)</option>
@@ -1544,7 +1544,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
               Data e Hora
             </label>
             <input
@@ -1552,7 +1552,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               value={formData.scheduledAt}
               onChange={(e) => setFormData(prev => ({ ...prev, scheduledAt: e.target.value }))}
               min={new Date().toISOString().slice(0, 16)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white"
             />
           </div>
           <div className="flex justify-end gap-3">
@@ -1573,7 +1573,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         title="Importar Contatos do CSV"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-500 dark:text-zinc-400">
+          <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             Cole o conteúdo do CSV abaixo. Formato esperado: telefone,nome (uma linha por contato)
           </p>
           <textarea
@@ -1581,7 +1581,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             onChange={(e) => setCsvContent(e.target.value)}
             placeholder="5511999999999,João Silva&#10;5511888888888,Maria Santos"
             rows={8}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white font-mono text-sm"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white font-mono text-sm"
           />
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={() => setShowImportModal(false)}>
@@ -1601,7 +1601,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         title="Contatos do Sistema"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-500 dark:text-zinc-400">
+          <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             Selecione os contatos que deseja adicionar à campanha
           </p>
           
@@ -1617,7 +1617,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           ) : (
             <>
               {/* Select All */}
-              <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-[var(--dark-bg-hover,#161616)] rounded-lg">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -1652,7 +1652,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         {contact.phone}
                       </p>
                       {contact.name && (
-                        <p className="text-sm text-gray-500 dark:text-zinc-400 truncate">
+                        <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate">
                           {contact.name}
                         </p>
                       )}
