@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -34,7 +34,7 @@
 
   /* Brand color — única var setada pelo JS com o hex da API.
      O resto da paleta é derivado automaticamente via color-mix(). */
-  --primary-500: #722F37; /* Pastita marsala (padrão até a loja carregar) */
+  --primary-500: #059669; /* Cardapidex emerald (padrão até a loja carregar) */
 
   /* Paleta derivada — não editar manualmente */
   --primary-50:  color-mix(in srgb, var(--primary-500)  8%, white);
@@ -54,11 +54,11 @@
   --brand-primary-dark:  var(--primary-600);
 
   /* Semantic Colors */
-  --pastita-background: #ffffff;
-  --pastita-surface: #f8fafc;
-  --pastita-foreground: #111827;
-  --pastita-border: #e5e7eb;
-  --pastita-primary: #F97316;
+  --cx-background: #ffffff;
+  --cx-surface: #f8fafc;
+  --cx-foreground: #111827;
+  --cx-border: #e5e7eb;
+  --cx-accent: var(--primary-500);
 
   /* Text Colors */
   --text-primary: #111827;
@@ -101,11 +101,12 @@
 .dark {
   color-scheme: dark;
 
-  /* Preto quente — marrom-carvão com toque de marsala */
-  --pastita-background: #0D0907;
-  --pastita-surface: #141009;
-  --pastita-foreground: #FAF9F7;
-  --pastita-border: #2C2218;
+  /* Dark mode */
+  --cx-background: #09090b;
+  --cx-surface:    #111113;
+  --cx-foreground: #fafafa;
+  --cx-border:     #27272a;
+  --cx-accent:     #10b981;
 
   /* Texto com temperatura quente, não zinc puro */
   --text-primary: #FAF9F7;
@@ -164,8 +165,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  color: var(--pastita-foreground);
-  background-color: var(--pastita-background);
+  color: var(--cx-foreground);
+  background-color: var(--cx-background);
   font-family: inherit;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -183,9 +184,9 @@ p, span, a, li {
 }
 
 input, textarea, select {
-  color: var(--pastita-foreground);
-  background-color: var(--pastita-surface);
-  border: 1px solid var(--pastita-border);
+  color: var(--cx-foreground);
+  background-color: var(--cx-surface);
+  border: 1px solid var(--cx-border);
   border-radius: 0.375rem;
   padding: 0.5rem 0.75rem;
   font-family: inherit;
@@ -306,12 +307,10 @@ textarea::placeholder {
    UTILITY CLASSES
    ============================================ */
 .text-gradient-brand {
-  @apply bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent;
-}
-
-/* Legacy alias */
-.text-gradient-marsala {
-  @apply bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent;
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-400) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Focus Visible */
@@ -321,7 +320,7 @@ textarea::placeholder {
 
 /* Selection */
 ::selection {
-  background-color: var(--pastita-primary);
+  background-color: var(--cx-accent);
   color: white;
 }
 
@@ -354,20 +353,19 @@ textarea::placeholder {
    Tipografia de exibição + scrollbar quente no dark
    ============================================ */
 
-/* Font display para métricas grandes — Playfair dá peso emocional */
+/* Font display para métricas grandes */
 .font-display {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 .metric-display {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 600;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1;
 }
 .metric-display--italic {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 400;
-  font-style: italic;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 800;
   letter-spacing: -0.01em;
 }
 
@@ -404,4 +402,8 @@ textarea::placeholder {
 .dark .nav-item-active {
   background: linear-gradient(90deg, rgba(var(--primary-500), 0.14) 0%, rgba(var(--primary-500), 0.06) 100%);
   border-left: 2px solid var(--primary-500);
+}
+
+.font-brand {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
