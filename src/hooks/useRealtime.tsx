@@ -16,8 +16,6 @@ import {
 import { useAuthStore } from '../stores/authStore';
 import { useStore } from './useStore';
 
-const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
-
 // Context para compartilhar a conexão entre componentes
 interface RealtimeContextValue {
   connection: RealtimeConnection | null;
@@ -51,7 +49,7 @@ export function RealtimeProvider({
 }: RealtimeProviderProps) {
   const { token } = useAuthStore();
   const { storeSlug, storeId } = useStore();
-  const effectiveStoreSlug = storeSlug || storeId || STORE_SLUG;
+  const effectiveStoreSlug = storeSlug || storeId || undefined;
   
   const connectionRef = useRef<RealtimeConnection | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
