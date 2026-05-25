@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Store, Settings, Package, ShoppingCart, Users, BarChart3, Zap, RefreshCw } from 'lucide-react';
+import { Plus, Store, Settings, Package, ShoppingCart, Users, BarChart3, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge, Modal, Input } from '../../components/common';
 import logger from '../../services/logger';
@@ -70,17 +70,6 @@ const StoresPage: React.FC = () => {
     } catch (error) {
       logger.error('Failed to toggle store status', error);
       toast.error('Erro ao alterar status da loja');
-    }
-  };
-
-  const handleSyncPastita = async (storeId: string) => {
-    try {
-      await storesApi.syncPastitaToStore(storeId);
-      toast.success('Sincronização concluída!');
-      loadStores();
-    } catch (error) {
-      logger.error('Failed to sync Pastita', error);
-      toast.error('Erro ao sincronizar loja');
     }
   };
 
@@ -286,16 +275,7 @@ const StoresPage: React.FC = () => {
                     <BarChart3 className="w-4 h-4 mr-1" />
                     Analytics
                   </Button>
-                  {store.slug === 'pastita' && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleSyncPastita(store.id)}
-                    >
-                      <RefreshCw className="w-4 h-4 mr-1" />
-                      Sync Pastita
-                    </Button>
-                  )}
+
                 </div>
               </Card>
             );
