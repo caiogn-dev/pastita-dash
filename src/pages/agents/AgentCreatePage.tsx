@@ -52,15 +52,15 @@ export const AgentCreatePage: React.FC = () => {
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate('/agents')}
-          className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5 text-zinc-500" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+          <h1 className="text-2xl font-display font-bold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
             Criar Novo Agente
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400">
+          <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             Configure um novo agente de inteligência artificial
           </p>
         </div>
@@ -74,7 +74,7 @@ export const AgentCreatePage: React.FC = () => {
       )}
 
       {/* Form */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] overflow-hidden">
         <AgentForm
           whatsappAccounts={whatsappAccounts}
           onSubmit={handleSubmit}

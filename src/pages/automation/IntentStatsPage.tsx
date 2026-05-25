@@ -56,10 +56,10 @@ export const IntentStatsPage: React.FC = () => {
             <ChartBarIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
               Estatísticas de Intenções
             </h1>
-            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-0.5">
               Análise de detecção de intenções nas mensagens
             </p>
           </div>
@@ -69,7 +69,7 @@ export const IntentStatsPage: React.FC = () => {
           <select
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           >
             <option value={1}>Últimas 24h</option>
             <option value={7}>Últimos 7 dias</option>
@@ -79,7 +79,7 @@ export const IntentStatsPage: React.FC = () => {
           <button
             onClick={loadStats}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] text-sm hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] disabled:opacity-50 transition-colors"
           >
             <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Atualizar

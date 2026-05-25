@@ -93,8 +93,8 @@ export const HandoverRequestsPage: React.FC = () => {
             </div>
 
             {pending.length === 0 ? (
-              <div className="p-8 text-center border-2 border-dashed border-border-primary rounded-xl">
-                <p className="text-fg-muted">Nenhuma solicitação pendente</p>
+              <div className="flex flex-col items-center justify-center h-40 gap-2 text-[var(--fg-muted,#9ca3af)]">
+                <p className="text-sm">Nenhuma solicitação de handover</p>
               </div>
             ) : (
               <div className="flex flex-col gap-3">

@@ -248,7 +248,7 @@ export const SubscribersPage: React.FC = () => {
       <div className="p-6 text-center">
         <UserGroupIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-gray-500 dark:text-zinc-400 mb-4">Selecione uma loja para visualizar a base de clientes.</p>
+        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">Selecione uma loja para visualizar a base de clientes.</p>
         <Button onClick={() => navigate('/stores')}>Ver lojas</Button>
       </div>
     );
@@ -263,8 +263,8 @@ export const SubscribersPage: React.FC = () => {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Base de clientes</h1>
-            <p className="text-gray-500 dark:text-zinc-400">
+            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">Base de clientes</h1>
+            <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
               Clientes e contatos agregados da loja <strong>{effectiveStoreLabel}</strong>, prontos para operação e campanhas.
             </p>
           </div>
@@ -306,7 +306,7 @@ export const SubscribersPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-              <p className="text-sm text-gray-500 dark:text-zinc-400">Total na base</p>
+              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total na base</p>
             </div>
           </div>
         </Card>
@@ -318,7 +318,7 @@ export const SubscribersPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
-              <p className="text-sm text-gray-500 dark:text-zinc-400">Ativos</p>
+              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Ativos</p>
             </div>
           </div>
         </Card>
@@ -330,7 +330,7 @@ export const SubscribersPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.withOrders}</p>
-              <p className="text-sm text-gray-500 dark:text-zinc-400">Já compraram</p>
+              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Já compraram</p>
             </div>
           </div>
         </Card>
@@ -342,7 +342,7 @@ export const SubscribersPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.unsubscribed}</p>
-              <p className="text-sm text-gray-500 dark:text-zinc-400">Descadastrados</p>
+              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Descadastrados</p>
             </div>
           </div>
         </Card>
@@ -356,7 +356,7 @@ export const SubscribersPage: React.FC = () => {
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 R$ {revenueFromBase.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <p className="text-sm text-gray-500 dark:text-zinc-400">Receita identificada</p>
+              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Receita identificada</p>
             </div>
           </div>
         </Card>
@@ -370,14 +370,14 @@ export const SubscribersPage: React.FC = () => {
               type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:ring-2 focus:ring-primary-500 dark:border-zinc-700"
+              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="Buscar por e-mail, nome ou telefone..."
             />
           </div>
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary-500 dark:border-zinc-700"
+            className="rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
           >
             <option value="all">Todos os status</option>
             <option value="active">Ativos</option>
@@ -394,7 +394,7 @@ export const SubscribersPage: React.FC = () => {
             <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
               {subscribers.length === 0 ? 'Nenhum cliente na base ainda' : 'Nenhum resultado encontrado'}
             </h3>
-            <p className="mb-4 text-gray-500 dark:text-zinc-400">
+            <p className="mb-4 text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
               {subscribers.length === 0
                 ? 'Assim que os pedidos entrarem ou contatos forem importados, eles aparecerão aqui.'
                 : 'Ajuste os filtros ou refine a busca para encontrar o cliente.'}
@@ -409,22 +409,22 @@ export const SubscribersPage: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="border-b bg-gray-50 dark:bg-black">
+              <thead className="border-b bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Cliente</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Tags</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Compras</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-zinc-400">Ações</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Cliente</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Tags</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Compras</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {filteredSubscribers.map((subscriber) => (
-                  <tr key={subscriber.id} className="hover:bg-gray-50 dark:bg-black dark:hover:bg-zinc-700/60">
+                  <tr key={subscriber.id} className="hover:bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] dark:hover:bg-zinc-700/60">
                     <td className="px-4 py-3">
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">{subscriber.name || subscriber.email}</p>
-                        <p className="text-sm text-gray-500 dark:text-zinc-400">{subscriber.email}</p>
+                        <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{subscriber.email}</p>
                         {subscriber.phone && (
                           <p className="text-sm text-gray-400">{subscriber.phone}</p>
                         )}
@@ -444,7 +444,7 @@ export const SubscribersPage: React.FC = () => {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {subscriber.tags?.slice(0, 3).map((tag) => (
-                          <span key={tag} className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-zinc-300">
+                          <span key={tag} className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-[var(--dark-bg-hover,#161616)] dark:text-[var(--dark-text-primary,#FAF9F7)]">
                             {tag}
                           </span>
                         ))}
@@ -457,7 +457,7 @@ export const SubscribersPage: React.FC = () => {
                       <div className="space-y-1">
                         <span className="block text-gray-900 dark:text-white">{subscriber.total_orders || 0} pedidos</span>
                         {subscriber.total_spent > 0 && (
-                          <span className="text-sm text-gray-500 dark:text-zinc-400">
+                          <span className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                             R$ {Number(subscriber.total_spent).toFixed(2)}
                           </span>
                         )}
@@ -494,32 +494,32 @@ export const SubscribersPage: React.FC = () => {
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Novo cliente">
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-zinc-300">E-mail *</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">E-mail *</label>
             <input
               type="email"
               value={newSubscriber.email}
               onChange={(event) => setNewSubscriber((prev) => ({ ...prev, email: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-zinc-700"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="cliente@exemplo.com"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-zinc-300">Nome</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">Nome</label>
             <input
               type="text"
               value={newSubscriber.name}
               onChange={(event) => setNewSubscriber((prev) => ({ ...prev, name: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-zinc-700"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="Nome do cliente"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-zinc-300">Telefone</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">Telefone</label>
             <input
               type="tel"
               value={newSubscriber.phone}
               onChange={(event) => setNewSubscriber((prev) => ({ ...prev, phone: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-zinc-700"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="(11) 99999-9999"
             />
           </div>
@@ -536,13 +536,13 @@ export const SubscribersPage: React.FC = () => {
 
       <Modal isOpen={showImportModal} onClose={() => setShowImportModal(false)} title="Importar clientes">
         <div className="space-y-4">
-          <p className="text-sm text-gray-500 dark:text-zinc-400">
-            Cole os contatos no formato <code className="rounded bg-gray-100 px-1 dark:bg-gray-700">email,nome,telefone</code>, um por linha.
+          <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            Cole os contatos no formato <code className="rounded bg-gray-100 px-1 dark:bg-[var(--dark-bg-hover,#161616)]">email,nome,telefone</code>, um por linha.
           </p>
           <textarea
             value={importText}
             onChange={(event) => setImportText(event.target.value)}
-            className="h-48 w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-primary-500 dark:border-zinc-700"
+            className="h-48 w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
             placeholder={`joao@email.com,João Silva,11999999999\nmaria@email.com,Maria Santos\npedro@email.com`}
           />
           <div className="flex justify-end gap-2 pt-4">

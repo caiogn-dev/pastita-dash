@@ -4,11 +4,10 @@
  */
 import api from './api';
 import logger from './logger';
-import { getStoreSlug } from '../hooks/useStore';
+import { getStoreSlugWithFallback } from '../hooks/useStore';
 
-const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
 const BASE_URL = '/stores/reports';
-const getStoreParam = () => getStoreSlug() || STORE_SLUG;
+const getStoreParam = () => getStoreSlugWithFallback() || undefined;
 
 // =============================================================================
 // TYPES

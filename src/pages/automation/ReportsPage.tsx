@@ -280,8 +280,8 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Relatórios Automatizados</h1>
-          <p className="text-gray-600 dark:text-zinc-400">Configure relatórios periódicos e gere sob demanda</p>
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Relatórios Automatizados</h1>
+          <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Configure relatórios periódicos e gere sob demanda</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setIsGenerateModalOpen(true)}>

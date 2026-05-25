@@ -1,639 +1,325 @@
-/**
- * OrderNewPage - Página de criação de pedido
- * Formulário completo para criar novos pedidos
- */
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  PlusIcon,
-  TrashIcon,
-  UserIcon,
-  CreditCardIcon,
-  TruckIcon,
-  ShoppingCartIcon,
-} from '@heroicons/react/24/outline';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { Box, Flex, Heading, Stack, Text } from '@chakra-ui/react';
+import { MinusIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, PageLoading } from '../../components/common';
-import { ordersService, productsService, getErrorMessage } from '../../services';
-import { useStore } from '../../hooks';
-import type { CalculatedDeliveryFee } from '../../services/orders';
-import { getStore } from '../../services/storesApi';
+import { Button, Card, Input, PageLoading } from '../../components/common';
+import { getErrorMessage, ordersService, productsService } from '../../services';
+import { useStore } from '../../hooks/useStore';
+import { Product } from '../../services/products';
+import type { CreateOrder } from '../../types';
 
-interface Product {
-  id: string;
-  name: string;
-  price: number | string;
-  stock_quantity: number;
-  sku: string;
-}
-
-const toNumber = (value: unknown): number => {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') return parseFloat(value) || 0;
-  return 0;
+type OrderLine = {
+  product: Product;
+  quantity: number;
 };
 
-const formatPrice = (value: unknown): string => toNumber(value).toFixed(2);
-
-const orderSchema = z.object({
-  customer_name: z.string().min(2, 'Nome é obrigatório'),
-  customer_phone: z.string().min(10, 'Telefone inválido'),
-  customer_email: z.string().email('Email inválido').optional().or(z.literal('')),
-  delivery_method: z.enum(['delivery', 'pickup', 'digital']),
-  delivery_address: z.string().optional(),
-  payment_method: z.enum(['pix', 'cash', 'credit_card', 'debit_card']),
-  adjustment_type: z.enum(['none', 'discount', 'surcharge']),
-  adjustment_amount: z.number().min(0, 'Valor inválido'),
-  adjustment_reason: z.string().optional(),
-  notes: z.string().optional(),
-  items: z.array(z.object({
-    product_id: z.string(),
-    product_name: z.string(),
-    quantity: z.number().min(1, 'Quantidade mínima é 1'),
-    unit_price: z.number(),
-  })).min(1, 'Adicione pelo menos um item'),
-});
-
-type OrderFormData = z.infer<typeof orderSchema>;
-
-const inputCls = 'w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500';
-const selectCls = inputCls;
-const labelCls = 'block text-sm font-medium text-fg-secondary mb-1';
-const errorCls = 'text-xs text-red-500 mt-1';
+const formatMoney = (value: number) => {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 export const OrderNewPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, stores } = useStore();
-  const effectiveStoreId = useMemo(() => {
-    if (!routeStoreId) return contextStoreId || null;
-    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
-    return match?.id || contextStoreId || null;
-  }, [routeStoreId, contextStoreId, stores]);
-  const effectiveStore = useMemo(() => {
-    if (!routeStoreId) {
-      return stores.find(s => s.id === effectiveStoreId) || null;
-    }
-    return stores.find(s => s.id === routeStoreId || s.slug === routeStoreId) || null;
-  }, [effectiveStoreId, routeStoreId, stores]);
-  const effectiveStoreSlug = effectiveStore?.slug || null;
+  const { storeId: contextStoreId, storeSlug } = useStore();
+  const storeId = routeStoreId || contextStoreId || storeSlug;
 
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
-  const [productsLoading, setProductsLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deliveryInfo, setDeliveryInfo] = useState<CalculatedDeliveryFee | null>(null);
-  const [deliveryLoading, setDeliveryLoading] = useState(false);
-  const [deliveryError, setDeliveryError] = useState<string | null>(null);
-  const [resolvedStoreSlug, setResolvedStoreSlug] = useState<string | null>(effectiveStoreSlug);
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedQty, setSelectedQty] = useState(1);
+  const [items, setItems] = useState<OrderLine[]>([]);
 
-  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<OrderFormData>({
-    resolver: zodResolver(orderSchema),
-    defaultValues: {
-      customer_name: '', customer_phone: '', customer_email: '',
-      delivery_method: 'delivery', delivery_address: '',
-      payment_method: 'pix', adjustment_type: 'none', adjustment_amount: 0, adjustment_reason: '',
-      notes: '', items: [],
-    },
-  });
-
-  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
-  const deliveryMethod = watch('delivery_method');
-  const adjustmentType = watch('adjustment_type');
-  const adjustmentAmount = watch('adjustment_amount') || 0;
-  const items = watch('items');
-  const deliveryAddress = watch('delivery_address');
-
-  const totals = useMemo(() => {
-    const subtotal = items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
-    const deliveryFee = deliveryMethod === 'delivery' ? (deliveryInfo?.fee || 0) : 0;
-    const cleanAdjustment = Math.max(0, toNumber(adjustmentAmount));
-    const discount = adjustmentType === 'discount' ? Math.min(cleanAdjustment, subtotal + deliveryFee) : 0;
-    const surcharge = adjustmentType === 'surcharge' ? cleanAdjustment : 0;
-    return {
-      subtotal,
-      deliveryFee,
-      discount,
-      surcharge,
-      total: Math.max(0, subtotal + deliveryFee + surcharge - discount),
-    };
-  }, [adjustmentAmount, adjustmentType, deliveryInfo?.fee, items, deliveryMethod]);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'cash' | 'credit_card' | 'debit_card'>('pix');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    if (!effectiveStoreId) return;
-    const load = async () => {
+    const loadProducts = async () => {
+      if (!storeId) {
+        toast.error('Loja nao informada');
+        navigate('/stores');
+        return;
+      }
+
       try {
-        const response = await productsService.getProducts({ store: effectiveStoreId, is_active: true });
-        setProducts((response.results || []).map(p => ({
-          ...p,
-          price: toNumber(p.price),
-          stock_quantity: toNumber(p.stock_quantity),
-        })));
-      } catch { toast.error('Erro ao carregar produtos'); }
-      finally { setProductsLoading(false); }
-    };
-    load();
-  }, [effectiveStoreId]);
-
-  useEffect(() => {
-    setResolvedStoreSlug(effectiveStoreSlug);
-  }, [effectiveStoreSlug]);
-
-  useEffect(() => {
-    if (effectiveStoreSlug || !effectiveStoreId) return;
-
-    let cancelled = false;
-    const loadStoreSlug = async () => {
-      try {
-        const storeData = await getStore(effectiveStoreId);
-        if (!cancelled) {
-          setResolvedStoreSlug(storeData.slug || null);
-        }
+        setLoading(true);
+        const response = await productsService.getProducts({ store: storeId, page_size: 200 });
+        setProducts(response.results || []);
       } catch (error) {
-        if (!cancelled) {
-          setDeliveryError(getErrorMessage(error));
-        }
+        toast.error(getErrorMessage(error));
+      } finally {
+        setLoading(false);
       }
     };
 
-    void loadStoreSlug();
-    return () => {
-      cancelled = true;
-    };
-  }, [effectiveStoreId, effectiveStoreSlug]);
+    loadProducts();
+  }, [storeId, navigate]);
 
-  const ensureStoreSlug = useCallback(async () => {
-    if (resolvedStoreSlug) {
-      return resolvedStoreSlug;
-    }
+  const subtotal = useMemo(() => {
+    return items.reduce((acc, item) => acc + Number(item.product.price || 0) * item.quantity, 0);
+  }, [items]);
 
-    const candidateStoreId = effectiveStoreId || routeStoreId || contextStoreId;
-    if (!candidateStoreId) {
-      setDeliveryError('Loja não identificada para calcular a entrega');
-      return null;
-    }
-
-    try {
-      const storeData = await getStore(candidateStoreId);
-      const slug = storeData.slug || null;
-      setResolvedStoreSlug(slug);
-      if (!slug) {
-        setDeliveryError('Loja sem slug configurado para cálculo de entrega');
-      }
-      return slug;
-    } catch (error) {
-      const message = getErrorMessage(error);
-      setDeliveryError(message);
-      return null;
-    }
-  }, [contextStoreId, effectiveStoreId, resolvedStoreSlug, routeStoreId]);
-
-  const calculateDeliveryFee = useCallback(async (address: string) => {
-    if (!address.trim() || deliveryMethod !== 'delivery') {
-      setDeliveryInfo(null);
-      setDeliveryError(null);
-      return null;
-    }
-
-    const storeSlug = await ensureStoreSlug();
-    if (!storeSlug) {
-      setDeliveryInfo(null);
-      return null;
-    }
-
-    setDeliveryLoading(true);
-    setDeliveryError(null);
-    try {
-      const result = await ordersService.calculateDeliveryFee(storeSlug, address.trim());
-      if (result.error) {
-        setDeliveryInfo(null);
-        setDeliveryError(result.error);
-        return null;
-      }
-      if (result.is_within_area === false) {
-        setDeliveryInfo(result);
-        setDeliveryError(result.message || 'Endereço fora da área de entrega');
-        return result;
-      }
-      setDeliveryInfo(result);
-      return result;
-    } catch (error) {
-      const message = getErrorMessage(error);
-      setDeliveryInfo(null);
-      setDeliveryError(message);
-      return null;
-    } finally {
-      setDeliveryLoading(false);
-    }
-  }, [deliveryMethod, ensureStoreSlug]);
-
-  useEffect(() => {
-    if (deliveryMethod !== 'delivery') {
-      setDeliveryInfo(null);
-      setDeliveryError(null);
-      return;
-    }
-
-    const address = typeof deliveryAddress === 'string' ? deliveryAddress.trim() : '';
-    if (address.length < 10) {
-      setDeliveryInfo(null);
-      setDeliveryError(null);
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      void calculateDeliveryFee(address);
-    }, 700);
-
-    return () => window.clearTimeout(timer);
-  }, [calculateDeliveryFee, deliveryAddress, deliveryMethod]);
-
-  const handleAddItem = () => {
-    if (!selectedProduct || quantity < 1) return;
-    const product = products.find(p => p.id === selectedProduct);
+  const addItem = () => {
+    const product = products.find((p) => p.id === selectedProductId);
     if (!product) return;
-    const existingIndex = items.findIndex(item => item.product_id === product.id);
-    if (existingIndex >= 0) {
-      const updated = [...items];
-      updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + quantity };
-      setValue('items', updated);
-    } else {
-      append({ product_id: product.id, product_name: product.name, quantity, unit_price: toNumber(product.price) });
-    }
-    setSelectedProduct('');
-    setQuantity(1);
+    if (selectedQty <= 0) return;
+
+    setItems((prev) => {
+      const idx = prev.findIndex((line) => line.product.id === product.id);
+      if (idx >= 0) {
+        const clone = [...prev];
+        clone[idx] = { ...clone[idx], quantity: clone[idx].quantity + selectedQty };
+        return clone;
+      }
+      return [...prev, { product, quantity: selectedQty }];
+    });
+
+    setSelectedProductId('');
+    setSelectedQty(1);
   };
 
-  const onSubmit = async (data: OrderFormData) => {
-    if (!effectiveStoreId) { toast.error('Selecione uma loja'); return; }
-    setIsSubmitting(true);
-    try {
-      let resolvedDeliveryInfo = deliveryInfo;
-      if (data.delivery_method === 'delivery') {
-        const address = (data.delivery_address || '').trim();
-        if (!address) {
-          toast.error('Informe o endereço de entrega');
-          return;
-        }
-        resolvedDeliveryInfo = await calculateDeliveryFee(address);
-        if (!resolvedDeliveryInfo || resolvedDeliveryInfo.is_within_area === false) {
-          toast.error(resolvedDeliveryInfo?.message || deliveryError || 'Não foi possível calcular a taxa de entrega');
-          return;
-        }
-      }
+  const updateQty = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      setItems((prev) => prev.filter((line) => line.product.id !== productId));
+      return;
+    }
+    setItems((prev) =>
+      prev.map((line) => (line.product.id === productId ? { ...line, quantity } : line))
+    );
+  };
 
-      const order = await ordersService.createOrder({
-        store: effectiveStoreId,
-        customer_name: data.customer_name,
-        customer_phone: data.customer_phone,
-        customer_email: data.customer_email || undefined,
-        delivery_method: data.delivery_method,
-        delivery_address: data.delivery_method === 'delivery' ? data.delivery_address : undefined,
-        delivery_fee: data.delivery_method === 'delivery' ? (resolvedDeliveryInfo?.fee || 0) : 0,
-        discount: data.adjustment_type === 'discount' ? totals.discount : 0,
-        surcharge: data.adjustment_type === 'surcharge' ? totals.surcharge : 0,
-        adjustment_reason: data.adjustment_reason,
-        payment_method: data.payment_method,
-        notes: data.notes,
-        items: data.items.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
-      });
-      if (['pix', 'credit_card', 'debit_card'].includes(data.payment_method)) {
-        try {
-          await ordersService.generatePayment(order.id, data.payment_method);
-          toast.success(`Pedido #${order.order_number} criado com link de pagamento!`);
-        } catch {
-          toast.success(`Pedido #${order.order_number} criado. Gere o pagamento na próxima tela.`);
-        }
-      } else {
-        toast.success(`Pedido #${order.order_number} criado com sucesso!`);
-      }
-      navigate(`/stores/${effectiveStoreId}/orders/${order.id}`);
+  const removeItem = (productId: string) => {
+    setItems((prev) => prev.filter((line) => line.product.id !== productId));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!storeId) return;
+
+    if (!customerName.trim() || !customerPhone.trim()) {
+      toast.error('Preencha nome e telefone do cliente');
+      return;
+    }
+    if (!items.length) {
+      toast.error('Adicione ao menos um produto');
+      return;
+    }
+
+    const payload: CreateOrder = {
+      store: storeId,
+      customer_name: customerName.trim(),
+      customer_phone: customerPhone.trim(),
+      customer_email: customerEmail.trim() || undefined,
+      items: items.map((line) => ({
+        product_id: line.product.id,
+        quantity: line.quantity,
+      })),
+      payment_method: paymentMethod,
+      delivery_address: deliveryAddress.trim() || undefined,
+      notes: notes.trim() || undefined,
+    };
+
+    try {
+      setSaving(true);
+      const order = await ordersService.createOrder(payload);
+      toast.success(`Pedido #${order.order_number} criado`);
+      navigate(`/stores/${storeId}/orders/${order.id}`);
     } catch (error) {
       toast.error(getErrorMessage(error));
-    } finally { setIsSubmitting(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (productsLoading) return <PageLoading />;
+  if (loading) {
+    return <PageLoading />;
+  }
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col gap-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => navigate(`/stores/${effectiveStoreId}/orders`)}
-            className="p-2 rounded-lg hover:bg-bg-hover text-fg-muted transition-colors"
-            aria-label="Voltar"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <h1 className="text-2xl font-bold text-fg-primary">Novo Pedido</h1>
-        </div>
+    <Box p={6}>
+      <Stack gap={6}>
+        <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+          <Stack gap={1}>
+            <Heading size="xl">Novo Pedido</Heading>
+            <Text color="fg.muted">Crie um pedido manual para esta loja</Text>
+          </Stack>
+          <Button variant="outline" onClick={() => navigate(`/stores/${storeId}/orders`)}>
+            Voltar
+          </Button>
+        </Flex>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
-            {/* Coluna Principal */}
-            <div className="flex flex-col gap-6">
-              {/* Cliente */}
-              <Card>
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <UserIcon className="w-5 h-5 text-fg-muted" />
-                    <h2 className="text-base font-semibold text-fg-primary">Dados do Cliente</h2>
-                  </div>
+        <form onSubmit={handleSubmit}>
+          <Stack gap={6}>
+            <Card title="Cliente">
+              <Stack gap={4}>
+                <Input
+                  label="Nome"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Nome do cliente"
+                  required
+                />
+                <Input
+                  label="Telefone"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  required
+                />
+                <Input
+                  label="Email (opcional)"
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="cliente@email.com"
+                />
+              </Stack>
+            </Card>
 
-                  <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
-                    <div>
-                      <label className={labelCls}>Nome *</label>
-                      <input {...register('customer_name')} placeholder="Nome do cliente" className={inputCls} />
-                      {errors.customer_name && <p className={errorCls}>{errors.customer_name.message}</p>}
-                    </div>
-                    <div>
-                      <label className={labelCls}>Telefone *</label>
-                      <input {...register('customer_phone')} placeholder="(11) 99999-9999" className={inputCls} />
-                      {errors.customer_phone && <p className={errorCls}>{errors.customer_phone.message}</p>}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className={labelCls}>Email</label>
-                    <input {...register('customer_email')} type="email" placeholder="cliente@email.com" className={inputCls} />
-                  </div>
-                </div>
-              </Card>
-
-              {/* Produtos */}
-              <Card>
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <ShoppingCartIcon className="w-5 h-5 text-fg-muted" />
-                    <h2 className="text-base font-semibold text-fg-primary">Produtos</h2>
-                  </div>
-
-                  <div className="flex flex-row max-sm:flex-col gap-3 items-end">
-                    <div className="flex-1">
-                      <label className={labelCls}>Produto</label>
-                      <select
-                        value={selectedProduct}
-                        onChange={(e) => setSelectedProduct(e.target.value)}
-                        className={selectCls}
-                      >
-                        <option value="">Selecione um produto</option>
-                        {products.map(p => (
-                          <option key={p.id} value={p.id}>{p.name} — R$ {formatPrice(p.price)}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="w-24">
-                      <label className={labelCls}>Qtd</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={quantity}
-                        onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                        className={inputCls}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      leftIcon={<PlusIcon className="w-4 h-4" />}
-                      onClick={handleAddItem}
-                      disabled={!selectedProduct}
+            <Card title="Produtos">
+              <Stack gap={4}>
+                <Flex gap={3} wrap="wrap">
+                  <Box minW="300px" flex={1}>
+                    <label className="block text-sm mb-1">Produto</label>
+                    <select
+                      value={selectedProductId}
+                      onChange={(e) => setSelectedProductId(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                     >
+                      <option value="">Selecione um produto</option>
+                      {products.map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.name} - R$ {formatMoney(Number(product.price || 0))}
+                        </option>
+                      ))}
+                    </select>
+                  </Box>
+                  <Box w="120px">
+                    <Input
+                      label="Qtd"
+                      type="number"
+                      min={1}
+                      value={selectedQty}
+                      onChange={(e) => setSelectedQty(Number(e.target.value || 1))}
+                    />
+                  </Box>
+                  <Flex align="flex-end">
+                    <Button onClick={addItem} type="button">
+                      <PlusIcon className="w-4 h-4 mr-1" />
                       Adicionar
                     </Button>
-                  </div>
+                  </Flex>
+                </Flex>
 
-                  {errors.items && (
-                    <p className="text-sm text-red-500">{errors.items.message as string}</p>
-                  )}
+                {!items.length ? (
+                  <Text color="fg.muted">Nenhum item adicionado.</Text>
+                ) : (
+                  <Stack gap={2}>
+                    {items.map((line) => (
+                      <Flex
+                        key={line.product.id}
+                        justify="space-between"
+                        align="center"
+                        p={3}
+                        borderWidth="1px"
+                        borderRadius="md"
+                        borderColor="border.subtle"
+                      >
+                        <Box>
+                          <Text fontWeight="semibold">{line.product.name}</Text>
+                          <Text color="fg.muted" fontSize="sm">
+                            R$ {formatMoney(Number(line.product.price || 0))} cada
+                          </Text>
+                        </Box>
+                        <Flex align="center" gap={2}>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateQty(line.product.id, line.quantity - 1)}
+                          >
+                            <MinusIcon className="w-3 h-3" />
+                          </Button>
+                          <Text minW="24px" textAlign="center">
+                            {line.quantity}
+                          </Text>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateQty(line.product.id, line.quantity + 1)}
+                          >
+                            <PlusIcon className="w-3 h-3" />
+                          </Button>
+                          <Text minW="120px" textAlign="right" fontWeight="semibold">
+                            R$ {formatMoney(Number(line.product.price || 0) * line.quantity)}
+                          </Text>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeItem(line.product.id)}
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </Button>
+                        </Flex>
+                      </Flex>
+                    ))}
+                  </Stack>
+                )}
+              </Stack>
+            </Card>
 
-                  {fields.length > 0 && (
-                    <div className="border border-border-primary rounded-lg overflow-hidden">
-                      {fields.map((field, index) => (
-                        <div
-                          key={field.id}
-                          className={`flex items-center justify-between p-3 ${index < fields.length - 1 ? 'border-b border-border-primary' : ''}`}
-                        >
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-fg-primary">{field.product_name}</p>
-                            <p className="text-xs text-fg-muted">{field.quantity} x R$ {formatPrice(field.unit_price)}</p>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <span className="text-sm font-semibold text-fg-primary">
-                              R$ {formatPrice(field.quantity * toNumber(field.unit_price))}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="p-1.5 rounded hover:bg-bg-hover text-red-500 transition-colors"
-                              aria-label="Remover"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              {/* Entrega */}
-              <Card>
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <TruckIcon className="w-5 h-5 text-fg-muted" />
-                    <h2 className="text-base font-semibold text-fg-primary">Entrega</h2>
-                  </div>
-
-                  <select {...register('delivery_method')} className={selectCls}>
-                    <option value="delivery">Entrega</option>
-                    <option value="pickup">Retirada</option>
-                    <option value="digital">Digital</option>
-                  </select>
-
-                  {deliveryMethod === 'delivery' && (
-                    <div>
-                      <label className={labelCls}>Endereço de Entrega</label>
-                      <textarea
-                        {...register('delivery_address')}
-                        placeholder="Rua, número, bairro, cidade..."
-                        rows={3}
-                        className={`${inputCls} resize-none`}
-                      />
-                      <div className="mt-2 flex items-center justify-between gap-3">
-                        <div className="min-h-[20px] text-xs">
-                          {deliveryLoading && (
-                            <span className="inline-flex items-center gap-1 text-fg-muted">
-                              <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                              Calculando rota real...
-                            </span>
-                          )}
-                          {!deliveryLoading && deliveryError && (
-                            <span className="text-red-500">{deliveryError}</span>
-                          )}
-                          {!deliveryLoading && !deliveryError && deliveryInfo?.distance_km && (
-                            <span className="text-green-600 dark:text-green-400">
-                              {deliveryInfo.distance_km.toFixed(2)} km
-                              {deliveryInfo.duration_minutes ? ` • ${Math.round(deliveryInfo.duration_minutes)} min` : ''}
-                            </span>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => void calculateDeliveryFee(typeof deliveryAddress === 'string' ? deliveryAddress : '')}
-                          disabled={deliveryLoading || !(typeof deliveryAddress === 'string' && deliveryAddress.trim())}
-                        >
-                          Calcular taxa
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              {/* Observações */}
-              <Card>
-                <div className="flex flex-col gap-4">
-                  <h2 className="text-base font-semibold text-fg-primary">Observações</h2>
-                  <textarea
-                    {...register('notes')}
-                    placeholder="Observações sobre o pedido..."
-                    rows={3}
-                    className={`${inputCls} resize-none`}
-                  />
-                </div>
-              </Card>
-            </div>
-
-            {/* Coluna Lateral */}
-            <div className="flex flex-col gap-6">
-              {/* Pagamento */}
-              <Card>
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <CreditCardIcon className="w-5 h-5 text-fg-muted" />
-                    <h2 className="text-base font-semibold text-fg-primary">Pagamento</h2>
-                  </div>
-                  <select {...register('payment_method')} className={selectCls}>
+            <Card title="Entrega e Pagamento">
+              <Stack gap={4}>
+                <Box>
+                  <label className="block text-sm mb-1">Forma de pagamento</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value as typeof paymentMethod)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                  >
                     <option value="pix">PIX</option>
                     <option value="cash">Dinheiro</option>
-                    <option value="credit_card">Cartão de Crédito</option>
-                    <option value="debit_card">Cartão de Débito</option>
+                    <option value="credit_card">Cartao de credito</option>
+                    <option value="debit_card">Cartao de debito</option>
                   </select>
-                </div>
-              </Card>
+                </Box>
+                <Input
+                  label="Endereco de entrega (opcional)"
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  placeholder="Rua, numero, bairro, cidade"
+                />
+                <Input
+                  label="Observacoes (opcional)"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Ex: sem cebola, entregar no portao"
+                />
+              </Stack>
+            </Card>
 
-              {/* Ajuste */}
-              <Card>
-                <div className="flex flex-col gap-4">
-                  <h2 className="text-base font-semibold text-fg-primary">Ajuste do pedido</h2>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-3">
-                    <div>
-                      <label className={labelCls}>Tipo</label>
-                      <select {...register('adjustment_type')} className={selectCls}>
-                        <option value="none">Sem ajuste</option>
-                        <option value="discount">Desconto</option>
-                        <option value="surcharge">Acréscimo</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Valor</label>
-                      <input
-                        {...register('adjustment_amount', { valueAsNumber: true })}
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        disabled={adjustmentType === 'none'}
-                        className={inputCls}
-                      />
-                      {errors.adjustment_amount && <p className={errorCls}>{errors.adjustment_amount.message}</p>}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className={labelCls}>Motivo</label>
-                    <input
-                      {...register('adjustment_reason')}
-                      placeholder="Ex: embalagem extra, cortesia, ajuste manual"
-                      disabled={adjustmentType === 'none'}
-                      className={inputCls}
-                    />
-                  </div>
-                </div>
-              </Card>
-
-              {/* Resumo */}
-              <Card>
-                <div className="flex flex-col gap-4">
-                  <h2 className="text-base font-semibold text-fg-primary">Resumo do Pedido</h2>
-
-                  <div className="flex justify-between text-sm">
-                    <span className="text-fg-muted">Subtotal</span>
-                    <span className="text-fg-primary">R$ {formatPrice(totals.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-fg-muted">Taxa de Entrega</span>
-                    <span className="text-fg-primary">
-                      {deliveryMethod === 'delivery' && deliveryLoading
-                        ? 'Calculando...'
-                        : `R$ ${formatPrice(totals.deliveryFee)}`}
-                    </span>
-                  </div>
-                  {deliveryMethod === 'delivery' && deliveryInfo?.distance_km && (
-                    <div className="flex justify-between text-xs text-fg-muted">
-                      <span>Rota</span>
-                      <span>
-                        {deliveryInfo.distance_km.toFixed(2)} km
-                        {deliveryInfo.duration_minutes ? ` • ${Math.round(deliveryInfo.duration_minutes)} min` : ''}
-                      </span>
-                    </div>
-                  )}
-                  {totals.discount > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-fg-muted">Desconto</span>
-                      <span className="text-green-600 dark:text-green-400">- R$ {formatPrice(totals.discount)}</span>
-                    </div>
-                  )}
-                  {totals.surcharge > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-fg-muted">Acréscimo</span>
-                      <span className="text-fg-primary">R$ {formatPrice(totals.surcharge)}</span>
-                    </div>
-                  )}
-
-                  <div className="border-t border-border-primary" />
-
-                  <div className="flex justify-between">
-                    <span className="font-bold text-lg text-fg-primary">Total</span>
-                    <span className="font-bold text-lg text-green-600 dark:text-green-400">R$ {formatPrice(totals.total)}</span>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    isLoading={isSubmitting}
-                    leftIcon={<PlusIcon className="w-5 h-5" />}
-                  >
-                    Criar Pedido
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          </div>
+            <Card>
+              <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+                <Stack gap={0}>
+                  <Text color="fg.muted">Subtotal</Text>
+                  <Heading size="lg">R$ {formatMoney(subtotal)}</Heading>
+                </Stack>
+                <Button type="submit" isLoading={saving}>
+                  Criar Pedido
+                </Button>
+              </Flex>
+            </Card>
+          </Stack>
         </form>
-      </div>
-    </div>
+      </Stack>
+    </Box>
   );
 };
 

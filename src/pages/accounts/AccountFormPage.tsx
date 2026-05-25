@@ -175,13 +175,13 @@ export const AccountFormPage: React.FC = () => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
                 Agente Padrão
               </label>
               <select
                 value={formData.default_agent}
                 onChange={(e) => setFormData({ ...formData, default_agent: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
               >
                 <option value="">Nenhum</option>
                 {agents.map((agent) => (

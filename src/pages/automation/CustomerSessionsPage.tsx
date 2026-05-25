@@ -125,8 +125,8 @@ const CustomerSessionsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sessões de Clientes</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Sessões de Clientes</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             Acompanhe as sessões de clientes entre o site e WhatsApp
           </p>
         </div>
@@ -135,7 +135,7 @@ const CustomerSessionsPage: React.FC = () => {
           className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
             showFilters
               ? 'border-green-500 text-green-700 bg-green-50'
-              : 'border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700'
+              : 'border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
           }`}
         >
           <FunnelIcon className="h-5 w-5 mr-2" />
@@ -145,17 +145,17 @@ const CustomerSessionsPage: React.FC = () => {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-4">
+        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] shadow rounded-lg p-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Empresa</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Empresa</label>
               <select
                 value={filters.company_id}
                 onChange={(e) => {
                   setFilters({ ...filters, company_id: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
               >
                 <option value="">Todas</option>
                 {companies.map((company) => (
@@ -166,14 +166,14 @@ const CustomerSessionsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Status</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => {
                   setFilters({ ...filters, status: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
               >
                 <option value="">Todos</option>
                 {Object.entries(sessionStatusLabels).map(([value, label]) => (
