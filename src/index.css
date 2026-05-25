@@ -134,7 +134,7 @@
 
   /* Gradiente sutil para sidebar/nav — profundidade lateral */
   --sidebar-gradient: linear-gradient(180deg, #181210 0%, #0D0907 100%);
-  --sidebar-active-glow: rgba(var(--primary-500), 0.12);
+  --sidebar-active-glow: color-mix(in srgb, var(--primary-500) 12%, transparent);
 }
 
 /* Textura grain sutil — faz o escuro respirar */
@@ -386,21 +386,21 @@ textarea::placeholder {
 /* Card warm glow — usado em cards de destaque */
 .card-warm-glow {
   box-shadow:
-    0 0 0 1px rgba(var(--primary-500), 0.08),
-    0 4px 16px rgba(var(--primary-500), 0.12),
+    0 0 0 1px color-mix(in srgb, var(--primary-500) 8%, transparent),
+    0 4px 16px color-mix(in srgb, var(--primary-500) 12%, transparent),
     0 1px 4px rgba(0,0,0,.3);
   transition: box-shadow 300ms ease;
 }
 .card-warm-glow:hover {
   box-shadow:
-    0 0 0 1px rgba(var(--primary-500), 0.15),
-    0 8px 32px rgba(var(--primary-500), 0.18),
+    0 0 0 1px color-mix(in srgb, var(--primary-500) 15%, transparent),
+    0 8px 32px color-mix(in srgb, var(--primary-500) 18%, transparent),
     0 2px 8px rgba(0,0,0,.4);
 }
 
 /* Sidebar item active state com glow warm */
 .dark .nav-item-active {
-  background: linear-gradient(90deg, rgba(var(--primary-500), 0.14) 0%, rgba(var(--primary-500), 0.06) 100%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary-500) 14%, transparent) 0%, color-mix(in srgb, var(--primary-500) 6%, transparent) 100%);
   border-left: 2px solid var(--primary-500);
 }
 
