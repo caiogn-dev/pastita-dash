@@ -1,5 +1,5 @@
 /**
- * Pastita Dashboard — Service Worker
+ * Cardapidex — Service Worker
  *
  * Responsibilities:
  * 1. Cache static assets for offline resilience (cache-first for assets, network-first for API)
@@ -7,7 +7,7 @@
  * 3. Handle notification click — focus existing tab or open new one
  */
 
-const CACHE_NAME = 'pastita-dash-v1';
+const CACHE_NAME = 'cardapidex-dash-v1';
 
 // Assets to pre-cache on install
 const PRE_CACHE = ['/'];
@@ -70,7 +70,7 @@ self.addEventListener('fetch', (event) => {
 
 // ─── Push ─────────────────────────────────────────────────────────────────────
 self.addEventListener('push', (event) => {
-  let payload = { title: 'Pastita', body: 'Nova notificação', data: {} };
+  let payload = { title: 'Cardapidex', body: 'Nova notificação', data: {} };
 
   if (event.data) {
     try {
@@ -82,9 +82,9 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: payload.body,
-    icon: '/pastita-logo.svg',
-    badge: '/pastita-logo.svg',
-    tag: payload.tag || 'pastita-notification',
+    icon: '/cardapidex-logo.svg',
+    badge: '/cardapidex-logo.svg',
+    tag: payload.tag || 'cardapidex-notification',
     data: payload.data || {},
     requireInteraction: false,
     vibrate: [200, 100, 200],
