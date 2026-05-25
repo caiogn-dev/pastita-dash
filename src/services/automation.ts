@@ -397,7 +397,7 @@ export const agentFlowService = {
   },
 
   update: async (id: string, data: UpdateAgentFlow): Promise<AgentFlow> => {
-    const response = await api.put(`/automation/flows/${id}/`, data);
+    const response = await api.patch(`/automation/flows/${id}/`, data);
     return response.data;
   },
 

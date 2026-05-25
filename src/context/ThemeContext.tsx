@@ -21,7 +21,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return stored;
       }
     }
-    return 'system';
+    return 'light';
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
@@ -47,35 +47,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => mediaQuery.removeEventListener('change', handler);
   }, [theme]);
 
-  const cssVariables = useMemo(() => {
-    const isDark = resolvedTheme === 'dark';
-    return {
-      '--pastita-background': isDark ? '#0f172a' : '#ffffff',
-      '--pastita-surface': isDark ? '#1e293b' : '#f8fafc',
-      '--pastita-foreground': isDark ? '#f8fafc' : '#0f172a',
-      '--pastita-border': isDark ? '#334155' : '#e5e7eb',
-      '--pastita-primary': '#722F37',
-      '--pastita-chart-accent': isDark ? '#f472b6' : '#de5b72',
-    };
-  }, [resolvedTheme]);
-
+  // Apply theme to document — only via class, never via data-theme
+  // (data-theme is reserved for per-store brand theming)
   useEffect(() => {
-    const root = document.documentElement;
-    if (resolvedTheme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(resolvedTheme);
   }, [resolvedTheme]);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (!root) return;
-
-    Object.entries(cssVariables).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
-    });
-  }, [cssVariables]);
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
@@ -83,11 +60,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  }, [resolvedTheme, setTheme]);
+    setThemeState((prev) => {
+      const newTheme = prev === 'light' ? 'dark' : 'light';
+      localStorage.setItem(STORAGE_KEY, newTheme);
+      return newTheme;
+    });
+  }, []);
+
+  const value = useMemo(() => ({
+    theme,
+    resolvedTheme,
+    setTheme,
+    toggleTheme,
+  }), [theme, resolvedTheme, setTheme, toggleTheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

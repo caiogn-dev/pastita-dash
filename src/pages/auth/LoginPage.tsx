@@ -1,16 +1,8 @@
 /**
- * LoginPage - Página de login moderna com Chakra UI v3
+ * LoginPage - Página de login
  */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Flex,
-  Heading,
-  Text,
-  Stack,
-  Image,
-} from '@chakra-ui/react';
 import toast from 'react-hot-toast';
 import { Button, Input, Card } from '../../components/common';
 import { authService, getErrorMessage, setAuthToken } from '../../services';
@@ -49,40 +41,35 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <Flex
-      minH="100vh"
-      align="center"
-      justify="center"
-      bg="bg.secondary"
-      p={4}
-    >
-      <Stack gap={8} maxW="md" w="full">
+    <div className="min-h-screen flex items-center justify-center bg-bg-secondary p-4">
+      <div className="flex flex-col gap-8 w-full max-w-md">
         {/* Logo e Título */}
-        <Stack align="center" gap={4}>
-          <Image
+        <div className="flex flex-col items-center gap-4">
+          <img
             src="/pastita-logo.svg"
             alt="Pastita"
-            boxSize="96px"
+            className="w-24 h-24"
           />
-          <Stack gap={1} textAlign="center">
-            <Heading size="2xl" color="fg.primary">Pastita</Heading>
-            <Text color="fg.muted">Dashboard de Gerenciamento</Text>
-          </Stack>
-        </Stack>
+          <div className="flex flex-col gap-1 text-center">
+            <h1 className="text-3xl font-bold text-fg-primary">Pastita</h1>
+            <p className="text-fg-muted">Dashboard de Gerenciamento</p>
+          </div>
+        </div>
 
         {/* Formulário */}
         <Card variant="default" size="lg">
           <form onSubmit={handleSubmit}>
-            <Stack gap={6}>
+            <div className="flex flex-col gap-6">
               <Input
                 label="Usuário"
-                type="text"
+                type="email"
                 isRequired
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="Digite seu e-mail"
+                autoComplete="email"
               />
-              
+
               <Input
                 label="Senha"
                 type="password"
@@ -90,26 +77,27 @@ export const LoginPage: React.FC = () => {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="Digite sua senha"
+                autoComplete="current-password"
               />
 
-              <Button 
-                type="submit" 
-                width="full" 
+              <Button
+                type="submit"
+                width="full"
                 isLoading={isLoading}
                 size="lg"
               >
                 Entrar
               </Button>
-            </Stack>
+            </div>
           </form>
         </Card>
 
         {/* Footer */}
-        <Text textAlign="center" fontSize="sm" color="fg.muted">
+        <p className="text-center text-sm text-fg-muted">
           Plataforma de gestão para restaurantes
-        </Text>
-      </Stack>
-    </Flex>
+        </p>
+      </div>
+    </div>
   );
 };
 

@@ -130,7 +130,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
     setReprocessing(true);
     try {
       const response = await api.post('/webhooks/whatsapp/debug/', { action, limit: 50 });
-      const results = response.data.results;
+      const results = response.data;
       toast.success(`Reprocessado: ${results.processed} sucesso, ${results.failed} falhas`);
       fetchDiagnostics();
     } catch (error) {
@@ -175,7 +175,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Diagnóstico de Webhooks WhatsApp
@@ -211,7 +211,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Status do Sistema
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 max-md:grid-cols-2 gap-4">
               <StatusIndicator ok={diagnosis.has_active_accounts} label="Contas ativas" />
               <StatusIndicator ok={diagnosis.celery_connected} label="Celery conectado" />
               <StatusIndicator ok={!diagnosis.has_failed_events} label="Sem eventos falhos" />
@@ -231,7 +231,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <SignalIcon className="w-8 h-8 text-blue-500" />

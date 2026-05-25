@@ -1,70 +1,43 @@
-/**
- * MainLayout - Layout principal moderno com Chakra UI v3
- */
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import { Box, Flex, useBreakpointValue } from '@chakra-ui/react';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
+import React from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { Navbar } from './Navbar';
 
 export const MainLayout: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isMobile = useBreakpointValue({ base: true, lg: false });
+  const location = useLocation();
+
+  const isDedicatedOrderRoute = /^\/stores\/[^/]+\/orders(?:\/.*)?$/.test(location.pathname);
+  const isFullscreenRoute = /^\/(whatsapp\/(inbox|chat)|conversations)/.test(location.pathname);
+
+  if (isDedicatedOrderRoute) {
+    return (
+      <div className="min-h-screen bg-[#f5f1e8] text-fg-primary dark:bg-[#050505]">
+        <Outlet />
+      </div>
+    );
+  }
+
+  if (isFullscreenRoute) {
+    return (
+      <div className="min-h-screen bg-bg-secondary text-fg-primary flex flex-col relative">
+        <Navbar />
+        <div className="flex-1 overflow-hidden">
+          <Outlet />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Flex minH="100vh" bg="bg.secondary" color="fg.primary">
-      {/* Overlay para mobile */}
-      {sidebarOpen && isMobile && (
-        <Box
-          position="fixed"
-          inset={0}
-          bg="blackAlpha.600"
-          zIndex={30}
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar Mobile */}
-      <Box
-        position="fixed"
-        left={0}
-        top={0}
-        bottom={0}
-        width="280px"
-        zIndex={40}
-        transform={sidebarOpen ? 'translateX(0)' : 'translateX(-100%)'}
-        transition="transform 0.3s ease-in-out"
-        display={{ base: 'block', lg: 'none' }}
-      >
-        <Sidebar onClose={() => setSidebarOpen(false)} />
-      </Box>
-
-      {/* Sidebar Desktop */}
-      <Box
-        width="280px"
-        flexShrink={0}
-        display={{ base: 'none', lg: 'block' }}
-      >
-        <Sidebar />
-      </Box>
-
-      {/* Main Content */}
-      <Flex flex={1} flexDirection="column" overflow="hidden">
-        <Header 
-          title="Painel Operacional" 
-          subtitle="CRM Pastita" 
-          onMenuClick={() => setSidebarOpen(true)} 
-        />
-        <Box 
-          as="main" 
-          flex={1} 
-          overflow="auto"
-          bg="bg.secondary"
-        >
-          <Outlet />
-        </Box>
-      </Flex>
-    </Flex>
+    <div className="min-h-screen bg-bg-secondary text-fg-primary flex flex-col relative">
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 55%)' }}
+      />
+      <Navbar />
+      <main className="flex-1 overflow-auto bg-transparent px-7 py-5 max-xl:px-5 max-md:px-3 max-md:py-3 z-10">
+        <Outlet />
+      </main>
+    </div>
   );
 };
 

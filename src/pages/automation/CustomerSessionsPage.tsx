@@ -353,7 +353,7 @@ const CustomerSessionsPage: React.FC = () => {
                 Próximo
               </button>
             </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div className="flex max-sm:hidden-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700 dark:text-zinc-300">
                   Mostrando <span className="font-medium">{(page - 1) * 20 + 1}</span> a{' '}
@@ -386,7 +386,7 @@ const CustomerSessionsPage: React.FC = () => {
       {selectedSession && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black0 bg-opacity-75" onClick={() => setSelectedSession(null)} />
+            <div className="fixed inset-0 bg-gray-500/75 dark:bg-black/75" onClick={() => setSelectedSession(null)} />
             <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">

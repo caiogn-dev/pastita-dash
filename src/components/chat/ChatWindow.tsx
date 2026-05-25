@@ -1,29 +1,32 @@
 /**
- * ChatWindow - Interface de Chat WhatsApp com Chakra UI v3
- * Versão melhorada com UX/UI aprimorada
+ * ChatWindow - Interface de Chat WhatsApp estilo WhatsApp Web
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import {
-  Box,
-  Flex,
-  Text,
-  IconButton,
-  Badge,
-  Spinner,
-  Stack,
-  Separator,
-  Avatar,
-} from '@chakra-ui/react';
+  MagnifyingGlassIcon,
+  DocumentTextIcon,
+  BoltIcon,
+  EllipsisVerticalIcon,
+} from '@heroicons/react/24/outline';
 
-import { ContactList, Contact } from './ContactList';
 import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
-import { useWhatsAppWS, MessageReceivedEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
+import { MediaViewer } from './MediaViewer';
+import { ChatToolsPanel } from './ChatToolsPanel';
+import { useWhatsAppWS, MessageReceivedEvent, MessageSentEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
+import { sendFile as sendFileApi } from '../../services/whatsapp';
+import { handoverService } from '../../services/handover';
 import { Message, Conversation } from '../../types';
+import { useStore } from '../../hooks/useStore';
+import '../../pages/whatsapp/WhatsAppInbox.css';
+
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value : [];
+}
 
 export interface ChatWindowProps {
   accountId: string;
@@ -36,9 +39,12 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   direction: msg.direction as 'inbound' | 'outbound',
   messageType: msg.message_type,
   status: msg.status as 'pending' | 'sent' | 'delivered' | 'read' | 'failed',
-  textBody: msg.text_body,
+  textBody: msg.text_body || msg.media_caption || msg.caption,
   content: msg.content,
   mediaUrl: msg.media_url,
+  mediaType: msg.media_mime_type || msg.media_type,
+  mimeType: msg.media_mime_type,
+  fileName: msg.media_filename || msg.file_name,
   createdAt: msg.created_at,
   sentAt: msg.sent_at ?? undefined,
   deliveredAt: msg.delivered_at ?? undefined,
@@ -46,96 +52,90 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   errorMessage: msg.error_message,
 });
 
-const conversationToContact = (conv: Conversation): Contact => ({
-  id: conv.id,
-  phoneNumber: conv.phone_number,
-  contactName: conv.contact_name || '',
-  lastMessagePreview: '',
-  lastMessageAt: conv.last_message_at ?? undefined,
-  unreadCount: 0,
-  status: conv.status,
-  mode: conv.mode as 'auto' | 'human' | 'hybrid',
-});
+const getInitials = (name?: string, phone?: string) => {
+  if (name) return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  return phone?.slice(-2) || '?';
+};
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({
-  accountId,
-  accountName,
-  onConversationSelect,
-}) => {
+const getStoreUrl = (metadata?: Record<string, unknown>) => {
+  const value = metadata?.website_url || metadata?.store_url || metadata?.public_url;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+
+export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, onConversationSelect }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
+  const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
+  const [insertText, setInsertText] = useState<string | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const { storeId, storeSlug, storeName, store } = useStore();
 
-  const {
-    isConnected,
-    connectionError,
-    subscribeToConversation,
-    unsubscribeFromConversation,
-    sendTypingIndicator,
-    sendMessage,
-  } = useWhatsAppWS({
-    accountId,
-    enabled: !!accountId,
-    onMessageReceived: handleMessageReceived,
-    onMessage: (msg) => {
-      const convertedMsg: Message = {
-        ...msg,
-        timestamp: msg.created_at,
-        account: accountId,
-        updated_at: msg.created_at,
-      } as unknown as Message;
-      handleNewMessage(convertedMsg);
-    },
-    onStatusUpdated: handleStatusUpdated,
-    onTyping: handleTyping,
-    onConversationUpdated: handleConversationUpdated,
-    onError: (event) => {
-      toast.error(`Erro: ${event.error_message}`);
-    },
-  });
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sendLockRef = useRef(false);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  const { isConnected, connectionError, retry, subscribeToConversation, unsubscribeFromConversation, sendTypingIndicator } =
+    useWhatsAppWS({
+      accountId,
+      enabled: !!accountId,
+      onMessageReceived: handleMessageReceived,
+      onMessageSent: handleMessageSent,
+      onMessage: (msg) => {
+        const converted: Message = { ...msg, timestamp: msg.created_at, account: accountId, updated_at: msg.created_at } as unknown as Message;
+        handleNewMessage(converted);
+      },
+      onStatusUpdated: handleStatusUpdated,
+      onTyping: handleTyping,
+      onConversationUpdated: handleConversationUpdated,
+      onError: (event) => { toast.error(`Erro: ${event.error_message}`); },
+    });
 
   const loadConversations = useCallback(async () => {
     if (!accountId) return;
-    
     setIsLoadingConversations(true);
     try {
-      const response = await conversationsService.getConversations({ account: accountId });
-      setConversations(response.results);
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsLoadingConversations(false);
-    }
-  }, [accountId]);
+      const search = debouncedSearchTerm.trim();
+      const response = await conversationsService.getConversations({
+        account: accountId,
+        page_size: search ? 100 : 50,
+        search: search || undefined,
+      });
+      setConversations(ensureArray<Conversation>(response?.results || response));
+    } catch (error) { toast.error(getErrorMessage(error)); }
+    finally { setIsLoadingConversations(false); }
+  }, [accountId, debouncedSearchTerm]);
 
   const loadMessages = useCallback(async () => {
     if (!selectedConversation || !accountId) return;
-    
     setIsLoadingMessages(true);
     try {
-      const history = await whatsappService.getConversationHistory(
-        accountId,
-        selectedConversation.phone_number,
-        100
-      );
-      setMessages(history.reverse());
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsLoadingMessages(false);
-    }
+      const historyRes = await conversationsService.getMessages(selectedConversation.id, 100);
+      setMessages(ensureArray<Message>(historyRes.results));
+    } catch (error) { toast.error(getErrorMessage(error)); }
+    finally { setIsLoadingMessages(false); }
   }, [accountId, selectedConversation]);
 
   useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm]);
+
+  useEffect(() => { loadConversations(); }, [loadConversations]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -146,106 +146,78 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       setMessages([]);
       onConversationSelect?.(null);
     }
-
-    return () => {
-      if (selectedConversation) {
-        unsubscribeFromConversation(selectedConversation.id);
-      }
-    };
+    return () => { if (selectedConversation) unsubscribeFromConversation(selectedConversation.id); };
   }, [selectedConversation, loadMessages, subscribeToConversation, unsubscribeFromConversation, onConversationSelect]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const handleAutoScroll = useCallback((isReceived = true) => {
+    if (isReceived && shouldAutoScrollRef.current) setTimeout(() => scrollToBottom(), 100);
+  }, [scrollToBottom]);
+
+  const handleContainerScroll = useCallback(() => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      shouldAutoScrollRef.current = scrollHeight - (scrollTop + clientHeight) < 100;
+    }
+  }, []);
 
   function handleMessageReceived(event: MessageReceivedEvent) {
     const newMessage = event.message;
-    
     if (selectedConversation && event.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) {
-          return prev;
-        }
+        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) return prev;
         return [...prev, newMessage as unknown as Message];
       });
+      handleAutoScroll(true);
     }
-
-    setConversations(prev => {
-      const updated = prev.map(conv => {
-        if (conv.id === event.conversation_id) {
-          return {
-            ...conv,
-            last_message_at: newMessage.created_at,
-          };
-        }
-        return conv;
-      });
-      return updated.sort((a, b) => {
-        if (!a.last_message_at) return 1;
-        if (!b.last_message_at) return -1;
-        return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
-      });
-    });
-
+    setConversations(prev => prev.map(c => c.id === event.conversation_id ? { ...c, last_message_at: newMessage.created_at } : c)
+      .sort((a, b) => new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()));
     if (!selectedConversation || event.conversation_id !== selectedConversation.id) {
-      const contactName = event.contact?.name || newMessage.from_number;
-      toast(`Nova mensagem de ${contactName}`, { icon: '💬' });
+      toast(`Nova mensagem de ${event.contact?.name || newMessage.from_number}`, { icon: '💬' });
     }
   }
 
-  function handleNewMessage(newMessage: Message) {
-    if (selectedConversation && newMessage.conversation_id === selectedConversation.id) {
+  function handleNewMessage(msg: Message) {
+    if (selectedConversation && msg.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) {
-          return prev;
-        }
-        return [...prev, newMessage];
+        if (prev.some(m => m.id === msg.id || m.whatsapp_message_id === msg.whatsapp_message_id)) return prev;
+        return [...prev, msg];
+      });
+      if (msg.direction === 'inbound') handleAutoScroll(true);
+    }
+  }
+
+  function handleMessageSent(event: MessageSentEvent) {
+    const msg = event.message;
+    if (selectedConversation && event.conversation_id === selectedConversation.id) {
+      const converted: Message = { ...msg, account: accountId, updated_at: msg.created_at } as unknown as Message;
+      setMessages(prev => {
+        if (prev.some(m => m.id === converted.id || m.whatsapp_message_id === converted.whatsapp_message_id)) return prev;
+        return [...prev, converted];
       });
     }
   }
 
   function handleStatusUpdated(event: StatusUpdatedEvent) {
-    setMessages(prev => prev.map(msg => {
-      if (msg.id === event.message_id || msg.whatsapp_message_id === event.whatsapp_message_id) {
-        return {
-          ...msg,
-          status: event.status,
-        };
-      }
-      return msg;
-    }));
+    setMessages(prev => prev.map(m =>
+      (m.id === event.message_id || m.whatsapp_message_id === event.whatsapp_message_id) ? { ...m, status: event.status } : m
+    ));
   }
 
   function handleTyping(event: TypingEvent) {
     setTypingContacts(prev => {
       const next = new Set(prev);
-      if (event.is_typing) {
-        next.add(event.conversation_id);
-      } else {
-        next.delete(event.conversation_id);
-      }
+      if (event.is_typing) next.add(event.conversation_id); else next.delete(event.conversation_id);
       return next;
     });
   }
 
   function handleConversationUpdated(event: ConversationUpdatedEvent) {
     const wsConv = event.conversation;
-    
     setConversations(prev => {
-      const exists = prev.some(c => c.id === wsConv.id);
-      if (exists) {
-        return prev.map(c => {
-          if (c.id === wsConv.id) {
-            return {
-              ...c,
-              phone_number: wsConv.phone_number,
-              contact_name: wsConv.contact_name,
-              status: wsConv.status as Conversation['status'],
-              mode: wsConv.mode as Conversation['mode'],
-            };
-          }
-          return c;
-        });
+      if (prev.some(c => c.id === wsConv.id)) {
+        return prev.map(c => c.id === wsConv.id
+          ? { ...c, phone_number: wsConv.phone_number, contact_name: wsConv.contact_name, wa_id: wsConv.wa_id, profile_picture: wsConv.profile_picture, profile_picture_url: wsConv.profile_picture_url, status: wsConv.status as Conversation['status'], mode: wsConv.mode as Conversation['mode'] }
+          : c);
       }
       loadConversations();
       return prev;
@@ -254,310 +226,326 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSendMessage = async (text: string) => {
     if (!selectedConversation || !accountId) return;
+    if (!text.trim() && !selectedFile) return;
+    if (sendLockRef.current) return;
 
+    sendLockRef.current = true;
+    const fileToSend = selectedFile;
+    setSelectedFile(null);
+    const clientRequestId = crypto.randomUUID();
+
+    const optimistic: Message = {
+      id: `temp-${Date.now()}`, conversation_id: selectedConversation.id, account: accountId,
+      text_body: text || (fileToSend ? fileToSend.name : ''),
+      direction: 'outbound',
+      message_type: fileToSend
+        ? (fileToSend.type.startsWith('image/') ? 'image' : fileToSend.type.startsWith('audio/') ? 'audio' : fileToSend.type.startsWith('video/') ? 'video' : 'document')
+        : 'text',
+      status: 'pending', created_at: new Date().toISOString(),
+      whatsapp_message_id: '', from_number: '', to_number: selectedConversation.phone_number,
+      timestamp: new Date().toISOString(), updated_at: new Date().toISOString(),
+    } as unknown as Message;
+    setMessages(prev => [...prev, optimistic]);
     setIsSending(true);
+
     try {
-      const message = await whatsappService.sendTextMessage({
-        account_id: accountId,
-        to: selectedConversation.phone_number,
-        text,
-      });
-      
-      setMessages(prev => [...prev, message]);
+      let res;
+      if (fileToSend) {
+        res = await sendFileApi(accountId, selectedConversation.phone_number, fileToSend, text || undefined);
+      } else {
+        res = await whatsappService.sendTextMessage({
+          account_id: accountId,
+          to: selectedConversation.phone_number,
+          text,
+          metadata: { client_request_id: clientRequestId, source: 'chat_window' },
+        });
+      }
+      setMessages(prev => prev.map(m => m.id === optimistic.id ? res.data : m));
     } catch (error) {
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
       toast.error(getErrorMessage(error));
     } finally {
+      sendLockRef.current = false;
       setIsSending(false);
     }
   };
 
-  const handleTypingIndicator = (isTyping: boolean) => {
-    if (selectedConversation) {
-      sendTypingIndicator(selectedConversation.id, isTyping);
-    }
-  };
-
-  const handleSelectContact = (contact: Contact) => {
-    const conversation = conversations.find(c => c.id === contact.id);
-    setSelectedConversation(conversation || null);
+  const handleToolsSend = async (text: string) => {
+    if (!selectedConversation || !text.trim()) return;
+    await whatsappService.sendTextMessage({
+      account_id: accountId,
+      to: selectedConversation.phone_number,
+      text: text.trim(),
+      metadata: { client_request_id: crypto.randomUUID(), source: 'chat_window_tools' },
+    });
+    void loadMessages();
   };
 
   const handleSwitchMode = async () => {
     if (!selectedConversation) return;
-
     try {
-      const newMode = selectedConversation.mode === 'human' ? 'auto' : 'human';
-      const updated = newMode === 'human'
-        ? await conversationsService.switchToHuman(selectedConversation.id)
-        : await conversationsService.switchToAuto(selectedConversation.id);
-      
-      setSelectedConversation(updated);
-      setConversations(prev => prev.map(c => c.id === updated.id ? updated : c));
+      const currentStatus = selectedConversation.mode === 'human' ? 'human' : 'bot';
+      const res = await handoverService.toggle(selectedConversation.id, currentStatus);
+      const newMode = res.handover_status === 'human' ? 'human' : 'auto';
+      setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
+      setConversations(prev => prev.map(c => c.id === selectedConversation.id ? { ...c, mode: newMode } : c));
       toast.success(`Modo alterado para ${newMode === 'human' ? 'humano' : 'automático'}`);
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
+    } catch (error) { toast.error(getErrorMessage(error)); }
   };
 
-  const contacts: Contact[] = conversations.map(conv => ({
-    ...conversationToContact(conv),
-    isTyping: typingContacts.has(conv.id),
-  }));
+  const togglePanel = (panel: 'templates' | 'tools') => {
+    setActivePanel(prev => prev === panel ? null : panel);
+  };
 
-  const groupedMessages = messages.reduce((groups, message) => {
-    const date = format(new Date(message.created_at), 'yyyy-MM-dd');
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(message);
+  const handleInsertText = (text: string) => {
+    setInsertText(text);
+    setTimeout(() => setInsertText(undefined), 100);
+  };
+
+  const groupedMessages = ensureArray<Message>(messages).reduce((groups, message) => {
+    if (!message.created_at) return groups;
+    try {
+      const date = format(new Date(message.created_at), 'yyyy-MM-dd');
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(message);
+    } catch { /* ignore invalid dates */ }
     return groups;
   }, {} as Record<string, Message[]>);
 
-  // Get initials for avatar
-  const getInitials = (name?: string, phone?: string) => {
-    if (name) {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    }
-    return phone?.slice(-2) || '?';
-  };
+  const filteredConversations = ensureArray<Conversation>(conversations);
 
   return (
-    <Flex 
-      h="calc(100vh - 64px)"
-      maxH="900px"
-      w="100%"
-      maxW="1400px"
-      mx="auto"
-      bg="bg.subtle"
-      borderRadius="xl"
-      overflow="hidden"
-      boxShadow="xl"
-      borderWidth="1px"
-      borderColor="border.default"
-    >
-      {/* Contact list sidebar */}
-      <Box 
-        w={{ base: '100%', md: '360px' }}
-        h="100%"
-        bg="bg.default"
-        borderRightWidth="1px"
-        borderColor="border.default"
-        display={{ base: selectedConversation ? 'none' : 'flex', md: 'flex' }}
-        flexDirection="column"
-      >
-        <ContactList
-          contacts={contacts}
-          selectedContactId={selectedConversation?.id}
-          onSelectContact={handleSelectContact}
-          isLoading={isLoadingConversations}
-          emptyMessage="Nenhuma conversa encontrada"
+    <div className="whatsapp-inbox">
+      {mediaViewer && (
+        <MediaViewer
+          url={mediaViewer.url}
+          type={mediaViewer.type}
+          fileName={mediaViewer.fileName}
+          onClose={() => setMediaViewer(null)}
         />
-      </Box>
+      )}
 
-      {/* Chat area */}
-      <Flex 
-        flex={1} 
-        flexDirection="column"
-        bg="bg.muted"
-        display={{ base: selectedConversation ? 'flex' : 'none', md: 'flex' }}
-      >
+      {/* ── Painel de Conversas ── */}
+      <div className="conversations-panel">
+        <div className="conversations-header">
+          <h1>{accountName || 'WhatsApp'}</h1>
+          <div className="search-box">
+            <MagnifyingGlassIcon className="w-4 h-4" style={{ flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder="Buscar conversa..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="conversations-list">
+          {isLoadingConversations ? (
+            <div className="empty-state">Carregando...</div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="empty-state">
+              {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa'}
+            </div>
+          ) : (
+            filteredConversations.map(conv => (
+              <div
+                key={conv.id}
+                className={`conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
+                onClick={() => setSelectedConversation(conv)}
+              >
+                <div className="conversation-avatar">
+                  {conv.profile_picture || conv.profile_picture_url ? (
+                    <img
+                      src={conv.profile_picture || conv.profile_picture_url}
+                      alt={conv.contact_name || conv.phone_number}
+                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    getInitials(conv.contact_name, conv.phone_number)
+                  )}
+                </div>
+                <div className="conversation-info">
+                  <h3>{conv.contact_name || conv.phone_number}</h3>
+                  <p className="conversation-preview">
+                    {typingContacts.has(conv.id)
+                      ? <span style={{ color: '#10b981', fontStyle: 'italic' }}>digitando...</span>
+                      : (conv.last_message_preview || conv.last_message || 'Sem mensagens')}
+                  </p>
+                </div>
+                <div className="conversation-meta">
+                  <span className="mode-badge">{conv.mode === 'human' ? '👤' : '🤖'}</span>
+                  {conv.unread_count && conv.unread_count > 0 && (
+                    <span className="unread-badge">{conv.unread_count}</span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── Painel de Chat ── */}
+      <div className={`chat-panel ${activePanel ? 'panel-open' : ''}`}>
         {!selectedConversation ? (
-          // Empty state
-          <Flex 
-            flex={1} 
-            align="center" 
-            justify="center" 
-            direction="column"
-            gap={6}
-            p={8}
-            bg="bg.default"
-          >
-            <Box 
-              p={8}
-              borderRadius="full"
-              bg="green.50"
-              _dark={{ bg: 'green.900' }}
-            >
-              <Text fontSize="6xl">💬</Text>
-            </Box>
-            
-            <Stack gap={2} textAlign="center">
-              <Text fontSize="2xl" fontWeight="bold">
-                {accountName || 'WhatsApp Business'}
-              </Text>
-              <Text color="fg.muted" maxW="400px">
-                Selecione uma conversa ao lado para começar a atender seus clientes
-              </Text>
-            </Stack>
-            
-            {!isConnected && (
-              <Badge colorPalette="red" variant="solid" size="lg">
-                ⚠️ Desconectado
-              </Badge>
-            )}
-          </Flex>
+          <div className="no-conversation-selected">
+            <div className="empty-message">
+              <span style={{ fontSize: '4rem' }}>💬</span>
+              <h2>{accountName || 'WhatsApp Business'}</h2>
+              <p>Selecione uma conversa para começar a atender</p>
+              {!isConnected && (
+                <p style={{ color: '#ef4444', fontSize: '0.85rem' }}>⚠️ Desconectado</p>
+              )}
+            </div>
+          </div>
         ) : (
           <>
-            {/* Chat Header */}
-            <Flex 
-              px={4}
-              py={3}
-              bg="bg.default"
-              borderBottomWidth="1px"
-              borderColor="border.default"
-              justify="space-between"
-              align="center"
-            >
-              <Flex gap={3} align="center">
-                <Avatar.Root 
-                  size="md"
-                  colorPalette={selectedConversation.mode === 'human' ? 'blue' : 'green'}
+            {/* Header */}
+            <div className="chat-header">
+              <div className="chat-info">
+                <h2>{selectedConversation.contact_name || selectedConversation.phone_number}</h2>
+                <p className="phone-number">
+                  {typingContacts.has(selectedConversation.id)
+                    ? <span style={{ color: '#10b981' }}>digitando...</span>
+                    : selectedConversation.phone_number}
+                </p>
+              </div>
+              <div className="chat-actions">
+                <div className="mode-selector">
+                  <button
+                    className={`mode-btn ${selectedConversation.mode !== 'human' ? 'active' : ''}`}
+                    onClick={handleSwitchMode}
+                    title="Modo Automático"
+                  >
+                    🤖
+                  </button>
+                  <button
+                    className={`mode-btn ${selectedConversation.mode === 'human' ? 'active' : ''}`}
+                    onClick={handleSwitchMode}
+                    title="Modo Humano"
+                  >
+                    👤
+                  </button>
+                </div>
+                <button
+                  className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
+                  onClick={() => togglePanel('templates')}
                 >
-                  <Avatar.Fallback>
-                    {getInitials(
-                      selectedConversation.contact_name,
-                      selectedConversation.phone_number
-                    )}
-                  </Avatar.Fallback>
-                </Avatar.Root>
-                
-                <Stack gap={0} align="flex-start">
-                  <Text fontWeight="semibold" fontSize="md">
-                    {selectedConversation.contact_name || selectedConversation.phone_number}
-                  </Text>
-                  <Flex gap={2} align="center">
-                    {typingContacts.has(selectedConversation.id) ? (
-                      <Text fontSize="sm" color="green.500" fontWeight="medium">
-                        digitando...
-                      </Text>
-                    ) : (
-                      <Text fontSize="sm" color="fg.muted">
-                        {isConnected ? '🟢 Online' : '🔴 Offline'}
-                      </Text>
-                    )}
-                  </Flex>
-                </Stack>
-              </Flex>
-
-              <Flex gap={2} align="center">
-                <Badge 
-                  colorPalette={selectedConversation.mode === 'human' ? 'blue' : 'green'}
-                  variant="subtle"
-                  size="md"
-                  cursor="pointer"
-                  onClick={handleSwitchMode}
-                  _hover={{ opacity: 0.8 }}
+                  <DocumentTextIcon className="w-4 h-4" />
+                  <span>Templates</span>
+                </button>
+                <button
+                  className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
+                  onClick={() => togglePanel('tools')}
                 >
-                  {selectedConversation.mode === 'human' ? '👤 Humano' : '🤖 Auto'}
-                </Badge>
-
-                <IconButton
-                  aria-label="Atualizar"
-                  variant="ghost"
-                  size="sm"
+                  <BoltIcon className="w-4 h-4" />
+                  <span>Ferramentas</span>
+                </button>
+                <button
+                  className="icon-btn"
                   onClick={loadMessages}
-                  loading={isLoadingMessages}
+                  disabled={isLoadingMessages}
+                  title="Recarregar mensagens"
                 >
-                  🔄
-                </IconButton>
-              </Flex>
-            </Flex>
+                  {isLoadingMessages
+                    ? <span style={{ fontSize: '0.75rem' }}>⏳</span>
+                    : <EllipsisVerticalIcon className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
 
-            {/* Connection Error Banner */}
+            {/* Banner de erro de conexão */}
             {connectionError && (
-              <Flex 
-                px={4}
-                py={2}
-                bg="yellow.50"
-                _dark={{ bg: 'yellow.900' }}
-                borderBottomWidth="1px"
-                borderColor="yellow.200"
-                align="center"
-                gap={2}
-              >
-                <Text fontSize="sm" color="yellow.700">
-                  ⚠️ {connectionError}
-                </Text>
-              </Flex>
+              <div style={{ padding: '0.5rem 1rem', background: '#fef9c3', borderBottom: '1px solid #fde047', fontSize: '0.82rem', color: '#854d0e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <span>⚠️ {connectionError}</span>
+                <button
+                  type="button"
+                  onClick={retry}
+                  style={{ padding: '0.2rem 0.6rem', background: '#854d0e', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, flexShrink: 0 }}
+                >
+                  Reconectar
+                </button>
+              </div>
             )}
 
-            {/* Messages Area */}
-            <Stack
+            {/* Mensagens */}
+            <div
               ref={messagesContainerRef}
-              flex={1}
-              overflowY="auto"
-              p={4}
-              gap={4}
-              bg="bg.muted"
+              onScroll={handleContainerScroll}
+              className="messages-container"
             >
               {isLoadingMessages ? (
-                <Flex flex={1} align="center" justify="center">
-                  <Spinner size="xl" color="green.500" />
-                </Flex>
+                <div className="messages-empty">
+                  <p>Carregando mensagens...</p>
+                </div>
               ) : messages.length === 0 ? (
-                <Flex 
-                  flex={1}
-                  direction="column"
-                  align="center"
-                  justify="center"
-                  gap={4}
-                  color="fg.muted"
-                >
-                  <Text fontSize="5xl">👋</Text>
-                  <Text fontSize="lg">Inicie a conversa</Text>
-                  <Text fontSize="sm" textAlign="center" maxW="300px">
-                    Envie uma mensagem para começar o atendimento
-                  </Text>
-                </Flex>
+                <div className="messages-empty">
+                  <p>Nenhuma mensagem</p>
+                  <small>Comece enviando uma mensagem</small>
+                </div>
               ) : (
-                Object.entries(groupedMessages).map(([date, dayMessages]) => (
-                  <Stack key={date} gap={4}>
-                    {/* Date separator */}
-                    <Flex align="center" justify="center">
-                      <Badge 
-                        variant="subtle" 
-                        size="sm"
-                        borderRadius="full"
-                        px={3}
-                      >
-                        {format(new Date(date), "d 'de' MMMM", { locale: ptBR })}
-                      </Badge>
-                    </Flex>
-                    
-                    {/* Messages */}
-                    <Stack gap={2}>
-                      {dayMessages.map((message) => (
-                        <MessageBubble 
-                          key={message.id} 
-                          {...messageToBubbleProps(message)} 
+                <div className="messages-list">
+                  {Object.entries(groupedMessages).map(([date, dayMessages]) => (
+                    <React.Fragment key={date}>
+                      <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}>
+                        <span style={{ padding: '0.2rem 0.75rem', background: 'rgba(255,255,255,0.8)', borderRadius: '20px', fontSize: '0.75rem', color: '#6b7280', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+                          {(() => { try { return format(new Date(date), "d 'de' MMMM", { locale: ptBR }); } catch { return date; } })()}
+                        </span>
+                      </div>
+                      {dayMessages.map(message => (
+                        <MessageBubble
+                          key={message.id}
+                          {...messageToBubbleProps(message)}
+                          onMediaClick={(url, type, fileName) => setMediaViewer({ url, type, fileName })}
                         />
                       ))}
-                    </Stack>
-                  </Stack>
-                ))
+                    </React.Fragment>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
               )}
-              <div ref={messagesEndRef} />
-            </Stack>
+            </div>
 
-            {/* Message Input */}
-            <Box 
-              p={4}
-              bg="bg.default"
-              borderTopWidth="1px"
-              borderColor="border.default"
-            >
+            {/* Input */}
+            <div style={{ borderTop: '1px solid var(--border-default, #e5e7eb)', background: 'var(--bg-card, white)', flexShrink: 0 }}>
               <MessageInput
                 onSend={handleSendMessage}
-                onTyping={handleTypingIndicator}
+                onTyping={(isTyping) => { if (selectedConversation) sendTypingIndicator(selectedConversation.id, isTyping); }}
+                onFileSelect={(file) => setSelectedFile(file)}
+                onClearFile={() => setSelectedFile(null)}
+                selectedFile={selectedFile}
                 disabled={!isConnected}
                 isLoading={isSending}
                 placeholder={isConnected ? 'Digite uma mensagem...' : 'Conectando...'}
+                insertText={insertText}
               />
-            </Box>
+            </div>
           </>
         )}
-      </Flex>
-    </Flex>
+      </div>
+
+      {/* ── Painel de Ferramentas ── */}
+      {selectedConversation && activePanel && (
+        <ChatToolsPanel
+          key={activePanel}
+          accountId={accountId}
+          storeId={storeId || undefined}
+          storeSlug={storeSlug || undefined}
+          storeName={storeName || undefined}
+          storeDescription={store?.description || undefined}
+          storeAddress={store?.address || undefined}
+          storeCity={store?.city || undefined}
+          storeState={store?.state || undefined}
+          storeUrl={getStoreUrl(store?.metadata)}
+          conversation={selectedConversation}
+          onInsertText={handleInsertText}
+          onSendMessage={handleToolsSend}
+          onAfterSend={() => void loadMessages()}
+          onClose={() => setActivePanel(null)}
+          defaultTab={activePanel}
+        />
+      )}
+    </div>
   );
 };
 

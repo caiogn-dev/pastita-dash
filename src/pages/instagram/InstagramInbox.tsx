@@ -1,537 +1,680 @@
-// @ts-nocheck
-import React, { useState, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
-  Box,
-  Card,
-  Typography,
-  TextField,
-  IconButton,
-  Avatar,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemButton,
-  Badge,
-  Chip,
-  Divider,
-  CircularProgress,
-  InputAdornment,
-  Paper,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Tooltip,
-  Alert,
-} from '@mui/material';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import SendIcon from '@mui/icons-material/Send';
-import SearchIcon from '@mui/icons-material/Search';
-import ImageIcon from '@mui/icons-material/Image';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import CircleIcon from '@mui/icons-material/Circle';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import DoneIcon from '@mui/icons-material/Done';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
+  ArrowPathIcon,
+  BoltIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  MagnifyingGlassIcon,
+  PaperAirplaneIcon,
+  PhotoIcon,
+  UserIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/outline';
+
 import {
-  instagramService,
   InstagramAccount,
   InstagramConversation,
   InstagramMessage,
+  instagramAccountService,
+  instagramDirectService,
 } from '../../services/instagram';
+import { getErrorMessage, normalizePaginatedResponse } from '../../services/api';
+import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
+import '../whatsapp/WhatsAppInbox.css';
 
-const messageStatusIcon: Record<string, React.ReactNode> = {
-  pending: <AccessTimeIcon fontSize="inherit" sx={{ color: 'text.disabled' }} />,
-  sent: <DoneIcon fontSize="inherit" sx={{ color: 'text.disabled' }} />,
-  delivered: <DoneAllIcon fontSize="inherit" sx={{ color: 'text.disabled' }} />,
-  seen: <DoneAllIcon fontSize="inherit" sx={{ color: 'primary.main' }} />,
-  failed: <CircleIcon fontSize="inherit" sx={{ color: 'error.main' }} />,
+const inputCls =
+  'w-full rounded-xl border border-border-primary bg-bg-card px-3 py-2 text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500';
+
+const messageStatusIcon: Record<string, React.ElementType> = {
+  pending: ClockIcon,
+  sent: CheckIcon,
+  delivered: CheckIcon,
+  read: CheckCircleIcon,
+  received: CheckCircleIcon,
+  failed: XCircleIcon,
 };
 
+function sortByLatest<T extends { last_message_at?: string | null }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const left = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+    const right = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+    return right - left;
+  });
+}
+
 export default function InstagramInbox() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [selectedAccountId, setSelectedAccountId] = useState('');
   const [conversations, setConversations] = useState<InstagramConversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<InstagramConversation | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState('');
   const [messages, setMessages] = useState<InstagramMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [messageText, setMessageText] = useState('');
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+  const [loadingConversations, setLoadingConversations] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
+  const [insertText, setInsertText] = useState<string | undefined>(undefined);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const markingConversationIdRef = useRef<string | null>(null);
+
+  const selectedConversation =
+    conversations.find((conversation) => conversation.id === selectedConversationId) ?? null;
 
   useEffect(() => {
-    loadAccounts();
+    void loadAccounts();
   }, []);
 
   useEffect(() => {
-    if (selectedAccountId) {
-      loadConversations();
+    if (!selectedAccountId) {
+      return;
     }
+
+    void loadConversations(false);
+    const interval = window.setInterval(() => {
+      if (!document.hidden) void loadConversations(true);
+    }, 60_000);
+
+    return () => window.clearInterval(interval);
   }, [selectedAccountId]);
 
   useEffect(() => {
-    if (selectedConversation) {
-      loadMessages();
+    if (!selectedConversationId) {
+      setMessages([]);
+      return;
     }
-  }, [selectedConversation]);
+
+    void loadMessages(selectedConversationId, false);
+    const interval = window.setInterval(() => {
+      if (!document.hidden) void loadMessages(selectedConversationId, true);
+    }, 30_000);
+
+    return () => window.clearInterval(interval);
+  }, [selectedConversationId]);
 
   useEffect(() => {
-    scrollToBottom();
+    if (!selectedConversationId || !selectedConversation || selectedConversation.unread_count <= 0) {
+      return;
+    }
+
+    void markConversationAsRead(selectedConversationId);
+  }, [selectedConversationId, selectedConversation?.unread_count]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const loadAccounts = async () => {
-    try {
-      const response = await instagramService.getAccounts();
-      // PaginatedResponse: response.data.results
-      const results = response.data?.results || [];
-      setAccounts(results);
-      if (results.length > 0) {
-        setSelectedAccountId(results[0].id);
-      }
-    } catch (err) {
-      console.error('Error loading accounts:', err);
-      setError('Erro ao carregar contas');
-    } finally {
-      setLoading(false);
+  const filteredConversations = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return conversations;
     }
-  };
 
-  const loadConversations = async () => {
-    if (!selectedAccountId) return;
-    
+    return conversations.filter((conversation) => {
+      const haystack = [
+        conversation.participant_name,
+        conversation.participant_username,
+        conversation.participant_id,
+        conversation.last_message_preview,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [conversations, searchQuery]);
+
+  async function loadAccounts() {
+    setLoadingAccounts(true);
     try {
-      setLoading(true);
-      const response = await instagramService.getConversations({
-        account_id: selectedAccountId,
-      });
-      // PaginatedResponse: response.data.results
-      setConversations(response.data?.results || []);
+      const response = await instagramAccountService.list();
+      const accountList = normalizePaginatedResponse<InstagramAccount>(response.data);
+      setAccounts(accountList);
+
+      const requestedAccountId = searchParams.get('account');
+      const nextAccountId =
+        (requestedAccountId && accountList.find((account) => account.id === requestedAccountId)?.id) ||
+        accountList[0]?.id ||
+        '';
+      setSelectedAccountId(nextAccountId);
       setError(null);
     } catch (err) {
-      console.error('Error loading conversations:', err);
-      setError('Erro ao carregar conversas');
+      setError(getErrorMessage(err));
+      setAccounts([]);
     } finally {
-      setLoading(false);
+      setLoadingAccounts(false);
     }
-  };
+  }
 
-  const loadMessages = async () => {
-    if (!selectedConversation) return;
-    
+  async function loadConversations(isBackgroundRefresh: boolean) {
+    if (!selectedAccountId) {
+      return;
+    }
+
+    if (isBackgroundRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoadingConversations(true);
+    }
+
     try {
-      setLoadingMessages(true);
-      const response = await instagramService.getMessages({
-        conversation_id: selectedConversation.id,
-      });
-      // PaginatedResponse: response.data.results
-      const results = response.data?.results || [];
-      setMessages(results.reverse());
-      
-      // Mark as seen - usa sender_id (quem enviou a última mensagem)
-      if (selectedAccountId && selectedConversation.participant_id) {
-        await instagramService.markSeen(selectedAccountId, selectedConversation.participant_id);
-      }
+      const response = await instagramDirectService.getConversations(selectedAccountId);
+      const conversationList = sortByLatest(
+        normalizePaginatedResponse<InstagramConversation>(response.data)
+      );
+      setConversations(conversationList);
+
+      const requestedConversationId = searchParams.get('conversation');
+      const fallbackConversationId =
+        selectedConversationId && conversationList.some((item) => item.id === selectedConversationId)
+          ? selectedConversationId
+          : '';
+      const nextConversationId =
+        (requestedConversationId &&
+          conversationList.find((conversation) => conversation.id === requestedConversationId)?.id) ||
+        fallbackConversationId ||
+        conversationList[0]?.id ||
+        '';
+
+      setSelectedConversationId(nextConversationId);
+      setError(null);
     } catch (err) {
-      console.error('Error loading messages:', err);
+      if (!isBackgroundRefresh) {
+        setError(getErrorMessage(err));
+      }
+      setConversations([]);
+      setSelectedConversationId('');
+    } finally {
+      setLoadingConversations(false);
+      setRefreshing(false);
+    }
+  }
+
+  async function loadMessages(conversationId: string, isBackgroundRefresh: boolean) {
+    if (!conversationId) {
+      return;
+    }
+
+    if (!isBackgroundRefresh) {
+      setLoadingMessages(true);
+    }
+
+    try {
+      const response = await instagramDirectService.getMessages(conversationId);
+      const nextMessages = normalizePaginatedResponse<InstagramMessage>(response.data);
+      setMessages(nextMessages);
+
+      setError(null);
+    } catch (err) {
+      if (!isBackgroundRefresh) {
+        setError(getErrorMessage(err));
+      }
+      if (!isBackgroundRefresh) {
+        setMessages([]);
+      }
     } finally {
       setLoadingMessages(false);
     }
-  };
+  }
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !selectedAccountId) return;
+  async function markConversationAsRead(conversationId: string) {
+    if (markingConversationIdRef.current === conversationId) {
+      return;
+    }
 
+    markingConversationIdRef.current = conversationId;
     try {
-      setSending(true);
-      
-      // Typing indicator (best effort - não falha se der erro)
-      try {
-        await instagramService.sendTyping(selectedAccountId, selectedConversation.participant_id);
-      } catch {
-        // Silently ignore typing errors
-      }
-      
-      // Send message
-      const response = await instagramService.sendMessage({
-        account_id: selectedAccountId,
-        recipient_id: selectedConversation.participant_id,
-        text: newMessage.trim(),
-      });
-      
-      // Adiciona mensagem enviada à lista
-      const sentMessage = response.data;
-      if (sentMessage) {
-        setMessages((prev) => [...prev, sentMessage]);
-      }
-      setNewMessage('');
+      const markResponse = await instagramDirectService.markAsRead(conversationId);
+      const updatedConversation = markResponse.data;
+      setConversations((previous) =>
+        sortByLatest(
+          previous.map((item) => (item.id === conversationId ? { ...item, ...updatedConversation } : item))
+        )
+      );
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.direction === 'inbound'
+            ? {
+                ...message,
+                is_read: true,
+                status: 'read',
+              }
+            : message
+        )
+      );
     } catch (err) {
-      console.error('Error sending message:', err);
-      setError('Erro ao enviar mensagem');
+      setError(getErrorMessage(err));
+    } finally {
+      markingConversationIdRef.current = null;
+    }
+  }
+
+  function handleSelectAccount(accountId: string) {
+    setSelectedAccountId(accountId);
+    setSelectedConversationId('');
+    setMessages([]);
+    const next = new URLSearchParams(searchParams);
+    next.set('account', accountId);
+    next.delete('conversation');
+    setSearchParams(next, { replace: true });
+  }
+
+  function handleSelectConversation(conversation: InstagramConversation) {
+    setSelectedConversationId(conversation.id);
+    const next = new URLSearchParams(searchParams);
+    next.set('account', conversation.account);
+    next.set('conversation', conversation.id);
+    setSearchParams(next, { replace: true });
+  }
+
+  async function handleSendMessage() {
+    if (!selectedConversation || !messageText.trim() || sending) {
+      return;
+    }
+
+    const content = messageText.trim();
+    setSending(true);
+    try {
+      const response = await instagramDirectService.sendMessage(selectedConversation.id, {
+        content,
+        message_type: 'TEXT',
+      });
+
+      const sentMessage = response.data;
+      setMessages((previous) => [...previous, sentMessage]);
+      setMessageText('');
+      setConversations((previous) =>
+        sortByLatest(
+          previous.map((item) =>
+            item.id === selectedConversation.id
+              ? {
+                  ...item,
+                  unread_count: 0,
+                  last_message_at: sentMessage.created_at,
+                  last_message_preview: sentMessage.content || item.last_message_preview,
+                  last_message: {
+                    type: sentMessage.message_type || 'TEXT',
+                    content: sentMessage.content || '',
+                    created_at: sentMessage.created_at,
+                  },
+                }
+              : item
+          )
+        )
+      );
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setSending(false);
     }
-  };
+  }
 
-  const filteredConversations = conversations.filter((conv) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      conv.participant_username?.toLowerCase().includes(query) ||
-      conv.participant_name?.toLowerCase().includes(query) ||
-      conv.last_message_preview?.toLowerCase().includes(query)
-    );
-  });
+  function togglePanel(panel: 'templates' | 'tools') {
+    setActivePanel((prev) => (prev === panel ? null : panel));
+  }
 
-  const formatTime = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+  function handleInsertText(text: string) {
+    setInsertText(text);
+    setMessageText(text);
+    setTimeout(() => setInsertText(undefined), 100);
+  }
+
+  async function handleToolsSend(message: string) {
+    if (!selectedConversation || !message.trim()) return;
+    setSending(true);
+    try {
+      const response = await instagramDirectService.sendMessage(selectedConversation.id, {
+        content: message.trim(),
+        message_type: 'TEXT',
+      });
+      const sentMessage = response.data;
+      setMessages((prev) => [...prev, sentMessage]);
+      setConversations((prev) =>
+        sortByLatest(
+          prev.map((item) =>
+            item.id === selectedConversation.id
+              ? { ...item, unread_count: 0, last_message_at: sentMessage.created_at }
+              : item
+          )
+        )
+      );
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function formatConversationTime(value?: string | null) {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+    const diffDays = Math.floor((Date.now() - date.getTime()) / 86400000);
     if (diffDays === 0) {
       return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays === 1) {
-      return 'Ontem';
-    } else if (diffDays < 7) {
-      return date.toLocaleDateString('pt-BR', { weekday: 'short' });
-    } else {
-      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     }
-  };
+    if (diffDays === 1) {
+      return 'Ontem';
+    }
+    if (diffDays < 7) {
+      return date.toLocaleDateString('pt-BR', { weekday: 'short' });
+    }
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  }
 
-  // Helper para pegar o ícone de status com fallback
-  const getStatusIcon = (status: string | undefined) => {
-    if (!status) return null;
-    return messageStatusIcon[status] || null;
-  };
+  function renderStatusIcon(message: InstagramMessage) {
+    const StatusIcon = messageStatusIcon[message.status ?? ''];
+    if (!StatusIcon || message.direction !== 'outbound') {
+      return null;
+    }
+    return <StatusIcon className="h-3.5 w-3.5 opacity-75" />;
+  }
 
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 100px)', gap: 2, p: 2 }}>
-      {/* Sidebar - Conversations List */}
-      <Card sx={{ width: 360, display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Box display="flex" alignItems="center" gap={2} mb={2}>
-            <InstagramIcon sx={{ color: '#E4405F', fontSize: 28 }} />
-            <Typography variant="h6" fontWeight="bold">
-              Instagram DM
-            </Typography>
-            <Box flex={1} />
-            <Tooltip title="Atualizar">
-              <IconButton size="small" onClick={loadConversations}>
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          
-          {/* Account Selector */}
-          {accounts.length > 1 && (
-            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-              <InputLabel>Conta</InputLabel>
-              <Select
-                value={selectedAccountId}
-                label="Conta"
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-              >
-                {accounts.map((account) => (
-                  <MenuItem key={account.id} value={account.id}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Avatar src={account.profile_picture_url} sx={{ width: 24, height: 24 }} />
-                      @{account.username}
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-          
-          {/* Search */}
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Buscar conversas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Box>
-
-        {/* Conversations List */}
-        <List sx={{ flex: 1, overflow: 'auto', py: 0 }}>
-          {loading ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <CircularProgress />
-            </Box>
-          ) : filteredConversations.length === 0 ? (
-            <Box textAlign="center" py={4} px={2}>
-              <InstagramIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-              <Typography color="text.secondary">
-                {searchQuery ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
-              </Typography>
-            </Box>
-          ) : (
-            filteredConversations.map((conv) => (
-              <React.Fragment key={conv.id}>
-                <ListItemButton
-                  selected={selectedConversation?.id === conv.id}
-                  onClick={() => setSelectedConversation(conv)}
-                  sx={{ py: 1.5 }}
-                >
-                  <ListItemAvatar>
-                    <Badge
-                      badgeContent={conv.unread_count}
-                      color="error"
-                      overlap="circular"
-                    >
-                      <Avatar src={conv.participant_profile_pic}>
-                        {conv.participant_username?.[0]?.toUpperCase() || 'U'}
-                      </Avatar>
-                    </Badge>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography
-                          variant="body2"
-                          fontWeight={conv.unread_count > 0 ? 'bold' : 'normal'}
-                          noWrap
-                        >
-                          @{conv.participant_username || conv.participant_id}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatTime(conv.last_message_at)}
-                        </Typography>
-                      </Box>
-                    }
-                    secondary={
-                      <Typography
-                        variant="caption"
-                        color={conv.unread_count > 0 ? 'text.primary' : 'text.secondary'}
-                        fontWeight={conv.unread_count > 0 ? 500 : 400}
-                        noWrap
-                      >
-                        {conv.last_message_preview || 'Nenhuma mensagem'}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-                <Divider component="li" />
-              </React.Fragment>
-            ))
-          )}
-        </List>
-      </Card>
-
-      {/* Main - Chat Area */}
-      <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {!selectedConversation ? (
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            flex={1}
-            color="text.secondary"
-          >
-            <InstagramIcon sx={{ fontSize: 80, color: '#E4405F', opacity: 0.5, mb: 2 }} />
-            <Typography variant="h6">Selecione uma conversa</Typography>
-            <Typography variant="body2">
-              Escolha uma conversa da lista para ver as mensagens
-            </Typography>
-          </Box>
-        ) : (
-          <>
-            {/* Chat Header */}
-            <Box
-              sx={{
-                p: 2,
-                borderBottom: 1,
-                borderColor: 'divider',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-              }}
+    <div className="whatsapp-inbox">
+      <div className="conversations-panel">
+        <div className="border-b border-border-primary p-4">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="rounded-2xl bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 p-2 text-white">
+              <UserIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-base font-semibold text-fg-primary">Instagram Inbox</h1>
+              <p className="text-xs text-fg-muted">
+                {loadingAccounts ? 'Carregando contas...' : `${conversations.length} conversa(s)`}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void loadConversations(false)}
+              className="ml-auto rounded-lg p-2 text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg-primary"
+              title="Atualizar conversas"
             >
-              <Avatar
-                src={selectedConversation.participant_profile_pic}
-                sx={{ width: 48, height: 48 }}
-              >
-                {selectedConversation.participant_username?.[0]?.toUpperCase()}
-              </Avatar>
-              <Box flex={1}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {selectedConversation.participant_name || `@${selectedConversation.participant_username}`}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  @{selectedConversation.participant_username || selectedConversation.participant_id}
-                </Typography>
-              </Box>
-              <Chip
-                label={selectedConversation.status === 'active' ? 'Ativo' : 'Fechado'}
-                color={selectedConversation.status === 'active' ? 'success' : 'default'}
-                size="small"
-              />
-            </Box>
+              <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
 
-            {/* Messages Area */}
-            <Box
-              sx={{
-                flex: 1,
-                overflow: 'auto',
-                p: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                bgcolor: 'grey.50',
-              }}
+          <div className="space-y-3">
+            <select
+              value={selectedAccountId}
+              onChange={(event) => handleSelectAccount(event.target.value)}
+              className={inputCls}
+              disabled={loadingAccounts || accounts.length === 0}
             >
-              {loadingMessages ? (
-                <Box display="flex" justifyContent="center" py={4}>
-                  <CircularProgress />
-                </Box>
-              ) : messages.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <Typography color="text.secondary">
-                    Nenhuma mensagem ainda. Envie a primeira!
-                  </Typography>
-                </Box>
+              {accounts.length === 0 ? (
+                <option value="">Nenhuma conta conectada</option>
               ) : (
-                messages.map((msg) => (
-                  <Box
-                    key={msg.id}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: msg.direction === 'outbound' ? 'flex-end' : 'flex-start',
-                    }}
-                  >
-                    <Paper
-                      sx={{
-                        p: 1.5,
-                        maxWidth: '70%',
-                        bgcolor: msg.direction === 'outbound' ? 'primary.main' : 'white',
-                        color: msg.direction === 'outbound' ? 'white' : 'text.primary',
-                        borderRadius: 2,
-                        borderTopRightRadius: msg.direction === 'outbound' ? 0 : 2,
-                        borderTopLeftRadius: msg.direction === 'inbound' ? 0 : 2,
-                      }}
-                    >
-                      {msg.media_url && (
-                        <Box mb={1}>
-                          {msg.message_type === 'image' ? (
-                            <img
-                              src={msg.media_url}
-                              alt="Imagem"
-                              style={{ maxWidth: '100%', borderRadius: 8 }}
-                            />
-                          ) : msg.message_type === 'video' ? (
-                            <video
-                              src={msg.media_url}
-                              controls
-                              style={{ maxWidth: '100%', borderRadius: 8 }}
-                            />
-                          ) : (
-                            <Chip icon={<ImageIcon />} label={msg.message_type} size="small" />
-                          )}
-                        </Box>
-                      )}
-                      {msg.text_content && (
-                        <Typography variant="body2">{msg.text_content}</Typography>
-                      )}
-                      <Box
-                        display="flex"
-                        justifyContent="flex-end"
-                        alignItems="center"
-                        gap={0.5}
-                        mt={0.5}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            opacity: 0.7,
-                            fontSize: '0.65rem',
-                          }}
-                        >
-                          {formatTime(msg.created_at)}
-                        </Typography>
-                        {msg.direction === 'outbound' && (
-                          <Box sx={{ fontSize: '0.8rem', display: 'flex' }}>
-                            {getStatusIcon(msg.status)}
-                          </Box>
-                        )}
-                      </Box>
-                    </Paper>
-                  </Box>
+                accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    @{account.username}
+                  </option>
                 ))
               )}
-              <div ref={messagesEndRef} />
-            </Box>
+            </select>
 
-            {/* Message Input */}
-            <Box
-              sx={{
-                p: 2,
-                borderTop: 1,
-                borderColor: 'divider',
-                display: 'flex',
-                gap: 1,
-              }}
-            >
-              <TextField
-                fullWidth
-                placeholder="Digite uma mensagem..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                multiline
-                maxRows={4}
-                disabled={sending}
+            <div className="relative">
+              <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Buscar por nome, @usuario ou mensagem"
+                className={`${inputCls} pl-9`}
               />
-              <IconButton
-                color="primary"
-                onClick={handleSendMessage}
-                disabled={!newMessage.trim() || sending}
-                sx={{
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'primary.dark' },
-                  '&:disabled': { bgcolor: 'grey.300' },
-                }}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {loadingConversations ? (
+            <div className="py-10 text-center text-sm text-fg-muted">Carregando conversas...</div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="py-10 text-center text-sm text-fg-muted">
+              {searchQuery ? 'Nenhuma conversa encontrada.' : 'Nenhuma conversa disponivel.'}
+            </div>
+          ) : (
+            filteredConversations.map((conversation) => {
+              const isSelected = conversation.id === selectedConversationId;
+              return (
+                <button
+                  key={conversation.id}
+                  type="button"
+                  onClick={() => handleSelectConversation(conversation)}
+                  className={`mb-2 w-full rounded-2xl border p-3 text-left transition-colors ${
+                    isSelected
+                      ? 'border-pink-300 bg-pink-50 dark:border-pink-700 dark:bg-pink-900/20'
+                      : 'border-border-primary bg-bg-card hover:bg-bg-hover'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-pink-500 to-purple-600 text-white">
+                      {conversation.participant_profile_pic ? (
+                        <img
+                          src={conversation.participant_profile_pic}
+                          alt={conversation.participant_name || conversation.participant_username || 'Perfil'}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
+                          {(conversation.participant_name ||
+                            conversation.participant_username ||
+                            conversation.participant_id ||
+                            '?')[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-sm font-semibold text-fg-primary">
+                          {conversation.participant_name ||
+                            `@${conversation.participant_username || conversation.participant_id}`}
+                        </p>
+                        <span className="shrink-0 text-xs text-fg-muted">
+                          {formatConversationTime(conversation.last_message_at)}
+                        </span>
+                      </div>
+                      <p className="truncate text-xs text-fg-muted">
+                        {conversation.participant_username
+                          ? `@${conversation.participant_username}`
+                          : conversation.participant_id}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <p className="min-w-0 flex-1 truncate text-sm text-fg-primary">
+                          {conversation.last_message_preview || 'Sem mensagens ainda'}
+                        </p>
+                        {conversation.unread_count > 0 && (
+                          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink-500 px-1 text-[11px] font-semibold text-white">
+                            {conversation.unread_count}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      <div className={`chat-panel ${activePanel ? 'panel-open' : ''}`}>
+        {!selectedConversation ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+            <div className="mb-4 rounded-3xl bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 p-4 text-white/90">
+              <UserIcon className="h-10 w-10" />
+            </div>
+            <h2 className="text-lg font-semibold text-fg-primary">Selecione uma conversa</h2>
+            <p className="mt-2 max-w-md text-sm text-fg-muted">
+              As mensagens que ja chegaram no backend vao aparecer aqui assim que voce abrir a conversa.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="chat-header">
+              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-pink-500 to-purple-600 text-white">
+                {selectedConversation.participant_profile_pic ? (
+                  <img
+                    src={selectedConversation.participant_profile_pic}
+                    alt={selectedConversation.participant_name || 'Perfil'}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
+                    {(selectedConversation.participant_name ||
+                      selectedConversation.participant_username ||
+                      selectedConversation.participant_id ||
+                      '?')[0].toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-fg-primary">
+                  {selectedConversation.participant_name ||
+                    `@${selectedConversation.participant_username || selectedConversation.participant_id}`}
+                </p>
+                <p className="truncate text-xs text-fg-muted">
+                  {selectedConversation.participant_username
+                    ? `@${selectedConversation.participant_username}`
+                    : selectedConversation.participant_id}
+                </p>
+              </div>
+              <span className="rounded-full bg-pink-100 px-3 py-1 text-xs font-medium text-pink-700 dark:bg-pink-900/30 dark:text-pink-300">
+                Instagram DM
+              </span>
+              <button
+                type="button"
+                className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
+                onClick={() => togglePanel('templates')}
+                title="Templates"
               >
-                {sending ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
-              </IconButton>
-            </Box>
+                <DocumentTextIcon className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
+                onClick={() => togglePanel('tools')}
+                title="Ferramentas"
+              >
+                <BoltIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="messages-container">
+              {loadingMessages ? (
+                <div className="py-10 text-center text-sm text-fg-muted">Carregando mensagens...</div>
+              ) : messages.length === 0 ? (
+                <div className="py-10 text-center text-sm text-fg-muted">
+                  Nenhuma mensagem sincronizada nesta conversa ainda.
+                </div>
+              ) : (
+                <div className="messages-list">
+                  {messages.map((message) => {
+                    const isOutbound = message.direction === 'outbound';
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex ${isOutbound ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[72%] rounded-2xl px-4 py-3 shadow-sm ${
+                            isOutbound
+                              ? 'rounded-br-sm bg-pink-500 text-white'
+                              : 'rounded-bl-sm border border-border-primary bg-bg-card text-fg-primary'
+                          }`}
+                        >
+                          {message.media_url && (
+                            <div className="mb-2 overflow-hidden rounded-xl">
+                              {message.message_type?.toUpperCase() === 'IMAGE' ? (
+                                <img src={message.media_url} alt="Midia" className="max-h-72 w-full object-cover" />
+                              ) : (
+                                <div className="flex items-center gap-2 rounded-xl bg-black/10 px-3 py-2 text-sm">
+                                  <PhotoIcon className="h-4 w-4" />
+                                  <span>{message.message_type || 'Midia'}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {message.content && (
+                            <p className="whitespace-pre-wrap break-words text-sm">{message.content}</p>
+                          )}
+                          <div
+                            className={`mt-2 flex items-center gap-1 text-xs ${
+                              isOutbound ? 'justify-end text-white/80' : 'justify-end text-fg-muted'
+                            }`}
+                          >
+                            <span>
+                              {new Date(message.created_at).toLocaleTimeString('pt-BR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                            {renderStatusIcon(message)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-border-primary px-5 py-4">
+              <div className="flex gap-3">
+                <input
+                  value={messageText}
+                  onChange={(event) => setMessageText(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      void handleSendMessage();
+                    }
+                  }}
+                  placeholder="Digite uma mensagem para responder no Instagram..."
+                  className={`${inputCls} flex-1`}
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleSendMessage()}
+                  disabled={!messageText.trim() || sending}
+                  className="rounded-xl bg-pink-500 p-3 text-white transition-colors hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <PaperAirplaneIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
           </>
         )}
-      </Card>
+      </div>
+
+      {selectedConversation && activePanel && (
+        <ChatToolsPanel
+          key={activePanel}
+          accountId={selectedAccountId}
+          conversation={selectedConversation as any}
+          onInsertText={handleInsertText}
+          onSendMessage={handleToolsSend}
+          onAfterSend={() => void loadMessages(selectedConversationId, true)}
+          onClose={() => setActivePanel(null)}
+          defaultTab={activePanel}
+        />
+      )}
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-          onClose={() => setError(null)}
-        >
+        <div className="fixed bottom-4 right-4 z-50 rounded-xl border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 shadow-lg dark:bg-red-900/20 dark:text-red-300">
           {error}
-        </Alert>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }

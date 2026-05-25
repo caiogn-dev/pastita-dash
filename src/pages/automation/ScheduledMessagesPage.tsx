@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useConfirm } from '../../hooks';
 import logger from '../../services/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,6 +42,7 @@ const messageTypeLabels: Record<string, string> = {
 };
 
 export default function ScheduledMessagesPage() {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [messages, setMessages] = useState<ScheduledMessage[]>([]);
   const [stats, setStats] = useState<ScheduledMessageStats | null>(null);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
@@ -59,7 +61,7 @@ export default function ScheduledMessagesPage() {
     contact_name: '',
     message_type: 'text',
     message_text: '',
-    scheduled_for: '',
+    scheduled_at: '',
     timezone: 'America/Sao_Paulo',
     notes: '',
   });
@@ -74,7 +76,7 @@ export default function ScheduledMessagesPage() {
       ]);
       setMessages(messagesRes.results);
       setStats(statsRes);
-      setAccounts(accountsRes.results);
+      setAccounts(accountsRes.data.results || []);
     } catch (error) {
       toast.error('Erro ao carregar mensagens agendadas');
       logger.error('Failed to load scheduled messages', error);
@@ -88,7 +90,7 @@ export default function ScheduledMessagesPage() {
   }, [fetchData]);
 
   const handleCreate = async () => {
-    if (!formData.account || !formData.to_number || !formData.scheduled_for) {
+    if (!formData.account || !formData.to_number || !formData.scheduled_at) {
       toast.error('Preencha os campos obrigatórios');
       return;
     }
@@ -103,7 +105,7 @@ export default function ScheduledMessagesPage() {
         contact_name: '',
         message_type: 'text',
         message_text: '',
-        scheduled_for: '',
+        scheduled_at: '',
         timezone: 'America/Sao_Paulo',
         notes: '',
       });
@@ -115,7 +117,12 @@ export default function ScheduledMessagesPage() {
   };
 
   const handleCancel = async (id: string) => {
-    if (!confirm('Deseja cancelar esta mensagem agendada?')) return;
+    const confirmed = await confirm({
+      title: 'Cancelar mensagem',
+      message: 'Deseja cancelar esta mensagem agendada?',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
 
     try {
       await scheduledMessagesService.cancel(id);
@@ -169,7 +176,7 @@ export default function ScheduledMessagesPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 max-lg:grid-cols-4 max-md:grid-cols-2 gap-4">
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             <p className="text-sm text-gray-500 dark:text-zinc-400">Total</p>
@@ -406,8 +413,8 @@ export default function ScheduledMessagesPage() {
             <input
               type="datetime-local"
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              value={formData.scheduled_for}
-              onChange={(e) => setFormData({ ...formData, scheduled_for: e.target.value })}
+              value={formData.scheduled_at}
+              onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
             />
           </div>
 
@@ -466,6 +473,7 @@ export default function ScheduledMessagesPage() {
           </div>
         </div>
       </Modal>
+      {ConfirmDialog}
     </div>
   );
 }

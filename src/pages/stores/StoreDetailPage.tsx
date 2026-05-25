@@ -30,7 +30,7 @@ import storesApi, { Store, StoreStats } from '../../services/storesApi';
 import { useStoreContextStore } from '../../stores';
 import logger from '../../services/logger';
 
-type TabId = 'overview' | 'products' | 'orders' | 'coupons' | 'delivery' | 'settings';
+type TabId = 'overview' | 'products' | 'orders' | 'coupons' | 'delivery' | 'settings' | 'storefront';
 
 interface Tab {
   id: TabId;
@@ -46,6 +46,7 @@ const TABS: Tab[] = [
   { id: 'coupons', label: 'Cupons', icon: TagIcon, path: 'coupons' },
   { id: 'delivery', label: 'Entrega', icon: TruckIcon, path: 'delivery' },
   { id: 'settings', label: 'Configurações', icon: Cog6ToothIcon, path: 'settings' },
+  { id: 'storefront', label: 'Storefront', icon: BuildingStorefrontIcon, path: 'storefront' },
 ];
 
 export const StoreDetailPage: React.FC = () => {
@@ -196,7 +197,7 @@ export const StoreDetailPage: React.FC = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4 mb-6">
           <Card className="p-4">
             <p className="text-sm text-gray-600 dark:text-zinc-400">Receita Total</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -258,7 +259,7 @@ export const StoreDetailPage: React.FC = () => {
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
           {/* Quick Actions */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>

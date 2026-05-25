@@ -1,4 +1,4 @@
-import api from './api';
+import api, { normalizePaginatedResponse } from './api';
 
 // Provider configurations - synced with backend
 // IMPORTANT: defaultBaseUrl is DEPRECATED - use fetchProviderConfig() to get base URLs from backend
@@ -7,31 +7,38 @@ export const PROVIDER_CONFIGS = {
   kimi: {
     name: 'Kimi (Moonshot)',
     models: ['kimi-for-coding', 'kimi-k2', 'kimi-k2.5'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
-    defaultBaseUrl: 'https://api.kimi.com/coding/',
+    defaultBaseUrl: 'https://api.moonshot.cn/v1',
     requiresApiKey: true,
-    apiStyle: 'anthropic', // Backend uses ChatAnthropic for Kimi
+    apiStyle: 'openai',
   },
   openai: {
     name: 'OpenAI',
     models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'https://api.openai.com/v1',
     requiresApiKey: true,
     apiStyle: 'openai',
   },
   anthropic: {
     name: 'Anthropic',
-    models: ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
-    defaultBaseUrl: 'https://api.anthropic.com/v1',
+    models: ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
+    defaultBaseUrl: 'https://api.anthropic.com',
     requiresApiKey: true,
     apiStyle: 'anthropic',
+  },
+  nvidia: {
+    name: 'NVIDIA AI (NIM)',
+    models: [
+      'meta/llama-3.1-405b-instruct',
+      'meta/llama-3.1-70b-instruct',
+      'meta/llama-3.1-8b-instruct',
+    ],
+    defaultBaseUrl: 'https://integrate.api.nvidia.com/v1',
+    requiresApiKey: true,
+    apiStyle: 'openai',
   },
   ollama: {
     name: 'Ollama (Local)',
     models: ['llama3', 'mistral', 'codellama', 'mixtral'],
-    // DEPRECATED: Do not use this - call fetchProviderConfig() instead
     defaultBaseUrl: 'http://localhost:11434/v1',
     requiresApiKey: false,
     apiStyle: 'openai',
@@ -126,16 +133,16 @@ export interface AgentMessage {
 }
 
 // Default values for new agent - synced with backend
-// Using Kimi Coding API with Anthropic style
+// Using Anthropic/Claude as default provider
 // NOTE: base_url is loaded from backend via getProviderConfig() to avoid hardcoding
 export const DEFAULT_AGENT_VALUES: Partial<CreateAgentData> = {
-  provider: 'kimi',
-  model_name: 'kimi-for-coding',
+  provider: 'anthropic',
+  model_name: 'claude-sonnet-4-6',
   // base_url is loaded from backend - do not hardcode
   temperature: 0.7,
-  max_tokens: 32768, // Max for kimi-for-coding
+  max_tokens: 8192,
   timeout: 30,
-  system_prompt: 'Você é o assistente virtual da Pastita, uma loja de massas artesanais.\n\nSuas responsabilidades:\n- Responder dúvidas sobre o cardápio e produtos\n- Ajudar clientes a fazer pedidos\n- Informar sobre horário de funcionamento e entregas\n- Ser sempre educado, prestativo e gentil\n\nSe não souber responder algo específico, direcione o cliente para falar com um atendente humano.',
+  system_prompt: 'Você é um assistente virtual útil e educado.\n\nResponda sempre em português, de forma clara e objetiva.',
   context_prompt: '',
   status: 'draft',
   use_memory: true,
@@ -147,14 +154,14 @@ export const DEFAULT_AGENT_VALUES: Partial<CreateAgentData> = {
 let backendProviderConfig: Record<string, { base_url: string; model_name: string; api_style: string }> | null = null;
 
 // Fetch provider config from backend (includes correct base URLs)
+// DRF 3.14+: url_path de @action preserva underscore → /agents/provider_config/
 export const fetchProviderConfig = async (): Promise<Record<string, { base_url: string; model_name: string; api_style: string }>> => {
   try {
-    const response = await api.get('/agents/agents/provider_config/');
+    const response = await api.get('/agents/provider_config/');
     backendProviderConfig = response.data;
     return response.data;
   } catch (error) {
     console.error('[AgentService] Failed to fetch provider config:', error);
-    // Return empty object - caller should handle fallback
     return {};
   }
 };
@@ -228,8 +235,8 @@ const agentsService = {
   // Agents
   getAgents: async (): Promise<Agent[]> => {
     try {
-      const response = await api.get('/agents/agents/');
-      return response.data.results || response.data;
+      const response = await api.get('/agents/');
+      return normalizePaginatedResponse<Agent>(response.data);
     } catch (error) {
       return handleApiError(error);
     }
@@ -237,7 +244,7 @@ const agentsService = {
 
   getAgent: async (id: string): Promise<AgentDetail> => {
     try {
-      const response = await api.get(`/agents/agents/${id}/`);
+      const response = await api.get(`/agents/${id}/`);
       return response.data;
     } catch (error) {
       return handleApiError(error);
@@ -246,7 +253,7 @@ const agentsService = {
 
   createAgent: async (data: CreateAgentData): Promise<Agent> => {
     try {
-      const response = await api.post('/agents/agents/', data);
+      const response = await api.post('/agents/', data);
       return response.data;
     } catch (error) {
       return handleApiError(error);
@@ -255,7 +262,7 @@ const agentsService = {
 
   updateAgent: async (id: string, data: Partial<CreateAgentData>): Promise<Agent> => {
     try {
-      const response = await api.patch(`/agents/agents/${id}/`, data);
+      const response = await api.patch(`/agents/${id}/`, data);
       return response.data;
     } catch (error) {
       return handleApiError(error);
@@ -264,7 +271,7 @@ const agentsService = {
 
   deleteAgent: async (id: string): Promise<void> => {
     try {
-      await api.delete(`/agents/agents/${id}/`);
+      await api.delete(`/agents/${id}/`);
     } catch (error) {
       return handleApiError(error);
     }
@@ -282,7 +289,7 @@ const agentsService = {
     });
     
     try {
-      const response = await api.post(`/agents/agents/${agentId}/process/`, data);
+      const response = await api.post(`/agents/${agentId}/process/`, data);
       console.log('[AgentService] Process message success:', {
         hasResponse: !!response.data?.response,
         sessionId: response.data?.session_id,
@@ -299,7 +306,7 @@ const agentsService = {
   // Stats
   getAgentStats: async (agentId: string): Promise<AgentStats> => {
     try {
-      const response = await api.get(`/agents/agents/${agentId}/stats/`);
+      const response = await api.get(`/agents/${agentId}/stats/`);
       return response.data;
     } catch (error) {
       return handleApiError(error);
@@ -309,8 +316,8 @@ const agentsService = {
   // Conversations
   getAgentConversations: async (agentId: string): Promise<AgentConversation[]> => {
     try {
-      const response = await api.get(`/agents/agents/${agentId}/conversations/`);
-      return response.data.results || response.data;
+      const response = await api.get(`/agents/${agentId}/conversations/`);
+      return normalizePaginatedResponse<AgentConversation>(response.data);
     } catch (error) {
       return handleApiError(error);
     }

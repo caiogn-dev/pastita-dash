@@ -9,7 +9,10 @@
  * - Estatísticas
  * - Acesso rápido a Lives e Shopping
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   PhotoIcon,
@@ -47,35 +50,36 @@ export const InstagramDashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('feed');
   const [isCreating, setIsCreating] = useState(false);
 
-  // Fetch account data
-  const { 
-    data: account, 
-    loading: accountLoading 
-  } = useFetch(
-    () => instagramAccountService.get(accountId!),
-    { enabled: !!accountId }
+  const fetchAccount = useCallback(
+    () => instagramAccountService.get(accountId!).then((r: any) => r.data ?? r),
+    [accountId]
   );
 
-  // Fetch media based on tab
-  const fetchMedia = async () => {
+  const {
+    data: account,
+    loading: accountLoading
+  } = useFetch<InstagramAccount>(fetchAccount);
+
+  const fetchMedia = useCallback(async (): Promise<InstagramMedia[]> => {
     if (!accountId) return [];
+    const extract = (r: any): InstagramMedia[] => r?.data?.results ?? r?.data ?? r ?? [];
     switch (activeTab) {
       case 'feed':
-        return instagramMediaService.getFeed();
+        return instagramMediaService.getFeed().then(extract);
       case 'stories':
-        return instagramMediaService.getStories();
+        return instagramMediaService.getStories().then(extract);
       case 'reels':
-        return instagramMediaService.getReels();
+        return instagramMediaService.getReels().then(extract);
       default:
         return [];
     }
-  };
+  }, [accountId, activeTab]);
 
-  const { 
-    data: media, 
+  const {
+    data: media,
     loading: mediaLoading,
-    refresh: refreshMedia 
-  } = useFetch(fetchMedia, { deps: [activeTab, accountId] });
+    refresh: refreshMedia
+  } = useFetch<InstagramMedia[]>(fetchMedia);
 
   const handleCreatePost = () => {
     navigate(`/instagram/${accountId}/create`, { 
@@ -126,7 +130,7 @@ export const InstagramDashboardPage: React.FC = () => {
       {/* Header com Info da Conta */}
       <Card className="overflow-hidden">
         <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 p-6">
-          <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="flex flex-row max-md:flex-col items-center gap-6">
             {/* Avatar */}
             <div className="relative">
               {account.profile_picture_url ? (
@@ -315,8 +319,8 @@ const MediaGrid: React.FC<MediaGridProps> = ({ media, type, onRefresh }) => {
     <div className={`
       grid gap-4
       ${type === 'stories' 
-        ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
-        : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+        ? 'grid-cols-3 sm:grid-cols-8 max-lg:grid-cols-6 max-md:grid-cols-4' 
+        : 'grid-cols-4 max-xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1'
       }
     `}>
       {media.map((item) => (
@@ -399,11 +403,13 @@ const MediaGrid: React.FC<MediaGridProps> = ({ media, type, onRefresh }) => {
 
 const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
   const [days, setDays] = useState(30);
-  
-  const { data: insights, loading } = useFetch(
+
+  const fetchInsights = useCallback(
     () => instagramAccountService.getInsights(accountId, days),
-    { deps: [accountId, days] }
+    [accountId, days]
   );
+
+  const { data: insights, loading } = useFetch(fetchInsights);
 
   if (loading) return <Loading />;
 
@@ -423,7 +429,7 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4">
             <Card className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-orange-100 dark:bg-orange-900/40 rounded-lg">
@@ -470,13 +476,37 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
             </Card>
       </div>
 
-      {/* Chart placeholder - would use Chart.js in real implementation */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Visão Geral</h3>
-          <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">Gráfico de desempenho (implementar com Chart.js)</p>
-          </div>
+          <h3 className="text-lg font-semibold mb-4">Desempenho por Dia</h3>
+          {insights && insights.length > 0 ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={insights} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-primary, #e5e7eb)" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v) => {
+                    const d = new Date(v);
+                    return `${d.getDate()}/${d.getMonth() + 1}`;
+                  }}
+                />
+                <YAxis tick={{ fontSize: 11 }} width={48} />
+                <Tooltip
+                  labelFormatter={(v) => new Date(v).toLocaleDateString('pt-BR')}
+                  contentStyle={{ fontSize: 12 }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Line type="monotone" dataKey="reach" name="Alcance" stroke="#ec4899" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="impressions" name="Impressões" stroke="#a855f7" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="engagement" name="Engajamento" stroke="#f59e0b" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-64 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800">
+              <p className="text-sm text-gray-400">Sem dados de insights para o período selecionado.</p>
+            </div>
+          )}
         </div>
       </Card>
     </div>

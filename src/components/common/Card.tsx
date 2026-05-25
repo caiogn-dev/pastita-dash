@@ -1,9 +1,7 @@
 /**
- * Card - Componente de cartão moderno com Chakra UI v3
- * Suporta props legados para compatibilidade
+ * Card - Componente de cartão sem Chakra UI
  */
 import React from 'react';
-import { Box, Stack } from '@chakra-ui/react';
 
 export interface CardProps {
   children: React.ReactNode;
@@ -19,6 +17,24 @@ export interface CardProps {
   onClose?: () => void;
 }
 
+const variantClasses = {
+  default: 'bg-bg-card border border-border-primary',
+  outline: 'bg-transparent border border-border-primary',
+  filled: 'bg-bg-secondary border-0',
+};
+
+const paddingClasses = {
+  sm: 'p-3',
+  md: 'p-4',
+  lg: 'p-6',
+};
+
+const headerPaddingClasses = {
+  sm: 'px-3 pt-3',
+  md: 'px-4 pt-4',
+  lg: 'px-6 pt-6',
+};
+
 export const Card: React.FC<CardProps> = ({
   children,
   title,
@@ -30,81 +46,40 @@ export const Card: React.FC<CardProps> = ({
   size = 'md',
   className,
 }) => {
-  const variants = {
-    default: {
-      bg: 'bg.card',
-      borderWidth: '1px',
-      borderColor: 'border.primary',
-    },
-    outline: {
-      bg: 'transparent',
-      borderWidth: '1px',
-      borderColor: 'border.primary',
-    },
-    filled: {
-      bg: 'bg.secondary',
-      borderWidth: '0',
-    },
-  };
-
-  const sizes = {
-    sm: { p: noPadding ? 0 : 3, gap: 2 },
-    md: { p: noPadding ? 0 : 4, gap: 3 },
-    lg: { p: noPadding ? 0 : 6, gap: 4 },
-  };
-
-  const currentVariant = variants[variant];
-  const currentSize = sizes[size];
   const headerAction = action || actions;
+  const pad = noPadding ? '' : paddingClasses[size];
+  const hPad = noPadding ? '' : headerPaddingClasses[size];
 
   return (
-    <Box
-      className={className}
-      borderRadius="lg"
-      boxShadow="sm"
-      transition="all 0.2s"
-      _hover={{ boxShadow: 'md' }}
-      {...currentVariant}
+    <div
+      className={[
+        'rounded-lg shadow-sm transition-shadow hover:shadow-md',
+        variantClasses[variant],
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       {(title || subtitle || headerAction) && (
-        <Stack
-          direction="row"
-          justify="space-between"
-          align="center"
-          px={currentSize.p}
-          pt={currentSize.p}
-          pb={subtitle ? 2 : currentSize.p}
-          borderBottomWidth={subtitle ? '1px' : '0'}
-          borderColor="border.subtle"
+        <div
+          className={`flex items-center justify-between ${hPad} pb-2 ${
+            subtitle ? 'border-b border-border-subtle' : ''
+          }`}
         >
-            <Stack gap={0.5}>
-              {title && (
-                <Box
-                  as="h3"
-                  fontSize="lg"
-                  fontWeight="semibold"
-                  color="fg.primary"
-                >
-                  {title}
-                </Box>
-              )}
-              {subtitle && (
-                <Box
-                  fontSize="sm"
-                  color="fg.muted"
-                >
-                  {subtitle}
-                </Box>
-              )}
-            </Stack>
-            {headerAction && <Box>{headerAction}</Box>}
-        </Stack>
+          <div className="flex flex-col gap-0.5">
+            {title && (
+              <h3 className="text-lg font-semibold text-fg-primary">{title}</h3>
+            )}
+            {subtitle && (
+              <p className="text-sm text-fg-muted">{subtitle}</p>
+            )}
+          </div>
+          {headerAction && <div>{headerAction}</div>}
+        </div>
       )}
-      
-      <Box p={noPadding ? 0 : currentSize.p}>
-        {children}
-      </Box>
-    </Box>
+
+      <div className={pad}>{children}</div>
+    </div>
   );
 };
 

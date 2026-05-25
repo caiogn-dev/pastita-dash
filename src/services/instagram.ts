@@ -126,23 +126,31 @@ export interface InstagramScheduledPost {
 
 export const instagramAccountService = {
   list: () => api.get<InstagramAccount[]>('/instagram/accounts/'),
-  
-  create: (data: Partial<InstagramAccount>) => 
+
+  create: (data: Partial<InstagramAccount>) =>
     api.post<InstagramAccount>('/instagram/accounts/', data),
-  
-  get: (id: string) => 
+
+  get: (id: string) =>
     api.get<InstagramAccount>(`/instagram/accounts/${id}/`),
-  
-  update: (id: string, data: Partial<InstagramAccount>) => 
+
+  update: (id: string, data: Partial<InstagramAccount>) =>
     api.patch<InstagramAccount>(`/instagram/accounts/${id}/`, data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     api.delete(`/instagram/accounts/${id}/`),
-  
-  sync: (id: string) => 
+
+  sync: (id: string) =>
     api.post<{ status: string; message: string }>(`/instagram/accounts/${id}/sync/`),
-  
-  getInsights: (id: string, days: number = 30) => 
+
+  /** Retorna a URL OAuth do Instagram Business Login com state assinado server-side. */
+  getConnectUrl: () =>
+    api.get<{ url: string }>('/instagram/accounts/connect-url/'),
+
+  /** Envia o authorization code do Instagram Business Login para o servidor criar/atualizar a conta. */
+  connect: (data: { code: string }) =>
+    api.post<InstagramAccount>('/instagram/accounts/connect/', data),
+
+  getInsights: (id: string, days: number = 30) =>
     api.get<InstagramInsight[]>(`/instagram/accounts/${id}/insights/?days=${days}`),
 };
 
@@ -281,20 +289,29 @@ export const instagramScheduledPostService = {
 
 export const instagramDirectService = {
   // Conversas
-  getConversations: (accountId: string) => 
-    api.get(`/instagram/conversations/?account_id=${accountId}`),
+  getConversations: (accountId?: string) =>
+    api.get<PaginatedResponse<InstagramConversation> | InstagramConversation[]>('/instagram/conversations/', {
+      params: accountId ? { account: accountId } : undefined,
+    }),
   
   // Mensagens
-  getMessages: (conversationId: string) => 
-    api.get(`/instagram/conversations/${conversationId}/messages/`),
+  getMessages: (conversationId: string) =>
+    api.get<InstagramMessage[]>(`/instagram/conversations/${conversationId}/messages/`),
   
   // Enviar mensagem
-  sendMessage: (conversationId: string, content: string) => 
-    api.post(`/instagram/conversations/${conversationId}/send_message/`, { content }),
+  sendMessage: (
+    conversationId: string,
+    data: {
+      content: string;
+      message_type?: string;
+      media_url?: string;
+      reply_to?: string;
+    }
+  ) => api.post<InstagramMessage>(`/instagram/conversations/${conversationId}/send_message/`, data),
   
   // Marcar como lida
-  markAsRead: (conversationId: string) => 
-    api.post(`/instagram/conversations/${conversationId}/mark_as_read/`),
+  markAsRead: (conversationId: string) =>
+    api.post<InstagramConversation>(`/instagram/conversations/${conversationId}/mark_as_read/`),
 };
 
 // ============================================================================
@@ -354,17 +371,31 @@ export type InstagramAccountStats = {
 export type InstagramConversation = {
   id: string;
   account: string;
+  instagram_conversation_id?: string;
   participant_id: string;
-  participant_username: string;
+  participant_username?: string;
+  participant_name?: string;
+  participant_profile_pic?: string;
   last_message_at?: string;
+  last_message_preview?: string;
+  last_message?: { type: string; content?: string | null; created_at: string } | null;
   unread_count: number;
+  status: 'active' | 'closed';
+  is_active?: boolean;
 };
 export type InstagramMessage = {
   id: string;
   conversation: string;
-  content: string;
+  instagram_message_id?: string;
+  content?: string;
   direction: 'inbound' | 'outbound';
-  sent_at: string;
+  message_type?: string;
+  media_url?: string;
+  is_from_business?: boolean;
+  is_read?: boolean;
+  status?: string;
+  sent_at?: string;
+  created_at: string;
 };
 
 // Export all

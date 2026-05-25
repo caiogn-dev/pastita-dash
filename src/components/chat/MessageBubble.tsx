@@ -29,6 +29,23 @@ import {
 } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckIconSolid } from '@heroicons/react/24/solid';
 
+const renderText = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const message = record.message || record.detail || record.error || record.details;
+    if (message && message !== value) return renderText(message);
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
 export interface MessageBubbleProps {
   id: string;
   direction: 'inbound' | 'outbound';
@@ -76,7 +93,7 @@ const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
 };
 
 // Componente de player de áudio inline
-const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileName }) => {
+const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string }> = ({ url, mimeType, fileName }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -186,7 +203,6 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
     <div className="w-[280px] bg-gray-100 dark:bg-zinc-800 rounded-lg p-3 mb-2">
       <audio
         ref={audioRef}
-        src={url}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onError={handleError}
@@ -195,7 +211,9 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
         onEnded={() => setIsPlaying(false)}
         preload="metadata"
         crossOrigin="anonymous"
-      />
+      >
+        <source src={url} type={mimeType?.split(';')[0].trim() || 'audio/ogg'} />
+      </audio>
 
       {error ? (
         <div className="flex items-center gap-2 text-amber-600 text-sm">
@@ -261,10 +279,11 @@ const AudioPlayer: React.FC<{ url: string; fileName?: string }> = ({ url, fileNa
 const MediaPreview: React.FC<{
   type: string;
   url?: string;
+  mimeType?: string;
   fileName?: string;
   content?: string | Record<string, unknown>;
   onClick?: () => void;
-}> = ({ type, url, fileName, content, onClick }) => {
+}> = ({ type, url, mimeType, fileName, content, onClick }) => {
   // Imagem
   if ((type === 'image' || type === 'sticker') && url) {
     return (
@@ -308,7 +327,7 @@ const MediaPreview: React.FC<{
 
   // Áudio - Usar player customizado
   if (type === 'audio' && url) {
-    return <AudioPlayer url={url} fileName={fileName} />;
+    return <AudioPlayer url={url} mimeType={mimeType} fileName={fileName} />;
   }
 
   // Documento
@@ -336,23 +355,48 @@ const MediaPreview: React.FC<{
 
   // Localização
   if (type === 'location') {
-    const location = typeof content === 'string' ? JSON.parse(content) : content;
+    const raw = typeof content === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(content);
+          } catch {
+            return {};
+          }
+        })()
+      : content;
+    const location = (raw as any)?.location ?? raw;
+    const lat = location?.latitude;
+    const lng = location?.longitude;
+    const name = location?.name || location?.address || 'Localização enviada';
+    const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null;
     return (
-      <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg mb-2 max-w-[280px]">
+      <a
+        href={mapsUrl ?? '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg mb-2 max-w-[280px] hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+        onClick={mapsUrl ? undefined : (e) => e.preventDefault()}
+      >
         <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
           <MapPinIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 dark:text-white">
-            Localização
+            {name}
           </p>
-          {location?.latitude && location?.longitude && (
-            <p className="text-xs text-gray-500 dark:text-zinc-400">
-              {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+          {location?.address && location.address !== name && (
+            <p className="text-xs text-gray-600 dark:text-zinc-300 mt-0.5 break-words">
+              {location.address}
             </p>
           )}
+          {lat && lng && (
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
+              {Number(lat).toFixed(6)}, {Number(lng).toFixed(6)}
+            </p>
+          )}
+          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Abrir no Maps</p>
         </div>
-      </div>
+      </a>
     );
   }
 
@@ -377,23 +421,142 @@ const MediaPreview: React.FC<{
 
   // Pedido/Compra
   if (type === 'order') {
+    const orderData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
     return (
       <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg mb-2 max-w-[280px]">
         <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
           <ShoppingCartIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            Pedido
-          </p>
-          <p className="text-xs text-gray-500 dark:text-zinc-400">
-            {typeof content === 'string' ? content : JSON.stringify(content)}
-          </p>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">Pedido WhatsApp</p>
+          {(orderData as any)?.product_items?.length > 0 && (
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
+              {(orderData as any).product_items.length} item(s)
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
+  // Reação de emoji
+  if (type === 'reaction') {
+    const reactionData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
+    const emoji = (reactionData as any)?.emoji || '👍';
+    return (
+      <div className="flex items-center gap-2 py-1 px-2">
+        <span className="text-2xl">{emoji}</span>
+        <span className="text-xs text-gray-400 dark:text-zinc-500">Reagiu</span>
+      </div>
+    );
+  }
+
+  // Botão de resposta
+  if (type === 'button') {
+    const btnData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
+    const btnText = (btnData as any)?.text || (btnData as any)?.title || String(content || '');
+    return (
+      <div className="flex items-center gap-2 mb-1">
+        <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
+          ↩ {btnText}
+        </div>
+      </div>
+    );
+  }
+
+  // Mensagem de sistema
+  if (type === 'system') {
+    return (
+      <div className="flex justify-center my-1">
+        <span className="text-xs text-gray-400 dark:text-zinc-500 italic px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full">
+          {typeof content === 'string' ? content : 'Mensagem do sistema'}
+        </span>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+const InteractiveContent: React.FC<{
+  content: string | Record<string, unknown>;
+  isInbound: boolean;
+}> = ({ content, isInbound }) => {
+  const raw: Record<string, unknown> = typeof content === 'string'
+    ? (() => { try { return JSON.parse(content); } catch { return {}; } })()
+    : content;
+
+  // Inbound messages from WhatsApp are wrapped: { interactive: { type, button_reply|list_reply } }
+  const data: Record<string, unknown> = (raw.interactive as Record<string, unknown>) || raw;
+
+  const interactiveType = data.type as string | undefined;
+
+  // Inbound: customer replied to a button
+  const buttonReply = (data.button_reply || raw.button_reply) as Record<string, string> | undefined;
+  if (buttonReply) {
+    return (
+      <div className="px-3 pb-2 pt-1">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
+          ↩ {buttonReply.title || buttonReply.id}
+        </div>
+      </div>
+    );
+  }
+
+  // Inbound: customer selected a list item
+  const listReply = (data.list_reply || raw.list_reply) as Record<string, string> | undefined;
+  if (listReply) {
+    return (
+      <div className="px-3 pb-2 pt-1">
+        <div className="inline-flex flex-col px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-300">
+          <span>☰ {listReply.title || listReply.id}</span>
+          {listReply.description && (
+            <span className="font-normal text-blue-500 dark:text-blue-400 mt-0.5">{listReply.description}</span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Outbound: buttons message
+  if ((interactiveType === 'buttons' || interactiveType === 'button') && Array.isArray(data.buttons)) {
+    const buttons = data.buttons as Array<Record<string, string>>;
+    return (
+      <div className="border-t border-gray-100 dark:border-zinc-700">
+        {buttons.map((btn, i) => (
+          <div
+            key={btn.id || i}
+            className="px-3 py-2.5 text-center text-sm font-medium text-blue-600 dark:text-blue-400 border-t border-gray-100 dark:border-zinc-700 first:border-t-0 cursor-default select-none"
+          >
+            {btn.title || btn.id}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Outbound: list message
+  if (interactiveType === 'list') {
+    const buttonText = (data.button as string) || 'Ver opções';
+    const sections = (data.sections as Array<Record<string, unknown>>) || [];
+    const totalItems = sections.reduce((acc, s) => {
+      const rows = (s.rows as unknown[]) || [];
+      return acc + rows.length;
+    }, 0);
+    return (
+      <div className="border-t border-gray-100 dark:border-zinc-700 px-3 py-2">
+        <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400">
+          <span>☰</span>
+          <span>{buttonText}</span>
+          {totalItems > 0 && (
+            <span className="text-xs text-gray-400 dark:text-zinc-500">({totalItems} opções)</span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback: unknown interactive type — don't show raw JSON, text_body is already rendered above
   return null;
 };
 
@@ -417,13 +580,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 }) => {
   const isInbound = direction === 'inbound';
   const hasMedia = mediaUrl && ['image', 'video', 'audio', 'document'].includes(messageType);
+  const hasLocation = messageType === 'location';
 
   return (
     <div
       className={`flex ${isInbound ? 'justify-start' : 'justify-end'} mb-4`}
     >
       <div
-        className={`max-w-[70%] ${
+        className={`max-w-[70%] overflow-hidden ${
           isInbound
             ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white'
             : 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-900 dark:text-white'
@@ -434,32 +598,49 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <MediaPreview
             type={messageType}
             url={mediaUrl}
+            mimeType={mimeType}
             fileName={fileName}
             content={content}
             onClick={() => onMediaClick?.(mediaUrl!, messageType, fileName)}
           />
         )}
 
-        {/* Texto */}
-        {textBody && (
+        {hasLocation && (
+          <MediaPreview
+            type="location"
+            content={content}
+          />
+        )}
+
+        {/* Texto (só mostra se não for caption de mídia já exibida via mediaUrl) */}
+        {textBody && !hasLocation && !(hasMedia && ['image', 'video', 'document'].includes(messageType)) && (
           <div className="px-3 py-2">
+            <p className="text-sm whitespace-pre-wrap break-words">{textBody}</p>
+          </div>
+        )}
+
+        {/* Caption de mídia abaixo da imagem/video */}
+        {textBody && hasMedia && ['image', 'video'].includes(messageType) && (
+          <div className="px-3 pt-1 pb-0">
             <p className="text-sm whitespace-pre-wrap break-words">{textBody}</p>
           </div>
         )}
 
         {/* Conteúdo especial (botões, listas, etc) */}
         {content && messageType === 'interactive' && (
-          <div className="px-3 py-2 border-t border-gray-100 dark:border-zinc-700">
-            <pre className="text-xs text-gray-600 dark:text-zinc-400 overflow-x-auto">
-              {typeof content === 'string' ? content : JSON.stringify(content, null, 2)}
-            </pre>
-          </div>
+          <InteractiveContent content={content} isInbound={isInbound} />
         )}
 
         {/* Footer com timestamp e status */}
         <div className="flex items-center justify-end gap-1 px-3 pb-2">
           <span className="text-[10px] text-gray-400">
-            {format(new Date(createdAt), 'HH:mm', { locale: ptBR })}
+            {(() => {
+              try {
+                return createdAt ? format(new Date(createdAt), 'HH:mm', { locale: ptBR }) : '--:--';
+              } catch (e) {
+                return '--:--';
+              }
+            })()}
           </span>
           
           {!isInbound && (
@@ -472,7 +653,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         {/* Erro */}
         {errorMessage && (
           <div className="px-3 pb-2">
-            <p className="text-xs text-red-500">{errorMessage}</p>
+            <p className="text-xs text-red-500">{renderText(errorMessage)}</p>
           </div>
         )}
       </div>

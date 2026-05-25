@@ -54,6 +54,12 @@ export interface ContactList {
   updated_at: string;
 }
 
+export interface SystemContact {
+  phone: string;
+  name: string;
+  source?: 'conversation' | 'order' | 'subscriber' | 'session';
+}
+
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -83,8 +89,22 @@ export const campaignsService = {
     audience_filters?: Record<string, unknown>;
     contact_list?: Array<{ phone: string; name?: string; variables?: Record<string, unknown> }>;
     scheduled_at?: string;
+    messages_per_minute?: number;
+    delay_between_messages?: number;
   }): Promise<Campaign> => {
     const response = await api.post<Campaign>('/campaigns/campaigns/', data);
+    return response.data;
+  },
+
+  uploadCampaignMedia: async (file: File): Promise<{
+    media_url: string;
+    media_type: 'image' | 'document';
+    filename: string;
+    mime_type: string;
+  }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/campaigns/campaigns/upload-media/', formData);
     return response.data;
   },
 
@@ -194,6 +214,15 @@ export const campaignsService = {
     csv_content: string;
   }): Promise<ContactList> => {
     const response = await api.post<ContactList>('/campaigns/contacts/import_csv/', data);
+    return response.data;
+  },
+
+  getSystemContacts: async (params?: {
+    account_id?: string;
+    source?: 'all' | 'conversations' | 'orders' | 'subscribers' | 'sessions';
+    limit?: number;
+  }): Promise<{ count: number; results: SystemContact[] }> => {
+    const response = await api.get('/campaigns/system-contacts/', { params });
     return response.data;
   },
 };

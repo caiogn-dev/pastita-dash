@@ -1,5 +1,4 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
-import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import logger from './services/logger';
@@ -8,10 +7,10 @@ import { MainLayout } from './components/layout';
 import { FullPageLoading } from './components/common';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
-import { whatsappService, setAuthToken } from './services';
+import { setAuthToken } from './services';
+import api from './services/api';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { WhatsAppWsProvider } from './context/WhatsAppWsContext';
-import system from './theme';
 import './App.css';
 
 // Lazy load pages for better performance
@@ -23,8 +22,8 @@ const AccountDetailPage = lazy(() => import('./pages/accounts/AccountDetailPage'
 const MessagesPage = lazy(() => import('./pages/messages/MessagesPage').then(m => ({ default: m.MessagesPage })));
 const ConversationsPage = lazy(() => import('./pages/conversations/ConversationsPage').then(m => ({ default: m.ConversationsPage })));
 const OrdersPage = lazy(() => import('./pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
+const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
 const OrderNewPage = lazy(() => import('./pages/orders/OrderNewPage').then(m => ({ default: m.OrderNewPage })));
-const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPageNew').then(m => ({ default: m.OrderDetailPageNew })));
 const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
@@ -38,6 +37,8 @@ const UnifiedOrchestratorTest = lazy(() => import('./pages/agents').then(m => ({
 // E-commerce Pages
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
 const ProductsPage = lazy(() => import('./pages/products/ProductsPageNew').then(m => ({ default: m.ProductsPageNew })));
+const CombosPage = lazy(() => import('./pages/products/CombosPage').then(m => ({ default: m.CombosPage })));
+const CustomersPage = lazy(() => import('./pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 
 // Automation Pages
 const CompanyProfilesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CompanyProfilesPage })));
@@ -47,6 +48,7 @@ const CustomerSessionsPage = lazy(() => import('./pages/automation').then(m => (
 const AutomationLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutomationLogsPage })));
 const ScheduledMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ScheduledMessagesPage })));
 const ReportsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ReportsPage })));
+const AgentFlowsPage = lazy(() => import('./pages/automation/AgentFlowsPage').then(m => ({ default: m.AgentFlowsPage })));
 
 // Intent Detection Pages (Novo Sistema)
 const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentStatsPage })));
@@ -54,12 +56,13 @@ const IntentLogsPage = lazy(() => import('./pages/automation').then(m => ({ defa
 
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
+const SaladasDashboardPage = lazy(() => import('./pages/reports').then(m => ({ default: m.SaladasDashboardPage })));
 
 // Stores Pages
 const StoresPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoresPage })));
 const StoreDetailPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreDetailPage })));
 const StoreSettingsPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreSettingsPage })));
-const DeliveryZonesPage = lazy(() => import('./pages/delivery/DeliveryZonesPage').then(m => ({ default: m.DeliveryZonesPage })));
+const StorefrontPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StorefrontPage })));
 
 // Marketing Pages
 const MarketingPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.MarketingPage })));
@@ -71,18 +74,28 @@ const WhatsAppCampaignsPage = lazy(() => import('./pages/marketing/whatsapp').th
 const WhatsAppTemplatesPage = lazy(() => import('./pages/marketing/whatsapp/WhatsAppTemplatesPage').then(m => ({ default: m.default })));
 const AutomationsPage = lazy(() => import('./pages/marketing/AutomationsPage').then(m => ({ default: m.default })));
 
+// Delivery Pages
+const DeliveryZonesPage = lazy(() => import('./pages/delivery/DeliveryZonesPage').then(m => ({ default: m.default || m.DeliveryZonesPage })));
+
 // Instagram Pages
 const InstagramAccountsPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramAccountsPage })));
 const InstagramDashboardPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramDashboardPage })));
 const InstagramInbox = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramInbox })));
+const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCallbackPage'));
 
 // Messenger Pages
 const MessengerInbox = lazy(() => import('./pages/messenger').then(m => ({ default: m.MessengerInbox })));
 const MessengerAccounts = lazy(() => import('./pages/messenger').then(m => ({ default: m.MessengerAccounts })));
 
+// Unified Messaging Connections Page
+const ConnectionsPage = lazy(() => import('./pages/messaging/ConnectionsPage').then(m => ({ default: m.default })));
+
 // WhatsApp Pages
 const WebhookDiagnosticsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WebhookDiagnosticsPage })));
 const WhatsAppChatPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WhatsAppChatPage })));
+const WhatsAppInboxPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WhatsAppInboxPage })));
+const DebugDashboardPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.DebugDashboardPage })));
+const HandoverRequestsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.HandoverRequestsPage })));
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -109,8 +122,11 @@ const AppContent: React.FC = () => {
 
       if (isAuthenticated && token) {
         try {
-          const response = await whatsappService.getAccounts();
-          setAccounts(response.results);
+          // skipAutoLogout: a 401 here does NOT mean the token is invalid —
+          // the user just logged in. Without this flag the interceptor would
+          // call logout() and send the user back to /login in a loop.
+          const response = await api.get('/whatsapp/accounts/', { skipAutoLogout: true });
+          setAccounts(response.data?.results || []);
         } catch (error) {
           logger.error('Error loading accounts:', error);
         }
@@ -148,10 +164,6 @@ const AppContent: React.FC = () => {
         <Route path="accounts/:id/edit" element={<Suspense fallback={<FullPageLoading />}><AccountFormPage /></Suspense>} />
         <Route path="messages" element={<Suspense fallback={<FullPageLoading />}><MessagesPage /></Suspense>} />
         <Route path="conversations" element={<Suspense fallback={<FullPageLoading />}><ConversationsPage /></Suspense>} />
-        <Route path="orders" element={<Suspense fallback={<FullPageLoading />}><OrdersPage /></Suspense>} />
-        <Route path="orders/new" element={<Suspense fallback={<FullPageLoading />}><OrderNewPage /></Suspense>} />
-        <Route path="orders/:id" element={<Suspense fallback={<FullPageLoading />}><OrderDetailPage /></Suspense>} />
-        <Route path="delivery/zones" element={<Suspense fallback={<FullPageLoading />}><DeliveryZonesPage /></Suspense>} />
         
         {/* AI Agents Routes (Langchain) */}
         <Route path="agents" element={<Suspense fallback={<FullPageLoading />}><AgentsPage /></Suspense>} />
@@ -168,39 +180,45 @@ const AppContent: React.FC = () => {
         <Route path="automation/companies" element={<Suspense fallback={<FullPageLoading />}><CompanyProfilesPage /></Suspense>} />
         <Route path="automation/companies/new" element={<Suspense fallback={<FullPageLoading />}><CompanyProfileDetailPage /></Suspense>} />
         <Route path="automation/companies/:id" element={<Suspense fallback={<FullPageLoading />}><CompanyProfileDetailPage /></Suspense>} />
+        <Route path="automation/messages" element={<Suspense fallback={<FullPageLoading />}><AutoMessagesPage /></Suspense>} />
         <Route path="automation/companies/:companyId/messages" element={<Suspense fallback={<FullPageLoading />}><AutoMessagesPage /></Suspense>} />
         <Route path="automation/sessions" element={<Suspense fallback={<FullPageLoading />}><CustomerSessionsPage /></Suspense>} />
         <Route path="automation/logs" element={<Suspense fallback={<FullPageLoading />}><AutomationLogsPage /></Suspense>} />
         <Route path="automation/scheduled" element={<Suspense fallback={<FullPageLoading />}><ScheduledMessagesPage /></Suspense>} />
         <Route path="automation/reports" element={<Suspense fallback={<FullPageLoading />}><ReportsPage /></Suspense>} />
+        <Route path="automation/flows" element={<Suspense fallback={<FullPageLoading />}><AgentFlowsPage /></Suspense>} />
 
         {/* Intent Detection Routes */}
-        <Route path="automation/intents" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
+        <Route path="automation/intents" element={<Navigate to="/automation/intents/stats" replace />} />
         <Route path="automation/intents/stats" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
         <Route path="automation/intents/logs" element={<Suspense fallback={<FullPageLoading />}><IntentLogsPage /></Suspense>} />
         
         {/* Analytics/Reports Routes */}
         <Route path="analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
-        <Route path="reports" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
+        <Route path="analytics/saladas" element={<Suspense fallback={<FullPageLoading />}><SaladasDashboardPage /></Suspense>} />
+        <Route path="reports" element={<Navigate to="/analytics" replace />} />
         
         {/* Stores Routes */}
         <Route path="stores" element={<Suspense fallback={<FullPageLoading />}><StoresPage /></Suspense>} />
         <Route path="stores/:storeId" element={<Suspense fallback={<FullPageLoading />}><StoreDetailPage /></Suspense>} />
         <Route path="stores/:storeId/products" element={<Suspense fallback={<FullPageLoading />}><ProductsPage /></Suspense>} />
+        <Route path="stores/:storeId/combos" element={<Suspense fallback={<FullPageLoading />}><CombosPage /></Suspense>} />
         <Route path="stores/:storeId/orders" element={<Suspense fallback={<FullPageLoading />}><OrdersPage /></Suspense>} />
+        <Route path="stores/:storeId/customers" element={<Suspense fallback={<FullPageLoading />}><CustomersPage /></Suspense>} />
         <Route path="stores/:storeId/orders/new" element={<Suspense fallback={<FullPageLoading />}><OrderNewPage /></Suspense>} />
         <Route path="stores/:storeId/orders/:id" element={<Suspense fallback={<FullPageLoading />}><OrderDetailPage /></Suspense>} />
         <Route path="stores/:storeId/coupons" element={<Suspense fallback={<FullPageLoading />}><CouponsPage /></Suspense>} />
-        <Route path="stores/:storeId/delivery" element={<Suspense fallback={<FullPageLoading />}><DeliveryZonesPage /></Suspense>} />
         <Route path="stores/:storeId/analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
         <Route path="stores/:storeId/payments" element={<Suspense fallback={<FullPageLoading />}><PaymentsPage /></Suspense>} />
         <Route path="stores/:storeId/settings" element={<Suspense fallback={<FullPageLoading />}><StoreSettingsPage /></Suspense>} />
+        <Route path="stores/:storeId/storefront" element={<Suspense fallback={<FullPageLoading />}><StorefrontPage /></Suspense>} />
+        <Route path="stores/:storeId/delivery" element={<Suspense fallback={<FullPageLoading />}><DeliveryZonesPage /></Suspense>} />
         
         {/* Marketing Routes */}
         <Route path="marketing" element={<Suspense fallback={<FullPageLoading />}><MarketingPage /></Suspense>} />
         <Route path="marketing/subscribers" element={<Suspense fallback={<FullPageLoading />}><SubscribersPage /></Suspense>} />
         <Route path="marketing/automations" element={<Suspense fallback={<FullPageLoading />}><AutomationsPage /></Suspense>} />
-        <Route path="marketing/email" element={<Suspense fallback={<FullPageLoading />}><CampaignsListPage /></Suspense>} />
+        <Route path="marketing/email" element={<Navigate to="/marketing/email/campaigns" replace />} />
         <Route path="marketing/email/campaigns" element={<Suspense fallback={<FullPageLoading />}><CampaignsListPage /></Suspense>} />
         <Route path="marketing/email/new" element={<Suspense fallback={<FullPageLoading />}><NewCampaignPage /></Suspense>} />
         <Route path="marketing/email/templates" element={<Suspense fallback={<FullPageLoading />}><MarketingPage /></Suspense>} />
@@ -209,18 +227,27 @@ const AppContent: React.FC = () => {
         <Route path="marketing/whatsapp/templates" element={<Suspense fallback={<FullPageLoading />}><WhatsAppTemplatesPage /></Suspense>} />
         
         {/* Instagram Routes */}
-        <Route path="instagram" element={<Suspense fallback={<FullPageLoading />}><InstagramAccountsPage /></Suspense>} />
+        <Route path="instagram" element={<Navigate to="/instagram/accounts" replace />} />
         <Route path="instagram/accounts" element={<Suspense fallback={<FullPageLoading />}><InstagramAccountsPage /></Suspense>} />
+        <Route path="instagram/callback" element={<Suspense fallback={<FullPageLoading />}><InstagramCallbackPage /></Suspense>} />
         <Route path="instagram/:accountId" element={<Suspense fallback={<FullPageLoading />}><InstagramDashboardPage /></Suspense>} />
         <Route path="instagram/inbox" element={<Suspense fallback={<FullPageLoading />}><InstagramInbox /></Suspense>} />
         
         {/* Messenger Routes */}
+        {/* Messenger/WhatsApp Routes - NOVA PÁGINA UNIFICADA */}
+        <Route path="connections" element={<Suspense fallback={<FullPageLoading />}><ConnectionsPage /></Suspense>} />
+        
+        {/* Legacy Routes (mantidas para compatibilidade) */}
         <Route path="messenger" element={<Suspense fallback={<FullPageLoading />}><MessengerInbox /></Suspense>} />
         <Route path="messenger/inbox" element={<Suspense fallback={<FullPageLoading />}><MessengerInbox /></Suspense>} />
         <Route path="messenger/accounts" element={<Suspense fallback={<FullPageLoading />}><MessengerAccounts /></Suspense>} />
         
         {/* WhatsApp Routes */}
+        <Route path="whatsapp" element={<Suspense fallback={<FullPageLoading />}><WhatsAppInboxPage /></Suspense>} />
+        <Route path="whatsapp/inbox" element={<Suspense fallback={<FullPageLoading />}><WhatsAppInboxPage /></Suspense>} />
         <Route path="whatsapp/chat" element={<Suspense fallback={<FullPageLoading />}><WhatsAppChatPage /></Suspense>} />
+        <Route path="whatsapp/handover" element={<Suspense fallback={<FullPageLoading />}><HandoverRequestsPage /></Suspense>} />
+        <Route path="whatsapp/debug" element={<Suspense fallback={<FullPageLoading />}><DebugDashboardPage /></Suspense>} />
         <Route path="whatsapp/diagnostics" element={<Suspense fallback={<FullPageLoading />}><WebhookDiagnosticsPage /></Suspense>} />
       </Route>
 
@@ -255,14 +282,12 @@ const App: React.FC = () => {
   );
   
   return (
-    <ChakraProvider value={system}>
-      <QueryClientProvider client={queryClient}>
-        <div className="app">
-          {appContent}
-        </div>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </ChakraProvider>
+    <QueryClientProvider client={queryClient}>
+      <div className="app">
+        {appContent}
+      </div>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useConfirm } from '../../hooks';
 import logger from '../../services/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -65,6 +66,7 @@ const dayOfWeekLabels: Record<number, string> = {
 };
 
 export default function ReportsPage() {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [schedules, setSchedules] = useState<ReportSchedule[]>([]);
   const [reports, setReports] = useState<GeneratedReport[]>([]);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
@@ -108,7 +110,7 @@ export default function ReportsPage() {
       ]);
       setSchedules(schedulesRes.results);
       setReports(reportsRes.results);
-      setAccounts(accountsRes.results);
+      setAccounts(accountsRes.data?.results || []);
       setCompanies(companiesRes.results);
     } catch (error) {
       toast.error('Erro ao carregar dados');
@@ -186,7 +188,11 @@ export default function ReportsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Deseja excluir este agendamento?')) return;
+    const confirmed = await confirm({
+      title: 'Excluir agendamento',
+      message: 'Deseja excluir este agendamento?',
+    });
+    if (!confirmed) return;
 
     try {
       await reportSchedulesService.delete(id);
@@ -742,6 +748,7 @@ export default function ReportsPage() {
           </div>
         </div>
       </Modal>
+      {ConfirmDialog}
     </div>
   );
 }

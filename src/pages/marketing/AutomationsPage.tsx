@@ -25,7 +25,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../components/common';
-import { useStore } from '../../hooks';
+import { useStore, useConfirm } from '../../hooks';
 import { 
   automationsApi, 
   EmailAutomation, 
@@ -60,6 +60,7 @@ const TRIGGER_CONFIG: Record<string, { icon: string; color: string; bgColor: str
 export default function AutomationsPage() {
   const navigate = useNavigate();
   const { storeId } = useStore();
+  const [ConfirmDialog, confirm] = useConfirm();
 
   // State
   const [automations, setAutomations] = useState<EmailAutomation[]>([]);
@@ -128,7 +129,11 @@ export default function AutomationsPage() {
   };
 
   const handleDelete = async (automation: EmailAutomation) => {
-    if (!confirm(`Excluir automação "${automation.name}"?`)) return;
+    const confirmed = await confirm({
+      title: 'Excluir automação',
+      message: `Excluir automação "${automation.name}"?`,
+    });
+    if (!confirmed) return;
 
     try {
       await automationsApi.delete(automation.id);
@@ -235,7 +240,7 @@ export default function AutomationsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary-100 rounded-lg">
@@ -572,6 +577,7 @@ export default function AutomationsPage() {
           </div>
         </div>
       </Modal>
+      {ConfirmDialog}
     </div>
   );
 }

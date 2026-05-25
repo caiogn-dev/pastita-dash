@@ -74,11 +74,12 @@ export interface Message {
   from_number: string;
   to_number: string;
   direction: 'inbound' | 'outbound';
-  message_type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'template' | 'interactive' | 'location' | 'contacts';
+  message_type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'sticker' | 'template' | 'interactive' | 'location' | 'contacts' | 'reaction' | 'button' | 'order' | 'system' | 'unknown';
   text_body?: string;
-  content?: string;
+  content?: string | Record<string, unknown>;
   text?: string;
   media_url?: string;
+  media_id?: string;
   media_caption?: string;
   media_mime_type?: string;
   media_type?: string;
@@ -94,8 +95,11 @@ export interface Message {
   error_message?: string;
   webhook_event?: string;
   conversation_id?: string;
+  conversation?: string;
   account: string;
   account_name?: string;
+  processed_by_agent?: boolean;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -166,12 +170,19 @@ export interface Conversation {
   id: string;
   phone_number: string;
   contact_name?: string;
+  wa_id?: string;
+  profile_picture_url?: string;
+  profile_picture_file?: string;
+  profile_picture?: string;
+  profile_name_last_seen_at?: string | null;
   account: string;
-  status: 'active' | 'archived' | 'blocked' | 'spam' | 'open' | 'pending';
-  mode?: 'auto' | 'manual' | 'hybrid' | 'human' | string;
+  status: 'open' | 'closed' | 'pending' | 'resolved';
+  mode?: 'auto' | 'human' | 'hybrid';
   last_message_at?: string;
   last_message_preview?: string;
   last_message?: string;
+  last_customer_message_at?: string;
+  last_agent_message_at?: string;
   unread_count: number;
   labels: string[];
   tags?: string[];
@@ -179,16 +190,39 @@ export interface Conversation {
   handover_status?: 'bot' | 'human' | 'pending' | string;
   handover_assigned_to?: string | null;
   handover_assigned_to_name?: string | null;
+  ai_agent?: string | null;
+  agent_session_id?: string | null;
+  closed_at?: string | null;
+  resolved_at?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface UniversalConversation {
+  id: string;
+  platform: 'whatsapp' | 'instagram' | 'messenger';
+  platform_icon_key: 'whatsapp' | 'instagram' | 'messenger';
+  source_conversation_id: string;
+  account_id?: string | null;
+  display_name: string;
+  secondary_identifier?: string | null;
+  last_message_preview?: string | null;
+  last_message_at?: string | null;
+  unread_count: number;
+  status?: string | null;
+  route: string;
+  route_params: Record<string, string>;
+  is_actionable: boolean;
 }
 
 export interface ConversationNote {
   id: string;
   conversation: string;
+  author?: string | null;
+  author_name?: string | null;
   content: string;
-  created_by: User;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============================================
@@ -199,11 +233,31 @@ export interface OrderItem {
   id: string;
   product_id: string;
   product_name: string;
+  variant_name?: string;
   quantity: number;
   unit_price: number;
   subtotal: number;
   total_price?: number;
-  options?: Record<string, unknown>;
+  notes?: string;
+  options?: Record<string, unknown> & {
+    is_salad_builder?: boolean;
+    ingredients?: Array<{ id: string; name: string; price: number; role: string }>;
+  };
+}
+
+export interface OrderComboItem {
+  id: string;
+  combo_id?: string;
+  combo_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  notes?: string;
+  customizations?: {
+    is_salad_builder?: boolean;
+    ingredients?: Array<{ id: string; name: string; price: number; role: string }>;
+    [key: string]: unknown;
+  };
 }
 
 export interface OrderEvent {
@@ -213,6 +267,33 @@ export interface OrderEvent {
   description: string;
   metadata?: Record<string, unknown>;
   created_at: string;
+}
+
+export interface DeliveryAddress {
+  [key: string]: unknown;
+  // Structured fields from backend geocode/reverse_geocode
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  // WhatsApp/geo routing extras
+  raw_address?: string;
+  lat?: number;
+  lng?: number;
+  distance_km?: number;
+  duration_minutes?: number;
+  // Legacy aliases kept for backward compatibility
+  rua?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  address?: string;
 }
 
 export interface Order {
@@ -225,10 +306,11 @@ export interface Order {
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
-  delivery_address?: string;
+  delivery_address?: DeliveryAddress;
   shipping_address?: Record<string, unknown>;
   delivery_instructions?: string;
   items: OrderItem[];
+  combo_items?: OrderComboItem[];
   items_count?: number;
   subtotal: number;
   tax: number;
@@ -247,9 +329,22 @@ export interface Order {
   init_point?: string;
   access_token?: string;
   payment_preference_id?: string;
+  delivery_method?: 'delivery' | 'pickup' | 'digital';
   tracking_code?: string;
+  tracking_url?: string;
+  carrier?: string;
   notes?: string;
-  paid_at?: string;
+  internal_notes?: string;
+  scheduled_date?: string | null;
+  scheduled_time?: string | null;
+  paid_at?: string | null;
+  confirmed_at?: string | null;
+  preparing_at?: string | null;
+  ready_at?: string | null;
+  shipped_at?: string | null;
+  delivered_at?: string | null;
+  cancelled_at?: string | null;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   events?: OrderEvent[];
@@ -260,7 +355,12 @@ export interface CreateOrder {
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
-  delivery_address?: string;
+  delivery_address?: DeliveryAddress | string;
+  delivery_method?: 'delivery' | 'pickup' | 'digital';
+  delivery_fee?: number;
+  discount?: number;
+  surcharge?: number;
+  adjustment_reason?: string;
   items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
   payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card';
   notes?: string;
@@ -276,7 +376,7 @@ export interface Payment {
   gateway: string;
   external_id: string;
   amount: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
+  status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded';
   payment_method: string;
   paid_at?: string;
   refunded_at?: string;
@@ -296,36 +396,8 @@ export interface PaymentGateway {
 // ============================================
 // DASHBOARD TYPES
 // ============================================
-
-export interface DashboardOverview {
-  total_revenue?: number;
-  total_orders?: number;
-  total_customers?: number;
-  conversion_rate?: number;
-  timestamp?: string;
-  messages?: number | { today: number; by_status: Record<string, number> };
-  conversations?: number | { active: number; new: number; resolved: number; by_mode?: Record<string, number> };
-  orders?: number | { today: number; revenue_today: number; revenue_month?: number };
-  agents?: number;
-  accounts?: number | { active: number; total: number };
-  payments?: {
-    total?: number;
-    pix?: number;
-    credit_card?: number;
-    debit_card?: number;
-    cash?: number;
-    pending?: number;
-    completed_today?: number;
-  };
-  period_comparison?: {
-    revenue_change: number;
-    orders_change: number;
-    customers_change: number;
-  };
-  interactions_today?: number;
-  avg_response_time_ms?: number;
-  success_rate?: number;
-}
+// Re-exported from dashboard.ts (canonical, aligned with backend)
+export type { DashboardOverview, DashboardCharts } from './dashboard';
 
 export interface DashboardActivity {
   id: string;
@@ -333,19 +405,6 @@ export interface DashboardActivity {
   description: string;
   timestamp: string;
   metadata?: Record<string, unknown>;
-}
-
-export interface DashboardCharts {
-  sales_over_time?: Array<{ date: string; amount: number; orders: number; revenue?: number; new?: number; resolved?: number }>;
-  orders_by_status?: Record<string, number>;
-  top_products?: Array<{ name: string; quantity: number; revenue: number }>;
-  revenue_by_payment_method?: Record<string, number>;
-  orders_per_day?: Array<{ date: string; count: number; revenue?: number }>;
-  conversations_per_day?: Array<{ date: string; count: number; new?: number; resolved?: number }>;
-  messages_per_day?: Array<{ date: string; count: number; incoming?: number; outgoing?: number; inbound?: number; outbound?: number }>;
-  message_types?: Record<string, number>;
-  order_statuses?: Record<string, number>;
-  messages_by_day?: Array<{ date: string; count: number; inbound?: number; outbound?: number }>;
 }
 
 // ============================================
@@ -664,7 +723,7 @@ export interface IntentStats {
   by_type: Partial<Record<IntentType, number>>;
   by_method: { regex: number; llm: number };
   avg_response_time_ms: number;
-  top_intents: Array<{ intent: IntentType; count: number }>;
+  top_intents: Array<{ intent?: IntentType; intent_type?: IntentType; count: number }>;
   period: { start: string; end: string };
 }
 
@@ -729,8 +788,7 @@ export interface CreateScheduledMessage {
   message_type: 'text' | 'template' | 'image' | 'document' | 'interactive';
   message_text?: string;
   template_name?: string;
-  scheduled_for: string;
-  scheduled_at?: string;
+  scheduled_at: string;
   timezone?: string;
   notes?: string;
   metadata?: Record<string, unknown>;

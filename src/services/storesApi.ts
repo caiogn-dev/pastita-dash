@@ -4,6 +4,36 @@
  */
 import api from './api';
 import logger from './logger';
+import type { DeliveryAddress } from '../types';
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+
+/**
+ * Normaliza respostas paginadas do backend.
+ * O DRF pode retornar {count, next, previous, results} ou um array direto.
+ */
+function normalizePaginatedResponse<T>(data: unknown): PaginatedResponse<T> {
+  if (Array.isArray(data)) {
+    return {
+      count: data.length,
+      next: null,
+      previous: null,
+      results: data,
+    };
+  }
+  if (data && typeof data === 'object') {
+    const d = data as Record<string, unknown>;
+    return {
+      count: (d.count as number) || 0,
+      next: (d.next as string | null) || null,
+      previous: (d.previous as string | null) || null,
+      results: Array.isArray(d.results) ? (d.results as T[]) : [],
+    };
+  }
+  return { count: 0, next: null, previous: null, results: [] };
+}
 
 // =============================================================================
 // TYPES
@@ -22,6 +52,9 @@ export interface Store {
   banner_url?: string;
   primary_color: string;
   secondary_color: string;
+  template: 'fresh' | 'bold' | 'classic';
+  tagline: string;
+  custom_domain: string | null;
   email: string;
   phone: string;
   whatsapp_number: string;
@@ -40,7 +73,7 @@ export interface Store {
   min_order_value: number;
   free_delivery_threshold?: number;
   default_delivery_fee: number;
-  operating_hours: Record<string, { open: string; close: string }>;
+  operating_hours: Record<string, { open: string; close: string; is_open: boolean }>;
   is_open: boolean;
   owner: number;
   metadata: Record<string, unknown>;
@@ -71,6 +104,12 @@ export interface StoreInput {
   min_order_value?: number;
   default_delivery_fee?: number;
   metadata?: Record<string, unknown>;
+  operating_hours?: Record<string, { open: string; close: string; is_open: boolean }>;
+  primary_color?: string;
+  secondary_color?: string;
+  template?: 'fresh' | 'bold' | 'classic';
+  tagline?: string;
+  custom_domain?: string | null;
 }
 
 export interface StoreIntegration {
@@ -317,7 +356,7 @@ export interface StoreOrder {
   pix_qr_code: string;
   delivery_method: 'delivery' | 'pickup' | 'digital';
   delivery_method_display: string;
-  delivery_address: Record<string, string>;
+  delivery_address: DeliveryAddress;
   delivery_notes: string;
   scheduled_date?: string;
   scheduled_time: string;
@@ -400,7 +439,12 @@ export interface PaginatedResponse<T> {
 // API FUNCTIONS
 // =============================================================================
 
+// URL base do módulo de lojas
 const BASE_URL = '/stores';
+// Sub-URL para o admin ViewSet de lojas (registrado como router.register('stores', ...))
+// O roteador gera: /stores/stores/ (list) e /stores/stores/{id}/ (detail)
+// Não usar /stores/{id}/ pois o catch-all <slug:store_slug>/ intercepta e retorna 404
+const STORES_ADMIN_URL = `${BASE_URL}/stores`;
 
 const generateSlug = (name: string): string => {
   return name
@@ -436,11 +480,12 @@ const buildFormData = (data: Record<string, unknown>, includeFile = true): FormD
   return formData;
 };
 
-// Stores
+// Stores — Admin CRUD (usa STORES_ADMIN_URL = /stores/stores/)
+// Não usar BASE_URL/{id}/ pois o catch-all <slug:store_slug>/ intercepta antes
 export const getStores = async (): Promise<PaginatedResponse<Store>> => {
   try {
-    const response = await api.get(`${BASE_URL}/stores/`);
-    return response.data;
+    const response = await api.get(`${STORES_ADMIN_URL}/`);
+    return normalizePaginatedResponse<Store>(response.data);
   } catch (error) {
     logger.error('Failed to fetch stores', error);
     throw error;
@@ -449,7 +494,7 @@ export const getStores = async (): Promise<PaginatedResponse<Store>> => {
 
 export const getStore = async (id: string): Promise<Store> => {
   try {
-    const response = await api.get(`${BASE_URL}/stores/${id}/`);
+    const response = await api.get(`${STORES_ADMIN_URL}/${id}/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch store', error);
@@ -459,7 +504,7 @@ export const getStore = async (id: string): Promise<Store> => {
 
 export const createStore = async (data: StoreInput): Promise<Store> => {
   try {
-    const response = await api.post(`${BASE_URL}/stores/`, data);
+    const response = await api.post(`${STORES_ADMIN_URL}/`, data);
     return response.data;
   } catch (error) {
     logger.error('Failed to create store', error);
@@ -469,7 +514,7 @@ export const createStore = async (data: StoreInput): Promise<Store> => {
 
 export const updateStore = async (id: string, data: Partial<StoreInput>): Promise<Store> => {
   try {
-    const response = await api.patch(`${BASE_URL}/stores/${id}/`, data);
+    const response = await api.patch(`${STORES_ADMIN_URL}/${id}/`, data);
     return response.data;
   } catch (error) {
     logger.error('Failed to update store', error);
@@ -477,9 +522,32 @@ export const updateStore = async (id: string, data: Partial<StoreInput>): Promis
   }
 };
 
+export const updateStoreWithFiles = async (
+  id: string,
+  data: Partial<StoreInput> & { logo?: File | null; banner?: File | null }
+): Promise<Store> => {
+  try {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value === null || value === undefined) return;
+      if (value instanceof File) { formData.append(key, value); return; }
+      if (typeof value === 'object') { formData.append(key, JSON.stringify(value)); return; }
+      if (typeof value === 'boolean') { formData.append(key, value ? 'true' : 'false'); return; }
+      formData.append(key, String(value));
+    });
+    const response = await api.patch(`${STORES_ADMIN_URL}/${id}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to update store with files', error);
+    throw error;
+  }
+};
+
 export const deleteStore = async (id: string): Promise<void> => {
   try {
-    await api.delete(`${BASE_URL}/stores/${id}/`);
+    await api.delete(`${STORES_ADMIN_URL}/${id}/`);
   } catch (error) {
     logger.error('Failed to delete store', error);
     throw error;
@@ -488,7 +556,7 @@ export const deleteStore = async (id: string): Promise<void> => {
 
 export const getStoreStats = async (id: string): Promise<StoreStats> => {
   try {
-    const response = await api.get(`${BASE_URL}/stores/${id}/stats/`);
+    const response = await api.get(`${STORES_ADMIN_URL}/${id}/stats/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch store stats', error);
@@ -498,7 +566,7 @@ export const getStoreStats = async (id: string): Promise<StoreStats> => {
 
 export const activateStore = async (id: string): Promise<{ status: string }> => {
   try {
-    const response = await api.post(`${BASE_URL}/stores/${id}/activate/`);
+    const response = await api.post(`${STORES_ADMIN_URL}/${id}/activate/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to activate store', error);
@@ -508,7 +576,7 @@ export const activateStore = async (id: string): Promise<{ status: string }> => 
 
 export const deactivateStore = async (id: string): Promise<{ status: string }> => {
   try {
-    const response = await api.post(`${BASE_URL}/stores/${id}/deactivate/`);
+    const response = await api.post(`${STORES_ADMIN_URL}/${id}/deactivate/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to deactivate store', error);
@@ -518,7 +586,7 @@ export const deactivateStore = async (id: string): Promise<{ status: string }> =
 
 export const syncPastitaToStore = async (id: string): Promise<{ message: string; synced: Record<string, number> }> => {
   try {
-    const response = await api.post(`${BASE_URL}/stores/${id}/sync_pastita/`);
+    const response = await api.post(`${STORES_ADMIN_URL}/${id}/sync_pastita/`);
     return response.data;
   } catch (error) {
     logger.error('Failed to sync Pastita to store', error);
@@ -531,7 +599,7 @@ export const getIntegrations = async (storeId?: string): Promise<PaginatedRespon
   try {
     const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/integrations/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreIntegration>(response.data);
   } catch (error) {
     logger.error('Failed to fetch integrations', error);
     throw error;
@@ -643,7 +711,7 @@ export const getCategories = async (storeId?: string): Promise<PaginatedResponse
   try {
     const params = storeId ? { store: storeId, page_size: 100 } : { page_size: 100 };
     const response = await api.get(`${BASE_URL}/categories/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreCategory>(response.data);
   } catch (error) {
     logger.error('Failed to fetch categories', error);
     throw error;
@@ -655,9 +723,7 @@ export const createCategory = async (data: StoreCategoryInput): Promise<StoreCat
     const payload = { ...data, slug: data.slug || generateSlug(data.name) };
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(payload);
-      const response = await api.post(`${BASE_URL}/categories/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.post(`${BASE_URL}/categories/`, formData);
       return response.data;
     }
     const response = await api.post(`${BASE_URL}/categories/`, payload);
@@ -672,9 +738,7 @@ export const updateCategory = async (id: string, data: Partial<StoreCategoryInpu
   try {
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(data);
-      const response = await api.patch(`${BASE_URL}/categories/${id}/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.patch(`${BASE_URL}/categories/${id}/`, formData);
       return response.data;
     }
     const response = await api.patch(`${BASE_URL}/categories/${id}/`, data);
@@ -708,7 +772,7 @@ export const getProducts = async (params?: {
 }): Promise<PaginatedResponse<StoreProduct>> => {
   try {
     const response = await api.get(`${BASE_URL}/products/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreProduct>(response.data);
   } catch (error) {
     logger.error('Failed to fetch products', error);
     throw error;
@@ -730,9 +794,7 @@ export const createProduct = async (data: StoreProductInput): Promise<StoreProdu
     const payload = { ...data, slug: data.slug || generateSlug(data.name) };
     if (data.main_image && isFile(data.main_image)) {
       const formData = buildFormData(payload);
-      const response = await api.post(`${BASE_URL}/products/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.post(`${BASE_URL}/products/`, formData);
       return response.data;
     }
     const response = await api.post(`${BASE_URL}/products/`, payload);
@@ -747,9 +809,7 @@ export const updateProduct = async (id: string, data: Partial<StoreProductInput>
   try {
     if (data.main_image && isFile(data.main_image)) {
       const formData = buildFormData(data);
-      const response = await api.patch(`${BASE_URL}/products/${id}/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.patch(`${BASE_URL}/products/${id}/`, formData);
       return response.data;
     }
     const response = await api.patch(`${BASE_URL}/products/${id}/`, data);
@@ -826,10 +886,13 @@ export const getOrders = async (params?: {
   status?: string;
   payment_status?: string;
   search?: string;
+  ordering?: string;
+  page?: number;
+  page_size?: number;
 }): Promise<PaginatedResponse<StoreOrder>> => {
   try {
     const response = await api.get(`${BASE_URL}/orders/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreOrder>(response.data);
   } catch (error) {
     logger.error('Failed to fetch orders', error);
     throw error;
@@ -935,9 +998,31 @@ export const getOrderStats = async (storeId?: string): Promise<{
   week_revenue: number;
 }> => {
   try {
-    const params = storeId ? { store_id: storeId } : {};
+    const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/orders/stats/`, { params });
-    return response.data;
+    const data = response.data as {
+      total?: number;
+      today?: number;
+      by_status?: Record<string, number>;
+      revenue?: {
+        total?: number;
+        today?: number;
+        week?: number;
+      };
+    };
+
+    const byStatus = data?.by_status || {};
+    const revenue = data?.revenue || {};
+
+    return {
+      total_orders: Number(data?.today ?? 0),
+      pending_orders: Number(byStatus.pending ?? 0),
+      processing_orders: Number((byStatus.processing ?? 0) + (byStatus.preparing ?? 0) + (byStatus.confirmed ?? 0)),
+      completed_orders: Number((byStatus.delivered ?? 0) + (byStatus.completed ?? 0)),
+      total_revenue: Number(revenue.total ?? 0),
+      today_revenue: Number(revenue.today ?? 0),
+      week_revenue: Number(revenue.week ?? 0),
+    };
   } catch (error) {
     logger.error('Failed to fetch order stats', error);
     throw error;
@@ -948,10 +1033,12 @@ export const getOrderStats = async (storeId?: string): Promise<{
 export const getCustomers = async (params?: {
   store?: string;
   search?: string;
+  page?: number;
+  page_size?: number;
 }): Promise<PaginatedResponse<StoreCustomer>> => {
   try {
     const response = await api.get(`${BASE_URL}/customers/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreCustomer>(response.data);
   } catch (error) {
     logger.error('Failed to fetch customers', error);
     throw error;
@@ -1038,7 +1125,7 @@ export const getCoupons = async (storeId?: string): Promise<PaginatedResponse<St
   try {
     const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/coupons/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreCoupon>(response.data);
   } catch (error) {
     logger.error('Failed to fetch coupons', error);
     throw error;
@@ -1167,7 +1254,7 @@ export const getDeliveryZones = async (storeId?: string): Promise<PaginatedRespo
   try {
     const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/delivery-zones/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreDeliveryZone>(response.data);
   } catch (error) {
     logger.error('Failed to fetch delivery zones', error);
     throw error;
@@ -1358,6 +1445,40 @@ export const deleteCombo = async (id: string): Promise<void> => {
   }
 };
 
+export interface StoreComboItemInput {
+  product: string;
+  variant?: string;
+  quantity: number;
+  allow_customization?: boolean;
+  customization_options?: Record<string, unknown>;
+}
+
+export const createComboWithItems = async (
+  data: StoreComboInput & { items?: StoreComboItemInput[] }
+): Promise<StoreCombo> => {
+  try {
+    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    const response = await api.post(`${BASE_URL}/combos/`, payload);
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to create combo with items', error);
+    throw error;
+  }
+};
+
+export const updateComboWithItems = async (
+  id: string,
+  data: Partial<StoreComboInput> & { items?: StoreComboItemInput[] }
+): Promise<StoreCombo> => {
+  try {
+    const response = await api.patch(`${BASE_URL}/combos/${id}/`, data);
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to update combo with items', error);
+    throw error;
+  }
+};
+
 // =============================================================================
 // PRODUCT TYPE FUNCTIONS
 // =============================================================================
@@ -1408,9 +1529,7 @@ export const createProductType = async (data: StoreProductTypeInput): Promise<St
     const payload = { ...data, slug: data.slug || generateSlug(data.name) };
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(payload);
-      const response = await api.post(`${BASE_URL}/product-types/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.post(`${BASE_URL}/product-types/`, formData);
       return response.data;
     }
     const response = await api.post(`${BASE_URL}/product-types/`, payload);
@@ -1425,9 +1544,7 @@ export const updateProductType = async (id: string, data: Partial<StoreProductTy
   try {
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(data);
-      const response = await api.patch(`${BASE_URL}/product-types/${id}/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.patch(`${BASE_URL}/product-types/${id}/`, formData);
       return response.data;
     }
     const response = await api.patch(`${BASE_URL}/product-types/${id}/`, data);
@@ -1454,6 +1571,7 @@ export default {
   getStore,
   createStore,
   updateStore,
+  updateStoreWithFiles,
   deleteStore,
   getStoreStats,
   activateStore,

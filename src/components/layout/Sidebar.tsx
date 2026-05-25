@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   HomeIcon,
   DevicePhoneMobileIcon,
   ChatBubbleLeftRightIcon,
+  ChatBubbleBottomCenterTextIcon,
   InboxIcon,
   ShoppingCartIcon,
   CreditCardIcon,
@@ -11,33 +12,23 @@ import {
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   BoltIcon,
-  BuildingOfficeIcon,
   UserGroupIcon,
-  DocumentTextIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  ClockIcon,
-  DocumentChartBarIcon,
   TagIcon,
   Squares2X2Icon,
   XMarkIcon,
   BuildingStorefrontIcon,
-  PresentationChartLineIcon,
   MegaphoneIcon,
-  EnvelopeIcon,
-  PlusCircleIcon,
-  PlusIcon,
-  MagnifyingGlassIcon,
-  ChatBubbleBottomCenterTextIcon,
-  FolderIcon,
   SparklesIcon,
-  ShareIcon,
-  ArchiveBoxIcon,
-  ReceiptPercentIcon,
-  QueueListIcon,
-  Bars3BottomLeftIcon,
-  SwatchIcon,
-  TruckIcon,
+  LinkIcon,
+  DocumentTextIcon,
+  DocumentChartBarIcon,
+  EnvelopeIcon,
+  PlusIcon,
+  BuildingOfficeIcon,
+  ClockIcon,
+  PresentationChartLineIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -67,7 +58,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { store } = useStore();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const totalUnreadCount = useTotalUnreadCount();
   const wsConnected = useWsConnected();
 
@@ -77,210 +67,130 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     return (path: string) => (storeKey ? `${storeRoot}/${path}` : '/stores');
   }, [storeKey, storeRoot]);
 
-  // Menu reorganizado - ATUALIZADO COM TODAS FUNCIONALIDADES DO BACKEND
   const navigationSections: NavSection[] = useMemo(() => [
     {
-      title: 'Principal',
+      title: 'Operação',
       items: [
         { name: 'Dashboard', href: '/', icon: HomeIcon },
         { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon },
-        { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
-        { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
-      ]
-    },
-    {
-      title: 'Comunicação',
-      items: [
-        { 
-          name: 'Conversas', 
-          href: '/conversations', 
-          icon: ChatBubbleLeftRightIcon,
+        {
+          name: 'WhatsApp',
+          href: '/whatsapp/inbox',
+          icon: DevicePhoneMobileIcon,
           badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
         },
-        { 
-          name: 'WhatsApp', 
-          href: '/whatsapp/chat', 
-          icon: DevicePhoneMobileIcon,
-          children: [
-            { name: 'Chat', href: '/whatsapp/chat', icon: ChatBubbleLeftRightIcon },
-            { name: 'Contas', href: '/accounts', icon: DevicePhoneMobileIcon },
-            { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-            { name: 'Analytics', href: '/analytics', icon: PresentationChartLineIcon },
-            { name: 'Diagnóstico', href: '/whatsapp/diagnostics', icon: Cog6ToothIcon },
-          ]
-        },
-        { 
-          name: 'Instagram', 
-          href: '/instagram/inbox', 
+        {
+          name: 'Conversas',
+          href: '/conversations',
           icon: ChatBubbleLeftRightIcon,
-          children: [
-            { name: 'Mensagens', href: '/instagram/inbox', icon: InboxIcon },
-            { name: 'Contas', href: '/instagram/accounts', icon: UserGroupIcon },
-          ]
         },
-        { 
-          name: 'Messenger', 
-          href: '/messenger/inbox', 
-          icon: ChatBubbleBottomCenterTextIcon,
+        { name: 'Clientes', href: storeHref('customers'), icon: UserGroupIcon },
+      ]
+    },
+    {
+      title: 'Catálogo',
+      items: [
+        { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
+        { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
+        { name: 'Storefront', href: storeHref('storefront'), icon: BuildingStorefrontIcon },
+      ]
+    },
+    {
+      title: 'Análise',
+      items: [
+        {
+          name: 'Relatórios',
+          href: '/analytics',
+          icon: PresentationChartLineIcon,
           children: [
-            { name: 'Mensagens', href: '/messenger/inbox', icon: InboxIcon },
-            { name: 'Contas', href: '/messenger/accounts', icon: UserGroupIcon },
-          ]
+            { name: 'Visão Geral', href: '/analytics', icon: PresentationChartLineIcon },
+            ...(user?.is_staff || user?.email === 'caiogn2002@gmail.com'
+              ? [{ name: 'Ce-Saladas 🥗', href: '/analytics/saladas', icon: PresentationChartLineIcon }]
+              : []),
+          ],
         },
-        { 
-          name: 'Marketing', 
-          href: '/marketing', 
+      ],
+    },
+    {
+      title: 'Ferramentas',
+      items: [
+        {
+          name: 'Marketing',
+          href: '/marketing',
           icon: MegaphoneIcon,
           children: [
-            { name: 'Dashboard', href: '/marketing', icon: MegaphoneIcon },
-            { name: 'Campanhas Email', href: '/marketing/email/campaigns', icon: EnvelopeIcon },
             { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp', icon: DevicePhoneMobileIcon },
             { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-            { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
-            { name: 'Automações', href: '/marketing/automations', icon: BoltIcon },
+            ...(user?.is_staff
+              ? [
+                  { name: 'Campanhas Email', href: '/marketing/email/campaigns', icon: EnvelopeIcon },
+                  { name: 'Assinantes', href: '/marketing/subscribers', icon: UserGroupIcon },
+                ]
+              : []),
           ]
         },
-      ]
-    },
-    {
-      title: 'Automação & IA',
-      items: [
-        { 
-          name: 'Agentes IA', 
-          href: '/agents', 
-          icon: CpuChipIcon,
-          badge: 'Novo',
+        ...(user?.is_staff
+          ? [{
+              name: 'Agentes IA',
+              href: '/agents',
+              icon: CpuChipIcon,
+              badge: 'IA',
+              children: [
+                { name: 'Lista de Agentes', href: '/agents', icon: CpuChipIcon },
+                { name: 'Novo Agente', href: '/agents/new', icon: PlusIcon },
+                { name: 'Intenções', href: '/automation/intents/stats', icon: SparklesIcon },
+                { name: 'Logs', href: '/automation/logs', icon: DocumentChartBarIcon },
+              ]
+            }]
+          : []),
+        {
+          name: 'Canais',
+          href: '/connections',
+          icon: LinkIcon,
           children: [
-            { name: 'Lista de Agentes', href: '/agents', icon: CpuChipIcon },
-            { name: 'Novo Agente', href: '/agents/new', icon: PlusIcon },
-            { name: 'Testar Orquestrador', href: '/agents/test/orchestrator', icon: SparklesIcon },
+            { name: 'Conexões', href: '/connections', icon: LinkIcon },
+            { name: 'Handover', href: '/whatsapp/handover', icon: UserGroupIcon },
+            ...(user?.is_staff
+              ? [
+                  { name: 'Instagram', href: '/instagram/inbox', icon: ChatBubbleLeftRightIcon },
+                  { name: 'Messenger', href: '/messenger/inbox', icon: ChatBubbleBottomCenterTextIcon },
+                ]
+              : []),
           ]
         },
         {
-          name: 'Automação',
-          href: '/automation/companies',
-          icon: BoltIcon,
+          name: 'Configurações',
+          href: '/stores',
+          icon: Cog6ToothIcon,
           children: [
-            { name: 'Empresas', href: '/automation/companies', icon: BuildingOfficeIcon },
-            { name: 'Sessões Clientes', href: '/automation/sessions', icon: UserGroupIcon },
-            { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
-            { name: 'Logs', href: '/automation/logs', icon: DocumentChartBarIcon },
-            { name: 'Relatórios', href: '/automation/reports', icon: DocumentChartBarIcon },
-          ]
-        },
-        {
-          name: 'Intenções (Novo)',
-          href: '/automation/intents',
-          icon: SparklesIcon,
-          badge: 'Novo',
-          children: [
-            { name: 'Estatísticas', href: '/automation/intents', icon: PresentationChartLineIcon },
-            { name: 'Logs de Intenções', href: '/automation/intents/logs', icon: DocumentChartBarIcon },
-          ]
-        },
-      ]
-    },
-    {
-      title: 'Analytics & Dados',
-      items: [
-        { name: 'Analytics', href: storeHref('analytics'), icon: PresentationChartLineIcon },
-        { name: 'Relatórios', href: '/reports', icon: DocumentChartBarIcon },
-        { 
-          name: 'Lojas', 
-          href: '/stores', 
-          icon: BuildingStorefrontIcon,
-          children: [
-            { name: 'Todas Lojas', href: '/stores', icon: BuildingStorefrontIcon },
-            { name: 'Configurações', href: storeHref('settings'), icon: Cog6ToothIcon },
+            { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
+            { name: 'Configurações da Loja', href: storeHref('settings'), icon: Cog6ToothIcon },
             { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
+            { name: 'Sistema', href: '/settings', icon: Cog6ToothIcon },
           ]
-        },
-      ]
-    },
-    {
-      title: 'Sistema',
-      items: [
-        { 
-          name: 'Configurações Gerais', 
-          href: '/settings', 
-          icon: Cog6ToothIcon 
-        },
-        { 
-          name: 'Entregas', 
-          href: storeHref('delivery'), 
-          icon: TruckIcon 
         },
       ]
     },
   ], [storeHref, totalUnreadCount]);
-  
-  
-  // Filter items by search
-  const filteredSections = useMemo(() => {
-    if (!searchQuery.trim()) return navigationSections;
-    
-    const query = searchQuery.toLowerCase();
-    return navigationSections
-      .map(section => ({
-        ...section,
-        items: section.items.filter(item => 
-          item.name.toLowerCase().includes(query) ||
-          item.children?.some(child => child.name.toLowerCase().includes(query))
-        )
-      }))
-      .filter(section => section.items.length > 0);
-  }, [navigationSections, searchQuery]);
+
+  const filteredSections = navigationSections;
 
   // Dynamic brand info based on selected store
   const brandInfo = useMemo(() => {
-    // Default Pastita branding with local SVG logo
-    const defaultBrand = {
-      name: 'Pastita',
-      logo: '/pastita-logo.svg',
-      primaryColor: '#722F37',
-      secondaryColor: '#8B3A42',
+    if (!store) return {
+      name: 'Painel',
+      logo: null,
+      primaryColor: '#6366f1',
+      secondaryColor: '#4f46e5',
       initial: 'P',
     };
-
-    if (!store) return defaultBrand;
-
-    // Check if it's Agrião based on store name or slug
-    const isAgriao = store.name?.toLowerCase().includes('agriao') || 
-                     store.slug?.toLowerCase().includes('agriao');
-
-    if (isAgriao) {
-      return {
-        name: store.name || 'Agrião',
-        logo: store.logo_url || null,
-        primaryColor: '#4A5D23',
-        secondaryColor: '#6B8E23',
-        initial: 'A',
-      };
-    }
-
-    // For Pastita stores, use local SVG logo
-    const isPastita = store.name?.toLowerCase().includes('pastita') || 
-                      store.slug?.toLowerCase().includes('pastita');
-
     return {
-      name: store.name || 'Pastita',
-      logo: isPastita ? '/pastita-logo.svg' : (store.logo_url || null),
-      primaryColor: store.primary_color || '#722F37',
-      secondaryColor: store.secondary_color || '#8B3A42',
-      initial: store.name?.[0]?.toUpperCase() || 'P',
+      name: store.name,
+      logo: store.logo_url || null,
+      primaryColor: store.primary_color || '#6366f1',
+      secondaryColor: store.secondary_color || '#4f46e5',
+      initial: store.name?.[0]?.toUpperCase() || 'L',
     };
-  }, [store]);
-
-  // Apply theme based on store
-  useEffect(() => {
-    const isAgriao = store?.name?.toLowerCase().includes('agriao') || 
-                     store?.slug?.toLowerCase().includes('agriao');
-    
-    if (isAgriao) {
-      document.documentElement.setAttribute('data-theme', 'agriao');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
   }, [store]);
 
   const handleLogout = () => {
@@ -300,6 +210,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     );
   };
 
+  useEffect(() => {
+    const activeParents = navigationSections
+      .flatMap((section) => section.items)
+      .filter((item) => item.children?.some((child) => location.pathname.startsWith(child.href)))
+      .map((item) => item.name);
+
+    if (activeParents.length === 0) return;
+    setExpandedItems((prev) => Array.from(new Set([...prev, ...activeParents])));
+  }, [location.pathname, navigationSections]);
+
   const isItemActive = (item: NavItem): boolean => {
     if (location.pathname === item.href) return true;
     if (item.children) {
@@ -308,42 +228,45 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     return false;
   };
 
-  const renderNavItem = (item: NavItem, depth = 0) => {
+  const renderNavItem = (item: NavItem, depth = 0, isPrimary = false) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.name);
     const isActive = isItemActive(item);
 
+    const primaryActive = 'bg-primary-50 dark:bg-zinc-900 text-primary-700 dark:text-primary-400 font-semibold';
+    const primaryIdle   = 'text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800';
+    const secondaryActive = 'bg-primary-50 dark:bg-zinc-900 text-primary-700 dark:text-primary-400';
+    const secondaryIdle   = 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white';
+
+    const itemClass = (active: boolean) => [
+      'w-full flex items-center justify-between rounded-lg transition-colors',
+      isPrimary ? 'px-3 py-2.5 text-sm' : 'px-3 py-2 text-sm',
+      active ? (isPrimary ? primaryActive : secondaryActive) : (isPrimary ? primaryIdle : secondaryIdle),
+    ].join(' ');
+
     if (hasChildren) {
       return (
         <div key={item.name}>
-          <button
-            onClick={() => toggleExpand(item.name)}
-            className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-              isActive 
-                ? 'bg-primary-50 dark:bg-zinc-900 text-primary-700 dark:text-primary-400' 
-                : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <div className="flex items-center">
-              <item.icon className="w-5 h-5 mr-3" />
-              {item.name}
+          <button onClick={() => toggleExpand(item.name)} className={itemClass(isActive)}>
+            <div className="flex items-center gap-3">
+              <item.icon className={isPrimary ? 'w-5 h-5' : 'w-4 h-4'} />
+              <span>{item.name}</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {item.badge && (
-                <span className="text-xs bg-primary-100 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold bg-primary-100 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded-full">
                   {item.badge}
                 </span>
               )}
-              {isExpanded ? (
-                <ChevronDownIcon className="w-4 h-4" />
-              ) : (
-                <ChevronRightIcon className="w-4 h-4" />
-              )}
+              {isExpanded
+                ? <ChevronDownIcon className="w-3.5 h-3.5 opacity-50" />
+                : <ChevronRightIcon className="w-3.5 h-3.5 opacity-50" />
+              }
             </div>
           </button>
           {isExpanded && (
-            <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-zinc-800 pl-2">
-              {item.children!.map(child => renderNavItem(child, depth + 1))}
+            <div className="ml-3 mt-0.5 space-y-0.5 border-l-2 border-gray-100 dark:border-zinc-800 pl-3">
+              {item.children!.map(child => renderNavItem(child, depth + 1, false))}
             </div>
           )}
         </div>
@@ -356,20 +279,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         to={item.href}
         end={item.href === '/'}
         onClick={handleNavClick}
-        className={({ isActive }) =>
-          `flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-            isActive
-              ? 'bg-primary-50 dark:bg-zinc-900 text-primary-700 dark:text-primary-400'
-              : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
-          }`
-        }
+        className={({ isActive: active }) => itemClass(active)}
       >
-        <div className="flex items-center">
-          <item.icon className="w-5 h-5 mr-3" />
-          {item.name}
+        <div className="flex items-center gap-3">
+          <item.icon className={isPrimary ? 'w-5 h-5' : 'w-4 h-4'} />
+          <span>{item.name}</span>
         </div>
         {item.badge && (
-          <span className="text-xs bg-primary-100 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded">
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+            /^\d+$/.test(item.badge)
+              ? 'bg-red-500 text-white min-w-[18px] text-center'
+              : 'bg-primary-100 dark:bg-zinc-800 text-primary-700 dark:text-primary-400'
+          }`}>
             {item.badge}
           </span>
         )}
@@ -378,9 +299,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-black border-r border-gray-200 dark:border-zinc-800 w-64 transition-colors">
+    <div className="flex flex-col h-full bg-white/90 dark:bg-black/90 backdrop-blur-xl border-r border-white/40 dark:border-zinc-800 w-64 transition-colors">
       {/* Dynamic Logo based on selected store */}
-      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-zinc-800">
+      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200/80 dark:border-zinc-800">
         <div className="flex items-center gap-3">
           {brandInfo.logo ? (
             <img 
@@ -418,48 +339,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         )}
       </div>
 
-      {/* Quick Search */}
-      <div className="px-3 py-2">
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-zinc-500" />
-          <input
-            type="text"
-            placeholder="Buscar menu..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn(
-              'w-full pl-9 pr-3 py-2 text-sm',
-              'bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800',
-              'rounded-lg placeholder-gray-400 dark:placeholder-zinc-500',
-              'text-gray-900 dark:text-zinc-100',
-              'focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500',
-              'transition-all duration-200'
-            )}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300"
-            >
-              <XMarkIcon className="w-4 h-4" />
-            </button>
-          )}
+      <div className="px-4 py-2.5 border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-gray-500 dark:text-zinc-500">
+            {store?.name || 'Loja'}
+          </span>
+          <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} title={wsConnected ? 'Conectado' : 'Desconectado'} />
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-2 overflow-y-auto smooth-scroll">
-        {filteredSections.map((section, index) => (
-          <div key={section.title} className={cn('animate-fade-up', index > 0 ? 'mt-5' : '')}>
-            <h3 className="px-3 mb-2 text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">
-              {section.title}
-            </h3>
-            <div className="space-y-0.5">
-              {section.items.map((item) => renderNavItem(item))}
+        {filteredSections.map((section, index) => {
+          const isPrimary = section.title === 'Operação';
+          return (
+            <div key={section.title} className={cn('animate-fade-up', index > 0 ? 'mt-4' : '')}>
+              <h3 className="px-3 mb-1.5 text-[10px] font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-widest">
+                {section.title}
+              </h3>
+              <div className={isPrimary ? 'space-y-0.5' : 'space-y-0.5'}>
+                {section.items.map((item) => renderNavItem(item, 0, isPrimary))}
+              </div>
             </div>
-          </div>
-        ))}
-        {filteredSections.length === 0 && searchQuery && (
+          );
+        })}
+        {filteredSections.length === 0 && (
           <div className="px-3 py-8 text-center">
             <p className="text-sm text-gray-500 dark:text-zinc-400">
               Nenhum item encontrado

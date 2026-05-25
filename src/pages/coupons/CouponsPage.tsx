@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import logger from '../../services/logger';
 import {
   PlusIcon,
@@ -16,10 +17,14 @@ import { useStore } from '../../hooks';
 
 export const CouponsPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName, isStoreSelected } = useStore();
-  
-  // Use route storeId if available, otherwise use context
-  const storeId = routeStoreId || contextStoreId;
+  const { storeId: contextStoreId, storeName, isStoreSelected, stores } = useStore();
+
+  // Resolve route param (could be slug or UUID) to UUID
+  const storeId = useMemo(() => {
+    if (!routeStoreId) return contextStoreId || undefined;
+    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    return match?.id || contextStoreId || undefined;
+  }, [routeStoreId, contextStoreId, stores]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [stats, setStats] = useState<CouponStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,9 +165,11 @@ export const CouponsPage: React.FC = () => {
   const handleToggleActive = async (coupon: Coupon) => {
     try {
       await couponsService.toggleActive(coupon.id);
+      toast.success(coupon.is_active ? 'Cupom desativado' : 'Cupom ativado');
       loadCoupons();
     } catch (error) {
       logger.error('Error toggling coupon:', error);
+      toast.error('Erro ao atualizar cupom');
     }
   };
 
@@ -171,11 +178,13 @@ export const CouponsPage: React.FC = () => {
     try {
       setSaving(true);
       await couponsService.deleteCoupon(deletingCoupon.id);
+      toast.success('Cupom excluído');
       setIsDeleteModalOpen(false);
       setDeletingCoupon(null);
       loadCoupons();
     } catch (error) {
       logger.error('Error deleting coupon:', error);
+      toast.error('Erro ao excluir cupom');
     } finally {
       setSaving(false);
     }
@@ -205,7 +214,7 @@ export const CouponsPage: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Cupons de Desconto</h1>
           <p className="text-sm md:text-base text-gray-500 dark:text-zinc-400">Gerencie os cupons de desconto da loja</p>
@@ -218,7 +227,7 @@ export const CouponsPage: React.FC = () => {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 gap-3 md:gap-4">
           <Card className="p-3 md:p-4">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg shrink-0">
@@ -268,7 +277,7 @@ export const CouponsPage: React.FC = () => {
 
       {/* Filters */}
       <Card className="p-3 md:p-4">
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+        <div className="flex flex-row max-sm:flex-col gap-3 md:gap-4">
           <div className="flex-1">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -375,7 +384,7 @@ export const CouponsPage: React.FC = () => {
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="block max-md:hidden overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 dark:bg-black">
               <tr>

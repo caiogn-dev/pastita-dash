@@ -48,6 +48,9 @@ export interface WhatsAppConversation {
   id: string;
   phone_number: string;
   contact_name: string;
+  wa_id?: string;
+  profile_picture?: string;
+  profile_picture_url?: string;
   status: string;
   mode: string;
   created_at: string;
@@ -122,6 +125,7 @@ interface UseWhatsAppWSOptions {
 interface UseWhatsAppWSReturn {
   isConnected: boolean;
   connectionError: string | null;
+  retry: () => void;
   subscribeToConversation: (conversationId: string) => void;
   unsubscribeFromConversation: (conversationId: string) => void;
   sendTypingIndicator: (conversationId: string, isTyping: boolean) => void;
@@ -170,12 +174,12 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     
     const proto = host.includes('railway') || host.includes('vercel') || location.protocol === 'https:' ? 'wss' : 'ws';
     
-    if (dashboardMode && accountId) {
-      return `${proto}://${host}/ws/whatsapp-dashboard/${accountId}/?token=${token}`;
+    if (dashboardMode) {
+      return `${proto}://${host}/ws/whatsapp/dashboard/`;
     }
-    
+
     if (!accountId) return null;
-    return `${proto}://${host}/ws/whatsapp/${accountId}/?token=${token}`;
+    return `${proto}://${host}/ws/whatsapp/${accountId}/`;
   }, [token, accountId, dashboardMode]);
 
   // Handle incoming messages
@@ -261,30 +265,42 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     }
 
     isConnecting.current = true;
-    console.log('[WhatsApp WS] Connecting to:', url.replace(/token=.*/, 'token=***'));
+    console.log('[WhatsApp WS] Connecting to:', url);
 
     try {
       const socket = new WebSocket(url);
       ws.current = socket;
 
       socket.onopen = () => {
-        console.log('[WhatsApp WS] Connected ✓');
-        isConnecting.current = false;
-        setIsConnected(true);
-        setConnectionError(null);
-        attempts.current = 0;
-        opts.current.onConnectionChange?.(true);
-
-        // Ping every 25s to keep connection alive
-        if (pingTimer.current) window.clearInterval(pingTimer.current);
-        pingTimer.current = window.setInterval(() => {
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({ type: 'ping' }));
-          }
-        }, 25000);
+        console.log('[WhatsApp WS] Open, sending auth...');
+        // First-message auth — token never in URL
+        if (token) {
+          socket.send(JSON.stringify({ type: 'auth', token }));
+        }
+        // connection_established from server triggers connected state
       };
 
-      socket.onmessage = handleMessage;
+      socket.onmessage = (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data) as { type: string };
+          if (data.type === 'connection_established') {
+            console.log('[WhatsApp WS] Authenticated ✓');
+            isConnecting.current = false;
+            setIsConnected(true);
+            setConnectionError(null);
+            attempts.current = 0;
+            opts.current.onConnectionChange?.(true);
+            if (pingTimer.current) window.clearInterval(pingTimer.current);
+            pingTimer.current = window.setInterval(() => {
+              if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'ping' }));
+              }
+            }, 25000);
+            return;
+          }
+        } catch { /* fall through to handleMessage */ }
+        handleMessage(event);
+      };
 
       socket.onclose = (e) => {
         console.log('[WhatsApp WS] Closed:', e.code, e.reason);
@@ -391,9 +407,16 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     };
   }, [connect, enabled, accountId, dashboardMode]);
 
+  const retry = useCallback(() => {
+    attempts.current = 0;
+    setConnectionError(null);
+    connect();
+  }, [connect]);
+
   const returnValue = {
     isConnected,
     connectionError,
+    retry,
     subscribeToConversation,
     unsubscribeFromConversation,
     sendTypingIndicator,

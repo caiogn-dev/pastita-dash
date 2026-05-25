@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
-import { SkeletonTable } from '../atoms/Skeleton';
+import { TableSkeleton as SkeletonTable } from '../ui/skeleton';
 
 export interface Column<T> {
   key: string;

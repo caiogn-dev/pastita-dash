@@ -1,6 +1,8 @@
 import api from './api';
 import { PaginatedResponse } from '../types';
-import { getStoreSlugWithFallback } from '../hooks/useStore';
+
+// Store slug for legacy operations. Never default to a specific tenant.
+const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || '';
 
 export interface Product {
   id: string;
@@ -61,11 +63,10 @@ let cachedCategories: Category[] | null = null;
 
 async function getStoreId(): Promise<string> {
   if (cachedStoreId) return cachedStoreId;
-  const storeSlug = getStoreSlugWithFallback();
-  if (!storeSlug) return '';
   
   try {
-    const response = await api.get('/stores/stores/', { params: { slug: storeSlug } });
+    // ATUALIZADO: Usando /stores/ em vez de /commerce/
+    const response = await api.get('/stores/', { params: { slug: STORE_SLUG } });
     const stores = response.data.results || response.data;
     if (stores.length > 0) {
       cachedStoreId = stores[0].id as string;
@@ -81,6 +82,7 @@ async function getCategoriesWithIds(): Promise<Category[]> {
   if (cachedCategories) return cachedCategories;
   
   try {
+    // ATUALIZADO: Usando /stores/categories/ em vez de /commerce/categories/
     const response = await api.get('/stores/categories/');
     const data = response.data;
     const results = data.results || data || [];
@@ -150,6 +152,7 @@ const buildProductFormData = async (data: CreateProduct | UpdateProduct, include
 };
 
 class ProductsService {
+  // ATUALIZADO: Usando /stores/ em vez de /commerce/ (2026-03-04)
   private baseUrl = '/stores/products';
   private categoriesUrl = '/stores/categories';
 
@@ -157,8 +160,9 @@ class ProductsService {
     const params = new URLSearchParams();
     if (filters?.search) params.append('search', filters.search);
     if (filters?.category) params.append('category', filters.category);
-    if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
     if (filters?.store) params.append('store', filters.store);
+    // Backend uses status field ('active'/'inactive'), not is_active boolean
+    if (filters?.is_active !== undefined) params.append('status', filters.is_active ? 'active' : 'inactive');
     if (filters?.ordering) params.append('ordering', filters.ordering);
     if (filters?.page) params.append('page', String(filters.page));
     if (filters?.page_size) params.append('page_size', String(filters.page_size));
@@ -176,17 +180,13 @@ class ProductsService {
 
   async createProduct(data: CreateProduct): Promise<Product> {
     const formData = await buildProductFormData(data, true);
-    const response = await api.post<Product>(`${this.baseUrl}/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post<Product>(`${this.baseUrl}/`, formData);
     return response.data;
   }
 
   async updateProduct(id: string, data: UpdateProduct): Promise<Product> {
     const formData = await buildProductFormData(data, false);
-    const response = await api.patch<Product>(`${this.baseUrl}/${id}/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.patch<Product>(`${this.baseUrl}/${id}/`, formData);
     return response.data;
   }
 

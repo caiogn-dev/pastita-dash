@@ -17,47 +17,38 @@ export interface MessengerAccount {
 
 export interface MessengerConversation {
   id: string;
+  messenger_conversation_id?: string;
   account: string;
-  account_name?: string;
-  sender_id: string;
-  sender_name: string;
-  status: 'open' | 'closed' | 'pending';
-  last_message?: string;
-  last_message_at?: string;
+  psid: string;
+  participant_name?: string;
+  participant_profile_pic?: string;
+  status?: string;
+  is_active: boolean;
   unread_count: number;
-  is_bot_active: boolean;
-  handover_status: 'bot' | 'human' | 'pending';
-  assigned_to?: number;
+  last_message_at?: string;
+  last_message_preview?: string;
+  last_message?: { type: string; content: string; created_at: string } | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface MessengerMessage {
   id: string;
+  messenger_message_id?: string;
   conversation: string;
-  sender_id: string;
-  sender_name: string;
+  message_type: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE' | 'STICKER' | 'TEMPLATE' | 'POSTBACK' | 'QUICK_REPLY';
   content: string;
-  message_type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'template';
-  media_url?: string;
-  attachments?: Array<{
-    type: string;
-    url: string;
-    name?: string;
-  }>;
-  quick_replies?: Array<{
-    title: string;
-    payload: string;
-  }>;
-  buttons?: Array<{
-    type: string;
-    title: string;
-    url?: string;
-    payload?: string;
-  }>;
-  is_from_bot: boolean;
+  direction?: 'inbound' | 'outbound';
+  attachment_url?: string;
+  attachment_type?: string;
+  template_payload?: Record<string, unknown>;
+  quick_replies?: Array<{ title: string; payload: string }>;
+  is_from_page: boolean;
   is_read: boolean;
-  mid?: string;  // Messenger message ID
+  status?: string;
+  delivered_at?: string;
+  read_at?: string;
+  sent_at: string;
   created_at: string;
 }
 
@@ -114,143 +105,119 @@ export interface SponsoredMessage {
   created_at: string;
 }
 
-const BASE_URL = '/messaging/messenger';
-
+/**
+ * CORREÇÃO: Todos os endpoints atualizados para usar /messaging/messenger/
+ * conforme definido no backend em apps/messaging/urls.py
+ */
 export const messengerService = {
   // Accounts
-  getAccounts: () => api.get<MessengerAccount[]>(`${BASE_URL}/accounts/`),
-  
-  getAccount: (id: string) => api.get<MessengerAccount>(`${BASE_URL}/accounts/${id}/`),
-  
+  getAccounts: () => api.get<MessengerAccount[]>('/messaging/messenger/accounts/'),
+
+  getAccount: (id: string) => api.get<MessengerAccount>(`/messaging/messenger/accounts/${id}/`),
+
   createAccount: (data: {
     name: string;
     page_id: string;
     page_name: string;
     page_access_token: string;
-  }) => api.post<MessengerAccount>(`${BASE_URL}/accounts/`, data),
-  
+  }) => api.post<MessengerAccount>('/messaging/messenger/accounts/', data),
+
   updateAccount: (id: string, data: Partial<MessengerAccount>) =>
-    api.patch<MessengerAccount>(`${BASE_URL}/accounts/${id}/`, data),
-  
-  deleteAccount: (id: string) => api.delete(`${BASE_URL}/accounts/${id}/`),
-  
-  verifyWebhook: (id: string) => api.post(`${BASE_URL}/accounts/${id}/sync/`),
-  
+    api.patch<MessengerAccount>(`/messaging/messenger/accounts/${id}/`, data),
+
+  deleteAccount: (id: string) => api.delete(`/messaging/messenger/accounts/${id}/`),
+
+  // NOTA: Endpoint verify_webhook não existe - usando sync como alternativa
+  verifyWebhook: (id: string) => api.post(`/messaging/messenger/accounts/${id}/sync/`),
+
   // Toggle auto-response
   toggleAutoResponse: (id: string, enabled: boolean) =>
-    api.patch<MessengerAccount>(`${BASE_URL}/accounts/${id}/`, { auto_response_enabled: enabled }),
-  
+    api.patch<MessengerAccount>(`/messaging/messenger/accounts/${id}/`, { auto_response_enabled: enabled }),
+
   // Toggle human handoff
   toggleHumanHandoff: (id: string, enabled: boolean) =>
-    api.patch<MessengerAccount>(`${BASE_URL}/accounts/${id}/`, { human_handoff_enabled: enabled }),
-  
+    api.patch<MessengerAccount>(`/messaging/messenger/accounts/${id}/`, { human_handoff_enabled: enabled }),
+
   // Conversations
   getConversations: (accountId?: string) =>
-    api.get<MessengerConversation[]>(`${BASE_URL}/conversations/`, {
+    api.get<MessengerConversation[]>('/messaging/messenger/conversations/', {
       params: accountId ? { account: accountId } : undefined,
     }),
-  
+
   getConversation: (id: string) =>
-    api.get<MessengerConversation>(`${BASE_URL}/conversations/${id}/`),
-  
+    api.get<MessengerConversation>(`/messaging/messenger/conversations/${id}/`),
+
   markAsRead: (conversationId: string) =>
-    api.post(`${BASE_URL}/conversations/${conversationId}/mark_read/`),
-  
+    api.post(`/messaging/messenger/conversations/${conversationId}/mark-read/`),
+
   // Messages
   getMessages: (conversationId: string, params?: { limit?: number; offset?: number }) =>
-    api.get<MessengerMessage[]>(`${BASE_URL}/conversations/${conversationId}/messages/`, { params }),
-  
+    api.get<MessengerMessage[]>(`/messaging/messenger/conversations/${conversationId}/messages/`, { params }),
+
   sendMessage: (conversationId: string, data: {
     content: string;
     message_type?: string;
     attachments?: any[];
     quick_replies?: any[];
-  }) => api.post<MessengerMessage>(`${BASE_URL}/conversations/${conversationId}/send_message/`, {
-    content: data.content,
-    type: data.message_type || 'text',
-    attachments: data.attachments,
-    quick_replies: data.quick_replies,
-  }),
-  
+  }) => api.post<MessengerMessage>(`/messaging/messenger/conversations/${conversationId}/send-message/`, data),
+
   // Profile
   getProfile: (accountId: string) =>
-    api.get<MessengerProfile>(`${BASE_URL}/profile/get/`, { params: { account_id: accountId } }),
-  
-  updateProfile: async (accountId: string, data: MessengerProfile) => {
-    if (data.greeting?.length) {
-      await api.post(`${BASE_URL}/profile/greeting/`, {
-        text: data.greeting[0].text,
-        locale: data.greeting[0].locale || 'default',
-      }, { params: { account_id: accountId } });
-    }
-    if (data.ice_breakers?.length) {
-      await api.post(`${BASE_URL}/profile/ice_breakers/`, {
-        ice_breakers: data.ice_breakers,
-      }, { params: { account_id: accountId } });
-    }
-    if (data.persistent_menu?.length) {
-      await api.post(`${BASE_URL}/profile/persistent_menu/`, {
-        menu_items: data.persistent_menu[0].call_to_actions || [],
-      }, { params: { account_id: accountId } });
-    }
-    if (data.whitelisted_domains?.length) {
-      await api.post(`${BASE_URL}/profile/whitelist_domains/`, {
-        domains: data.whitelisted_domains,
-      }, { params: { account_id: accountId } });
-    }
-    return { data };
-  },
-  
+    api.get<MessengerProfile>(`/messaging/messenger/accounts/${accountId}/profile/`),
+
+  updateProfile: (accountId: string, data: MessengerProfile) =>
+    api.patch(`/messaging/messenger/accounts/${accountId}/profile/`, data),
+
   // Broadcast
   getBroadcasts: (accountId?: string) =>
-    api.get<BroadcastMessage[]>(`${BASE_URL}/broadcasts/`, {
+    api.get<BroadcastMessage[]>('/messaging/messenger/broadcasts/', {
       params: accountId ? { account: accountId } : undefined,
     }),
-  
-  getBroadcast: (id: string) => api.get<BroadcastMessage>(`${BASE_URL}/broadcasts/${id}/`),
-  
+
+  getBroadcast: (id: string) => api.get<BroadcastMessage>(`/messaging/messenger/broadcasts/${id}/`),
+
   createBroadcast: (data: Partial<BroadcastMessage>) =>
-    api.post<BroadcastMessage>(`${BASE_URL}/broadcasts/`, data),
-  
+    api.post<BroadcastMessage>('/messaging/messenger/broadcasts/', data),
+
   updateBroadcast: (id: string, data: Partial<BroadcastMessage>) =>
-    api.patch<BroadcastMessage>(`${BASE_URL}/broadcasts/${id}/`, data),
-  
-  deleteBroadcast: (id: string) => api.delete(`${BASE_URL}/broadcasts/${id}/`),
-  
+    api.patch<BroadcastMessage>(`/messaging/messenger/broadcasts/${id}/`, data),
+
+  deleteBroadcast: (id: string) => api.delete(`/messaging/messenger/broadcasts/${id}/`),
+
   scheduleBroadcast: (id: string, scheduledAt: string) =>
-    api.patch(`${BASE_URL}/broadcasts/${id}/`, { scheduled_at: scheduledAt, status: 'scheduled' }),
-  
+    api.post(`/messaging/messenger/broadcasts/${id}/schedule/`, { scheduled_at: scheduledAt }),
+
   cancelBroadcast: (id: string) =>
-    api.patch(`${BASE_URL}/broadcasts/${id}/`, { status: 'cancelled' }),
-  
+    api.post(`/messaging/messenger/broadcasts/${id}/cancel/`),
+
   sendBroadcast: (id: string) =>
-    api.post(`${BASE_URL}/broadcasts/${id}/send/`),
-  
+    api.post(`/messaging/messenger/broadcasts/${id}/send/`),
+
   getBroadcastStats: (id: string) =>
-    api.get(`${BASE_URL}/broadcasts/${id}/insights/`),
-  
+    api.get(`/messaging/messenger/broadcasts/${id}/stats/`),
+
   // Sponsored Messages
   getSponsoredMessages: (accountId?: string) =>
-    api.get<SponsoredMessage[]>(`${BASE_URL}/sponsored/`, {
+    api.get<SponsoredMessage[]>('/messaging/messenger/sponsored/', {
       params: accountId ? { account: accountId } : undefined,
     }),
-  
+
   getSponsoredMessage: (id: string) =>
-    api.get<SponsoredMessage>(`${BASE_URL}/sponsored/${id}/`),
-  
+    api.get<SponsoredMessage>(`/messaging/messenger/sponsored/${id}/`),
+
   createSponsoredMessage: (data: Partial<SponsoredMessage>) =>
-    api.post<SponsoredMessage>(`${BASE_URL}/sponsored/`, data),
-  
+    api.post<SponsoredMessage>('/messaging/messenger/sponsored/', data),
+
   updateSponsoredMessage: (id: string, data: Partial<SponsoredMessage>) =>
-    api.patch<SponsoredMessage>(`${BASE_URL}/sponsored/${id}/`, data),
-  
-  deleteSponsoredMessage: (id: string) => api.delete(`${BASE_URL}/sponsored/${id}/`),
-  
+    api.patch<SponsoredMessage>(`/messaging/messenger/sponsored/${id}/`, data),
+
+  deleteSponsoredMessage: (id: string) => api.delete(`/messaging/messenger/sponsored/${id}/`),
+
   publishSponsoredMessage: (id: string) =>
-    api.post(`${BASE_URL}/sponsored/${id}/submit/`),
-  
+    api.post(`/messaging/messenger/sponsored/${id}/publish/`),
+
   pauseSponsoredMessage: (id: string) =>
-    api.post(`${BASE_URL}/sponsored/${id}/pause/`),
+    api.post(`/messaging/messenger/sponsored/${id}/pause/`),
 };
 
 export default messengerService;

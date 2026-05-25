@@ -27,7 +27,7 @@ export const PageTitle: React.FC<PageTitleProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 md:mb-6 ${className}`}>
+    <div className={`flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 md:mb-6 ${className}`}>
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
           {title}

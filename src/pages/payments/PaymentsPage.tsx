@@ -52,6 +52,22 @@ const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: React.ReactNo
   mercadopago: { label: 'Mercado Pago', icon: <CurrencyDollarIcon className="w-4 h-4" /> },
 };
 
+const STOREFRONT_ORIGINS_BY_SLUG: Record<string, string> = {
+  pastita: 'https://pastita.com.br',
+  'ce-saladas': 'https://cesaladas.com.br',
+};
+
+const metadataString = (metadata: Record<string, unknown> | undefined, keys: string[]): string | null => {
+  if (!metadata) return null;
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim().replace(/\/$/, '');
+    }
+  }
+  return null;
+};
+
 // Payment status badge component
 const PaymentStatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const config: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
@@ -79,19 +95,40 @@ export const PaymentsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeSlug, stores } = useStore();
-  const effectiveStoreSlug = useMemo(() => {
-    if (!routeStoreId) return storeSlug || null;
-    const match = stores.find((store) => store.id === routeStoreId || store.slug === routeStoreId);
-    return match?.slug || match?.id || routeStoreId;
-  }, [routeStoreId, storeSlug, stores]);
+  const { storeId, stores } = useStore();
+  const selectedStore = useMemo(() => {
+    if (!routeStoreId && !storeId) return null;
+    return stores.find((store) =>
+      store.id === routeStoreId ||
+      store.slug === routeStoreId ||
+      store.id === storeId
+    ) || null;
+  }, [routeStoreId, storeId, stores]);
+  const effectiveStoreId = useMemo(() => {
+    if (!routeStoreId) return storeId || null;
+    return selectedStore?.id || routeStoreId;
+  }, [routeStoreId, selectedStore, storeId]);
+  const storefrontOrigin = useMemo(() => {
+    const metadataOrigin = metadataString(selectedStore?.metadata, [
+      'storefront_url',
+      'storefront_origin',
+      'site_url',
+      'website',
+      'public_url',
+    ]);
+    if (metadataOrigin) return metadataOrigin;
+    if (selectedStore?.slug && STOREFRONT_ORIGINS_BY_SLUG[selectedStore.slug]) {
+      return STOREFRONT_ORIGINS_BY_SLUG[selectedStore.slug];
+    }
+    return STOREFRONT_ORIGINS_BY_SLUG.pastita;
+  }, [selectedStore]);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       // Get all orders from store, ordered by most recent
-      const params: Record<string, string> = { ordering: '-created_at' };
-      if (effectiveStoreSlug) params.store = effectiveStoreSlug;
+      const params: Record<string, string | number> = { ordering: '-created_at', page_size: 500 };
+      if (effectiveStoreId) params.store = effectiveStoreId;
       const ordersData = await ordersService.getOrders(params);
       setOrders(ordersData.results);
     } catch (error) {
@@ -100,7 +137,7 @@ export const PaymentsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [effectiveStoreSlug]);
+  }, [effectiveStoreId]);
 
   useEffect(() => {
     loadData();
@@ -238,7 +275,7 @@ export const PaymentsPage: React.FC = () => {
         // SECURE: Generate link using access_token (not order_number)
         // This prevents unauthorized access to order details
         const clientPaymentLink = pix_code && access_token
-          ? `https://pastita.com.br/pendente?token=${access_token}`
+          ? `${storefrontOrigin}/pendente?token=${encodeURIComponent(access_token)}`
           : null;
         
         // Priority: pix_ticket_url > client payment page (with token) > direct link > preference link
@@ -329,7 +366,7 @@ export const PaymentsPage: React.FC = () => {
       />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           <Card className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/40 dark:bg-green-900/40 rounded-lg">

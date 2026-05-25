@@ -43,6 +43,16 @@ interface PaginatedPayload<T> {
   results?: T[];
 }
 
+function buildAuthHeader(token: string | null): Record<string, string> {
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: token.includes('.') ? `Bearer ${token}` : `Token ${token}`,
+  };
+}
+
 /**
  * Detecta as capacidades do navegador para cada transporte
  */
@@ -316,19 +326,27 @@ export class RealtimeConnection {
   private connectWebSocket(): void {
     try {
       const url = this.buildUrl('websocket');
-      console.log('[Realtime] Connecting WebSocket:', url.replace(/token=.*/, 'token=***'));
-      
+      console.log('[Realtime] Connecting WebSocket:', url);
+
       this.ws = new WebSocket(url);
-      
+
       this.ws.onopen = () => {
-        console.log('[Realtime] WebSocket connected ✓');
-        this.onConnectSuccess();
-        this.startPingInterval();
+        console.log('[Realtime] WebSocket open, sending auth...');
+        if (this.token) {
+          this.ws!.send(JSON.stringify({ type: 'auth', token: this.token }));
+        }
+        // onConnectSuccess is triggered when server sends connection_established
       };
-      
+
       this.ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
+          if (data.type === 'connection_established') {
+            console.log('[Realtime] WebSocket authenticated ✓');
+            this.onConnectSuccess();
+            this.startPingInterval();
+            return;
+          }
           this.handleMessage(data);
         } catch (err) {
           console.error('[Realtime] WebSocket parse error:', err);
@@ -435,7 +453,7 @@ export class RealtimeConnection {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          ...(this.token ? { 'Authorization': `Bearer ${this.token}` } : {}),
+          ...buildAuthHeader(this.token),
         },
         signal: this.pollingController?.signal,
       });
@@ -481,11 +499,10 @@ export class RealtimeConnection {
     switch (transport) {
       case 'websocket': {
         const proto = this.isSecure() ? 'wss' : 'ws';
-        return `${proto}://${wsHost}/ws/stores/${storeSlug}/orders/?token=${token}`;
+        return `${proto}://${wsHost}/ws/stores/${storeSlug}/orders/`;
       }
       case 'sse': {
         const httpProto = this.isSecure() ? 'https' : 'http';
-        // Use the correct SSE endpoint
         return `${httpProto}://${wsHost}/api/sse/orders/?token=${token}&store_id=${storeSlug}`;
       }
       case 'polling': {
@@ -494,9 +511,6 @@ export class RealtimeConnection {
         params.set('store', storeSlug);
         params.set('page_size', '50');
         params.set('ordering', '-updated_at');
-        if (token) {
-          params.set('token', token);
-        }
         return `${httpProto}://${wsHost}/api/v1/stores/orders/?${params.toString()}`;
       }
     }

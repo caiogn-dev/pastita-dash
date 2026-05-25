@@ -49,7 +49,8 @@ export const AccountFormPage: React.FC = () => {
   const loadAccount = async () => {
     setIsLoading(true);
     try {
-      const account = await whatsappService.getAccount(id!);
+      const accountRes = await whatsappService.getAccount(id!);
+      const account = accountRes.data;
       setFormData({
         name: account.name,
         phone_number_id: account.phone_number_id ?? '',
@@ -76,12 +77,12 @@ export const AccountFormPage: React.FC = () => {
 
     try {
       if (isEditing) {
-        const updatedAccount = await whatsappService.updateAccount(id!, formData);
-        updateAccount(updatedAccount);
+        const updatedRes = await whatsappService.updateAccount(id!, formData);
+        updateAccount(updatedRes.data);
         toast.success('Conta atualizada com sucesso!');
       } else {
-        const newAccount = await whatsappService.createAccount(formData);
-        updateAccount(newAccount);
+        const newRes = await whatsappService.createAccount(formData);
+        updateAccount(newRes.data);
         toast.success('Conta criada com sucesso!');
       }
       navigate('/accounts');
@@ -113,7 +114,7 @@ export const AccountFormPage: React.FC = () => {
 
       <Card>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 max-md:grid-cols-1 gap-6">
             <Input
               label="Nome da Conta"
               value={formData.name}

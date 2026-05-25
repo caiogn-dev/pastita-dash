@@ -9,34 +9,50 @@ export default {
     extend: {
       colors: {
         // ============================================
-        // PASTITA BRAND - Marsala (Primary)
+        // BRAND COLORS - Dinâmico via CSS Variables (muda por loja)
         // ============================================
         primary: {
-          50: '#fdf2f3',
-          100: '#fce4e6',
-          200: '#facdd2',
-          300: '#f5a3ad',
-          400: '#ed6b7b',
-          500: '#722F37', // Marsala - main brand color
-          600: '#5c262d',
-          700: '#4d1f25',
-          800: '#411b20',
-          900: '#391a1e',
-          950: '#1A0B0D',
+          50:  'var(--primary-50)',
+          100: 'var(--primary-100)',
+          200: 'var(--primary-200)',
+          300: 'var(--primary-300)',
+          400: 'var(--primary-400)',
+          500: 'var(--primary-500)',
+          600: 'var(--primary-600)',
+          700: 'var(--primary-700)',
+          800: 'var(--primary-800)',
+          900: 'var(--primary-900)',
+          950: 'var(--primary-950)',
         },
-        marsala: {
-          DEFAULT: '#722F37',
-          50: '#F9F2F3',
-          100: '#F0E0E2',
-          200: '#E1C1C5',
-          300: '#D2A2A8',
-          400: '#C3838B',
-          500: '#B4646E',
-          600: '#8A3D46',
-          700: '#722F37',
-          800: '#4A1E23',
-          900: '#2D1215',
-          950: '#1A0B0D',
+        // ============================================
+        // SEMANTIC COLOR TOKENS (used via CSS variables)
+        // ============================================
+        fg: {
+          primary: 'var(--fg-primary)',
+          secondary: 'var(--fg-secondary)',
+          muted: 'var(--fg-muted)',
+        },
+        bg: {
+          primary: 'var(--bg-primary)',
+          secondary: 'var(--bg-secondary)',
+          card: 'var(--bg-card)',
+          hover: 'var(--bg-hover)',
+          active: 'var(--bg-active)',
+        },
+        brand: {
+          400: 'var(--brand-primary-light)',
+          500: 'var(--brand-primary)',
+          600: 'var(--brand-primary-dark)',
+        },
+        border: {
+          primary: 'var(--border-default)',
+          subtle: 'var(--border-subtle)',
+          focus: 'var(--brand-primary)',
+        },
+        danger: {
+          400: '#f87171',
+          500: '#ef4444',
+          600: '#dc2626',
         },
         background: {
           DEFAULT: '#ffffff',
@@ -58,22 +74,22 @@ export default {
         // ============================================
         dark: {
           bg: {
-            primary: '#000000',
-            secondary: '#0a0a0a',
-            tertiary: '#141414',
-            elevated: '#1a1a1a',
-            hover: '#262626',
+            primary: '#0D0907',
+            secondary: '#141009',
+            tertiary: '#1C1510',
+            elevated: '#251C14',
+            hover: '#2E2219',
           },
           border: {
-            DEFAULT: '#27272a',
-            light: '#3f3f46',
-            focus: '#52525b',
+            DEFAULT: '#2C2218',
+            light: '#3D2E20',
+            focus: '#F59342',
           },
           text: {
-            primary: '#ffffff',
-            secondary: '#a1a1aa',
-            tertiary: '#71717a',
-            muted: '#52525b',
+            primary: '#FAF9F7',
+            secondary: '#A8998F',
+            tertiary: '#7A6D64',
+            muted: '#6E6058',
           },
         },
         // ============================================
@@ -170,18 +186,25 @@ export default {
         },
       },
       // ============================================
+      // TYPOGRAPHY
+      // ============================================
+      fontFamily: {
+        display: ['Playfair Display', 'Georgia', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      // ============================================
       // SHADOWS
       // ============================================
       boxShadow: {
-        'soft': '0 10px 30px rgba(114, 47, 55, 0.1)',
-        'soft-lg': '0 20px 40px rgba(114, 47, 55, 0.15)',
+        'soft': '0 10px 30px rgba(249, 115, 22, 0.1)',
+        'soft-lg': '0 20px 40px rgba(249, 115, 22, 0.15)',
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-        'inner-marsala': 'inset 0 -3px 0 0 #722F37',
-        'inner-gold': 'inset 0 -3px 0 0 #D4AF37',
-        'glow-marsala': '0 0 20px rgba(114, 47, 55, 0.4)',
-        'glow-agriao': '0 0 20px rgba(74, 93, 35, 0.4)',
+        'inner-primary': 'inset 0 -3px 0 0 #F97316',
+        'inner-secondary': 'inset 0 -3px 0 0 #22C55E',
+        'glow-primary': '0 0 20px rgba(249, 115, 22, 0.4)',
+        'glow-secondary': '0 0 20px rgba(34, 197, 94, 0.4)',
       },
       // ============================================
       // ANIMATIONS
