@@ -273,7 +273,7 @@ export const useChatStore = create<ChatState>()(
       reset: () => set(initialState),
     }),
     {
-      name: 'pastita-chat-store',
+      name: 'cardapidex-chat-store',
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         selectedConversationId: state.selectedConversationId,
