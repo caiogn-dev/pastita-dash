@@ -51,16 +51,16 @@ export const CadastroPage: React.FC = () => {
 
   if (done) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center space-y-6">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+            <svg className="w-10 h-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900">Cadastro recebido!</h2>
           <p className="text-gray-600">
-            Recebemos seu interesse no Pastita. Nossa equipe entrará em contato pelo WhatsApp em breve.
+            Recebemos seu interesse no Cardapidex. Nossa equipe entrará em contato pelo WhatsApp em breve.
           </p>
           <p className="text-sm text-gray-400">Tempo médio de resposta: até 24 horas úteis.</p>
         </div>
@@ -69,16 +69,13 @@ export const CadastroPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
       <header className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-lg">P</span>
-          </div>
-          <span className="font-bold text-gray-900 text-xl">Pastita</span>
+          <img src="/cardapidex-logo.svg" alt="Cardapidex" className="w-9 h-9 rounded-xl shadow-sm" />
+          <span className="font-bold text-gray-900 text-xl font-brand">Cardapidex</span>
         </div>
-        <a href="/login" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+        <a href="/login" className="text-sm text-emerald-600 hover:text-emerald-800 font-medium">
           Já tenho conta →
         </a>
       </header>
@@ -86,15 +83,14 @@ export const CadastroPage: React.FC = () => {
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-12 items-center">
 
-          {/* Left — pitch */}
           <div className="space-y-8">
             <div className="space-y-4">
-              <span className="inline-block text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">
+              <span className="inline-block text-xs font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">
                 Plataforma de delivery
               </span>
-              <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
+              <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight font-brand">
                 Venda mais pelo<br />
-                <span className="text-indigo-600">WhatsApp</span> com<br />
+                <span className="text-emerald-600">WhatsApp</span> com<br />
                 automação IA
               </h1>
               <p className="text-lg text-gray-600">
@@ -111,7 +107,7 @@ export const CadastroPage: React.FC = () => {
                 'Sem taxa por pedido',
               ].map(item => (
                 <li key={item} className="flex items-center gap-3 text-gray-700">
-                  <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-5 h-5 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
@@ -124,10 +120,9 @@ export const CadastroPage: React.FC = () => {
             <p className="text-sm text-gray-400">Mais de 5 restaurantes já usam a plataforma.</p>
           </div>
 
-          {/* Right — form */}
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Quero conhecer o Pastita</h2>
+              <h2 className="text-xl font-bold text-gray-900 font-brand">Quero conhecer o Cardapidex</h2>
               <p className="text-sm text-gray-500 mt-1">Preencha e entraremos em contato pelo WhatsApp.</p>
             </div>
 
@@ -142,7 +137,7 @@ export const CadastroPage: React.FC = () => {
                   onChange={set('name')}
                   placeholder="João Silva"
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
 
@@ -156,7 +151,7 @@ export const CadastroPage: React.FC = () => {
                   onChange={set('phone')}
                   placeholder="(11) 99999-9999"
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
 
@@ -167,7 +162,7 @@ export const CadastroPage: React.FC = () => {
                   value={form.email}
                   onChange={set('email')}
                   placeholder="joao@restaurante.com"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
 
@@ -179,7 +174,7 @@ export const CadastroPage: React.FC = () => {
                     value={form.city}
                     onChange={set('city')}
                     placeholder="São Paulo"
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
 
@@ -188,7 +183,7 @@ export const CadastroPage: React.FC = () => {
                   <select
                     value={form.business_type}
                     onChange={set('business_type')}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
                   >
                     <option value="">Selecione</option>
                     {BUSINESS_TYPES.map(t => (
@@ -205,7 +200,7 @@ export const CadastroPage: React.FC = () => {
                   onChange={set('message')}
                   placeholder="Conte um pouco sobre seu negócio..."
                   rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
                 />
               </div>
 
@@ -216,9 +211,9 @@ export const CadastroPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors text-sm"
+                className="w-full bg-emerald-600 text-white font-semibold py-3 rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors text-sm"
               >
-                {loading ? 'Enviando...' : 'Quero conhecer o Pastita'}
+                {loading ? 'Enviando...' : 'Quero conhecer o Cardapidex'}
               </button>
 
               <p className="text-center text-xs text-gray-400">
@@ -229,9 +224,8 @@ export const CadastroPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="py-6 text-center text-xs text-gray-400 border-t border-gray-100">
-        © {new Date().getFullYear()} Pastita · Plataforma de delivery com IA
+        © {new Date().getFullYear()} Cardapidex · Plataforma de delivery com IA
       </footer>
     </div>
   );
