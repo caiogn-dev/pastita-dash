@@ -13,7 +13,7 @@ const BUSINESS_TYPES = [
   'Outro',
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend.pastita.com.br/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const CadastroPage: React.FC = () => {
   const [form, setForm] = useState({
