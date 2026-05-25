@@ -50,19 +50,25 @@ const SaladasDashboardPage: React.FC = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     const store = getStoreSlug() || STORE_SLUG;
     const periodMap: Record<SaladasPeriod, string> = { today: '1d', '7d': '7d', '30d': '30d' };
-    const base = import.meta.env.VITE_API_URL || '';
-    const token = localStorage.getItem('auth_token') || '';
-    const url = `${base}/stores/reports/orders/export/?store=${store}&period=${periodMap[period]}`;
-    const a = document.createElement('a');
-    a.href = url;
-    if (token) a.setAttribute('data-token', token);
-    a.setAttribute('download', `saladas_${period}.csv`);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const url = `/stores/reports/orders/export/?store=${store}&period=${periodMap[period]}`;
+    try {
+      const { default: api } = await import('../../services/api');
+      const response = await api.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = `saladas_${period}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      setError('Erro ao exportar CSV. Tente novamente.');
+    }
   };
 
   const kpis = data?.kpis;
