@@ -32,7 +32,7 @@ export interface LoginResponse {
   first_name?: string;
   last_name?: string;
   token: string;
-  refresh: string;
+  refresh?: string; // DRF Token auth — sem JWT refresh
 }
 
 // ============================================

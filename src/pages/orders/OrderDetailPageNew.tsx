@@ -7,7 +7,7 @@
  * - Intuitive actions
  * - Beautiful progress timeline
  */
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -93,8 +93,8 @@ const STATUS_LABELS: Record<string, string> = {
 // HELPER FUNCTIONS
 // =============================================================================
 
-const formatMoney = (value: number | undefined | null) => {
-  return `R$ ${(value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+const formatMoney = (value: number | string | undefined | null) => {
+  return `R$ ${(Number(value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 };
 
 const getStatusIndex = (status: string): number => {
@@ -199,11 +199,7 @@ export const OrderDetailPageNew: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  useEffect(() => {
-    if (id) loadOrder();
-  }, [id]);
-
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     if (!id) return;
     setIsLoading(true);
     try {
@@ -219,7 +215,11 @@ export const OrderDetailPageNew: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id, navigate, ordersRoute]);
+
+  useEffect(() => {
+    if (id) loadOrder();
+  }, [id, loadOrder]);
 
   const handleAction = async (action: string) => {
     if (!order) return;
