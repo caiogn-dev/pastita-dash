@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Flex, Heading, Stack, Text } from '@chakra-ui/react';
+
 import { MinusIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Card, Input, PageLoading } from '../../components/common';
@@ -141,22 +141,22 @@ export const OrderNewPage: React.FC = () => {
   }
 
   return (
-    <Box p={6}>
-      <Stack gap={6}>
-        <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
-          <Stack gap={1}>
-            <Heading size="xl">Novo Pedido</Heading>
-            <Text color="fg.muted">Crie um pedido manual para esta loja</Text>
-          </Stack>
+    <div className="p-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex justify-between items-center flex-wrap gap-3">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-bold">Novo Pedido</h1>
+            <p className="text-gray-500">Crie um pedido manual para esta loja</p>
+          </div>
           <Button variant="outline" onClick={() => navigate(`/stores/${storeId}/orders`)}>
             Voltar
           </Button>
-        </Flex>
+        </div>
 
         <form onSubmit={handleSubmit}>
-          <Stack gap={6}>
+          <div className="flex flex-col gap-6">
             <Card title="Cliente">
-              <Stack gap={4}>
+              <div className="flex flex-col gap-4">
                 <Input
                   label="Nome"
                   value={customerName}
@@ -178,13 +178,13 @@ export const OrderNewPage: React.FC = () => {
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="cliente@email.com"
                 />
-              </Stack>
+              </div>
             </Card>
 
             <Card title="Produtos">
-              <Stack gap={4}>
-                <Flex gap={3} wrap="wrap">
-                  <Box minW="300px" flex={1}>
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-3 flex-wrap">
+                  <div className="min-w-[300px] flex-1">
                     <label className="block text-sm mb-1">Produto</label>
                     <select
                       value={selectedProductId}
@@ -198,8 +198,8 @@ export const OrderNewPage: React.FC = () => {
                         </option>
                       ))}
                     </select>
-                  </Box>
-                  <Box w="120px">
+                  </div>
+                  <div className="w-[120px]">
                     <Input
                       label="Qtd"
                       type="number"
@@ -207,36 +207,31 @@ export const OrderNewPage: React.FC = () => {
                       value={selectedQty}
                       onChange={(e) => setSelectedQty(Number(e.target.value || 1))}
                     />
-                  </Box>
-                  <Flex align="flex-end">
+                  </div>
+                  <div className="flex items-end">
                     <Button onClick={addItem} type="button">
                       <PlusIcon className="w-4 h-4 mr-1" />
                       Adicionar
                     </Button>
-                  </Flex>
-                </Flex>
+                  </div>
+                </div>
 
                 {!items.length ? (
-                  <Text color="fg.muted">Nenhum item adicionado.</Text>
+                  <p className="text-gray-500">Nenhum item adicionado.</p>
                 ) : (
-                  <Stack gap={2}>
+                  <div className="flex flex-col gap-2">
                     {items.map((line) => (
-                      <Flex
+                      <div
                         key={line.product.id}
-                        justify="space-between"
-                        align="center"
-                        p={3}
-                        borderWidth="1px"
-                        borderRadius="md"
-                        borderColor="border.subtle"
+                        className="flex justify-between items-center p-3 border border-gray-200 rounded-md"
                       >
-                        <Box>
-                          <Text fontWeight="semibold">{line.product.name}</Text>
-                          <Text color="fg.muted" fontSize="sm">
+                        <div>
+                          <p className="font-semibold">{line.product.name}</p>
+                          <p className="text-gray-500 text-sm">
                             R$ {formatMoney(Number(line.product.price || 0))} cada
-                          </Text>
-                        </Box>
-                        <Flex align="center" gap={2}>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
                           <Button
                             type="button"
                             size="sm"
@@ -245,9 +240,9 @@ export const OrderNewPage: React.FC = () => {
                           >
                             <MinusIcon className="w-3 h-3" />
                           </Button>
-                          <Text minW="24px" textAlign="center">
+                          <span className="min-w-[24px] text-center">
                             {line.quantity}
-                          </Text>
+                          </span>
                           <Button
                             type="button"
                             size="sm"
@@ -256,9 +251,9 @@ export const OrderNewPage: React.FC = () => {
                           >
                             <PlusIcon className="w-3 h-3" />
                           </Button>
-                          <Text minW="120px" textAlign="right" fontWeight="semibold">
+                          <span className="min-w-[120px] text-right font-semibold">
                             R$ {formatMoney(Number(line.product.price || 0) * line.quantity)}
-                          </Text>
+                          </span>
                           <Button
                             type="button"
                             size="sm"
@@ -267,17 +262,17 @@ export const OrderNewPage: React.FC = () => {
                           >
                             <TrashIcon className="w-4 h-4" />
                           </Button>
-                        </Flex>
-                      </Flex>
+                        </div>
+                      </div>
                     ))}
-                  </Stack>
+                  </div>
                 )}
-              </Stack>
+              </div>
             </Card>
 
             <Card title="Entrega e Pagamento">
-              <Stack gap={4}>
-                <Box>
+              <div className="flex flex-col gap-4">
+                <div>
                   <label className="block text-sm mb-1">Forma de pagamento</label>
                   <select
                     value={paymentMethod}
@@ -289,7 +284,7 @@ export const OrderNewPage: React.FC = () => {
                     <option value="credit_card">Cartao de credito</option>
                     <option value="debit_card">Cartao de debito</option>
                   </select>
-                </Box>
+                </div>
                 <Input
                   label="Endereco de entrega (opcional)"
                   value={deliveryAddress}
@@ -302,24 +297,24 @@ export const OrderNewPage: React.FC = () => {
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ex: sem cebola, entregar no portao"
                 />
-              </Stack>
+              </div>
             </Card>
 
             <Card>
-              <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
-                <Stack gap={0}>
-                  <Text color="fg.muted">Subtotal</Text>
-                  <Heading size="lg">R$ {formatMoney(subtotal)}</Heading>
-                </Stack>
+              <div className="flex justify-between items-center flex-wrap gap-3">
+                <div>
+                  <p className="text-gray-500">Subtotal</p>
+                  <h2 className="text-xl font-bold">R$ {formatMoney(subtotal)}</h2>
+                </div>
                 <Button type="submit" isLoading={saving}>
                   Criar Pedido
                 </Button>
-              </Flex>
+              </div>
             </Card>
-          </Stack>
+          </div>
         </form>
-      </Stack>
-    </Box>
+      </div>
+    </div>
   );
 };
 
