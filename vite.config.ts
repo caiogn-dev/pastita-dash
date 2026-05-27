@@ -6,13 +6,13 @@ export default defineConfig({
   base: '/',
   server: {
     host: '0.0.0.0',
-    port: 3010,
+    port: 3000,
     strictPort: true,
     allowedHosts: true,
     cors: true,
     hmr: {
       host: '0.0.0.0',
-      port: 3010,
+      port: 3000,
     },
   },
   resolve: {

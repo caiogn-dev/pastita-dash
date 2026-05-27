@@ -107,13 +107,13 @@ const IntentLogsPage: React.FC = () => {
             <DocumentChartBarIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Logs de Intenções</h1>
-            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Histórico completo de detecção de intenções</p>
+            <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Logs de Intenções</h1>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-0.5">Histórico completo de detecção de intenções</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] cursor-pointer">
             <input
               type="checkbox"
               checked={autoRefresh}
@@ -125,7 +125,7 @@ const IntentLogsPage: React.FC = () => {
           <button
             onClick={() => { loadLogs(); loadStats(); }}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] text-sm hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] disabled:opacity-50 transition-colors"
           >
             <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
@@ -142,9 +142,9 @@ const IntentLogsPage: React.FC = () => {
             { label: 'Método Mais Usado', value: stats.most_common_method || '-', color: 'text-indigo-600 dark:text-indigo-400' },
             { label: 'Intenção Top', value: (intentTypeLabels as any)[stats.most_common_intent] || stats.most_common_intent || '-', color: 'text-purple-600 dark:text-purple-400' },
           ].map((card) => (
-            <div key={card.label} className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-4">
-              <div className="text-xs text-gray-500 dark:text-zinc-400 font-medium uppercase tracking-wide mb-1">{card.label}</div>
-              <div className={`text-lg font-bold truncate ${card.color}`}>{card.value}</div>
+            <div key={card.label} className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] p-4">
+              <div className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] font-medium uppercase tracking-wide mb-1">{card.label}</div>
+              <div className={`text-lg font-bold truncate ${card.color} dark:text-white`}>{card.value}</div>
             </div>
           ))}
         </div>

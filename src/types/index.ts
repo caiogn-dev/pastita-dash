@@ -32,7 +32,7 @@ export interface LoginResponse {
   first_name?: string;
   last_name?: string;
   token: string;
-  refresh: string;
+  refresh?: string; // DRF Token auth — sem JWT refresh
 }
 
 // ============================================
@@ -123,6 +123,7 @@ export interface SendTextMessage {
 }
 
 export interface SendTemplateMessage {
+  account_id: string;
   to: string;
   template_name: string;
   language_code: string;
@@ -187,6 +188,9 @@ export interface Conversation {
   labels: string[];
   tags?: string[];
   assigned_to?: string;
+  handover_status?: 'bot' | 'human' | 'pending' | string;
+  handover_assigned_to?: string | null;
+  handover_assigned_to_name?: string | null;
   ai_agent?: string | null;
   agent_session_id?: string | null;
   closed_at?: string | null;
@@ -491,6 +495,9 @@ export type BusinessHours = Record<string, { open: boolean; start?: string; end?
 export interface CompanyProfile {
   id: string;
   name: string;
+  store_id?: string;
+  store_slug?: string;
+  store_name?: string;
   company_name?: string;
   slug?: string;
   description?: string;
@@ -528,6 +535,8 @@ export interface CompanyProfile {
 }
 
 export interface CreateCompanyProfile {
+  account_id: string;
+  store_id?: string;
   name: string;
   company_name?: string;
   slug?: string;

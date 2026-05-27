@@ -226,13 +226,13 @@ const AutoMessagesPage: React.FC = () => {
         <div className="flex items-center gap-4">
           <Link
             to={`/automation/companies/${companyId}`}
-            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mensagens Automáticas</h1>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">{company?.company_name}</p>
+            <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Mensagens Automáticas</h1>
+            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{company?.company_name}</p>
           </div>
         </div>
         <button
@@ -252,7 +252,7 @@ const AutoMessagesPage: React.FC = () => {
       {Object.keys(eventTypeLabels).map((eventType) => {
         const eventMessages = groupedMessages[eventType] || [];
         return (
-          <div key={eventType} className="bg-white dark:bg-zinc-900 shadow rounded-lg overflow-hidden">
+          <div key={eventType} className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] shadow rounded-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-black">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 {eventTypeLabels[eventType as AutoMessageEventType]}

@@ -3,16 +3,28 @@
  * Use WebSocketContext for singleton connection
  * This file exports utility functions and stubs for backwards compatibility
  */
+const _apiUrl = (import.meta.env.VITE_API_URL as string | undefined) || 'https://backend.pastita.com.br/api/v1';
+const BACKEND_BASE_URL = _apiUrl.replace(/\/api\/v1\/?$/, '');
+const WS_BASE_URL = BACKEND_BASE_URL.replace(/^http/, 'ws');
 
 /**
  * Get the WebSocket URL for a given path
  */
 export const getWebSocketUrl = (path: string): string => {
-  let wsHost = import.meta.env.VITE_WS_HOST;
+  let wsHost = import.meta.env.VITE_WS_HOST?.replace(/^wss?:\/\//, '').replace(/\/+$/, '');
+
   if (!wsHost) {
-    const apiUrl = import.meta.env.VITE_API_URL || '';
-    wsHost = apiUrl ? new URL(apiUrl).host : window.location.host;
+    try {
+      wsHost = new URL(WS_BASE_URL).host;
+    } catch {
+      try {
+        wsHost = new URL(BACKEND_BASE_URL).host;
+      } catch {
+        wsHost = window.location.host;
+      }
+    }
   }
+
   const proto = wsHost.includes('railway') || wsHost.includes('vercel') || location.protocol === 'https:' ? 'wss' : 'ws';
   return `${proto}://${wsHost}${path}`;
 };

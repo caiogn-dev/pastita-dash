@@ -74,8 +74,8 @@ const CompanyProfilesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Automação & Perfis</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Automação & Perfis</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             Configure automações, mensagens e agentes para cada número WhatsApp
           </p>
         </div>
@@ -99,12 +99,12 @@ const CompanyProfilesPage: React.FC = () => {
           <Link
             key={item.to}
             to={item.to}
-            className="flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 transition-colors group"
+            className="flex items-center gap-3 p-3 bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] hover:border-gray-300 dark:hover:border-[var(--dark-border,#2a2a2a)] transition-colors group"
           >
             <div className={`p-2 rounded-lg ${item.color} transition-colors`}>
               <item.icon className="w-4 h-4" />
             </div>
-            <span className="text-sm font-medium text-gray-700 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-white truncate">
+            <span className="text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] group-hover:text-gray-900 dark:group-hover:text-[var(--dark-text-primary,#FAF9F7)] truncate">
               {item.label}
             </span>
           </Link>
@@ -113,10 +113,10 @@ const CompanyProfilesPage: React.FC = () => {
 
       {/* Profiles Grid */}
       {profiles.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800">
+        <div className="text-center py-16 bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-2xl border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
           <BuildingOfficeIcon className="mx-auto h-14 w-14 text-gray-300 dark:text-zinc-600 mb-4" />
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Nenhum perfil configurado</h3>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">Nenhum perfil configurado</h3>
+          <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-6">
             Crie um perfil de empresa para começar a usar automações.
           </p>
           <Link
@@ -132,7 +132,7 @@ const CompanyProfilesPage: React.FC = () => {
           {profiles.map((profile) => (
             <div
               key={profile.id}
-              className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 shadow-sm hover:shadow-md transition-all"
+              className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-2xl border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] hover:border-gray-300 dark:hover:border-[var(--dark-border,#2a2a2a)] shadow-sm hover:shadow-md transition-all"
             >
               {/* Card Header */}
               <div className="p-5 pb-4 flex items-start justify-between">
@@ -141,10 +141,10 @@ const CompanyProfilesPage: React.FC = () => {
                     <BuildingOfficeIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] truncate">
                       {profile.company_name}
                     </h3>
-                    <p className="text-xs text-gray-500 dark:text-zinc-400 truncate mt-0.5">
+                    <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate mt-0.5">
                       {profile.account_phone || 'Sem número'}
                     </p>
                   </div>

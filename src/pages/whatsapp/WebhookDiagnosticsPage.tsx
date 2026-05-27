@@ -180,7 +180,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Diagnóstico de Webhooks WhatsApp
           </h1>
-          <p className="text-gray-500 dark:text-zinc-400">
+          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             Monitore o recebimento de mensagens em tempo real
           </p>
         </div>
@@ -294,12 +294,12 @@ export const WebhookDiagnosticsPage: React.FC = () => {
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ativo</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
               {accounts.map((account) => (
                 <tr key={account.id}>
                   <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{account.name}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400">{account.phone_number}</td>
-                  <td className="px-4 py-2 text-sm font-mono text-gray-600 dark:text-zinc-400">{account.phone_number_id}</td>
+                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{account.phone_number}</td>
+                  <td className="px-4 py-2 text-sm font-mono text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{account.phone_number_id}</td>
                   <td className="px-4 py-2">
                     <Badge variant={account.status === 'active' ? 'success' : 'warning'}>
                       {account.status}
@@ -381,7 +381,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
           Eventos Recentes (últimos 20)
         </h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
             <thead>
               <tr>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
@@ -390,7 +390,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Erro</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
               {recent_events.map((event) => (
                 <tr key={event.id}>
                   <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{event.event_type}</td>
@@ -423,7 +423,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
           Mensagens Recebidas (últimas 10)
         </h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
             <thead>
               <tr>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">De</th>
@@ -432,15 +432,15 @@ export const WebhookDiagnosticsPage: React.FC = () => {
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
               {recent_inbound_messages.map((msg) => (
                 <tr key={msg.id}>
                   <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{msg.from_number}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400">{msg.message_type}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400 max-w-xs truncate">
+                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{msg.message_type}</td>
+                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] max-w-xs truncate">
                     {msg.text_body || '-'}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400">
+                  <td className="px-4 py-2 text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
                     {new Date(msg.created_at).toLocaleString('pt-BR')}
                   </td>
                 </tr>
@@ -458,7 +458,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
       </Card>
 
       {/* Server Info */}
-      <Card className="p-4 bg-gray-50 dark:bg-zinc-900">
+      <Card className="p-4 bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]">
         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-zinc-400">
           <ServerIcon className="w-5 h-5" />
           <span>Servidor: {new Date(data.server_time).toLocaleString('pt-BR')}</span>

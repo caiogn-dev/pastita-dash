@@ -57,7 +57,7 @@ export default function AgentDebugPage() {
       {/* Header */}
       <Card className="mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+          <div className="p-2 bg-blue-100 dark:bg-[var(--dark-bg-hover,#161616)] rounded-lg text-blue-600 dark:text-blue-400">
             <CpuChipIcon className="w-6 h-6" />
           </div>
           <div>
@@ -74,7 +74,7 @@ export default function AgentDebugPage() {
           <div className="flex-1">
             <label className="block text-sm font-medium text-fg-secondary mb-1">ID da Conversa</label>
             <input
-              className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary dark:bg-[var(--dark-bg-hover,#161616)] dark:border-[var(--dark-border,#2a2a2a)] dark:text-[var(--dark-text-primary,#FAF9F7)] focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="Digite o ID da conversa..."
               value={conversationId}
               onChange={(e) => setConversationId(e.target.value)}
@@ -93,7 +93,7 @@ export default function AgentDebugPage() {
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border-l-4 border-red-500 text-red-700 dark:text-red-400">
+          <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]/80 rounded-lg border-l-4 border-red-500 text-red-700 dark:text-red-400">
             <ExclamationTriangleIcon className="w-5 h-5 flex-shrink-0" />
             <span className="font-medium">{error}</span>
           </div>
@@ -109,7 +109,7 @@ export default function AgentDebugPage() {
           </div>
 
           {/* Overall status */}
-          <div className={`mb-6 p-6 rounded-xl border-2 text-center ${result.agent_would_respond ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'}`}>
+          <div className={`mb-6 p-6 rounded-xl border-2 text-center ${result.agent_would_respond ? 'bg-red-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]/80 border-red-200 dark:border-[var(--dark-border,#2a2a2a)]' : 'bg-green-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]/80 border-green-200 dark:border-[var(--dark-border,#2a2a2a)]'}`}>
             <div className="flex items-center justify-center gap-2 mb-2">
               {result.agent_would_respond
                 ? <ExclamationTriangleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
@@ -121,7 +121,7 @@ export default function AgentDebugPage() {
             <p className="text-sm text-fg-muted max-w-xl mx-auto">{result.recommendation}</p>
           </div>
 
-          <div className="border-t border-border-primary my-6" />
+          <div className="border-t border-border-primary dark:border-[var(--dark-border,#2a2a2a)] my-6" />
 
           {/* Checks */}
           <div className="mb-6">
@@ -146,7 +146,7 @@ export default function AgentDebugPage() {
           <div className="grid grid-cols-2 max-md:grid-cols-1 gap-6 mb-6">
             {/* Agent info */}
             {result.agent && (
-              <div className="p-4 bg-bg-subtle border border-border-primary rounded-lg">
+              <div className="p-4 bg-bg-subtle border border-border-primary dark:border-[var(--dark-border,#2a2a2a)] rounded-lg">
                 <h3 className="font-semibold text-fg-primary mb-3">Informações do Agente</h3>
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center">
@@ -166,7 +166,7 @@ export default function AgentDebugPage() {
             )}
 
             {/* Handover info */}
-            <div className="p-4 bg-bg-subtle border border-border-primary rounded-lg">
+            <div className="p-4 bg-bg-subtle border border-border-primary dark:border-[var(--dark-border,#2a2a2a)] rounded-lg">
               <h3 className="font-semibold text-fg-primary mb-3">Handover</h3>
               {result.handover ? (
                 <div className="flex flex-col gap-2">
@@ -185,7 +185,7 @@ export default function AgentDebugPage() {
             </div>
           </div>
 
-          <div className="border-t border-border-primary my-6" />
+          <div className="border-t border-border-primary dark:border-[var(--dark-border,#2a2a2a)] my-6" />
 
           {/* Actions */}
           <div>

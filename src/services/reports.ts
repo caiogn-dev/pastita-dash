@@ -4,11 +4,10 @@
  */
 import api from './api';
 import logger from './logger';
-import { getStoreSlug } from '../hooks/useStore';
-import { requireStoreSlug } from '../config/storeConfig';
+import { getStoreSlugWithFallback } from '../hooks/useStore';
 
 const BASE_URL = '/stores/reports';
-const getStoreParam = () => requireStoreSlug(getStoreSlug());
+const getStoreParam = () => getStoreSlugWithFallback() || undefined;
 
 // =============================================================================
 // TYPES

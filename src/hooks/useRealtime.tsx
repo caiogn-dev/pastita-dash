@@ -14,7 +14,7 @@ import {
   setGlobalConnection
 } from '../services/realtime';
 import { useAuthStore } from '../stores/authStore';
-import { useStore } from './useStore';
+import { getStoreSlugWithFallback, useStore } from './useStore';
 
 // Context para compartilhar a conexão entre componentes
 interface RealtimeContextValue {
@@ -48,8 +48,8 @@ export function RealtimeProvider({
   fallbackOrder = ['websocket', 'sse', 'polling']
 }: RealtimeProviderProps) {
   const { token } = useAuthStore();
-  const { storeSlug, storeId } = useStore();
-  const effectiveStoreSlug = storeSlug || storeId || undefined;
+  const { storeSlug } = useStore();
+  const effectiveStoreSlug = storeSlug || getStoreSlugWithFallback();
   
   const connectionRef = useRef<RealtimeConnection | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
@@ -58,7 +58,7 @@ export function RealtimeProvider({
 
   // Criar conexão
   useEffect(() => {
-    if (!token) {
+    if (!token || !effectiveStoreSlug) {
       console.log('[RealtimeProvider] No token, skipping connection creation');
       return;
     }

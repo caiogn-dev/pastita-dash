@@ -14,6 +14,7 @@ import {
 
 import { Button, Modal, PageLoading, PageTitle, Textarea } from '../../components/common';
 import { conversationsService, getErrorMessage } from '../../services';
+import { getAvatarColor, getInitials } from '../../utils/avatar';
 import type { Conversation, ConversationNote, Message, UniversalConversation } from '../../types';
 
 type PlatformFilter = 'all' | 'whatsapp' | 'instagram' | 'messenger';
@@ -358,7 +359,7 @@ export const ConversationsPage: React.FC = () => {
                   onClick={() => setPlatformFilter(platform)}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-fg-primary text-bg-card'
+                      ? 'bg-primary-600 text-white'
                       : 'bg-bg-subtle text-fg-primary hover:bg-bg-hover'
                   }`}
                 >
@@ -390,7 +391,16 @@ export const ConversationsPage: React.FC = () => {
                 className="grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_180px_120px] gap-4 border-b border-border-primary px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-bg-hover"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <PlatformGlyph platform={conversation.platform} />
+                  {conversation.platform === 'whatsapp' ? (
+                    <div
+                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
+                      style={{ backgroundColor: getAvatarColor(conversation.display_name) }}
+                    >
+                      {getInitials(conversation.display_name)}
+                    </div>
+                  ) : (
+                    <PlatformGlyph platform={conversation.platform} />
+                  )}
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-fg-primary">
                       {conversation.display_name}
