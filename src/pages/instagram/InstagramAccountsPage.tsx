@@ -323,7 +323,7 @@ export const InstagramAccountsPage: React.FC = () => {
                     ) : (
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
                         <span className="text-2xl font-bold text-white">
-                          {account.username[0].toUpperCase()}
+                          {(account.username?.[0] ?? '?').toUpperCase()}
                         </span>
                       </div>
                     )}

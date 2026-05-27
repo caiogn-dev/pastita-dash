@@ -141,7 +141,7 @@ export const CampaignsListPage: React.FC = () => {
     try {
       setActionLoading(campaign.id);
       const response = await api.post(`/marketing/campaigns/${campaign.id}/send/`);
-      toast.success(`Campanha enviada! ${response.data.sent} emails enviados.`);
+      toast.success(`Campanha enviada! ${response.data?.sent ?? 0} emails enviados.`);
       loadCampaigns();
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Erro ao enviar campanha');
