@@ -320,7 +320,7 @@ export interface Order {
   discount: number;
   total: number;
   status: 'pending' | 'processing' | 'confirmed' | 'preparing' | 'ready' | 'shipped' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'completed' | 'refunded' | 'failed' | 'paid';
-  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  payment_status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
   payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card' | string;
   pix_code?: string;
   pix_qr_code?: string;
@@ -334,6 +334,9 @@ export interface Order {
   tracking_code?: string;
   tracking_url?: string;
   carrier?: string;
+  /** API field (server model). Use this as the authoritative customer notes field. */
+  customer_notes?: string;
+  /** Legacy alias — some older API responses still use `notes` */
   notes?: string;
   internal_notes?: string;
   scheduled_date?: string | null;
