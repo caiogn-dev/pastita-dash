@@ -128,7 +128,7 @@ const WhatsAppInboxPage: React.FC = () => {
   const loadMessages = useCallback(async (conversationId: string) => {
     try {
       const msgs = await conversationsService.getMessages(conversationId);
-      // Carrega mensagens históricas no store; WS adiciona novas em tempo real
+      // getMessages retorna { results, has_more, next_before_id } — usar .results
       useChatStore.getState().setMessages(conversationId, ensureArray<Message>(msgs.results));
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
