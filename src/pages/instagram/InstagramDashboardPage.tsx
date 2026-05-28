@@ -142,7 +142,7 @@ export const InstagramDashboardPage: React.FC = () => {
               ) : (
                 <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
                   <span className="text-3xl text-white font-bold">
-                    {account.username[0].toUpperCase()}
+                    {(account.username?.[0] ?? '?').toUpperCase()}
                   </span>
                 </div>
               )}
