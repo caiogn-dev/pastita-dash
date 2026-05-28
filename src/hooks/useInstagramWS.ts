@@ -14,6 +14,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { getWebSocketUrl as buildWebSocketUrl } from '../services/websocket';
 
 // Types
 export interface InstagramMessage {
@@ -170,10 +171,7 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
   const { token } = useAuthStore();
 
   const getWebSocketUrl = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsBaseUrl = import.meta.env.VITE_WS_URL || `${protocol}//${window.location.host}`;
-    const baseUrl = wsBaseUrl.replace(/^http/, 'ws');
-    return `${baseUrl}/ws/instagram/${accountId}/`;
+    return buildWebSocketUrl(`/ws/instagram/${accountId}/`);
   }, [accountId, token]);
 
   const sendMessage = useCallback((data: Record<string, unknown>) => {

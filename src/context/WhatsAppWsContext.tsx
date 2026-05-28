@@ -15,6 +15,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useAccountStore } from '../stores/accountStore';
 import { useChatStore } from '../stores/chatStore';
 import { Message, Conversation } from '../types';
+import { getWebSocketUrl } from '../services/websocket';
 import toast from 'react-hot-toast';
 
 // WebSocket event types
@@ -128,30 +129,10 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
   // Build WebSocket URL
   const getWsUrl = useCallback(() => {
     if (!token) return null;
-    
-    let host = import.meta.env.VITE_WS_HOST;
-    if (!host) {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      if (apiUrl) {
-        try {
-          const url = new URL(apiUrl);
-          host = url.host;
-        } catch {
-          host = window.location.host;
-        }
-      } else {
-        host = window.location.host;
-      }
-    }
-    
-    // Determine protocol
-    const protocol = host.includes('localhost') || host.includes('127.0.0.1')
-      ? 'ws'
-      : 'wss';
     // WebSocket endpoint: /ws/whatsapp/{account_id}/
     // Token is sent via an 'auth' message immediately after onopen — não expor na URL.
     if (!selectedAccount) return null;
-    return `${protocol}://${host}/ws/whatsapp/${selectedAccount.id}/`;
+    return getWebSocketUrl(`/ws/whatsapp/${selectedAccount.id}/`);
   }, [token, dashboardMode, selectedAccount]);
   
   // Cleanup function
