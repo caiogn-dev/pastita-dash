@@ -1,6 +1,6 @@
-# CLAUDE.md — pastita-dash
+# CLAUDE.md — Cardapidex dashboard
 
-Admin dashboard for the Pastita multi-tenant platform. React + TypeScript + Vite, served at `painel.pastita.com.br`.
+Admin dashboard for the Cardapidex multi-tenant SaaS platform. React + TypeScript + Vite. Current production may still be served from `painel.pastita.com.br` until DNS/deploy is fully migrated.
 
 ## Stack
 
@@ -42,11 +42,11 @@ src/
 
 ### API Base URL
 
-Set via `VITE_API_URL` env var → `src/services/api.ts`. Production: `https://backend.pastita.com.br`.
+Set via `VITE_API_URL` env var → `src/services/api.ts`. Current production backend is `https://backend.pastita.com.br` until the Cardapidex backend domain is cut over.
 
 ### WebSocket (WhatsApp real-time)
 
-`src/hooks/useWhatsAppWS.ts` connects to `wss://backend.pastita.com.br/ws/whatsapp/{accountId}/`. Handles:
+`src/hooks/useWhatsAppWS.ts` connects to the base configured by `VITE_WS_URL`, then appends `/ws/whatsapp/{accountId}/`. Handles:
 - `new_message` → `onNewMessage` callback
 - `message_sent` → `onMessageSent` callback (outbound/bot messages)
 - `conversation_update` → `onConversationUpdate`
@@ -90,7 +90,7 @@ All API calls in `src/services/`:
 
 ## CORS / Media
 
-Audio and media files are served from `https://backend.pastita.com.br/media/`. Nginx has `Access-Control-Allow-Origin: https://painel.pastita.com.br`. Use `crossOrigin="anonymous"` on `<audio>` / `<img>` tags for cross-origin media.
+Audio and media files are served by the backend media host. Use `crossOrigin="anonymous"` on `<audio>` / `<img>` tags for cross-origin media.
 
 ## Handover (Bot ↔ Human)
 

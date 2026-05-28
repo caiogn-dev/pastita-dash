@@ -119,7 +119,7 @@ export const AccountFormPage: React.FC = () => {
               label="Nome da Conta"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Ex: Pastita Principal"
+              placeholder="Ex: Loja Principal"
               required
             />
 

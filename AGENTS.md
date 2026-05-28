@@ -1,6 +1,6 @@
-# Pastita Dashboard — Repository Knowledge
+# Cardapidex Dashboard — Repository Knowledge
 
-React/TypeScript admin dashboard for the Pastita/CE Saladas multi-tenant platform.
+React/TypeScript admin dashboard for the Cardapidex multi-tenant SaaS platform.
 
 ## Tech Stack
 

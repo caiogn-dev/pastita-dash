@@ -1,6 +1,6 @@
 /**
  * WhatsApp Inbox - Página consolidada para gerenciar conversas
- * Similar ao WhatsApp Web, mas integrado ao painel Pastita
+ * Similar ao WhatsApp Web, mas integrado ao painel Cardapidex
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
