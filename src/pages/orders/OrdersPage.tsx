@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
 import {
   DndContext,
   DragOverlay,
@@ -385,6 +386,24 @@ export const OrdersPage: React.FC = () => {
   const storeQuery = storeSlug || storeId;
   const orderCreateRoute = storeQuery ? `/stores/${storeQuery}/orders/new` : null;
 
+  // ── Novo Pedido (PDV) drawer ─────────────────────────────────────────────
+  const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
+
+  // Keyboard shortcut: press 'N' when not focused on an input opens the drawer
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (['input', 'textarea', 'select'].includes(tag)) return;
+      if (e.key === 'n' || e.key === 'N') {
+        if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+          setIsNewOrderOpen(true);
+        }
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -631,13 +650,24 @@ export const OrdersPage: React.FC = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {/* PDV Drawer button */}
+            {storeQuery && (
+              <button
+                onClick={() => setIsNewOrderOpen(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
+                title="Atalho: tecla N"
+              >
+                <ShoppingCartIcon className="h-4 w-4" />
+                Novo Pedido (N)
+              </button>
+            )}
             {orderCreateRoute && (
               <button
                 onClick={() => navigate(orderCreateRoute)}
                 className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-black dark:bg-white dark:text-black dark:hover:bg-zinc-200 transition-colors"
               >
                 <ShoppingCartIcon className="h-4 w-4" />
-                Novo pedido
+                Formulário
               </button>
             )}
             <button
@@ -721,6 +751,20 @@ export const OrdersPage: React.FC = () => {
         ) : null}
       </DragOverlay>
       {ConfirmDialog}
+
+      {/* PDV: Novo Pedido Drawer */}
+      {storeQuery && (
+        <NewOrderDrawer
+          isOpen={isNewOrderOpen}
+          onClose={() => setIsNewOrderOpen(false)}
+          storeSlug={storeQuery}
+          storeId={storeId || undefined}
+          onOrderCreated={() => {
+            setIsNewOrderOpen(false);
+            loadOrders(true);
+          }}
+        />
+      )}
     </DndContext>
   );
 };

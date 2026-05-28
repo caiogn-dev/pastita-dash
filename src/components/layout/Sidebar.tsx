@@ -104,9 +104,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           icon: PresentationChartLineIcon,
           children: [
             { name: 'Visão Geral', href: '/analytics', icon: PresentationChartLineIcon },
-            ...(user?.is_staff || user?.email === 'caiogn2002@gmail.com'
-              ? [{ name: 'Ce-Saladas 🥗', href: '/analytics/saladas', icon: PresentationChartLineIcon }]
-              : []),
           ],
         },
       ],

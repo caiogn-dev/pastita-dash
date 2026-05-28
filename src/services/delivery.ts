@@ -1,5 +1,7 @@
 import api from './api';
 import { PaginatedResponse } from '../types';
+import { getStoreSlug } from '../hooks/useStore';
+import { requireStoreSlug } from '../config/storeConfig';
 
 export interface DeliveryZone {
   id: string;
@@ -102,7 +104,7 @@ export interface DeliveryZoneFilters {
 class DeliveryService {
   private baseUrl = '/stores/delivery-zones';
   private storeUrl = '/stores';
-  private storeSlug = import.meta.env.VITE_STORE_SLUG || 'pastita';
+  private get storeSlug(): string { return requireStoreSlug(getStoreSlug()); }
 
   async getZones(filters?: DeliveryZoneFilters): Promise<PaginatedResponse<DeliveryZone>> {
     const params = new URLSearchParams();

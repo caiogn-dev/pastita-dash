@@ -122,7 +122,7 @@ export const NewCampaignPage: React.FC = () => {
   const [campaignData, setCampaignData] = useState<CampaignData>({
     name: '',
     subject: '',
-    from_name: storeName || 'Pastita',
+    from_name: storeName || '',
     html_content: '',
     audienceType: 'all',
     segmentFilters: {
@@ -312,7 +312,7 @@ export const NewCampaignPage: React.FC = () => {
         name: campaignData.name,
         subject: campaignData.subject,
         html_content: finalHtml,
-        from_name: campaignData.from_name || storeName || 'Pastita',
+        from_name: campaignData.from_name || storeName || '',
         audience_type: campaignData.audienceType as 'all' | 'segment' | 'custom',
       };
 
@@ -552,7 +552,7 @@ export const NewCampaignPage: React.FC = () => {
                       value={campaignData.from_name}
                       onChange={e => setCampaignData(prev => ({ ...prev, from_name: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="Ex: Pastita"
+                      placeholder="Ex: Nome da loja"
                     />
                   </div>
                 </div>

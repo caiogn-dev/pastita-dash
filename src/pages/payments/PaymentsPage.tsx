@@ -31,6 +31,7 @@ import { ordersService } from '../../services';
 import { Order } from '../../types';
 import logger from '../../services/logger';
 import { useStore } from '../../hooks';
+import { buildStorefrontUrl } from '../../utils/storefrontUrl';
 
 // Payment status options based on StoreOrder.PaymentStatus
 const PAYMENT_STATUS_OPTIONS = [
@@ -50,22 +51,6 @@ const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: React.ReactNo
   cash: { label: 'Dinheiro', icon: <BanknotesIcon className="w-4 h-4" /> },
   card: { label: 'Cartão', icon: <CreditCardIcon className="w-4 h-4" /> },
   mercadopago: { label: 'Mercado Pago', icon: <CurrencyDollarIcon className="w-4 h-4" /> },
-};
-
-const STOREFRONT_ORIGINS_BY_SLUG: Record<string, string> = {
-  pastita: 'https://pastita.com.br',
-  'ce-saladas': 'https://cesaladas.com.br',
-};
-
-const metadataString = (metadata: Record<string, unknown> | undefined, keys: string[]): string | null => {
-  if (!metadata) return null;
-  for (const key of keys) {
-    const value = metadata[key];
-    if (typeof value === 'string' && value.trim()) {
-      return value.trim().replace(/\/$/, '');
-    }
-  }
-  return null;
 };
 
 // Payment status badge component
@@ -108,20 +93,7 @@ export const PaymentsPage: React.FC = () => {
     if (!routeStoreId) return storeId || null;
     return selectedStore?.id || routeStoreId;
   }, [routeStoreId, selectedStore, storeId]);
-  const storefrontOrigin = useMemo(() => {
-    const metadataOrigin = metadataString(selectedStore?.metadata, [
-      'storefront_url',
-      'storefront_origin',
-      'site_url',
-      'website',
-      'public_url',
-    ]);
-    if (metadataOrigin) return metadataOrigin;
-    if (selectedStore?.slug && STOREFRONT_ORIGINS_BY_SLUG[selectedStore.slug]) {
-      return STOREFRONT_ORIGINS_BY_SLUG[selectedStore.slug];
-    }
-    return STOREFRONT_ORIGINS_BY_SLUG.pastita;
-  }, [selectedStore]);
+  const storefrontUrl = useMemo(() => buildStorefrontUrl(selectedStore), [selectedStore]);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -275,7 +247,7 @@ export const PaymentsPage: React.FC = () => {
         // SECURE: Generate link using access_token (not order_number)
         // This prevents unauthorized access to order details
         const clientPaymentLink = pix_code && access_token
-          ? `${storefrontOrigin}/pendente?token=${encodeURIComponent(access_token)}`
+            ? `${storefrontUrl}/pendente?token=${encodeURIComponent(access_token)}`
           : null;
         
         // Priority: pix_ticket_url > client payment page (with token) > direct link > preference link

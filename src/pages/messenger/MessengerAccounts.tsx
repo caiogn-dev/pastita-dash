@@ -185,7 +185,7 @@ export default function MessengerAccounts() {
               {[
                 { key: 'name', label: 'Nome da Conta', type: 'text', placeholder: 'Nome para identificar esta conta' },
                 { key: 'page_id', label: 'Page ID', type: 'text', placeholder: 'ID da página do Facebook', disabled: !!editingAccount },
-                { key: 'page_name', label: 'Nome da Página', type: 'text', placeholder: 'Ex: Pastita Oficial' },
+                { key: 'page_name', label: 'Nome da Página', type: 'text', placeholder: 'Ex: Loja Oficial' },
                 { key: 'page_access_token', label: 'Page Access Token', type: 'password', placeholder: 'Token de acesso da página' },
               ].map(({ key, label, type, placeholder, disabled }) => (
                 <div key={key}>

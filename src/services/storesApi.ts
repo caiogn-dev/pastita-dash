@@ -52,7 +52,7 @@ export interface Store {
   banner_url?: string;
   primary_color: string;
   secondary_color: string;
-  template: 'fresh' | 'bold' | 'classic';
+  template: 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'premium';
   tagline: string;
   custom_domain: string | null;
   email: string;
@@ -107,7 +107,7 @@ export interface StoreInput {
   operating_hours?: Record<string, { open: string; close: string; is_open: boolean }>;
   primary_color?: string;
   secondary_color?: string;
-  template?: 'fresh' | 'bold' | 'classic';
+  template?: 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'premium';
   tagline?: string;
   custom_domain?: string | null;
 }
@@ -580,16 +580,6 @@ export const deactivateStore = async (id: string): Promise<{ status: string }> =
     return response.data;
   } catch (error) {
     logger.error('Failed to deactivate store', error);
-    throw error;
-  }
-};
-
-export const syncPastitaToStore = async (id: string): Promise<{ message: string; synced: Record<string, number> }> => {
-  try {
-    const response = await api.post(`${STORES_ADMIN_URL}/${id}/sync_pastita/`);
-    return response.data;
-  } catch (error) {
-    logger.error('Failed to sync Pastita to store', error);
     throw error;
   }
 };
@@ -1576,7 +1566,6 @@ export default {
   getStoreStats,
   activateStore,
   deactivateStore,
-  syncPastitaToStore,
   // Integrations
   getIntegrations,
   getIntegration,

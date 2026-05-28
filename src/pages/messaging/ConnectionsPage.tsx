@@ -25,7 +25,7 @@ const PLATFORMS: Record<string, PlatformConfig> = {
     name: 'WhatsApp', icon: '📱',
     description: 'Conecte sua conta WhatsApp Business',
     fields: [
-      { name: 'name', label: 'Nome da Conexão', type: 'text', required: true, placeholder: 'Ex: Pastita Principal' },
+      { name: 'name', label: 'Nome da Conexão', type: 'text', required: true, placeholder: 'Ex: Loja Principal' },
       { name: 'phone_number', label: 'Número de Telefone', type: 'tel', required: true, placeholder: 'Ex: +55 63 99138-6719' },
       { name: 'phone_number_id', label: 'Phone Number ID (Meta)', type: 'text', required: true, placeholder: 'Ex: 123456789012345' },
       { name: 'waba_id', label: 'WABA ID (opcional)', type: 'text', required: false, placeholder: 'Ex: 987654321098765' },
@@ -37,9 +37,9 @@ const PLATFORMS: Record<string, PlatformConfig> = {
     name: 'Messenger', icon: '💬',
     description: 'Conecte sua página do Facebook Messenger',
     fields: [
-      { name: 'name', label: 'Nome da Conexão', type: 'text', required: true, placeholder: 'Ex: Página Pastita' },
+      { name: 'name', label: 'Nome da Conexão', type: 'text', required: true, placeholder: 'Ex: Página da Loja' },
       { name: 'page_id', label: 'Page ID', type: 'text', required: true, placeholder: 'Ex: 123456789012345' },
-      { name: 'page_name', label: 'Nome da Página', type: 'text', required: true, placeholder: 'Ex: Pastita Oficial' },
+      { name: 'page_name', label: 'Nome da Página', type: 'text', required: true, placeholder: 'Ex: Loja Oficial' },
       { name: 'page_access_token', label: 'Page Access Token', type: 'password', required: true, placeholder: 'Token de acesso da página' },
     ],
   },

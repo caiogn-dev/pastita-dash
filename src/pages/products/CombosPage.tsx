@@ -2,7 +2,7 @@
  * CombosPage — Gerenciamento de Combos da Loja
  *
  * Permite criar, editar e excluir combos com seus produtos.
- * Os combos aparecem no cardápio do ce-saladas e podem ser adicionados ao carrinho.
+ * Os combos aparecem no cardápio da loja e podem ser adicionados ao carrinho.
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -145,7 +145,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
         featured: combo.featured,
         track_stock: combo.track_stock,
         stock_quantity: combo.stock_quantity,
-        items: combo.items.map(i => ({
+        items: (combo.items || []).map(i => ({
           _key: i.id,
           product: i.product,
           quantity: i.quantity,

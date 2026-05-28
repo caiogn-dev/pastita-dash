@@ -463,6 +463,7 @@ export default function InstagramInbox() {
                           src={conversation.participant_profile_pic}
                           alt={conversation.participant_name || conversation.participant_username || 'Perfil'}
                           className="h-full w-full object-cover"
+                          crossOrigin="anonymous"
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
@@ -527,6 +528,7 @@ export default function InstagramInbox() {
                     src={selectedConversation.participant_profile_pic}
                     alt={selectedConversation.participant_name || 'Perfil'}
                     className="h-full w-full object-cover"
+                    crossOrigin="anonymous"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
@@ -595,7 +597,7 @@ export default function InstagramInbox() {
                           {message.media_url && (
                             <div className="mb-2 overflow-hidden rounded-xl">
                               {message.message_type?.toUpperCase() === 'IMAGE' ? (
-                                <img src={message.media_url} alt="Midia" className="max-h-72 w-full object-cover" />
+                                <img src={message.media_url} alt="Midia" className="max-h-72 w-full object-cover" crossOrigin="anonymous" />
                               ) : (
                                 <div className="flex items-center gap-2 rounded-xl bg-black/10 px-3 py-2 text-sm">
                                   <PhotoIcon className="h-4 w-4" />

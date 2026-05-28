@@ -180,96 +180,84 @@ export const Navbar: React.FC = () => {
 
   const sections: NavSection[] = useMemo(() => [
     { label: 'Início', icon: HomeIcon, href: '/', items: [] },
+
+    // ── Operação diária ─────────────────────────────────────
     {
-      label: 'Loja',
-      icon: BuildingStorefrontIcon,
-      items: [
-        { name: 'Pedidos',       href: storeHref('orders'),    icon: ShoppingCartIcon },
-        { name: 'Clientes',      href: storeHref('customers'), icon: UserGroupIcon },
-        { name: 'Produtos',      href: storeHref('products'),  icon: Squares2X2Icon },
-        { name: 'Cupons',        href: storeHref('coupons'),   icon: TagIcon },
-        { name: 'Configurações', href: storeHref('settings'),  icon: Cog6ToothIcon },
-        { name: 'Pagamentos',    href: storeHref('payments'),  icon: CreditCardIcon },
-      ],
+      label: 'Pedidos',
+      icon: ShoppingCartIcon,
+      href: storeHref('orders'),
+      items: [],
     },
     {
-      label: 'Conversas',
+      label: 'Chat',
       icon: ChatBubbleLeftRightIcon,
+      href: '/whatsapp/chat',
       badge: totalUnreadCount > 0 ? String(totalUnreadCount > 99 ? '99+' : totalUnreadCount) : undefined,
-      items: [
-        { name: 'Inbox unificado',  href: '/conversations',     icon: InboxIcon },
-        { name: 'Chat WhatsApp',    href: '/whatsapp/chat',     icon: DevicePhoneMobileIcon },
-        { name: 'Caixa de Entrada', href: '/whatsapp/inbox',    icon: InboxIcon },
-        { name: 'Instagram',        href: '/instagram/inbox',   icon: ChatBubbleLeftRightIcon },
-        { name: 'Messenger',        href: '/messenger/inbox',   icon: ChatBubbleBottomCenterTextIcon },
-        { name: 'Handover',         href: '/whatsapp/handover', icon: UserGroupIcon },
-        { name: 'Conexões',         href: '/connections',       icon: LinkIcon },
-      ],
+      items: [],
     },
     {
-      label: 'Marketing',
-      icon: MegaphoneIcon,
-      items: [
-        { name: 'Campanhas Email',    href: '/marketing/email/campaigns',   icon: EnvelopeIcon },
-        { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp',          icon: DevicePhoneMobileIcon },
-        { name: 'Templates',          href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-        { name: 'Assinantes',         href: '/marketing/subscribers',       icon: UserGroupIcon },
-        { name: 'Automações',         href: '/marketing/automations',       icon: BoltIcon },
-      ],
+      label: 'Clientes',
+      icon: UserGroupIcon,
+      href: storeHref('customers'),
+      items: [],
     },
     {
-      label: 'IA',
-      icon: CpuChipIcon,
+      label: 'Cardápio',
+      icon: Squares2X2Icon,
       items: [
-        { name: 'Agentes IA',   href: '/agents',                   icon: CpuChipIcon, badge: 'Beta' },
-        { name: 'Novo Agente',  href: '/agents/new',               icon: PlusIcon },
-        { name: 'Empresas',     href: '/automation/companies',     icon: BuildingOfficeIcon },
-        { name: 'Sessões',      href: '/automation/sessions',      icon: UserGroupIcon },
-        { name: 'Agendamentos', href: '/automation/scheduled',     icon: ClockIcon },
-        { name: 'Logs',         href: '/automation/logs',          icon: DocumentChartBarIcon },
-        { name: 'Intenções',    href: '/automation/intents/stats', icon: SparklesIcon },
+        { name: 'Produtos',  href: storeHref('products'), icon: Squares2X2Icon },
+        { name: 'Combos',    href: storeHref('combos'),   icon: Squares2X2Icon },
+        { name: 'Cupons',    href: storeHref('coupons'),  icon: TagIcon },
       ],
     },
-    {
-      label: 'Relatórios',
-      icon: PresentationChartLineIcon,
-      items: [
-        { name: 'Visão Geral',   href: '/analytics',         icon: PresentationChartLineIcon },
-        { name: 'Ce-Saladas 🥗', href: '/analytics/saladas', icon: PresentationChartLineIcon },
-      ],
-    },
+
+    // ── Tudo o mais ─────────────────────────────────────────
     {
       label: 'Config',
       icon: Cog6ToothIcon,
       items: [
-        { name: 'Contas WhatsApp',  href: '/accounts',             icon: DevicePhoneMobileIcon },
-        { name: 'Contas Instagram', href: '/instagram/accounts',   icon: ChatBubbleLeftRightIcon },
-        { name: 'Contas Messenger', href: '/messenger/accounts',   icon: ChatBubbleBottomCenterTextIcon },
-        { name: 'Todas as Lojas',   href: '/stores',               icon: BuildingStorefrontIcon },
-        { name: 'Sistema',          href: '/settings',             icon: Cog6ToothIcon },
-        { name: 'Diagnóstico',      href: '/whatsapp/diagnostics', icon: Cog6ToothIcon },
+        // Loja
+        { name: 'Relatórios',    href: '/analytics',             icon: PresentationChartLineIcon },
+        { name: 'Pagamentos',    href: storeHref('payments'),    icon: CreditCardIcon },
+        { name: 'Entrega',       href: storeHref('delivery'),    icon: ShoppingCartIcon },
+        { name: 'Configurações', href: storeHref('settings'),    icon: Cog6ToothIcon },
+        { name: 'Todas as Lojas', href: '/stores',               icon: BuildingStorefrontIcon },
+        // Marketing
+        { name: 'Campanhas Email',    href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
+        { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
+        { name: 'Templates WA',       href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
+        // Handover
+        { name: 'Handover',      href: '/whatsapp/handover',    icon: UserGroupIcon },
+        // IA & Automação
+        { name: 'Agentes IA',    href: '/agents',                icon: CpuChipIcon, badge: 'Beta' },
+        { name: 'Automações',    href: '/automation/companies',  icon: BoltIcon },
+        { name: 'Agendamentos',  href: '/automation/scheduled',  icon: ClockIcon },
+        { name: 'Logs IA',       href: '/automation/logs',       icon: DocumentChartBarIcon },
+        // Conexões
+        { name: 'Contas WhatsApp',  href: '/accounts',           icon: DevicePhoneMobileIcon },
+        { name: 'Conexões',         href: '/connections',        icon: LinkIcon },
+        // Sistema
+        { name: 'Sistema',       href: '/settings',              icon: Cog6ToothIcon },
       ],
     },
   ], [storeHref, totalUnreadCount]);
 
   const brandInfo = useMemo(() => {
-    if (!store) return { name: 'Pastita', logo: '/pastita-logo.svg', initial: 'P', color: '#722F37' };
-    const isPastita = store.name?.toLowerCase().includes('pastita') || store.slug?.toLowerCase().includes('pastita');
+    if (!store) return {
+      name: 'Cardapidex',
+      logo: '/cardapidex-logo.svg',
+      initial: 'Cx',
+      color: '#059669',
+    };
     return {
-      name: store.name || 'Pastita',
-      logo: isPastita ? '/pastita-logo.svg' : (store.logo_url || null),
-      initial: store.name?.[0]?.toUpperCase() || 'P',
-      color: store.primary_color || '#722F37',
+      name: store.name || 'Cardapidex',
+      logo: store.logo_url || null,
+      initial: store.name?.[0]?.toUpperCase() || 'C',
+      color: store.primary_color || '#059669',
     };
   }, [store]);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
-
-  useEffect(() => {
-    const isAgriao = store?.name?.toLowerCase().includes('agriao') || store?.slug?.toLowerCase().includes('agriao');
-    if (isAgriao) document.documentElement.setAttribute('data-theme', 'agriao');
-    else document.documentElement.removeAttribute('data-theme');
-  }, [store]);
 
   return (
     <>

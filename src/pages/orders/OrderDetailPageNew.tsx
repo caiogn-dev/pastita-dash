@@ -427,11 +427,11 @@ export const OrderDetailPageNew: React.FC = () => {
             </Card>
 
             {/* Notes */}
-            {order.notes && (
+            {(order.customer_notes || order.notes) && (
               <Card className="p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Observações</h2>
                 <p className="text-gray-600 dark:text-zinc-400 bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                  {order.notes}
+                  {order.customer_notes || order.notes}
                 </p>
               </Card>
             )}

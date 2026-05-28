@@ -3,13 +3,17 @@ import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../services/storesApi';
 import { useStore } from '../../hooks';
+import { buildStorefrontUrl } from '../../utils/storefrontUrl';
 
-type Template = 'fresh' | 'bold' | 'classic';
+type Template = 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'premium';
 
 const TEMPLATES: { id: Template; label: string; description: string; preview: string }[] = [
-  { id: 'fresh', label: 'Fresh', description: 'Hero com gradiente + cards. Ideal para saudável, saladas, açaí.', preview: '🥗' },
-  { id: 'bold', label: 'Bold', description: 'Dark mode com acento vibrante. Ideal para hambúrgueres, pizzas.', preview: '🍔' },
-  { id: 'classic', label: 'Classic', description: 'Tom elegante estilo menu. Ideal para restaurantes, marmitas.', preview: '🍱' },
+  { id: 'fresh', label: 'Fresh', description: 'Claro, leve e visual. Ideal para saladas, bowls e comida saudável.', preview: '🥗' },
+  { id: 'bold', label: 'Bold', description: 'Promocional, forte e direto. Ideal para salgadinhos, pizza, burger e pastel.', preview: '🍔' },
+  { id: 'classic', label: 'Classic', description: 'Tradicional e editorial. Ideal para restaurantes, marmitas e cardápios clássicos.', preview: '🍱' },
+  { id: 'minimal', label: 'Minimal', description: 'Compacto e rápido. Ideal para cardápio estilo app de delivery.', preview: '⚡' },
+  { id: 'dark', label: 'Dark', description: 'Escuro e contrastado. Ideal para marcas noturnas, adegas e lanches premium.', preview: '🌙' },
+  { id: 'premium', label: 'Premium', description: 'Mais calmo e sofisticado. Ideal para restaurantes e produtos especiais.', preview: '✨' },
 ];
 
 export const StorefrontPage: React.FC = () => {
@@ -150,7 +154,7 @@ export const StorefrontPage: React.FC = () => {
       {/* Template */}
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-gray-700">Template</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {TEMPLATES.map(t => (
             <button
               key={t.id}
@@ -232,11 +236,12 @@ export const StorefrontPage: React.FC = () => {
           type="text"
           value={form.custom_domain}
           onChange={e => setForm(f => ({ ...f, custom_domain: e.target.value }))}
-          placeholder="cesaladas.com.br"
+          placeholder="loja.com.br"
           className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-mono"
         />
         <p className="text-xs text-gray-400">
-          Aponte o DNS do domínio para o servidor do storefront antes de salvar.
+          Sem domínio próprio, o cardápio público usa cardapidex.com.br/{store.slug}.
+          Com domínio próprio, a loja abre direto no domínio configurado.
         </p>
       </section>
 
@@ -250,11 +255,7 @@ export const StorefrontPage: React.FC = () => {
         </button>
         {store && (
           <a
-            href={
-              store.custom_domain
-                ? `https://${store.custom_domain}`
-                : `${import.meta.env.VITE_STOREFRONT_BASE_URL || 'https://cesaladas.com.br'}/preview/${store.slug}`
-            }
+            href={buildStorefrontUrl(store)}
             target="_blank"
             rel="noopener noreferrer"
             className="px-5 py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 font-semibold hover:bg-indigo-50 transition-colors whitespace-nowrap"

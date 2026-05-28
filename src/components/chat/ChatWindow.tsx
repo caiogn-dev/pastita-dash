@@ -18,7 +18,10 @@ import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { MediaViewer } from './MediaViewer';
 import { ContactInfoPanel } from './ContactInfoPanel';
+import { CustomerPanel } from './CustomerPanel';
 import { NewConversationModal } from './NewConversationModal';
+import { NewOrderDrawer } from '../orders/NewOrderDrawer';
+import type { CustomerSearchResult } from '../../types/crm';
 import { getAvatarColor, getInitials } from '../../utils/avatar';
 import { useWhatsAppWS, MessageReceivedEvent, MessageSentEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
@@ -71,7 +74,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
-  const [rightPanel, setRightPanel] = useState<'info' | 'templates' | 'tools' | null>(null);
+  const [rightPanel, setRightPanel] = useState<'info' | 'templates' | 'tools' | 'customer' | null>(null);
+  const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
+  const [newOrderCustomer, setNewOrderCustomer] = useState<CustomerSearchResult | null>(null);
   const [showNewConvModal, setShowNewConvModal] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unread' | 'human' | 'bot'>('all');
   const [insertText, setInsertText] = useState<string | undefined>(undefined);
@@ -178,7 +183,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     const newMessage = event.message;
     if (selectedConversation && event.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        if (prev.some(m => m.id === newMessage.id || m.whatsapp_message_id === newMessage.whatsapp_message_id)) return prev;
+        const isDuplicate = prev.some(m =>
+          m.id === newMessage.id ||
+          (newMessage.whatsapp_message_id && m.whatsapp_message_id === newMessage.whatsapp_message_id)
+        );
+        if (isDuplicate) return prev;
         return [...prev, newMessage as unknown as Message];
       });
       handleAutoScroll(true);
@@ -193,7 +202,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   function handleNewMessage(msg: Message) {
     if (selectedConversation && msg.conversation_id === selectedConversation.id) {
       setMessages(prev => {
-        if (prev.some(m => m.id === msg.id || m.whatsapp_message_id === msg.whatsapp_message_id)) return prev;
+        const isDuplicate = prev.some(m =>
+          m.id === msg.id ||
+          (msg.whatsapp_message_id && m.whatsapp_message_id === msg.whatsapp_message_id)
+        );
+        if (isDuplicate) return prev;
         return [...prev, msg];
       });
       if (msg.direction === 'inbound') handleAutoScroll(true);
@@ -205,7 +218,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     if (selectedConversation && event.conversation_id === selectedConversation.id) {
       const converted: Message = { ...msg, account: accountId, updated_at: msg.created_at } as unknown as Message;
       setMessages(prev => {
-        if (prev.some(m => m.id === converted.id || m.whatsapp_message_id === converted.whatsapp_message_id)) return prev;
+        const isDuplicate = prev.some(m =>
+          m.id === converted.id ||
+          (converted.whatsapp_message_id && m.whatsapp_message_id === converted.whatsapp_message_id)
+        );
+        if (isDuplicate) return prev;
         return [...prev, converted];
       });
     }
@@ -286,13 +303,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
 
   const handleToolsSend = async (text: string) => {
     if (!selectedConversation || !text.trim()) return;
-    await whatsappService.sendTextMessage({
-      account_id: accountId,
-      to: selectedConversation.phone_number,
-      text: text.trim(),
-      metadata: { client_request_id: crypto.randomUUID(), source: 'chat_window_tools' },
-    });
-    void loadMessages();
+    try {
+      await whatsappService.sendTextMessage({
+        account_id: accountId,
+        to: selectedConversation.phone_number,
+        text: text.trim(),
+        metadata: { client_request_id: crypto.randomUUID(), source: 'chat_window_tools' },
+      });
+      void loadMessages();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
   };
 
   const handleSwitchMode = async () => {
@@ -307,8 +328,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     } catch (error) { toast.error(getErrorMessage(error)); }
   };
 
-  const toggleRightPanel = (panel: 'info' | 'templates' | 'tools') => {
+  const toggleRightPanel = (panel: 'info' | 'templates' | 'tools' | 'customer') => {
     setRightPanel(prev => prev === panel ? null : panel);
+  };
+
+  const handleNewOrderFromPanel = (customer: CustomerSearchResult) => {
+    setNewOrderCustomer(customer);
+    setRightPanel(null);
+    setIsNewOrderOpen(true);
   };
 
   const handleInsertText = (text: string) => {
@@ -591,6 +618,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
                 >
                   <BoltIcon className="w-4 h-4" />
                 </button>
+                {/* Botão CRM */}
+                <button
+                  onClick={() => toggleRightPanel('customer')}
+                  className={`p-1.5 rounded-lg transition-colors ${rightPanel === 'customer' ? 'bg-primary-600 text-white' : 'hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] text-[var(--fg-secondary)]'}`}
+                  title="Painel CRM do cliente"
+                >
+                  <UserCircleIcon className="w-4 h-4" />
+                </button>
                 {/* Reload */}
                 <button
                   className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] transition-colors"
@@ -667,7 +702,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       </div>
 
       {/* ── Painel Direito ── */}
-      {selectedConversation && rightPanel && (
+      {selectedConversation && rightPanel && rightPanel !== 'customer' && (
         <ContactInfoPanel
           conversation={selectedConversation}
           accountId={accountId}
@@ -679,12 +714,40 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
           storeCity={store?.city || undefined}
           storeState={store?.state || undefined}
           storeUrl={getStoreUrl(store?.metadata)}
-          activeTab={rightPanel}
-          onTabChange={setRightPanel}
+          activeTab={rightPanel as 'info' | 'templates' | 'tools'}
+          onTabChange={(tab) => setRightPanel(tab)}
           onClose={() => setRightPanel(null)}
           onInsertText={handleInsertText}
           onSendMessage={handleToolsSend}
           onAfterSend={() => void loadMessages()}
+        />
+      )}
+
+      {/* ── Painel CRM (CustomerPanel) ── */}
+      {selectedConversation && rightPanel === 'customer' && (
+        <CustomerPanel
+          storeSlug={storeSlug || ''}
+          unifiedUserId={selectedConversation?.unified_user_id ?? null}
+          onNewOrder={handleNewOrderFromPanel}
+          onClose={() => setRightPanel(null)}
+        />
+      )}
+
+      {/* ── NewOrderDrawer (aberto pelo painel CRM ou outro ponto) ── */}
+      {storeSlug && (
+        <NewOrderDrawer
+          isOpen={isNewOrderOpen}
+          onClose={() => {
+            setIsNewOrderOpen(false);
+            setNewOrderCustomer(null);
+          }}
+          storeSlug={storeSlug}
+          storeId={storeId || undefined}
+          initialCustomer={newOrderCustomer}
+          onOrderCreated={() => {
+            setIsNewOrderOpen(false);
+            setNewOrderCustomer(null);
+          }}
         />
       )}
     </div>

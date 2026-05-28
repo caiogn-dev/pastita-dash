@@ -64,9 +64,11 @@ export const ordersService = {
   },
 
   createOrder: async (data: CreateOrder): Promise<Order> => {
-    // Dashboard/admin order creation is registered at /stores/orders/.
+    // Dashboard/admin order creation uses nested router: /stores/{store_pk}/orders/
     // Storefront checkout uses /stores/{slug}/checkout/, not /stores/{slug}/orders/.
-    const response = await api.post<Order>('/stores/orders/', data);
+    const storeId = data.store;
+    if (!storeId) throw new Error('store field is required');
+    const response = await api.post<Order>(`/stores/${storeId}/orders/`, data);
     return normalizeOrder(response.data);
   },
 

@@ -294,7 +294,7 @@ export default function MessengerInbox() {
                         }`}
                       >
                         {msg.attachment_url ? (
-                          <img src={msg.attachment_url} alt="attachment" className="max-w-full rounded-xl" />
+                          <img src={msg.attachment_url} alt="attachment" className="max-w-full rounded-xl" crossOrigin="anonymous" />
                         ) : (
                           <p className="whitespace-pre-wrap break-words text-sm">{msg.content}</p>
                         )}
