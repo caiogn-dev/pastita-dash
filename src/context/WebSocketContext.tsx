@@ -56,6 +56,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { storeSlug } = useStore();
   const connectionRef = useRef<RealtimeConnection | null>(null);
   const listenersRef = useRef<Map<string, Set<Callback>>>(new Map());
+  const lastTokenRef = useRef<string | null>(null);
   
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Reutilizar conexão global se existir, mas recriar se a loja mudou
+    // Reutilizar conexão global se existir, mas recriar se loja ou token mudou
     let connection = getGlobalConnection();
 
     const currentInfo = connection?.getConnectionInfo();
@@ -100,11 +101,18 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       currentInfo?.storeSlug &&
       currentInfo.storeSlug !== effectiveStoreSlug
     );
+    const isWrongToken = Boolean(
+      connection &&
+      lastTokenRef.current &&
+      lastTokenRef.current !== effectiveToken
+    );
 
-    if (isWrongStore && connection) {
-      console.log(`[WS] Store changed (${currentInfo?.storeSlug} → ${effectiveStoreSlug}), recreating realtime connection`);
+    if ((isWrongStore || isWrongToken) && connection) {
+      const reason = isWrongToken ? 'token changed (re-login)' : `store changed (${currentInfo?.storeSlug} → ${effectiveStoreSlug})`;
+      console.log(`[WS] Recreating realtime connection: ${reason}`);
       connection.disconnect();
       setGlobalConnection(null);
+      lastTokenRef.current = null;
       connection = null;
     }
 
@@ -121,6 +129,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         pingInterval: 25000,
       });
       setGlobalConnection(connection);
+      lastTokenRef.current = effectiveToken;
     }
 
     connectionRef.current = connection;
