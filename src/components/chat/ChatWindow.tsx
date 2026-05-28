@@ -303,13 +303,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
 
   const handleToolsSend = async (text: string) => {
     if (!selectedConversation || !text.trim()) return;
-    await whatsappService.sendTextMessage({
-      account_id: accountId,
-      to: selectedConversation.phone_number,
-      text: text.trim(),
-      metadata: { client_request_id: crypto.randomUUID(), source: 'chat_window_tools' },
-    });
-    void loadMessages();
+    try {
+      await whatsappService.sendTextMessage({
+        account_id: accountId,
+        to: selectedConversation.phone_number,
+        text: text.trim(),
+        metadata: { client_request_id: crypto.randomUUID(), source: 'chat_window_tools' },
+      });
+      void loadMessages();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
   };
 
   const handleSwitchMode = async () => {

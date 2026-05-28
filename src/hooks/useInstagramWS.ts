@@ -164,6 +164,8 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const optsRef = useRef(options);
+  optsRef.current = options;
 
   const { token } = useAuthStore();
 
@@ -238,25 +240,25 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
           clearInterval(pingIntervalRef.current);
         }
 
-        onDisconnected?.();
+        optsRef.current.onDisconnected?.();
 
         // Attempt reconnection if not a normal close
         if (
-          autoReconnect &&
+          optsRef.current.autoReconnect !== false &&
           event.code !== 1000 &&
-          reconnectAttemptsRef.current < maxReconnectAttempts
+          reconnectAttemptsRef.current < (optsRef.current.maxReconnectAttempts ?? 5)
         ) {
           reconnectAttemptsRef.current++;
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
-          }, reconnectInterval * reconnectAttemptsRef.current);
+          }, (optsRef.current.reconnectInterval ?? 3000) * reconnectAttemptsRef.current);
         }
       };
 
       wsRef.current.onerror = () => {
         const errorMsg = 'WebSocket connection error';
         setError(errorMsg);
-        onError?.(errorMsg);
+        optsRef.current.onError?.(errorMsg);
       };
 
       wsRef.current.onmessage = (event) => {
@@ -265,25 +267,25 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
 
           switch (data.type) {
             case 'message_received':
-              onMessageReceived?.(data);
+              optsRef.current.onMessageReceived?.(data);
               break;
             case 'message_sent':
-              onMessageSent?.(data);
+              optsRef.current.onMessageSent?.(data);
               break;
             case 'message_seen':
-              onMessageSeen?.(data);
+              optsRef.current.onMessageSeen?.(data);
               break;
             case 'typing':
-              onTyping?.(data);
+              optsRef.current.onTyping?.(data);
               break;
             case 'conversation_updated':
-              onConversationUpdated?.(data);
+              optsRef.current.onConversationUpdated?.(data);
               break;
             case 'story_mention':
-              onStoryMention?.(data);
+              optsRef.current.onStoryMention?.(data);
               break;
             case 'story_reply':
-              onStoryReply?.(data);
+              optsRef.current.onStoryReply?.(data);
               break;
             case 'connection_established':
               console.log('[Instagram WS] Authenticated ✓');
@@ -292,14 +294,14 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
               setError(null);
               reconnectAttemptsRef.current = 0;
               startPingInterval();
-              onConnected?.();
+              optsRef.current.onConnected?.();
               break;
             case 'pong':
               // Keep-alive response
               break;
             case 'error':
               setError(data.message);
-              onError?.(data.message);
+              optsRef.current.onError?.(data.message);
               break;
           }
         } catch (err) {
@@ -310,27 +312,9 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
       setIsConnecting(false);
       const errorMsg = 'Failed to create WebSocket connection';
       setError(errorMsg);
-      onError?.(errorMsg);
+      optsRef.current.onError?.(errorMsg);
     }
-  }, [
-    accountId,
-    token,
-    getWebSocketUrl,
-    startPingInterval,
-    autoReconnect,
-    maxReconnectAttempts,
-    reconnectInterval,
-    onConnected,
-    onDisconnected,
-    onError,
-    onMessageReceived,
-    onMessageSent,
-    onMessageSeen,
-    onTyping,
-    onConversationUpdated,
-    onStoryMention,
-    onStoryReply,
-  ]);
+  }, [accountId, token, getWebSocketUrl, startPingInterval]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
