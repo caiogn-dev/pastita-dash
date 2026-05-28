@@ -83,6 +83,7 @@ const WhatsAppInboxPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
   const [sending, setSending] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
   const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -138,7 +139,12 @@ const WhatsAppInboxPage: React.FC = () => {
   const handleSelectConversation = async (conversation: ConversationWithMessages) => {
     setSelectedConversation(conversation);
     setMessageText('');
-    await loadMessages(conversation.id);
+    setLoadingMessages(true);
+    try {
+      await loadMessages(conversation.id);
+    } finally {
+      setLoadingMessages(false);
+    }
   };
 
   const togglePanel = (panel: 'templates' | 'tools') => {
@@ -267,7 +273,9 @@ const WhatsAppInboxPage: React.FC = () => {
         </div>
 
         <div className="conversations-list">
-          {filteredConversations.length === 0 ? (
+          {loading ? (
+            <div className="empty-state">Carregando conversas...</div>
+          ) : filteredConversations.length === 0 ? (
             <div className="empty-state">
               {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa'}
             </div>
@@ -355,7 +363,11 @@ const WhatsAppInboxPage: React.FC = () => {
 
             {/* Messages Container */}
             <div className="messages-container">
-              {messages.length === 0 ? (
+              {loadingMessages ? (
+                <div className="messages-empty">
+                  <p>Carregando mensagens...</p>
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="messages-empty">
                   <p>Nenhuma mensagem nesta conversa</p>
                   <small>Comece enviando uma mensagem</small>
