@@ -145,7 +145,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
         featured: combo.featured,
         track_stock: combo.track_stock,
         stock_quantity: combo.stock_quantity,
-        items: combo.items.map(i => ({
+        items: (combo.items || []).map(i => ({
           _key: i.id,
           product: i.product,
           quantity: i.quantity,

@@ -1,10 +1,11 @@
-import React, { useEffect, useState, Suspense, lazy } from 'react';
+import React, { useEffect, useState, lazy } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import logger from './services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout';
 import { FullPageLoading } from './components/common';
+import { PageWrapper } from './components/ErrorBoundary';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
 import { setAuthToken } from './services';
@@ -146,15 +147,15 @@ const AppContent: React.FC = () => {
       {/* Public routes */}
       <Route path="/login" element={
         isAuthenticated ? <Navigate to="/" replace /> : (
-          <Suspense fallback={<FullPageLoading />}>
+          <PageWrapper>
             <LoginPage />
-          </Suspense>
+          </PageWrapper>
         )
       } />
       <Route path="/cadastro" element={
-        <Suspense fallback={<FullPageLoading />}>
+        <PageWrapper>
           <CadastroPage />
-        </Suspense>
+        </PageWrapper>
       } />
 
       {/* Protected routes */}
@@ -163,98 +164,98 @@ const AppContent: React.FC = () => {
           <MainLayout />
         </ProtectedRoute>
       }>
-        <Route index element={<Suspense fallback={<FullPageLoading />}><DashboardPage /></Suspense>} />
-        <Route path="accounts" element={<Suspense fallback={<FullPageLoading />}><AccountsPage /></Suspense>} />
-        <Route path="accounts/new" element={<Suspense fallback={<FullPageLoading />}><AccountFormPage /></Suspense>} />
-        <Route path="accounts/:id" element={<Suspense fallback={<FullPageLoading />}><AccountDetailPage /></Suspense>} />
-        <Route path="accounts/:id/edit" element={<Suspense fallback={<FullPageLoading />}><AccountFormPage /></Suspense>} />
-        <Route path="messages" element={<Suspense fallback={<FullPageLoading />}><MessagesPage /></Suspense>} />
-        <Route path="conversations" element={<Suspense fallback={<FullPageLoading />}><ConversationsPage /></Suspense>} />
+        <Route index element={<PageWrapper><DashboardPage /></PageWrapper>} />
+        <Route path="accounts" element={<PageWrapper><AccountsPage /></PageWrapper>} />
+        <Route path="accounts/new" element={<PageWrapper><AccountFormPage /></PageWrapper>} />
+        <Route path="accounts/:id" element={<PageWrapper><AccountDetailPage /></PageWrapper>} />
+        <Route path="accounts/:id/edit" element={<PageWrapper><AccountFormPage /></PageWrapper>} />
+        <Route path="messages" element={<PageWrapper><MessagesPage /></PageWrapper>} />
+        <Route path="conversations" element={<PageWrapper><ConversationsPage /></PageWrapper>} />
         
         {/* AI Agents Routes (Langchain) */}
-        <Route path="agents" element={<Suspense fallback={<FullPageLoading />}><AgentsPage /></Suspense>} />
-        <Route path="agents/new" element={<Suspense fallback={<FullPageLoading />}><AgentCreatePage /></Suspense>} />
-        <Route path="agents/:id" element={<Suspense fallback={<FullPageLoading />}><AgentDetailPage /></Suspense>} />
-        <Route path="agents/:id/test" element={<Suspense fallback={<FullPageLoading />}><AgentTestPage /></Suspense>} />
-        <Route path="agents/:id/conversations" element={<Suspense fallback={<FullPageLoading />}><AgentDetailPage /></Suspense>} />
-        <Route path="agents/test/orchestrator" element={<Suspense fallback={<FullPageLoading />}><UnifiedOrchestratorTest /></Suspense>} />
+        <Route path="agents" element={<PageWrapper><AgentsPage /></PageWrapper>} />
+        <Route path="agents/new" element={<PageWrapper><AgentCreatePage /></PageWrapper>} />
+        <Route path="agents/:id" element={<PageWrapper><AgentDetailPage /></PageWrapper>} />
+        <Route path="agents/:id/test" element={<PageWrapper><AgentTestPage /></PageWrapper>} />
+        <Route path="agents/:id/conversations" element={<PageWrapper><AgentDetailPage /></PageWrapper>} />
+        <Route path="agents/test/orchestrator" element={<PageWrapper><UnifiedOrchestratorTest /></PageWrapper>} />
         
         {/* Settings */}
-        <Route path="settings" element={<Suspense fallback={<FullPageLoading />}><SettingsPage /></Suspense>} />
+        <Route path="settings" element={<PageWrapper><SettingsPage /></PageWrapper>} />
         
         {/* Automation Routes */}
-        <Route path="automation/companies" element={<Suspense fallback={<FullPageLoading />}><CompanyProfilesPage /></Suspense>} />
-        <Route path="automation/companies/new" element={<Suspense fallback={<FullPageLoading />}><CompanyProfileDetailPage /></Suspense>} />
-        <Route path="automation/companies/:id" element={<Suspense fallback={<FullPageLoading />}><CompanyProfileDetailPage /></Suspense>} />
-        <Route path="automation/messages" element={<Suspense fallback={<FullPageLoading />}><AutoMessagesPage /></Suspense>} />
-        <Route path="automation/companies/:companyId/messages" element={<Suspense fallback={<FullPageLoading />}><AutoMessagesPage /></Suspense>} />
-        <Route path="automation/sessions" element={<Suspense fallback={<FullPageLoading />}><CustomerSessionsPage /></Suspense>} />
-        <Route path="automation/logs" element={<Suspense fallback={<FullPageLoading />}><AutomationLogsPage /></Suspense>} />
-        <Route path="automation/scheduled" element={<Suspense fallback={<FullPageLoading />}><ScheduledMessagesPage /></Suspense>} />
-        <Route path="automation/reports" element={<Suspense fallback={<FullPageLoading />}><ReportsPage /></Suspense>} />
-        <Route path="automation/flows" element={<Suspense fallback={<FullPageLoading />}><AgentFlowsPage /></Suspense>} />
+        <Route path="automation/companies" element={<PageWrapper><CompanyProfilesPage /></PageWrapper>} />
+        <Route path="automation/companies/new" element={<PageWrapper><CompanyProfileDetailPage /></PageWrapper>} />
+        <Route path="automation/companies/:id" element={<PageWrapper><CompanyProfileDetailPage /></PageWrapper>} />
+        <Route path="automation/messages" element={<PageWrapper><AutoMessagesPage /></PageWrapper>} />
+        <Route path="automation/companies/:companyId/messages" element={<PageWrapper><AutoMessagesPage /></PageWrapper>} />
+        <Route path="automation/sessions" element={<PageWrapper><CustomerSessionsPage /></PageWrapper>} />
+        <Route path="automation/logs" element={<PageWrapper><AutomationLogsPage /></PageWrapper>} />
+        <Route path="automation/scheduled" element={<PageWrapper><ScheduledMessagesPage /></PageWrapper>} />
+        <Route path="automation/reports" element={<PageWrapper><ReportsPage /></PageWrapper>} />
+        <Route path="automation/flows" element={<PageWrapper><AgentFlowsPage /></PageWrapper>} />
 
         {/* Intent Detection Routes */}
         <Route path="automation/intents" element={<Navigate to="/automation/intents/stats" replace />} />
-        <Route path="automation/intents/stats" element={<Suspense fallback={<FullPageLoading />}><IntentStatsPage /></Suspense>} />
-        <Route path="automation/intents/logs" element={<Suspense fallback={<FullPageLoading />}><IntentLogsPage /></Suspense>} />
+        <Route path="automation/intents/stats" element={<PageWrapper><IntentStatsPage /></PageWrapper>} />
+        <Route path="automation/intents/logs" element={<PageWrapper><IntentLogsPage /></PageWrapper>} />
         
         {/* Analytics/Reports Routes */}
-        <Route path="analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
-        <Route path="analytics/saladas" element={<Suspense fallback={<FullPageLoading />}><SaladasDashboardPage /></Suspense>} />
+        <Route path="analytics" element={<PageWrapper><AnalyticsPage /></PageWrapper>} />
+        <Route path="analytics/saladas" element={<PageWrapper><SaladasDashboardPage /></PageWrapper>} />
         <Route path="reports" element={<Navigate to="/analytics" replace />} />
         
         {/* Stores Routes */}
-        <Route path="stores" element={<Suspense fallback={<FullPageLoading />}><StoresPage /></Suspense>} />
-        <Route path="stores/:storeId" element={<Suspense fallback={<FullPageLoading />}><StoreDetailPage /></Suspense>} />
-        <Route path="stores/:storeId/products" element={<Suspense fallback={<FullPageLoading />}><ProductsPage /></Suspense>} />
-        <Route path="stores/:storeId/combos" element={<Suspense fallback={<FullPageLoading />}><CombosPage /></Suspense>} />
-        <Route path="stores/:storeId/orders" element={<Suspense fallback={<FullPageLoading />}><OrdersPage /></Suspense>} />
-        <Route path="stores/:storeId/customers" element={<Suspense fallback={<FullPageLoading />}><CustomersPage /></Suspense>} />
-        <Route path="stores/:storeId/orders/new" element={<Suspense fallback={<FullPageLoading />}><OrderNewPage /></Suspense>} />
-        <Route path="stores/:storeId/orders/:id" element={<Suspense fallback={<FullPageLoading />}><OrderDetailPage /></Suspense>} />
-        <Route path="stores/:storeId/coupons" element={<Suspense fallback={<FullPageLoading />}><CouponsPage /></Suspense>} />
-        <Route path="stores/:storeId/analytics" element={<Suspense fallback={<FullPageLoading />}><AnalyticsPage /></Suspense>} />
-        <Route path="stores/:storeId/payments" element={<Suspense fallback={<FullPageLoading />}><PaymentsPage /></Suspense>} />
-        <Route path="stores/:storeId/settings" element={<Suspense fallback={<FullPageLoading />}><StoreSettingsPage /></Suspense>} />
-        <Route path="stores/:storeId/storefront" element={<Suspense fallback={<FullPageLoading />}><StorefrontPage /></Suspense>} />
-        <Route path="stores/:storeId/delivery" element={<Suspense fallback={<FullPageLoading />}><DeliveryZonesPage /></Suspense>} />
+        <Route path="stores" element={<PageWrapper><StoresPage /></PageWrapper>} />
+        <Route path="stores/:storeId" element={<PageWrapper><StoreDetailPage /></PageWrapper>} />
+        <Route path="stores/:storeId/products" element={<PageWrapper><ProductsPage /></PageWrapper>} />
+        <Route path="stores/:storeId/combos" element={<PageWrapper><CombosPage /></PageWrapper>} />
+        <Route path="stores/:storeId/orders" element={<PageWrapper><OrdersPage /></PageWrapper>} />
+        <Route path="stores/:storeId/customers" element={<PageWrapper><CustomersPage /></PageWrapper>} />
+        <Route path="stores/:storeId/orders/new" element={<PageWrapper><OrderNewPage /></PageWrapper>} />
+        <Route path="stores/:storeId/orders/:id" element={<PageWrapper><OrderDetailPage /></PageWrapper>} />
+        <Route path="stores/:storeId/coupons" element={<PageWrapper><CouponsPage /></PageWrapper>} />
+        <Route path="stores/:storeId/analytics" element={<PageWrapper><AnalyticsPage /></PageWrapper>} />
+        <Route path="stores/:storeId/payments" element={<PageWrapper><PaymentsPage /></PageWrapper>} />
+        <Route path="stores/:storeId/settings" element={<PageWrapper><StoreSettingsPage /></PageWrapper>} />
+        <Route path="stores/:storeId/storefront" element={<PageWrapper><StorefrontPage /></PageWrapper>} />
+        <Route path="stores/:storeId/delivery" element={<PageWrapper><DeliveryZonesPage /></PageWrapper>} />
         
         {/* Marketing Routes */}
-        <Route path="marketing" element={<Suspense fallback={<FullPageLoading />}><MarketingPage /></Suspense>} />
-        <Route path="marketing/subscribers" element={<Suspense fallback={<FullPageLoading />}><SubscribersPage /></Suspense>} />
-        <Route path="marketing/automations" element={<Suspense fallback={<FullPageLoading />}><AutomationsPage /></Suspense>} />
+        <Route path="marketing" element={<PageWrapper><MarketingPage /></PageWrapper>} />
+        <Route path="marketing/subscribers" element={<PageWrapper><SubscribersPage /></PageWrapper>} />
+        <Route path="marketing/automations" element={<PageWrapper><AutomationsPage /></PageWrapper>} />
         <Route path="marketing/email" element={<Navigate to="/marketing/email/campaigns" replace />} />
-        <Route path="marketing/email/campaigns" element={<Suspense fallback={<FullPageLoading />}><CampaignsListPage /></Suspense>} />
-        <Route path="marketing/email/new" element={<Suspense fallback={<FullPageLoading />}><NewCampaignPage /></Suspense>} />
-        <Route path="marketing/email/templates" element={<Suspense fallback={<FullPageLoading />}><MarketingPage /></Suspense>} />
-        <Route path="marketing/whatsapp" element={<Suspense fallback={<FullPageLoading />}><WhatsAppCampaignsPage /></Suspense>} />
-        <Route path="marketing/whatsapp/new" element={<Suspense fallback={<FullPageLoading />}><NewWhatsAppCampaignPage /></Suspense>} />
-        <Route path="marketing/whatsapp/templates" element={<Suspense fallback={<FullPageLoading />}><WhatsAppTemplatesPage /></Suspense>} />
+        <Route path="marketing/email/campaigns" element={<PageWrapper><CampaignsListPage /></PageWrapper>} />
+        <Route path="marketing/email/new" element={<PageWrapper><NewCampaignPage /></PageWrapper>} />
+        <Route path="marketing/email/templates" element={<PageWrapper><MarketingPage /></PageWrapper>} />
+        <Route path="marketing/whatsapp" element={<PageWrapper><WhatsAppCampaignsPage /></PageWrapper>} />
+        <Route path="marketing/whatsapp/new" element={<PageWrapper><NewWhatsAppCampaignPage /></PageWrapper>} />
+        <Route path="marketing/whatsapp/templates" element={<PageWrapper><WhatsAppTemplatesPage /></PageWrapper>} />
         
         {/* Instagram Routes */}
         <Route path="instagram" element={<Navigate to="/instagram/accounts" replace />} />
-        <Route path="instagram/accounts" element={<Suspense fallback={<FullPageLoading />}><InstagramAccountsPage /></Suspense>} />
-        <Route path="instagram/callback" element={<Suspense fallback={<FullPageLoading />}><InstagramCallbackPage /></Suspense>} />
-        <Route path="instagram/:accountId" element={<Suspense fallback={<FullPageLoading />}><InstagramDashboardPage /></Suspense>} />
-        <Route path="instagram/inbox" element={<Suspense fallback={<FullPageLoading />}><InstagramInbox /></Suspense>} />
+        <Route path="instagram/accounts" element={<PageWrapper><InstagramAccountsPage /></PageWrapper>} />
+        <Route path="instagram/callback" element={<PageWrapper><InstagramCallbackPage /></PageWrapper>} />
+        <Route path="instagram/:accountId" element={<PageWrapper><InstagramDashboardPage /></PageWrapper>} />
+        <Route path="instagram/inbox" element={<PageWrapper><InstagramInbox /></PageWrapper>} />
         
         {/* Messenger Routes */}
         {/* Messenger/WhatsApp Routes - NOVA PÁGINA UNIFICADA */}
-        <Route path="connections" element={<Suspense fallback={<FullPageLoading />}><ConnectionsPage /></Suspense>} />
+        <Route path="connections" element={<PageWrapper><ConnectionsPage /></PageWrapper>} />
         
         {/* Legacy Routes (mantidas para compatibilidade) */}
-        <Route path="messenger" element={<Suspense fallback={<FullPageLoading />}><MessengerInbox /></Suspense>} />
-        <Route path="messenger/inbox" element={<Suspense fallback={<FullPageLoading />}><MessengerInbox /></Suspense>} />
-        <Route path="messenger/accounts" element={<Suspense fallback={<FullPageLoading />}><MessengerAccounts /></Suspense>} />
+        <Route path="messenger" element={<PageWrapper><MessengerInbox /></PageWrapper>} />
+        <Route path="messenger/inbox" element={<PageWrapper><MessengerInbox /></PageWrapper>} />
+        <Route path="messenger/accounts" element={<PageWrapper><MessengerAccounts /></PageWrapper>} />
         
         {/* WhatsApp Routes */}
-        <Route path="whatsapp" element={<Suspense fallback={<FullPageLoading />}><WhatsAppInboxPage /></Suspense>} />
-        <Route path="whatsapp/inbox" element={<Suspense fallback={<FullPageLoading />}><WhatsAppInboxPage /></Suspense>} />
-        <Route path="whatsapp/chat" element={<Suspense fallback={<FullPageLoading />}><WhatsAppChatPage /></Suspense>} />
-        <Route path="whatsapp/handover" element={<Suspense fallback={<FullPageLoading />}><HandoverRequestsPage /></Suspense>} />
-        <Route path="whatsapp/debug" element={<Suspense fallback={<FullPageLoading />}><DebugDashboardPage /></Suspense>} />
-        <Route path="whatsapp/diagnostics" element={<Suspense fallback={<FullPageLoading />}><WebhookDiagnosticsPage /></Suspense>} />
+        <Route path="whatsapp" element={<PageWrapper><WhatsAppInboxPage /></PageWrapper>} />
+        <Route path="whatsapp/inbox" element={<PageWrapper><WhatsAppInboxPage /></PageWrapper>} />
+        <Route path="whatsapp/chat" element={<PageWrapper><WhatsAppChatPage /></PageWrapper>} />
+        <Route path="whatsapp/handover" element={<PageWrapper><HandoverRequestsPage /></PageWrapper>} />
+        <Route path="whatsapp/debug" element={<PageWrapper><DebugDashboardPage /></PageWrapper>} />
+        <Route path="whatsapp/diagnostics" element={<PageWrapper><WebhookDiagnosticsPage /></PageWrapper>} />
       </Route>
 
       {/* Catch all */}

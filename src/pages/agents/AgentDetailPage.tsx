@@ -420,7 +420,7 @@ export const AgentDetailPage: React.FC = () => {
                   </span>
                 </div>
                 
-                {selectedConversation.messages ? (
+                {Array.isArray(selectedConversation.messages) && selectedConversation.messages.length > 0 ? (
                   <div className="space-y-4 max-h-[500px] overflow-y-auto">
                     {selectedConversation.messages.map(message => (
                       <div

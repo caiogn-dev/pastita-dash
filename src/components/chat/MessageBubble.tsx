@@ -296,6 +296,7 @@ const MediaPreview: React.FC<{
           alt="Imagem"
           className="max-w-[280px] max-h-[200px] object-cover rounded-lg hover:opacity-90 transition-opacity"
           loading="lazy"
+          crossOrigin="anonymous"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
           <PhotoIcon className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -315,6 +316,7 @@ const MediaPreview: React.FC<{
           src={url}
           className="max-w-[280px] max-h-[200px] object-cover rounded-lg"
           preload="metadata"
+          crossOrigin="anonymous"
         />
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
           <div className="w-12 h-12 bg-white/80 rounded-full flex items-center justify-center">

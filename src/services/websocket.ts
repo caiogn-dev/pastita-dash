@@ -8,9 +8,16 @@ const BACKEND_BASE_URL = _apiUrl.replace(/\/api\/v1\/?$/, '');
 const WS_BASE_URL = BACKEND_BASE_URL.replace(/^http/, 'ws');
 
 /**
- * Get the WebSocket URL for a given path
+ * Get the WebSocket URL for a given path.
+ *
+ * Priority: VITE_WS_URL (full base URL) → VITE_WS_HOST (host only) → derived from VITE_API_URL → window.location.host
  */
 export const getWebSocketUrl = (path: string): string => {
+  const wsUrl = import.meta.env.VITE_WS_URL as string | undefined;
+  if (wsUrl) {
+    return `${wsUrl.replace(/\/+$/, '')}${path}`;
+  }
+
   let wsHost = import.meta.env.VITE_WS_HOST?.replace(/^wss?:\/\//, '').replace(/\/+$/, '');
 
   if (!wsHost) {
