@@ -5,6 +5,7 @@ import { useAccountStore } from '../../stores/accountStore';
 import { NotificationDropdown, PushNotificationToggle } from '../notifications';
 import { StoreSelector } from './StoreSelector';
 import { ThemeToggle } from '../theme';
+import { useWsConnected } from '../../stores/chatStore';
 
 const BREADCRUMB_LABELS: Record<string, string> = {
   analytics: 'Analytics',
@@ -83,6 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
   const { accounts, selectedAccount, setSelectedAccount } = useAccountStore();
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
+  const wsConnected = useWsConnected();
 
   const breadcrumbs = useMemo(() => buildBreadcrumbs(location.pathname), [location.pathname]);
 
@@ -172,6 +174,24 @@ export const Header: React.FC<HeaderProps> = ({
                 className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
               />
             </form>
+          )}
+
+          {accounts.length > 0 && (
+            <div
+              title={wsConnected ? 'Tempo real ativo' : 'Sem conexão em tempo real'}
+              className="flex items-center gap-1.5 cursor-default"
+            >
+              <span
+                className={`block h-2 w-2 rounded-full ${
+                  wsConnected
+                    ? 'bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.7)]'
+                    : 'bg-amber-400'
+                }`}
+              />
+              <span className="text-xs text-gray-400 dark:text-zinc-500 hidden sm:inline">
+                {wsConnected ? 'Ao vivo' : 'Offline'}
+              </span>
+            </div>
           )}
 
           <ThemeToggle />
