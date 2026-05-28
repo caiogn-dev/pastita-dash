@@ -584,7 +584,7 @@ export const deactivateStore = async (id: string): Promise<{ status: string }> =
   }
 };
 
-export const syncPastitaToStore = async (id: string): Promise<{ message: string; synced: Record<string, number> }> => {
+export const syncStorefront = async (id: string): Promise<{ message: string; synced: Record<string, number> }> => {
   try {
     const response = await api.post(`${STORES_ADMIN_URL}/${id}/sync_pastita/`);
     return response.data;
@@ -1576,7 +1576,7 @@ export default {
   getStoreStats,
   activateStore,
   deactivateStore,
-  syncPastitaToStore,
+  syncStorefront,
   // Integrations
   getIntegrations,
   getIntegration,

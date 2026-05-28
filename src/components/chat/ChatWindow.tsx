@@ -711,11 +711,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       {selectedConversation && rightPanel === 'customer' && (
         <CustomerPanel
           storeSlug={storeSlug || ''}
-          unifiedUserId={
-            /* TODO: quando a Conversation tiver unified_user_id, usar aqui.
-               Por ora, passa null para mostrar estado de espera. */
-            (selectedConversation as unknown as { unified_user_id?: string }).unified_user_id ?? null
-          }
+          unifiedUserId={selectedConversation?.unified_user_id ?? null}
           onNewOrder={handleNewOrderFromPanel}
           onClose={() => setRightPanel(null)}
         />

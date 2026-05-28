@@ -172,6 +172,7 @@ export interface Conversation {
   phone_number: string;
   contact_name?: string;
   wa_id?: string;
+  unified_user_id?: string | null;
   profile_picture_url?: string;
   profile_picture_file?: string;
   profile_picture?: string;
