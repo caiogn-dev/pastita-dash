@@ -292,7 +292,7 @@ const WhatsAppInboxPage: React.FC = () => {
                 <div className="conversation-info">
                   <h3>{conv.contact_name || conv.phone_number}</h3>
                   <p className="conversation-preview">
-                    {typeof conv.last_message === 'object' && conv.last_message?.text_body ? conv.last_message.text_body : (typeof conv.last_message === 'string' ? conv.last_message : 'Sem mensagens')}
+                    {messagePreviewText(conv.last_message)}
                   </p>
                 </div>
                 <div className="conversation-meta">
