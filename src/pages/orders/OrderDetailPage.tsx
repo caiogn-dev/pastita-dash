@@ -536,10 +536,10 @@ export const OrderDetailPage: React.FC = () => {
               </div>
 
               {/* Notes — always visible, critical for kitchen ops */}
-              {order.notes && (
+              {(order.customer_notes || order.notes) && (
                 <div className="rounded-[24px] border border-amber-200/80 bg-[#f8edd0] px-4 py-4 text-[#6a5731] dark:border-amber-800/40 dark:bg-[#2b2417] dark:text-[#d8c18c] sm:px-5">
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] mb-2 text-[#9a7c3a] dark:text-[#b8962e]">Observações do cliente</p>
-                  <p className="text-sm leading-relaxed">{order.notes}</p>
+                  <p className="text-sm leading-relaxed">{order.customer_notes || order.notes}</p>
                 </div>
               )}
 
