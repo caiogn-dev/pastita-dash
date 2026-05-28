@@ -8,6 +8,7 @@ import { FullPageLoading } from './components/common';
 import { PageWrapper } from './components/ErrorBoundary';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
+import { useStoreContextStore } from './stores/storeContextStore';
 import { setAuthToken } from './services';
 import api from './services/api';
 import { WebSocketProvider } from './context/WebSocketContext';
@@ -113,6 +114,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const AppContent: React.FC = () => {
   const { isAuthenticated, token } = useAuthStore();
   const { setAccounts } = useAccountStore();
+  const { fetchStores } = useStoreContextStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -123,19 +125,22 @@ const AppContent: React.FC = () => {
 
       if (isAuthenticated && token) {
         try {
+          // Load stores (required for dashboard and multi-store UI)
+          await fetchStores();
+
           // skipAutoLogout: a 401 here does NOT mean the token is invalid —
           // the user just logged in. Without this flag the interceptor would
           // call logout() and send the user back to /login in a loop.
           const response = await api.get('/whatsapp/accounts/', { skipAutoLogout: true });
           setAccounts(response.data?.results || []);
         } catch (error) {
-          logger.error('Error loading accounts:', error);
+          logger.error('Error during initialization:', error);
         }
       }
       setIsInitializing(false);
     };
     initialize();
-  }, [isAuthenticated, token, setAccounts]);
+  }, [isAuthenticated, token, setAccounts, fetchStores]);
 
   if (isInitializing) {
     return <FullPageLoading />;
