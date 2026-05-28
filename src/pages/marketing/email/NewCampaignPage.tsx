@@ -552,7 +552,7 @@ export const NewCampaignPage: React.FC = () => {
                       value={campaignData.from_name}
                       onChange={e => setCampaignData(prev => ({ ...prev, from_name: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="Ex: Pastita"
+                      placeholder="Ex: Nome da loja"
                     />
                   </div>
                 </div>

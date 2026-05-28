@@ -30,7 +30,7 @@ beforeEach(() => {
 describe('ordersService', () => {
   it('creates dashboard orders through the canonical admin orders endpoint', async () => {
     const payload: CreateOrder = {
-      store: 'ce-saladas',
+      store: 'demo-store',
       customer_name: 'Maria Silva',
       customer_phone: '5563999999999',
       delivery_method: 'pickup',

@@ -584,16 +584,6 @@ export const deactivateStore = async (id: string): Promise<{ status: string }> =
   }
 };
 
-export const syncStorefront = async (id: string): Promise<{ message: string; synced: Record<string, number> }> => {
-  try {
-    const response = await api.post(`${STORES_ADMIN_URL}/${id}/sync_pastita/`);
-    return response.data;
-  } catch (error) {
-    logger.error('Failed to sync Pastita to store', error);
-    throw error;
-  }
-};
-
 // Integrations
 export const getIntegrations = async (storeId?: string): Promise<PaginatedResponse<StoreIntegration>> => {
   try {
@@ -1576,7 +1566,6 @@ export default {
   getStoreStats,
   activateStore,
   deactivateStore,
-  syncStorefront,
   // Integrations
   getIntegrations,
   getIntegration,

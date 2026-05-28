@@ -1,5 +1,5 @@
 /**
- * Design System - Pastita Dash
+ * Design System - Cardapidex Dashboard
  * Centraliza cores, tipografia, espaçamento e sombras
  */
 
