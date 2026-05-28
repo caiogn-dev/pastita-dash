@@ -1090,8 +1090,8 @@ export const templateVariablesApi = {
         store: {
           description: 'Variáveis da loja',
           variables: [
-            { name: 'store_name', description: 'Nome da loja', example: 'Pastita' },
-            { name: 'store_url', description: 'URL da loja', example: 'https://pastita.com.br' },
+            { name: 'store_name', description: 'Nome da loja', example: 'Kero Kero Salgadinhos' },
+            { name: 'store_url', description: 'URL da loja', example: 'https://cardapidex.com.br/kero-kero' },
             { name: 'year', description: 'Ano atual', example: '2026' },
           ]
         },
@@ -1142,8 +1142,8 @@ export const templateVariablesApi = {
         first_name: 'Cliente',
         email: 'cliente@exemplo.com',
         phone: '(11) 99999-9999',
-        store_name: 'Pastita',
-        store_url: 'https://pastita.com.br',
+        store_name: 'Kero Kero Salgadinhos',
+        store_url: 'https://cardapidex.com.br/kero-kero',
         year: new Date().getFullYear().toString(),
         order_number: 'PAS-2026-001',
         order_total: '89.90',

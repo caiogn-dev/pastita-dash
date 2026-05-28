@@ -1,20 +1,16 @@
 {
-  "name": "Pastita Dashboard",
-  "short_name": "Pastita",
-  "description": "Painel de controle da Pastita — pedidos, clientes e conversas",
-  "start_url": "/",
+  "name": "Cardapidex",
+  "short_name": "Cardapidex",
+  "description": "Painel de controle Cardapidex — pedidos, clientes e conversas",
+  "theme_color": "#059669",
+  "background_color": "#f8fafc",
   "display": "standalone",
-  "background_color": "#0f0f0f",
-  "theme_color": "#8c2e2e",
-  "orientation": "portrait-primary",
+  "start_url": "/",
   "icons": [
     {
-      "src": "/pastita-logo.svg",
+      "src": "/cardapidex-logo.svg",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     }
-  ],
-  "categories": ["business", "productivity"],
-  "lang": "pt-BR"
+  ]
 }

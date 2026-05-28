@@ -1,8 +1,8 @@
 import api from './api';
 import { getStoreSlug } from '../hooks/useStore';
+import { requireStoreSlug } from '../config/storeConfig';
 
-const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
-const getStoreParam = () => getStoreSlug() || STORE_SLUG;
+const getStoreParam = () => requireStoreSlug(getStoreSlug());
 
 export type SaladasPeriod = 'today' | '7d' | '30d';
 

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../services/storesApi';
 import { useStore } from '../../hooks';
+import { buildStorefrontUrl } from '../../utils/storefrontUrl';
 
 type Template = 'fresh' | 'bold' | 'classic';
 
@@ -232,11 +233,12 @@ export const StorefrontPage: React.FC = () => {
           type="text"
           value={form.custom_domain}
           onChange={e => setForm(f => ({ ...f, custom_domain: e.target.value }))}
-          placeholder="cesaladas.com.br"
+          placeholder="loja.com.br"
           className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-mono"
         />
         <p className="text-xs text-gray-400">
-          Aponte o DNS do domínio para o servidor do storefront antes de salvar.
+          Sem domínio próprio, o cardápio público usa cardapidex.com.br/{store.slug}.
+          Com domínio próprio, a loja abre direto no domínio configurado.
         </p>
       </section>
 
@@ -250,11 +252,7 @@ export const StorefrontPage: React.FC = () => {
         </button>
         {store && (
           <a
-            href={
-              store.custom_domain
-                ? `https://${store.custom_domain}`
-                : `${import.meta.env.VITE_STOREFRONT_BASE_URL || 'https://cesaladas.com.br'}/preview/${store.slug}`
-            }
+            href={buildStorefrontUrl(store)}
             target="_blank"
             rel="noopener noreferrer"
             className="px-5 py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 font-semibold hover:bg-indigo-50 transition-colors whitespace-nowrap"

@@ -44,16 +44,14 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-bg-secondary p-4">
       <div className="flex flex-col gap-8 w-full max-w-md">
         {/* Logo e Título */}
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center mb-8">
           <img
-            src="/pastita-logo.svg"
-            alt="Pastita"
-            className="w-24 h-24"
+            src="/cardapidex-logo.svg"
+            alt="Cardapidex"
+            className="w-14 h-14 rounded-2xl shadow-lg mb-4"
           />
-          <div className="flex flex-col gap-1 text-center">
-            <h1 className="text-3xl font-bold text-fg-primary">Pastita</h1>
-            <p className="text-fg-muted">Dashboard de Gerenciamento</p>
-          </div>
+          <h1 className="text-3xl font-bold text-fg-primary font-brand">Cardapidex</h1>
+          <p className="text-sm text-fg-secondary mt-1">Faça login para continuar</p>
         </div>
 
         {/* Formulário */}

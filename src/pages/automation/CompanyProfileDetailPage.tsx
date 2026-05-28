@@ -7,7 +7,7 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { companyProfileService, businessTypeLabels } from '../../services/automation';
-import { whatsappService } from '../../services/whatsapp';
+import * as whatsappService from '../../services/whatsapp';
 import { getStores, type Store as StoreRecord } from '../../services/storesApi';
 import {
   CompanyProfile,
@@ -84,7 +84,7 @@ const CompanyProfileDetailPage: React.FC = () => {
       ]);
 
       const availableStores = storesResponse.results || [];
-      const availableAccounts = accountsResponse.results || [];
+      const availableAccounts = (accountsResponse as any)?.data?.results || [];
 
       setStores(availableStores);
       setAccounts(availableAccounts);

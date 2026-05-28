@@ -704,7 +704,7 @@ export const useOrderPrint = () => {
 };
 
 // Auto-print settings storage key
-export const AUTO_PRINT_KEY = 'pastita_auto_print_enabled';
+export const AUTO_PRINT_KEY = 'cardapidex_auto_print_enabled';
 
 export const getAutoPrintEnabled = (): boolean => {
   if (typeof window === 'undefined') return false;

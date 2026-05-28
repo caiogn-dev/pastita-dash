@@ -253,23 +253,21 @@ export const Navbar: React.FC = () => {
   ], [storeHref, totalUnreadCount]);
 
   const brandInfo = useMemo(() => {
-    if (!store) return { name: 'Pastita', logo: '/pastita-logo.svg', initial: 'P', color: '#722F37' };
-    const isPastita = store.name?.toLowerCase().includes('pastita') || store.slug?.toLowerCase().includes('pastita');
+    if (!store) return {
+      name: 'Cardapidex',
+      logo: '/cardapidex-logo.svg',
+      initial: 'Cx',
+      color: '#059669',
+    };
     return {
-      name: store.name || 'Pastita',
-      logo: isPastita ? '/pastita-logo.svg' : (store.logo_url || null),
-      initial: store.name?.[0]?.toUpperCase() || 'P',
-      color: store.primary_color || '#722F37',
+      name: store.name || 'Cardapidex',
+      logo: store.logo_url || null,
+      initial: store.name?.[0]?.toUpperCase() || 'C',
+      color: store.primary_color || '#059669',
     };
   }, [store]);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
-
-  useEffect(() => {
-    const isAgriao = store?.name?.toLowerCase().includes('agriao') || store?.slug?.toLowerCase().includes('agriao');
-    if (isAgriao) document.documentElement.setAttribute('data-theme', 'agriao');
-    else document.documentElement.removeAttribute('data-theme');
-  }, [store]);
 
   return (
     <>

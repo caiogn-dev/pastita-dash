@@ -122,7 +122,7 @@ export const NewCampaignPage: React.FC = () => {
   const [campaignData, setCampaignData] = useState<CampaignData>({
     name: '',
     subject: '',
-    from_name: storeName || 'Pastita',
+    from_name: storeName || '',
     html_content: '',
     audienceType: 'all',
     segmentFilters: {
@@ -312,7 +312,7 @@ export const NewCampaignPage: React.FC = () => {
         name: campaignData.name,
         subject: campaignData.subject,
         html_content: finalHtml,
-        from_name: campaignData.from_name || storeName || 'Pastita',
+        from_name: campaignData.from_name || storeName || '',
         audience_type: campaignData.audienceType as 'all' | 'segment' | 'custom',
       };
 

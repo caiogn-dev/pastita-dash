@@ -15,6 +15,7 @@ import './App.css';
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
+const CadastroPage = lazy(() => import('./pages/auth/CadastroPage').then(m => ({ default: m.CadastroPage })));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const AccountsPage = lazy(() => import('./pages/accounts/AccountsPage').then(m => ({ default: m.AccountsPage })));
 const AccountFormPage = lazy(() => import('./pages/accounts/AccountFormPage').then(m => ({ default: m.AccountFormPage })));
@@ -149,6 +150,11 @@ const AppContent: React.FC = () => {
             <LoginPage />
           </Suspense>
         )
+      } />
+      <Route path="/cadastro" element={
+        <Suspense fallback={<FullPageLoading />}>
+          <CadastroPage />
+        </Suspense>
       } />
 
       {/* Protected routes */}

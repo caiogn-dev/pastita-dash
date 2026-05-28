@@ -16,8 +16,7 @@ import { Card } from '../../components/common';
 import StatCard from '../../components/common/StatCard';
 import { getSaladasReport, SaladasPeriod, SaladasReport } from '../../services/saladasReport';
 import { getStoreSlug } from '../../hooks/useStore';
-
-const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || 'pastita';
+import { requireStoreSlug } from '../../config/storeConfig';
 const fmt = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -51,7 +50,7 @@ const SaladasDashboardPage: React.FC = () => {
   useEffect(() => { load(); }, [load]);
 
   const handleExportCSV = () => {
-    const store = getStoreSlug() || STORE_SLUG;
+    const store = requireStoreSlug(getStoreSlug());
     const periodMap: Record<SaladasPeriod, string> = { today: '1d', '7d': '7d', '30d': '30d' };
     const base = import.meta.env.VITE_API_URL || '';
     const token = localStorage.getItem('auth_token') || '';

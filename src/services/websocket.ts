@@ -3,7 +3,9 @@
  * Use WebSocketContext for singleton connection
  * This file exports utility functions and stubs for backwards compatibility
  */
-import { BACKEND_BASE_URL, WS_BASE_URL } from './api';
+const _apiUrl = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:8000/api/v1';
+const BACKEND_BASE_URL = _apiUrl.replace(/\/api\/v1\/?$/, '');
+const WS_BASE_URL = BACKEND_BASE_URL.replace(/^http/, 'ws');
 
 /**
  * Get the WebSocket URL for a given path
