@@ -18,7 +18,10 @@ import { MessageBubble, MessageBubbleProps } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { MediaViewer } from './MediaViewer';
 import { ContactInfoPanel } from './ContactInfoPanel';
+import { CustomerPanel } from './CustomerPanel';
 import { NewConversationModal } from './NewConversationModal';
+import { NewOrderDrawer } from '../orders/NewOrderDrawer';
+import type { CustomerSearchResult } from '../../types/crm';
 import { getAvatarColor, getInitials } from '../../utils/avatar';
 import { useWhatsAppWS, MessageReceivedEvent, MessageSentEvent, StatusUpdatedEvent, TypingEvent, ConversationUpdatedEvent } from '../../hooks/useWhatsAppWS';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
@@ -71,7 +74,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [typingContacts, setTypingContacts] = useState<Set<string>>(new Set());
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
-  const [rightPanel, setRightPanel] = useState<'info' | 'templates' | 'tools' | null>(null);
+  const [rightPanel, setRightPanel] = useState<'info' | 'templates' | 'tools' | 'customer' | null>(null);
+  const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
+  const [newOrderCustomer, setNewOrderCustomer] = useState<CustomerSearchResult | null>(null);
   const [showNewConvModal, setShowNewConvModal] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unread' | 'human' | 'bot'>('all');
   const [insertText, setInsertText] = useState<string | undefined>(undefined);
@@ -307,8 +312,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     } catch (error) { toast.error(getErrorMessage(error)); }
   };
 
-  const toggleRightPanel = (panel: 'info' | 'templates' | 'tools') => {
+  const toggleRightPanel = (panel: 'info' | 'templates' | 'tools' | 'customer') => {
     setRightPanel(prev => prev === panel ? null : panel);
+  };
+
+  const handleNewOrderFromPanel = (customer: CustomerSearchResult) => {
+    setNewOrderCustomer(customer);
+    setRightPanel(null);
+    setIsNewOrderOpen(true);
   };
 
   const handleInsertText = (text: string) => {
@@ -591,6 +602,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
                 >
                   <BoltIcon className="w-4 h-4" />
                 </button>
+                {/* Botão CRM */}
+                <button
+                  onClick={() => toggleRightPanel('customer')}
+                  className={`p-1.5 rounded-lg transition-colors ${rightPanel === 'customer' ? 'bg-primary-600 text-white' : 'hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] text-[var(--fg-secondary)]'}`}
+                  title="Painel CRM do cliente"
+                >
+                  <UserCircleIcon className="w-4 h-4" />
+                </button>
                 {/* Reload */}
                 <button
                   className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] transition-colors"
@@ -667,7 +686,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       </div>
 
       {/* ── Painel Direito ── */}
-      {selectedConversation && rightPanel && (
+      {selectedConversation && rightPanel && rightPanel !== 'customer' && (
         <ContactInfoPanel
           conversation={selectedConversation}
           accountId={accountId}
@@ -679,12 +698,44 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
           storeCity={store?.city || undefined}
           storeState={store?.state || undefined}
           storeUrl={getStoreUrl(store?.metadata)}
-          activeTab={rightPanel}
-          onTabChange={setRightPanel}
+          activeTab={rightPanel as 'info' | 'templates' | 'tools'}
+          onTabChange={(tab) => setRightPanel(tab)}
           onClose={() => setRightPanel(null)}
           onInsertText={handleInsertText}
           onSendMessage={handleToolsSend}
           onAfterSend={() => void loadMessages()}
+        />
+      )}
+
+      {/* ── Painel CRM (CustomerPanel) ── */}
+      {selectedConversation && rightPanel === 'customer' && (
+        <CustomerPanel
+          storeSlug={storeSlug || ''}
+          unifiedUserId={
+            /* TODO: quando a Conversation tiver unified_user_id, usar aqui.
+               Por ora, passa null para mostrar estado de espera. */
+            (selectedConversation as unknown as { unified_user_id?: string }).unified_user_id ?? null
+          }
+          onNewOrder={handleNewOrderFromPanel}
+          onClose={() => setRightPanel(null)}
+        />
+      )}
+
+      {/* ── NewOrderDrawer (aberto pelo painel CRM ou outro ponto) ── */}
+      {storeSlug && (
+        <NewOrderDrawer
+          isOpen={isNewOrderOpen}
+          onClose={() => {
+            setIsNewOrderOpen(false);
+            setNewOrderCustomer(null);
+          }}
+          storeSlug={storeSlug}
+          storeId={storeId || undefined}
+          initialCustomer={newOrderCustomer}
+          onOrderCreated={() => {
+            setIsNewOrderOpen(false);
+            setNewOrderCustomer(null);
+          }}
         />
       )}
     </div>
