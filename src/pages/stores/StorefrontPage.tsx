@@ -5,12 +5,15 @@ import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../s
 import { useStore } from '../../hooks';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
 
-type Template = 'fresh' | 'bold' | 'classic';
+type Template = 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'premium';
 
 const TEMPLATES: { id: Template; label: string; description: string; preview: string }[] = [
-  { id: 'fresh', label: 'Fresh', description: 'Hero com gradiente + cards. Ideal para saudável, saladas, açaí.', preview: '🥗' },
-  { id: 'bold', label: 'Bold', description: 'Dark mode com acento vibrante. Ideal para hambúrgueres, pizzas.', preview: '🍔' },
-  { id: 'classic', label: 'Classic', description: 'Tom elegante estilo menu. Ideal para restaurantes, marmitas.', preview: '🍱' },
+  { id: 'fresh', label: 'Fresh', description: 'Claro, leve e visual. Ideal para saladas, bowls e comida saudável.', preview: '🥗' },
+  { id: 'bold', label: 'Bold', description: 'Promocional, forte e direto. Ideal para salgadinhos, pizza, burger e pastel.', preview: '🍔' },
+  { id: 'classic', label: 'Classic', description: 'Tradicional e editorial. Ideal para restaurantes, marmitas e cardápios clássicos.', preview: '🍱' },
+  { id: 'minimal', label: 'Minimal', description: 'Compacto e rápido. Ideal para cardápio estilo app de delivery.', preview: '⚡' },
+  { id: 'dark', label: 'Dark', description: 'Escuro e contrastado. Ideal para marcas noturnas, adegas e lanches premium.', preview: '🌙' },
+  { id: 'premium', label: 'Premium', description: 'Mais calmo e sofisticado. Ideal para restaurantes e produtos especiais.', preview: '✨' },
 ];
 
 export const StorefrontPage: React.FC = () => {
@@ -151,7 +154,7 @@ export const StorefrontPage: React.FC = () => {
       {/* Template */}
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-gray-700">Template</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {TEMPLATES.map(t => (
             <button
               key={t.id}
