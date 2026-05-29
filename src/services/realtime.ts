@@ -355,6 +355,9 @@ export class RealtimeConnection {
       
       this.ws.onclose = (e) => {
         console.log('[Realtime] WebSocket closed:', e.code, e.reason);
+        if (e.code === 1006) {
+          console.warn('[Realtime] Abnormal closure (1006) — server may have disconnected or timeout. Falling back to SSE/polling.');
+        }
         this.onConnectError(new Error(`WebSocket closed: ${e.code} ${e.reason}`));
       };
       
