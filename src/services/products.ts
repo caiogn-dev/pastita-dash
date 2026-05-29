@@ -1,5 +1,6 @@
 import api from './api';
 import { PaginatedResponse } from '../types';
+import { validateImageFile } from '../utils/fileValidation';
 
 // Store slug for legacy operations. Never default to a specific tenant.
 const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || '';
@@ -147,7 +148,10 @@ const buildProductFormData = async (data: CreateProduct | UpdateProduct, include
     }
   }
   
-  if (data.image) formData.append('image', data.image);
+  if (data.image) {
+    validateImageFile(data.image);
+    formData.append('image', data.image);
+  }
   return formData;
 };
 

@@ -175,14 +175,13 @@ const stringifyApiErrorValue = (value: unknown): string | null => {
       stringifyApiErrorValue(record.message) ||
       stringifyApiErrorValue(record.detail) ||
       stringifyApiErrorValue(record.error) ||
+      stringifyApiErrorValue(record.errors) ||
       stringifyApiErrorValue(record.details);
     if (nestedMessage) return nestedMessage;
 
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
+    // Do NOT JSON.stringify unknown objects — that can expose internal server
+    // data (stack traces, DB paths, env values) in user-visible toasts.
+    return null;
   }
   return String(value);
 };
@@ -194,15 +193,16 @@ export const getErrorMessage = (error: unknown): string => {
       stringifyApiErrorValue(data?.error) ||
       stringifyApiErrorValue(data?.message) ||
       stringifyApiErrorValue(data?.detail) ||
+      stringifyApiErrorValue(data?.non_field_errors) ||
       stringifyApiErrorValue(data) ||
       error.message ||
-      'An unexpected error occurred'
+      'Ocorreu um erro inesperado.'
     );
   }
   if (error instanceof Error) {
     return error.message;
   }
-  return 'An unexpected error occurred';
+  return 'Ocorreu um erro inesperado.';
 };
 
 /**

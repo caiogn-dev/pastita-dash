@@ -5,6 +5,7 @@
 import api from './api';
 import logger from './logger';
 import type { DeliveryAddress } from '../types';
+import { validateImageFile } from '../utils/fileValidation';
 
 // =============================================================================
 // HELPERS
@@ -463,6 +464,7 @@ const buildFormData = (data: Record<string, unknown>, includeFile = true): FormD
   Object.entries(data).forEach(([key, value]) => {
     if (value === null || value === undefined) return;
     if (isFile(value) && includeFile) {
+      validateImageFile(value);
       formData.append(key, value);
       return;
     }
