@@ -28,7 +28,12 @@ export const createCustomer = (data: any) => api.post('/stores/customers/', data
 // Orders
 export const getOrders = (params?: { store?: string }) => api.get('/stores/orders/', { params });
 export const getOrder = (id: string) => api.get(`/stores/orders/${id}/`);
-export const createOrder = (data: any) => api.post('/stores/orders/', data);
+export const createOrder = (data: any) => {
+  // Extract store slug/id from payload and use it in URL path
+  const { store, ...payload } = data;
+  const storeSlug = store || 'ce-saladas'; // fallback for dev
+  return api.post(`/stores/${storeSlug}/orders/`, payload);
+};
 
 // Export
 export const commerceService = {
