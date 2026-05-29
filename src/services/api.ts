@@ -125,8 +125,7 @@ api.interceptors.response.use(
       hadAuthHeader &&
       !isAuthEndpoint
     ) {
-      useAuthStore.getState().logout();
-      useStoreContextStore.getState().clearSelection();
+      useAuthStore.getState().logout(); // also clears chatStore + storeContextStore
       try {
         delete api.defaults.headers.common.Authorization;
       } catch {
