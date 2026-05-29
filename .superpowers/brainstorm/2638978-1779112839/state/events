@@ -1,0 +1,12 @@
+{"type":"click","text":"12\n        \n          Top clientes\n          Quem mais gastou / mais pediu no período","choice":"top_clientes","id":null,"timestamp":1779113749289}
+{"type":"click","text":"9\n        \n          Receita por categoria\n          Saladas, bebidas, acompanhamentos — pizza chart","choice":"receita_categoria","id":null,"timestamp":1779113773441}
+{"type":"click","text":"13\n        \n          Bairros / regiões\n          De onde vêm os pedidos de delivery — top bairros","choice":"bairros","id":null,"timestamp":1779113778343}
+{"type":"click","text":"14\n        \n          Tempo médio de preparo\n          Da confirmação até \"pronto\" — média em minutos","choice":"tempo_preparo","id":null,"timestamp":1779113779817}
+{"type":"click","text":"14\n        \n          Tempo médio de preparo\n          Da confirmação até \"pronto\" — média em minutos","choice":"tempo_preparo","id":null,"timestamp":1779113780554}
+{"type":"click","text":"2\n        \n          Nº de pedidos\n          Quantidade de pedidos no período selecionado","choice":"pedidos_periodo","id":null,"timestamp":1779113789794}
+{"type":"click","text":"3\n        \n          Ticket médio\n          Valor médio por pedido","choice":"ticket_medio","id":null,"timestamp":1779113791235}
+{"type":"click","text":"8\n        \n          Top saladas mais pedidas\n          Ranking com qtd e receita — filtra por período","choice":"top_saladas","id":null,"timestamp":1779113794622}
+{"type":"click","text":"1\n        \n          Faturamento do período\n          Total em R$ com % variação vs período anterior","choice":"fat_periodo","id":null,"timestamp":1779113798611}
+{"type":"click","text":"5\n        \n          Hora de pico\n          Heatmap de pedidos por hora do dia / dia da semana","choice":"hora_pico","id":null,"timestamp":1779125201060}
+{"type":"click","text":"5\n        \n          Hora de pico\n          Heatmap de pedidos por hora do dia / dia da semana","choice":"hora_pico","id":null,"timestamp":1779125202127}
+{"type":"click","text":"11\n        \n          Novos vs Recorrentes\n          Clientes novos vs que já pediram antes no período","choice":"clientes_novos_vs_recorrentes","id":null,"timestamp":1779125210637}

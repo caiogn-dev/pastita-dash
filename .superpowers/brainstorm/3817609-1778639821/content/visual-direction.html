@@ -1,0 +1,335 @@
+<h2>Direção visual — qual estilo para o pastita-dash?</h2>
+<p class="subtitle">Três direções distintas. Escolhe a que mais combina com a vibe que você quer.</p>
+
+<style>
+.direction-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+@media (max-width: 900px) {
+  .direction-grid { grid-template-columns: 1fr; }
+}
+.dir-card {
+  border: 2px solid #2a2a2a;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #111;
+}
+.dir-card:hover { border-color: #555; transform: translateY(-2px); }
+.dir-card.selected { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.25); }
+
+.dir-preview {
+  height: 260px;
+  overflow: hidden;
+  position: relative;
+}
+.dir-info { padding: 14px 16px; }
+.dir-info h3 { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
+.dir-info p { font-size: 12px; color: #888; margin: 0; line-height: 1.5; }
+.dir-tag {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 2px 8px; border-radius: 999px;
+  margin-bottom: 8px;
+}
+.check { float: right; font-size: 18px; color: #f97316; display: none; }
+.dir-card.selected .check { display: inline; }
+
+/* ── OPTION A: Operational Dense ── */
+.preview-a {
+  background: #0d0d0d;
+  font-family: 'Inter', system-ui, sans-serif;
+  display: flex; height: 100%;
+}
+.preview-a .sidebar {
+  width: 52px; background: #111; border-right: 1px solid #222;
+  display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 4px;
+}
+.preview-a .sidebar .logo {
+  width: 32px; height: 32px; background: #722F37; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 13px; font-weight: 800; margin-bottom: 8px;
+}
+.preview-a .sidebar .nav-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #555; transition: all 0.1s;
+}
+.preview-a .sidebar .nav-icon.active { background: #1a1a1a; color: #e5e5e5; }
+.preview-a .main { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.preview-a .topbar {
+  height: 32px; display: flex; align-items: center; justify-content: space-between;
+}
+.preview-a .topbar .title { font-size: 13px; font-weight: 700; color: #e5e5e5; }
+.preview-a .topbar .pill { font-size: 10px; background: #1a1a1a; border: 1px solid #333; color: #aaa; padding: 3px 10px; border-radius: 999px; }
+.preview-a .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+.preview-a .kpi { background: #141414; border: 1px solid #222; border-radius: 8px; padding: 8px; }
+.preview-a .kpi .kpi-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.08em; color: #555; margin-bottom: 4px; }
+.preview-a .kpi .kpi-val { font-size: 16px; font-weight: 800; color: #e5e5e5; }
+.preview-a .kpis .kpi:nth-child(2) .kpi-val { color: #4ade80; }
+.preview-a .kpis .kpi:nth-child(3) .kpi-val { color: #fb923c; }
+.preview-a .kpis .kpi:nth-child(4) .kpi-val { color: #a78bfa; }
+.preview-a .kanban { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; flex: 1; }
+.preview-a .col { background: #111; border: 1px solid #1e1e1e; border-radius: 8px; padding: 6px; overflow: hidden; }
+.preview-a .col-hd { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+.preview-a .col:nth-child(1) .col-hd { color: #94a3b8; }
+.preview-a .col:nth-child(2) .col-hd { color: #60a5fa; }
+.preview-a .col:nth-child(3) .col-hd { color: #fb923c; }
+.preview-a .col:nth-child(4) .col-hd { color: #4ade80; }
+.preview-a .order-card { background: #1a1a1a; border: 1px solid #252525; border-radius: 6px; padding: 6px; margin-bottom: 4px; }
+.preview-a .order-card .num { font-size: 9px; font-weight: 700; color: #ccc; }
+.preview-a .order-card .name { font-size: 8px; color: #666; }
+.preview-a .order-card .amt { font-size: 10px; font-weight: 700; color: #e5e5e5; margin-top: 3px; }
+.preview-a .dot { width: 5px; height: 5px; border-radius: 50%; }
+
+/* ── OPTION B: Modern SaaS ── */
+.preview-b {
+  background: #fafafa;
+  font-family: 'Inter', system-ui, sans-serif;
+  display: flex; height: 100%;
+}
+.preview-b .sidebar {
+  width: 180px; background: #fff; border-right: 1px solid #f0f0f0;
+  padding: 12px 8px; display: flex; flex-direction: column; gap: 2px;
+}
+.preview-b .logo-row { display: flex; align-items: center; gap: 8px; padding: 4px 8px 12px; }
+.preview-b .logo-box { width: 28px; height: 28px; background: #722F37; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 800; }
+.preview-b .logo-txt { font-size: 13px; font-weight: 700; color: #111; }
+.preview-b .section-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: #bbb; font-weight: 700; padding: 8px 8px 4px; }
+.preview-b .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 7px; font-size: 11px; color: #666; cursor: pointer; }
+.preview-b .nav-item.active { background: #f5f0f0; color: #722F37; font-weight: 600; }
+.preview-b .nav-item .icon { font-size: 13px; }
+.preview-b .main { flex: 1; padding: 12px; background: #f8f8f8; overflow: hidden; }
+.preview-b .page-hd { font-size: 16px; font-weight: 800; color: #111; margin-bottom: 10px; }
+.preview-b .kpis { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 10px; }
+.preview-b .kpi { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.preview-b .kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: #aaa; font-weight: 700; margin-bottom: 4px; }
+.preview-b .kpi-val { font-size: 18px; font-weight: 800; color: #111; }
+.preview-b .kpis .kpi:nth-child(2) .kpi-val { color: #16a34a; }
+.preview-b .chart-area { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 10px; height: 80px; }
+.preview-b .chart-label { font-size: 9px; color: #bbb; margin-bottom: 6px; font-weight: 600; }
+.preview-b .bar-row { display: flex; align-items: flex-end; gap: 3px; height: 50px; }
+.preview-b .bar { background: #722F37; border-radius: 3px 3px 0 0; opacity: 0.8; flex: 1; }
+.preview-b .bar:nth-child(4) { opacity: 1; }
+.preview-b .bar:nth-child(2), .preview-b .bar:nth-child(6) { opacity: 0.4; }
+
+/* ── OPTION C: Premium Dark ── */
+.preview-c {
+  background: #080808;
+  font-family: 'Inter', system-ui, sans-serif;
+  display: flex; height: 100%;
+}
+.preview-c .sidebar {
+  width: 200px; background: #0d0d0d; border-right: 1px solid #181818;
+  padding: 14px 12px; display: flex; flex-direction: column; gap: 2px;
+}
+.preview-c .logo-row { display: flex; align-items: center; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid #1a1a1a; margin-bottom: 8px; }
+.preview-c .logo-box {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, #722F37, #a04050);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 800;
+  box-shadow: 0 2px 8px rgba(114,47,55,0.5);
+}
+.preview-c .logo-txt { font-size: 14px; font-weight: 700; color: #f5f5f5; }
+.preview-c .section-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: #333; font-weight: 700; padding: 10px 6px 4px; }
+.preview-c .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 8px; border-radius: 8px; font-size: 11px; color: #555; cursor: pointer; }
+.preview-c .nav-item.active { background: rgba(255,255,255,0.06); color: #e5e5e5; font-weight: 600; }
+.preview-c .nav-item .dot-active { width: 4px; height: 4px; border-radius: 50%; background: #a04050; margin-left: auto; }
+.preview-c .nav-item .icon { font-size: 13px; }
+.preview-c .main { flex: 1; padding: 14px; overflow: hidden; }
+.preview-c .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.preview-c .page-hd { font-size: 15px; font-weight: 700; color: #f0f0f0; }
+.preview-c .cmd-k { font-size: 10px; background: #151515; border: 1px solid #252525; color: #555; padding: 4px 10px; border-radius: 6px; display: flex; align-items: center; gap: 5px; }
+.preview-c .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 10px; }
+.preview-c .kpi { background: #0f0f0f; border: 1px solid #1a1a1a; border-radius: 10px; padding: 10px; position: relative; overflow: hidden; }
+.preview-c .kpi::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.preview-c .kpis .kpi:nth-child(1)::after { background: linear-gradient(90deg, #60a5fa, transparent); }
+.preview-c .kpis .kpi:nth-child(2)::after { background: linear-gradient(90deg, #4ade80, transparent); }
+.preview-c .kpis .kpi:nth-child(3)::after { background: linear-gradient(90deg, #fb923c, transparent); }
+.preview-c .kpis .kpi:nth-child(4)::after { background: linear-gradient(90deg, #a78bfa, transparent); }
+.preview-c .kpi-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.08em; color: #444; font-weight: 700; margin-bottom: 6px; }
+.preview-c .kpi-val { font-size: 17px; font-weight: 800; color: #f0f0f0; }
+.preview-c .kpis .kpi:nth-child(2) .kpi-val { color: #4ade80; }
+.preview-c .kpis .kpi:nth-child(3) .kpi-val { color: #fb923c; }
+.preview-c .kpis .kpi:nth-child(4) .kpi-val { color: #a78bfa; }
+.preview-c .content-row { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.preview-c .panel { background: #0d0d0d; border: 1px solid #181818; border-radius: 10px; padding: 10px; }
+.preview-c .panel-hd { font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.preview-c .order-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #151515; }
+.preview-c .order-row .num { font-size: 10px; font-weight: 700; color: #ccc; min-width: 32px; }
+.preview-c .order-row .name { font-size: 9px; color: #555; flex: 1; }
+.preview-c .order-row .badge { font-size: 8px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+.preview-c .badge-orange { background: rgba(251,146,60,0.15); color: #fb923c; }
+.preview-c .badge-blue { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.preview-c .badge-green { background: rgba(74,222,128,0.15); color: #4ade80; }
+.preview-c .mini-kpi { padding: 8px; background: #111; border: 1px solid #1e1e1e; border-radius: 8px; margin-bottom: 6px; }
+.preview-c .mini-kpi .lbl { font-size: 8px; color: #444; text-transform: uppercase; letter-spacing: 0.07em; }
+.preview-c .mini-kpi .val { font-size: 14px; font-weight: 800; color: #f0f0f0; }
+</style>
+
+<div class="direction-grid">
+
+  <!-- A: Operational Dense -->
+  <div class="dir-card" data-choice="operational" onclick="toggleSelect(this)">
+    <div class="dir-preview">
+      <div class="preview-a">
+        <div class="sidebar">
+          <div class="logo">P</div>
+          <div class="nav-icon active">🏠</div>
+          <div class="nav-icon">🛒</div>
+          <div class="nav-icon">💬</div>
+          <div class="nav-icon">👥</div>
+          <div class="nav-icon">📣</div>
+          <div class="nav-icon">⚙️</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <span class="title">Dashboard</span>
+            <span class="pill">⌘K Buscar...</span>
+          </div>
+          <div class="kpis">
+            <div class="kpi"><div class="kpi-label">Pedidos hoje</div><div class="kpi-val">34</div></div>
+            <div class="kpi"><div class="kpi-label">Receita</div><div class="kpi-val">R$2.4k</div></div>
+            <div class="kpi"><div class="kpi-label">Aguardando</div><div class="kpi-val">5</div></div>
+            <div class="kpi"><div class="kpi-label">Conversas</div><div class="kpi-val">12</div></div>
+          </div>
+          <div class="kanban">
+            <div class="col">
+              <div class="col-hd"><div class="dot" style="background:#94a3b8"></div> RECEBIDO</div>
+              <div class="order-card"><div class="num">#341</div><div class="name">Ana M.</div><div class="amt">R$42,90</div></div>
+              <div class="order-card"><div class="num">#342</div><div class="name">João P.</div><div class="amt">R$38,50</div></div>
+            </div>
+            <div class="col">
+              <div class="col-hd"><div class="dot" style="background:#60a5fa"></div> CONFIRMADO</div>
+              <div class="order-card"><div class="num">#338</div><div class="name">Maria S.</div><div class="amt">R$67,00</div></div>
+            </div>
+            <div class="col">
+              <div class="col-hd"><div class="dot" style="background:#fb923c"></div> PREPARANDO</div>
+              <div class="order-card"><div class="num">#335</div><div class="name">Carlos R.</div><div class="amt">R$55,90</div></div>
+              <div class="order-card"><div class="num">#336</div><div class="name">Lucia F.</div><div class="amt">R$29,90</div></div>
+            </div>
+            <div class="col">
+              <div class="col-hd"><div class="dot" style="background:#4ade80"></div> ENTREGUE</div>
+              <div class="order-card"><div class="num">#330</div><div class="name">Pedro B.</div><div class="amt">R$44,00</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dir-info">
+      <span class="check">✓</span>
+      <span class="dir-tag" style="background:#1a1a2e;color:#7dd3fc;">Foco operacional</span>
+      <h3>A — Dark Operacional</h3>
+      <p>Sidebar icon-only colapsado, Kanban sempre visível, densidade máxima. Inspirado em Square POS / Toast POS. Para equipes que ficam na tela o dia todo.</p>
+    </div>
+  </div>
+
+  <!-- B: Modern SaaS Light -->
+  <div class="dir-card" data-choice="modern-saas" onclick="toggleSelect(this)">
+    <div class="dir-preview">
+      <div class="preview-b">
+        <div class="sidebar">
+          <div class="logo-row">
+            <div class="logo-box">P</div>
+            <span class="logo-txt">Pastita</span>
+          </div>
+          <span class="section-lbl">Operação</span>
+          <div class="nav-item active"><span class="icon">🏠</span> Dashboard</div>
+          <div class="nav-item"><span class="icon">🛒</span> Pedidos</div>
+          <div class="nav-item"><span class="icon">💬</span> WhatsApp</div>
+          <div class="nav-item"><span class="icon">👥</span> Clientes</div>
+          <span class="section-lbl">Ferramentas</span>
+          <div class="nav-item"><span class="icon">📣</span> Marketing</div>
+          <div class="nav-item"><span class="icon">⚙️</span> Config</div>
+        </div>
+        <div class="main">
+          <div class="page-hd">Bom dia, Caio ☀️</div>
+          <div class="kpis">
+            <div class="kpi"><div class="kpi-label">Pedidos hoje</div><div class="kpi-val">34</div></div>
+            <div class="kpi"><div class="kpi-label">Receita hoje</div><div class="kpi-val">R$2.4k</div></div>
+          </div>
+          <div class="chart-area">
+            <div class="chart-label">PEDIDOS — ÚLTIMOS 7 DIAS</div>
+            <div class="bar-row">
+              <div class="bar" style="height:30px"></div>
+              <div class="bar" style="height:45px"></div>
+              <div class="bar" style="height:25px"></div>
+              <div class="bar" style="height:60px"></div>
+              <div class="bar" style="height:38px"></div>
+              <div class="bar" style="height:20px"></div>
+              <div class="bar" style="height:42px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dir-info">
+      <span class="check">✓</span>
+      <span class="dir-tag" style="background:#f0fdf4;color:#166534;">Clean & Legível</span>
+      <h3>B — SaaS Light</h3>
+      <p>Light mode como padrão, sidebar expandida com labels, espaço generoso, gráficos proeminentes. Inspirado em Shopify Admin / Linear. Mais fácil para usuários novos.</p>
+    </div>
+  </div>
+
+  <!-- C: Premium Dark -->
+  <div class="dir-card" data-choice="premium-dark" onclick="toggleSelect(this)">
+    <div class="dir-preview">
+      <div class="preview-c">
+        <div class="sidebar">
+          <div class="logo-row">
+            <div class="logo-box">P</div>
+            <span class="logo-txt">Pastita</span>
+          </div>
+          <span class="section-lbl">Operação</span>
+          <div class="nav-item active"><span class="icon">🏠</span> Dashboard <div class="dot-active"></div></div>
+          <div class="nav-item"><span class="icon">🛒</span> Pedidos</div>
+          <div class="nav-item"><span class="icon">💬</span> WhatsApp</div>
+          <div class="nav-item"><span class="icon">👥</span> Clientes</div>
+          <span class="section-lbl">Ferramentas</span>
+          <div class="nav-item"><span class="icon">📣</span> Marketing</div>
+          <div class="nav-item"><span class="icon">🤖</span> Agentes IA</div>
+          <div class="nav-item"><span class="icon">⚙️</span> Config</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <span class="page-hd">Dashboard</span>
+            <div class="cmd-k"><span>⌘</span><span>K</span></div>
+          </div>
+          <div class="kpis">
+            <div class="kpi"><div class="kpi-label">Pedidos hoje</div><div class="kpi-val">34</div></div>
+            <div class="kpi"><div class="kpi-label">Receita</div><div class="kpi-val">R$2.4k</div></div>
+            <div class="kpi"><div class="kpi-label">Aguardando</div><div class="kpi-val">5</div></div>
+            <div class="kpi"><div class="kpi-label">Conversas</div><div class="kpi-val">12</div></div>
+          </div>
+          <div class="content-row">
+            <div class="panel">
+              <div class="panel-hd">Pedidos recentes</div>
+              <div class="order-row"><span class="num">#341</span><span class="name">Ana M. · Delivery</span><span class="badge badge-orange">Preparando</span></div>
+              <div class="order-row"><span class="num">#340</span><span class="name">João P. · Retirada</span><span class="badge badge-blue">Confirmado</span></div>
+              <div class="order-row"><span class="num">#339</span><span class="name">Maria S. · Delivery</span><span class="badge badge-green">Entregue</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="mini-kpi"><div class="lbl">Ticket médio</div><div class="val">R$54</div></div>
+              <div class="mini-kpi"><div class="lbl">Agentes ativos</div><div class="val">3</div></div>
+              <div class="mini-kpi"><div class="lbl">Alertas</div><div class="val" style="color:#fb923c">2</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dir-info">
+      <span class="check">✓</span>
+      <span class="dir-tag" style="background:#1c0a10;color:#fda4af;">Premium & Moderno</span>
+      <h3>C — Premium Dark</h3>
+      <p>Dark mode refinado, cores da marca (#722F37) em destaques, cmd+K, sidebar expandida, KPIs com accent gradiente. Inspirado em Vercel Dashboard / Stripe. Alta percepção de qualidade.</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:20px;font-size:12px;color:#555;text-align:center;">Clique para selecionar → responde no terminal qual você quer (A, B ou C).</p>

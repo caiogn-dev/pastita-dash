@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp Redesign — Abordagens</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0a; color: #e5e5e5; font-family: 'Inter', system-ui, sans-serif; padding: 20px; }
+  h1 { font-size: 18px; font-weight: 800; color: #f5f5f5; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
+
+  .approaches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media(max-width: 1000px) { .approaches { grid-template-columns: 1fr; } }
+
+  .approach-card {
+    border: 2px solid #1e1e1e;
+    border-radius: 14px; overflow: hidden;
+    cursor: pointer; transition: all 0.15s;
+    background: #111;
+  }
+  .approach-card:hover { border-color: #444; transform: translateY(-2px); }
+  .approach-card.selected { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.2); }
+  .check { float:right; font-size:18px; color:#f97316; display:none; }
+  .approach-card.selected .check { display:inline; }
+
+  .approach-header { padding: 14px 16px; border-bottom: 1px solid #1e1e1e; display:flex; align-items:center; gap:10px; }
+  .approach-tag { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; padding:2px 8px; border-radius:999px; }
+  .tag-recommended { background: rgba(249,115,22,.15); color:#fb923c; }
+  .tag-safe { background: rgba(74,222,128,.15); color:#4ade80; }
+  .tag-big { background: rgba(168,85,247,.15); color:#c084fc; }
+  .approach-title { font-size:14px; font-weight:700; color:#f0f0f0; flex:1; }
+
+  /* ── MOCKUP WRAPPER ── */
+  .mockup-wrap { padding: 12px; background: #0d0d0d; }
+  .mockup {
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid #222;
+    height: 340px;
+    display: flex;
+    font-size: 11px;
+  }
+
+  /* ══════════ APPROACH A — Full Rebuild ══════════ */
+  .mock-a { background: #0f0f0f; }
+
+  .mock-a .sidebar {
+    width: 280px; flex-shrink:0;
+    display:flex; flex-direction:column;
+    background: #111; border-right: 1px solid #1e1e1e;
+  }
+  .mock-a .sidebar-hd {
+    padding: 10px 12px;
+    display:flex; align-items:center; gap:8px;
+    border-bottom: 1px solid #1e1e1e;
+  }
+  .mock-a .sidebar-hd .title { font-size:13px; font-weight:700; color:#f0f0f0; flex:1; }
+  .mock-a .new-btn {
+    display:flex; align-items:center; gap:4px;
+    background:#722F37; color:white; border:none;
+    border-radius:6px; padding:4px 8px; font-size:10px; font-weight:700; cursor:pointer;
+  }
+  .mock-a .search {
+    margin: 8px; background:#1a1a1a; border:1px solid #2a2a2a;
+    border-radius:8px; display:flex; align-items:center; gap:6px; padding:5px 10px;
+  }
+  .mock-a .search input { background:none; border:none; outline:none; font-size:11px; color:#aaa; flex:1; }
+  .mock-a .filters {
+    display:flex; gap:4px; padding: 0 8px 8px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .mock-a .filter-chip {
+    font-size:9px; font-weight:700; padding:2px 8px; border-radius:999px;
+    border:1px solid #2a2a2a; color:#666; cursor:pointer;
+  }
+  .mock-a .filter-chip.active { background:#722F37; border-color:#722F37; color:#fff; }
+
+  .mock-a .conv-list { flex:1; overflow:hidden; }
+  .mock-a .conv-item {
+    display:flex; align-items:flex-start; gap:8px;
+    padding: 8px 10px; cursor:pointer;
+    border-left: 2px solid transparent;
+  }
+  .mock-a .conv-item:hover { background:#1a1a1a; }
+  .mock-a .conv-item.active { background:#1c0e10; border-left-color:#722F37; }
+  .mock-a .avatar {
+    width:36px; height:36px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; color:#fff;
+  }
+  .mock-a .conv-body { flex:1; min-width:0; }
+  .mock-a .conv-name { font-size:11px; font-weight:600; color:#e5e5e5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mock-a .conv-preview { font-size:10px; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+  .mock-a .conv-meta { display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0; }
+  .mock-a .conv-time { font-size:9px; color:#555; }
+  .mock-a .unread { background:#10b981; color:#fff; font-size:8px; font-weight:700; padding:1px 5px; border-radius:999px; }
+  .mock-a .mode-dot { width:6px; height:6px; border-radius:50%; }
+  .mock-a .mode-bot { background:#a78bfa; }
+  .mock-a .mode-human { background:#fb923c; }
+
+  .mock-a .chat-area { flex:1; display:flex; flex-direction:column; background:#0a0a0a; min-width:0; }
+  .mock-a .chat-hd {
+    display:flex; align-items:center; gap:8px;
+    padding:8px 12px; background:#111; border-bottom:1px solid #1e1e1e;
+  }
+  .mock-a .chat-hd .avatar2 { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+  .mock-a .chat-hd .cname { font-size:12px; font-weight:700; color:#f0f0f0; }
+  .mock-a .chat-hd .cphone { font-size:9px; color:#555; }
+  .mock-a .chat-hd .spacer { flex:1; }
+  .mock-a .mode-toggle {
+    display:flex; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:6px; overflow:hidden;
+  }
+  .mock-a .mode-toggle button {
+    border:none; background:none; color:#666; font-size:9px; font-weight:700;
+    padding:3px 8px; cursor:pointer; display:flex; align-items:center; gap:3px;
+  }
+  .mock-a .mode-toggle button.on { background:#722F37; color:#fff; }
+  .mock-a .hd-btn {
+    width:24px; height:24px; border-radius:6px; background:#1a1a1a; border:none;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:#777; font-size:12px;
+  }
+
+  .mock-a .msgs { flex:1; overflow:hidden; padding:8px 12px; display:flex; flex-direction:column; gap:6px; justify-content:flex-end; }
+  .mock-a .date-sep { text-align:center; }
+  .mock-a .date-sep span { background:#1a1a1a; color:#555; font-size:9px; padding:2px 8px; border-radius:999px; }
+  .mock-a .msg { display:flex; }
+  .mock-a .msg.in { justify-content:flex-start; }
+  .mock-a .msg.out { justify-content:flex-end; }
+  .mock-a .bubble {
+    max-width:65%; padding:6px 10px; border-radius:10px;
+    font-size:11px; line-height:1.4; position:relative;
+  }
+  .mock-a .msg.in .bubble { background:#1e1e1e; color:#e5e5e5; border-top-left-radius:2px; }
+  .mock-a .msg.out .bubble { background:#1c3a2f; color:#a7f3d0; border-bottom-right-radius:2px; }
+  .mock-a .btime { font-size:8px; color:#555; text-align:right; margin-top:2px; }
+  .mock-a .msg.out .btime { color:#6ee7b7; }
+  .mock-a .typing { display:flex; align-items:center; gap:3px; padding:6px 10px; background:#1e1e1e; border-radius:10px; border-top-left-radius:2px; width:48px; }
+  .mock-a .typing span { width:5px; height:5px; background:#555; border-radius:50%; animation:bounce .8s infinite; }
+  .mock-a .typing span:nth-child(2) { animation-delay:.15s; }
+  .mock-a .typing span:nth-child(3) { animation-delay:.3s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-4px)} }
+
+  .mock-a .input-row {
+    display:flex; align-items:center; gap:6px;
+    padding:8px 12px; background:#111; border-top:1px solid #1e1e1e;
+  }
+  .mock-a .input-row .att-btn { width:28px; height:28px; border-radius:50%; background:#1a1a1a; border:none; cursor:pointer; color:#666; display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .mock-a .input-row input { flex:1; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:999px; color:#e5e5e5; padding:6px 12px; font-size:11px; outline:none; }
+  .mock-a .input-row .send { width:30px; height:30px; border-radius:50%; background:#722F37; border:none; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; }
+
+  .mock-a .fab {
+    position:absolute; bottom:56px; right:16px;
+    width:28px; height:28px; border-radius:50%;
+    background:#722F37; border:none; color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:12px;
+    cursor:pointer; box-shadow:0 2px 8px rgba(114,47,55,.5);
+  }
+
+  /* ══════════ APPROACH B — Incremental ══════════ */
+  .mock-b { background: #f0f2f5; }
+  .mock-b .sidebar {
+    width: 270px; flex-shrink:0;
+    display:flex; flex-direction:column;
+    background: #fff; border-right:1px solid #e5e7eb;
+  }
+  .mock-b .sidebar-hd { padding: 12px; border-bottom:1px solid #e5e7eb; }
+  .mock-b .sidebar-hd h2 { font-size:14px; font-weight:700; color:#111; margin-bottom:8px; }
+  .mock-b .search { display:flex; align-items:center; gap:6px; background:#f3f4f6; border-radius:8px; padding:5px 10px; }
+  .mock-b .search input { background:none; border:none; outline:none; font-size:11px; color:#374151; flex:1; }
+  .mock-b .filters { display:flex; gap:4px; padding:8px 12px; border-bottom:1px solid #e5e7eb; }
+  .mock-b .chip { font-size:9px; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid #e5e7eb; color:#6b7280; cursor:pointer; }
+  .mock-b .chip.active { background:#722F37; border-color:#722F37; color:#fff; }
+
+  .mock-b .conv-list { flex:1; overflow:hidden; }
+  .mock-b .citem { display:flex; align-items:flex-start; gap:8px; padding:8px 12px; cursor:pointer; border-left:3px solid transparent; }
+  .mock-b .citem:hover { background:#f9fafb; }
+  .mock-b .citem.active { background:#fdf2f3; border-left-color:#722F37; }
+  .mock-b .av { width:36px; height:36px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; }
+  .mock-b .cb { flex:1; min-width:0; }
+  .mock-b .cn { font-size:11px; font-weight:600; color:#111; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mock-b .cp { font-size:10px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+  .mock-b .cm { display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0; }
+  .mock-b .ct { font-size:9px; color:#9ca3af; }
+  .mock-b .unr { background:#10b981; color:#fff; font-size:8px; font-weight:700; padding:1px 5px; border-radius:999px; }
+  .mock-b .mbadge { font-size:8px; font-weight:700; padding:1px 5px; border-radius:999px; }
+  .mock-b .bot { background:#ede9fe; color:#7c3aed; }
+  .mock-b .human { background:#fef3c7; color:#b45309; }
+
+  .mock-b .chat-area { flex:1; display:flex; flex-direction:column; background:#f0f2f5; min-width:0; }
+  .mock-b .chd { display:flex; align-items:center; gap:8px; padding:8px 12px; background:#fff; border-bottom:1px solid #e5e7eb; }
+  .mock-b .chd .av2 { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+  .mock-b .chd .cn2 { font-size:12px; font-weight:700; color:#111; }
+  .mock-b .chd .cp2 { font-size:9px; color:#9ca3af; }
+  .mock-b .chd .sp { flex:1; }
+  .mock-b .mt { display:flex; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:6px; overflow:hidden; }
+  .mock-b .mt button { border:none; background:none; color:#6b7280; font-size:9px; font-weight:700; padding:3px 8px; cursor:pointer; }
+  .mock-b .mt button.on { background:#722F37; color:#fff; }
+  .mock-b .hbtn { width:24px; height:24px; border-radius:6px; background:#f3f4f6; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#9ca3af; font-size:11px; }
+
+  .mock-b .msgs { flex:1; overflow:hidden; padding:8px 12px; display:flex; flex-direction:column; gap:6px; justify-content:flex-end; }
+  .mock-b .dsep { text-align:center; }
+  .mock-b .dsep span { background:rgba(255,255,255,.8); color:#9ca3af; font-size:9px; padding:2px 8px; border-radius:999px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .mock-b .msg { display:flex; }
+  .mock-b .msg.in { justify-content:flex-start; }
+  .mock-b .msg.out { justify-content:flex-end; }
+  .mock-b .bbl { max-width:65%; padding:6px 10px; border-radius:10px; font-size:11px; line-height:1.4; }
+  .mock-b .msg.in .bbl { background:#fff; color:#374151; border-top-left-radius:2px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .mock-b .msg.out .bbl { background:#d9fdd3; color:#065f46; border-bottom-right-radius:2px; }
+  .mock-b .bt { font-size:8px; color:#9ca3af; text-align:right; margin-top:2px; }
+  .mock-b .msg.out .bt { color:#25d366; }
+
+  .mock-b .inp { display:flex; align-items:center; gap:6px; padding:8px 12px; background:#fff; border-top:1px solid #e5e7eb; }
+  .mock-b .inp .attb { width:28px; height:28px; border-radius:50%; background:#f3f4f6; border:none; cursor:pointer; color:#6b7280; display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .mock-b .inp input { flex:1; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:999px; color:#374151; padding:6px 12px; font-size:11px; outline:none; }
+  .mock-b .inp .snd { width:30px; height:30px; border-radius:50%; background:#722F37; border:none; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; }
+
+  /* NEW CONV BADGE — shown on approach A */
+  .new-conv-badge {
+    background:#722F37; color:#fff; font-size:9px; font-weight:700;
+    padding:2px 7px; border-radius:999px;
+  }
+
+  /* ══════════ APPROACH C — Modular ══════════ */
+  .mock-c { background:#0a0a0a; }
+  .mock-c .sidebar {
+    width:60px; flex-shrink:0; background:#111; border-right:1px solid #1a1a1a;
+    display:flex; flex-direction:column; align-items:center; padding:10px 0; gap:4px;
+  }
+  .mock-c .sico { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; color:#555; }
+  .mock-c .sico.active { background:#1c0e10; color:#f97316; }
+  .mock-c .sico:hover { background:#1a1a1a; color:#aaa; }
+
+  .mock-c .panel2 {
+    width:260px; flex-shrink:0; background:#111; border-right:1px solid #1a1a1a;
+    display:flex; flex-direction:column;
+  }
+  .mock-c .p2hd { padding:10px 12px; border-bottom:1px solid #1a1a1a; }
+  .mock-c .p2hd h2 { font-size:13px; font-weight:700; color:#f0f0f0; margin-bottom:6px; }
+  .mock-c .srch { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px; padding:4px 8px; display:flex; align-items:center; gap:4px; }
+  .mock-c .srch input { background:none; border:none; outline:none; font-size:10px; color:#aaa; flex:1; }
+  .mock-c .tabs { display:flex; gap:1px; padding:6px 8px; border-bottom:1px solid #1a1a1a; }
+  .mock-c .tab { font-size:9px; font-weight:700; padding:3px 7px; border-radius:5px; cursor:pointer; color:#555; }
+  .mock-c .tab.active { background:#1c0e10; color:#fb923c; }
+  .mock-c .clist { flex:1; overflow:hidden; }
+  .mock-c .ci { display:flex; align-items:center; gap:6px; padding:7px 10px; cursor:pointer; }
+  .mock-c .ci:hover { background:#1a1a1a; }
+  .mock-c .ci.active { background:#1c0e10; }
+  .mock-c .av3 { width:32px; height:32px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; }
+  .mock-c .cb3 { flex:1; min-width:0; }
+  .mock-c .cn3 { font-size:10px; font-weight:600; color:#e0e0e0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mock-c .cp3 { font-size:9px; color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mock-c .cm3 { display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0; }
+  .mock-c .ct3 { font-size:8px; color:#444; }
+  .mock-c .ur3 { background:#10b981; color:#fff; font-size:7px; padding:1px 4px; border-radius:999px; font-weight:700; }
+
+  .mock-c .chat { flex:1; display:flex; flex-direction:column; background:#0d0d0d; min-width:0; position:relative; }
+  .mock-c .chd2 { display:flex; align-items:center; gap:8px; padding:8px 12px; background:#111; border-bottom:1px solid #1a1a1a; }
+  .mock-c .chd2 .av4 { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; flex-shrink:0; }
+  .mock-c .chd2 .cn4 { font-size:11px; font-weight:700; color:#f0f0f0; flex:1; }
+  .mock-c .mt2 { display:flex; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:5px; overflow:hidden; }
+  .mock-c .mt2 button { border:none; background:none; color:#666; font-size:9px; font-weight:700; padding:3px 7px; cursor:pointer; }
+  .mock-c .mt2 button.on { background:#722F37; color:#fff; }
+  .mock-c .hb2 { width:22px; height:22px; border-radius:5px; background:#1a1a1a; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#777; font-size:11px; }
+
+  .mock-c .msgs2 { flex:1; overflow:hidden; padding:8px 10px; display:flex; flex-direction:column; gap:5px; justify-content:flex-end; }
+  .mock-c .m2 { display:flex; }
+  .mock-c .m2.in { justify-content:flex-start; }
+  .mock-c .m2.out { justify-content:flex-end; }
+  .mock-c .b2 { max-width:65%; padding:5px 9px; border-radius:9px; font-size:10px; line-height:1.4; }
+  .mock-c .m2.in .b2 { background:#1e1e1e; color:#e0e0e0; border-top-left-radius:2px; }
+  .mock-c .m2.out .b2 { background:#1c3a2f; color:#a7f3d0; border-bottom-right-radius:2px; }
+  .mock-c .bt2 { font-size:7px; color:#555; text-align:right; margin-top:2px; }
+  .mock-c .m2.out .bt2 { color:#6ee7b7; }
+
+  .mock-c .inr { display:flex; align-items:center; gap:5px; padding:7px 10px; background:#111; border-top:1px solid #1a1a1a; }
+  .mock-c .inr .ab { width:26px; height:26px; border-radius:50%; background:#1a1a1a; border:none; cursor:pointer; color:#666; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .mock-c .inr input { flex:1; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:999px; color:#e0e0e0; padding:5px 10px; font-size:10px; outline:none; }
+  .mock-c .inr .sb { width:26px; height:26px; border-radius:50%; background:#722F37; border:none; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px; }
+
+  .mock-c .right-panel {
+    width:200px; flex-shrink:0; background:#111; border-left:1px solid #1a1a1a;
+    display:flex; flex-direction:column;
+  }
+  .mock-c .rp-hd { padding:8px 10px; border-bottom:1px solid #1a1a1a; font-size:11px; font-weight:700; color:#f0f0f0; }
+  .mock-c .rp-avatar { display:flex; flex-direction:column; align-items:center; padding:14px 10px; border-bottom:1px solid #1a1a1a; gap:6px; }
+  .mock-c .rp-av { width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#fff; }
+  .mock-c .rp-name { font-size:12px; font-weight:700; color:#f0f0f0; }
+  .mock-c .rp-phone { font-size:10px; color:#555; }
+  .mock-c .rp-stats { padding:8px 10px; display:flex; flex-direction:column; gap:4px; }
+  .mock-c .stat-row { display:flex; justify-content:space-between; }
+  .mock-c .stat-lbl { font-size:9px; color:#555; }
+  .mock-c .stat-val { font-size:9px; font-weight:700; color:#e0e0e0; }
+  .mock-c .rp-actions { padding:8px 10px; display:flex; flex-direction:column; gap:4px; margin-top:auto; }
+  .mock-c .rpbtn { padding:5px 8px; border-radius:6px; font-size:10px; font-weight:600; border:none; cursor:pointer; text-align:center; }
+  .mock-c .rpbtn-tpl { background:#1c0e10; color:#fb923c; }
+  .mock-c .rpbtn-ord { background:#1a1a2e; color:#7dd3fc; }
+
+  /* Approach info */
+  .approach-info { padding:14px 16px; }
+  .approach-info h3 { font-size:13px; font-weight:700; color:#f0f0f0; margin-bottom:6px; }
+  .features { list-style:none; display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+  .features li { font-size:11px; color:#888; display:flex; align-items:flex-start; gap:6px; line-height:1.4; }
+  .features li::before { content:'→'; color:#555; flex-shrink:0; }
+  .features li.new::before { content:'✦'; color:#fb923c; flex-shrink:0; }
+  .features li.fix::before { content:'⚠'; color:#fbbf24; flex-shrink:0; }
+  .tradeoffs { font-size:10px; color:#555; padding:8px; background:#0d0d0d; border-radius:6px; border:1px solid #1e1e1e; line-height:1.5; }
+</style>
+</head>
+<body>
+<h1>Redesign WhatsApp / Chat — 3 Abordagens</h1>
+<p class="subtitle">Escolha a abordagem que mais faz sentido. Cada mockup é um preview funcional do novo design.</p>
+
+<div class="approaches">
+
+  <!-- ══ APPROACH A ══ -->
+  <div class="approach-card" data-choice="a" onclick="sel(this)">
+    <div class="approach-header">
+      <span class="check">✓</span>
+      <span class="approach-tag tag-recommended">Recomendado</span>
+      <span class="approach-title">A — Rebuild Premium Dark</span>
+    </div>
+    <div class="mockup-wrap">
+      <div class="mockup mock-a" style="position:relative">
+        <div class="sidebar">
+          <div class="sidebar-hd">
+            <span class="title">WhatsApp</span>
+            <button class="new-btn">+ Nova</button>
+          </div>
+          <div class="search"><span style="color:#555;font-size:12px">⌕</span><input placeholder="Buscar..." readonly></div>
+          <div class="filters">
+            <div class="filter-chip active">Todos</div>
+            <div class="filter-chip">Não lidos</div>
+            <div class="filter-chip">🤖 Bot</div>
+            <div class="filter-chip">👤 Human</div>
+          </div>
+          <div class="conv-list">
+            <div class="conv-item active">
+              <div class="avatar" style="background:linear-gradient(135deg,#667eea,#764ba2)">A</div>
+              <div class="conv-body"><div class="conv-name">Ana Martins</div><div class="conv-preview">Quero fazer um pedido…</div></div>
+              <div class="conv-meta"><div class="conv-time">14:22</div><div class="unread">3</div><div class="mode-dot mode-bot"></div></div>
+            </div>
+            <div class="conv-item">
+              <div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">J</div>
+              <div class="conv-body"><div class="conv-name">João Pedro</div><div class="conv-preview">🎵 Áudio</div></div>
+              <div class="conv-meta"><div class="conv-time">13:10</div><div class="mode-dot mode-human"></div></div>
+            </div>
+            <div class="conv-item">
+              <div class="avatar" style="background:linear-gradient(135deg,#10b981,#059669)">M</div>
+              <div class="conv-body"><div class="conv-name">Maria Silva</div><div class="conv-preview">Ok, obrigada!</div></div>
+              <div class="conv-meta"><div class="conv-time">12:47</div></div>
+            </div>
+            <div class="conv-item">
+              <div class="avatar" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">C</div>
+              <div class="conv-body"><div class="conv-name">Carlos Rocha</div><div class="conv-preview">📷 Imagem</div></div>
+              <div class="conv-meta"><div class="conv-time">11:30</div><div class="unread">1</div><div class="mode-dot mode-bot"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-area">
+          <div class="chat-hd">
+            <div class="avatar2">A</div>
+            <div><div class="cname">Ana Martins</div><div class="cphone">+55 11 98765-4321</div></div>
+            <div class="spacer"></div>
+            <div class="mode-toggle">
+              <button>🤖 Bot</button>
+              <button class="on">👤 Humano</button>
+            </div>
+            <button class="hd-btn">⚙</button>
+            <button class="hd-btn">📋</button>
+          </div>
+          <div class="msgs">
+            <div class="date-sep"><span>Hoje</span></div>
+            <div class="msg in"><div class="bubble">Oi, quero fazer um pedido!<div class="btime">14:20</div></div></div>
+            <div class="msg out"><div class="bubble">Olá Ana! Claro, me diz o que quer 😊<div class="btime">14:21 ✓✓</div></div></div>
+            <div class="msg in"><div class="bubble">1 macarrão carbonara + 1 tiramisù<div class="btime">14:22</div></div></div>
+            <div class="msg in"><div class="typing"><span></span><span></span><span></span></div></div>
+          </div>
+          <div style="position:relative">
+            <button class="fab" style="position:relative;display:inline-flex;margin:4px 0 0 auto;display:block;margin-right:12px;margin-top:4px;margin-bottom:-4px">↓</button>
+          </div>
+          <div class="input-row">
+            <button class="att-btn">📎</button>
+            <button class="att-btn">😊</button>
+            <input placeholder="Digite uma mensagem…" readonly>
+            <button class="send">↑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="approach-info">
+      <h3>Rewrite completo — um arquivo canônico</h3>
+      <ul class="features">
+        <li class="new">Botão "Nova Conversa" com modal de número + template inicial</li>
+        <li class="new">Filter chips: Todos / Não lidos / Bot / Humano</li>
+        <li class="new">Timestamps na lista (14:22, ontem, seg…)</li>
+        <li class="new">Profile pictures (já existe no tipo, faltava renderizar)</li>
+        <li class="new">Typing animation (3 pontos) no chat</li>
+        <li class="new">Scroll-to-bottom FAB com contagem de novas</li>
+        <li class="new">Bot/Human toggle com labels claros</li>
+        <li class="fix">WhatsAppInboxPage passa a usar MessageInput (file + emoji)</li>
+        <li class="fix">Date separators + optimistic messages migrados do ChatWindow</li>
+        <li class="fix">CSS file → Tailwind puro</li>
+      </ul>
+      <div class="tradeoffs"><strong style="color:#f0f0f0">Esforço:</strong> 2–3 dias · Reescrita do WhatsAppInboxPage. ChatWindow vira deprecated. CSS file some.</div>
+    </div>
+  </div>
+
+  <!-- ══ APPROACH B ══ -->
+  <div class="approach-card" data-choice="b" onclick="sel(this)">
+    <div class="approach-header">
+      <span class="check">✓</span>
+      <span class="approach-tag tag-safe">Seguro</span>
+      <span class="approach-title">B — Incrementos no Existente</span>
+    </div>
+    <div class="mockup-wrap">
+      <div class="mockup mock-b">
+        <div class="sidebar">
+          <div class="sidebar-hd">
+            <h2>Caixa de Entrada</h2>
+            <div class="search"><span style="color:#9ca3af;font-size:12px">⌕</span><input placeholder="Buscar..." readonly></div>
+          </div>
+          <div class="filters">
+            <div class="chip active">Todos</div>
+            <div class="chip">Não lidos</div>
+            <div class="chip">🤖 Bot</div>
+            <div class="chip">👤 Human</div>
+          </div>
+          <div class="conv-list">
+            <div class="citem active">
+              <div class="av" style="background:linear-gradient(135deg,#667eea,#764ba2)">A</div>
+              <div class="cb"><div class="cn">Ana Martins</div><div class="cp">Quero fazer um pedido…</div></div>
+              <div class="cm"><div class="ct">14:22</div><div class="unr">3</div><div class="mbadge human">humano</div></div>
+            </div>
+            <div class="citem">
+              <div class="av" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">J</div>
+              <div class="cb"><div class="cn">João Pedro</div><div class="cp">🎵 Áudio</div></div>
+              <div class="cm"><div class="ct">13:10</div><div class="mbadge bot">bot</div></div>
+            </div>
+            <div class="citem">
+              <div class="av" style="background:linear-gradient(135deg,#10b981,#059669)">M</div>
+              <div class="cb"><div class="cn">Maria Silva</div><div class="cp">Ok, obrigada!</div></div>
+              <div class="cm"><div class="ct">12:47</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-area">
+          <div class="chd">
+            <div class="av2">A</div>
+            <div><div class="cn2">Ana Martins</div><div class="cp2">+55 11 98765-4321</div></div>
+            <div class="sp"></div>
+            <div class="mt"><button>🤖</button><button class="on">👤</button></div>
+            <button class="hbtn">📋</button>
+            <button class="hbtn">⚡</button>
+          </div>
+          <div class="msgs">
+            <div class="dsep"><span>Hoje</span></div>
+            <div class="msg in"><div class="bbl">Oi, quero fazer um pedido!<div class="bt">14:20</div></div></div>
+            <div class="msg out"><div class="bbl">Olá Ana! Claro, me diz o que quer 😊<div class="bt">14:21 ✓✓</div></div></div>
+            <div class="msg in"><div class="bbl">1 macarrão carbonara + 1 tiramisù<div class="bt">14:22</div></div></div>
+          </div>
+          <div class="inp">
+            <button class="attb">📎</button>
+            <input placeholder="Digite uma mensagem…" readonly>
+            <button class="snd">↑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="approach-info">
+      <h3>Adiciona peças sem mexer na estrutura</h3>
+      <ul class="features">
+        <li class="new">Filter chips: Todos / Não lidos / Bot / Humano</li>
+        <li class="new">Timestamps na lista</li>
+        <li class="new">Profile picture renderizado</li>
+        <li class="new">Date separators nos messages</li>
+        <li class="fix">Troca <code>&lt;input&gt;</code> por MessageInput (file + emoji)</li>
+        <li class="fix">Bot/Human: adiciona labels textuais</li>
+      </ul>
+      <div class="tradeoffs"><strong style="color:#111">Esforço:</strong> 1 dia · CSS file permanece. ChatWindow continua paralelo. Nenhuma nova conversa ainda.</div>
+    </div>
+  </div>
+
+  <!-- ══ APPROACH C ══ -->
+  <div class="approach-card" data-choice="c" onclick="sel(this)">
+    <div class="approach-header">
+      <span class="check">✓</span>
+      <span class="approach-tag tag-big">Maior escopo</span>
+      <span class="approach-title">C — Hub Unificado 3 Painéis</span>
+    </div>
+    <div class="mockup-wrap">
+      <div class="mockup mock-c">
+        <div class="sidebar">
+          <div class="sico active">💬</div>
+          <div class="sico">📸</div>
+          <div class="sico">💼</div>
+          <div style="flex:1"></div>
+          <div class="sico">⚙</div>
+        </div>
+        <div class="panel2">
+          <div class="p2hd">
+            <h2>WhatsApp</h2>
+            <div class="srch"><span style="color:#555;font-size:11px">⌕</span><input placeholder="Buscar..." readonly></div>
+          </div>
+          <div class="tabs">
+            <div class="tab active">Todos</div>
+            <div class="tab">Bot</div>
+            <div class="tab">Humano</div>
+            <div class="tab">🆕</div>
+          </div>
+          <div class="clist">
+            <div class="ci active">
+              <div class="av3" style="background:linear-gradient(135deg,#667eea,#764ba2)">A</div>
+              <div class="cb3"><div class="cn3">Ana Martins</div><div class="cp3">Quero fazer um pedido…</div></div>
+              <div class="cm3"><div class="ct3">14:22</div><div class="ur3">3</div></div>
+            </div>
+            <div class="ci">
+              <div class="av3" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">J</div>
+              <div class="cb3"><div class="cn3">João Pedro</div><div class="cp3">🎵 Áudio</div></div>
+              <div class="cm3"><div class="ct3">13:10</div></div>
+            </div>
+            <div class="ci">
+              <div class="av3" style="background:linear-gradient(135deg,#10b981,#059669)">M</div>
+              <div class="cb3"><div class="cn3">Maria Silva</div><div class="cp3">Ok, obrigada!</div></div>
+              <div class="cm3"><div class="ct3">12:47</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="chat">
+          <div class="chd2">
+            <div class="av4">A</div>
+            <div class="cn4">Ana Martins</div>
+            <div class="mt2"><button>🤖</button><button class="on">👤</button></div>
+            <button class="hb2">ℹ</button>
+          </div>
+          <div class="msgs2">
+            <div class="m2 in"><div class="b2">Oi, quero fazer um pedido!<div class="bt2">14:20</div></div></div>
+            <div class="m2 out"><div class="b2">Olá Ana! Claro 😊<div class="bt2">14:21 ✓✓</div></div></div>
+            <div class="m2 in"><div class="b2">1 macarrão + 1 tiramisù<div class="bt2">14:22</div></div></div>
+          </div>
+          <div class="inr">
+            <button class="ab">📎</button>
+            <input placeholder="Digite uma mensagem…" readonly>
+            <button class="sb">↑</button>
+          </div>
+        </div>
+        <div class="right-panel">
+          <div class="rp-hd">Info do Contato</div>
+          <div class="rp-avatar">
+            <div class="rp-av">A</div>
+            <div class="rp-name">Ana Martins</div>
+            <div class="rp-phone">+55 11 98765-4321</div>
+          </div>
+          <div class="rp-stats">
+            <div class="stat-row"><span class="stat-lbl">Pedidos</span><span class="stat-val">7</span></div>
+            <div class="stat-row"><span class="stat-lbl">LTV</span><span class="stat-val">R$412</span></div>
+            <div class="stat-row"><span class="stat-lbl">Modo</span><span class="stat-val" style="color:#fb923c">Humano</span></div>
+            <div class="stat-row"><span class="stat-lbl">Conta WA</span><span class="stat-val">ce-saladas</span></div>
+          </div>
+          <div class="rp-actions">
+            <div class="rpbtn rpbtn-tpl">Templates</div>
+            <div class="rpbtn rpbtn-ord">+ Criar Pedido</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="approach-info">
+      <h3>Sidebar com ícones + painel de info do contato</h3>
+      <ul class="features">
+        <li class="new">Sidebar de canais: WA / Instagram / Messenger (ícones)</li>
+        <li class="new">Painel direito: Info do contato (LTV, pedidos, modo)</li>
+        <li class="new">Tools/Templates migram para dentro do painel direito</li>
+        <li class="new">Nova conversa como tab na lista</li>
+        <li class="new">Tudo via Tailwind, zero CSS files</li>
+        <li class="fix">Unifica ChatWindow + WhatsAppInboxPage em uma estrutura</li>
+      </ul>
+      <div class="tradeoffs"><strong style="color:#f0f0f0">Esforço:</strong> 4–5 dias · Maior rewrite, mais componentes novos, melhor resultado final.</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:20px;padding:14px;background:#0d0d0d;border:1px solid #1e1e1e;border-radius:10px;font-size:12px;color:#666;">
+  <strong style="color:#f0f0f0">Minha recomendação:</strong> <strong style="color:#fb923c">Opção A</strong> — rewrite focado no WhatsAppInboxPage com todos os problemas corrigidos e features novas. É o melhor custo-benefício: melhora drástica em 2–3 dias. A Opção C é a mais ambiciosa mas pode ficar para uma segunda fase.
+</div>
+
+<p style="margin-top:14px;font-size:12px;color:#555;text-align:center">Clica na abordagem que quer → me diz no terminal</p>
+
+<script>
+function sel(el) {
+  document.querySelectorAll('.approach-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const choice = el.dataset.choice;
+  if (window.recordEvent) window.recordEvent({ type:'click', choice, text: 'Approach ' + choice.toUpperCase() });
+}
+</script>
+</body>
+</html>

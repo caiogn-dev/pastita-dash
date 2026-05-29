@@ -1,0 +1,214 @@
+<h2>Design final — /analytics/saladas</h2>
+<p class="subtitle">Mockup completo. Confirme se está certo antes de escrevermos o plano de implementação.</p>
+
+<div class="mockup">
+  <div class="mockup-header">pastita-dash · /analytics/saladas · Ce-Saladas</div>
+  <div class="mockup-body" style="padding:0;">
+
+    <!-- Page header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#111827;">🥗 Ce-Saladas — Dashboard</div>
+        <div style="font-size:11px;color:#6b7280;">Análise de vendas e performance</div>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <span style="padding:5px 12px;background:#2563eb;color:white;border-radius:20px;font-size:11px;font-weight:700;">Hoje</span>
+        <span style="padding:5px 12px;background:#f3f4f6;color:#6b7280;border-radius:20px;font-size:11px;">Semana</span>
+        <span style="padding:5px 12px;background:#f3f4f6;color:#6b7280;border-radius:20px;font-size:11px;">Mês</span>
+        <span style="padding:5px 12px;background:#f3f4f6;color:#374151;border-radius:20px;font-size:11px;border:1px solid #e5e7eb;">↓ CSV</span>
+      </div>
+    </div>
+
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Row 1: 3 KPI cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div style="background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:10px;padding:14px;">
+          <div style="font-size:10px;color:rgba(255,255,255,0.8);margin-bottom:4px;">FATURAMENTO · HOJE</div>
+          <div style="font-size:24px;font-weight:900;color:white;">R$ 342,00</div>
+          <div style="font-size:10px;color:#bbf7d0;margin-top:2px;">▲ 12% vs ontem</div>
+        </div>
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px;">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px;">PEDIDOS · HOJE</div>
+          <div style="font-size:24px;font-weight:900;color:#111827;">23</div>
+          <div style="font-size:10px;color:#2563eb;margin-top:2px;">▲ 4 vs ontem</div>
+        </div>
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px;">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px;">TICKET MÉDIO</div>
+          <div style="font-size:24px;font-weight:900;color:#111827;">R$ 14,87</div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:2px;">estável</div>
+        </div>
+      </div>
+
+      <!-- Row 2: Bar chart + Donut -->
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px;">
+          <div style="font-size:11px;font-weight:700;color:#111827;margin-bottom:10px;">Faturamento — Últimos 7 dias</div>
+          <div style="display:flex;align-items:flex-end;gap:5px;height:70px;border-bottom:1px solid #f3f4f6;padding-bottom:4px;">
+            <div style="flex:1;background:#bfdbfe;border-radius:3px 3px 0 0;height:45%;"></div>
+            <div style="flex:1;background:#93c5fd;border-radius:3px 3px 0 0;height:60%;"></div>
+            <div style="flex:1;background:#60a5fa;border-radius:3px 3px 0 0;height:75%;"></div>
+            <div style="flex:1;background:#93c5fd;border-radius:3px 3px 0 0;height:50%;"></div>
+            <div style="flex:1;background:#3b82f6;border-radius:3px 3px 0 0;height:88%;"></div>
+            <div style="flex:1;background:#60a5fa;border-radius:3px 3px 0 0;height:65%;"></div>
+            <div style="flex:1;background:#2563eb;border-radius:3px 3px 0 0;height:100%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:5px;">
+            <span style="font-size:9px;color:#9ca3af;">Seg</span>
+            <span style="font-size:9px;color:#9ca3af;">Ter</span>
+            <span style="font-size:9px;color:#9ca3af;">Qua</span>
+            <span style="font-size:9px;color:#9ca3af;">Qui</span>
+            <span style="font-size:9px;color:#9ca3af;">Sex</span>
+            <span style="font-size:9px;color:#9ca3af;">Sáb</span>
+            <span style="font-size:9px;color:#2563eb;font-weight:700;">Dom</span>
+          </div>
+        </div>
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px;">
+          <div style="font-size:11px;font-weight:700;color:#111827;margin-bottom:10px;">Receita por categoria</div>
+          <div style="display:flex;justify-content:center;margin-bottom:10px;">
+            <div style="width:64px;height:64px;border-radius:50%;background:conic-gradient(#16a34a 0% 55%,#2563eb 55% 75%,#f59e0b 75% 88%,#e5e7eb 88% 100%);"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;flex-shrink:0;background:#16a34a;border-radius:50%;"></div><span style="font-size:9px;color:#374151;">Saladas 55%</span></div>
+            <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;flex-shrink:0;background:#2563eb;border-radius:50%;"></div><span style="font-size:9px;color:#374151;">Bebidas 20%</span></div>
+            <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;flex-shrink:0;background:#f59e0b;border-radius:50%;"></div><span style="font-size:9px;color:#374151;">Acomp. 13%</span></div>
+            <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;flex-shrink:0;background:#e5e7eb;border-radius:50%;"></div><span style="font-size:9px;color:#6b7280;">Outros 12%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Top saladas + Clientes + Bairros -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px;">
+          <div style="font-size:11px;font-weight:700;color:#111827;margin-bottom:10px;">🥗 Top Saladas — Hoje</div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="font-size:10px;font-weight:600;color:#111827;">🥇 Cesar</span>
+                <span style="font-size:10px;color:#16a34a;font-weight:700;">17x · R$178</span>
+              </div>
+              <div style="height:5px;background:#f3f4f6;border-radius:3px;"><div style="width:90%;height:5px;background:#16a34a;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="font-size:10px;font-weight:600;color:#111827;">🥈 Tropical</span>
+                <span style="font-size:10px;color:#2563eb;font-weight:700;">12x · R$126</span>
+              </div>
+              <div style="height:5px;background:#f3f4f6;border-radius:3px;"><div style="width:63%;height:5px;background:#2563eb;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="font-size:10px;font-weight:600;color:#111827;">🥉 Grega</span>
+                <span style="font-size:10px;color:#d97706;font-weight:700;">9x · R$89</span>
+              </div>
+              <div style="height:5px;background:#f3f4f6;border-radius:3px;"><div style="width:47%;height:5px;background:#f59e0b;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="font-size:10px;color:#374151;">4. Caprese</span>
+                <span style="font-size:10px;color:#6b7280;">6x · R$60</span>
+              </div>
+              <div style="height:5px;background:#f3f4f6;border-radius:3px;"><div style="width:32%;height:5px;background:#d1d5db;border-radius:3px;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:12px;">
+            <div style="font-size:11px;font-weight:700;color:#111827;margin-bottom:8px;">👥 Clientes — Hoje</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;">
+              <div style="background:#eff6ff;border-radius:6px;padding:8px;">
+                <div style="font-size:16px;font-weight:800;color:#1d4ed8;">23</div>
+                <div style="font-size:8px;color:#3b82f6;">Total</div>
+              </div>
+              <div style="background:#f0fdf4;border-radius:6px;padding:8px;">
+                <div style="font-size:16px;font-weight:800;color:#15803d;">+5</div>
+                <div style="font-size:8px;color:#16a34a;">Novos</div>
+              </div>
+              <div style="background:#faf5ff;border-radius:6px;padding:8px;">
+                <div style="font-size:16px;font-weight:800;color:#7c3aed;">18</div>
+                <div style="font-size:8px;color:#8b5cf6;">Recorrentes</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:12px;flex:1;">
+            <div style="font-size:11px;font-weight:700;color:#111827;margin-bottom:8px;">📍 Top Bairros</div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:10px;color:#374151;">Centro</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div style="width:50px;height:5px;background:#f3f4f6;border-radius:3px;"><div style="width:80%;height:5px;background:#2563eb;border-radius:3px;"></div></div>
+                  <span style="font-size:10px;font-weight:600;color:#111827;width:18px;text-align:right;">8</span>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:10px;color:#374151;">Boa Vista</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div style="width:50px;height:5px;background:#f3f4f6;border-radius:3px;"><div style="width:50%;height:5px;background:#2563eb;border-radius:3px;"></div></div>
+                  <span style="font-size:10px;font-weight:600;color:#111827;width:18px;text-align:right;">5</span>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:10px;color:#374151;">Jardins</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div style="width:50px;height:5px;background:#f3f4f6;border-radius:3px;"><div style="width:40%;height:5px;background:#2563eb;border-radius:3px;"></div></div>
+                  <span style="font-size:10px;font-weight:600;color:#111827;width:18px;text-align:right;">4</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Top clientes -->
+      <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:#111827;margin-bottom:10px;">🏆 Top Clientes — Hoje</div>
+        <table style="width:100%;font-size:10px;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid #f3f4f6;">
+              <th style="text-align:left;padding:4px 6px;color:#6b7280;font-weight:600;">Cliente</th>
+              <th style="text-align:left;padding:4px 6px;color:#6b7280;font-weight:600;">WhatsApp</th>
+              <th style="text-align:right;padding:4px 6px;color:#6b7280;font-weight:600;">Pedidos</th>
+              <th style="text-align:right;padding:4px 6px;color:#6b7280;font-weight:600;">Total gasto</th>
+              <th style="text-align:right;padding:4px 6px;color:#6b7280;font-weight:600;">Ticket médio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #f9fafb;">
+              <td style="padding:5px 6px;font-weight:600;color:#111827;">Ana Paula S.</td>
+              <td style="padding:5px 6px;color:#6b7280;">11 9 9999-xxxx</td>
+              <td style="padding:5px 6px;text-align:right;">12</td>
+              <td style="padding:5px 6px;text-align:right;font-weight:700;color:#16a34a;">R$ 189,50</td>
+              <td style="padding:5px 6px;text-align:right;color:#374151;">R$ 15,79</td>
+            </tr>
+            <tr>
+              <td style="padding:5px 6px;font-weight:600;color:#111827;">Carlos M.</td>
+              <td style="padding:5px 6px;color:#6b7280;">11 9 8888-xxxx</td>
+              <td style="padding:5px 6px;text-align:right;">8</td>
+              <td style="padding:5px 6px;text-align:right;font-weight:700;color:#16a34a;">R$ 124,00</td>
+              <td style="padding:5px 6px;text-align:right;color:#374151;">R$ 15,50</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:20px;">
+  <div class="option" data-choice="aprovado" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Aprovado — parte pra implementação</h3>
+      <p>Layout, KPIs e estrutura estão certos.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="ajuste" onclick="toggleSelect(this)">
+    <div class="letter">✎</div>
+    <div class="content">
+      <h3>Precisa de ajuste</h3>
+      <p>Me fala o que mudar no terminal.</p>
+    </div>
+  </div>
+</div>

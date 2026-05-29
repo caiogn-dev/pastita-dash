@@ -1,0 +1,136 @@
+<h2>Quais KPIs você quer ver no painel do Ce-Saladas?</h2>
+<p class="subtitle">Temos dados reais disponíveis no banco. Selecione tudo que faz sentido pra você acompanhar. <strong>Seleção múltipla.</strong></p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+
+  <!-- Coluna 1: Vendas -->
+  <div>
+    <div class="label" style="margin-bottom:8px;">💰 Vendas e Faturamento</div>
+    <div class="options" data-multiselect>
+
+      <div class="option" data-choice="fat_periodo" onclick="toggleSelect(this)">
+        <div class="letter">1</div>
+        <div class="content">
+          <h3>Faturamento do período</h3>
+          <p>Total em R$ com % variação vs período anterior</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="pedidos_periodo" onclick="toggleSelect(this)">
+        <div class="letter">2</div>
+        <div class="content">
+          <h3>Nº de pedidos</h3>
+          <p>Quantidade de pedidos no período selecionado</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="ticket_medio" onclick="toggleSelect(this)">
+        <div class="letter">3</div>
+        <div class="content">
+          <h3>Ticket médio</h3>
+          <p>Valor médio por pedido</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="taxa_cancelamento" onclick="toggleSelect(this)">
+        <div class="letter">4</div>
+        <div class="content">
+          <h3>Taxa de cancelamento</h3>
+          <p>% de pedidos cancelados</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="hora_pico" onclick="toggleSelect(this)">
+        <div class="letter">5</div>
+        <div class="content">
+          <h3>Hora de pico</h3>
+          <p>Heatmap de pedidos por hora do dia / dia da semana</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="delivery_vs_retirada" onclick="toggleSelect(this)">
+        <div class="letter">6</div>
+        <div class="content">
+          <h3>Delivery vs Retirada</h3>
+          <p>Split entre pedidos com entrega e retirada no local</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="forma_pagamento" onclick="toggleSelect(this)">
+        <div class="letter">7</div>
+        <div class="content">
+          <h3>Forma de pagamento</h3>
+          <p>PIX vs cartão vs dinheiro — distribuição %</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Coluna 2: Produtos e Clientes -->
+  <div>
+    <div class="label" style="margin-bottom:8px;">🥗 Produtos · 👥 Clientes</div>
+    <div class="options" data-multiselect>
+
+      <div class="option" data-choice="top_saladas" onclick="toggleSelect(this)">
+        <div class="letter">8</div>
+        <div class="content">
+          <h3>Top saladas mais pedidas</h3>
+          <p>Ranking com qtd e receita — filtra por período</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="receita_categoria" onclick="toggleSelect(this)">
+        <div class="letter">9</div>
+        <div class="content">
+          <h3>Receita por categoria</h3>
+          <p>Saladas, bebidas, acompanhamentos — pizza chart</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="tendencia_produto" onclick="toggleSelect(this)">
+        <div class="letter">10</div>
+        <div class="content">
+          <h3>Tendência de produto</h3>
+          <p>Produtos que cresceram mais vs semana anterior</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="clientes_novos_vs_recorrentes" onclick="toggleSelect(this)">
+        <div class="letter">11</div>
+        <div class="content">
+          <h3>Novos vs Recorrentes</h3>
+          <p>Clientes novos vs que já pediram antes no período</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="top_clientes" onclick="toggleSelect(this)">
+        <div class="letter">12</div>
+        <div class="content">
+          <h3>Top clientes</h3>
+          <p>Quem mais gastou / mais pediu no período</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="bairros" onclick="toggleSelect(this)">
+        <div class="letter">13</div>
+        <div class="content">
+          <h3>Bairros / regiões</h3>
+          <p>De onde vêm os pedidos de delivery — top bairros</p>
+        </div>
+      </div>
+
+      <div class="option" data-choice="tempo_preparo" onclick="toggleSelect(this)">
+        <div class="letter">14</div>
+        <div class="content">
+          <h3>Tempo médio de preparo</h3>
+          <p>Da confirmação até "pronto" — média em minutos</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Selecione quantos quiser. Esses são os dados que já temos no banco — sem precisar criar nada novo.</p>

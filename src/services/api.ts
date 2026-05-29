@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../stores/authStore';
+import { useStoreContextStore } from '../stores/storeContextStore';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -125,6 +126,7 @@ api.interceptors.response.use(
       !isAuthEndpoint
     ) {
       useAuthStore.getState().logout();
+      useStoreContextStore.getState().clearSelection();
       try {
         delete api.defaults.headers.common.Authorization;
       } catch {

@@ -1,0 +1,155 @@
+<h2>Mapa de escopo — pastita-dash UI</h2>
+<p class="subtitle">O projeto tem ~10 áreas independentes. Selecione as que quer melhorar <strong>nessa sprint</strong> (multi-select).</p>
+
+<style>
+.scope-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+.scope-card {
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #1a1a1a;
+  user-select: none;
+}
+.scope-card:hover { border-color: #555; background: #222; }
+.scope-card.selected { border-color: #f97316; background: #1c1208; }
+.scope-card .tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+.scope-card h3 { font-size: 15px; font-weight: 700; margin: 0 0 6px; color: #f5f5f5; }
+.scope-card p { font-size: 12px; color: #888; margin: 0; line-height: 1.5; }
+.scope-card .impact {
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
+}
+.impact-high { color: #f97316; }
+.impact-med  { color: #facc15; }
+.impact-low  { color: #6b7280; }
+.check-mark { float: right; font-size: 18px; color: #f97316; display: none; }
+.scope-card.selected .check-mark { display: inline; }
+
+.tag-foundation { background: #312e81; color: #a5b4fc; }
+.tag-operations { background: #14532d; color: #86efac; }
+.tag-catalog    { background: #7f1d1d; color: #fca5a5; }
+.tag-messaging  { background: #0c4a6e; color: #7dd3fc; }
+.tag-marketing  { background: #4a1d96; color: #d8b4fe; }
+.tag-crm        { background: #064e3b; color: #6ee7b7; }
+.tag-ai         { background: #1c1917; color: #fde68a; }
+.tag-analytics  { background: #1e3a5f; color: #93c5fd; }
+.tag-settings   { background: #1f2937; color: #d1d5db; }
+</style>
+
+<div class="scope-grid" data-multiselect id="scopeGrid">
+
+  <div class="scope-card" data-choice="foundation" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-foundation">Fundação</span>
+    <h3>🏗️ Design System + Navegação</h3>
+    <p>Sidebar, Navbar, tokens de cor, tipografia, dark mode consistente, command palette (Cmd+K), breadcrumbs.</p>
+    <div class="impact impact-high">● Alto impacto — afeta todas as páginas</div>
+  </div>
+
+  <div class="scope-card" data-choice="dashboard" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-operations">Operação</span>
+    <h3>📊 Dashboard (Home)</h3>
+    <p>KPI cards, gráficos de receita/pedidos, pipeline visual, alertas operacionais, feed de atividade em tempo real.</p>
+    <div class="impact impact-high">● Alto impacto — primeira tela do dia</div>
+  </div>
+
+  <div class="scope-card" data-choice="orders" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-operations">Operação</span>
+    <h3>🛒 Pedidos (Kanban + Detalhe)</h3>
+    <p>Kanban com colunas repaginadas, cards mais densos, timer de urgência, filtros rápidos, detalhes do pedido.</p>
+    <div class="impact impact-high">● Alto impacto — usado ~100x por dia</div>
+  </div>
+
+  <div class="scope-card" data-choice="catalog" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-catalog">Catálogo</span>
+    <h3>🍝 Produtos + Combos + Cupons</h3>
+    <p>Grid de produtos com imagens, inline edit, status toggle, busca/filtro, tela de cupom com desconto visual.</p>
+    <div class="impact impact-med">● Médio impacto — configuração frequente</div>
+  </div>
+
+  <div class="scope-card" data-choice="messaging" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-messaging">Mensagens</span>
+    <h3>💬 WhatsApp + Conversas + Canais</h3>
+    <p>Inbox unificado, chat window, handover bot↔humano, indicadores de leitura, busca de contato.</p>
+    <div class="impact impact-high">● Alto impacto — core product</div>
+  </div>
+
+  <div class="scope-card" data-choice="crm" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-crm">CRM</span>
+    <h3>👥 Clientes (CRM)</h3>
+    <p>Lista com avatar + histórico de pedidos, perfil do cliente, LTV, segmentação, últimas conversas.</p>
+    <div class="impact impact-med">● Médio impacto — crescimento</div>
+  </div>
+
+  <div class="scope-card" data-choice="marketing" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-marketing">Marketing</span>
+    <h3>📣 Campanhas + Templates</h3>
+    <p>Builder de campanha WhatsApp, preview de template, lista de assinantes, métricas de envio.</p>
+    <div class="impact impact-med">● Médio impacto</div>
+  </div>
+
+  <div class="scope-card" data-choice="agents" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-ai">IA</span>
+    <h3>🤖 Agentes IA + Automações</h3>
+    <p>Card de agente com status, fluxos visuais (ReactFlow), logs de intenção, configuração de company profile.</p>
+    <div class="impact impact-med">● Médio impacto</div>
+  </div>
+
+  <div class="scope-card" data-choice="analytics" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-analytics">Dados</span>
+    <h3>📈 Analytics + Relatórios</h3>
+    <p>Filtros por período, gráficos de tendência, funil de conversão, exportação de dados.</p>
+    <div class="impact impact-low">● Baixo uso atual</div>
+  </div>
+
+  <div class="scope-card" data-choice="settings" onclick="selectCard(this)">
+    <span class="check-mark">✓</span>
+    <span class="tag tag-settings">Config</span>
+    <h3>⚙️ Configurações + Lojas</h3>
+    <p>Tela de configurações da loja, zonas de entrega (mapa), pagamentos, perfil do usuário.</p>
+    <div class="impact impact-low">● Baixo uso, mas importante</div>
+  </div>
+
+</div>
+
+<script>
+function selectCard(el) {
+  el.classList.toggle('selected');
+  const selected = document.querySelectorAll('.scope-card.selected');
+  const choices = Array.from(selected).map(c => c.dataset.choice);
+  // record selection via the standard toggleSelect mechanism
+  if (window.recordEvent) {
+    window.recordEvent({ type: 'click', choice: choices.join(','), text: choices.join(', ') });
+  }
+}
+</script>
+
+<p style="margin-top:24px;font-size:13px;color:#666;text-align:center;">
+  Selecione tudo que quiser melhorar → responda no terminal quando terminar.
+</p>

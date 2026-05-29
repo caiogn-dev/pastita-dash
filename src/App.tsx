@@ -147,7 +147,8 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <Routes>
+    <React.Suspense fallback={<FullPageLoading />}>
+      <Routes>
       {/* Public routes */}
       <Route path="/login" element={
         isAuthenticated ? <Navigate to="/" replace /> : (
@@ -265,6 +266,7 @@ const AppContent: React.FC = () => {
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </React.Suspense>
   );
 };
 

@@ -1,0 +1,328 @@
+<h2>Auditoria UI — pastita-dash</h2>
+<p class="subtitle">O que existe, o que está bom, o que está faltando. Por área.</p>
+
+<style>
+.audit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+.audit-card {
+  border: 1px solid #222;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #111;
+}
+.audit-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid #1e1e1e;
+}
+.audit-card-header h3 { font-size: 13px; font-weight: 700; color: #e5e5e5; margin: 0; }
+.score {
+  font-size: 11px; font-weight: 800;
+  padding: 2px 8px; border-radius: 999px;
+}
+.score-ok   { background: rgba(74,222,128,0.15); color: #4ade80; }
+.score-med  { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.score-bad  { background: rgba(248,113,113,0.15); color: #f87171; }
+.audit-body { padding: 12px 14px; }
+.check-list { list-style: none; padding: 0; margin: 0 0 8px; }
+.check-list li {
+  font-size: 11px; padding: 3px 0;
+  display: flex; align-items: flex-start; gap: 6px; color: #888;
+  line-height: 1.4;
+}
+.check-list li.ok   { color: #6ee7b7; }
+.check-list li.warn { color: #fbbf24; }
+.check-list li.miss { color: #f87171; }
+.check-list li::before { flex-shrink: 0; margin-top: 1px; }
+.check-list li.ok::before   { content: '✓'; color: #4ade80; }
+.check-list li.warn::before { content: '⚠'; color: #fbbf24; }
+.check-list li.miss::before { content: '✗'; color: #f87171; }
+.audit-divider { height: 1px; background: #1a1a1a; margin: 8px 0; }
+.priority-tag {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 2px 7px; border-radius: 999px;
+}
+.pri-high   { background: rgba(249,115,22,0.15); color: #fb923c; }
+.pri-med    { background: rgba(168,85,247,0.15); color: #c084fc; }
+.pri-low    { background: rgba(100,116,139,0.15); color: #94a3b8; }
+
+.summary-bar {
+  background: #0f0f0f; border: 1px solid #1e1e1e; border-radius: 12px;
+  padding: 16px 20px; margin-bottom: 20px;
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; text-align: center;
+}
+.summary-bar .num { font-size: 24px; font-weight: 800; }
+.summary-bar .lbl { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; }
+.summary-bar .ok-num  { color: #4ade80; }
+.summary-bar .warn-num{ color: #fbbf24; }
+.summary-bar .bad-num { color: #f87171; }
+.summary-bar .neu-num { color: #a78bfa; }
+</style>
+
+<div class="summary-bar">
+  <div><div class="num ok-num">14</div><div class="lbl">Funciona bem</div></div>
+  <div><div class="num warn-num">11</div><div class="lbl">Incompleto</div></div>
+  <div><div class="num bad-num">17</div><div class="lbl">Faltando</div></div>
+  <div><div class="num neu-num">8</div><div class="lbl">Melhorias UX</div></div>
+</div>
+
+<div class="audit-grid">
+
+  <!-- DESIGN SYSTEM -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>🏗️ Design System + Navegação</h3>
+      <span class="score score-med">5/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-high">Alta prioridade · Afeta tudo</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">CSS vars para tema dinâmico por loja</li>
+        <li class="ok">Dark mode com class-based toggle</li>
+        <li class="ok">Framer Motion já instalado</li>
+        <li class="ok">Tailwind com tokens semânticos (fg, bg, brand)</li>
+        <li class="warn">Design system em src/styles/design-system.ts não reflete o tailwind.config</li>
+        <li class="warn">Sidebar.tsx existe mas não é usado no MainLayout (dead code)</li>
+        <li class="warn">Inconsistência: algumas páginas usam zinc, outras slate, outras o dark theme custom</li>
+        <li class="miss">Cmd+K / global search inexistente</li>
+        <li class="miss">Sem breadcrumbs nas rotas profundas (/stores/:id/orders/:id)</li>
+        <li class="miss">Sem skip-to-content / acessibilidade básica</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>🧭 Navbar</h3>
+      <span class="score score-med">6/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-high">Alta prioridade</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">Portal dropdown bem implementado</li>
+        <li class="ok">Badge de não-lidos no Conversas</li>
+        <li class="ok">Indicador WS (online/offline)</li>
+        <li class="ok">StoreSelector integrado</li>
+        <li class="ok">ThemeToggle + NotificationDropdown</li>
+        <li class="warn">Dropdown fecha ao hover-out mas não tem animação de entrada</li>
+        <li class="warn">Select de contas WA ficou inline no header — parece um bug de design</li>
+        <li class="warn">Mobile drawer funciona mas não tem search</li>
+        <li class="miss">Sem Cmd+K</li>
+        <li class="miss">Sem indicador de qual página você está (breadcrumb / page title no header)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>📊 Dashboard</h3>
+      <span class="score score-med">6/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-high">Alta prioridade</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">4 KPI cards com urgency states</li>
+        <li class="ok">Tabela de pedidos recentes com ação rápida</li>
+        <li class="ok">Pipeline com barras de progresso</li>
+        <li class="ok">Saúde do sistema (project health)</li>
+        <li class="ok">Alert banner para pendentes</li>
+        <li class="warn">KPIs sem trend (↑↓ vs ontem/semana)</li>
+        <li class="warn">Pipeline é barras 2D — poderia ser visual mais rico</li>
+        <li class="warn">Project health: 9 mini-cells numa grid — difícil de escanear</li>
+        <li class="miss">Sem gráfico de série temporal (Recharts está instalado mas não usado aqui)</li>
+        <li class="miss">Sem seletor de período (hoje / semana / mês)</li>
+        <li class="miss">Sem ações rápidas (+ Pedido, Nova Campanha, etc.)</li>
+        <li class="miss">Sem feed de atividade recente</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>🛒 Pedidos (Kanban)</h3>
+      <span class="score score-ok">7/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-high">Alta prioridade · Uso diário</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">Kanban DnD com 5 colunas</li>
+        <li class="ok">Timer de urgência (ok/warning/critical)</li>
+        <li class="ok">WebSocket real-time</li>
+        <li class="ok">PaymentBadge por método de pagamento</li>
+        <li class="ok">Avançar status inline no card</li>
+        <li class="warn">Layout fora do MainLayout (rota separada) — inconsistente</li>
+        <li class="warn">Sem filtros rápidos por chips acima do kanban</li>
+        <li class="miss">Sem bulk actions (confirmar todos pendentes)</li>
+        <li class="miss">Sem sound notification visual toggle na UI</li>
+        <li class="miss">Card de detalhe do pedido pode ter mais contexto inline</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CUSTOMERS -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>👥 Clientes (CRM)</h3>
+      <span class="score score-med">5/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-med">Média prioridade</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">Lista paginada com busca</li>
+        <li class="ok">Drawer lateral com histórico de pedidos</li>
+        <li class="ok">LTV e ticket médio calculados</li>
+        <li class="warn">Avatar é apenas inicial do nome (sem foto)</li>
+        <li class="warn">Drawer carrega pedidos filtrando client-side (todos os orders do store)</li>
+        <li class="warn">Sem segmentação/tags de cliente</li>
+        <li class="miss">Sem timeline de atividade do cliente</li>
+        <li class="miss">Sem acesso rápido ao chat WhatsApp do cliente</li>
+        <li class="miss">Sem RFM ou score de engajamento</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CONVERSATIONS -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>💬 Conversas (Inbox)</h3>
+      <span class="score score-med">6/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-high">Alta prioridade · Core</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">Inbox unificado (WA + IG + Messenger)</li>
+        <li class="ok">Platform glyphs bonitos (Instagram, WA, Messenger)</li>
+        <li class="ok">previewText() lida corretamente com mídia</li>
+        <li class="ok">Filtro por plataforma</li>
+        <li class="warn">Modal de ações abre em overlay — poderia ser drawer lateral</li>
+        <li class="warn">Sem indicação clara de "bot ativo" vs "humano"</li>
+        <li class="miss">Sem busca por contato/texto no inbox</li>
+        <li class="miss">Sem contador de mensagens não-lidas por conversa</li>
+        <li class="miss">Sem shortcut para responder rápido</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- WHATSAPP -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>📱 WhatsApp Inbox / Chat</h3>
+      <span class="score score-ok">7/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-high">Alta prioridade</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">Chat com MessageBubble e AudioPlayer</li>
+        <li class="ok">Media viewer para imagens/vídeos</li>
+        <li class="ok">Handover bot↔humano</li>
+        <li class="ok">ContactList com não-lidos</li>
+        <li class="warn">CSS separado (.css files) — inconsistente com resto do app que usa Tailwind</li>
+        <li class="warn">ChatToolsPanel existe mas não é claro quando aparece</li>
+        <li class="miss">Sem template de resposta rápida acessível no input</li>
+        <li class="miss">Sem indicação visual de qual agente IA está respondendo</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>🍝 Produtos</h3>
+      <span class="score score-ok">7/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-med">Média prioridade</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">Grid + list views</li>
+        <li class="ok">StockBadge + StatusBadge</li>
+        <li class="ok">Categories management</li>
+        <li class="ok">Produto featured toggle (estrela)</li>
+        <li class="ok">Duplicate produto</li>
+        <li class="warn">1450 linhas em um arquivo — muito grande</li>
+        <li class="warn">Sem drag-to-sort para reordenar produtos por categoria</li>
+        <li class="miss">Sem preview de como aparece no cardápio digital</li>
+        <li class="miss">Sem bulk price update</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- MARKETING -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>📣 Marketing / Campanhas</h3>
+      <span class="score score-bad">4/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-med">Média prioridade</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">Lista de campanhas com status</li>
+        <li class="ok">Ações play/pause/stop</li>
+        <li class="warn">Stats de campanha muito básicas (apenas números)</li>
+        <li class="warn">Sem preview de template no card da campanha</li>
+        <li class="miss">Sem delivery rate visual (barra de progresso)</li>
+        <li class="miss">Sem programação de horário de envio visual</li>
+        <li class="miss">Sem segmentação de audience no flow de criação</li>
+        <li class="miss">Sem A/B test UI</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- AGENTS -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>🤖 Agentes IA</h3>
+      <span class="score score-bad">4/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-med">Média prioridade</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">Lista com filtros (status, provider)</li>
+        <li class="ok">AgentCard com toggle de status</li>
+        <li class="warn">AgentCard sem métricas visíveis (conversas, respostas, taxa de sucesso)</li>
+        <li class="warn">confirm() nativo para delete — fora do padrão visual</li>
+        <li class="miss">Sem status "processando" em tempo real</li>
+        <li class="miss">Sem log de últimas ativações</li>
+        <li class="miss">Sem indicador de custo por agente</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="audit-card">
+    <div class="audit-card-header">
+      <h3>⚙️ Configurações</h3>
+      <span class="score score-bad">3/10</span>
+    </div>
+    <div class="audit-body">
+      <span class="priority-tag pri-low">Baixa prioridade</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li class="ok">Troca de senha funcional</li>
+        <li class="ok">Preferências de notificação com toggles</li>
+        <li class="warn">Página única sem tabs/seções — vai crescer sem estrutura</li>
+        <li class="miss">Sem foto de perfil</li>
+        <li class="miss">Sem configuração de timezone</li>
+        <li class="miss">Sem tela de configurações da loja (logo, cor, horário de funcionamento)</li>
+        <li class="miss">Sem seção de integrações (MercadoPago, etc.)</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#0f0f0f;border:1px solid #1e1e1e;border-radius:12px;">
+  <p style="font-size:12px;color:#888;margin:0;">
+    <strong style="color:#e5e5e5;">Stack existente:</strong> framer-motion ✓ · recharts ✓ · react-chartjs-2 ✓ · @dnd-kit ✓ · @headlessui/react ✓ · @radix-ui/icons ✓ · zustand ✓ · react-query ✓ · react-hook-form + zod ✓ · react-hot-toast ✓ · lucide-react ✓
+    <br><br>
+    <strong style="color:#e5e5e5;">O que precisaria instalar:</strong> cmdk (Cmd+K) · react-virtualized ou tanstack-virtual (listas longas)
+  </p>
+</div>
+
+<p style="margin-top:16px;font-size:12px;color:#555;text-align:center;">
+  Lê a auditoria → diz no terminal se concorda com as prioridades ou quer ajustar.
+</p>
