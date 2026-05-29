@@ -767,7 +767,7 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
         paymentMethod === 'fiado' ? 'cash' : (paymentMethod as 'pix' | 'cash' | 'credit_card');
 
       await ordersService.createOrder({
-        store: storeSlug,
+        store: storeId || storeSlug,
         customer_name: customer.name || 'Cliente PDV',
         customer_phone: customer.phone_number.replace(/\D/g, ''),
         customer_email: customer.email,
