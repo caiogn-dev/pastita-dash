@@ -274,6 +274,12 @@ export const OrderNewPage: React.FC = () => {
     if (!effectiveStoreId) { toast.error('Selecione uma loja'); return; }
     setIsSubmitting(true);
     try {
+      const storeSlug = await ensureStoreSlug();
+      if (!storeSlug) {
+        toast.error('Loja não identificada para criar pedido');
+        return;
+      }
+
       let resolvedDeliveryInfo = deliveryInfo;
       if (data.delivery_method === 'delivery') {
         const address = (data.delivery_address || '').trim();
@@ -289,7 +295,7 @@ export const OrderNewPage: React.FC = () => {
       }
 
       const order = await ordersService.createOrder({
-        store: effectiveStoreId,
+        store: storeSlug,
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
         customer_email: data.customer_email || undefined,
