@@ -759,7 +759,7 @@ function OrderTool({ conversation, storeId, onSendMessage }: {
     setCreating(true);
     try {
       const order = await ordersService.createOrder({
-        store: storeId,
+        store: storeSlug || storeId,
         customer_name: conversation.contact_name || 'Cliente WhatsApp',
         customer_phone: onlyDigits(conversation.phone_number),
         customer_email: `${onlyDigits(conversation.phone_number) || 'cliente'}@whatsapp.chat`,
