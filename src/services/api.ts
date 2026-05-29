@@ -30,10 +30,13 @@ const getTokenFromStorage = (): string | null => {
     const raw = window.localStorage.getItem('auth-storage');
     if (raw) {
       const parsed = JSON.parse(raw);
-      return parsed?.state?.token || null;
+      const token = parsed?.state?.token;
+      if (token && typeof token === 'string') {
+        return token.trim() || null;
+      }
     }
-  } catch {
-    /* ignore parse errors */
+  } catch (err) {
+    console.warn('[Auth] Failed to parse token from localStorage:', err);
   }
   return null;
 };
@@ -41,25 +44,31 @@ const getTokenFromStorage = (): string | null => {
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Try zustand store first, then localStorage directly, then axios defaults
-    let token = useAuthStore.getState().token;
-    
+    // Priority order: axios defaults > zustand store > localStorage fallback
+    let token: string | null = null;
+
+    // Check axios defaults first (set by setAuthToken after login)
+    const defaultAuth = api.defaults.headers.common?.Authorization;
+    if (defaultAuth && typeof defaultAuth === 'string') {
+      token = defaultAuth.replace(/^(Token |Bearer )/, '');
+    }
+
+    // Try zustand store (primary source after login)
     if (!token) {
-      // Fallback: read directly from localStorage (handles hydration timing)
+      token = useAuthStore.getState().token;
+    }
+
+    // Fallback: read directly from localStorage (handles hydration timing)
+    if (!token) {
       token = getTokenFromStorage();
     }
 
-    if (token) {
+    // Apply token to request
+    if (token && token.trim()) {
       if (token.includes('.')) {
         config.headers.Authorization = `Bearer ${token}`;
       } else {
         config.headers.Authorization = `Token ${token}`;
-      }
-    } else {
-      // Last fallback: use axios default header if set
-      const defaultAuth = api.defaults.headers.common?.Authorization;
-      if (defaultAuth && typeof defaultAuth === 'string') {
-        config.headers.Authorization = defaultAuth;
       }
     }
 
