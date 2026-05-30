@@ -1,7 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as orderApi from '../services/orders';
 
-export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
+interface Driver {
+  name: string;
+  phone: string;
+  vehicle_info: string;
+  eta_minutes: number;
+  pickup_instructions?: string;
+}
+
+interface PollingState {
+  status: 'searching' | 'driver_found' | 'no_drivers' | 'error';
+  driver: Driver | null;
+  error: string | null;
+  secondsRemaining: number;
+}
+
+export const useUberDeliveryPolling = (orderId: number | string, storeSlug: string, isOpen: boolean) => {
   const [state, setState] = useState({
     status: 'searching', // 'searching', 'driver_found', 'no_drivers', 'error'
     driver: null,
@@ -124,6 +139,8 @@ export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
   }, [isOpen, createDeliveryRequest]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const countdownInterval = setInterval(() => {
       secondsRef.current -= 1;
       setState(prev => ({
@@ -133,7 +150,7 @@ export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
     }, 1000);
 
     return () => clearInterval(countdownInterval);
-  }, []);
+  }, [isOpen]);
 
   return {
     state,

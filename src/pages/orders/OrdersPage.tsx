@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
+import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import {
   DndContext,
   DragOverlay,
@@ -206,11 +207,13 @@ interface CardProps {
   onPay: (o: StoreOrder) => void;
   onCancel: (o: StoreOrder) => void;
   onDetail: (o: StoreOrder) => void;
+  onUberClick?: (o: StoreOrder) => void;
+  storeSlug?: string;
 }
 
 const OrderCard: React.FC<CardProps> = ({
   order, advancing, paying, cancelling, isUpdating, isSuccess, isDragging,
-  onAdvance, onPay, onCancel, onDetail,
+  onAdvance, onPay, onCancel, onDetail, onUberClick, storeSlug,
 }) => {
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -223,6 +226,11 @@ const OrderCard: React.FC<CardProps> = ({
   const elapsed = getElapsedMinutes(order.created_at);
   const urgency = getElapsedUrgency(elapsed, order.status);
   const isPickup = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
+  const canRequestUber =
+    storeSlug &&
+    order.delivery_method === 'delivery' &&
+    ['confirmed', 'preparing'].includes(order.status) &&
+    (!order.delivery_provider || order.delivery_provider === 'none');
 
   const urgencyBorder =
     isSuccess   ? 'border-emerald-400 dark:border-emerald-600' :
@@ -301,6 +309,22 @@ const OrderCard: React.FC<CardProps> = ({
 
       {/* Action buttons — stopPropagation so card click (→ detail) doesn't trigger */}
       <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+        {canRequestUber && (
+          <button
+            onClick={() => onUberClick?.(order)}
+            disabled={isUpdating}
+            title="Solicitar motorista Uber"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-60 dark:bg-blue-900/20 dark:text-blue-400 transition-colors"
+          >
+            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="8.5" r="1.5" />
+              <circle cx="8.5" cy="12" r="1.5" />
+              <circle cx="15.5" cy="12" r="1.5" />
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+            </svg>
+          </button>
+        )}
+
         {hasPendingPayment && (
           <button
             onClick={() => onPay(order)}
@@ -388,6 +412,9 @@ export const OrdersPage: React.FC = () => {
 
   // ── Novo Pedido (PDV) drawer ─────────────────────────────────────────────
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
+
+  // ── Uber Delivery Modal ──────────────────────────────────────────────────
+  const [uberModalOrderId, setUberModalOrderId] = useState<string | null>(null);
 
   // Keyboard shortcut: press 'N' when not focused on an input opens the drawer
   useEffect(() => {
@@ -727,6 +754,8 @@ export const OrdersPage: React.FC = () => {
                           onPay={handlePay}
                           onCancel={handleCancel}
                           onDetail={o => navigate(`/stores/${storeQuery}/orders/${o.id}`)}
+                          onUberClick={o => setUberModalOrderId(o.id)}
+                          storeSlug={storeSlug}
                         />
                       ))
                     )}
@@ -761,6 +790,20 @@ export const OrdersPage: React.FC = () => {
           storeId={storeId || undefined}
           onOrderCreated={() => {
             setIsNewOrderOpen(false);
+            loadOrders(true);
+          }}
+        />
+      )}
+
+      {/* Uber Delivery Modal */}
+      {uberModalOrderId && storeQuery && (
+        <OrderDeliveryModal
+          orderId={uberModalOrderId}
+          storeSlug={storeQuery}
+          isOpen={Boolean(uberModalOrderId)}
+          onClose={() => setUberModalOrderId(null)}
+          onAccept={() => {
+            setUberModalOrderId(null);
             loadOrders(true);
           }}
         />

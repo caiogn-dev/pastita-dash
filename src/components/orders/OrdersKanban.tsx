@@ -165,10 +165,12 @@ interface OrderCardProps {
   isDragging?: boolean;
   isUpdating?: boolean;
   isSuccess?: boolean;
+  onUberClick?: (order: Order) => void;
+  storeSlug?: string;
 }
 
 // Sortable Order Card
-const SortableOrderCard: React.FC<OrderCardProps> = ({ order, onClick, isUpdating, isSuccess }) => {
+const SortableOrderCard: React.FC<OrderCardProps> = ({ order, onClick, isUpdating, isSuccess, onUberClick, storeSlug }) => {
   const {
     attributes,
     listeners,
@@ -186,7 +188,7 @@ const SortableOrderCard: React.FC<OrderCardProps> = ({ order, onClick, isUpdatin
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <OrderCard order={order} onClick={onClick} isDragging={isDragging} isUpdating={isUpdating} isSuccess={isSuccess} />
+      <OrderCard order={order} onClick={onClick} isDragging={isDragging} isUpdating={isUpdating} isSuccess={isSuccess} onUberClick={onUberClick} storeSlug={storeSlug} />
     </div>
   );
 };
@@ -220,11 +222,16 @@ const PaymentBadge: React.FC<{ paymentStatus?: string; paymentMethod?: string }>
 };
 
 // Order Card Component
-const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpdating, isSuccess }) => {
+const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpdating, isSuccess, onUberClick, storeSlug }) => {
   const derivedPaymentStatus = order.payment_status
     || (['paid', 'confirmed'].includes(order.status?.toLowerCase?.() || '')
       ? 'paid'
       : undefined);
+
+  const canRequestUber =
+    storeSlug &&
+    ['confirmed', 'preparing'].includes(order.status) &&
+    !order.delivery_provider || order.delivery_provider === 'none';
 
   return (
     <div
@@ -294,16 +301,42 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, isDragging, isUpd
         </div>
       )}
 
-      {/* Items count */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-zinc-700">
+      {/* Uber delivery status */}
+      {order.delivery_provider === 'uber' && order.uber_driver_name && (
+        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+          <span className="text-xs text-blue-700 dark:text-blue-300">
+            🏍️ {order.uber_driver_name} • ETA: {order.uber_eta_minutes}min
+          </span>
+        </div>
+      )}
+
+      {/* Items count & Uber button */}
+      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-200 dark:border-zinc-700">
         <span className="text-xs text-gray-500 dark:text-zinc-400">
           {getItemsCount(order)} item(ns)
         </span>
-        <div className="flex items-center gap-1">
-          <CurrencyDollarIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
-          <span className="font-bold text-green-600 dark:text-green-400">
-            R$ {formatCurrency(order.total)}
-          </span>
+        <div className="flex items-center gap-2">
+          {canRequestUber && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onUberClick?.(order);
+              }}
+              className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              title="Solicitar motorista Uber"
+              disabled={isUpdating}
+            >
+              <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
+              </svg>
+            </button>
+          )}
+          <div className="flex items-center gap-1">
+            <CurrencyDollarIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <span className="font-bold text-green-600 dark:text-green-400">
+              R$ {formatCurrency(order.total)}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -324,12 +357,14 @@ interface KanbanColumnProps {
   status: typeof ORDER_STATUSES[0];
   orders: Order[];
   onOrderClick?: (order: Order) => void;
+  onUberClick?: (order: Order) => void;
   updatingOrders?: Set<string>;
   successOrders?: Set<string>;
   isOver?: boolean;
+  storeSlug?: string;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClick, updatingOrders, successOrders }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClick, onUberClick, updatingOrders, successOrders, storeSlug }) => {
   const Icon = status.icon;
   
   // Make the column a drop target
@@ -388,6 +423,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
                 key={order.id}
                 order={order}
                 onClick={onOrderClick}
+                onUberClick={onUberClick}
+                storeSlug={storeSlug}
                 isUpdating={updatingOrders?.has(order.id)}
                 isSuccess={successOrders?.has(order.id)}
               />
@@ -403,8 +440,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onOrderClic
 interface OrdersKanbanProps {
   orders: Order[];
   onOrderClick?: (order: Order) => void;
+  onUberClick?: (order: Order) => void;
   onStatusChange?: (orderId: string, newStatus: OrderStatus) => Promise<void>;
   visibleStatuses?: string[];
+  storeSlug?: string;
 }
 
 // Local status overrides - completely managed by Kanban
@@ -422,8 +461,10 @@ const LOCAL_STATE_TTL = 60000; // 60 seconds - external data should sync by then
 export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
   orders: externalOrders,
   onOrderClick,
+  onUberClick,
   onStatusChange,
   visibleStatuses,
+  storeSlug,
 }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   
@@ -694,8 +735,10 @@ export const OrdersKanban: React.FC<OrdersKanbanProps> = ({
             status={status}
             orders={ordersByStatus[status.id] || []}
             onOrderClick={onOrderClick}
+            onUberClick={onUberClick}
             updatingOrders={updatingOrders}
             successOrders={successOrders}
+            storeSlug={storeSlug}
           />
         ))}
       </div>

@@ -332,6 +332,15 @@ export interface Order {
   access_token?: string;
   payment_preference_id?: string;
   delivery_method?: 'delivery' | 'pickup' | 'digital';
+  delivery_provider?: 'none' | 'toca' | 'uber';
+  uber_delivery_request_id?: string | null;
+  uber_driver_id?: string | null;
+  uber_driver_name?: string;
+  uber_driver_phone?: string;
+  uber_vehicle_info?: string;
+  uber_eta_minutes?: number | null;
+  uber_pickup_instructions?: string;
+  uber_created_at?: string | null;
   tracking_code?: string;
   tracking_url?: string;
   carrier?: string;

@@ -189,24 +189,24 @@ export const ordersService = {
     return response.data;
   },
 
-  createDeliveryRequest: async (storeSlug: string, orderId: number) => {
+  createDeliveryRequest: async (storeSlug: string, orderId: number | string) => {
     const response = await api.post(
-      `/stores/${storeSlug}/orders/${orderId}/delivery/request/`,
+      `/stores/${storeSlug}/orders/${orderId}/create-delivery-request/`,
       {}
     );
     return response.data;
   },
 
-  pollDeliveryStatus: async (storeSlug: string, orderId: number) => {
+  pollDeliveryStatus: async (storeSlug: string, orderId: number | string) => {
     const response = await api.get(
-      `/stores/${storeSlug}/orders/${orderId}/delivery/request/status/`
+      `/stores/${storeSlug}/orders/${orderId}/delivery-request-status/`
     );
     return response.data;
   },
 
-  cancelDeliveryRequest: async (storeSlug: string, orderId: number) => {
+  cancelDeliveryRequest: async (storeSlug: string, orderId: number | string) => {
     const response = await api.delete(
-      `/stores/${storeSlug}/orders/${orderId}/delivery/request/cancel/`
+      `/stores/${storeSlug}/orders/${orderId}/delivery-request/`
     );
     return response.data;
   },
