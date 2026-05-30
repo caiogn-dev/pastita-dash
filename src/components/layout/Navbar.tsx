@@ -11,6 +11,7 @@ import {
   PresentationChartLineIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
+import { useStoreContextStore } from '../../stores/storeContextStore';
 import { useStore } from '../../hooks/useStore';
 import { useTotalUnreadCount, useWsConnected } from '../../stores/chatStore';
 import { useAccountStore } from '../../stores/accountStore';
@@ -178,6 +179,12 @@ export const Navbar: React.FC = () => {
     [storeKey]
   );
 
+  const handleLogout = useCallback(() => {
+    logout();
+    useStoreContextStore.getState().clearSelection();
+    window.location.href = '/login';
+  }, [logout]);
+
   const sections: NavSection[] = useMemo(() => [
     { label: 'Início', icon: HomeIcon, href: '/', items: [] },
 
@@ -327,7 +334,7 @@ export const Navbar: React.FC = () => {
                 {user?.first_name || user?.username}
               </span>
               <button
-                onClick={() => { logout(); window.location.href = '/login'; }}
+                onClick={handleLogout}
                 className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                 title="Sair"
               >

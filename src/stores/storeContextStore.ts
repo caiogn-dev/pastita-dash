@@ -107,9 +107,10 @@ export const useStoreContextStore = create<StoreContextState>()(
         }
       },
       
-      // Clear selection
+      // Clear selection — resets all session state so the next login fetches fresh data.
+      // Called on logout (Navbar button + api.ts 401/403 interceptor).
       clearSelection: () => {
-        set({ selectedStore: null });
+        set({ selectedStore: null, stores: [], initialized: false, error: null });
       },
       
       // Refresh stores list
