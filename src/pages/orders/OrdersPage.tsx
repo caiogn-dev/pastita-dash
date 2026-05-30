@@ -414,7 +414,7 @@ export const OrdersPage: React.FC = () => {
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
 
   // ── Uber Delivery Modal ──────────────────────────────────────────────────
-  const [uberModalOrderId, setUberModalOrderId] = useState<string | null>(null);
+  const [uberModalOrderId, setUberModalOrderId] = useState<string | undefined>();
 
   // Keyboard shortcut: press 'N' when not focused on an input opens the drawer
   useEffect(() => {
@@ -801,9 +801,9 @@ export const OrdersPage: React.FC = () => {
           orderId={uberModalOrderId}
           storeSlug={storeQuery}
           isOpen={Boolean(uberModalOrderId)}
-          onClose={() => setUberModalOrderId(null)}
+          onClose={() => setUberModalOrderId(undefined)}
           onAccept={() => {
-            setUberModalOrderId(null);
+            setUberModalOrderId(undefined);
             loadOrders(true);
           }}
         />

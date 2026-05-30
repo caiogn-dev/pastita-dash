@@ -24,8 +24,8 @@ export const useUberDeliveryPolling = (orderId: number | string, storeSlug: stri
     secondsRemaining: 60
   });
 
-  const pollIntervalRef = useRef(null);
-  const timeoutRef = useRef(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const secondsRef = useRef(60);
 
   const createDeliveryRequest = useCallback(async () => {
@@ -52,11 +52,12 @@ export const useUberDeliveryPolling = (orderId: number | string, storeSlug: stri
 
       startPolling();
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create delivery request';
       console.error('Error creating delivery request:', err);
       setState(prev => ({
         ...prev,
         status: 'error',
-        error: err.message || 'Failed to create delivery request'
+        error: errorMessage
       }));
     }
   }, [orderId, storeSlug]);
@@ -85,11 +86,12 @@ export const useUberDeliveryPolling = (orderId: number | string, storeSlug: stri
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
         }
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to poll delivery status';
         console.error('Error polling delivery status:', err);
         setState(prev => ({
           ...prev,
           status: 'error',
-          error: err.message || 'Failed to poll delivery status'
+          error: errorMessage
         }));
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
