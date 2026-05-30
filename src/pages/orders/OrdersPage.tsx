@@ -755,7 +755,7 @@ export const OrdersPage: React.FC = () => {
                           onCancel={handleCancel}
                           onDetail={o => navigate(`/stores/${storeQuery}/orders/${o.id}`)}
                           onUberClick={o => setUberModalOrderId(o.id)}
-                          storeSlug={storeSlug}
+                          storeSlug={storeSlug || undefined}
                         />
                       ))
                     )}
