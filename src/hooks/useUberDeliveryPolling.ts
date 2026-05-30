@@ -41,7 +41,7 @@ export const useUberDeliveryPolling = (orderId: number | string, storeSlug: stri
 
       const response = await ordersService.createDeliveryRequest(storeSlug, orderId);
 
-      if (!response.delivery_request_id) {
+      if (!response.order_id && !response.delivery_request_id) {
         setState(prev => ({
           ...prev,
           status: 'error',
