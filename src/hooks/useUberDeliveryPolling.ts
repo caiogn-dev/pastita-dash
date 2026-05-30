@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import * as orderApi from '../services/orders';
+import ordersService from '../services/orders';
 
 interface Driver {
   name: string;
@@ -17,8 +17,8 @@ interface PollingState {
 }
 
 export const useUberDeliveryPolling = (orderId: number | string, storeSlug: string, isOpen: boolean) => {
-  const [state, setState] = useState({
-    status: 'searching', // 'searching', 'driver_found', 'no_drivers', 'error'
+  const [state, setState] = useState<PollingState>({
+    status: 'searching',
     driver: null,
     error: null,
     secondsRemaining: 60
@@ -39,7 +39,7 @@ export const useUberDeliveryPolling = (orderId: number | string, storeSlug: stri
       }));
       secondsRef.current = 60;
 
-      const response = await orderApi.createDeliveryRequest(storeSlug, orderId);
+      const response = await ordersService.createDeliveryRequest(storeSlug, orderId);
 
       if (!response.delivery_request_id) {
         setState(prev => ({
@@ -64,7 +64,7 @@ export const useUberDeliveryPolling = (orderId: number | string, storeSlug: stri
   const startPolling = useCallback(() => {
     const pollDelivery = async () => {
       try {
-        const response = await orderApi.pollDeliveryStatus(storeSlug, orderId);
+        const response = await ordersService.pollDeliveryStatus(storeSlug, orderId);
 
         if (response.status === 'driver_found') {
           setState(prev => ({
@@ -121,7 +121,7 @@ export const useUberDeliveryPolling = (orderId: number | string, storeSlug: stri
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     try {
-      await orderApi.cancelDeliveryRequest(storeSlug, orderId);
+      await ordersService.cancelDeliveryRequest(storeSlug, orderId);
     } catch (err) {
       console.error('Error canceling delivery:', err);
     }

@@ -90,7 +90,9 @@ export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId,
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={() => {
-                  onAccept(state.driver);
+                  if (state.driver) {
+                    onAccept(state.driver);
+                  }
                   onClose();
                 }}
                 style={{
