@@ -170,7 +170,6 @@ export class RealtimeConnection {
    */
   connect(): void {
     if (this.status === 'connecting' || this.status === 'connected') {
-      console.log('[Realtime] Already connecting or connected');
       return;
     }
 
@@ -186,7 +185,6 @@ export class RealtimeConnection {
     this.setStatus('disconnected');
     this.reconnectAttempts = 0;
     this.currentFallbackIndex = 0;
-    console.log('[Realtime] Disconnected');
   }
 
   /**
@@ -207,12 +205,9 @@ export class RealtimeConnection {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)!.add(callback);
-    
-    console.log(`[Realtime] Subscribed to '${event}' (total: ${this.listeners.get(event)!.size})`);
-    
+
     return () => {
       this.listeners.get(event)?.delete(callback);
-      console.log(`[Realtime] Unsubscribed from '${event}'`);
     };
   }
 
@@ -298,13 +293,10 @@ export class RealtimeConnection {
     }
 
     if (!isTransportSupported(transport)) {
-      console.log(`[Realtime] Transport '${transport}' not supported, trying next...`);
       this.currentFallbackIndex++;
       this.tryConnect();
       return;
     }
-
-    console.log(`[Realtime] Trying transport: ${transport}`);
     this.transport = transport;
 
     switch (transport) {
@@ -326,12 +318,9 @@ export class RealtimeConnection {
   private connectWebSocket(): void {
     try {
       const url = this.buildUrl('websocket');
-      console.log('[Realtime] Connecting WebSocket:', url);
-
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {
-        console.log('[Realtime] WebSocket open, sending auth...');
         if (this.token) {
           this.ws!.send(JSON.stringify({ type: 'auth', token: this.token }));
         }
@@ -342,7 +331,6 @@ export class RealtimeConnection {
         try {
           const data = JSON.parse(e.data);
           if (data.type === 'connection_established') {
-            console.log('[Realtime] WebSocket authenticated ✓');
             this.onConnectSuccess();
             this.startPingInterval();
             return;
@@ -354,10 +342,6 @@ export class RealtimeConnection {
       };
       
       this.ws.onclose = (e) => {
-        console.log('[Realtime] WebSocket closed:', e.code, e.reason);
-        if (e.code === 1006) {
-          console.warn('[Realtime] Abnormal closure (1006) — server may have disconnected or timeout. Falling back to SSE/polling.');
-        }
         this.onConnectError(new Error(`WebSocket closed: ${e.code} ${e.reason}`));
       };
       
@@ -377,12 +361,9 @@ export class RealtimeConnection {
   private connectSSE(): void {
     try {
       const url = this.buildUrl('sse');
-      console.log('[Realtime] Connecting SSE:', url.replace(/token=.*/, 'token=***'));
-      
       this.eventSource = new EventSource(url);
-      
+
       this.eventSource.onopen = () => {
-        console.log('[Realtime] SSE connected ✓');
         this.onConnectSuccess();
       };
       
@@ -437,7 +418,6 @@ export class RealtimeConnection {
    * Conecta via HTTP Polling
    */
   private connectPolling(): void {
-    console.log('[Realtime] Starting HTTP polling');
     this.pollingController = new AbortController();
     this.doPoll();
   }
@@ -635,7 +615,6 @@ export class RealtimeConnection {
     this.currentFallbackIndex++;
     
     if (this.currentFallbackIndex < this.fallbackOrder.length) {
-      console.log(`[Realtime] Falling back to next transport...`);
       this.tryConnect();
     } else {
       // Todos os transportes falharam, tentar reconexão
@@ -658,7 +637,6 @@ export class RealtimeConnection {
       this.maxReconnectDelay
     );
 
-    console.log(`[Realtime] Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
     this.setStatus('connecting');
 
     this.reconnectTimer = window.setTimeout(() => {
@@ -696,7 +674,6 @@ export class RealtimeConnection {
    * Emite evento para listeners
    */
   private emitEvent(event: string, data: unknown): void {
-    console.log(`[Realtime] Event: ${event}`, data);
 
     // Listeners específicos do evento
     const eventListeners = this.listeners.get(event);

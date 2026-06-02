@@ -88,7 +88,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const effectiveToken = getEffectiveToken();
     
     if (!effectiveToken || !effectiveStoreSlug) {
-      console.log('[WS] No token, skipping connection');
       return;
     }
 
@@ -108,8 +107,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     );
 
     if ((isWrongStore || isWrongToken) && connection) {
-      const reason = isWrongToken ? 'token changed (re-login)' : `store changed (${currentInfo?.storeSlug} → ${effectiveStoreSlug})`;
-      console.log(`[WS] Recreating realtime connection: ${reason}`);
       connection.disconnect();
       setGlobalConnection(null);
       lastTokenRef.current = null;
@@ -117,7 +114,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!connection) {
-      console.log('[WS] Creating new RealtimeConnection with fallback support');
       connection = createRealtimeConnection({
         url: '',
         token: effectiveToken,
@@ -148,10 +144,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         setError(null);
       }
       
-      // Log de mudança de transporte
-      if (newTransport) {
-        console.log(`[WS] Transport changed to: ${newTransport} (${newStatus})`);
-      }
     });
 
     // Inscrever em erros
@@ -187,7 +179,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const onVisible = () => {
       if (document.visibilityState === 'visible' && connectionRef.current) {
         if (!connectionRef.current.isConnected()) {
-          console.log('[WS] Tab visible, reconnecting...');
           connectionRef.current.reconnect();
         }
       }
@@ -204,9 +195,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const emit = useCallback((event: string, data: OrderEvent) => {
     const eventListeners = listenersRef.current.get(event);
     const wildcardListeners = listenersRef.current.get('*');
-    
-    console.log(`[WS] Event: ${event}`, data);
-    console.log(`[WS] Listeners for '${event}':`, eventListeners?.size || 0);
     
     eventListeners?.forEach(cb => {
       try {
@@ -231,9 +219,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       listenersRef.current.set(event, new Set());
     }
     listenersRef.current.get(event)!.add(cb);
-    
-    console.log(`[WS] Subscribed to '${event}' (total: ${listenersRef.current.get(event)!.size})`);
-    
+
     // Também registrar na conexão realtime se disponível
     if (connectionRef.current) {
       connectionRef.current.on(event, cb as (data: unknown) => void);
@@ -241,14 +227,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     
     return () => {
       listenersRef.current.get(event)?.delete(cb);
-      console.log(`[WS] Unsubscribed from '${event}'`);
     };
   }, []);
 
   // Reconectar manualmente
   const reconnect = useCallback(() => {
     if (connectionRef.current) {
-      console.log('[WS] Manual reconnect triggered');
       connectionRef.current.reconnect();
     }
   }, []);
@@ -256,7 +240,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   // Forçar transporte específico
   const forceTransport = useCallback((t: TransportType) => {
     if (connectionRef.current) {
-      console.log(`[WS] Forcing transport to: ${t}`);
       connectionRef.current.forceTransport(t);
     }
   }, []);
