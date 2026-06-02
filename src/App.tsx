@@ -299,7 +299,7 @@ const App: React.FC = () => {
       <div className="app">
         {appContent}
       </div>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 };
