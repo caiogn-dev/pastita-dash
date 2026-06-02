@@ -107,10 +107,15 @@ describe('commerce service', () => {
       expect(mockGet).toHaveBeenCalledWith('/stores/orders/order-uuid/');
     });
 
-    it('createOrder posts to /stores/orders/', () => {
-      const payload = { customer_name: 'Maria', items: [] };
+    it('createOrder posts to /stores/{store}/orders/', () => {
+      const payload = { store: 'test-store', customer_name: 'Maria', items: [] };
       createOrder(payload);
-      expect(mockPost).toHaveBeenCalledWith('/stores/orders/', payload);
+      // store is extracted from payload and used in URL, not sent in body
+      expect(mockPost).toHaveBeenCalledWith('/stores/test-store/orders/', {
+        customer_name: 'Maria',
+        items: [],
+        delivery_address: {},
+      });
     });
   });
 });

@@ -31,7 +31,8 @@ export const getOrder = (id: string) => api.get(`/stores/orders/${id}/`);
 export const createOrder = (data: any) => {
   // Extract store slug/id from payload and use it in URL path
   const { store, delivery_address, ...payload } = data;
-  const storeSlug = store || 'ce-saladas'; // fallback for dev
+  if (!store) throw new Error('[createOrder] store is required');
+  const storeSlug = store;
 
   // Convert delivery_address string to JSON object if needed
   const formattedData = {
