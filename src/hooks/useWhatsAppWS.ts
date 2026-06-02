@@ -170,76 +170,46 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
   const handleMessage = useCallback((event: MessageEvent) => {
     try {
       const data = JSON.parse(event.data) as WhatsAppEvent & { type: string };
-      
-      if (data.type === 'pong') return;
-      if (data.type === 'connection_established') {
-        console.log('[WhatsApp WS] Connection confirmed:', data);
-        return;
-      }
-      if (data.type === 'subscribed' || data.type === 'unsubscribed') {
-        console.log(`[WhatsApp WS] ${data.type}:`, data);
-        return;
-      }
-      if (data.type === 'read_receipt_sent') {
-        console.log('[WhatsApp WS] Read receipt sent:', data);
-        return;
-      }
 
-      console.log('[WhatsApp WS] Event received:', data.type, JSON.stringify(data, null, 2));
+      if (data.type === 'pong') return;
+      if (data.type === 'connection_established') return;
+      if (data.type === 'subscribed' || data.type === 'unsubscribed') return;
+      if (data.type === 'read_receipt_sent') return;
 
       switch (data.type) {
         case 'message_received':
-          console.log('[WhatsApp WS] Calling onMessageReceived callback');
           opts.current.onMessageReceived?.(data as MessageReceivedEvent);
           opts.current.onMessage?.(data.message);
           break;
         case 'message_sent':
-          console.log('[WhatsApp WS] Calling onMessageSent callback');
           opts.current.onMessageSent?.(data as MessageSentEvent);
           break;
         case 'status_updated':
-          console.log('[WhatsApp WS] Calling onStatusUpdated callback');
           opts.current.onStatusUpdated?.(data as StatusUpdatedEvent);
           break;
         case 'typing':
           opts.current.onTyping?.(data as TypingEvent);
           break;
         case 'conversation_updated':
-          console.log('[WhatsApp WS] Calling onConversationUpdated callback');
           opts.current.onConversationUpdated?.(data as ConversationUpdatedEvent);
           break;
         case 'error':
-          console.error('[WhatsApp WS] Error event:', data);
           opts.current.onError?.(data as ErrorEvent);
           break;
-        default: {
-          // Handle unknown event types
-          const unknownData = data as { type: string };
-          console.log('[WhatsApp WS] Unknown event type:', unknownData.type, data);
-        }
+        default:
+          break;
       }
     } catch (err) {
-      console.error('[WhatsApp WS] Parse error:', err, 'Raw data:', event.data);
+      console.error('[WhatsApp WS] Parse error:', err);
     }
   }, []);
 
   // Connect to WebSocket
   const connect = useCallback(() => {
     const url = getWsUrl();
-    if (!url || !enabled) {
-      console.log('[WhatsApp WS] Skipping connection (no URL or disabled)');
-      return;
-    }
-
-    if (isConnecting.current) {
-      console.log('[WhatsApp WS] Already connecting');
-      return;
-    }
-
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      console.log('[WhatsApp WS] Already connected');
-      return;
-    }
+    if (!url || !enabled) return;
+    if (isConnecting.current) return;
+    if (ws.current?.readyState === WebSocket.OPEN) return;
 
     // Close existing connection
     if (ws.current) {
@@ -249,14 +219,12 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     }
 
     isConnecting.current = true;
-    console.log('[WhatsApp WS] Connecting to:', url);
 
     try {
       const socket = new WebSocket(url);
       ws.current = socket;
 
       socket.onopen = () => {
-        console.log('[WhatsApp WS] Open, sending auth...');
         // First-message auth — token never in URL
         if (token) {
           socket.send(JSON.stringify({ type: 'auth', token }));
@@ -268,7 +236,6 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
         try {
           const data = JSON.parse(event.data) as { type: string };
           if (data.type === 'connection_established') {
-            console.log('[WhatsApp WS] Authenticated ✓');
             isConnecting.current = false;
             setIsConnected(true);
             setConnectionError(null);
@@ -287,7 +254,6 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
       };
 
       socket.onclose = (e) => {
-        console.log('[WhatsApp WS] Closed:', e.code, e.reason);
         isConnecting.current = false;
         setIsConnected(false);
         opts.current.onConnectionChange?.(false);
@@ -300,7 +266,6 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
         // Reconnect on abnormal close
         if (e.code !== 1000 && attempts.current < 10 && enabled) {
           const delay = Math.min(1000 * Math.pow(1.5, attempts.current), 30000);
-          console.log(`[WhatsApp WS] Reconnecting in ${Math.round(delay)}ms (attempt ${attempts.current + 1}/10)`);
           setConnectionError('Reconectando...');
 
           reconnectTimer.current = window.setTimeout(() => {
@@ -312,8 +277,7 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
         }
       };
 
-      socket.onerror = (e) => {
-        console.error('[WhatsApp WS] Error:', e);
+      socket.onerror = () => {
         isConnecting.current = false;
       };
     } catch (err) {
