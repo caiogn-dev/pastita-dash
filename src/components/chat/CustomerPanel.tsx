@@ -269,7 +269,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                 >
                   <MapPinIcon className="h-4 w-4 flex-shrink-0" />
                   Enviar localização
-                  <span className="ml-auto text-[9px]">TODO</span>
+                  <span className="ml-auto text-[9px] italic">Em breve</span>
                 </button>
 
                 {/* Confirmar pedido ativo */}
@@ -277,12 +277,12 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                   <button
                     type="button"
                     disabled
-                    title="Confirmar pedido — TODO PATCH endpoint"
+                    title="Confirmar pedido (em breve)"
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 cursor-not-allowed opacity-50"
                   >
                     <CheckCircleIcon className="h-4 w-4 flex-shrink-0" />
                     Confirmar pedido
-                    <span className="ml-auto text-[9px]">TODO</span>
+                    <span className="ml-auto text-[9px] italic">Em breve</span>
                   </button>
                 )}
 
@@ -291,12 +291,12 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                   <button
                     type="button"
                     disabled
-                    title="Cancelar pedido — TODO PATCH endpoint"
+                    title="Cancelar pedido (em breve)"
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-red-500 dark:text-red-400 border border-red-100 dark:border-red-900/30 cursor-not-allowed opacity-50"
                   >
                     <XCircleIcon className="h-4 w-4 flex-shrink-0" />
                     Cancelar pedido
-                    <span className="ml-auto text-[9px]">TODO</span>
+                    <span className="ml-auto text-[9px] italic">Em breve</span>
                   </button>
                 )}
               </div>
