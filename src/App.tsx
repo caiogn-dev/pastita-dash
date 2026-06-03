@@ -1,14 +1,13 @@
-import React, { useEffect, useState, lazy } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import logger from './services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout';
 import { FullPageLoading } from './components/common';
-import { PageWrapper } from './components/ErrorBoundary';
+import { PageBoundary } from './components/ErrorBoundary';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
-import { useStoreContextStore } from './stores/storeContextStore';
 import { setAuthToken } from './services';
 import api from './services/api';
 import { WebSocketProvider } from './context/WebSocketContext';
@@ -17,7 +16,6 @@ import './App.css';
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
-const CadastroPage = lazy(() => import('./pages/auth/CadastroPage').then(m => ({ default: m.CadastroPage })));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const AccountsPage = lazy(() => import('./pages/accounts/AccountsPage').then(m => ({ default: m.AccountsPage })));
 const AccountFormPage = lazy(() => import('./pages/accounts/AccountFormPage').then(m => ({ default: m.AccountFormPage })));
@@ -59,6 +57,7 @@ const IntentLogsPage = lazy(() => import('./pages/automation').then(m => ({ defa
 
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
+const SaladasDashboardPage = lazy(() => import('./pages/reports').then(m => ({ default: m.SaladasDashboardPage })));
 
 // Stores Pages
 const StoresPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoresPage })));
@@ -114,7 +113,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const AppContent: React.FC = () => {
   const { isAuthenticated, token } = useAuthStore();
   const { setAccounts } = useAccountStore();
-  const { fetchStores } = useStoreContextStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -125,42 +123,33 @@ const AppContent: React.FC = () => {
 
       if (isAuthenticated && token) {
         try {
-          // Load stores (required for dashboard and multi-store UI)
-          await fetchStores();
-
           // skipAutoLogout: a 401 here does NOT mean the token is invalid —
           // the user just logged in. Without this flag the interceptor would
           // call logout() and send the user back to /login in a loop.
           const response = await api.get('/whatsapp/accounts/', { skipAutoLogout: true });
           setAccounts(response.data?.results || []);
         } catch (error) {
-          logger.error('Error during initialization:', error);
+          logger.error('Error loading accounts:', error);
         }
       }
       setIsInitializing(false);
     };
     initialize();
-  }, [isAuthenticated, token, setAccounts, fetchStores]);
+  }, [isAuthenticated, token, setAccounts]);
 
   if (isInitializing) {
     return <FullPageLoading />;
   }
 
   return (
-    <React.Suspense fallback={<FullPageLoading />}>
-      <Routes>
+    <Routes>
       {/* Public routes */}
       <Route path="/login" element={
         isAuthenticated ? <Navigate to="/" replace /> : (
-          <PageWrapper>
+          <Suspense fallback={<FullPageLoading />}>
             <LoginPage />
-          </PageWrapper>
+          </Suspense>
         )
-      } />
-      <Route path="/cadastro" element={
-        <PageWrapper>
-          <CadastroPage />
-        </PageWrapper>
       } />
 
       {/* Protected routes */}
@@ -169,104 +158,103 @@ const AppContent: React.FC = () => {
           <MainLayout />
         </ProtectedRoute>
       }>
-        <Route index element={<PageWrapper><DashboardPage /></PageWrapper>} />
-        <Route path="accounts" element={<PageWrapper><AccountsPage /></PageWrapper>} />
-        <Route path="accounts/new" element={<PageWrapper><AccountFormPage /></PageWrapper>} />
-        <Route path="accounts/:id" element={<PageWrapper><AccountDetailPage /></PageWrapper>} />
-        <Route path="accounts/:id/edit" element={<PageWrapper><AccountFormPage /></PageWrapper>} />
-        <Route path="messages" element={<PageWrapper><MessagesPage /></PageWrapper>} />
-        <Route path="conversations" element={<PageWrapper><ConversationsPage /></PageWrapper>} />
+        <Route index element={<PageBoundary><DashboardPage /></PageBoundary>} />
+        <Route path="accounts" element={<PageBoundary><AccountsPage /></PageBoundary>} />
+        <Route path="accounts/new" element={<PageBoundary><AccountFormPage /></PageBoundary>} />
+        <Route path="accounts/:id" element={<PageBoundary><AccountDetailPage /></PageBoundary>} />
+        <Route path="accounts/:id/edit" element={<PageBoundary><AccountFormPage /></PageBoundary>} />
+        <Route path="messages" element={<PageBoundary><MessagesPage /></PageBoundary>} />
+        <Route path="conversations" element={<PageBoundary><ConversationsPage /></PageBoundary>} />
         
         {/* AI Agents Routes (Langchain) */}
-        <Route path="agents" element={<PageWrapper><AgentsPage /></PageWrapper>} />
-        <Route path="agents/new" element={<PageWrapper><AgentCreatePage /></PageWrapper>} />
-        <Route path="agents/:id" element={<PageWrapper><AgentDetailPage /></PageWrapper>} />
-        <Route path="agents/:id/test" element={<PageWrapper><AgentTestPage /></PageWrapper>} />
-        <Route path="agents/:id/conversations" element={<PageWrapper><AgentDetailPage /></PageWrapper>} />
-        <Route path="agents/test/orchestrator" element={<PageWrapper><UnifiedOrchestratorTest /></PageWrapper>} />
+        <Route path="agents" element={<PageBoundary><AgentsPage /></PageBoundary>} />
+        <Route path="agents/new" element={<PageBoundary><AgentCreatePage /></PageBoundary>} />
+        <Route path="agents/:id" element={<PageBoundary><AgentDetailPage /></PageBoundary>} />
+        <Route path="agents/:id/test" element={<PageBoundary><AgentTestPage /></PageBoundary>} />
+        <Route path="agents/:id/conversations" element={<PageBoundary><AgentDetailPage /></PageBoundary>} />
+        <Route path="agents/test/orchestrator" element={<PageBoundary><UnifiedOrchestratorTest /></PageBoundary>} />
         
         {/* Settings */}
-        <Route path="settings" element={<PageWrapper><SettingsPage /></PageWrapper>} />
+        <Route path="settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />
         
         {/* Automation Routes */}
-        <Route path="automation/companies" element={<PageWrapper><CompanyProfilesPage /></PageWrapper>} />
-        <Route path="automation/companies/new" element={<PageWrapper><CompanyProfileDetailPage /></PageWrapper>} />
-        <Route path="automation/companies/:id" element={<PageWrapper><CompanyProfileDetailPage /></PageWrapper>} />
-        <Route path="automation/messages" element={<PageWrapper><AutoMessagesPage /></PageWrapper>} />
-        <Route path="automation/companies/:companyId/messages" element={<PageWrapper><AutoMessagesPage /></PageWrapper>} />
-        <Route path="automation/sessions" element={<PageWrapper><CustomerSessionsPage /></PageWrapper>} />
-        <Route path="automation/logs" element={<PageWrapper><AutomationLogsPage /></PageWrapper>} />
-        <Route path="automation/scheduled" element={<PageWrapper><ScheduledMessagesPage /></PageWrapper>} />
-        <Route path="automation/reports" element={<PageWrapper><ReportsPage /></PageWrapper>} />
-        <Route path="automation/flows" element={<PageWrapper><AgentFlowsPage /></PageWrapper>} />
+        <Route path="automation/companies" element={<PageBoundary><CompanyProfilesPage /></PageBoundary>} />
+        <Route path="automation/companies/new" element={<PageBoundary><CompanyProfileDetailPage /></PageBoundary>} />
+        <Route path="automation/companies/:id" element={<PageBoundary><CompanyProfileDetailPage /></PageBoundary>} />
+        <Route path="automation/messages" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
+        <Route path="automation/companies/:companyId/messages" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
+        <Route path="automation/sessions" element={<PageBoundary><CustomerSessionsPage /></PageBoundary>} />
+        <Route path="automation/logs" element={<PageBoundary><AutomationLogsPage /></PageBoundary>} />
+        <Route path="automation/scheduled" element={<PageBoundary><ScheduledMessagesPage /></PageBoundary>} />
+        <Route path="automation/reports" element={<PageBoundary><ReportsPage /></PageBoundary>} />
+        <Route path="automation/flows" element={<PageBoundary><AgentFlowsPage /></PageBoundary>} />
 
         {/* Intent Detection Routes */}
         <Route path="automation/intents" element={<Navigate to="/automation/intents/stats" replace />} />
-        <Route path="automation/intents/stats" element={<PageWrapper><IntentStatsPage /></PageWrapper>} />
-        <Route path="automation/intents/logs" element={<PageWrapper><IntentLogsPage /></PageWrapper>} />
+        <Route path="automation/intents/stats" element={<PageBoundary><IntentStatsPage /></PageBoundary>} />
+        <Route path="automation/intents/logs" element={<PageBoundary><IntentLogsPage /></PageBoundary>} />
         
         {/* Analytics/Reports Routes */}
-        <Route path="analytics" element={<PageWrapper><AnalyticsPage /></PageWrapper>} />
-        <Route path="analytics/saladas" element={<Navigate to="/analytics" replace />} />
+        <Route path="analytics" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
+        <Route path="analytics/saladas" element={<PageBoundary><SaladasDashboardPage /></PageBoundary>} />
         <Route path="reports" element={<Navigate to="/analytics" replace />} />
         
         {/* Stores Routes */}
-        <Route path="stores" element={<PageWrapper><StoresPage /></PageWrapper>} />
-        <Route path="stores/:storeId" element={<PageWrapper><StoreDetailPage /></PageWrapper>} />
-        <Route path="stores/:storeId/products" element={<PageWrapper><ProductsPage /></PageWrapper>} />
-        <Route path="stores/:storeId/combos" element={<PageWrapper><CombosPage /></PageWrapper>} />
-        <Route path="stores/:storeId/orders" element={<PageWrapper><OrdersPage /></PageWrapper>} />
-        <Route path="stores/:storeId/customers" element={<PageWrapper><CustomersPage /></PageWrapper>} />
-        <Route path="stores/:storeId/orders/new" element={<PageWrapper><OrderNewPage /></PageWrapper>} />
-        <Route path="stores/:storeId/orders/:id" element={<PageWrapper><OrderDetailPage /></PageWrapper>} />
-        <Route path="stores/:storeId/coupons" element={<PageWrapper><CouponsPage /></PageWrapper>} />
-        <Route path="stores/:storeId/analytics" element={<PageWrapper><AnalyticsPage /></PageWrapper>} />
-        <Route path="stores/:storeId/payments" element={<PageWrapper><PaymentsPage /></PageWrapper>} />
-        <Route path="stores/:storeId/settings" element={<PageWrapper><StoreSettingsPage /></PageWrapper>} />
-        <Route path="stores/:storeId/storefront" element={<PageWrapper><StorefrontPage /></PageWrapper>} />
-        <Route path="stores/:storeId/delivery" element={<PageWrapper><DeliveryZonesPage /></PageWrapper>} />
+        <Route path="stores" element={<PageBoundary><StoresPage /></PageBoundary>} />
+        <Route path="stores/:storeId" element={<PageBoundary><StoreDetailPage /></PageBoundary>} />
+        <Route path="stores/:storeId/products" element={<PageBoundary><ProductsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/combos" element={<PageBoundary><CombosPage /></PageBoundary>} />
+        <Route path="stores/:storeId/orders" element={<PageBoundary><OrdersPage /></PageBoundary>} />
+        <Route path="stores/:storeId/customers" element={<PageBoundary><CustomersPage /></PageBoundary>} />
+        <Route path="stores/:storeId/orders/new" element={<PageBoundary><OrderNewPage /></PageBoundary>} />
+        <Route path="stores/:storeId/orders/:id" element={<PageBoundary><OrderDetailPage /></PageBoundary>} />
+        <Route path="stores/:storeId/coupons" element={<PageBoundary><CouponsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/analytics" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/payments" element={<PageBoundary><PaymentsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/settings" element={<PageBoundary><StoreSettingsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
+        <Route path="stores/:storeId/delivery" element={<PageBoundary><DeliveryZonesPage /></PageBoundary>} />
         
         {/* Marketing Routes */}
-        <Route path="marketing" element={<PageWrapper><MarketingPage /></PageWrapper>} />
-        <Route path="marketing/subscribers" element={<PageWrapper><SubscribersPage /></PageWrapper>} />
-        <Route path="marketing/automations" element={<PageWrapper><AutomationsPage /></PageWrapper>} />
+        <Route path="marketing" element={<PageBoundary><MarketingPage /></PageBoundary>} />
+        <Route path="marketing/subscribers" element={<PageBoundary><SubscribersPage /></PageBoundary>} />
+        <Route path="marketing/automations" element={<PageBoundary><AutomationsPage /></PageBoundary>} />
         <Route path="marketing/email" element={<Navigate to="/marketing/email/campaigns" replace />} />
-        <Route path="marketing/email/campaigns" element={<PageWrapper><CampaignsListPage /></PageWrapper>} />
-        <Route path="marketing/email/new" element={<PageWrapper><NewCampaignPage /></PageWrapper>} />
-        <Route path="marketing/email/templates" element={<PageWrapper><MarketingPage /></PageWrapper>} />
-        <Route path="marketing/whatsapp" element={<PageWrapper><WhatsAppCampaignsPage /></PageWrapper>} />
-        <Route path="marketing/whatsapp/new" element={<PageWrapper><NewWhatsAppCampaignPage /></PageWrapper>} />
-        <Route path="marketing/whatsapp/templates" element={<PageWrapper><WhatsAppTemplatesPage /></PageWrapper>} />
+        <Route path="marketing/email/campaigns" element={<PageBoundary><CampaignsListPage /></PageBoundary>} />
+        <Route path="marketing/email/new" element={<PageBoundary><NewCampaignPage /></PageBoundary>} />
+        <Route path="marketing/email/templates" element={<PageBoundary><MarketingPage /></PageBoundary>} />
+        <Route path="marketing/whatsapp" element={<PageBoundary><WhatsAppCampaignsPage /></PageBoundary>} />
+        <Route path="marketing/whatsapp/new" element={<PageBoundary><NewWhatsAppCampaignPage /></PageBoundary>} />
+        <Route path="marketing/whatsapp/templates" element={<PageBoundary><WhatsAppTemplatesPage /></PageBoundary>} />
         
         {/* Instagram Routes */}
         <Route path="instagram" element={<Navigate to="/instagram/accounts" replace />} />
-        <Route path="instagram/accounts" element={<PageWrapper><InstagramAccountsPage /></PageWrapper>} />
-        <Route path="instagram/callback" element={<PageWrapper><InstagramCallbackPage /></PageWrapper>} />
-        <Route path="instagram/:accountId" element={<PageWrapper><InstagramDashboardPage /></PageWrapper>} />
-        <Route path="instagram/inbox" element={<PageWrapper><InstagramInbox /></PageWrapper>} />
+        <Route path="instagram/accounts" element={<PageBoundary><InstagramAccountsPage /></PageBoundary>} />
+        <Route path="instagram/callback" element={<PageBoundary><InstagramCallbackPage /></PageBoundary>} />
+        <Route path="instagram/:accountId" element={<PageBoundary><InstagramDashboardPage /></PageBoundary>} />
+        <Route path="instagram/inbox" element={<PageBoundary><InstagramInbox /></PageBoundary>} />
         
         {/* Messenger Routes */}
         {/* Messenger/WhatsApp Routes - NOVA PÁGINA UNIFICADA */}
-        <Route path="connections" element={<PageWrapper><ConnectionsPage /></PageWrapper>} />
+        <Route path="connections" element={<PageBoundary><ConnectionsPage /></PageBoundary>} />
         
         {/* Legacy Routes (mantidas para compatibilidade) */}
-        <Route path="messenger" element={<PageWrapper><MessengerInbox /></PageWrapper>} />
-        <Route path="messenger/inbox" element={<PageWrapper><MessengerInbox /></PageWrapper>} />
-        <Route path="messenger/accounts" element={<PageWrapper><MessengerAccounts /></PageWrapper>} />
+        <Route path="messenger" element={<PageBoundary><MessengerInbox /></PageBoundary>} />
+        <Route path="messenger/inbox" element={<PageBoundary><MessengerInbox /></PageBoundary>} />
+        <Route path="messenger/accounts" element={<PageBoundary><MessengerAccounts /></PageBoundary>} />
         
         {/* WhatsApp Routes */}
-        <Route path="whatsapp" element={<PageWrapper><WhatsAppInboxPage /></PageWrapper>} />
-        <Route path="whatsapp/inbox" element={<PageWrapper><WhatsAppInboxPage /></PageWrapper>} />
-        <Route path="whatsapp/chat" element={<PageWrapper><WhatsAppChatPage /></PageWrapper>} />
-        <Route path="whatsapp/handover" element={<PageWrapper><HandoverRequestsPage /></PageWrapper>} />
-        <Route path="whatsapp/debug" element={<PageWrapper><DebugDashboardPage /></PageWrapper>} />
-        <Route path="whatsapp/diagnostics" element={<PageWrapper><WebhookDiagnosticsPage /></PageWrapper>} />
+        <Route path="whatsapp" element={<PageBoundary><WhatsAppInboxPage /></PageBoundary>} />
+        <Route path="whatsapp/inbox" element={<PageBoundary><WhatsAppInboxPage /></PageBoundary>} />
+        <Route path="whatsapp/chat" element={<PageBoundary><WhatsAppChatPage /></PageBoundary>} />
+        <Route path="whatsapp/handover" element={<PageBoundary><HandoverRequestsPage /></PageBoundary>} />
+        <Route path="whatsapp/debug" element={<PageBoundary><DebugDashboardPage /></PageBoundary>} />
+        <Route path="whatsapp/diagnostics" element={<PageBoundary><WebhookDiagnosticsPage /></PageBoundary>} />
       </Route>
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-    </React.Suspense>
   );
 };
 

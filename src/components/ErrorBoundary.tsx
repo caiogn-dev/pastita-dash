@@ -1,6 +1,9 @@
 import React, { Component, ErrorInfo, ReactNode, Suspense } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './molecules/Card';
+import { FullPageLoading } from './common';
+
+const isDev = import.meta.env.DEV;
 
 interface Props {
   children: ReactNode;
@@ -25,7 +28,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+    // Only log full details in dev — avoid exposing stack traces in production logs
+    if (isDev) {
+      console.error('Uncaught error:', error, errorInfo);
+    }
     this.setState({ error, errorInfo });
   }
 
@@ -52,8 +58,9 @@ export class ErrorBoundary extends Component<Props, State> {
               <p className="text-zinc-600 dark:text-zinc-400">
                 Ocorreu um erro inesperado. Tente recarregar a página.
               </p>
-              
-              {this.state.error && (
+
+              {/* Show error details only in dev to avoid leaking internal info */}
+              {isDev && this.state.error && (
                 <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg overflow-auto">
                   <p className="text-sm font-mono text-red-800 dark:text-red-200">
                     {this.state.error.toString()}
@@ -65,8 +72,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 <Button onClick={this.handleReset} variant="primary">
                   Recarregar página
                 </Button>
-                <Button 
-                  onClick={() => window.location.href = '/'} 
+                <Button
+                  onClick={() => window.location.href = '/'}
                   variant="secondary"
                 >
                   Voltar ao início
@@ -82,66 +89,51 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-const PageLoadingFallback: React.FC = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="w-8 h-8 border-4 border-violet-600 border-t-transparent rounded-full animate-spin" />
+/**
+ * Lightweight fallback shown when a lazy page chunk fails to load (e.g. network
+ * error or stale bundle hash after a deploy).  Wraps Suspense + ErrorBoundary so
+ * a single chunk failure doesn't crash the entire app.
+ */
+const ChunkErrorFallback: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
+  <div className="flex flex-col items-center justify-center h-64 gap-4 text-zinc-500 dark:text-zinc-400">
+    <p className="text-sm">Falha ao carregar a página.</p>
+    <Button onClick={onRetry} variant="secondary" size="sm">
+      Tentar novamente
+    </Button>
   </div>
 );
 
-const PageErrorFallback: React.FC<{ error: Error | null; onRetry: () => void }> = ({ error, onRetry }) => (
-  <div className="flex items-center justify-center min-h-[400px] p-4">
-    <Card className="max-w-md w-full">
-      <CardHeader>
-        <CardTitle className="text-red-600 dark:text-red-400 text-base">
-          Erro ao carregar a página
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Ocorreu um erro inesperado nesta seção. As outras partes do painel continuam funcionando.
-        </p>
-        {error && (
-          <p className="text-xs font-mono text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 p-2 rounded truncate">
-            {error.message}
-          </p>
-        )}
-        <Button onClick={onRetry} variant="primary" size="sm">
-          Tentar novamente
-        </Button>
-      </CardContent>
-    </Card>
-  </div>
-);
+class PageErrorBoundaryInner extends Component<Props, State> {
+  public state: State = { hasError: false, error: null, errorInfo: null };
 
-class PageErrorBoundaryInner extends Component<
-  { children: ReactNode },
-  { hasError: boolean; error: Error | null }
-> {
-  state = { hasError: false, error: null };
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error, errorInfo: null };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('[PageErrorBoundary]', error, info.componentStack);
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    if (isDev) console.error('[PageBoundary]', error, errorInfo);
+    this.setState({ error, errorInfo });
   }
 
   private handleRetry = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
-  render() {
+  public render() {
     if (this.state.hasError) {
-      return <PageErrorFallback error={this.state.error} onRetry={this.handleRetry} />;
+      return <ChunkErrorFallback onRetry={this.handleRetry} />;
     }
     return this.props.children;
   }
 }
 
-export const PageWrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+/**
+ * Use this to wrap each lazy-loaded page instead of bare <Suspense>.
+ * Catches both loading fallback and runtime errors without crashing the whole app.
+ */
+export const PageBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
   <PageErrorBoundaryInner>
-    <Suspense fallback={<PageLoadingFallback />}>
+    <Suspense fallback={<FullPageLoading />}>
       {children}
     </Suspense>
   </PageErrorBoundaryInner>
