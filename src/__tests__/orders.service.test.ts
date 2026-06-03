@@ -52,7 +52,7 @@ describe('ordersService', () => {
 
     const result = await ordersService.createOrder(payload);
 
-    expect(mockPost).toHaveBeenCalledWith('/stores/orders/', payload);
+    expect(mockPost).toHaveBeenCalledWith('/stores/demo-store/orders/', payload);
     expect(result.subtotal).toBe(40);
     expect(result.total).toBe(40);
   });
