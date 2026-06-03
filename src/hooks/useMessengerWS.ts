@@ -79,21 +79,18 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
   const connect = useCallback(() => {
     // Prevent multiple simultaneous connection attempts
     if (isConnecting || wsRef.current?.readyState === WebSocket.CONNECTING) {
-      console.log('[MessengerWS] Already connecting, skipping...');
       return;
     }
-    
+
     // Prevent connection if already connected
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('[MessengerWS] Already connected, skipping...');
       return;
     }
-    
+
     // Rate limiting: minimum interval between connections
     const now = Date.now();
     const timeSinceLastConnect = now - lastConnectTimeRef.current;
     if (timeSinceLastConnect < MIN_CONNECT_INTERVAL && reconnectAttemptsRef.current > 0) {
-      console.log(`[MessengerWS] Rate limited. Waiting ${MIN_CONNECT_INTERVAL - timeSinceLastConnect}ms...`);
       clearReconnectTimeout();
       reconnectTimeoutRef.current = setTimeout(
         connect,
@@ -108,13 +105,10 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
     
     try {
       const wsUrl = getWebSocketUrl(`/ws/messenger/${accountId || 'all'}/`);
-      console.log('[MessengerWS] Connecting to:', wsUrl);
-      
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
-      
+
       ws.onopen = () => {
-        console.log('[MessengerWS] Open, sending auth...');
         setIsConnecting(false);
         const currentToken = useAuthStore.getState().token;
         if (currentToken) {
@@ -128,7 +122,6 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
 
           switch (data.type) {
             case 'connection_established':
-              console.log('[MessengerWS] Authenticated ✓');
               setIsConnected(true);
               reconnectAttemptsRef.current = 0;
               onConnect?.();
@@ -140,25 +133,23 @@ export const useMessengerWS = (options: UseMessengerWSOptions) => {
               onConversationUpdate?.(data as MessengerConversationEvent);
               break;
             default:
-              console.log('[MessengerWS] Unknown event type:', data);
+              break;
           }
         } catch (error) {
           console.error('[MessengerWS] Error parsing message:', error);
         }
       };
       
-      ws.onclose = (event) => {
-        console.log('[MessengerWS] Disconnected:', event.code, event.reason);
+      ws.onclose = (_event) => {
         setIsConnected(false);
         setIsConnecting(false);
         wsRef.current = null;
         onDisconnect?.();
-        
+
         // Only reconnect if not intentionally closed and within retry limit
         if (!intentionalCloseRef.current && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
           reconnectAttemptsRef.current++;
           const delay = getReconnectDelay();
-          console.log(`[MessengerWS] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
           
           clearReconnectTimeout();
           reconnectTimeoutRef.current = setTimeout(connect, delay);

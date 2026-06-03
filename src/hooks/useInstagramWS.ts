@@ -222,7 +222,6 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
       wsRef.current = new WebSocket(url);
 
       wsRef.current.onopen = () => {
-        console.log('[Instagram WS] Open, sending auth...');
         // First-message auth — token never in URL
         if (token) {
           wsRef.current!.send(JSON.stringify({ type: 'auth', token }));
@@ -286,7 +285,6 @@ export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSRe
               optsRef.current.onStoryReply?.(data);
               break;
             case 'connection_established':
-              console.log('[Instagram WS] Authenticated ✓');
               setIsConnected(true);
               setIsConnecting(false);
               setError(null);
