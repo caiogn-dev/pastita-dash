@@ -484,7 +484,7 @@ const buildFormData = (data: Record<string, unknown>, includeFile = true): FormD
 // Não usar BASE_URL/{id}/ pois o catch-all <slug:store_slug>/ intercepta antes
 export const getStores = async (): Promise<PaginatedResponse<Store>> => {
   try {
-    const response = await api.get(`${STORES_ADMIN_URL}/`);
+    const response = await api.get(`${STORES_ADMIN_URL}/`, { skipAutoLogout: true });
     return normalizePaginatedResponse<Store>(response.data);
   } catch (error) {
     logger.error('Failed to fetch stores', error);
@@ -494,7 +494,7 @@ export const getStores = async (): Promise<PaginatedResponse<Store>> => {
 
 export const getStore = async (id: string): Promise<Store> => {
   try {
-    const response = await api.get(`${STORES_ADMIN_URL}/${id}/`);
+    const response = await api.get(`${STORES_ADMIN_URL}/${id}/`, { skipAutoLogout: true });
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch store', error);
@@ -514,7 +514,7 @@ export const createStore = async (data: StoreInput): Promise<Store> => {
 
 export const updateStore = async (id: string, data: Partial<StoreInput>): Promise<Store> => {
   try {
-    const response = await api.patch(`${STORES_ADMIN_URL}/${id}/`, data);
+    const response = await api.patch(`${STORES_ADMIN_URL}/${id}/`, data, { skipAutoLogout: true });
     return response.data;
   } catch (error) {
     logger.error('Failed to update store', error);

@@ -130,7 +130,7 @@ api.interceptors.response.use(
     if (
       !skipAutoLogout &&
       !inLoginGracePeriod &&
-      (httpStatus === 401 || httpStatus === 403 || errorCode === 'token_not_valid') &&
+      (httpStatus === 401 || errorCode === 'token_not_valid') &&
       hadAuthHeader &&
       !isAuthEndpoint
     ) {

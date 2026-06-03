@@ -122,7 +122,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         url: '',
         token: effectiveToken,
         storeSlug: effectiveStoreSlug,
-        fallbackOrder: ['websocket', 'sse', 'polling'],
+        fallbackOrder: ['websocket', 'polling'],
         reconnectAttempts: 10,
         reconnectDelay: 1000,
         maxReconnectDelay: 30000,
