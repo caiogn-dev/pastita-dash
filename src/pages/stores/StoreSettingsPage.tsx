@@ -53,7 +53,7 @@ export const StoreSettingsPage: React.FC = () => {
   const effectiveStoreId = useMemo(() => {
     if (!routeStoreId) return contextStoreId || null;
     const match = stores.find((store) => store.id === routeStoreId || store.slug === routeStoreId);
-    return match?.id || routeStoreId;
+    return match?.slug || routeStoreId;
   }, [routeStoreId, contextStoreId, stores]);
 
   const [loading, setLoading] = useState(true);

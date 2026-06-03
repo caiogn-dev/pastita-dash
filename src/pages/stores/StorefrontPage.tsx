@@ -20,9 +20,10 @@ export const StorefrontPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, stores } = useStore();
 
+  const storeData = stores.find(s => s.id === contextStoreId || s.slug === contextStoreId);
   const effectiveStoreId =
     routeStoreId ||
-    stores.find(s => s.id === contextStoreId || s.slug === contextStoreId)?.id ||
+    storeData?.slug ||
     contextStoreId ||
     null;
 
