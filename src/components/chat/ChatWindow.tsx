@@ -250,8 +250,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
           ? { ...c, phone_number: wsConv.phone_number, contact_name: wsConv.contact_name, wa_id: wsConv.wa_id, profile_picture: wsConv.profile_picture, profile_picture_url: wsConv.profile_picture_url, status: wsConv.status as Conversation['status'], mode: wsConv.mode as Conversation['mode'] }
           : c);
       }
-      loadConversations();
-      return prev;
+      // New conversation: schedule a reload outside setState to avoid calling
+      // async functions inside a state updater (causes React state batching issues).
+      return [...prev, wsConv as unknown as Conversation];
     });
   }
 

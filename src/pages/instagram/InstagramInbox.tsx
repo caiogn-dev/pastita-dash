@@ -606,7 +606,7 @@ export default function InstagramInbox() {
                               )}
                             </div>
                           )}
-                          {message.content && (
+                          {typeof message.content === 'string' && message.content && (
                             <p className="whitespace-pre-wrap break-words text-sm">{message.content}</p>
                           )}
                           <div
