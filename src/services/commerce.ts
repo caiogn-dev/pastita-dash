@@ -28,7 +28,21 @@ export const createCustomer = (data: any) => api.post('/stores/customers/', data
 // Orders
 export const getOrders = (params?: { store?: string }) => api.get('/stores/orders/', { params });
 export const getOrder = (id: string) => api.get(`/stores/orders/${id}/`);
-export const createOrder = (data: any) => api.post('/stores/orders/', data);
+export const createOrder = (data: any) => {
+  // Extract store slug/id from payload and use it in URL path
+  const { store, delivery_address, ...payload } = data;
+  const storeSlug = store || 'ce-saladas'; // fallback for dev
+
+  // Convert delivery_address string to JSON object if needed
+  const formattedData = {
+    ...payload,
+    delivery_address: typeof delivery_address === 'string'
+      ? { address: delivery_address }
+      : (delivery_address || {}),
+  };
+
+  return api.post(`/stores/${storeSlug}/orders/`, formattedData);
+};
 
 // Export
 export const commerceService = {

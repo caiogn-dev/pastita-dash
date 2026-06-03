@@ -1,7 +1,23 @@
 import React from 'react';
 import { useUberDeliveryPolling } from '../hooks/useUberDeliveryPolling';
 
-export const OrderDeliveryModal = ({ orderId, storeSlug, isOpen, onClose, onAccept }) => {
+interface Driver {
+  name: string;
+  phone: string;
+  vehicle_info: string;
+  eta_minutes: number;
+  pickup_instructions?: string;
+}
+
+interface OrderDeliveryModalProps {
+  orderId: number | string;
+  storeSlug: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onAccept: (driver: Driver) => void;
+}
+
+export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId, storeSlug, isOpen, onClose, onAccept }) => {
   const { state, cancelDelivery, retryDelivery } = useUberDeliveryPolling(orderId, storeSlug, isOpen);
 
   if (!isOpen) return null;
@@ -74,7 +90,9 @@ export const OrderDeliveryModal = ({ orderId, storeSlug, isOpen, onClose, onAcce
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={() => {
-                  onAccept(state.driver);
+                  if (state.driver) {
+                    onAccept(state.driver);
+                  }
                   onClose();
                 }}
                 style={{

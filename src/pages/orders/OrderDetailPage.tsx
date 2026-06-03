@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Button, Modal, PageLoading } from '../../components/common';
+import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import { Order, Payment } from '../../types';
 
@@ -244,6 +245,7 @@ export const OrderDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showUberModal, setShowUberModal] = useState(false);
 
   useEffect(() => {
     if (id) loadOrder();
@@ -645,6 +647,16 @@ export const OrderDetailPage: React.FC = () => {
                 </button>
               )}
 
+              {order && order.delivery_method === 'delivery' && !isCancelled && !isCompleted && (
+                <button
+                  onClick={() => setShowUberModal(true)}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-zinc-700 px-4 py-3 text-base font-semibold text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-zinc-900"
+                >
+                  <TruckIcon className="h-5 w-5" />
+                  Enviar para Uber Direct
+                </button>
+              )}
+
               <div className="mt-6 grid gap-2">
                 <button
                   onClick={async () => {
@@ -729,8 +741,8 @@ export const OrderDetailPage: React.FC = () => {
             <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
               Voltar
             </Button>
-            <Button 
-              variant="danger" 
+            <Button
+              variant="danger"
               onClick={() => handleAction('cancel')}
               isLoading={actionLoading === 'cancel'}
             >
@@ -739,6 +751,21 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Uber Delivery Modal */}
+      {order && (
+        <OrderDeliveryModal
+          orderId={order.id}
+          storeSlug={store?.slug || ''}
+          isOpen={showUberModal}
+          onClose={() => setShowUberModal(false)}
+          onAccept={(driver) => {
+            toast.success(`Motorista ${driver.name} confirmado!`);
+            setShowUberModal(false);
+            // Refresh order data if needed
+          }}
+        />
+      )}
     </div>
   );
 };

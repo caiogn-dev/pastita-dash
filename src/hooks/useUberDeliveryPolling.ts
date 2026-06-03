@@ -1,16 +1,31 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import * as orderApi from '../services/orders';
+import ordersService from '../services/orders';
 
-export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
-  const [state, setState] = useState({
-    status: 'searching', // 'searching', 'driver_found', 'no_drivers', 'error'
+interface Driver {
+  name: string;
+  phone: string;
+  vehicle_info: string;
+  eta_minutes: number;
+  pickup_instructions?: string;
+}
+
+interface PollingState {
+  status: 'searching' | 'driver_found' | 'no_drivers' | 'error';
+  driver: Driver | null;
+  error: string | null;
+  secondsRemaining: number;
+}
+
+export const useUberDeliveryPolling = (orderId: number | string, storeSlug: string, isOpen: boolean) => {
+  const [state, setState] = useState<PollingState>({
+    status: 'searching',
     driver: null,
     error: null,
     secondsRemaining: 60
   });
 
-  const pollIntervalRef = useRef(null);
-  const timeoutRef = useRef(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const secondsRef = useRef(60);
 
   const createDeliveryRequest = useCallback(async () => {
@@ -24,9 +39,9 @@ export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
       }));
       secondsRef.current = 60;
 
-      const response = await orderApi.createDeliveryRequest(storeSlug, orderId);
+      const response = await ordersService.createDeliveryRequest(storeSlug, orderId);
 
-      if (!response.delivery_request_id) {
+      if (!response.order_id && !response.delivery_request_id) {
         setState(prev => ({
           ...prev,
           status: 'error',
@@ -37,11 +52,12 @@ export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
 
       startPolling();
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create delivery request';
       console.error('Error creating delivery request:', err);
       setState(prev => ({
         ...prev,
         status: 'error',
-        error: err.message || 'Failed to create delivery request'
+        error: errorMessage
       }));
     }
   }, [orderId, storeSlug]);
@@ -49,7 +65,7 @@ export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
   const startPolling = useCallback(() => {
     const pollDelivery = async () => {
       try {
-        const response = await orderApi.pollDeliveryStatus(storeSlug, orderId);
+        const response = await ordersService.pollDeliveryStatus(storeSlug, orderId);
 
         if (response.status === 'driver_found') {
           setState(prev => ({
@@ -70,11 +86,12 @@ export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
         }
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to poll delivery status';
         console.error('Error polling delivery status:', err);
         setState(prev => ({
           ...prev,
           status: 'error',
-          error: err.message || 'Failed to poll delivery status'
+          error: errorMessage
         }));
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -106,7 +123,7 @@ export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     try {
-      await orderApi.cancelDeliveryRequest(storeSlug, orderId);
+      await ordersService.cancelDeliveryRequest(storeSlug, orderId);
     } catch (err) {
       console.error('Error canceling delivery:', err);
     }
@@ -124,6 +141,8 @@ export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
   }, [isOpen, createDeliveryRequest]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const countdownInterval = setInterval(() => {
       secondsRef.current -= 1;
       setState(prev => ({
@@ -133,7 +152,7 @@ export const useUberDeliveryPolling = (orderId, storeSlug, isOpen) => {
     }, 1000);
 
     return () => clearInterval(countdownInterval);
-  }, []);
+  }, [isOpen]);
 
   return {
     state,

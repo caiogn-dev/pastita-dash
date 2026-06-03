@@ -669,9 +669,10 @@ interface OrderItem {
   price: string;
 }
 
-function OrderTool({ conversation, storeId, onSendMessage }: {
+function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
   conversation: ConversationRef;
   storeId?: string;
+  storeSlug?: string;
   onSendMessage: (text: string) => Promise<void>;
 }) {
   const [items, setItems] = useState<OrderItem[]>([{ name: '', qty: 1, price: '' }]);
@@ -759,7 +760,7 @@ function OrderTool({ conversation, storeId, onSendMessage }: {
     setCreating(true);
     try {
       const order = await ordersService.createOrder({
-        store: storeId,
+        store: storeSlug || storeId,
         customer_name: conversation.contact_name || 'Cliente WhatsApp',
         customer_phone: onlyDigits(conversation.phone_number),
         customer_email: `${onlyDigits(conversation.phone_number) || 'cliente'}@whatsapp.chat`,
@@ -958,6 +959,7 @@ function ToolsTab({ accountId, conversation, storeId, storeSlug, storeName, onSe
               <OrderTool
                 conversation={conversation}
                 storeId={storeId}
+                storeSlug={storeSlug}
                 onSendMessage={onSendMessage}
               />
             )}
