@@ -476,7 +476,10 @@ export class RealtimeConnection {
    */
   private buildUrl(transport: TransportType): string {
     const wsHost = this.getWSHost();
-    const storeSlug = this.options.storeSlug || 'default';
+    const storeSlug = this.options.storeSlug;
+    if (!storeSlug) {
+      throw new Error('[Realtime] storeSlug is required but was not provided');
+    }
     const token = this.token;
     
     switch (transport) {
