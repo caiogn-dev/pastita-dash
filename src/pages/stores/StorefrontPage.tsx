@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../services/storesApi';
@@ -41,6 +41,19 @@ export const StorefrontPage: React.FC = () => {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState('');
 
+  // Refs so the cleanup effect always reads the latest preview URL
+  const logoPreviewRef = useRef(logoPreview);
+  const bannerPreviewRef = useRef(bannerPreview);
+  useEffect(() => { logoPreviewRef.current = logoPreview; }, [logoPreview]);
+  useEffect(() => { bannerPreviewRef.current = bannerPreview; }, [bannerPreview]);
+
+  useEffect(() => {
+    return () => {
+      if (logoPreviewRef.current.startsWith('blob:')) URL.revokeObjectURL(logoPreviewRef.current);
+      if (bannerPreviewRef.current.startsWith('blob:')) URL.revokeObjectURL(bannerPreviewRef.current);
+    };
+  }, []);
+
   const loadStore = useCallback(async () => {
     if (!effectiveStoreId) return;
     const data = await getStore(effectiveStoreId);
@@ -59,6 +72,7 @@ export const StorefrontPage: React.FC = () => {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (logoPreviewRef.current.startsWith('blob:')) URL.revokeObjectURL(logoPreviewRef.current);
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
   };
@@ -66,6 +80,7 @@ export const StorefrontPage: React.FC = () => {
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (bannerPreviewRef.current.startsWith('blob:')) URL.revokeObjectURL(bannerPreviewRef.current);
     setBannerFile(file);
     setBannerPreview(URL.createObjectURL(file));
   };
@@ -84,8 +99,13 @@ export const StorefrontPage: React.FC = () => {
         await updateStore(effectiveStoreId, form);
       }
       toast.success('Storefront salvo com sucesso!');
+      if (logoPreview.startsWith('blob:')) URL.revokeObjectURL(logoPreview);
+      if (bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
       setLogoFile(null);
+      setLogoPreview('');
       setBannerFile(null);
+      setBannerPreview('');
+      await loadStore();
     } catch {
       toast.error('Erro ao salvar. Tente novamente.');
     } finally {
@@ -120,7 +140,7 @@ export const StorefrontPage: React.FC = () => {
             <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
           </label>
           {logoPreview && (
-            <button onClick={() => { setLogoFile(null); setLogoPreview(''); }} className="text-sm text-red-500 hover:text-red-700">Remover</button>
+            <button onClick={() => { if (logoPreview.startsWith('blob:')) URL.revokeObjectURL(logoPreview); setLogoFile(null); setLogoPreview(''); }} className="text-sm text-red-500 hover:text-red-700">Remover</button>
           )}
         </div>
         <p className="text-xs text-gray-400">PNG ou JPG. Recomendado: 400×400px.</p>
@@ -146,7 +166,7 @@ export const StorefrontPage: React.FC = () => {
           <input type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
         </label>
         {bannerPreview && (
-          <button onClick={() => { setBannerFile(null); setBannerPreview(''); }} className="ml-3 text-sm text-red-500 hover:text-red-700">Remover</button>
+          <button onClick={() => { if (bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview); setBannerFile(null); setBannerPreview(''); }} className="ml-3 text-sm text-red-500 hover:text-red-700">Remover</button>
         )}
         <p className="text-xs text-gray-400">PNG ou JPG. Recomendado: 1200×300px.</p>
       </section>
