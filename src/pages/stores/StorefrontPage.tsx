@@ -273,9 +273,9 @@ export const StorefrontPage: React.FC = () => {
         >
           {saving ? 'Salvando...' : 'Salvar storefront'}
         </button>
-        {store && (
+        {store && buildStorefrontUrl(store) && (
           <a
-            href={buildStorefrontUrl(store)}
+            href={buildStorefrontUrl(store)!}
             target="_blank"
             rel="noopener noreferrer"
             className="px-5 py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 font-semibold hover:bg-indigo-50 transition-colors whitespace-nowrap"
