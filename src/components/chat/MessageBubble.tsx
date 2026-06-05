@@ -414,7 +414,7 @@ const MediaPreview: React.FC<{
             Contato
           </p>
           <p className="text-xs text-gray-500 dark:text-zinc-400">
-            {typeof content === 'string' ? content : JSON.stringify(content)}
+            {renderText(content)}
           </p>
         </div>
       </div>
@@ -456,7 +456,7 @@ const MediaPreview: React.FC<{
   // Botão de resposta
   if (type === 'button') {
     const btnData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
-    const btnText = (btnData as any)?.text || (btnData as any)?.title || String(content || '');
+    const btnText = (btnData as any)?.text || (btnData as any)?.title || renderText(content);
     return (
       <div className="flex items-center gap-2 mb-1">
         <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">

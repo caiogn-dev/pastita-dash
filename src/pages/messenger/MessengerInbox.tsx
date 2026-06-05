@@ -296,7 +296,7 @@ export default function MessengerInbox() {
                         {msg.attachment_url ? (
                           <img src={msg.attachment_url} alt="attachment" className="max-w-full rounded-xl" crossOrigin="anonymous" />
                         ) : (
-                          <p className="whitespace-pre-wrap break-words text-sm">{msg.content}</p>
+                          <p className="whitespace-pre-wrap break-words text-sm">{typeof msg.content === 'string' ? msg.content : ''}</p>
                         )}
                         <div className={`mt-2 flex items-center gap-1 text-xs ${msg.is_from_page ? 'justify-end text-blue-100' : 'justify-end text-fg-muted'}`}>
                           <span>
