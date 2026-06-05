@@ -16,7 +16,7 @@ import toast from 'react-hot-toast';
 import { Button, Card, Modal, Loading } from '../../components/common';
 import { useStore } from '../../hooks';
 import { marketingService, Subscriber } from '../../services/marketingService';
-import { useStoreContextStore } from '../../stores/storeContextStore';
+import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
 
 interface NewSubscriber {
@@ -30,8 +30,7 @@ export const SubscribersPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreParam } = useParams<{ storeId?: string }>();
   const { storeId, storeName, stores } = useStore();
-  const selectStoreById = useStoreContextStore((state) => state.selectStoreById);
-  const selectStoreBySlug = useStoreContextStore((state) => state.selectStoreBySlug);
+  const { setSelectedStore } = useRootStore();
 
   const routeStore = useMemo(() => {
     if (!routeStoreParam) return null;
@@ -66,17 +65,10 @@ export const SubscribersPage: React.FC = () => {
       (store) => store.id === routeStoreParam || store.slug === routeStoreParam,
     );
 
-    if (!matchedStore) {
-      return;
+    if (matchedStore) {
+      setSelectedStore(matchedStore.id);
     }
-
-    if (matchedStore.id === routeStoreParam) {
-      selectStoreById(matchedStore.id);
-      return;
-    }
-
-    selectStoreBySlug(matchedStore.slug);
-  }, [routeStoreParam, selectStoreById, selectStoreBySlug, stores]);
+  }, [routeStoreParam, stores, setSelectedStore]);
 
   useEffect(() => {
     const loadCustomers = async () => {

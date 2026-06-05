@@ -3,20 +3,39 @@
  * Dropdown to select the active store for dashboard operations.
  * Used in the Header to provide global store context.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Store, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
-import { useStoreContextStore } from '../../stores';
+import { useRootStore } from '../../stores/rootStore';
+import { storesApi } from '../../services/storesApi';
 
 export const StoreSelector: React.FC = () => {
-  const { 
-    stores, 
-    selectedStore, 
-    loading, 
-    error,
-    initialized,
-    fetchStores, 
-    setSelectedStore 
-  } = useStoreContextStore();
+  const {
+    stores,
+    selectedStoreId,
+    setStores,
+    setSelectedStore
+  } = useRootStore();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
+
+  const fetchStores = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await storesApi.getStores();
+      setStores(response.results || []);
+      setInitialized(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar lojas');
+      setInitialized(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedStore = stores.find(s => s.id === selectedStoreId) || null;
 
   // Fetch stores on mount if not initialized
   useEffect(() => {
@@ -67,10 +86,9 @@ export const StoreSelector: React.FC = () => {
       <Store className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
       <div className="relative">
         <select
-          value={selectedStore?.id || ''}
+          value={selectedStoreId || ''}
           onChange={(e) => {
-            const store = stores.find(s => s.id === e.target.value);
-            setSelectedStore(store || null);
+            setSelectedStore(e.target.value || null);
           }}
           className="appearance-none bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 pr-8 text-sm font-medium text-gray-700 dark:text-zinc-300 hover:border-gray-300 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer min-w-[180px] transition-colors"
           disabled={loading}

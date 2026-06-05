@@ -5,9 +5,11 @@ import { User } from '../types';
 // Lazy imports to avoid circular deps — resolved at call time, not at module load.
 const clearDependentStores = () => {
   import('./chatStore').then(({ useChatStore }) => useChatStore.getState().reset());
-  import('./storeContextStore').then(({ useStoreContextStore }) =>
-    useStoreContextStore.getState().clearSelection()
-  );
+  import('./rootStore').then(({ useRootStore }) => {
+    const root = useRootStore.getState();
+    root.clearAuth();
+    root.setSelectedStore(null);
+  });
 };
 
 interface AuthState {

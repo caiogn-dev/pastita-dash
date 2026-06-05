@@ -27,7 +27,7 @@ import {
 import toast from 'react-hot-toast';
 import { Card, Button, Badge, Loading, Modal, Input } from '../../components/common';
 import storesApi, { Store, StoreStats } from '../../services/storesApi';
-import { useStoreContextStore } from '../../stores';
+import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
 
 type TabId = 'overview' | 'products' | 'orders' | 'coupons' | 'delivery' | 'settings' | 'storefront';
@@ -52,7 +52,7 @@ const TABS: Tab[] = [
 export const StoreDetailPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
-  const { setSelectedStore } = useStoreContextStore();
+  const { setSelectedStore } = useRootStore();
   
   const [store, setStore] = useState<Store | null>(null);
   const [stats, setStats] = useState<StoreStats | null>(null);
@@ -71,9 +71,9 @@ export const StoreDetailPage: React.FC = () => {
       ]);
       setStore(storeData);
       setStats(statsData);
-      
+
       // Set as selected store in context
-      setSelectedStore(storeData);
+      setSelectedStore(storeId);
     } catch (error) {
       logger.error('Failed to load store:', error);
       toast.error('Erro ao carregar loja');
