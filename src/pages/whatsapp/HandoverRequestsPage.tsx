@@ -6,13 +6,13 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { ArrowPathIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { Badge, Button } from '../../components/common';
+import { Badge, BadgeVariant } from '../../components/common';
 import { handoverService, HandoverRequest } from '../../services/handover';
 
-const PRIORITY_VARIANT: Record<HandoverRequest['priority'], string> = {
+const PRIORITY_VARIANT: Record<HandoverRequest['priority'], BadgeVariant> = {
   low: 'gray', medium: 'info', high: 'warning', urgent: 'danger',
 };
-const STATUS_VARIANT: Record<HandoverRequest['status'], string> = {
+const STATUS_VARIANT: Record<HandoverRequest['status'], BadgeVariant> = {
   pending: 'warning', approved: 'success', rejected: 'danger', expired: 'gray',
 };
 
@@ -106,7 +106,7 @@ export const HandoverRequestsPage: React.FC = () => {
                           <span className="text-sm font-semibold text-fg-primary">
                             Conversa: <span className="font-mono text-xs text-fg-muted">{req.conversation}</span>
                           </span>
-                          <Badge variant={PRIORITY_VARIANT[req.priority] as any} size="sm">{req.priority_display || req.priority}</Badge>
+                          <Badge variant={PRIORITY_VARIANT[req.priority]} size="sm">{req.priority_display || req.priority}</Badge>
                         </div>
                         {req.reason && <p className="text-sm text-fg-muted">Motivo: {req.reason}</p>}
                         <p className="text-xs text-fg-muted">
@@ -152,8 +152,8 @@ export const HandoverRequestsPage: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-xs text-fg-muted">{req.conversation}</span>
-                        <Badge variant={STATUS_VARIANT[req.status] as any} size="sm">{req.status_display || req.status}</Badge>
-                        <Badge variant={PRIORITY_VARIANT[req.priority] as any} size="sm">{req.priority_display || req.priority}</Badge>
+                        <Badge variant={STATUS_VARIANT[req.status]} size="sm">{req.status_display || req.status}</Badge>
+                        <Badge variant={PRIORITY_VARIANT[req.priority]} size="sm">{req.priority_display || req.priority}</Badge>
                       </div>
                       <span className="text-xs text-fg-muted">{format(new Date(req.created_at), 'dd/MM HH:mm', { locale: ptBR })}</span>
                     </div>
