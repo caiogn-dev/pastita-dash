@@ -25,12 +25,6 @@ import storesApi, {
 } from '../../../services/storesApi';
 import logger from '../../../services/logger';
 
-type ComboItemDraft = StoreComboItemInput & {
-  _key: string;
-  product_name?: string;
-  product_price?: number;
-};
-
 export const ComboFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId, comboId } = useParams<{ storeId?: string; comboId?: string }>();
@@ -84,7 +78,7 @@ export const ComboFormPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  const handleSubmit = async (data: StoreComboInput & { items?: ComboItemDraft[] }) => {
+  const handleSubmit = async (data: StoreComboInput & { items?: StoreComboItemInput[] }) => {
     setSaving(true);
     try {
       if (isEditing && comboId) {
