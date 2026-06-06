@@ -246,7 +246,7 @@ export const PaymentsPage: React.FC = () => {
         
         // SECURE: Generate link using access_token (not order_number)
         // This prevents unauthorized access to order details
-        const clientPaymentLink = pix_code && access_token
+        const clientPaymentLink = pix_code && access_token && storefrontUrl
             ? `${storefrontUrl}/pendente?token=${encodeURIComponent(access_token)}`
           : null;
         

@@ -27,8 +27,9 @@ const metadataString = (
 export const buildStorefrontUrl = (
   store: StorefrontStore | null | undefined,
   path = '',
-): string => {
+): string | null => {
   const customDomain = store?.custom_domain?.trim();
+  const slug = store?.slug?.trim();
   const metadataUrl = metadataString(store?.metadata, [
     'storefront_url',
     'storefront_origin',
@@ -37,9 +38,14 @@ export const buildStorefrontUrl = (
     'public_url',
   ]);
 
+  // Require at least one of: custom domain, metadata URL, or a non-empty slug.
+  // Without these the resulting URL would point to the platform root, which is
+  // misleading and almost certainly wrong.
+  if (!customDomain && !metadataUrl && !slug) return null;
+
   const base = customDomain
     ? `https://${stripProtocol(customDomain)}`
-    : metadataUrl || `${stripTrailingSlash(DEFAULT_STOREFRONT_BASE_URL)}/${store?.slug || ''}`;
+    : metadataUrl || `${stripTrailingSlash(DEFAULT_STOREFRONT_BASE_URL)}/${slug}`;
 
   const normalizedBase = stripTrailingSlash(base);
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
