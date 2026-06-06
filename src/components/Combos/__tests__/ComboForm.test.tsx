@@ -194,7 +194,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       expect(screen.getByText(/Adicionar Item/i)).toBeInTheDocument();
@@ -213,7 +213,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -236,7 +236,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -266,7 +266,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -289,7 +289,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -314,7 +314,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -339,7 +339,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -375,7 +375,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -404,7 +404,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -439,7 +439,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/i);
+      const groupsTab = screen.getByRole('button', { name: /Itens/i });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -473,7 +473,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByText(/Grupos/);
+      const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -629,7 +629,7 @@ describe('ComboForm', () => {
       const priceInputs = screen.getAllByRole('spinbutton');
       fireEvent.change(priceInputs[0], { target: { value: '15' } });
 
-      const groupsTab = screen.getByText(/Grupos \(0\)/);
+      const groupsTab = screen.getByText(/Itens \(0\)/);
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -672,7 +672,7 @@ describe('ComboForm', () => {
             store: 'store-1',
             name: 'Test Combo',
             price: 15,
-            groups: [],
+            items: [],
           })
         );
       });
@@ -697,7 +697,7 @@ describe('ComboForm', () => {
       const priceInputs = screen.getAllByRole('spinbutton');
       fireEvent.change(priceInputs[0], { target: { value: '15' } });
 
-      const groupsTab = screen.getByText(/Grupos \(0\)/);
+      const groupsTab = screen.getByText(/Itens \(0\)/);
       fireEvent.click(groupsTab);
 
       const addButton = screen.getByText(/Adicionar Item/i);
@@ -720,9 +720,9 @@ describe('ComboForm', () => {
             store: 'store-1',
             name: 'Test Combo',
             price: 15,
-            groups: expect.arrayContaining([
+            items: expect.arrayContaining([
               expect.objectContaining({
-                product_id: 'prod-1',
+                product: 'prod-1',
               }),
             ]),
           })
