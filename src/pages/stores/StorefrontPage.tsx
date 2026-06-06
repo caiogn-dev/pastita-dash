@@ -1,9 +1,24 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../services/storesApi';
 import { useStore } from '../../hooks';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
+
+const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_BANNER_SIZE = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+function validateImageFile(file: File, maxBytes: number): string | null {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return `Tipo não suportado: ${file.type}. Use JPG, PNG ou WebP.`;
+  }
+  if (file.size > maxBytes) {
+    return `Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)} MB). Limite: ${maxBytes / 1024 / 1024} MB.`;
+  }
+  return null;
+}
 
 type Template = 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'premium';
 
@@ -41,6 +56,17 @@ export const StorefrontPage: React.FC = () => {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState('');
 
+  // Track blob URLs so we can revoke them to avoid memory leaks
+  const logoBlobRef = useRef<string | null>(null);
+  const bannerBlobRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (logoBlobRef.current) URL.revokeObjectURL(logoBlobRef.current);
+      if (bannerBlobRef.current) URL.revokeObjectURL(bannerBlobRef.current);
+    };
+  }, []);
+
   const loadStore = useCallback(async () => {
     if (!effectiveStoreId) return;
     const data = await getStore(effectiveStoreId);
@@ -59,19 +85,51 @@ export const StorefrontPage: React.FC = () => {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const err = validateImageFile(file, MAX_LOGO_SIZE);
+    if (err) { toast.error(err); e.target.value = ''; return; }
+    if (logoBlobRef.current) URL.revokeObjectURL(logoBlobRef.current);
+    const url = URL.createObjectURL(file);
+    logoBlobRef.current = url;
     setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+    setLogoPreview(url);
   };
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const err = validateImageFile(file, MAX_BANNER_SIZE);
+    if (err) { toast.error(err); e.target.value = ''; return; }
+    if (bannerBlobRef.current) URL.revokeObjectURL(bannerBlobRef.current);
+    const url = URL.createObjectURL(file);
+    bannerBlobRef.current = url;
     setBannerFile(file);
-    setBannerPreview(URL.createObjectURL(file));
+    setBannerPreview(url);
+  };
+
+  const clearLogo = () => {
+    if (logoBlobRef.current) { URL.revokeObjectURL(logoBlobRef.current); logoBlobRef.current = null; }
+    setLogoFile(null);
+    setLogoPreview('');
+  };
+
+  const clearBanner = () => {
+    if (bannerBlobRef.current) { URL.revokeObjectURL(bannerBlobRef.current); bannerBlobRef.current = null; }
+    setBannerFile(null);
+    setBannerPreview('');
   };
 
   const handleSave = async () => {
     if (!effectiveStoreId) return;
+
+    if (!HEX_COLOR_RE.test(form.primary_color)) {
+      toast.error('Cor primária inválida. Use formato hexadecimal #RRGGBB.');
+      return;
+    }
+    if (!HEX_COLOR_RE.test(form.secondary_color)) {
+      toast.error('Cor secundária inválida. Use formato hexadecimal #RRGGBB.');
+      return;
+    }
+
     setSaving(true);
     try {
       if (logoFile || bannerFile) {
@@ -84,8 +142,8 @@ export const StorefrontPage: React.FC = () => {
         await updateStore(effectiveStoreId, form);
       }
       toast.success('Storefront salvo com sucesso!');
-      setLogoFile(null);
-      setBannerFile(null);
+      clearLogo();
+      clearBanner();
     } catch {
       toast.error('Erro ao salvar. Tente novamente.');
     } finally {
@@ -120,7 +178,7 @@ export const StorefrontPage: React.FC = () => {
             <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
           </label>
           {logoPreview && (
-            <button onClick={() => { setLogoFile(null); setLogoPreview(''); }} className="text-sm text-red-500 hover:text-red-700">Remover</button>
+            <button onClick={clearLogo} className="text-sm text-red-500 hover:text-red-700">Remover</button>
           )}
         </div>
         <p className="text-xs text-gray-400">PNG ou JPG. Recomendado: 400×400px.</p>
@@ -146,7 +204,7 @@ export const StorefrontPage: React.FC = () => {
           <input type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
         </label>
         {bannerPreview && (
-          <button onClick={() => { setBannerFile(null); setBannerPreview(''); }} className="ml-3 text-sm text-red-500 hover:text-red-700">Remover</button>
+          <button onClick={clearBanner} className="ml-3 text-sm text-red-500 hover:text-red-700">Remover</button>
         )}
         <p className="text-xs text-gray-400">PNG ou JPG. Recomendado: 1200×300px.</p>
       </section>
