@@ -87,15 +87,12 @@ export const CampaignsListPage: React.FC = () => {
   const loadCampaigns = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('Loading campaigns, storeId:', storeId);
-      
       const params: Record<string, string> = {};
       if (storeId) {
         params.store = storeId;
       }
-      
+
       const response = await api.get(`/marketing/campaigns/`, { params });
-      console.log('Campaigns response:', response.data);
       
       const data = response.data?.results || response.data || [];
       setCampaigns(Array.isArray(data) ? data : []);
