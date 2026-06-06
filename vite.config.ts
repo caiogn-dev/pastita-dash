@@ -29,8 +29,8 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-ui': ['@headlessui/react', '@heroicons/react', 'lucide-react'],
           'vendor-charts': ['chart.js', 'react-chartjs-2', 'recharts'],
-'vendor-utils': ['axios', 'date-fns', 'zustand'],
-          
+          'vendor-utils': ['axios', 'date-fns', 'zustand'],
+
           // Feature chunks
           'feature-automation': [
             './src/pages/automation/index.ts',
