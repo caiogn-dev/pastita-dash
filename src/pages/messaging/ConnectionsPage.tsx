@@ -185,26 +185,26 @@ export default function ConnectionsPage() {
       return;
     }
 
+    // Clean up any previous listener
     if (instagramMessageHandlerRef.current) {
       window.removeEventListener('message', instagramMessageHandlerRef.current);
       instagramMessageHandlerRef.current = null;
     }
 
-    channelsApi.getInstagramConnectUrl()
-      .then(url => {
-        popup.location.href = url;
-      })
-      .catch(error => {
-        popup.close();
-        toast.error(error?.response?.data?.error || 'Erro ao gerar URL de conexão do Instagram');
-      });
+    let completed = false;
+
+    const cleanup = () => {
+      window.removeEventListener('message', handleMessage);
+      instagramMessageHandlerRef.current = null;
+      clearInterval(closedPollInterval);
+    };
 
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       if ((event.data as { type?: string })?.type !== 'instagram_oauth') return;
 
-      window.removeEventListener('message', handleMessage);
-      instagramMessageHandlerRef.current = null;
+      completed = true;
+      cleanup();
 
       const payload = event.data as { success?: boolean; error?: string };
       if (payload.success) {
@@ -215,8 +215,26 @@ export default function ConnectionsPage() {
       }
     };
 
+    // Detect manual popup close before OAuth completes
+    const closedPollInterval = window.setInterval(() => {
+      if (popup.closed && !completed) {
+        cleanup();
+        toast.error('Conexão cancelada. Feche e tente novamente.');
+      }
+    }, 500);
+
     instagramMessageHandlerRef.current = handleMessage;
     window.addEventListener('message', handleMessage);
+
+    channelsApi.getInstagramConnectUrl()
+      .then(url => {
+        if (!popup.closed) popup.location.href = url;
+      })
+      .catch(error => {
+        cleanup();
+        popup.close();
+        toast.error(error?.response?.data?.error || 'Erro ao gerar URL de conexão do Instagram');
+      });
   };
 
   const openDialog = (platform?: string, conn?: Connection) => {

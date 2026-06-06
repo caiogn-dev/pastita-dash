@@ -311,7 +311,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
         text: text.trim(),
         metadata: { client_request_id: crypto.randomUUID(), source: 'chat_window_tools' },
       });
-      void loadMessages();
+      await loadMessages();
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
