@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { ArrowPathIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { Badge, BadgeVariant } from '../../components/common';
+import { Badge, BadgeVariant, Button } from '../../components/common';
 import { handoverService, HandoverRequest } from '../../services/handover';
 
 const PRIORITY_VARIANT: Record<HandoverRequest['priority'], BadgeVariant> = {

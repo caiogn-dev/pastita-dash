@@ -529,6 +529,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             ))}
           </div>
         );
+      }
 
       case 'boolean':
         return (
