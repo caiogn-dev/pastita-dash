@@ -139,6 +139,19 @@ export default function ConnectionsPage() {
 
   useEffect(() => { loadConnections(); }, []);
 
+  // Clean up OAuth popup event listener and close popup on unmount
+  useEffect(() => {
+    return () => {
+      if (instagramMessageHandlerRef.current) {
+        window.removeEventListener('message', instagramMessageHandlerRef.current);
+        instagramMessageHandlerRef.current = null;
+      }
+      if (instagramPopupRef.current && !instagramPopupRef.current.closed) {
+        instagramPopupRef.current.close();
+      }
+    };
+  }, []);
+
   const loadConnections = async () => {
     try {
       setLoading(true);
