@@ -3,10 +3,12 @@
  */
 import React from 'react';
 
+export type BadgeVariant = 'solid' | 'subtle' | 'outline' | 'success' | 'warning' | 'danger' | 'info' | 'gray' | 'purple';
+
 export interface BadgeProps {
   children: React.ReactNode;
   colorPalette?: 'brand' | 'accent' | 'success' | 'warning' | 'danger' | 'gray' | 'info' | 'purple';
-  variant?: 'solid' | 'subtle' | 'outline' | 'success' | 'warning' | 'danger' | 'info' | 'gray' | 'purple';
+  variant?: BadgeVariant;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -72,7 +74,9 @@ export default Badge;
 
 // ─── Status configs (preserved for compatibility) ────────────────────────────
 
-export const ORDER_STATUS_CONFIG: Record<string, { label: string; variant: string }> = {
+type StatusConfig = { label: string; variant: BadgeVariant };
+
+export const ORDER_STATUS_CONFIG: Record<string, StatusConfig> = {
   pending:          { label: 'Pendente',    variant: 'warning' },
   processing:       { label: 'Processando', variant: 'info'    },
   confirmed:        { label: 'Confirmado',  variant: 'success' },
@@ -87,35 +91,35 @@ export const ORDER_STATUS_CONFIG: Record<string, { label: string; variant: strin
   failed:           { label: 'Falhou',      variant: 'danger'  },
 };
 
-export const CONVERSATION_STATUS_CONFIG: Record<string, { label: string; variant: string }> = {
+export const CONVERSATION_STATUS_CONFIG: Record<string, StatusConfig> = {
   active:   { label: 'Ativa',     variant: 'success' },
   inactive: { label: 'Inativa',   variant: 'gray'    },
   archived: { label: 'Arquivada', variant: 'warning' },
   spam:     { label: 'Spam',      variant: 'danger'  },
 };
 
-export const CONVERSATION_MODE_CONFIG: Record<string, { label: string; variant: string }> = {
+export const CONVERSATION_MODE_CONFIG: Record<string, StatusConfig> = {
   auto:   { label: 'Auto',    variant: 'success' },
   human:  { label: 'Humano',  variant: 'warning' },
   hybrid: { label: 'Híbrido', variant: 'info'    },
 };
 
 export const StatusBadge: React.FC<{ status: string; children?: React.ReactNode }> = ({ status, children }) => {
-  const config = ORDER_STATUS_CONFIG[status] || { label: status, variant: 'gray' };
-  return <Badge variant={config.variant as any}>{children || config.label}</Badge>;
+  const config: StatusConfig = ORDER_STATUS_CONFIG[status] ?? { label: status, variant: 'gray' };
+  return <Badge variant={config.variant}>{children || config.label}</Badge>;
 };
 
 export const OrderStatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const config = ORDER_STATUS_CONFIG[status] || { label: status, variant: 'gray' };
-  return <Badge variant={config.variant as any}>{config.label}</Badge>;
+  const config: StatusConfig = ORDER_STATUS_CONFIG[status] ?? { label: status, variant: 'gray' };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
 };
 
 export const ConversationStatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const config = CONVERSATION_STATUS_CONFIG[status] || { label: status, variant: 'gray' };
-  return <Badge variant={config.variant as any}>{config.label}</Badge>;
+  const config: StatusConfig = CONVERSATION_STATUS_CONFIG[status] ?? { label: status, variant: 'gray' };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
 };
 
 export const ConversationModeBadge: React.FC<{ mode: string }> = ({ mode }) => {
-  const config = CONVERSATION_MODE_CONFIG[mode] || { label: mode, variant: 'gray' };
-  return <Badge variant={config.variant as any}>{config.label}</Badge>;
+  const config: StatusConfig = CONVERSATION_MODE_CONFIG[mode] ?? { label: mode, variant: 'gray' };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
 };
