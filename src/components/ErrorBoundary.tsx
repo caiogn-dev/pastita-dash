@@ -1,4 +1,5 @@
-import React, { ReactNode, Component, ErrorInfo } from 'react';
+import React, { ReactNode, Component, ErrorInfo, Suspense } from 'react';
+import { FullPageLoading } from './common';
 
 interface Props {
   children: ReactNode;
@@ -95,3 +96,15 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
+/**
+ * PageBoundary combines ErrorBoundary with Suspense for lazy-loaded page routes.
+ * Wraps each lazy page to handle both loading and error states gracefully.
+ */
+export const PageBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <ErrorBoundary>
+    <Suspense fallback={<FullPageLoading />}>
+      {children}
+    </Suspense>
+  </ErrorBoundary>
+);

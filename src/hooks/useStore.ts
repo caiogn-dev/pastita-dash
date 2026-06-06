@@ -10,7 +10,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useRootStore } from '../stores/rootStore';
-import { Store } from '../services/storesApi';
+import type { Store as ApiStore } from '../services/storesApi';
 import { DEFAULT_STORE_SLUG, resolveStoreSlug } from '../config/storeConfig';
 
 export interface UseStoreReturn {
@@ -23,9 +23,9 @@ export interface UseStoreReturn {
   /** Whether a store is currently selected */
   isStoreSelected: boolean;
   /** The full store object */
-  store: Store | null;
+  store: any;
   /** All available stores */
-  stores: Store[];
+  stores: any[];
   /** Loading state */
   loading: boolean;
   /** Throws an error if no store is selected */

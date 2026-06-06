@@ -5,7 +5,7 @@ import logger from './services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout';
 import { FullPageLoading } from './components/common';
-import { PageBoundary } from './components/ErrorBoundary';
+import { ErrorBoundary, PageBoundary } from './components/ErrorBoundary';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
 import { setAuthToken } from './services';
@@ -39,6 +39,8 @@ const UnifiedOrchestratorTest = lazy(() => import('./pages/agents').then(m => ({
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
 const ProductsPage = lazy(() => import('./pages/products/ProductsPageNew').then(m => ({ default: m.ProductsPageNew })));
 const CombosPage = lazy(() => import('./pages/products/CombosPage').then(m => ({ default: m.CombosPage })));
+const ComboListPage = lazy(() => import('./pages/Combos').then(m => ({ default: m.ComboListPage })));
+const ComboFormPage = lazy(() => import('./pages/Combos').then(m => ({ default: m.ComboFormPage })));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 
 // Automation Pages
@@ -201,7 +203,9 @@ const AppContent: React.FC = () => {
         <Route path="stores" element={<PageBoundary><StoresPage /></PageBoundary>} />
         <Route path="stores/:storeId" element={<PageBoundary><StoreDetailPage /></PageBoundary>} />
         <Route path="stores/:storeId/products" element={<PageBoundary><ProductsPage /></PageBoundary>} />
-        <Route path="stores/:storeId/combos" element={<PageBoundary><CombosPage /></PageBoundary>} />
+        <Route path="stores/:storeId/combos" element={<PageBoundary><ComboListPage /></PageBoundary>} />
+        <Route path="stores/:storeId/combos/new" element={<PageBoundary><ComboFormPage /></PageBoundary>} />
+        <Route path="stores/:storeId/combos/:comboId/edit" element={<PageBoundary><ComboFormPage /></PageBoundary>} />
         <Route path="stores/:storeId/orders" element={<PageBoundary><OrdersPage /></PageBoundary>} />
         <Route path="stores/:storeId/customers" element={<PageBoundary><CustomersPage /></PageBoundary>} />
         <Route path="stores/:storeId/orders/new" element={<PageBoundary><OrderNewPage /></PageBoundary>} />

@@ -91,6 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       title: 'Catálogo',
       items: [
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
+        { name: 'Combos', href: storeHref('combos'), icon: ShoppingCartIcon },
         { name: 'Cupons', href: storeHref('coupons'), icon: TagIcon },
         { name: 'Storefront', href: storeHref('storefront'), icon: BuildingStorefrontIcon },
       ]
