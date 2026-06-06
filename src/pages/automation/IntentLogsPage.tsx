@@ -59,8 +59,8 @@ const IntentLogsPage: React.FC = () => {
     try {
       const statsData = await intentService.getStats();
       setStats(statsData);
-    } catch (err) {
-      console.error('[IntentLogsPage] Failed to load stats:', err);
+    } catch {
+      // stats are non-critical; silently ignore errors
     }
   };
 
