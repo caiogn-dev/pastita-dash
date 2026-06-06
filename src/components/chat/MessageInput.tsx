@@ -18,6 +18,31 @@ import {
   MusicalNoteIcon,
   FilmIcon,
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
+
+// WhatsApp upload limits
+const WA_LIMITS: Record<string, number> = {
+  image: 5 * 1024 * 1024,    // 5 MB
+  video: 16 * 1024 * 1024,   // 16 MB
+  audio: 16 * 1024 * 1024,   // 16 MB
+  document: 100 * 1024 * 1024, // 100 MB
+};
+
+function getWACategory(file: File): string {
+  if (file.type.startsWith('image/')) return 'image';
+  if (file.type.startsWith('video/')) return 'video';
+  if (file.type.startsWith('audio/')) return 'audio';
+  return 'document';
+}
+
+function validateWAFile(file: File): string | null {
+  const category = getWACategory(file);
+  const limit = WA_LIMITS[category];
+  if (file.size > limit) {
+    return `Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)} MB). Limite do WhatsApp: ${limit / 1024 / 1024} MB para ${category}.`;
+  }
+  return null;
+}
 
 export interface MessageInputProps {
   onSend: (text: string) => void;
@@ -140,8 +165,13 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && onFileSelect) {
-      onFileSelect(file);
+    if (file) {
+      const err = validateWAFile(file);
+      if (err) {
+        toast.error(err);
+      } else if (onFileSelect) {
+        onFileSelect(file);
+      }
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
