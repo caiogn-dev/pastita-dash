@@ -451,7 +451,7 @@ export const OrdersPage: React.FC = () => {
     if (!storeQuery) { setLoading(false); return; }
     bg ? setRefreshing(true) : setLoading(true);
     try {
-      const res = await getOrders({ store: storeQuery, page_size: 500 });
+      const res = await getOrders({ store: storeQuery, page_size: 100 });
       setOrders(res.results ?? []);
       setLastSync(new Date());
     } catch {
