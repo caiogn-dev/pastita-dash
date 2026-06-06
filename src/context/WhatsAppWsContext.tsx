@@ -15,7 +15,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useAccountStore } from '../stores/accountStore';
 import { useChatStore } from '../stores/chatStore';
 import { Message, Conversation } from '../types';
-import { getWebSocketUrl } from '../services/websocket';
+import { getWebSocketUrl } from '../services/realtime';
 import toast from 'react-hot-toast';
 
 // WebSocket event types

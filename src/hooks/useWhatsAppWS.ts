@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import api from '../services/api';
-import { getWebSocketUrl } from '../services/websocket';
+import { getWebSocketUrl } from '../services/realtime';
 
 // Types
 export interface WhatsAppMessage {

@@ -73,7 +73,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
         console.log('WebSocket disconnected - will reconnect automatically');
       });
 
-      ws.on('error', (error) => {
+      ws.on('error', (error: Error) => {
         console.error('WebSocket error:', error);
       });
     };

@@ -39,8 +39,8 @@ const UnifiedOrchestratorTest = lazy(() => import('./pages/agents').then(m => ({
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
 const ProductsPage = lazy(() => import('./pages/products/ProductsPageNew').then(m => ({ default: m.ProductsPageNew })));
 const CombosPage = lazy(() => import('./pages/products/CombosPage').then(m => ({ default: m.CombosPage })));
-const ComboListPage = lazy(() => import('./pages/Combos').then(m => ({ default: m.ComboListPage })));
-const ComboFormPage = lazy(() => import('./pages/Combos').then(m => ({ default: m.ComboFormPage })));
+const ComboListPage = lazy(() => import('./pages/stores/combos').then(m => ({ default: m.ComboListPage })));
+const ComboFormPage = lazy(() => import('./pages/stores/combos').then(m => ({ default: m.ComboFormPage })));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 
 // Automation Pages

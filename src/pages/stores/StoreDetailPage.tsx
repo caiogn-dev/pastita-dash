@@ -30,7 +30,7 @@ import storesApi, { Store, StoreStats } from '../../services/storesApi';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
 
-type TabId = 'overview' | 'products' | 'orders' | 'coupons' | 'delivery' | 'settings' | 'storefront';
+type TabId = 'overview' | 'products' | 'combos' | 'orders' | 'coupons' | 'delivery' | 'settings' | 'storefront';
 
 interface Tab {
   id: TabId;
@@ -42,6 +42,7 @@ interface Tab {
 const TABS: Tab[] = [
   { id: 'overview', label: 'Visão Geral', icon: ChartBarIcon },
   { id: 'products', label: 'Produtos', icon: CubeIcon, path: 'products' },
+  { id: 'combos', label: 'Combos', icon: CubeIcon, path: 'combos' },
   { id: 'orders', label: 'Pedidos', icon: ShoppingCartIcon, path: 'orders' },
   { id: 'coupons', label: 'Cupons', icon: TagIcon, path: 'coupons' },
   { id: 'delivery', label: 'Entrega', icon: TruckIcon, path: 'delivery' },
@@ -282,6 +283,16 @@ export const StoreDetailPage: React.FC = () => {
                 <div>
                   <p className="font-medium">Pedidos</p>
                   <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{store.orders_count} pedidos</p>
+                </div>
+              </Link>
+              <Link
+                to={`/stores/${storeId}/combos`}
+                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+              >
+                <CubeIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                <div>
+                  <p className="font-medium">Combos</p>
+                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Kits de produtos</p>
                 </div>
               </Link>
               <Link

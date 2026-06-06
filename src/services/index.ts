@@ -34,14 +34,13 @@ export { intentTypeLabels } from './automation';
 // Instagram - exportar tudo
 export * from './instagram';
 
-// WebSocket
+// WebSocket (novo client)
 export {
-  notificationWS,
-  chatWS,
-  dashboardWS,
-  getWebSocketUrl,
-  initializeWebSockets,
-  disconnectWebSockets,
+  WebSocketClient,
+  useWebSocket,
+  clearWebSocketInstance,
+  type WebSocketConfig,
+  type WebSocketEvent,
 } from './websocket';
 
 // Realtime

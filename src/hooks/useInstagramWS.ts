@@ -14,7 +14,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import { getWebSocketUrl as buildWebSocketUrl } from '../services/websocket';
+import { getWebSocketUrl as buildWebSocketUrl } from '../services/realtime';
 
 // Types
 export interface InstagramMessage {

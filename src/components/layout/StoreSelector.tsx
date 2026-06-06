@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { Store, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
 import { useRootStore } from '../../stores/rootStore';
-import { storesApi } from '../../services/storesApi';
+import storesApi from '../../services/storesApi';
 
 export const StoreSelector: React.FC = () => {
   const {
@@ -112,16 +112,11 @@ export const StoreSelector: React.FC = () => {
         <RefreshCw className="w-4 h-4 text-gray-400 dark:text-gray-500" />
       </button>
       
-      {/* Store status indicator */}
+      {/* Store indicator */}
       {selectedStore && (
-        <div 
-          className={`w-2 h-2 rounded-full ${
-            selectedStore.status === 'active' ? 'bg-green-500' : 
-            selectedStore.status === 'inactive' ? 'bg-gray-400' :
-            selectedStore.status === 'suspended' ? 'bg-red-500' :
-            'bg-yellow-500'
-          }`}
-          title={`Status: ${selectedStore.status}`}
+        <div
+          className="w-2 h-2 rounded-full bg-blue-500"
+          title={`Selected: ${selectedStore.name}`}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { getWebSocketUrl } from '../services/websocket';
+import { getWebSocketUrl } from '../services/realtime';
 import { useAuthStore } from '../stores/authStore';
 
 interface MessengerMessageEvent {
