@@ -125,7 +125,7 @@ export interface InstagramScheduledPost {
 // ============================================================================
 
 export const instagramAccountService = {
-  list: () => api.get<InstagramAccount[]>('/instagram/accounts/'),
+  list: () => api.get<PaginatedResponse<InstagramAccount>>('/instagram/accounts/'),
 
   create: (data: Partial<InstagramAccount>) =>
     api.post<InstagramAccount>('/instagram/accounts/', data),
@@ -175,16 +175,16 @@ export const instagramMediaService = {
     api.delete(`/instagram/media/${id}/`),
   
   // Feed de posts
-  getFeed: () => 
-    api.get<InstagramMedia[]>('/instagram/media/feed/'),
-  
+  getFeed: () =>
+    api.get<PaginatedResponse<InstagramMedia>>('/instagram/media/feed/'),
+
   // Stories
-  getStories: () => 
-    api.get<InstagramMedia[]>('/instagram/media/stories/'),
-  
+  getStories: () =>
+    api.get<PaginatedResponse<InstagramMedia>>('/instagram/media/stories/'),
+
   // Reels
-  getReels: () => 
-    api.get<InstagramMedia[]>('/instagram/media/reels/'),
+  getReels: () =>
+    api.get<PaginatedResponse<InstagramMedia>>('/instagram/media/reels/'),
   
   // Publicar
   publish: (id: string) => 
@@ -209,12 +209,12 @@ export const instagramMediaService = {
 
 export const instagramShoppingService = {
   // Catálogos
-  getCatalogs: (accountId: string) => 
-    api.get<InstagramCatalog[]>(`/instagram/shopping/catalogs/?account_id=${accountId}`),
-  
+  getCatalogs: (accountId: string) =>
+    api.get<PaginatedResponse<InstagramCatalog>>(`/instagram/shopping/catalogs/?account_id=${accountId}`),
+
   // Produtos
-  getProducts: (accountId: string, catalogId?: string) => 
-    api.get<InstagramProduct[]>(`/instagram/shopping/products/?account_id=${accountId}${catalogId ? `&catalog_id=${catalogId}` : ''}`),
+  getProducts: (accountId: string, catalogId?: string) =>
+    api.get<PaginatedResponse<InstagramProduct>>(`/instagram/shopping/products/?account_id=${accountId}${catalogId ? `&catalog_id=${catalogId}` : ''}`),
   
   // Tag de produto em mídia
   tagProduct: (accountId: string, data: {
@@ -230,8 +230,8 @@ export const instagramShoppingService = {
 // ============================================================================
 
 export const instagramLiveService = {
-  list: (accountId: string) => 
-    api.get<InstagramLive[]>(`/instagram/live/?account_id=${accountId}`),
+  list: (accountId: string) =>
+    api.get<PaginatedResponse<InstagramLive>>(`/instagram/live/?account_id=${accountId}`),
   
   create: (accountId: string, data: Partial<InstagramLive>) => 
     api.post<InstagramLive>('/instagram/live/', { account: accountId, ...data }),

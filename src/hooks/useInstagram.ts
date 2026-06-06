@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useCallback, useEffect } from 'react';
 import { instagramService, InstagramAccount, InstagramMedia, InstagramStory, InstagramReel, InstagramCatalog, InstagramProduct, InstagramLive } from '../services/instagram';
 import toast from 'react-hot-toast';

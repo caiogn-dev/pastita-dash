@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Instagram Dashboard Page
  * 
@@ -51,7 +50,7 @@ export const InstagramDashboardPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
 
   const fetchAccount = useCallback(
-    () => instagramAccountService.get(accountId!).then((r: any) => r.data ?? r),
+    (): Promise<InstagramAccount> => instagramAccountService.get(accountId!).then(r => r.data),
     [accountId]
   );
 
@@ -62,14 +61,13 @@ export const InstagramDashboardPage: React.FC = () => {
 
   const fetchMedia = useCallback(async (): Promise<InstagramMedia[]> => {
     if (!accountId) return [];
-    const extract = (r: any): InstagramMedia[] => r?.data?.results ?? r?.data ?? r ?? [];
     switch (activeTab) {
       case 'feed':
-        return instagramMediaService.getFeed().then(extract);
+        return instagramMediaService.getFeed().then(r => r.data.results ?? []);
       case 'stories':
-        return instagramMediaService.getStories().then(extract);
+        return instagramMediaService.getStories().then(r => r.data.results ?? []);
       case 'reels':
-        return instagramMediaService.getReels().then(extract);
+        return instagramMediaService.getReels().then(r => r.data.results ?? []);
       default:
         return [];
     }
