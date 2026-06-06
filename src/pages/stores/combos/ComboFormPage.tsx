@@ -38,9 +38,16 @@ export const ComboFormPage: React.FC = () => {
 
   const storeId = useMemo(() => {
     if (!routeStoreId) return contextStoreId || null;
+    // Support both store ID and store slug in the route
     const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
     return match?.id || contextStoreId || null;
   }, [routeStoreId, contextStoreId, stores]);
+
+  // Get store slug for navigation
+  const storeSlug = useMemo(() => {
+    const match = stores.find(s => s.id === storeId);
+    return match?.slug || routeStoreId || '';
+  }, [storeId, routeStoreId, stores]);
 
   const [combo, setCombo] = useState<StoreCombo | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -67,11 +74,11 @@ export const ComboFormPage: React.FC = () => {
     } catch (err) {
       logger.error('Error loading data:', err);
       toast.error('Erro ao carregar dados');
-      navigate(`/stores/${storeId || ''}/combos`);
+      navigate(`/stores/${storeSlug || ''}/combos`);
     } finally {
       setLoading(false);
     }
-  }, [storeId, comboId, navigate]);
+  }, [storeId, storeSlug, comboId, navigate]);
 
   useEffect(() => {
     loadData();
@@ -87,7 +94,7 @@ export const ComboFormPage: React.FC = () => {
         await createComboWithItems(data);
         toast.success('Combo criado com sucesso!');
       }
-      navigate(`/stores/${storeId || ''}/combos`);
+      navigate(`/stores/${storeSlug || ''}/combos`);
     } catch (err) {
       logger.error('Error saving combo:', err);
       toast.error('Erro ao salvar combo');

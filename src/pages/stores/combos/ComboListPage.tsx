@@ -38,9 +38,16 @@ export const ComboListPage: React.FC = () => {
 
   const storeId = useMemo(() => {
     if (!routeStoreId) return contextStoreId || null;
+    // Support both store ID and store slug in the route
     const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
     return match?.id || contextStoreId || null;
   }, [routeStoreId, contextStoreId, stores]);
+
+  // Get store slug for navigation
+  const storeSlug = useMemo(() => {
+    const match = stores.find(s => s.id === storeId);
+    return match?.slug || routeStoreId || '';
+  }, [storeId, routeStoreId, stores]);
 
   const [combos, setCombos] = useState<StoreCombo[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -142,7 +149,7 @@ export const ComboListPage: React.FC = () => {
           <Button variant="secondary" onClick={loadData} title="Atualizar">
             <ArrowPathIcon className="w-5 h-5" />
           </Button>
-          <Button onClick={() => navigate(`/stores/${storeId}/combos/new`)}>
+          <Button onClick={() => navigate(`/stores/${storeSlug}/combos/new`)}>
             <PlusIcon className="w-5 h-5 mr-2" />
             Novo Combo
           </Button>
@@ -186,7 +193,7 @@ export const ComboListPage: React.FC = () => {
           combos={combos}
           products={products}
           loading={loading}
-          onEdit={combo => navigate(`/stores/${storeId}/combos/${combo.id}/edit`)}
+          onEdit={combo => navigate(`/stores/${storeSlug}/combos/${combo.id}/edit`)}
           onDelete={setDeletingCombo}
           onToggleActive={handleToggleActive}
           onToggleFeatured={handleToggleFeatured}
