@@ -26,7 +26,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Input, Button } from '../common';
-import { StoreCombo, StoreComboInput, StoreProduct as Product, StoreProductVariant } from '../../services/storesApi';
+import { StoreCombo, StoreComboInput, StoreComboItemInput, StoreProduct as Product, StoreProductVariant } from '../../services/storesApi';
 
 const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = (v: number | string) => CURRENCY.format(Number(v));
@@ -64,7 +64,7 @@ export interface ComboFormProps {
   combo?: StoreCombo | null;
   storeId: string;
   products: Product[];
-  onSubmit: (data: StoreComboInput & { groups?: ComboGroupDraft[] }) => Promise<void>;
+  onSubmit: (data: StoreComboInput & { items?: StoreComboItemInput[] }) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -305,28 +305,32 @@ export const ComboForm: React.FC<ComboFormProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
-  const [form, setForm] = useState<StoreComboInput & { groups: ComboGroupDraft[] }>(() => {
+  const [form, setForm] = useState<StoreComboInput & { items: ComboGroupDraft[] }>(() => {
     // Initialize from existing combo or empty
-    const groups: ComboGroupDraft[] = (combo as any)?.groups?.map((g: any, idx: number) => ({
-      _key: g.id,
-      product_id: g.product_id,
-      product_name: g.product_name,
-      is_required: g.is_required ?? true,
-      min_selections: g.min_selections ?? 1,
-      max_selections: g.max_selections ?? 1,
-      allow_duplicate_variants: g.allow_duplicate_variants ?? false,
-      position: g.position ?? idx,
-      variant_limits: (g.variant_limits || []).map((vl: any) => ({
-        _key: vl.id,
-        variant_id: vl.variant_id,
-        variant_name: vl.variant_name,
-        variant_sku: vl.variant_sku,
-        stock: vl.stock,
-        max_selections: vl.max_selections ?? 1,
-        price_override: vl.price_override,
-      })),
-      _expanded: false,
-    })) || [];
+    // Map combo items to groups for UI purposes
+    const items: ComboGroupDraft[] = (combo?.items || []).map((item: any, idx: number) => {
+      const product = products.find(p => p.id === item.product);
+      return {
+        _key: item.id,
+        product_id: item.product,
+        product_name: item.product_name,
+        is_required: true,
+        min_selections: item.quantity || 1,
+        max_selections: item.quantity || 1,
+        allow_duplicate_variants: false,
+        position: idx,
+        variant_limits: (product?.variants || []).map((v: any) => ({
+          _key: v.id,
+          variant_id: v.id,
+          variant_name: v.name,
+          variant_sku: v.sku,
+          stock: v.stock_quantity || 0,
+          max_selections: 1,
+          price_override: undefined,
+        })),
+        _expanded: false,
+      };
+    });
 
     return {
       store: storeId,
@@ -339,7 +343,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
       featured: combo?.featured || false,
       track_stock: combo?.track_stock || false,
       stock_quantity: combo?.stock_quantity || 0,
-      groups,
+      items,
     };
   });
 
@@ -352,8 +356,8 @@ export const ComboForm: React.FC<ComboFormProps> = ({
   const addGroup = () => {
     setForm(prev => ({
       ...prev,
-      groups: [
-        ...prev.groups,
+      items: [
+        ...prev.items,
         {
           _key: `new_${Date.now()}`,
           product_id: '',
@@ -362,7 +366,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
           min_selections: 1,
           max_selections: 1,
           allow_duplicate_variants: false,
-          position: prev.groups.length,
+          position: prev.items.length,
           variant_limits: [],
           _expanded: true,
         },
@@ -373,7 +377,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
   const updateGroup = (key: string, changes: Partial<ComboGroupDraft>) => {
     setForm(prev => ({
       ...prev,
-      groups: prev.groups.map(g => {
+      items: prev.items.map(g => {
         if (g._key === key) {
           const updated = { ...g, ...changes };
           // Update product_name when product_id changes
@@ -404,7 +408,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
   const removeGroup = (key: string) => {
     setForm(prev => ({
       ...prev,
-      groups: prev.groups.filter(g => g._key !== key),
+      items: prev.items.filter(g => g._key !== key),
     }));
   };
 
@@ -419,15 +423,23 @@ export const ComboForm: React.FC<ComboFormProps> = ({
       return;
     }
 
-    // Validate groups have products selected
-    const validGroups = form.groups.filter(g => g.product_id);
-    if (form.groups.length > 0 && validGroups.length !== form.groups.length) {
-      toast.error('Selecione um produto para cada grupo do combo');
+    // Validate items have products selected
+    const validItems = form.items.filter(g => g.product_id);
+    if (form.items.length > 0 && validItems.length !== form.items.length) {
+      toast.error('Selecione um produto para cada item do combo');
       return;
     }
 
     try {
-      const payload: StoreComboInput & { groups?: ComboGroupDraft[] } = {
+      // Map groups to API items format
+      const items: StoreComboItemInput[] = validItems.map(item => ({
+        product: item.product_id,
+        quantity: item.max_selections || 1,
+        allow_customization: false,
+        customization_options: {},
+      }));
+
+      const payload: StoreComboInput & { items?: StoreComboItemInput[] } = {
         store: storeId,
         name: form.name.trim(),
         description: form.description?.trim() || '',
@@ -438,7 +450,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
         featured: form.featured,
         track_stock: form.track_stock,
         stock_quantity: form.track_stock ? form.stock_quantity || 0 : 0,
-        groups: validGroups,
+        items,
       };
       await onSubmit(payload);
     } catch (err) {
@@ -448,7 +460,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
 
   const tabs = [
     { key: 'basic', label: 'Informações' },
-    { key: 'groups', label: `Grupos (${form.groups.length})` },
+    { key: 'groups', label: `Itens (${form.items.length})` },
     { key: 'settings', label: 'Configurações' },
   ] as const;
 
@@ -523,31 +535,31 @@ export const ComboForm: React.FC<ComboFormProps> = ({
         </div>
       )}
 
-      {/* Tab: Grupos */}
+      {/* Tab: Itens */}
       {activeTab === 'groups' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-1">
             <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-              Organize os produtos em grupos com regras de seleção
+              Adicione produtos ao combo
             </p>
             <Button type="button" size="sm" onClick={addGroup}>
               <PlusIcon className="w-4 h-4 mr-1" />
-              Adicionar Grupo
+              Adicionar Item
             </Button>
           </div>
-          {form.groups.length === 0 ? (
+          {form.items.length === 0 ? (
             <div className="text-center py-10 rounded-lg border-2 border-dashed border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]">
               <CubeIcon className="w-10 h-10 mx-auto text-gray-300 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2" />
               <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-                Nenhum grupo no combo ainda
+                Nenhum item no combo ainda
               </p>
               <p className="text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
-                Combos sem grupos são válidos (ex: "Monte seu combo")
+                Combos sem itens são válidos (ex: "Monte seu combo")
               </p>
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-              {form.groups.map((group, idx) => (
+              {form.items.map((group, idx) => (
                 <ComboGroupRow
                   key={group._key}
                   group={group}
