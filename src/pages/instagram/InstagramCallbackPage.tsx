@@ -42,7 +42,7 @@ const InstagramCallbackPage: React.FC = () => {
         igError === 'invalid_state' ? 'Sessão expirada. Tente novamente.' :
         igError === 'no_instagram_id' ? 'Conta Instagram não encontrada. Certifique-se de usar uma conta Business ou Creator.' :
         igError === 'authorization_failed' ? 'Autorização cancelada.' :
-        decodeURIComponent(igError);
+        (() => { try { return decodeURIComponent(igError); } catch { return igError; } })();
       notify({ type: 'instagram_oauth', error: label });
     } else {
       // Sem parâmetros — apenas fecha/redireciona
