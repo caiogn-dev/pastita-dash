@@ -1353,6 +1353,28 @@ export interface StoreComboItem {
   customization_options: Record<string, unknown>;
 }
 
+export interface ComboVariantLimit {
+  id: string;
+  variant_id: string;
+  variant_name: string;
+  variant_sku: string;
+  stock: number;
+  max_selections: number;
+  price_override?: number;
+}
+
+export interface ComboProductGroup {
+  id: string;
+  product_id: string;
+  product_name: string;
+  is_required: boolean;
+  min_selections: number;
+  max_selections: number;
+  allow_duplicate_variants: boolean;
+  position: number;
+  variant_limits: ComboVariantLimit[];
+}
+
 export interface StoreCombo {
   id: string;
   store: string;
@@ -1370,6 +1392,7 @@ export interface StoreCombo {
   track_stock: boolean;
   stock_quantity: number;
   items: StoreComboItem[];
+  groups?: ComboProductGroup[];
   created_at: string;
   updated_at: string;
 }
