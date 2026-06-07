@@ -53,11 +53,16 @@ export class WebSocketClient {
 
     return new Promise((resolve, reject) => {
       try {
-        const url = `${this.config.url}/ws/stores/${this.config.storeSlug}/orders/?token=${this.config.token}`;
+        const url = `${this.config.url}/ws/stores/${this.config.storeSlug}/orders/`;
         this.ws = new WebSocket(url);
 
         this.ws.addEventListener('open', () => {
           this.reconnectAttempts = 0;
+          // Send authentication message on open
+          this.ws!.send(JSON.stringify({
+            type: 'auth',
+            token: this.config.token,
+          }));
           this.emit('connected');
           resolve();
         });
