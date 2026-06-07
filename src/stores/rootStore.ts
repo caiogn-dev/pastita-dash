@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { StoreOrder } from '../services/storesApi';
 
 /**
  * Root Store - Single source of truth for app state
@@ -21,12 +22,6 @@ interface Store {
   name: string;
 }
 
-interface Order {
-  id: string;
-  status: string;
-  [key: string]: any;
-}
-
 interface RootStore {
   // Auth state
   auth: {
@@ -45,8 +40,8 @@ interface RootStore {
   setSelectedStore: (storeId: string | null) => void;
 
   // Orders cache (by store ID)
-  orders: { [storeId: string]: Order[] };
-  setOrders: (storeId: string, orders: Order[]) => void;
+  orders: { [storeId: string]: StoreOrder[] };
+  setOrders: (storeId: string, orders: StoreOrder[]) => void;
   clearOrders: (storeId: string) => void;
 }
 

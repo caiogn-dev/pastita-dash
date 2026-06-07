@@ -418,6 +418,12 @@ export const OrdersPage: React.FC = () => {
   // ── Uber Delivery Modal ──────────────────────────────────────────────────
   const [uberModalOrderId, setUberModalOrderId] = useState<string | undefined>();
 
+  // ── Loading state (local) ────────────────────────────────────────────────
+  const [loading, setLoading] = useState(true);
+  const [rtConnected, setRtConnected] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
   // Keyboard shortcut: press 'N' when not focused on an input opens the drawer
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -434,7 +440,8 @@ export const OrdersPage: React.FC = () => {
   }, []);
 
   // Real-time orders from Zustand store + WebSocket
-  const { orders, loading } = useRootStore();
+  const rootStore = useRootStore();
+  const storeOrders = storeQuery ? rootStore.orders[storeQuery] || [] : [];
   const { playNotificationSound } = useNotificationSound();
 
   // DnD state
@@ -460,7 +467,7 @@ export const OrdersPage: React.FC = () => {
       const now = Date.now();
       for (const [id, state] of prev.entries()) {
         if (!state.isConfirmed) continue;
-        const ext = orders.find((o: StoreOrder) => o.id === id);
+        const ext = storeOrders.find((o: StoreOrder) => o.id === id);
         if (!ext || ext.status === state.status || now - state.timestamp > LOCAL_TTL) {
           next.delete(id);
           changed = true;
@@ -468,21 +475,22 @@ export const OrdersPage: React.FC = () => {
       }
       return changed ? next : prev;
     });
-  }, [orders]);
+  }, [storeOrders]);
 
   // Effective orders: local state takes priority (optimistic updates)
   const effectiveOrders = useMemo(() =>
-    orders.map(o => {
+    storeOrders.map((o: StoreOrder) => {
       const loc = localStates.get(o.id);
       return loc ? { ...o, status: loc.status } : o;
     }),
-  [orders, localStates]);
+  [storeOrders, localStates]);
 
   const patchOrder = useCallback((id: string, patch: Partial<StoreOrder>) => {
+    if (!storeQuery) return;
     // Update through Zustand store
-    const { setOrders: setStoreOrders } = useRootStore.getState();
-    setStoreOrders(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o));
-  }, []);
+    const { setOrders } = useRootStore.getState();
+    setOrders(storeQuery, storeOrders.map((o: StoreOrder) => o.id === id ? { ...o, ...patch } : o));
+  }, [storeQuery, storeOrders]);
 
   const handleAdvance = useCallback(async (order: StoreOrder) => {
     const action = getNextAction(order);
@@ -542,14 +550,14 @@ export const OrdersPage: React.FC = () => {
     COLUMNS.map(col => ({
       ...col,
       orders: effectiveOrders
-        .filter(o => !['cancelled'].includes(o.status) && (col.statuses as readonly string[]).includes(o.status))
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+        .filter((o: StoreOrder) => !['cancelled'].includes(o.status) && (col.statuses as readonly string[]).includes(o.status))
+        .sort((a: StoreOrder, b: StoreOrder) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     })),
   [effectiveOrders]);
 
   const findColumn = useCallback((orderId: string): ColumnId | null => {
     for (const col of columnData) {
-      if (col.orders.some(o => o.id === orderId)) return col.id;
+      if (col.orders.some((o) => o.id === orderId)) return col.id;
     }
     return null;
   }, [columnData]);
@@ -578,7 +586,7 @@ export const OrdersPage: React.FC = () => {
       done:      'delivered',
     };
     const newStatus = colToStatus[destCol];
-    const order = effectiveOrders.find(o => o.id === orderId);
+    const order = effectiveOrders.find((o: StoreOrder) => o.id === orderId);
     if (!order) return;
 
     // Optimistic update
@@ -605,7 +613,32 @@ export const OrdersPage: React.FC = () => {
     }
   };
 
-  const activeOrder = useMemo(() => effectiveOrders.find(o => o.id === activeId) || null, [effectiveOrders, activeId]);
+  const activeOrder = useMemo(() => effectiveOrders.find((o: StoreOrder) => o.id === activeId) || null, [effectiveOrders, activeId]);
+
+  // Load orders from API
+  const loadOrders = useCallback(async (force: boolean = false) => {
+    if (!storeQuery) return;
+    try {
+      if (force) setRefreshing(true);
+      else setLoading(true);
+      const response = await getOrders({ store: storeQuery });
+      const { setOrders } = useRootStore.getState();
+      setOrders(storeQuery, response.results);
+      setLastSync(new Date());
+      setRtConnected(true);
+    } catch (error) {
+      console.error('Erro ao carregar pedidos:', error);
+      setRtConnected(false);
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
+  }, [storeQuery]);
+
+  // Initial load
+  useEffect(() => {
+    loadOrders();
+  }, [storeQuery, loadOrders]);
 
   if (loading) return <PageLoading />;
 
@@ -674,7 +707,7 @@ export const OrdersPage: React.FC = () => {
 
         {/* Kanban columns */}
         <div className="grid min-h-0 flex-1 gap-2 md:grid-cols-5 max-xl:grid-cols-2">
-          {columnData.map(col => {
+          {columnData.map((col) => {
             const Icon = col.Icon;
             return (
               <div
@@ -704,7 +737,7 @@ export const OrdersPage: React.FC = () => {
                         <p className="text-xs text-gray-300 dark:text-zinc-700">Arraste aqui</p>
                       </div>
                     ) : (
-                      col.orders.map(order => (
+                      col.orders.map((order: StoreOrder) => (
                         <SortableCard
                           key={order.id}
                           id={order.id}
@@ -717,8 +750,8 @@ export const OrdersPage: React.FC = () => {
                           onAdvance={handleAdvance}
                           onPay={handlePay}
                           onCancel={handleCancel}
-                          onDetail={o => navigate(`/stores/${storeQuery}/orders/${o.id}`)}
-                          onUberClick={o => setUberModalOrderId(o.id)}
+                          onDetail={(o: StoreOrder) => navigate(`/stores/${storeQuery}/orders/${o.id}`)}
+                          onUberClick={(o: StoreOrder) => setUberModalOrderId(o.id)}
                           storeSlug={storeSlug || undefined}
                         />
                       ))
