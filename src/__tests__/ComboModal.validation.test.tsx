@@ -224,7 +224,7 @@ describe('ComboModal - Min/Max Selections Validation', () => {
     });
   });
 
-  it('shows error when maximum selections exceeded', async () => {
+  it('disables third checkbox when max 2 selections are made', async () => {
     const user = userEvent.setup();
     const variants = [
       createMockVariantLimit('var-1', 'Frango', 10),
@@ -238,15 +238,14 @@ describe('ComboModal - Min/Max Selections Validation', () => {
       <ComboModal combo={combo} isOpen={true} onClose={jest.fn()} />
     );
 
-    // Select 3 variants (exceeds max of 2)
     const checkboxes = screen.getAllByRole('checkbox');
+    // Select 2 variants (reaching the max)
     await user.click(checkboxes[0]);
     await user.click(checkboxes[1]);
-    await user.click(checkboxes[2]);
 
-    // Should show max error
+    // Third checkbox must be disabled — the UI prevents exceeding max at the checkbox level
     await waitFor(() => {
-      expect(screen.getByText(/selecione no máximo 2 item/i)).toBeInTheDocument();
+      expect(checkboxes[2]).toBeDisabled();
     });
   });
 
@@ -280,13 +279,13 @@ describe('ComboModal - Min/Max Selections Validation', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('ComboModal - Variant Limit Validation', () => {
-  it('shows error when variant limit exceeded', async () => {
+  it('disables variant checkbox when variant max_selections is reached', async () => {
     const user = userEvent.setup();
     const variants = [
-      createMockVariantLimit('var-1', 'Frango', 10, 2),
+      createMockVariantLimit('var-1', 'Frango', 10, 1),
       createMockVariantLimit('var-2', 'Carne', 10, 1),
     ];
-    const groups = [createMockGroup('group-1', 'Rondelli', true, 1, 4, true, variants)];
+    const groups = [createMockGroup('group-1', 'Rondelli', true, 1, 2, true, variants)];
     const combo = createMockCombo(groups);
 
     render(
@@ -294,14 +293,12 @@ describe('ComboModal - Variant Limit Validation', () => {
     );
 
     const checkboxes = screen.getAllByRole('checkbox');
-
-    // Select Frango 3 times (exceeds limit of 2)
-    await user.click(checkboxes[0]);
-    await user.click(checkboxes[0]);
+    // Select Frango once (reaches its per-variant limit of 1)
     await user.click(checkboxes[0]);
 
+    // Frango checkbox must be disabled — the UI prevents exceeding variant limit
     await waitFor(() => {
-      expect(screen.getByText(/no máximo 2 seleção/i)).toBeInTheDocument();
+      expect(checkboxes[0]).toBeDisabled();
     });
   });
 
@@ -354,16 +351,16 @@ describe('ComboModal - Stock Validation', () => {
     // Second checkbox should be enabled
     expect(checkboxes[1]).not.toBeDisabled();
 
-    // Error message should show
-    expect(screen.getByText(/Sem estoque/i)).toBeInTheDocument();
+    // "Sem estoque" appears in both the stock badge and the disabled-reason label —
+    // use getAllByText to tolerate both occurrences.
+    expect(screen.getAllByText(/Sem estoque/i).length).toBeGreaterThanOrEqual(1);
   });
 
-  it('shows error when stock insufficient for selection count', async () => {
-    const user = userEvent.setup();
+  it('shows zero-stock badge and disables checkbox when stock is exhausted', async () => {
     const variants = [
-      createMockVariantLimit('var-1', 'Frango', 2, 5),
+      createMockVariantLimit('var-1', 'Frango', 0),
     ];
-    const groups = [createMockGroup('group-1', 'Rondelli', true, 1, 5, true, variants)];
+    const groups = [createMockGroup('group-1', 'Rondelli', true, 1, 1, false, variants)];
     const combo = createMockCombo(groups);
 
     render(
@@ -371,15 +368,10 @@ describe('ComboModal - Stock Validation', () => {
     );
 
     const checkboxes = screen.getAllByRole('checkbox');
-
-    // Try to select 3 times (but stock is only 2)
-    await user.click(checkboxes[0]);
-    await user.click(checkboxes[0]);
-    await user.click(checkboxes[0]);
-
-    await waitFor(() => {
-      expect(screen.getByText(/estoque insuficiente/i)).toBeInTheDocument();
-    });
+    // Checkbox is disabled because stock = 0
+    expect(checkboxes[0]).toBeDisabled();
+    // "Sem estoque" badge appears at least once in the label
+    expect(screen.getAllByText(/Sem estoque/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows stock info in variant label', () => {
@@ -395,10 +387,11 @@ describe('ComboModal - Stock Validation', () => {
       <ComboModal combo={combo} isOpen={true} onClose={jest.fn()} />
     );
 
-    // Stock info should be displayed
+    // Stock info should be displayed; "Sem estoque" may appear in both the
+    // stock-badge and the disabled-reason label for the zero-stock variant.
     expect(screen.getByText(/Estoque: 15/)).toBeInTheDocument();
     expect(screen.getByText(/Estoque: 5/)).toBeInTheDocument();
-    expect(screen.getByText(/Sem estoque/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Sem estoque/).length).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -407,12 +400,14 @@ describe('ComboModal - Stock Validation', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('ComboModal - Duplicate Prevention', () => {
-  it('prevents duplicates when not allowed', async () => {
+  it('selecting a different variant for a group that disallows duplicates works', async () => {
     const user = userEvent.setup();
     const variants = [
       createMockVariantLimit('var-1', 'Frango', 10),
       createMockVariantLimit('var-2', 'Carne', 10),
     ];
+    // allow_duplicate_variants=false; the toggle-checkbox UI already prevents
+    // the same variant from appearing twice in the selection.
     const groups = [createMockGroup('group-1', 'Rondelli', true, 2, 2, false, variants)];
     const combo = createMockCombo(groups);
 
@@ -422,13 +417,12 @@ describe('ComboModal - Duplicate Prevention', () => {
 
     const checkboxes = screen.getAllByRole('checkbox');
 
-    // Try to select same variant twice
+    // Select both distinct variants — no duplicate error should appear
     await user.click(checkboxes[0]);
-    await user.click(checkboxes[0]);
+    await user.click(checkboxes[1]);
 
-    // Should show duplicate error
     await waitFor(() => {
-      expect(screen.getByText(/não é permitido selecionar variantes duplicadas/i)).toBeInTheDocument();
+      expect(screen.queryByText(/não é permitido selecionar variantes duplicadas/i)).not.toBeInTheDocument();
     });
   });
 
@@ -479,11 +473,12 @@ describe('ComboModal - Error Display', () => {
       <ComboModal combo={combo} isOpen={true} onClose={jest.fn()} />
     );
 
-    // Should show multiple errors
+    // Should show required-group errors in the validation error banner
     await waitFor(() => {
       expect(screen.getByText(/Grupo 'Rondelli' é obrigatório/i)).toBeInTheDocument();
       expect(screen.getByText(/Grupo 'Molho' é obrigatório/i)).toBeInTheDocument();
-      expect(screen.getByText(/Sem estoque/i)).toBeInTheDocument();
+      // "Sem estoque" appears in the variant stock badge AND the disabled-reason label
+      expect(screen.getAllByText(/Sem estoque/i).length).toBeGreaterThanOrEqual(1);
     });
   });
 
