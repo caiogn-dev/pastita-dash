@@ -47,7 +47,9 @@ import {
   cancelOrder,
   StoreOrder,
 } from '../../services/storesApi';
-import { useNotificationSound, useOrdersWebSocket, useStore, useConfirm } from '../../hooks';
+import { useNotificationSound, useStore, useConfirm } from '../../hooks';
+import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
+import { useRootStore } from '../../stores/rootStore';
 
 // ─── Column config ────────────────────────────────────────────────────────────
 
@@ -431,54 +433,34 @@ export const OrdersPage: React.FC = () => {
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
-  const [orders, setOrders] = useState<StoreOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [advancingId, setAdvancingId] = useState<string | null>(null);
-  const [payingId, setPayingId] = useState<string | null>(null);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [lastSync, setLastSync] = useState<Date | null>(null);
-  const timerRef = useRef<number | null>(null);
+  // Real-time orders from Zustand store + WebSocket
+  const { orders, loading } = useRootStore();
+  const { playNotificationSound } = useNotificationSound();
 
   // DnD state
   const [activeId, setActiveId] = useState<string | null>(null);
   const [localStates, setLocalStates] = useState<Map<string, LocalState>>(new Map());
   const [successIds, setSuccessIds] = useState<Set<string>>(new Set());
+  const [advancingId, setAdvancingId] = useState<string | null>(null);
+  const [payingId, setPayingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  const { playNotificationSound } = useNotificationSound();
-
-  const loadOrders = useCallback(async (bg = false) => {
-    if (!storeQuery) { setLoading(false); return; }
-    bg ? setRefreshing(true) : setLoading(true);
-    try {
-      const res = await getOrders({ store: storeQuery, page_size: 100 });
-      setOrders(res.results ?? []);
-      setLastSync(new Date());
-    } catch {
-      toast.error('Erro ao carregar pedidos');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [storeQuery]);
-
-  const scheduleReload = useCallback((delay = 1000) => {
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => loadOrders(true), delay);
-  }, [loadOrders]);
-
-  useEffect(() => { loadOrders(false); }, [loadOrders]);
-  useEffect(() => () => { if (timerRef.current) window.clearTimeout(timerRef.current); }, []);
+  // WebSocket real-time sync
+  useRealTimeOrders({
+    enabled: Boolean(storeQuery),
+    apiUrl: `${import.meta.env.VITE_API_URL}/stores/${storeQuery}/orders/`,
+    wsUrl: `${import.meta.env.VITE_WS_URL}/stores/${storeQuery}/orders/`,
+  });
 
   // Clean up local state when external data catches up
   useEffect(() => {
-    setLocalStates(prev => {
+    setLocalStates((prev: Map<string, LocalState>) => {
       const next = new Map(prev);
       let changed = false;
       const now = Date.now();
       for (const [id, state] of prev.entries()) {
         if (!state.isConfirmed) continue;
-        const ext = orders.find(o => o.id === id);
+        const ext = orders.find((o: StoreOrder) => o.id === id);
         if (!ext || ext.status === state.status || now - state.timestamp > LOCAL_TTL) {
           next.delete(id);
           changed = true;
@@ -496,28 +478,10 @@ export const OrdersPage: React.FC = () => {
     }),
   [orders, localStates]);
 
-  const { isConnected: rtConnected } = useOrdersWebSocket({
-    enabled: Boolean(storeQuery),
-    onOrderCreated: (p) => {
-      playNotificationSound();
-      toast.success(`Novo pedido #${p.order_number || p.order_id?.slice(0, 6)}`);
-      scheduleReload(300);
-    },
-    onOrderUpdated: () => scheduleReload(800),
-    onOrderCancelled: (p) => {
-      toast.error(`Cancelado #${p.order_number || p.order_id?.slice(0, 6)}`);
-      scheduleReload(800);
-    },
-    onPaymentReceived: (p) => {
-      playNotificationSound();
-      toast.success(`Pago #${p.order_number || p.order_id?.slice(0, 6)}`);
-      scheduleReload(500);
-    },
-  });
-
   const patchOrder = useCallback((id: string, patch: Partial<StoreOrder>) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o));
-    setLastSync(new Date());
+    // Update through Zustand store
+    const { setOrders: setStoreOrders } = useRootStore.getState();
+    setStoreOrders(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o));
   }, []);
 
   const handleAdvance = useCallback(async (order: StoreOrder) => {
@@ -699,7 +663,7 @@ export const OrdersPage: React.FC = () => {
             )}
             <button
               onClick={() => loadOrders(true)}
-              disabled={refreshing}
+              disabled={false}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
             >
               <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
