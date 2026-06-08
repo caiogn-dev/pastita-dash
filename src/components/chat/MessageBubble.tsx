@@ -621,8 +621,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         )}
 
-        {/* Caption de mídia abaixo da imagem/video */}
-        {textBody && hasMedia && ['image', 'video'].includes(messageType) && (
+        {/* Caption de mídia abaixo da imagem/video/documento */}
+        {textBody && hasMedia && ['image', 'video', 'document'].includes(messageType) && (
           <div className="px-3 pt-1 pb-0">
             <p className="text-sm whitespace-pre-wrap break-words">{textBody}</p>
           </div>

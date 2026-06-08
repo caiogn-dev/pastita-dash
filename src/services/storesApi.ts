@@ -1008,7 +1008,7 @@ export const getOrderStats = async (storeId?: string): Promise<{
     const revenue = data?.revenue || {};
 
     return {
-      total_orders: Number(data?.today ?? 0),
+      total_orders: Number(data?.total ?? 0),
       pending_orders: Number(byStatus.pending ?? 0),
       processing_orders: Number((byStatus.processing ?? 0) + (byStatus.preparing ?? 0) + (byStatus.confirmed ?? 0)),
       completed_orders: Number((byStatus.delivered ?? 0) + (byStatus.completed ?? 0)),
