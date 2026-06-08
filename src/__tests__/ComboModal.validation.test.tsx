@@ -231,14 +231,15 @@ describe('ComboModal - Min/Max Selections Validation', () => {
       createMockVariantLimit('var-2', 'Carne', 10),
       createMockVariantLimit('var-3', 'Vegetariano', 10),
     ];
-    const groups = [createMockGroup('group-1', 'Rondelli', true, 1, 2, false, variants)];
+    // allowDuplicates=true: group max is soft-enforced (error shown, not blocked)
+    const groups = [createMockGroup('group-1', 'Rondelli', true, 1, 2, true, variants)];
     const combo = createMockCombo(groups);
 
     render(
       <ComboModal combo={combo} isOpen={true} onClose={jest.fn()} />
     );
 
-    // Select 3 variants (exceeds max of 2)
+    // Select 3 variants (exceeds soft max of 2)
     const checkboxes = screen.getAllByRole('checkbox');
     await user.click(checkboxes[0]);
     await user.click(checkboxes[1]);
@@ -311,7 +312,8 @@ describe('ComboModal - Variant Limit Validation', () => {
       createMockVariantLimit('var-1', 'Frango', 10, 1),
       createMockVariantLimit('var-2', 'Carne', 10, 1),
     ];
-    const groups = [createMockGroup('group-1', 'Rondelli', true, 1, 2, true, variants)];
+    // allowDuplicates=false: variant limit is hard-enforced (checkbox disabled)
+    const groups = [createMockGroup('group-1', 'Rondelli', true, 1, 2, false, variants)];
     const combo = createMockCombo(groups);
 
     render(
@@ -323,7 +325,7 @@ describe('ComboModal - Variant Limit Validation', () => {
     // Select Frango once (reaches its limit of 1)
     await user.click(checkboxes[0]);
 
-    // Try to click Frango again - should be disabled
+    // Frango checkbox should now be disabled (hard variant limit enforced)
     await waitFor(() => {
       expect(checkboxes[0]).toBeDisabled();
     });
@@ -410,9 +412,10 @@ describe('ComboModal - Duplicate Prevention', () => {
   it('prevents duplicates when not allowed', async () => {
     const user = userEvent.setup();
     const variants = [
-      createMockVariantLimit('var-1', 'Frango', 10),
-      createMockVariantLimit('var-2', 'Carne', 10),
+      createMockVariantLimit('var-1', 'Frango', 10, 2), // max_selections=2 so first click doesn't disable
+      createMockVariantLimit('var-2', 'Carne', 10, 2),
     ];
+    // allowDuplicates=false: clicking selected variant deselects it (toggle), not duplicates
     const groups = [createMockGroup('group-1', 'Rondelli', true, 2, 2, false, variants)];
     const combo = createMockCombo(groups);
 
@@ -422,14 +425,17 @@ describe('ComboModal - Duplicate Prevention', () => {
 
     const checkboxes = screen.getAllByRole('checkbox');
 
-    // Try to select same variant twice
+    // Select var-1, then click again — toggle removes it instead of duplicating
     await user.click(checkboxes[0]);
     await user.click(checkboxes[0]);
 
-    // Should show duplicate error
+    // No duplicate error since toggle deselected the item
     await waitFor(() => {
-      expect(screen.getByText(/não é permitido selecionar variantes duplicadas/i)).toBeInTheDocument();
+      expect(screen.queryByText(/não é permitido selecionar variantes duplicadas/i)).not.toBeInTheDocument();
     });
+
+    // Checkbox should be unchecked (deselected, not duplicated)
+    expect(checkboxes[0]).not.toBeChecked();
   });
 
   it('allows duplicates when allowed', async () => {

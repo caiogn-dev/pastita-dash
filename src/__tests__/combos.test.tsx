@@ -453,12 +453,19 @@ describe('ComboModal Component', () => {
   });
 
   it('validates selections before adding to cart', async () => {
-    const user = userEvent.setup();
     const onAddToCart = jest.fn();
+    const comboWithGroup = {
+      ...mockCombo,
+      groups: [{
+        id: 'g1', product_id: 'p1', product_name: 'Proteína', is_required: true,
+        min_selections: 1, max_selections: 1, allow_duplicate_variants: false, position: 0,
+        variant_limits: [{ id: 'vl1', variant_id: 'v1', variant_name: 'Frango', variant_sku: 'SKU-F', stock: 10, max_selections: 1, price_override: null }],
+      }],
+    };
 
     render(
       <ComboModal
-        combo={mockCombo}
+        combo={comboWithGroup}
         isOpen={true}
         onClose={jest.fn()}
         onAddToCart={onAddToCart}
@@ -467,36 +474,46 @@ describe('ComboModal Component', () => {
 
     const addButton = screen.getByRole('button', { name: /Adicionar ao Carrinho/i });
 
-    // Should be disabled initially (no selections)
-    expect(addButton).toBeDisabled();
+    // Should be disabled initially (required group has no selection)
+    await waitFor(() => {
+      expect(addButton).toBeDisabled();
+    });
   });
 
   it('calls onAddToCart when valid selection is made', async () => {
     const user = userEvent.setup();
     const onAddToCart = jest.fn().mockResolvedValue(undefined);
+    const comboWithGroup = {
+      ...mockCombo,
+      groups: [{
+        id: 'g1', product_id: 'p1', product_name: 'Proteína', is_required: true,
+        min_selections: 1, max_selections: 1, allow_duplicate_variants: false, position: 0,
+        variant_limits: [{ id: 'vl1', variant_id: 'v1', variant_name: 'Frango', variant_sku: 'SKU-F', stock: 10, max_selections: 1, price_override: null }],
+      }],
+    };
 
     render(
       <ComboModal
-        combo={mockCombo}
+        combo={comboWithGroup}
         isOpen={true}
         onClose={jest.fn()}
         onAddToCart={onAddToCart}
       />
     );
 
-    // Select the item
+    // Select the required variant
     const checkboxes = screen.getAllByRole('checkbox');
-    if (checkboxes.length > 0) {
-      await user.click(checkboxes[0]);
-    }
+    await user.click(checkboxes[0]);
 
     const addButton = screen.getByRole('button', { name: /Adicionar ao Carrinho/i });
 
-    // Button should be enabled after selection
-    if (!addButton.hasAttribute('disabled')) {
-      await user.click(addButton);
-      expect(onAddToCart).toHaveBeenCalled();
-    }
+    // Button should be enabled after required selection
+    await waitFor(() => {
+      expect(addButton).not.toBeDisabled();
+    });
+
+    await user.click(addButton);
+    expect(onAddToCart).toHaveBeenCalled();
   });
 
   it('calls onClose when cancel button clicked', async () => {

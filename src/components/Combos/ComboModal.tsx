@@ -62,8 +62,17 @@ export const ComboModal: React.FC<ComboModalProps> = ({
       return; // Prevent selection if checkbox is disabled
     }
 
+    const group = combo?.groups?.find(g => String(g.id) === groupId);
+
     setSelectedVariants(prev => {
       const current = prev[groupId] || [];
+
+      if (group?.allow_duplicate_variants) {
+        // For duplicate-allowed groups, clicking always adds another copy
+        return { ...prev, [groupId]: [...current, variantId] };
+      }
+
+      // For non-duplicate groups, toggle (add if absent, remove if present)
       const isSelected = current.includes(variantId);
       return {
         ...prev,
@@ -79,18 +88,19 @@ export const ComboModal: React.FC<ComboModalProps> = ({
     if (!group) return null;
 
     const variantLimit = group.variant_limits?.find(vl => vl.variant_id === variantId);
-    const variant = variantLimit?.variant_id ? variantLimit : null;
 
-    // Check stock
+    // Hard limit for all groups: zero stock
     if (variantLimit && variantLimit.stock === 0) {
       return 'Sem estoque';
     }
 
-    // Check variant limit reached
-    const currentCount = (selectedVariants[groupId] || []).filter(v => v === variantId).length;
-    const maxForVariant = variantLimit?.max_selections || group.max_selections;
-    if (currentCount >= maxForVariant) {
-      return `Limite atingido (${maxForVariant}/${maxForVariant})`;
+    // For non-duplicate groups, variant selection count is a hard limit
+    if (!group.allow_duplicate_variants) {
+      const currentCount = (selectedVariants[groupId] || []).filter(v => v === variantId).length;
+      const maxForVariant = variantLimit?.max_selections || group.max_selections;
+      if (currentCount >= maxForVariant) {
+        return `Limite atingido (${maxForVariant}/${maxForVariant})`;
+      }
     }
 
     return null;
@@ -194,7 +204,9 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                         const variantId = variantLimit.variant_id;
                         const isSelected = selected.includes(variantId);
                         const disabledReason = getVariantDisabledReason(groupId, variantId);
-                        const canSelect = !disabledReason && selected.length < group.max_selections;
+                        const canSelect = !disabledReason && (
+                          group.allow_duplicate_variants ? true : selected.length < group.max_selections
+                        );
                         const currentVariantCount = selected.filter(v => v === variantId).length;
                         const maxForVariant = variantLimit.max_selections;
 
@@ -245,7 +257,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                             <div className="text-right">
                               {isSelected ? (
                                 <CheckIcon className="w-5 h-5 text-brand-600" />
-                              ) : disabledReason ? (
+                              ) : disabledReason && disabledReason !== 'Sem estoque' ? (
                                 <span className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] font-medium">
                                   {disabledReason}
                                 </span>
