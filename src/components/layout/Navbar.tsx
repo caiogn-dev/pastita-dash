@@ -327,7 +327,7 @@ export const Navbar: React.FC = () => {
                 {user?.first_name || user?.username}
               </span>
               <button
-                onClick={() => { logout(); window.location.href = '/login'; }}
+                onClick={() => { logout(); navigate('/login'); }}
                 className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                 title="Sair"
               >

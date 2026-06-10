@@ -8,7 +8,9 @@ declare module 'axios' {
   }
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (
+  import.meta.env.DEV ? 'http://localhost:8000/api/v1' : (() => { throw new Error('[Config] VITE_API_URL não definida em produção'); })()
+);
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

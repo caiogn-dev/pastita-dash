@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   HomeIcon,
   DevicePhoneMobileIcon,
@@ -57,6 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { logout, user } = useAuthStore();
   const { store } = useStore();
   const location = useLocation();
+  const navigate = useNavigate();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const totalUnreadCount = useTotalUnreadCount();
   const wsConnected = useWsConnected();
@@ -193,7 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const handleNavClick = () => {

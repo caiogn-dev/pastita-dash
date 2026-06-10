@@ -86,8 +86,20 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   // Criar/reutilizar conexão
   useEffect(() => {
     const effectiveToken = getEffectiveToken();
-    
+
     if (!effectiveToken || !effectiveStoreSlug) {
+      // Desconectar ao logout (token removido)
+      const existing = getGlobalConnection();
+      if (existing) {
+        existing.disconnect();
+        setGlobalConnection(null);
+        lastTokenRef.current = null;
+        connectionRef.current = null;
+        setIsConnected(false);
+        setStatus('disconnected');
+        setTransport(null);
+        setError(null);
+      }
       return;
     }
 

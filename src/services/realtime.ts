@@ -77,7 +77,7 @@ export function isTransportSupported(transport: TransportType): boolean {
  */
 export class RealtimeConnection {
   private transport: TransportType | null = null;
-  private fallbackOrder: TransportType[] = ['websocket', 'sse', 'polling'];
+  private fallbackOrder: TransportType[] = ['websocket', 'polling'];
   private currentFallbackIndex = 0;
   
   // Handlers de conexão
@@ -122,7 +122,10 @@ export class RealtimeConnection {
       reconnectDelay: 1000,
       maxReconnectDelay: 30000,
       pingInterval: 25000,
-      fallbackOrder: ['websocket', 'sse', 'polling'],
+      // SSE removido do fallback padrão: a API EventSource não suporta headers
+      // customizados, o que obrigaria o token a ir na query string (exposto em logs).
+      // O polling HTTP usa Authorization header normalmente.
+      fallbackOrder: ['websocket', 'polling'],
       ...options,
     };
     
@@ -528,8 +531,10 @@ export class RealtimeConnection {
         return `${proto}://${wsHost}/ws/stores/${storeSlug}/orders/`;
       }
       case 'sse': {
+        // Nota: EventSource não suporta headers customizados; requer sessão Django ativa.
         const httpProto = this.isSecure() ? 'https' : 'http';
-        return `${httpProto}://${wsHost}/api/sse/orders/?token=${token}&store_id=${storeSlug}`;
+        const sseParams = new URLSearchParams({ store_id: storeSlug });
+        return `${httpProto}://${wsHost}/api/sse/orders/?${sseParams.toString()}`;
       }
       case 'polling': {
         const httpProto = this.isSecure() ? 'https' : 'http';
