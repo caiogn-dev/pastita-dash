@@ -74,7 +74,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         if (raw) {
           const parsed = JSON.parse(raw);
           effectiveToken = parsed?.state?.token || undefined;
-          if (effectiveToken) console.debug('[WS] using token from localStorage');
         }
       } catch (e) {
         // ignore

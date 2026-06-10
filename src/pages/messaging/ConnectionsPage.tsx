@@ -137,7 +137,19 @@ export default function ConnectionsPage() {
   const instagramPopupRef = useRef<Window | null>(null);
   const instagramMessageHandlerRef = useRef<((event: MessageEvent) => void) | null>(null);
 
-  useEffect(() => { loadConnections(); }, []);
+  useEffect(() => {
+    loadConnections();
+    return () => {
+      // Limpar listener de OAuth do Instagram se o componente desmontar durante o fluxo
+      if (instagramMessageHandlerRef.current) {
+        window.removeEventListener('message', instagramMessageHandlerRef.current);
+        instagramMessageHandlerRef.current = null;
+      }
+      if (instagramPopupRef.current && !instagramPopupRef.current.closed) {
+        instagramPopupRef.current.close();
+      }
+    };
+  }, []);
 
   // Clean up OAuth popup event listener and close popup on unmount
   useEffect(() => {
