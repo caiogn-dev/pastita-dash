@@ -1375,6 +1375,22 @@ export interface ComboProductGroup {
   variant_limits: ComboVariantLimit[];
 }
 
+export interface ComboVariantLimitInput {
+  variant_id: string;
+  max_selections: number;
+  price_override?: number;
+}
+
+export interface ComboProductGroupInput {
+  product_id: string;
+  is_required: boolean;
+  min_selections: number;
+  max_selections: number;
+  allow_duplicate_variants: boolean;
+  position: number;
+  variant_limits: ComboVariantLimitInput[];
+}
+
 export interface StoreCombo {
   id: string;
   store: string;
@@ -1469,8 +1485,13 @@ export interface StoreComboItemInput {
   customization_options?: Record<string, unknown>;
 }
 
+export type StoreComboPayload = StoreComboInput & {
+  items?: StoreComboItemInput[];
+  groups?: ComboProductGroupInput[];
+};
+
 export const createComboWithItems = async (
-  data: StoreComboInput & { items?: StoreComboItemInput[] }
+  data: StoreComboPayload
 ): Promise<StoreCombo> => {
   try {
     const payload = { ...data, slug: data.slug || generateSlug(data.name) };
@@ -1484,7 +1505,7 @@ export const createComboWithItems = async (
 
 export const updateComboWithItems = async (
   id: string,
-  data: Partial<StoreComboInput> & { items?: StoreComboItemInput[] }
+  data: Partial<StoreComboPayload>
 ): Promise<StoreCombo> => {
   try {
     const response = await api.patch(`${BASE_URL}/combos/${id}/`, data);

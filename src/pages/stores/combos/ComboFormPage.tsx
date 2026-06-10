@@ -16,8 +16,7 @@ import ComboForm from '../../../components/Combos/ComboForm';
 import { useStore } from '../../../hooks';
 import storesApi, {
   StoreCombo,
-  StoreComboInput,
-  StoreComboItemInput,
+  StoreComboPayload,
   StoreProduct as Product,
   getCombo,
   createComboWithItems,
@@ -78,7 +77,7 @@ export const ComboFormPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  const handleSubmit = async (data: StoreComboInput & { items?: StoreComboItemInput[] }) => {
+  const handleSubmit = async (data: StoreComboPayload) => {
     setSaving(true);
     try {
       if (isEditing && comboId) {
