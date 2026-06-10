@@ -85,6 +85,11 @@ export class RealtimeConnection {
   private eventSource: EventSource | null = null;
   private pollingInterval: number | null = null;
   private pollingController: AbortController | null = null;
+  // Base polling cadence (orders não precisam de 5s; reduz carga e evita 429).
+  private pollBaseMs = 15000;
+  // Backoff extra acumulado quando o backend responde 429 (rate limit).
+  private pollBackoffMs = 0;
+  private pollMaxBackoffMs = 120000;
   
   // Estado
   private status: ConnectionStatus = 'disconnected';
@@ -441,12 +446,30 @@ export class RealtimeConnection {
         signal: this.pollingController?.signal,
       });
 
+      // 429 (rate limit): NÃO cascatear para outros transportes / reconexão.
+      // Isso é o que causava a tempestade de requests. Respeitamos Retry-After
+      // (ou backoff exponencial) e continuamos no mesmo transporte de polling.
+      if (response.status === 429) {
+        const retryAfter = this.parseRetryAfter(response.headers.get('Retry-After'));
+        const nextBackoff = retryAfter ?? ((this.pollBackoffMs * 2) || this.pollBaseMs);
+        this.pollBackoffMs = Math.min(
+          Math.max(nextBackoff, this.pollBaseMs),
+          this.pollMaxBackoffMs,
+        );
+        console.warn(`[Realtime] Polling 429 — backoff ${Math.round(this.pollBackoffMs / 1000)}s`);
+        this.schedulePoll(this.pollBackoffMs);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
       const payload = await response.json() as PollingOrderSnapshot[] | PaginatedPayload<PollingOrderSnapshot> | null;
-      
+
+      // Resposta OK: zera backoff de rate limit.
+      this.pollBackoffMs = 0;
+
       // Primeira resposta bem-sucedida = conectado
       if (this.status !== 'connected') {
         this.onConnectSuccess();
@@ -463,12 +486,32 @@ export class RealtimeConnection {
       return;
     }
 
-    // Agendar próximo poll
-    if (this.transport === 'polling' && this.status === 'connected') {
-      this.pollingInterval = window.setTimeout(() => {
-        this.doPoll();
-      }, 5000); // Poll a cada 5 segundos
+    // Agendar próximo poll com jitter (±15%) para evitar sincronização entre abas.
+    this.schedulePoll(this.pollBaseMs);
+  }
+
+  /**
+   * Agenda o próximo poll, se ainda estivermos em modo polling.
+   * Aplica jitter para dispersar requests de múltiplas abas/clientes.
+   */
+  private schedulePoll(delayMs: number): void {
+    if (this.transport !== 'polling' || this.status === 'disconnected') {
+      return;
     }
+    const jitter = delayMs * (0.85 + Math.random() * 0.3);
+    this.pollingInterval = window.setTimeout(() => this.doPoll(), jitter);
+  }
+
+  /**
+   * Converte o header Retry-After (segundos ou data HTTP) em milissegundos.
+   */
+  private parseRetryAfter(value: string | null): number | null {
+    if (!value) return null;
+    const asNumber = Number(value);
+    if (Number.isFinite(asNumber)) return asNumber * 1000;
+    const asDate = Date.parse(value);
+    if (Number.isFinite(asDate)) return Math.max(0, asDate - Date.now());
+    return null;
   }
 
   /**

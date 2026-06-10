@@ -92,9 +92,11 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   const refreshOrdersFromAPI = async () => {
     if (!selectedStoreId || !auth.token) return;
 
+    // apiUrl já é a base (VITE_API_URL, que inclui /api/v1). NÃO concatenar /api/v1
+    // de novo — antes gerava `.../api/v1/stores/x/orders//api/v1/stores/x/orders/`.
     try {
       const response = await fetch(
-        `${apiUrl}/api/v1/stores/${selectedStoreId}/orders/`,
+        `${apiUrl}/stores/${selectedStoreId}/orders/`,
         {
           headers: {
             Authorization: `Token ${auth.token}`,
