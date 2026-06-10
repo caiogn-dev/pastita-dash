@@ -798,6 +798,52 @@ export const createProduct = async (data: StoreProductInput): Promise<StoreProdu
   }
 };
 
+// ===== Variantes de produto (rota aninhada do backend) =====
+// /api/v1/stores/products/{productId}/variants/
+
+export interface StoreProductVariantInput {
+  name: string;
+  sku?: string;
+  barcode?: string;
+  price?: number | null;
+  compare_at_price?: number | null;
+  stock_quantity?: number;
+  is_active?: boolean;
+  sort_order?: number;
+  options?: Record<string, string>;
+}
+
+export const getProductVariants = async (productId: string): Promise<StoreProductVariant[]> => {
+  const response = await api.get(`${BASE_URL}/products/${productId}/variants/`, {
+    params: { page_size: 200 },
+  });
+  return normalizePaginatedResponse<StoreProductVariant>(response.data).results;
+};
+
+export const createProductVariant = async (
+  productId: string,
+  data: StoreProductVariantInput,
+): Promise<StoreProductVariant> => {
+  const response = await api.post(`${BASE_URL}/products/${productId}/variants/`, {
+    ...data,
+    product: productId,
+  });
+  return response.data;
+};
+
+export const updateProductVariant = async (
+  productId: string,
+  variantId: string,
+  data: Partial<StoreProductVariantInput>,
+): Promise<StoreProductVariant> => {
+  const response = await api.patch(`${BASE_URL}/products/${productId}/variants/${variantId}/`, data);
+  return response.data;
+};
+
+export const deleteProductVariant = async (productId: string, variantId: string): Promise<void> => {
+  await api.delete(`${BASE_URL}/products/${productId}/variants/${variantId}/`);
+};
+
 export const updateProduct = async (id: string, data: Partial<StoreProductInput>): Promise<StoreProduct> => {
   try {
     if (data.main_image && isFile(data.main_image)) {

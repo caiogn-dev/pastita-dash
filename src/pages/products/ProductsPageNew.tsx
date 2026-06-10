@@ -36,6 +36,7 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
+import VariantsManager from '../../components/products/VariantsManager';
 import { useStore } from '../../hooks';
 import storesApi, {
   StoreProduct as Product,
@@ -343,7 +344,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 }) => {
   const isEditing = !!product;
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'inventory' | 'media' | 'seo'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'inventory' | 'variants' | 'media' | 'seo'>('basic');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<ProductInput>({
@@ -599,6 +600,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     { id: 'basic', label: 'Básico', icon: CubeIcon },
     { id: 'pricing', label: 'Preços', icon: TagIcon },
     { id: 'inventory', label: 'Estoque', icon: CubeIcon },
+    // Variantes só existem após o produto ser criado (precisa do id)
+    ...(isEditing ? ([{ id: 'variants', label: 'Variantes', icon: Squares2X2Icon }] as const) : []),
     { id: 'media', label: 'Mídia', icon: PhotoIcon },
     { id: 'seo', label: 'SEO', icon: MagnifyingGlassIcon },
   ] as const;
@@ -943,6 +946,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </select>
               </div>
             </div>
+          )}
+
+          {/* Variants Tab — só no modo edição (precisa do product.id) */}
+          {activeTab === 'variants' && isEditing && product && (
+            <VariantsManager productId={product.id} basePrice={product.price} />
           )}
 
           {/* Media Tab */}
