@@ -109,8 +109,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       onError: (event) => { toast.error(`Erro: ${event.error_message}`); },
     });
 
+  const conversationsFetchRef = useRef<AbortController | null>(null);
+
   const loadConversations = useCallback(async () => {
     if (!accountId) return;
+    // Cancelar requisição anterior para evitar race condition com buscas rápidas
+    conversationsFetchRef.current?.abort();
+    const controller = new AbortController();
+    conversationsFetchRef.current = controller;
     setIsLoadingConversations(true);
     try {
       const search = debouncedSearchTerm.trim();
@@ -118,9 +124,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
         account: accountId,
         page_size: search ? 100 : 50,
         search: search || undefined,
-      });
+      }, controller.signal);
       setConversations(ensureArray<Conversation>(response?.results || response));
-    } catch (error) { toast.error(getErrorMessage(error)); }
+    } catch (error) {
+      if ((error as Error).name !== 'CanceledError' && (error as Error).name !== 'AbortError') {
+        toast.error(getErrorMessage(error));
+      }
+    }
     finally { setIsLoadingConversations(false); }
   }, [accountId, debouncedSearchTerm]);
 
