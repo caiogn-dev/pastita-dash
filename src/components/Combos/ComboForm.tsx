@@ -26,7 +26,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Input, Button } from '../common';
-import { StoreCombo, StoreComboInput, StoreComboItemInput, StoreProduct as Product, StoreProductVariant } from '../../services/storesApi';
+import { StoreCombo, StoreComboInput, StoreComboPayload, StoreProduct as Product } from '../../services/storesApi';
 
 const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = (v: number | string) => CURRENCY.format(Number(v));
@@ -64,7 +64,7 @@ export interface ComboFormProps {
   combo?: StoreCombo | null;
   storeId: string;
   products: Product[];
-  onSubmit: (data: StoreComboInput & { items?: StoreComboItemInput[] }) => Promise<void>;
+  onSubmit: (data: StoreComboPayload) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -306,27 +306,50 @@ export const ComboForm: React.FC<ComboFormProps> = ({
   isLoading = false,
 }) => {
   const [form, setForm] = useState<StoreComboInput & { items: ComboGroupDraft[] }>(() => {
-    // Initialize from existing combo or empty
-    // Map combo items to groups for UI purposes
-    const items: ComboGroupDraft[] = (combo?.items || []).map((item: any, idx: number) => {
-      const product = products.find(p => p.id === item.product);
+    const sourceGroups = combo?.groups && combo.groups.length > 0
+      ? combo.groups
+      : (combo?.items || []).map((item: any, idx: number) => ({
+          id: item.id,
+          product_id: item.product,
+          product_name: item.product_name,
+          is_required: true,
+          min_selections: item.quantity || 1,
+          max_selections: item.quantity || 1,
+          allow_duplicate_variants: false,
+          position: idx,
+          variant_limits: [],
+        }));
+
+    const items: ComboGroupDraft[] = sourceGroups.map((item: any, idx: number) => {
+      const productId = item.product_id || item.product;
+      const product = products.find(p => p.id === productId);
+      const variantLimits = item.variant_limits && item.variant_limits.length > 0
+        ? item.variant_limits
+        : ((product?.variants || []).map((v: any) => ({
+            variant_id: v.id,
+            variant_name: v.name,
+            variant_sku: v.sku,
+            stock: v.stock_quantity || 0,
+            max_selections: 1,
+            price_override: undefined,
+          })));
       return {
         _key: item.id,
-        product_id: item.product,
-        product_name: item.product_name,
-        is_required: true,
-        min_selections: item.quantity || 1,
-        max_selections: item.quantity || 1,
-        allow_duplicate_variants: false,
-        position: idx,
-        variant_limits: (product?.variants || []).map((v: any) => ({
-          _key: v.id,
-          variant_id: v.id,
-          variant_name: v.name,
-          variant_sku: v.sku,
-          stock: v.stock_quantity || 0,
-          max_selections: 1,
-          price_override: undefined,
+        product_id: productId,
+        product_name: item.product_name || product?.name || '',
+        is_required: item.is_required ?? true,
+        min_selections: item.min_selections ?? item.quantity ?? 1,
+        max_selections: item.max_selections ?? item.quantity ?? 1,
+        allow_duplicate_variants: item.allow_duplicate_variants ?? false,
+        position: item.position ?? idx,
+        variant_limits: variantLimits.map((v: any) => ({
+          _key: v.id || v.variant_id,
+          variant_id: v.variant_id || v.id,
+          variant_name: v.variant_name || v.name,
+          variant_sku: v.variant_sku || v.sku,
+          stock: v.stock || v.stock_quantity || 0,
+          max_selections: v.max_selections || 1,
+          price_override: v.price_override ?? undefined,
         })),
         _expanded: false,
       };
@@ -431,15 +454,29 @@ export const ComboForm: React.FC<ComboFormProps> = ({
     }
 
     try {
-      // Map groups to API items format
-      const items: StoreComboItemInput[] = validItems.map(item => ({
+      const groups = validItems.map((item, idx) => ({
+        product_id: item.product_id,
+        is_required: item.is_required,
+        min_selections: item.min_selections,
+        max_selections: item.max_selections,
+        allow_duplicate_variants: item.allow_duplicate_variants,
+        position: idx,
+        variant_limits: item.variant_limits.map(limit => ({
+          variant_id: limit.variant_id,
+          max_selections: limit.max_selections,
+          price_override: limit.price_override,
+        })),
+      }));
+
+      // Keep fixed-item payload for backward compatibility with older API paths.
+      const items = validItems.map(item => ({
         product: item.product_id,
         quantity: item.max_selections || 1,
         allow_customization: false,
         customization_options: {},
       }));
 
-      const payload: StoreComboInput & { items?: StoreComboItemInput[] } = {
+      const payload: StoreComboPayload = {
         store: storeId,
         name: form.name.trim(),
         description: form.description?.trim() || '',
@@ -451,6 +488,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
         track_stock: form.track_stock,
         stock_quantity: form.track_stock ? form.stock_quantity || 0 : 0,
         items,
+        groups,
       };
       await onSubmit(payload);
     } catch (err) {
