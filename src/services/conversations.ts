@@ -3,9 +3,10 @@ import { Conversation, ConversationNote, PaginatedResponse, Message, UniversalCo
 
 export const conversationsService = {
   getConversations: async (
-    params?: Record<string, string | number | undefined>
+    params?: Record<string, string | number | undefined>,
+    signal?: AbortSignal
   ): Promise<PaginatedResponse<Conversation>> => {
-    const response = await api.get<PaginatedResponse<Conversation> | Conversation[]>('/conversations/', { params });
+    const response = await api.get<PaginatedResponse<Conversation> | Conversation[]>('/conversations/', { params, signal });
     return normalizePaginatedEnvelope<Conversation>(response.data);
   },
 
