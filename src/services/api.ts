@@ -1,10 +1,10 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../stores/authStore';
+import { buildAuthHeader } from './tokenStorage';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
     skipAutoLogout?: boolean;
-    _retryCount?: number;
   }
 }
 
@@ -24,53 +24,14 @@ const api: AxiosInstance = axios.create({
 // withCredentials was removed: it caused cross-origin issues and is unnecessary
 // since all auth is done via Authorization header (not session cookies)
 
-// Helper to get token from localStorage directly (bypasses zustand hydration timing)
-const getTokenFromStorage = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem('auth-storage');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const token = parsed?.state?.token;
-      if (token && typeof token === 'string') {
-        return token.trim() || null;
-      }
-    }
-  } catch (err) {
-    console.warn('[Auth] Failed to parse token from localStorage:', err);
-  }
-  return null;
-};
-
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Priority order: axios defaults > zustand store > localStorage fallback
-    let token: string | null = null;
-
-    // Check axios defaults first (set by setAuthToken after login)
-    const defaultAuth = api.defaults.headers.common?.Authorization;
-    if (defaultAuth && typeof defaultAuth === 'string') {
-      token = defaultAuth.replace(/^(Token |Bearer )/, '');
-    }
-
-    // Try zustand store (primary source after login)
-    if (!token) {
-      token = useAuthStore.getState().token;
-    }
-
-    // Fallback: read directly from localStorage (handles hydration timing)
-    if (!token) {
-      token = getTokenFromStorage();
-    }
-
-    // Apply token to request
-    if (token && token.trim()) {
-      if (token.includes('.')) {
-        config.headers.Authorization = `Bearer ${token}`;
-      } else {
-        config.headers.Authorization = `Token ${token}`;
-      }
+    // Fonte única de token: tokenStorage (zustand + fallback de hydration).
+    // Backend é DRF Token Auth — header sempre `Token <key>`.
+    const authHeader = buildAuthHeader();
+    if (authHeader) {
+      config.headers.Authorization = authHeader;
     }
 
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
@@ -94,43 +55,16 @@ api.interceptors.response.use(
     const errorCode = errorData?.code;
     const requestUrl = error.config?.url || '';
 
-    // Only logout on 401/403 if:
+    // Logout on 401 only if:
     // 1. The request actually had an Authorization header (token was sent)
     // 2. It's not a login/register endpoint (those return 401 for invalid credentials)
     // 3. skipAutoLogout flag is not set on the request
-    // 4. We're outside the post-login grace period (15s) — handles DB replication lag
-    //    where the token exists on the write DB but hasn't synced to read replicas yet
     const hadAuthHeader = Boolean(error.config?.headers?.Authorization);
     const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
     const skipAutoLogout = Boolean(error.config?.skipAutoLogout);
-    const retryCount = error.config?._retryCount ?? 0;
-
-    const { loginTimestamp } = useAuthStore.getState();
-    const msSinceLogin = loginTimestamp ? Date.now() - loginTimestamp : Infinity;
-    const inLoginGracePeriod = msSinceLogin < 15_000;
-
-    // During the post-login grace period, 401s are caused by DB replication lag
-    // (token written to primary but not yet synced to read replicas).
-    // Auto-retry up to 2 times with a 2s delay so data loads once the replica catches up.
-    if (
-      inLoginGracePeriod &&
-      httpStatus === 401 &&
-      hadAuthHeader &&
-      !isAuthEndpoint &&
-      retryCount < 2
-    ) {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          api.request({ ...error.config, _retryCount: retryCount + 1 })
-            .then(resolve)
-            .catch(reject);
-        }, 2000);
-      });
-    }
 
     if (
       !skipAutoLogout &&
-      !inLoginGracePeriod &&
       (httpStatus === 401 || errorCode === 'token_not_valid') &&
       hadAuthHeader &&
       !isAuthEndpoint
@@ -156,14 +90,13 @@ export const postForm = (url: string, data: FormData, config?: Parameters<typeof
 export const patchForm = (url: string, data: FormData, config?: Parameters<typeof api.patch>[2]) =>
   api.patch(url, data, config);
 
-// Allow immediate setting/clearing of the Authorization header
+// Allow immediate setting/clearing of the Authorization header.
+// O interceptor já lê da fonte única a cada request; isto só cobre o intervalo
+// até o zustand persistir o token recém-recebido no login.
 export const setAuthToken = (token: string | null): void => {
-  if (token) {
-    if (token.includes('.')) {
-      api.defaults.headers.common.Authorization = `Bearer ${token}`;
-    } else {
-      api.defaults.headers.common.Authorization = `Token ${token}`;
-    }
+  const header = buildAuthHeader(token);
+  if (header) {
+    api.defaults.headers.common.Authorization = header;
   } else {
     delete api.defaults.headers.common.Authorization;
   }

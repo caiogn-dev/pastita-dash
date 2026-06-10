@@ -4,7 +4,7 @@ import { getStoreSlugWithFallback } from '../hooks/useStore';
 
 export const exportService = {
   exportMessages: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get('/export/messages/', {
+    const response = await api.get('/core/export/messages/', {
       params,
       responseType: 'blob',
     });
@@ -23,7 +23,7 @@ export const exportService = {
   },
 
   exportSessions: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get('/export/sessions/', {
+    const response = await api.get('/core/export/sessions/', {
       params,
       responseType: 'blob',
     });
@@ -31,7 +31,7 @@ export const exportService = {
   },
 
   exportAutomationLogs: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get('/export/automation-logs/', {
+    const response = await api.get('/core/export/automation-logs/', {
       params,
       responseType: 'blob',
     });
@@ -39,7 +39,7 @@ export const exportService = {
   },
 
   exportConversations: async (params: ExportParams = {}): Promise<Blob> => {
-    const response = await api.get('/export/conversations/', {
+    const response = await api.get('/core/export/conversations/', {
       params,
       responseType: 'blob',
     });

@@ -16,7 +16,6 @@ interface AuthState {
   token: string | null;
   user: User | null;
   isAuthenticated: boolean;
-  loginTimestamp: number | null;
   setAuth: (token: string, user: Partial<User>) => void;
   setUser: (user: User) => void;
   logout: () => void;
@@ -28,13 +27,11 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       isAuthenticated: false,
-      loginTimestamp: null,
       setAuth: (token, userData) =>
         set({
           token,
           user: userData as User,
           isAuthenticated: true,
-          loginTimestamp: Date.now(),
         }),
       setUser: (user) => set({ user }),
       logout: () => {
@@ -42,20 +39,16 @@ export const useAuthStore = create<AuthState>()(
           token: null,
           user: null,
           isAuthenticated: false,
-          loginTimestamp: null,
         });
         clearDependentStores();
       },
     }),
     {
       name: 'auth-storage',
-      // loginTimestamp is persisted so the post-login grace period in api.ts
-      // survives page reloads (e.g. user logs in and immediately refreshes).
       partialize: (state) => ({
         token: state.token,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        loginTimestamp: state.loginTimestamp,
       }),
     }
   )

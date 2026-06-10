@@ -7,22 +7,12 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
 import { setAuthToken } from './services'
+import { getAuthToken } from './services/tokenStorage'
 
 // Pre-hydrate axios Authorization header from persisted zustand storage
-try {
-  if (typeof window !== 'undefined') {
-    const raw = window.localStorage.getItem('auth-storage');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const token = parsed?.state?.token;
-      if (token) {
-        setAuthToken(token);
-        console.debug('[main] preloaded auth header from localStorage');
-      }
-    }
-  }
-} catch (e) {
-  /* ignore */
+const preloadedToken = getAuthToken();
+if (preloadedToken) {
+  setAuthToken(preloadedToken);
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

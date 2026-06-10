@@ -10,6 +10,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { getStoreSlugWithFallback, useStore } from '../hooks/useStore';
+import { getAuthToken } from '../services/tokenStorage';
 import { 
   RealtimeConnection, 
   TransportType, 
@@ -65,21 +66,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   
   const effectiveStoreSlug = storeSlug || getStoreSlugWithFallback();
 
-  // Obter token efetivo (do store ou localStorage)
+  // Fonte única de token (zustand + fallback de hydration)
   const getEffectiveToken = useCallback(() => {
-    let effectiveToken = token;
-    if (!effectiveToken && typeof window !== 'undefined') {
-      try {
-        const raw = window.localStorage.getItem('auth-storage');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          effectiveToken = parsed?.state?.token || undefined;
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-    return effectiveToken;
+    return token || getAuthToken() || undefined;
   }, [token]);
 
   // Criar/reutilizar conexão
