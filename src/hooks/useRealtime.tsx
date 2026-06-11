@@ -59,7 +59,6 @@ export function RealtimeProvider({
   // Criar conexão
   useEffect(() => {
     if (!token || !effectiveStoreSlug) {
-      console.log('[RealtimeProvider] No token, skipping connection creation');
       return;
     }
 
@@ -115,7 +114,6 @@ export function RealtimeProvider({
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && connectionRef.current) {
         if (!connectionRef.current.isConnected()) {
-          console.log('[RealtimeProvider] Tab visible, reconnecting...');
           connectionRef.current.reconnect();
         }
       }
