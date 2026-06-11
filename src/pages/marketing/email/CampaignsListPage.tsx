@@ -87,8 +87,6 @@ export const CampaignsListPage: React.FC = () => {
   const loadCampaigns = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('Loading campaigns, storeId:', storeId);
-      
       const params: Record<string, string> = {};
       if (storeId) {
         params.store = storeId;
