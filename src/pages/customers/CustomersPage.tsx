@@ -86,7 +86,7 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) =>
         const all = res.results || [];
         setOrders(all.filter(o => o.customer === customer.user));
       })
-      .catch(() => {})
+      .catch(() => toast.error('Erro ao carregar pedidos do cliente'))
       .finally(() => setLoadingOrders(false));
   }, [customer?.id, storeQuery]);
 
