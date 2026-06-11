@@ -402,6 +402,8 @@ interface LocalState {
   timestamp: number;
 }
 const LOCAL_TTL = 60000;
+// Referência estável para evitar re-render infinito quando a loja não tem pedidos
+const EMPTY_ORDERS: StoreOrder[] = [];
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -440,8 +442,11 @@ export const OrdersPage: React.FC = () => {
   }, []);
 
   // Real-time orders from Zustand store + WebSocket
-  const rootStore = useRootStore();
-  const storeOrders = storeQuery ? rootStore.orders[storeQuery] || [] : [];
+  // Selector estreito: re-render apenas quando os pedidos DESTA loja mudam,
+  // não em qualquer mudança da store global.
+  const storeOrders = useRootStore(
+    (s) => (storeQuery ? s.orders[storeQuery] : undefined)
+  ) ?? EMPTY_ORDERS;
   const { playNotificationSound } = useNotificationSound();
 
   // DnD state
@@ -487,10 +492,12 @@ export const OrdersPage: React.FC = () => {
 
   const patchOrder = useCallback((id: string, patch: Partial<StoreOrder>) => {
     if (!storeQuery) return;
-    // Update through Zustand store
-    const { setOrders } = useRootStore.getState();
-    setOrders(storeQuery, storeOrders.map((o: StoreOrder) => o.id === id ? { ...o, ...patch } : o));
-  }, [storeQuery, storeOrders]);
+    // Ler do getState() (não do closure) para não sobrescrever updates que
+    // chegaram via WebSocket entre o render e o clique (stale closure).
+    const { orders, setOrders } = useRootStore.getState();
+    const current = orders[storeQuery] || [];
+    setOrders(storeQuery, current.map((o: StoreOrder) => o.id === id ? { ...o, ...patch } : o));
+  }, [storeQuery]);
 
   const handleAdvance = useCallback(async (order: StoreOrder) => {
     const action = getNextAction(order);

@@ -20,18 +20,21 @@ export interface UseRealTimeOrdersConfig {
 
 export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   const { enabled = true, apiUrl, wsUrl } = config;
-  const { auth, selectedStoreId, orders, setOrders } = useRootStore();
+  // Selectors estreitos: não re-renderizar a cada mudança em qualquer pedido
+  const authToken = useRootStore((s) => s.auth.token);
+  const selectedStoreId = useRootStore((s) => s.selectedStoreId);
   const wsRef = useRef<ReturnType<typeof useWebSocket> | null>(null);
+  const refreshAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!enabled || !auth.token || !selectedStoreId) {
+    if (!enabled || !authToken || !selectedStoreId) {
       return;
     }
 
     const initWebSocket = async () => {
       const ws = useWebSocket({
         url: wsUrl,
-        token: auth.token!,
+        token: authToken!,
         storeSlug: selectedStoreId!,
       });
 
@@ -85,12 +88,20 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
         wsRef.current.disconnect();
         wsRef.current = null;
       }
+      refreshAbortRef.current?.abort();
+      refreshAbortRef.current = null;
       clearWebSocketInstance();
     };
-  }, [enabled, auth.token, selectedStoreId, wsUrl]);
+  }, [enabled, authToken, selectedStoreId, wsUrl]);
 
   const refreshOrdersFromAPI = async () => {
-    if (!selectedStoreId || !auth.token) return;
+    if (!selectedStoreId || !authToken) return;
+
+    // Cancela refresh anterior em voo: vários eventos WS em sequência disparavam
+    // fetches concorrentes e a resposta mais antiga podia sobrescrever a mais nova.
+    refreshAbortRef.current?.abort();
+    const controller = new AbortController();
+    refreshAbortRef.current = controller;
 
     // apiUrl já é a base (VITE_API_URL, que inclui /api/v1). NÃO concatenar /api/v1
     // de novo — antes gerava `.../api/v1/stores/x/orders//api/v1/stores/x/orders/`.
@@ -99,24 +110,27 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
         `${apiUrl}/stores/${selectedStoreId}/orders/`,
         {
           headers: {
-            Authorization: `Token ${auth.token}`,
+            Authorization: `Token ${authToken}`,
           },
+          signal: controller.signal,
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        setOrders(selectedStoreId, data.results || []);
+        useRootStore.getState().setOrders(selectedStoreId, data.results || []);
       }
     } catch (error) {
-      console.error('Failed to refresh orders:', error);
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Failed to refresh orders:', error);
+      }
     }
   };
 
   return {
     isConnected: wsRef.current !== null,
     reconnect: async () => {
-      if (wsRef.current && selectedStoreId && auth.token) {
+      if (wsRef.current && selectedStoreId && authToken) {
         try {
           await wsRef.current.connect();
         } catch (error) {
