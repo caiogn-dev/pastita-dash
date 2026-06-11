@@ -11,6 +11,10 @@
 import { useEffect, useRef } from 'react';
 import { useRootStore } from '../stores/rootStore';
 import { useWebSocket, clearWebSocketInstance } from '../services/websocket';
+import { applyOrderEventToOrders, type OrderRealtimeEvent } from './orderRealtimeEvents';
+
+export { applyOrderEventToOrders };
+export type { OrderRealtimeEvent };
 
 export interface UseRealTimeOrdersConfig {
   enabled?: boolean;
@@ -51,20 +55,18 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       // Subscribe to order events
       ws.subscribe('order.created', (event) => {
         console.log('Order created:', event.order_id);
-        // Refresh orders from API
+        // Pedido novo: o payload do evento não traz items — precisa refetch
         refreshOrdersFromAPI();
       });
 
       ws.subscribe('order.updated', (event) => {
         console.log('Order updated:', event.order_id, event.status);
-        // Refresh orders from API
-        refreshOrdersFromAPI();
+        applyEventOrRefresh(event as OrderRealtimeEvent);
       });
 
       ws.subscribe('order.payment_received', (event) => {
         console.log('Payment received:', event.order_id, event.amount);
-        // Refresh orders from API
-        refreshOrdersFromAPI();
+        applyEventOrRefresh(event as OrderRealtimeEvent);
       });
 
       // Listen for connection events
@@ -93,6 +95,21 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       clearWebSocketInstance();
     };
   }, [enabled, authToken, selectedStoreId, wsUrl]);
+
+  // Patch incremental: aplica o evento direto na store sem refetch da lista
+  // inteira. Só refetch quando o pedido não está na lista (página filtrada,
+  // pedido fora do page_size etc.).
+  const applyEventOrRefresh = (event: OrderRealtimeEvent) => {
+    if (!selectedStoreId) return;
+    const { orders, setOrders } = useRootStore.getState();
+    const current = orders[selectedStoreId] || [];
+    const next = applyOrderEventToOrders(current, event);
+    if (next === null) {
+      refreshOrdersFromAPI();
+      return;
+    }
+    setOrders(selectedStoreId, next);
+  };
 
   const refreshOrdersFromAPI = async () => {
     if (!selectedStoreId || !authToken) return;
