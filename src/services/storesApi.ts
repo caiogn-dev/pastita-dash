@@ -653,7 +653,7 @@ export const getWebhooks = async (storeId?: string): Promise<PaginatedResponse<S
   try {
     const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/webhooks/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreWebhook>(response.data);
   } catch (error) {
     logger.error('Failed to fetch webhooks', error);
     throw error;
@@ -1477,7 +1477,7 @@ export const getCombos = async (storeId?: string): Promise<PaginatedResponse<Sto
   try {
     const params = storeId ? { store: storeId } : {};
     const response = await api.get(`${BASE_URL}/combos/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreCombo>(response.data);
   } catch (error) {
     logger.error('Failed to fetch combos', error);
     throw error;
@@ -1600,7 +1600,7 @@ export const getProductTypes = async (storeId?: string): Promise<PaginatedRespon
   try {
     const params = storeId ? { store: storeId, page_size: 100 } : { page_size: 100 };
     const response = await api.get(`${BASE_URL}/product-types/`, { params });
-    return response.data;
+    return normalizePaginatedResponse<StoreProductType>(response.data);
   } catch (error) {
     logger.error('Failed to fetch product types', error);
     throw error;

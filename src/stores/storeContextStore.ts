@@ -26,6 +26,10 @@ interface StoreContextState {
   refresh: () => Promise<void>;
 }
 
+// Dedup de fetchStores concorrentes: vários componentes chamam no mount e
+// cada um disparava um GET /stores/ próprio (race + carga desnecessária).
+let inflightFetch: Promise<void> | null = null;
+
 export const useStoreContextStore = create<StoreContextState>()(
   persist(
     (set, get) => ({
@@ -38,6 +42,8 @@ export const useStoreContextStore = create<StoreContextState>()(
       
       // Fetch all stores the user has access to
       fetchStores: async () => {
+        if (inflightFetch) return inflightFetch;
+        inflightFetch = (async () => {
         set({ loading: true, error: null });
         try {
           const response = await getStores();
@@ -70,11 +76,15 @@ export const useStoreContextStore = create<StoreContextState>()(
           set({ 
             error: 'Falha ao carregar lojas', 
             loading: false,
-            initialized: true 
+            initialized: true
           });
+        } finally {
+          inflightFetch = null;
         }
+        })();
+        return inflightFetch;
       },
-      
+
       // Set selected store directly
       setSelectedStore: (store) => {
         set({ selectedStore: store });
