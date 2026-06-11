@@ -59,7 +59,7 @@ function buildAuthHeader(token: string | null): Record<string, string> {
 export function detectTransportCapabilities(): TransportCapabilities {
   return {
     websocket: typeof window !== 'undefined' && 'WebSocket' in window,
-    sse: typeof window !== 'undefined' && 'EventSource' in window,
+    sse: typeof window !== 'undefined' && 'fetch' in window,
     polling: true, // Sempre disponível
   };
 }
@@ -82,7 +82,7 @@ export class RealtimeConnection {
   
   // Handlers de conexão
   private ws: WebSocket | null = null;
-  private eventSource: EventSource | null = null;
+  private sseController: AbortController | null = null;
   private pollingInterval: number | null = null;
   private pollingController: AbortController | null = null;
   
@@ -356,61 +356,87 @@ export class RealtimeConnection {
   }
 
   /**
-   * Conecta via Server-Sent Events
+   * Conecta via Server-Sent Events usando fetch com Authorization header.
+   * Evita expor o token DRF em parâmetros de URL (histórico do browser, logs de acesso).
    */
   private connectSSE(): void {
+    const controller = new AbortController();
+    this.sseController = controller;
+    void this.runSSE(controller);
+  }
+
+  private async runSSE(controller: AbortController): Promise<void> {
     try {
       const url = this.buildUrl('sse');
-      this.eventSource = new EventSource(url);
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          ...buildAuthHeader(this.token),
+        },
+        signal: controller.signal,
+      });
 
-      this.eventSource.onopen = () => {
-        this.onConnectSuccess();
-      };
-      
-      this.eventSource.onmessage = (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          this.handleMessage(data);
-        } catch (err) {
-          console.error('[Realtime] SSE parse error:', err);
+      if (!response.ok) {
+        throw new Error(`SSE HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('SSE: no response body');
+      }
+
+      this.onConnectSuccess();
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let currentEvent = '';
+      let currentData = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line === '') {
+            if (currentData) {
+              this.dispatchSseEvent(currentEvent, currentData);
+            }
+            currentEvent = '';
+            currentData = '';
+          } else if (line.startsWith('event:')) {
+            currentEvent = line.slice(6).trim();
+          } else if (line.startsWith('data:')) {
+            currentData = line.slice(5).trim();
+          }
         }
-      };
-      
-      // Eventos específicos do SSE
-      this.eventSource.addEventListener('order_created', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          this.emitEvent('order_created', data);
-        } catch (err) {
-          console.error('[Realtime] SSE event error:', err);
-        }
-      });
-      
-      this.eventSource.addEventListener('order_updated', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          this.emitEvent('order_updated', data);
-        } catch (err) {
-          console.error('[Realtime] SSE event error:', err);
-        }
-      });
-      
-      this.eventSource.addEventListener('payment_received', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          this.emitEvent('payment_received', data);
-        } catch (err) {
-          console.error('[Realtime] SSE event error:', err);
-        }
-      });
-      
-      this.eventSource.onerror = (e) => {
-        console.error('[Realtime] SSE error:', e);
-        this.onConnectError(new Error('SSE error'));
-      };
+      }
+
+      // Stream ended cleanly — schedule reconnect unless we were aborted
+      if (!controller.signal.aborted) {
+        this.onConnectError(new Error('SSE stream ended'));
+      }
     } catch (err) {
-      console.error('[Realtime] SSE connection error:', err);
+      if ((err as Error).name === 'AbortError') return;
+      console.error('[Realtime] SSE error:', err);
       this.onConnectError(err as Error);
+    }
+  }
+
+  private dispatchSseEvent(eventType: string, dataStr: string): void {
+    try {
+      const data = JSON.parse(dataStr);
+      if (eventType) {
+        this.emitEvent(eventType, data);
+      } else {
+        this.handleMessage(data);
+      }
+    } catch (err) {
+      console.error('[Realtime] SSE parse error:', err);
     }
   }
 
@@ -477,8 +503,7 @@ export class RealtimeConnection {
   private buildUrl(transport: TransportType): string {
     const wsHost = this.getWSHost();
     const storeSlug = this.options.storeSlug || 'default';
-    const token = this.token;
-    
+
     switch (transport) {
       case 'websocket': {
         const proto = this.isSecure() ? 'wss' : 'ws';
@@ -486,7 +511,7 @@ export class RealtimeConnection {
       }
       case 'sse': {
         const httpProto = this.isSecure() ? 'https' : 'http';
-        return `${httpProto}://${wsHost}/api/sse/orders/?token=${token}&store_id=${storeSlug}`;
+        return `${httpProto}://${wsHost}/api/sse/orders/?store_id=${storeSlug}`;
       }
       case 'polling': {
         const httpProto = this.isSecure() ? 'https' : 'http';
@@ -769,9 +794,9 @@ export class RealtimeConnection {
     }
 
     // Limpar SSE
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (this.sseController) {
+      this.sseController.abort();
+      this.sseController = null;
     }
 
     // Limpar Polling
