@@ -238,6 +238,8 @@ function TemplatesTab({
     try {
       await onSendMessage(filledContent);
       setExpandedId(null);
+    } catch (error) {
+      toast.error(getErrorMessage(error) || 'Erro ao enviar mensagem');
     } finally {
       setSending(false);
     }
@@ -457,6 +459,8 @@ function RouteTool({ storeSlug, onSendMessage }: { storeSlug?: string; onSendMes
       await onSendMessage(`📍 *Rota para entrega*\n${address.trim()}${quoteText}\n\n🗺️ Abrir no Google Maps:\n${mapsUrl}`);
       setAddress('');
       setQuote(null);
+    } catch (error) {
+      toast.error(getErrorMessage(error) || 'Erro ao enviar rota');
     } finally {
       setSending(false);
     }
@@ -572,6 +576,8 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
     try {
       await onSendMessage(editing ? customMsg : catalogMessage);
       setEditing(false);
+    } catch (error) {
+      toast.error(getErrorMessage(error) || 'Erro ao enviar catálogo');
     } finally {
       setSending(false);
     }
@@ -749,6 +755,8 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
       await onSendMessage(buildSummary());
       setItems([{ name: '', qty: 1, price: '' }]);
       setNotes('');
+    } catch (error) {
+      toast.error(getErrorMessage(error) || 'Erro ao enviar resumo do pedido');
     } finally {
       setSending(false);
     }
