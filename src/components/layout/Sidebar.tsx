@@ -76,15 +76,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         { name: 'Dashboard', href: '/', icon: HomeIcon },
         { name: 'Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon },
         {
-          name: 'WhatsApp',
-          href: '/whatsapp/inbox',
-          icon: DevicePhoneMobileIcon,
-          badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
-        },
-        {
-          name: 'Conversas',
-          href: '/conversations',
+          name: 'Inbox',
+          href: '/inbox/whatsapp',
           icon: ChatBubbleLeftRightIcon,
+          badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
         },
         { name: 'Clientes', href: storeHref('customers'), icon: UserGroupIcon },
       ]
@@ -152,8 +147,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             { name: 'Handover', href: '/whatsapp/handover', icon: UserGroupIcon },
             ...(user?.is_staff
               ? [
-                  { name: 'Instagram', href: '/instagram/inbox', icon: ChatBubbleLeftRightIcon },
-                  { name: 'Messenger', href: '/messenger/inbox', icon: ChatBubbleBottomCenterTextIcon },
+                  { name: 'Contas Instagram', href: '/instagram/accounts', icon: ChatBubbleLeftRightIcon },
+                  { name: 'Contas Messenger', href: '/messenger/accounts', icon: ChatBubbleBottomCenterTextIcon },
                 ]
               : []),
           ]

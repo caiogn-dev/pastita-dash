@@ -20,8 +20,7 @@ const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(
 const AccountsPage = lazy(() => import('./pages/accounts/AccountsPage').then(m => ({ default: m.AccountsPage })));
 const AccountFormPage = lazy(() => import('./pages/accounts/AccountFormPage').then(m => ({ default: m.AccountFormPage })));
 const AccountDetailPage = lazy(() => import('./pages/accounts/AccountDetailPage').then(m => ({ default: m.AccountDetailPage })));
-const MessagesPage = lazy(() => import('./pages/messages/MessagesPage').then(m => ({ default: m.MessagesPage })));
-const ConversationsPage = lazy(() => import('./pages/conversations/ConversationsPage').then(m => ({ default: m.ConversationsPage })));
+const InboxPage = lazy(() => import('./pages/inbox/InboxPage'));
 const OrdersPage = lazy(() => import('./pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
 const OrderNewPage = lazy(() => import('./pages/orders/OrderNewPage').then(m => ({ default: m.OrderNewPage })));
@@ -82,11 +81,9 @@ const PrintSettingsPage = lazy(() => import('./pages/printing/PrintSettingsPage'
 // Instagram Pages
 const InstagramAccountsPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramAccountsPage })));
 const InstagramDashboardPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramDashboardPage })));
-const InstagramInbox = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramInbox })));
 const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCallbackPage'));
 
 // Messenger Pages
-const MessengerInbox = lazy(() => import('./pages/messenger').then(m => ({ default: m.MessengerInbox })));
 const MessengerAccounts = lazy(() => import('./pages/messenger').then(m => ({ default: m.MessengerAccounts })));
 
 // Unified Messaging Connections Page
@@ -94,8 +91,6 @@ const ConnectionsPage = lazy(() => import('./pages/messaging/ConnectionsPage').t
 
 // WhatsApp Pages
 const WebhookDiagnosticsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WebhookDiagnosticsPage })));
-const WhatsAppChatPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WhatsAppChatPage })));
-const WhatsAppInboxPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WhatsAppInboxPage })));
 const DebugDashboardPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.DebugDashboardPage })));
 const HandoverRequestsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.HandoverRequestsPage })));
 
@@ -164,8 +159,11 @@ const AppContent: React.FC = () => {
         <Route path="accounts/new" element={<PageBoundary><AccountFormPage /></PageBoundary>} />
         <Route path="accounts/:id" element={<PageBoundary><AccountDetailPage /></PageBoundary>} />
         <Route path="accounts/:id/edit" element={<PageBoundary><AccountFormPage /></PageBoundary>} />
-        <Route path="messages" element={<PageBoundary><MessagesPage /></PageBoundary>} />
-        <Route path="conversations" element={<PageBoundary><ConversationsPage /></PageBoundary>} />
+        {/* Inbox unificado — rotas antigas redirecionam para a aba correspondente */}
+        <Route path="inbox" element={<PageBoundary><InboxPage /></PageBoundary>} />
+        <Route path="inbox/:tab" element={<PageBoundary><InboxPage /></PageBoundary>} />
+        <Route path="messages" element={<Navigate to="/inbox/conversas" replace />} />
+        <Route path="conversations" element={<Navigate to="/inbox/conversas" replace />} />
         
         {/* AI Agents Routes (Langchain) */}
         <Route path="agents" element={<PageBoundary><AgentsPage /></PageBoundary>} />
@@ -235,21 +233,21 @@ const AppContent: React.FC = () => {
         <Route path="instagram/accounts" element={<PageBoundary><InstagramAccountsPage /></PageBoundary>} />
         <Route path="instagram/callback" element={<PageBoundary><InstagramCallbackPage /></PageBoundary>} />
         <Route path="instagram/:accountId" element={<PageBoundary><InstagramDashboardPage /></PageBoundary>} />
-        <Route path="instagram/inbox" element={<PageBoundary><InstagramInbox /></PageBoundary>} />
+        <Route path="instagram/inbox" element={<Navigate to="/inbox/instagram" replace />} />
         
         {/* Messenger Routes */}
         {/* Messenger/WhatsApp Routes - NOVA PÁGINA UNIFICADA */}
         <Route path="connections" element={<PageBoundary><ConnectionsPage /></PageBoundary>} />
         
         {/* Legacy Routes (mantidas para compatibilidade) */}
-        <Route path="messenger" element={<PageBoundary><MessengerInbox /></PageBoundary>} />
-        <Route path="messenger/inbox" element={<PageBoundary><MessengerInbox /></PageBoundary>} />
+        <Route path="messenger" element={<Navigate to="/inbox/messenger" replace />} />
+        <Route path="messenger/inbox" element={<Navigate to="/inbox/messenger" replace />} />
         <Route path="messenger/accounts" element={<PageBoundary><MessengerAccounts /></PageBoundary>} />
         
         {/* WhatsApp Routes */}
-        <Route path="whatsapp" element={<PageBoundary><WhatsAppInboxPage /></PageBoundary>} />
-        <Route path="whatsapp/inbox" element={<PageBoundary><WhatsAppInboxPage /></PageBoundary>} />
-        <Route path="whatsapp/chat" element={<PageBoundary><WhatsAppChatPage /></PageBoundary>} />
+        <Route path="whatsapp" element={<Navigate to="/inbox/whatsapp" replace />} />
+        <Route path="whatsapp/inbox" element={<Navigate to="/inbox/whatsapp" replace />} />
+        <Route path="whatsapp/chat" element={<Navigate to="/inbox/whatsapp" replace />} />
         <Route path="whatsapp/handover" element={<PageBoundary><HandoverRequestsPage /></PageBoundary>} />
         <Route path="whatsapp/debug" element={<PageBoundary><DebugDashboardPage /></PageBoundary>} />
         <Route path="whatsapp/diagnostics" element={<PageBoundary><WebhookDiagnosticsPage /></PageBoundary>} />
