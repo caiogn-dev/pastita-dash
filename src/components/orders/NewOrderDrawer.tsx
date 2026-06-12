@@ -812,7 +812,7 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
         ? ((customer as Customer).phone_number_edited || customer.phone_number)
         : customer.phone_number;
 
-      await ordersService.createOrder({
+      const created = await ordersService.createOrder({
         store: storeSlug,
         customer_name: customer.name || 'Cliente PDV',
         customer_phone: customerPhone.replace(/\D/g, ''),
@@ -829,7 +829,22 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
         // TODO: enviar manual_discount_* e surcharge_* quando backend tiver as migrações da Fase 1
       });
 
-      toast.success('Pedido criado com sucesso!');
+      // PDV PIX: backend agora gera o pagamento na criação — entregar o link na hora
+      const pixLink = (created as { pix_ticket_url?: string })?.pix_ticket_url || '';
+      const pixCode = (created as { pix_code?: string })?.pix_code || '';
+      const paymentError = (created as { payment_error?: string })?.payment_error;
+      if (paymentMethod === 'pix' && (pixLink || pixCode)) {
+        try {
+          await navigator.clipboard.writeText(pixLink || pixCode);
+          toast.success('Pedido criado! Link PIX copiado — cole no WhatsApp do cliente.', { duration: 6000 });
+        } catch {
+          toast.success('Pedido criado! Abra o pedido para ver o PIX.', { duration: 6000 });
+        }
+      } else if (paymentMethod === 'pix' && paymentError) {
+        toast.error(`Pedido criado, mas o PIX falhou: ${paymentError}`, { duration: 8000 });
+      } else {
+        toast.success('Pedido criado com sucesso!');
+      }
       onOrderCreated?.();
       handleClose();
     } catch {
