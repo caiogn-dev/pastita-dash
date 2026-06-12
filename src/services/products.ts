@@ -19,6 +19,8 @@ export interface Product {
   sku: string;
   is_active: boolean;
   status?: string;
+  is_paused?: boolean;
+  paused_until?: string | null;
   store?: string;
   metadata?: Record<string, unknown>;
   attributes?: Record<string, unknown>;

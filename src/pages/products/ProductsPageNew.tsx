@@ -37,6 +37,7 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
+import PauseProductButton from '../../components/products/PauseProductButton';
 import { useStore } from '../../hooks';
 import storesApi, {
   StoreProduct as Product,
@@ -97,6 +98,7 @@ interface ProductCardProps {
   onDuplicate: () => void;
   onToggleFeatured: () => void;
   onToggleStatus: () => void;
+  onPauseChanged: () => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -106,6 +108,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onDuplicate,
   onToggleFeatured,
   onToggleStatus,
+  onPauseChanged,
 }) => {
   const imageUrl = product.main_image_url || product.main_image;
   
@@ -215,6 +218,20 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <StatusBadge status={product.status} />
           </button>
         </div>
+
+        {/* Pausa rápida (item esgotado) */}
+        <div className="mt-2 flex items-center justify-between">
+          {product.is_paused && (
+            <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Pausado</span>
+          )}
+          <span className="ml-auto">
+            <PauseProductButton
+              productId={product.id}
+              isPaused={Boolean(product.is_paused)}
+              onChanged={onPauseChanged}
+            />
+          </span>
+        </div>
       </div>
     </Card>
   );
@@ -233,6 +250,7 @@ const ProductRow: React.FC<ProductRowProps> = ({
   onDuplicate,
   onToggleFeatured,
   onToggleStatus,
+  onPauseChanged,
 }) => {
   const imageUrl = product.main_image_url || product.main_image;
   
@@ -279,7 +297,14 @@ const ProductRow: React.FC<ProductRowProps> = ({
         <StockBadge quantity={product.stock_quantity} threshold={product.low_stock_threshold} />
       </td>
       <td className="px-4 py-3">
-        <StatusBadge status={product.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={product.status} />
+          <PauseProductButton
+            productId={product.id}
+            isPaused={Boolean(product.is_paused)}
+            onChanged={onPauseChanged}
+          />
+        </div>
       </td>
       <td className="px-4 py-3">
         <button onClick={onToggleFeatured}>
@@ -1385,6 +1410,7 @@ export const ProductsPageNew: React.FC = () => {
               onDuplicate={() => handleDuplicate(product)}
               onToggleFeatured={() => handleToggleFeatured(product)}
               onToggleStatus={() => handleToggleStatus(product)}
+              onPauseChanged={loadData}
             />
           ))}
         </div>
@@ -1412,6 +1438,7 @@ export const ProductsPageNew: React.FC = () => {
                   onDuplicate={() => handleDuplicate(product)}
                   onToggleFeatured={() => handleToggleFeatured(product)}
                   onToggleStatus={() => handleToggleStatus(product)}
+                  onPauseChanged={loadData}
                 />
               ))}
             </tbody>

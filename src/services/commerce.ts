@@ -15,6 +15,10 @@ export const getProduct = (id: string) => api.get(`/stores/products/${id}/`);
 export const createProduct = (data: any) => api.post('/stores/products/', data);
 export const updateProduct = (id: string, data: any) => api.put(`/stores/products/${id}/`, data);
 export const deleteProduct = (id: string) => api.delete(`/stores/products/${id}/`);
+// Pausa rápida (item esgotado): minutes vazio = até amanhã
+export const pauseProduct = (id: string, minutes?: number) =>
+  api.post(`/stores/products/${id}/pause/`, minutes ? { minutes } : {});
+export const unpauseProduct = (id: string) => api.post(`/stores/products/${id}/unpause/`, {});
 
 // Categories
 export const getCategories = () => api.get('/stores/categories/');
