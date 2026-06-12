@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toCsv, downloadCsv } from '../../utils/csv';
 import { Card, Button, Badge } from '../../components/common';
 import {
   reportsService,
@@ -142,6 +143,62 @@ const AnalyticsPage: React.FC = () => {
       const blob = await reportsService.exportOrdersCSV({ period });
       reportsService.downloadBlob(blob, `pedidos_${format(new Date(), 'yyyy-MM-dd')}.csv`);
     } catch { /* silent */ }
+  };
+
+  // Exports CSV client-side a partir dos dados já carregados (pt-BR/Excel)
+  const stamp = () => format(new Date(), 'yyyy-MM-dd');
+
+  const handleExportRevenue = () => {
+    downloadCsv(toCsv(revenueReport?.data || [], [
+      { key: 'period', label: 'Período' },
+      { key: 'total_revenue', label: 'Faturamento' },
+      { key: 'order_count', label: 'Pedidos' },
+      { key: 'avg_order_value', label: 'Ticket Médio' },
+      { key: 'total_delivery_fees', label: 'Taxas de Entrega' },
+      { key: 'total_discounts', label: 'Descontos' },
+    ]), `faturamento_${stamp()}.csv`);
+  };
+
+  const handleExportProducts = () => {
+    downloadCsv(toCsv(productsReport?.top_products || [], [
+      { key: 'product_name', label: 'Produto' },
+      { key: 'total_quantity', label: 'Qtd Vendida' },
+      { key: 'order_count', label: 'Pedidos' },
+      { key: 'total_revenue', label: 'Receita' },
+      { key: 'current_stock', label: 'Estoque Atual' },
+    ]), `produtos_${stamp()}.csv`);
+  };
+
+  const handleExportStock = () => {
+    const rows = [
+      ...(stockReport?.low_stock_products || []).map((p) => ({ ...p, situacao: 'Estoque baixo' })),
+      ...(stockReport?.out_of_stock_products || []).map((p) => ({ ...p, stock_quantity: 0, situacao: 'Sem estoque' })),
+    ];
+    downloadCsv(toCsv(rows, [
+      { key: 'name', label: 'Produto' },
+      { key: 'sku', label: 'SKU' },
+      { key: 'category', label: 'Categoria' },
+      { key: 'stock_quantity', label: 'Estoque' },
+      { key: 'situacao', label: 'Situação' },
+    ]), `estoque_${stamp()}.csv`);
+  };
+
+  const handleExportCustomers = () => {
+    downloadCsv(toCsv(customersReport?.top_customers || [], [
+      { key: 'name', label: 'Cliente' },
+      { key: 'phone', label: 'Telefone' },
+      { key: 'email', label: 'Email' },
+      { key: 'order_count', label: 'Pedidos' },
+      { key: 'total_spent', label: 'Total Gasto' },
+      { key: 'avg_order_value', label: 'Ticket Médio' },
+    ]), `clientes_${stamp()}.csv`);
+  };
+
+  const exportForTab: Partial<Record<TabValue, () => void>> = {
+    revenue: handleExportRevenue,
+    products: handleExportProducts,
+    stock: handleExportStock,
+    customers: handleExportCustomers,
   };
 
   // ─── Overview Tab ──────────────────────────────────────────────────────────
@@ -469,8 +526,19 @@ const AnalyticsPage: React.FC = () => {
             {PERIOD_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           <Button variant="outline" size="sm" onClick={handleExportOrders} leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}>
-            Exportar
+            Exportar pedidos
           </Button>
+          {exportForTab[activeTab] && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportForTab[activeTab]}
+              disabled={loading}
+              leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}
+            >
+              Exportar aba (CSV)
+            </Button>
+          )}
           <Button variant="ghost" size="sm" onClick={loadData} isLoading={loading} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
             Atualizar
           </Button>
