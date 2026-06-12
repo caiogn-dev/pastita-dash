@@ -56,6 +56,7 @@ import { useRootStore } from '../../stores/rootStore';
 
 import { COLUMNS, statusToColumn, resolveFocusColumn } from './orderColumns';
 import type { ColumnId } from './orderColumns';
+import { getStageStart, getAvgPrepMinutes } from './orderSla';
 
 // Next status for advance button
 const getNextAction = (order: StoreOrder): { status: string; label: string; color: string } | null => {
@@ -159,7 +160,8 @@ const OrderCard: React.FC<CardProps> = ({
 
   const action = getNextAction(order);
   const hasPendingPayment = needsPayment(order);
-  const elapsed = getElapsedMinutes(order.created_at);
+  // Elapsed por etapa (SLA): em preparo conta desde preparing_at, não da criação
+  const elapsed = getElapsedMinutes(getStageStart(order));
   const urgency = getElapsedUrgency(elapsed, order.status);
   const isPickup = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
   const canRequestUber =
@@ -486,6 +488,9 @@ export const OrdersPage: React.FC = () => {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // SLA: tempo médio confirmado→pronto dos pedidos carregados
+  const avgPrepMinutes = useMemo(() => getAvgPrepMinutes(effectiveOrders), [effectiveOrders]);
+
   // Drill-down dos KPIs do dashboard: ?status=pending foca a coluna correspondente
   const [searchParams, setSearchParams] = useSearchParams();
   const focusColumn = resolveFocusColumn(searchParams.get('status'));
@@ -619,6 +624,14 @@ export const OrdersPage: React.FC = () => {
             {lastSync && (
               <span className="text-xs text-gray-400 dark:text-zinc-600 hidden sm:block">
                 {format(lastSync, 'HH:mm:ss', { locale: ptBR })}
+              </span>
+            )}
+            {avgPrepMinutes !== null && (
+              <span
+                className="hidden md:inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                title="Tempo médio entre confirmação e pronto (pedidos carregados)"
+              >
+                Preparo médio: {avgPrepMinutes}min
               </span>
             )}
             {focusColumn && (
