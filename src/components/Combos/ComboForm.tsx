@@ -306,19 +306,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
   isLoading = false,
 }) => {
   const [form, setForm] = useState<StoreComboInput & { items: ComboGroupDraft[] }>(() => {
-    const sourceGroups = combo?.groups && combo.groups.length > 0
-      ? combo.groups
-      : (combo?.items || []).map((item: any, idx: number) => ({
-          id: item.id,
-          product_id: item.product,
-          product_name: item.product_name,
-          is_required: true,
-          min_selections: item.quantity || 1,
-          max_selections: item.quantity || 1,
-          allow_duplicate_variants: false,
-          position: idx,
-          variant_limits: [],
-        }));
+    const sourceGroups = combo?.groups || [];
 
     const items: ComboGroupDraft[] = sourceGroups.map((item: any, idx: number) => {
       const productId = item.product_id || item.product;
@@ -468,14 +456,6 @@ export const ComboForm: React.FC<ComboFormProps> = ({
         })),
       }));
 
-      // Keep fixed-item payload for backward compatibility with older API paths.
-      const items = validItems.map(item => ({
-        product: item.product_id,
-        quantity: item.max_selections || 1,
-        allow_customization: false,
-        customization_options: {},
-      }));
-
       const payload: StoreComboPayload = {
         store: storeId,
         name: form.name.trim(),
@@ -487,7 +467,6 @@ export const ComboForm: React.FC<ComboFormProps> = ({
         featured: form.featured,
         track_stock: form.track_stock,
         stock_quantity: form.track_stock ? form.stock_quantity || 0 : 0,
-        items,
         groups,
       };
       await onSubmit(payload);

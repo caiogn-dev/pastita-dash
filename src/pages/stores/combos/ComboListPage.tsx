@@ -173,7 +173,7 @@ export const ComboListPage: React.FC = () => {
             },
             {
               label: 'Com produtos',
-              value: combos.filter(c => c.items.length > 0).length,
+              value: combos.filter(c => (c.groups?.length ?? 0) > 0).length,
               color: 'text-blue-600 dark:text-blue-400',
             },
           ].map(s => (

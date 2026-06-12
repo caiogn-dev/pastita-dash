@@ -262,6 +262,8 @@ export interface StoreProduct {
   allow_backorder: boolean;
   is_low_stock: boolean;
   is_in_stock: boolean;
+  paused_until?: string | null;
+  is_paused?: boolean;
   status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued';
   featured: boolean;
   main_image?: string;
@@ -1388,17 +1390,6 @@ export const getDeliveryZoneStats = async (storeId?: string): Promise<{
 // COMBO TYPES AND FUNCTIONS
 // =============================================================================
 
-export interface StoreComboItem {
-  id: string;
-  product: string;
-  product_name: string;
-  product_image?: string;
-  variant?: string;
-  quantity: number;
-  allow_customization: boolean;
-  customization_options: Record<string, unknown>;
-}
-
 export interface ComboVariantLimit {
   id: string;
   variant_id: string;
@@ -1453,8 +1444,7 @@ export interface StoreCombo {
   featured: boolean;
   track_stock: boolean;
   stock_quantity: number;
-  items: StoreComboItem[];
-  groups?: ComboProductGroup[];
+  groups: ComboProductGroup[];
   created_at: string;
   updated_at: string;
 }
@@ -1523,16 +1513,7 @@ export const deleteCombo = async (id: string): Promise<void> => {
   }
 };
 
-export interface StoreComboItemInput {
-  product: string;
-  variant?: string;
-  quantity: number;
-  allow_customization?: boolean;
-  customization_options?: Record<string, unknown>;
-}
-
 export type StoreComboPayload = StoreComboInput & {
-  items?: StoreComboItemInput[];
   groups?: ComboProductGroupInput[];
 };
 

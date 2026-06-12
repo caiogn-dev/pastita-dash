@@ -162,7 +162,7 @@ export const ComboList: React.FC<ComboListProps> = ({
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className="inline-block px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-medium">
-                      {combo.items.length}
+                      {combo.groups?.length ?? 0}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
