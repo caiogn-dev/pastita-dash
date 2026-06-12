@@ -11,6 +11,7 @@ import {
   CpuChipIcon,
   Cog6ToothIcon,
   PrinterIcon,
+  BanknotesIcon,
   ArrowRightOnRectangleIcon,
   BoltIcon,
   UserGroupIcon,
@@ -81,6 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           icon: ChatBubbleLeftRightIcon,
           badge: totalUnreadCount > 0 ? String(totalUnreadCount) : undefined,
         },
+        { name: 'Caixa', href: storeHref('cash'), icon: BanknotesIcon },
         { name: 'Clientes', href: storeHref('customers'), icon: UserGroupIcon },
       ]
     },
