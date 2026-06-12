@@ -553,8 +553,7 @@ function StepAjustes({
       </div>
 
       <p className="text-xs text-gray-400 dark:text-zinc-500">
-        Os campos de desconto/acréscimo ficam como TODO no backend até a Fase 1 do
-        plano ser concluída.
+        Desconto e acréscimo são aplicados ao total do pedido.
       </p>
     </div>
   );
@@ -812,6 +811,18 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
         ? ((customer as Customer).phone_number_edited || customer.phone_number)
         : customer.phone_number;
 
+      const subtotal = cart.reduce((s, c) => s + c.product.price * c.quantity, 0);
+      const discountRaw = parseFloat(discountValue) || 0;
+      const discountAmount =
+        discountType === 'percent' ? subtotal * (discountRaw / 100) : discountRaw;
+      const surchargeAmount = parseFloat(surchargeValue) || 0;
+
+      const reasonParts: string[] = [];
+      if (discountAmount > 0 && discountReason.trim())
+        reasonParts.push(`Desconto: ${discountReason.trim()}`);
+      if (surchargeAmount > 0 && surchargeReason.trim())
+        reasonParts.push(`Acréscimo: ${surchargeReason.trim()}`);
+
       await ordersService.createOrder({
         store: storeSlug,
         customer_name: customer.name || 'Cliente PDV',
@@ -826,7 +837,9 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
         })),
         payment_method: apiPaymentMethod,
         notes: paymentMethod === 'fiado' ? 'Fiado' : undefined,
-        // TODO: enviar manual_discount_* e surcharge_* quando backend tiver as migrações da Fase 1
+        discount: discountAmount > 0 ? discountAmount : undefined,
+        surcharge: surchargeAmount > 0 ? surchargeAmount : undefined,
+        adjustment_reason: reasonParts.length > 0 ? reasonParts.join(' | ') : undefined,
       });
 
       toast.success('Pedido criado com sucesso!');
