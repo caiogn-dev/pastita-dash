@@ -23,6 +23,8 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  /** Quando presente, renderiza um cabeçalho de seção acima deste item */
+  sectionHeader?: string;
 }
 
 interface NavSection {
@@ -78,27 +80,33 @@ function PortalDropdown({
       className="w-52 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-2xl py-1"
     >
       {section.items.map((item) => (
-        <NavLink
-          key={item.href}
-          to={item.href}
-          end={item.href === '/'}
-          onClick={onClose}
-          className={({ isActive }) =>
-            `flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
-              isActive
-                ? 'bg-primary-50 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 font-medium'
-                : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
-            }`
-          }
-        >
-          <item.icon className="w-4 h-4 flex-shrink-0" />
-          <span>{item.name}</span>
-          {item.badge && (
-            <span className="ml-auto text-[10px] bg-primary-100 dark:bg-zinc-700 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded-full font-medium">
-              {item.badge}
-            </span>
+        <React.Fragment key={item.href}>
+          {item.sectionHeader && (
+            <p className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500 border-t border-gray-100 dark:border-zinc-800 first:border-t-0 mt-1 first:mt-0">
+              {item.sectionHeader}
+            </p>
           )}
-        </NavLink>
+          <NavLink
+            to={item.href}
+            end={item.href === '/'}
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                isActive
+                  ? 'bg-primary-50 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 font-medium'
+                  : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
+              }`
+            }
+          >
+            <item.icon className="w-4 h-4 flex-shrink-0" />
+            <span>{item.name}</span>
+            {item.badge && (
+              <span className="ml-auto text-[10px] bg-primary-100 dark:bg-zinc-700 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded-full font-medium">
+                {item.badge}
+              </span>
+            )}
+          </NavLink>
+        </React.Fragment>
       ))}
     </div>,
     document.body
@@ -219,34 +227,42 @@ export const Navbar: React.FC = () => {
         { name: 'Cupons',    href: storeHref('coupons'),  icon: TagIcon },
       ],
     },
-
-    // ── Tudo o mais ─────────────────────────────────────────
     {
-      label: 'Config',
+      label: 'Relatórios',
+      icon: PresentationChartLineIcon,
+      href: '/analytics',
+      items: [],
+    },
+
+    // ── Crescimento ─────────────────────────────────────────
+    {
+      label: 'Marketing',
+      icon: MegaphoneIcon,
+      items: [
+        { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon, sectionHeader: 'Campanhas' },
+        { name: 'Templates WhatsApp', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
+        { name: 'Campanhas Email',    href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
+        { name: 'Agentes IA',    href: '/agents',               icon: CpuChipIcon, badge: 'Beta', sectionHeader: 'Automação IA' },
+        { name: 'Automações',    href: '/automation/companies', icon: BoltIcon },
+        { name: 'Agendamentos',  href: '/automation/scheduled', icon: ClockIcon },
+        { name: 'Logs IA',       href: '/automation/logs',      icon: DocumentChartBarIcon },
+        { name: 'Handover',      href: '/whatsapp/handover',    icon: UserGroupIcon },
+      ],
+    },
+
+    // ── Configuração ────────────────────────────────────────
+    {
+      label: 'Loja',
       icon: Cog6ToothIcon,
       items: [
-        // Loja
-        { name: 'Relatórios',    href: '/analytics',             icon: PresentationChartLineIcon },
-        { name: 'Pagamentos',    href: storeHref('payments'),    icon: CreditCardIcon },
-        { name: 'Entrega',       href: storeHref('delivery'),    icon: ShoppingCartIcon },
-        { name: 'Configurações', href: storeHref('settings'),    icon: Cog6ToothIcon },
-        { name: 'Todas as Lojas', href: '/stores',               icon: BuildingStorefrontIcon },
-        // Marketing
-        { name: 'Campanhas Email',    href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
-        { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
-        { name: 'Templates WA',       href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-        // Handover
-        { name: 'Handover',      href: '/whatsapp/handover',    icon: UserGroupIcon },
-        // IA & Automação
-        { name: 'Agentes IA',    href: '/agents',                icon: CpuChipIcon, badge: 'Beta' },
-        { name: 'Automações',    href: '/automation/companies',  icon: BoltIcon },
-        { name: 'Agendamentos',  href: '/automation/scheduled',  icon: ClockIcon },
-        { name: 'Logs IA',       href: '/automation/logs',       icon: DocumentChartBarIcon },
-        // Conexões
-        { name: 'Contas WhatsApp',  href: '/accounts',           icon: DevicePhoneMobileIcon },
-        { name: 'Conexões',         href: '/connections',        icon: LinkIcon },
-        // Sistema
-        { name: 'Sistema',       href: '/settings',              icon: Cog6ToothIcon },
+        { name: 'Configurações', href: storeHref('settings'),   icon: Cog6ToothIcon, sectionHeader: 'Esta loja' },
+        { name: 'Entrega',       href: storeHref('delivery'),   icon: ShoppingCartIcon },
+        { name: 'Pagamentos',    href: storeHref('payments'),   icon: CreditCardIcon },
+        { name: 'Storefront',    href: storeHref('storefront'), icon: BuildingStorefrontIcon },
+        { name: 'Todas as Lojas',   href: '/stores',      icon: BuildingStorefrontIcon, sectionHeader: 'Conta' },
+        { name: 'Contas WhatsApp',  href: '/accounts',    icon: DevicePhoneMobileIcon },
+        { name: 'Conexões',         href: '/connections', icon: LinkIcon },
+        { name: 'Sistema',          href: '/settings',    icon: Cog6ToothIcon },
       ],
     },
   ], [storeHref, totalUnreadCount]);
@@ -389,26 +405,32 @@ export const Navbar: React.FC = () => {
                         {section.label}
                       </p>
                       {section.items.map((item) => (
-                        <NavLink
-                          key={item.href}
-                          to={item.href}
-                          end={item.href === '/'}
-                          className={({ isActive }) =>
-                            `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                              isActive
-                                ? 'bg-primary-50 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 font-medium'
-                                : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800'
-                            }`
-                          }
-                        >
-                          <item.icon className="w-4 h-4 flex-shrink-0" />
-                          {item.name}
-                          {item.badge && (
-                            <span className="ml-auto text-[10px] bg-primary-100 dark:bg-zinc-700 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded-full font-medium">
-                              {item.badge}
-                            </span>
+                        <React.Fragment key={item.href}>
+                          {item.sectionHeader && (
+                            <p className="px-3 pt-2 pb-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-300 dark:text-zinc-600">
+                              {item.sectionHeader}
+                            </p>
                           )}
-                        </NavLink>
+                          <NavLink
+                            to={item.href}
+                            end={item.href === '/'}
+                            className={({ isActive }) =>
+                              `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                                isActive
+                                  ? 'bg-primary-50 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 font-medium'
+                                  : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                              }`
+                            }
+                          >
+                            <item.icon className="w-4 h-4 flex-shrink-0" />
+                            {item.name}
+                            {item.badge && (
+                              <span className="ml-auto text-[10px] bg-primary-100 dark:bg-zinc-700 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded-full font-medium">
+                                {item.badge}
+                              </span>
+                            )}
+                          </NavLink>
+                        </React.Fragment>
                       ))}
                     </>
                   )}

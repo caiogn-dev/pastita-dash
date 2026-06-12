@@ -45,6 +45,16 @@ interface RootStore {
   clearOrders: (storeId: string) => void;
 }
 
+const SELECTED_STORE_KEY = 'cardapidex_selected_store';
+
+const readPersistedStore = (): string | null => {
+  try {
+    return localStorage.getItem(SELECTED_STORE_KEY);
+  } catch {
+    return null;
+  }
+};
+
 export const useRootStore = create<RootStore>((set) => ({
   // Auth
   auth: {
@@ -54,13 +64,31 @@ export const useRootStore = create<RootStore>((set) => ({
   setAuth: (auth) => set({ auth }),
   clearAuth: () => set({ auth: { user: null, token: null } }),
 
-  // Stores
+  // Stores — ao carregar a lista, auto-seleciona a primeira loja se nada
+  // estiver selecionado (sem isso, todo reload derrubava os links por loja
+  // para /stores, porque selectedStoreId começava null)
   stores: [],
-  setStores: (stores) => set({ stores }),
+  setStores: (stores) =>
+    set((state) => {
+      const valid = state.selectedStoreId
+        && stores.some((s) => s.id === state.selectedStoreId || s.slug === state.selectedStoreId);
+      if (valid || stores.length === 0) return { stores };
+      const persisted = readPersistedStore();
+      const fromPersisted = persisted
+        ? stores.find((s) => s.id === persisted || s.slug === persisted)
+        : null;
+      return { stores, selectedStoreId: (fromPersisted || stores[0]).id };
+    }),
 
-  // Selected store
-  selectedStoreId: null,
-  setSelectedStore: (storeId) => set({ selectedStoreId: storeId }),
+  // Selected store (persistido entre reloads)
+  selectedStoreId: readPersistedStore(),
+  setSelectedStore: (storeId) => {
+    try {
+      if (storeId) localStorage.setItem(SELECTED_STORE_KEY, storeId);
+      else localStorage.removeItem(SELECTED_STORE_KEY);
+    } catch { /* storage indisponível */ }
+    set({ selectedStoreId: storeId });
+  },
 
   // Orders
   orders: {},
