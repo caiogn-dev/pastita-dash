@@ -485,7 +485,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
                       style={{ backgroundColor: profilePic ? undefined : avatarBg }}
                     >
                       {profilePic
-                        ? <img src={profilePic} alt={conv.contact_name} className="w-full h-full object-cover" />
+                        ? <img src={profilePic} alt={conv.contact_name} className="w-full h-full object-cover" crossOrigin="anonymous" />
                         : initials}
                     </div>
                     {/* Mode dot */}
@@ -558,7 +558,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
                   const ini = getInitials(selectedConversation.contact_name, selectedConversation.phone_number);
                   return (
                     <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white overflow-hidden" style={{ backgroundColor: pic ? undefined : bg }}>
-                      {pic ? <img src={pic} alt={selectedConversation.contact_name} className="w-full h-full object-cover" /> : ini}
+                      {pic ? <img src={pic} alt={selectedConversation.contact_name} className="w-full h-full object-cover" crossOrigin="anonymous" /> : ini}
                     </div>
                   );
                 })()}

@@ -36,12 +36,12 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
         </div>
 
         <div className="media-viewer-body">
-          {isImage && <img src={url} alt={fileName} className="viewer-image" />}
-          {isVideo && <video src={url} controls className="viewer-video" />}
+          {isImage && <img src={url} alt={fileName} className="viewer-image" crossOrigin="anonymous" />}
+          {isVideo && <video src={url} controls className="viewer-video" crossOrigin="anonymous" />}
           {isAudio && (
             <div className="viewer-audio">
               <div className="audio-icon">🎵</div>
-              <audio src={url} controls />
+              <audio src={url} controls crossOrigin="anonymous" />
               {fileName && <div className="audio-name">{fileName}</div>}
             </div>
           )}
