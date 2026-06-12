@@ -77,6 +77,7 @@ const AutomationsPage = lazy(() => import('./pages/marketing/AutomationsPage').t
 
 // Delivery Pages
 const DeliveryZonesPage = lazy(() => import('./pages/delivery/DeliveryZonesPage').then(m => ({ default: m.default || m.DeliveryZonesPage })));
+const PrintSettingsPage = lazy(() => import('./pages/printing/PrintSettingsPage'));
 
 // Instagram Pages
 const InstagramAccountsPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramAccountsPage })));
@@ -215,6 +216,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/settings" element={<PageBoundary><StoreSettingsPage /></PageBoundary>} />
         <Route path="stores/:storeId/storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
         <Route path="stores/:storeId/delivery" element={<PageBoundary><DeliveryZonesPage /></PageBoundary>} />
+        <Route path="stores/:storeId/printing" element={<PageBoundary><PrintSettingsPage /></PageBoundary>} />
         
         {/* Marketing Routes */}
         <Route path="marketing" element={<PageBoundary><MarketingPage /></PageBoundary>} />

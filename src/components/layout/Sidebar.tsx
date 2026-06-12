@@ -10,6 +10,7 @@ import {
   CreditCardIcon,
   CpuChipIcon,
   Cog6ToothIcon,
+  PrinterIcon,
   ArrowRightOnRectangleIcon,
   BoltIcon,
   UserGroupIcon,
@@ -164,6 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           children: [
             { name: 'Lojas', href: '/stores', icon: BuildingStorefrontIcon },
             { name: 'Configurações da Loja', href: storeHref('settings'), icon: Cog6ToothIcon },
+            { name: 'Impressão', href: storeHref('printing'), icon: PrinterIcon },
             { name: 'Pagamentos', href: storeHref('payments'), icon: CreditCardIcon },
             { name: 'Sistema', href: '/settings', icon: Cog6ToothIcon },
           ]
