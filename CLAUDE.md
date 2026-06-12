@@ -34,6 +34,11 @@ Current production API may still use `backend.pastita.com.br` until DNS/backend 
 - Treat `VITE_STORE_SLUG` as optional local/test config only.
 - Store-specific reports or pages must be genericized before entering main navigation.
 
+## Navegação (CRÍTICO)
+
+- **A navegação real do painel é a `src/components/layout/Navbar.tsx`** (barra superior com dropdowns via portal). É ela que o `MainLayout` renderiza.
+- **`src/components/layout/Sidebar.tsx` é LEGADO e não é renderizado** — não adicionar itens de menu nela. Todo item novo de navegação vai na `Navbar.tsx` (array `sections`).
+
 ## Important Areas
 
 - `src/pages/stores/StorefrontPage.tsx`: store branding, public menu template, colors and domain.

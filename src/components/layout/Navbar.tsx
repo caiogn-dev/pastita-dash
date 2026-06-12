@@ -191,9 +191,18 @@ export const Navbar: React.FC = () => {
     {
       label: 'Chat',
       icon: ChatBubbleLeftRightIcon,
-      href: '/whatsapp/chat',
+      href: '/inbox/whatsapp',
       badge: totalUnreadCount > 0 ? String(totalUnreadCount > 99 ? '99+' : totalUnreadCount) : undefined,
       items: [],
+    },
+    {
+      label: 'PDV',
+      icon: CreditCardIcon,
+      items: [
+        { name: 'Caixa',              href: storeHref('cash'),     icon: CreditCardIcon },
+        { name: 'Modo Cozinha (KDS)', href: storeHref('kds'),      icon: ClockIcon },
+        { name: 'Impressão',          href: storeHref('printing'), icon: DocumentTextIcon },
+      ],
     },
     {
       label: 'Clientes',
