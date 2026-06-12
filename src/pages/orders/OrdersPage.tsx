@@ -647,6 +647,17 @@ export const OrdersPage: React.FC = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {storeQuery && (
+              <a
+                href={`/stores/${storeQuery}/kds`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                title="Abrir tela de cozinha em nova aba"
+              >
+                Modo Cozinha (KDS)
+              </a>
+            )}
             {/* PDV Drawer button */}
             {storeQuery && (
               <button

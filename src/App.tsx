@@ -78,6 +78,7 @@ const AutomationsPage = lazy(() => import('./pages/marketing/AutomationsPage').t
 const DeliveryZonesPage = lazy(() => import('./pages/delivery/DeliveryZonesPage').then(m => ({ default: m.default || m.DeliveryZonesPage })));
 const PrintSettingsPage = lazy(() => import('./pages/printing/PrintSettingsPage'));
 const CashPage = lazy(() => import('./pages/cash/CashPage'));
+const KdsPage = lazy(() => import('./pages/kds/KdsPage'));
 
 // Instagram Pages
 const InstagramAccountsPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramAccountsPage })));
@@ -147,6 +148,13 @@ const AppContent: React.FC = () => {
             <LoginPage />
           </Suspense>
         )
+      } />
+
+      {/* KDS fullscreen — sem sidebar, para a tela da cozinha */}
+      <Route path="/stores/:storeId/kds" element={
+        <ProtectedRoute>
+          <PageBoundary><KdsPage /></PageBoundary>
+        </ProtectedRoute>
       } />
 
       {/* Protected routes */}
