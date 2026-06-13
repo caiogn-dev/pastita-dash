@@ -2,9 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCartIcon,
-  CurrencyDollarIcon,
-  ChatBubbleLeftRightIcon,
-  ClockIcon,
   ArrowRightIcon,
   ExclamationTriangleIcon,
   ArrowPathIcon,
@@ -17,7 +14,8 @@ import {
   PlusIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Badge, Button, Loading } from '../../components/common';
+import { Badge, Button, Loading } from '../../components/common';
+import { Card, StatCard } from '../../components/ui';
 import { useStore } from '../../hooks';
 import { useAuthStore } from '../../stores/authStore';
 import { useOrderSound } from '../../hooks/useOrderSound';
@@ -74,70 +72,6 @@ const healthLabel: Record<string, string> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// KPI Card
-// ─────────────────────────────────────────────────────────────────────────────
-
-type Urgency = 'none' | 'medium' | 'high';
-
-interface KpiCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  sub?: string;
-  accent?: string;
-  iconBg?: string;
-  iconColor?: string;
-  urgency?: Urgency;
-  onClick?: () => void;
-}
-
-const KpiCard: React.FC<KpiCardProps> = ({
-  icon, label, value, sub, accent, iconBg, iconColor, urgency = 'none', onClick,
-}) => (
-  <div onClick={onClick} className={`flex-1 min-w-0 ${onClick ? 'cursor-pointer' : ''}`}>
-    <div className={[
-      'h-full rounded-xl border shadow-sm transition-all duration-200 overflow-hidden',
-      'bg-white dark:bg-zinc-950',
-      onClick ? 'hover:shadow-md hover:-translate-y-0.5' : '',
-      urgency === 'high'
-        ? 'border-red-200 dark:border-red-900/60'
-        : urgency === 'medium'
-        ? 'border-yellow-200 dark:border-yellow-900/60'
-        : 'border-gray-100 dark:border-zinc-800',
-    ].filter(Boolean).join(' ')}>
-      <div className="flex items-start justify-between gap-3 p-5">
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2.5">
-            {label}
-          </p>
-          <p className={[
-            'text-3xl font-bold tracking-tight truncate leading-none mb-1.5',
-            accent ?? 'text-gray-900 dark:text-white',
-            urgency === 'high' ? 'animate-pulse' : '',
-          ].filter(Boolean).join(' ')}>
-            {value}
-          </p>
-          {sub && <p className="text-xs text-gray-400 dark:text-zinc-500">{sub}</p>}
-        </div>
-        <div className={[
-          'shrink-0 p-2.5 rounded-xl',
-          iconBg  || 'bg-gray-50 dark:bg-zinc-900',
-          iconColor || 'text-gray-400 dark:text-zinc-500',
-        ].join(' ')}>
-          {icon}
-        </div>
-      </div>
-      {urgency === 'high' && (
-        <div className="h-0.5 bg-gradient-to-r from-red-500 to-orange-400" />
-      )}
-      {urgency === 'medium' && (
-        <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-amber-300" />
-      )}
-    </div>
-  </div>
-);
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Order row with inline advance action
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -187,7 +121,7 @@ const OrderRow: React.FC<OrderRowProps> = ({ order, storeRoute, advancing, onAdv
           <button
             onClick={() => onAdvance(order.id, action.next)}
             disabled={advancing === order.id}
-            className="text-xs px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700
+            className="text-xs px-3 py-1.5 rounded bg-brand hover:bg-brand-hover
                        disabled:opacity-50 text-white font-medium transition-colors whitespace-nowrap"
           >
             {advancing === order.id ? '…' : action.label}
@@ -340,41 +274,27 @@ export const DashboardPage: React.FC = () => {
 
       {/* ── KPI row ── */}
       <div className="grid grid-cols-4 max-xl:grid-cols-2 gap-3">
-        <KpiCard
-          icon={<ShoppingCartIcon className="h-5 w-5" />}
+        <StatCard
           label="Pedidos hoje"
           value={loading ? '—' : ordersToday}
           sub={!loading && ordersToday === 0 ? 'Nenhum ainda' : undefined}
-          iconBg="bg-blue-50 dark:bg-blue-950/40"
-          iconColor="text-blue-500 dark:text-blue-400"
           onClick={() => navigate(`/stores/${storeRoute}/orders`)}
         />
-        <KpiCard
-          icon={<CurrencyDollarIcon className="h-5 w-5" />}
+        <StatCard
           label="Receita hoje"
           value={loading ? '—' : fmt(revenueToday)}
-          accent="text-emerald-600 dark:text-emerald-400"
-          iconBg="bg-emerald-50 dark:bg-emerald-950/40"
-          iconColor="text-emerald-500 dark:text-emerald-400"
+          tone="brand"
         />
-        <KpiCard
-          icon={<ClockIcon className="h-5 w-5" />}
+        <StatCard
           label="Aguardando"
           value={loading ? '—' : pendingCount}
-          accent={pendingCount > 0 ? (pendingCount > 3 ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400') : undefined}
+          tone={pendingCount > 0 ? 'warning' : 'default'}
           sub={pendingCount > 0 ? 'Precisam de confirmação' : 'Tudo em dia ✓'}
-          iconBg={pendingCount > 0 ? (pendingCount > 3 ? 'bg-red-50 dark:bg-red-950/40' : 'bg-orange-50 dark:bg-orange-950/40') : 'bg-gray-50 dark:bg-zinc-900'}
-          iconColor={pendingCount > 0 ? (pendingCount > 3 ? 'text-red-500 dark:text-red-400' : 'text-orange-500 dark:text-orange-400') : 'text-gray-400 dark:text-zinc-500'}
-          urgency={pendingCount > 3 ? 'high' : pendingCount > 0 ? 'medium' : 'none'}
           onClick={() => navigate(`/stores/${storeRoute}/orders?status=pending`)}
         />
-        <KpiCard
-          icon={<ChatBubbleLeftRightIcon className="h-5 w-5" />}
+        <StatCard
           label="Conversas abertas"
           value={loading ? '—' : conversationsOpen}
-          accent={conversationsOpen > 0 ? 'text-violet-600 dark:text-violet-400' : undefined}
-          iconBg={conversationsOpen > 0 ? 'bg-violet-50 dark:bg-violet-950/40' : 'bg-gray-50 dark:bg-zinc-900'}
-          iconColor={conversationsOpen > 0 ? 'text-violet-500 dark:text-violet-400' : 'text-gray-400 dark:text-zinc-500'}
           onClick={() => navigate('/conversations')}
         />
       </div>
@@ -384,22 +304,22 @@ export const DashboardPage: React.FC = () => {
 
         {/* Recent orders — 2/3 */}
         <Card className="xl:col-span-2">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border-token">
+            <h2 className="text-sm font-semibold text-fg-token flex items-center gap-2">
               <FireIcon className="h-4 w-4 text-orange-400" />
               Pedidos recentes
             </h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(`/stores/${storeRoute}/orders/new`)}
-                className="flex items-center gap-1 text-xs bg-primary-600 hover:bg-primary-700 text-white px-2.5 py-1.5 rounded-lg font-medium transition-colors"
+                className="flex items-center gap-1 text-xs bg-brand hover:bg-brand-hover text-white px-2.5 py-1.5 rounded font-medium transition-colors"
               >
                 <PlusIcon className="h-3.5 w-3.5" />
                 Novo pedido
               </button>
               <button
                 onClick={() => navigate(`/stores/${storeRoute}/orders`)}
-                className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline font-medium"
+                className="flex items-center gap-1 text-xs text-brand hover:underline font-medium"
               >
                 Ver todos <ArrowRightIcon className="h-3 w-3" />
               </button>
@@ -443,9 +363,9 @@ export const DashboardPage: React.FC = () => {
 
         {/* Pipeline — 1/3 */}
         <Card>
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-border-token">
             <TruckIcon className="h-4 w-4 text-indigo-400" />
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Pipeline de pedidos</h2>
+            <h2 className="text-sm font-semibold text-fg-token">Pipeline de pedidos</h2>
           </div>
           <div className="p-5 space-y-3">
             {loading ? (
@@ -480,10 +400,10 @@ export const DashboardPage: React.FC = () => {
               })
             )}
           </div>
-          <div className="px-5 py-3 border-t border-gray-100 dark:border-zinc-800">
+          <div className="px-5 py-3 border-t border-border-token">
             <button
               onClick={() => navigate(`/stores/${storeRoute}/orders`)}
-              className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 font-medium"
+              className="text-xs text-brand hover:underline flex items-center gap-1 font-medium"
             >
               Gerenciar todos <ArrowRightIcon className="h-3 w-3" />
             </button>
@@ -493,12 +413,12 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* ── Project health (admins only) ── */}
-      {user?.is_staff && <Card noPadding>
+      {user?.is_staff && <Card>
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-border-token">
           <div className="flex items-center gap-2">
-            <ServerStackIcon className="h-4 w-4 text-primary-500" />
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Saúde do sistema</h2>
+            <ServerStackIcon className="h-4 w-4 text-brand" />
+            <h2 className="text-sm font-semibold text-fg-token">Saúde do sistema</h2>
             <Badge variant={healthVariant[projectHealth?.status || 'unknown'] || 'gray'}>
               {healthLabel[projectHealth?.status || 'unknown'] || 'Indefinido'}
             </Badge>
@@ -511,7 +431,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/analytics')}
-            className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline font-medium"
+            className="flex items-center gap-1 text-xs text-brand hover:underline font-medium"
           >
             Ver analytics <ArrowRightIcon className="h-3 w-3" />
           </button>
@@ -615,7 +535,7 @@ export const DashboardPage: React.FC = () => {
                             {item.intent_type.replace(/_/g, ' ')}
                           </span>
                           <div className="w-16 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-primary-400 rounded-full" style={{ width: `${Math.max(pct, 8)}%` }} />
+                            <div className="h-full bg-brand rounded-full" style={{ width: `${Math.max(pct, 8)}%` }} />
                           </div>
                           <span className="text-[11px] font-bold text-gray-700 dark:text-zinc-300 tabular-nums w-5 text-right">{item.count}</span>
                         </div>
@@ -668,7 +588,7 @@ export const DashboardPage: React.FC = () => {
       <p className="text-right text-xs text-gray-400 dark:text-zinc-600">
         Atualizado às {refreshedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         {' · '}
-        <button onClick={loadData} className="hover:text-primary-500 underline transition-colors">
+        <button onClick={loadData} className="hover:text-brand underline transition-colors">
           atualizar agora
         </button>
       </p>
