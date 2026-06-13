@@ -100,17 +100,27 @@ export function getStoreSlug(): string | null {
 }
 
 /**
- * Get store slug with environment fallback.
+ * Get store slug/id with fallback.
+ * Lê a loja SELECIONADA no rootStore primeiro (corrige relatórios/exports que
+ * iam sem store em produção multi-tenant, onde DEFAULT_STORE_SLUG é vazio).
+ * O backend aceita id (UUID) ou slug, então retornar o id resolvido é válido.
  */
 export function getStoreSlugWithFallback(): string | null {
+  const { selectedStoreId, stores } = useRootStore.getState();
+  if (selectedStoreId) {
+    const match = stores.find((s: any) => s.id === selectedStoreId || s.slug === selectedStoreId);
+    if (match?.slug) return match.slug;
+    return selectedStoreId; // já pode ser um slug; backend resolve id ou slug
+  }
   return resolveStoreSlug(null, DEFAULT_STORE_SLUG);
 }
 
 /**
- * Get store ID or fallback to env variable.
+ * Get store ID with fallback (lê a loja selecionada no rootStore).
  */
 export function getStoreIdWithFallback(): string | null {
-  return null;
+  return useRootStore.getState().selectedStoreId
+    ?? resolveStoreSlug(null, DEFAULT_STORE_SLUG);
 }
 
 export default useStore;
