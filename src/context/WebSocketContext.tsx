@@ -221,12 +221,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     listenersRef.current.get(event)!.add(cb);
 
     // Também registrar na conexão realtime se disponível
-    if (connectionRef.current) {
-      connectionRef.current.on(event, cb as (data: unknown) => void);
-    }
-    
+    const unsubFromConnection = connectionRef.current
+      ? connectionRef.current.on(event, cb as (data: unknown) => void)
+      : null;
+
     return () => {
       listenersRef.current.get(event)?.delete(cb);
+      unsubFromConnection?.();
     };
   }, []);
 
