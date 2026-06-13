@@ -19,6 +19,7 @@ import {
   PrintJob,
   listPrintAgents,
   createPrintAgent,
+  updatePrintAgent,
   rotatePrintAgentKey,
   deletePrintAgent,
   listPrintJobs,
@@ -92,6 +93,17 @@ const PrintSettingsPage: React.FC = () => {
       toast.error('Erro ao criar agente de impressão');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleSelectPrinter = async (agent: PrintAgent, printerName: string) => {
+    if (!storeId || !printerName) return;
+    try {
+      await updatePrintAgent(storeId, agent.id, { printer_name: printerName });
+      toast.success(`Impressora "${printerName}" selecionada — o agent troca no próximo heartbeat (~30s)`);
+      loadData();
+    } catch {
+      toast.error('Erro ao trocar impressora');
     }
   };
 
@@ -191,7 +203,29 @@ const PrintSettingsPage: React.FC = () => {
                       <p className="font-medium text-fg-primary">{agent.name}</p>
                       <p className="text-xs text-fg-muted">{agent.host_name || agent.platform}</p>
                     </td>
-                    <td className="py-2.5 px-2 text-fg-primary">{agent.printer_name || '—'}</td>
+                    <td className="py-2.5 px-2">
+                      {(agent.available_printers?.length ?? 0) > 0 ? (
+                        <select
+                          value={agent.printer_name || ''}
+                          onChange={(e) => handleSelectPrinter(agent, e.target.value)}
+                          className="text-sm border border-border-primary rounded-lg px-2 py-1.5 bg-bg-card text-fg-primary max-w-[220px]"
+                          title="Impressoras detectadas no computador do agent"
+                        >
+                          {!agent.printer_name && <option value="">Escolha a impressora…</option>}
+                          {agent.printer_name && !agent.available_printers!.includes(agent.printer_name) && (
+                            <option value={agent.printer_name}>{agent.printer_name} (não detectada)</option>
+                          )}
+                          {agent.available_printers!.map((name) => (
+                            <option key={name} value={name}>{name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-fg-primary" title="Conecte o agent para detectar as impressoras automaticamente">
+                          {agent.printer_name || '—'}
+                          <span className="block text-[11px] text-fg-muted">aguardando detecção…</span>
+                        </span>
+                      )}
+                    </td>
                     <td className="py-2.5 px-2">
                       {agent.is_online ? (
                         <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
@@ -299,14 +333,19 @@ const PrintSettingsPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-fg-primary mb-1">Nome da impressora no Windows</label>
+            <label className="block text-sm font-medium text-fg-primary mb-1">
+              Impressora <span className="text-fg-muted font-normal">(opcional)</span>
+            </label>
             <input
               type="text"
               value={newPrinterName}
               onChange={(e) => setNewPrinterName(e.target.value)}
-              placeholder="Ex.: EPSON TM-T20 Receipt"
+              placeholder="Deixe vazio — detectamos automaticamente"
               className="w-full text-sm border border-border-primary rounded-lg px-3 py-2 bg-bg-card text-fg-primary"
             />
+            <p className="text-xs text-fg-muted mt-1">
+              Assim que o agent conectar, as impressoras do computador aparecem aqui num dropdown para você escolher.
+            </p>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>

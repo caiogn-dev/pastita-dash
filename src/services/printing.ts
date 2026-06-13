@@ -24,6 +24,8 @@ export interface PrintAgent {
   host_name: string;
   is_online: boolean;
   is_active: boolean;
+  /** Impressoras detectadas no PC do agent (via heartbeat) */
+  available_printers?: string[];
   created_at: string;
   /** Presente apenas na resposta de criação/rotação — chave exibida uma única vez */
   api_key?: string;
