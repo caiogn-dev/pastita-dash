@@ -1,9 +1,14 @@
-export { Button, buttonVariants } from './button';
-export { Card, CardHeader, CardContent, CardFooter, StatCard } from './card';
+export { Button } from './Button';
+export type { ButtonProps, ButtonVariant } from './Button';
+export { Card } from './Card';
+export type { CardProps } from './Card';
+export { StatCard } from './StatCard';
+export type { StatCardProps, StatCardTone } from './StatCard';
 export { Input, SearchInput } from './input';
 export { Label } from './label';
 export { Modal, ModalHeader, ModalBody, ModalFooter } from './modal';
-export { Badge } from './badge';
+export { Badge } from './Badge';
+export type { BadgeProps, BadgeTone } from './Badge';
 export { Skeleton, TableSkeleton, CardSkeleton, StatsSkeleton } from './skeleton';
 export { Dropdown, DropdownButton } from './dropdown';
 export { Toast, ToastContainer } from './toast';

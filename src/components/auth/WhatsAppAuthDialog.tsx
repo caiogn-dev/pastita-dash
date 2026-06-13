@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -262,8 +262,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
             <Button
               onClick={handleSendCode}
               disabled={isLoading || phone.replace(/\D/g, '').length < 10}
-              className="w-full"
-              size="lg"
+              className="w-full justify-center text-base"
             >
               {isLoading ? (
                 <>
@@ -318,8 +317,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
             <Button
               onClick={handleVerifyCode}
               disabled={isLoading || code.join('').length !== 6}
-              className="w-full"
-              size="lg"
+              className="w-full justify-center text-base"
             >
               {isLoading ? (
                 <>
@@ -334,7 +332,6 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
-                size="sm"
                 onClick={() => setStep('phone')}
                 className="text-gray-500"
               >
@@ -349,7 +346,6 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
               ) : (
                 <Button
                   variant="ghost"
-                  size="sm"
                   onClick={handleResendCode}
                   disabled={isLoading}
                 >
