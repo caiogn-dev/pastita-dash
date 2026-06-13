@@ -37,7 +37,7 @@ export * from './instagram';
 // WebSocket (novo client)
 export {
   WebSocketClient,
-  useWebSocket,
+  createWebSocket,
   clearWebSocketInstance,
   type WebSocketConfig,
   type WebSocketEvent,
