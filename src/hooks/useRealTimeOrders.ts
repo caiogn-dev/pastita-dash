@@ -27,11 +27,15 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   // Selectors estreitos: não re-renderizar a cada mudança em qualquer pedido
   const authToken = useRootStore((s) => s.auth.token);
   const selectedStoreId = useRootStore((s) => s.selectedStoreId);
+  const selectedStoreSlug = useRootStore((s) => {
+    const store = s.stores.find((st) => st.id === s.selectedStoreId);
+    return store?.slug ?? null;
+  });
   const wsRef = useRef<ReturnType<typeof createWebSocket> | null>(null);
   const refreshAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!enabled || !authToken || !selectedStoreId) {
+    if (!enabled || !authToken || !selectedStoreId || !selectedStoreSlug) {
       return;
     }
 
@@ -39,7 +43,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       const ws = createWebSocket({
         url: wsUrl,
         token: authToken!,
-        storeSlug: selectedStoreId!,
+        storeSlug: selectedStoreSlug,
       });
 
       wsRef.current = ws;
@@ -94,7 +98,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       refreshAbortRef.current = null;
       clearWebSocketInstance();
     };
-  }, [enabled, authToken, selectedStoreId, wsUrl]);
+  }, [enabled, authToken, selectedStoreId, selectedStoreSlug, wsUrl]);
 
   // Patch incremental: aplica o evento direto na store sem refetch da lista
   // inteira. Só refetch quando o pedido não está na lista (página filtrada,
