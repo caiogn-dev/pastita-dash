@@ -10,7 +10,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRootStore } from '../stores/rootStore';
-import { useWebSocket, clearWebSocketInstance } from '../services/websocket';
+import { createWebSocket, clearWebSocketInstance } from '../services/websocket';
 import { applyOrderEventToOrders, type OrderRealtimeEvent } from './orderRealtimeEvents';
 
 export { applyOrderEventToOrders };
@@ -27,7 +27,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   // Selectors estreitos: não re-renderizar a cada mudança em qualquer pedido
   const authToken = useRootStore((s) => s.auth.token);
   const selectedStoreId = useRootStore((s) => s.selectedStoreId);
-  const wsRef = useRef<ReturnType<typeof useWebSocket> | null>(null);
+  const wsRef = useRef<ReturnType<typeof createWebSocket> | null>(null);
   const refreshAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
     }
 
     const initWebSocket = async () => {
-      const ws = useWebSocket({
+      const ws = createWebSocket({
         url: wsUrl,
         token: authToken!,
         storeSlug: selectedStoreId!,

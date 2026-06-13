@@ -32,7 +32,8 @@ export class WebSocketClient {
   private ws: WebSocket | null = null;
   private config: Required<WebSocketConfig>;
   private subscribers: Map<string, Map<string, EventHandler>> = new Map();
-  private listeners: Map<string, Set<Function>> = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private listeners: Map<string, Set<(...args: any[]) => void>> = new Map();
   private reconnectAttempts = 0;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private heartbeatTimeout: NodeJS.Timeout | null = null;
@@ -122,14 +123,16 @@ export class WebSocketClient {
     return true;
   }
 
-  on(event: 'connected' | 'disconnected' | 'error', handler: Function): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on(event: 'connected' | 'disconnected' | 'error', handler: (...args: any[]) => void): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)!.add(handler);
   }
 
-  off(event: string, handler: Function): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  off(event: string, handler: (...args: any[]) => void): void {
     this.listeners.get(event)?.delete(handler);
   }
 
@@ -199,7 +202,7 @@ export class WebSocketClient {
 // Singleton instance
 let instance: WebSocketClient | null = null;
 
-export function useWebSocket(config?: WebSocketConfig): WebSocketClient {
+export function createWebSocket(config?: WebSocketConfig): WebSocketClient {
   if (!instance && config) {
     instance = new WebSocketClient(config);
   }
