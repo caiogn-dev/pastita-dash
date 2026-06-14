@@ -40,10 +40,19 @@ export default {
           active: 'var(--bg-active)',
         },
         brand: {
+          DEFAULT: 'var(--brand)',
+          hover: 'var(--brand-hover)',
+          strong: 'var(--brand-strong)',
+          soft: 'var(--brand-soft)',
           400: 'var(--brand-primary-light)',
           500: 'var(--brand-primary)',
           600: 'var(--brand-primary-dark)',
         },
+        // Token aliases (redesign painel) - novas chaves, não sobrescrevem existentes
+        canvas: 'var(--canvas)',
+        'fg-token': 'var(--fg)',
+        'fg-muted-token': 'var(--fg-muted)',
+        'border-token': 'var(--border)',
         border: {
           primary: 'var(--border-default)',
           subtle: 'var(--border-subtle)',
@@ -60,7 +69,8 @@ export default {
           dark: '#000000', // PRETO PURO, não slate
         },
         surface: {
-          DEFAULT: '#f8fafc',
+          DEFAULT: 'var(--surface)',
+          2: 'var(--surface-2)',
           light: '#f8fafc',
           dark: '#0a0a0a', // Preto suave, não slate
         },
@@ -268,6 +278,8 @@ export default {
       // BORDER RADIUS
       // ============================================
       borderRadius: {
+        DEFAULT: 'var(--radius)', // visual enquadrado (cantos retos ~2px)
+        'pill': 'var(--radius-pill)',
         'xl': '1rem',
         '2xl': '1.5rem',
         '3xl': '2rem',

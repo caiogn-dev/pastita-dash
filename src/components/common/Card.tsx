@@ -1,3 +1,5 @@
+// TODO dedup: API difere do ui/Card (este tem title/subtitle/action/variant/size/noPadding;
+// o ui/Card é um <div> puro). Consolidar depois sem quebrar consumidores.
 /**
  * Card - Componente de cartão sem Chakra UI
  */

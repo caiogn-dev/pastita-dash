@@ -1,0 +1,45 @@
+/* ============================================
+   DESIGN TOKENS — Identidade Verde Floresta
+   Cantos retos, bordas firmes, profundidade neutra.
+   light em :root, dark em .dark
+   ============================================ */
+:root {
+  --brand: #166534;
+  --brand-hover: #14532d;
+  --brand-strong: #11241c;
+  --brand-soft: #dcfce7;
+  --canvas: #eef0ec;
+  --surface: #ffffff;
+  --surface-2: #f7f8f7;
+  --border: #cfd8d1;
+  --border-strong: #b7c2ba;
+  --fg: #0f1f17;
+  --fg-muted: #5b6b62;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --danger: #dc2626;
+  --radius: 2px;
+  --radius-pill: 999px;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.dark {
+  --brand: #22c55e;
+  --brand-hover: #16a34a;
+  --brand-strong: #0a0f0c;
+  --brand-soft: #14271c;
+  --canvas: #0a0f0c;
+  --surface: #121a15;
+  --surface-2: #0e1511;
+  --border: #1f2a23;
+  --border-strong: #2a382f;
+  --fg: #e8f0ec;
+  --fg-muted: #9fb3a8;
+}
+
+html,
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}

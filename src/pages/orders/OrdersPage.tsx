@@ -39,7 +39,8 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Button, PageLoading } from '../../components/common';
+import { PageLoading } from '../../components/common';
+import { Button, Card } from '../../components/ui';
 import {
   getOrders,
   updateOrderStatus,
@@ -172,19 +173,19 @@ const OrderCard: React.FC<CardProps> = ({
 
   const urgencyBorder =
     isSuccess   ? 'border-emerald-400 dark:border-emerald-600' :
-    isUpdating  ? 'border-primary-400 dark:border-primary-600' :
+    isUpdating  ? 'border-brand' :
     urgency === 'critical' ? 'border-red-400 dark:border-red-700' :
     urgency === 'warning'  ? 'border-yellow-400 dark:border-yellow-600' :
-    'border-black/8 dark:border-white/8';
+    'border-border-token';
 
   return (
     <div
       onClick={() => !isUpdating && onDetail(order)}
       className={`
-        cursor-pointer rounded-xl border-2 bg-white/95 dark:bg-zinc-900 p-2.5
+        cursor-pointer rounded border-2 bg-surface text-fg-token p-2.5
         transition-all duration-200
         hover:-translate-y-0.5 hover:shadow-md
-        ${isDragging ? 'shadow-2xl ring-2 ring-primary-500 scale-105 rotate-1' : ''}
+        ${isDragging ? 'shadow-2xl ring-2 ring-brand scale-105 rotate-1' : ''}
         ${isUpdating ? 'opacity-70' : ''}
         ${urgency === 'critical' && !isSuccess && !isUpdating ? 'animate-pulse' : ''}
         ${urgencyBorder}
@@ -192,11 +193,11 @@ const OrderCard: React.FC<CardProps> = ({
     >
       {/* Row 1: order number + elapsed + delivery badge */}
       <div className="flex items-center justify-between gap-1 mb-1.5">
-        <span className="font-mono text-[10px] font-bold text-gray-400 dark:text-zinc-500">
+        <span className="font-mono text-[10px] font-bold text-fg-muted-token">
           #{order.order_number}
         </span>
         <div className="flex items-center gap-1">
-          {isUpdating && <ArrowPathIcon className="h-3 w-3 text-primary-500 animate-spin" />}
+          {isUpdating && <ArrowPathIcon className="h-3 w-3 text-brand animate-spin" />}
           {isSuccess && <span className="text-[10px] font-bold text-emerald-600">✓ Movido</span>}
           {!isUpdating && !isSuccess && elapsed > 0 && (
             <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
@@ -221,10 +222,10 @@ const OrderCard: React.FC<CardProps> = ({
 
       {/* Row 2: customer name + value */}
       <div className="flex items-start justify-between gap-2 mb-1.5">
-        <p className="truncate text-[12px] font-semibold leading-tight text-gray-900 dark:text-white">
+        <p className="truncate text-[12px] font-semibold leading-tight text-fg-token">
           {order.customer_name || 'Cliente'}
         </p>
-        <p className="shrink-0 text-[14px] font-bold tracking-tight text-gray-900 dark:text-white">
+        <p className="shrink-0 text-[14px] font-bold tracking-tight text-fg-token">
           R$ {fmt(order.total)}
         </p>
       </div>
@@ -232,14 +233,14 @@ const OrderCard: React.FC<CardProps> = ({
       {/* Row 3: phone + payment + items */}
       <div className="flex items-center gap-1.5 mb-2 flex-wrap">
         {order.customer_phone && (
-          <span className="flex items-center gap-0.5 text-[10px] text-gray-400 dark:text-zinc-500">
+          <span className="flex items-center gap-0.5 text-[10px] text-fg-muted-token">
             <PhoneIcon className="h-2.5 w-2.5" />
             {order.customer_phone}
           </span>
         )}
         <PaymentBadge status={order.payment_status} method={order.payment_method} />
         {order.items?.length > 0 && (
-          <span className="text-[10px] text-gray-400 dark:text-zinc-500">
+          <span className="text-[10px] text-fg-muted-token">
             {order.items.length} item(ns)
           </span>
         )}
@@ -252,7 +253,7 @@ const OrderCard: React.FC<CardProps> = ({
             onClick={() => onUberClick?.(order)}
             disabled={isUpdating}
             title="Solicitar motorista Uber"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-60 dark:bg-blue-900/20 dark:text-blue-400 transition-colors"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-60 dark:bg-blue-900/20 dark:text-blue-400 transition-colors"
           >
             <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
               <circle cx="12" cy="8.5" r="1.5" />
@@ -268,7 +269,7 @@ const OrderCard: React.FC<CardProps> = ({
             onClick={() => onPay(order)}
             disabled={paying || isUpdating}
             title="Lançar pagamento"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 disabled:opacity-60 dark:bg-emerald-900/20 dark:text-emerald-400 transition-colors"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100 disabled:opacity-60 dark:bg-emerald-900/20 dark:text-emerald-400 transition-colors"
           >
             {paying ? <ArrowPathIcon className="h-3 w-3 animate-spin" /> : <CurrencyDollarIcon className="h-3.5 w-3.5" />}
           </button>
@@ -278,7 +279,7 @@ const OrderCard: React.FC<CardProps> = ({
           <button
             onClick={() => onAdvance(order)}
             disabled={advancing || isUpdating}
-            className={`flex h-7 flex-1 items-center justify-center gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-wide text-white transition-colors disabled:opacity-60 ${action.color}`}
+            className={`flex h-7 flex-1 items-center justify-center gap-1 rounded px-1.5 text-[10px] font-semibold uppercase tracking-wide text-white transition-colors disabled:opacity-60 ${action.color}`}
           >
             {advancing ? <ArrowPathIcon className="h-3 w-3 animate-spin" /> : <CheckIcon className="h-3 w-3" />}
             <span className="truncate">{action.label}</span>
@@ -289,7 +290,7 @@ const OrderCard: React.FC<CardProps> = ({
           onClick={() => onCancel(order)}
           disabled={cancelling || isUpdating}
           title="Cancelar pedido"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-red-100 text-red-400 hover:bg-red-50 disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 transition-colors"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-red-100 text-red-400 hover:bg-red-50 disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 transition-colors"
         >
           <XMarkIcon className="h-3.5 w-3.5" />
         </button>
@@ -322,7 +323,7 @@ const DroppableColumn: React.FC<{ id: string; children: React.ReactNode }> = ({ 
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 overflow-y-auto p-2 space-y-1.5 transition-colors ${isOver ? 'bg-primary-50/40 dark:bg-primary-900/10' : ''}`}
+      className={`flex-1 overflow-y-auto p-2 space-y-1.5 transition-colors ${isOver ? 'bg-brand-soft' : ''}`}
     >
       {children}
     </div>
@@ -599,7 +600,7 @@ export const OrdersPage: React.FC = () => {
   if (!storeQuery) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <p className="text-gray-500 dark:text-zinc-400">Selecione uma loja para ver os pedidos.</p>
+        <p className="text-fg-muted-token">Selecione uma loja para ver os pedidos.</p>
         <Button onClick={() => navigate('/stores')}>Selecionar loja</Button>
       </div>
     );
@@ -607,22 +608,22 @@ export const OrdersPage: React.FC = () => {
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex min-h-screen flex-col gap-3 bg-[#f5f1e8] px-2 py-2 text-fg-primary dark:bg-[#050505] sm:px-3 sm:py-3">
+      <div className="flex min-h-screen flex-col gap-3 bg-canvas px-2 py-2 text-fg-token sm:px-3 sm:py-3">
 
         {/* Header */}
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/70 px-3 py-2 dark:border-white/5 dark:bg-white/5">
+        <Card className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-3 py-2">
           <div className="flex items-center gap-2.5">
-            <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-gray-900 dark:text-white">Pedidos</h1>
+            <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-fg-token">Pedidos</h1>
             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
               rtConnected
                 ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500'
+                : 'bg-surface-2 text-fg-muted-token'
             }`}>
               {rtConnected ? <SignalIcon className="h-3 w-3" /> : <SignalSlashIcon className="h-3 w-3" />}
               {rtConnected ? 'Ao vivo' : 'Offline'}
             </span>
             {lastSync && (
-              <span className="text-xs text-gray-400 dark:text-zinc-600 hidden sm:block">
+              <span className="text-xs text-fg-muted-token hidden sm:block">
                 {format(lastSync, 'HH:mm:ss', { locale: ptBR })}
               </span>
             )}
@@ -652,42 +653,44 @@ export const OrdersPage: React.FC = () => {
                 href={`/stores/${storeQuery}/kds`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                 title="Abrir tela de cozinha em nova aba"
               >
-                Modo Cozinha (KDS)
+                <Button variant="outline" className="py-1.5">
+                  Modo Cozinha (KDS)
+                </Button>
               </a>
             )}
             {/* PDV Drawer button */}
             {storeQuery && (
-              <button
+              <Button
                 onClick={() => setIsNewOrderOpen(true)}
-                className="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
+                className="py-1.5"
+                leftIcon={<ShoppingCartIcon className="h-4 w-4" />}
                 title="Atalho: tecla N"
               >
-                <ShoppingCartIcon className="h-4 w-4" />
                 Novo Pedido (N)
-              </button>
+              </Button>
             )}
             {orderCreateRoute && (
-              <button
+              <Button
+                variant="outline"
                 onClick={() => navigate(orderCreateRoute)}
-                className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-black dark:bg-white dark:text-black dark:hover:bg-zinc-200 transition-colors"
+                className="py-1.5"
+                leftIcon={<ShoppingCartIcon className="h-4 w-4" />}
               >
-                <ShoppingCartIcon className="h-4 w-4" />
                 Formulário
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              variant="outline"
               onClick={() => loadOrders(true)}
-              disabled={false}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+              className="py-1.5"
+              leftIcon={<ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />}
             >
-              <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               Atualizar
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
 
         {/* Kanban columns */}
         <div className="grid min-h-0 flex-1 gap-2 md:grid-cols-5 max-xl:grid-cols-2">
@@ -696,10 +699,10 @@ export const OrdersPage: React.FC = () => {
             return (
               <div
                 key={col.id}
-                className={`flex min-h-[220px] flex-col overflow-hidden rounded-2xl border border-gray-200/80 dark:border-zinc-800 xl:min-h-[calc(100vh-5.75rem)] ${col.colBg}`}
+                className={`flex min-h-[220px] flex-col overflow-hidden rounded border border-border-token xl:min-h-[calc(100vh-5.75rem)] ${col.colBg}`}
               >
                 {/* Column header */}
-                <div className={`${col.headerBg} text-white px-3 py-2.5 border-t-0 rounded-t-2xl`}>
+                <div className={`${col.headerBg} text-white px-3 py-2.5 border-t-0 rounded-t`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Icon className="h-4 w-4 opacity-90" />
@@ -716,9 +719,9 @@ export const OrdersPage: React.FC = () => {
                 <SortableContext items={col.orders.map(o => o.id)} strategy={verticalListSortingStrategy}>
                   <DroppableColumn id={col.id}>
                     {col.orders.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-gray-200/60 dark:border-zinc-700/60 rounded-xl">
-                        <ShoppingCartIcon className="h-6 w-6 text-gray-200 dark:text-zinc-700 mb-1.5" />
-                        <p className="text-xs text-gray-300 dark:text-zinc-700">Arraste aqui</p>
+                      <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-border-token rounded">
+                        <ShoppingCartIcon className="h-6 w-6 text-fg-muted-token opacity-50 mb-1.5" />
+                        <p className="text-xs text-fg-muted-token">Arraste aqui</p>
                       </div>
                     ) : (
                       col.orders.map((order: StoreOrder) => (

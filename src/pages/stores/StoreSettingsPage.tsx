@@ -7,13 +7,12 @@ import {
   TruckIcon,
   CurrencyDollarIcon,
   ClockIcon,
-  Cog6ToothIcon,
-  CheckCircleIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { getStore, updateStore, type Store } from '../../services/storesApi';
 import { useStore } from '../../hooks';
 import logger from '../../services/logger';
+import { Card, Button, StatCard } from '../../components/ui';
 
 interface DeliveryConfig {
   delivery_base_fee: number;
@@ -246,10 +245,10 @@ export const StoreSettingsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] flex items-center justify-center">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="text-center">
-          <ArrowPathIcon className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Carregando configurações...</p>
+          <ArrowPathIcon className="w-8 h-8 text-fg-muted-token animate-spin mx-auto mb-3" />
+          <p className="text-fg-muted-token">Carregando configurações...</p>
         </div>
       </div>
     );
@@ -257,234 +256,234 @@ export const StoreSettingsPage: React.FC = () => {
 
   if (!effectiveStoreId) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] flex items-center justify-center">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="text-center max-w-md">
-          <BuildingStorefrontIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Selecione uma loja para configurar.</p>
+          <BuildingStorefrontIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
+          <p className="text-fg-muted-token">Selecione uma loja para configurar.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] p-6">
+    <div className="min-h-screen bg-canvas p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <BuildingStorefrontIcon className="w-6 h-6 text-primary-600" />
+          <BuildingStorefrontIcon className="w-6 h-6 text-brand" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Configurações da Loja</h1>
-            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{store?.name || 'Loja'}</p>
+            <h1 className="text-2xl font-bold text-fg-token">Configurações da Loja</h1>
+            <p className="text-sm text-fg-muted-token">{store?.name || 'Loja'}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
-          <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-6 shadow-sm">
+          <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <BuildingStorefrontIcon className="w-5 h-5 text-gray-600 dark:text-[var(--dark-text-primary,#FAF9F7)]" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Informações da Loja</h2>
+              <BuildingStorefrontIcon className="w-5 h-5 text-fg-muted-token" />
+              <h2 className="text-lg font-semibold text-fg-token">Informações da Loja</h2>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Nome</label>
+                <label className="text-sm font-medium text-fg-muted-token">Nome</label>
                 <input
                   type="text"
                   value={storeForm.name}
                   onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Email</label>
+                <label className="text-sm font-medium text-fg-muted-token">Email</label>
                 <input
                   type="email"
                   value={storeForm.email}
                   onChange={(e) => setStoreForm({ ...storeForm, email: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Telefone</label>
+                <label className="text-sm font-medium text-fg-muted-token">Telefone</label>
                 <input
                   type="text"
                   value={storeForm.phone}
                   onChange={(e) => setStoreForm({ ...storeForm, phone: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">WhatsApp</label>
+                <label className="text-sm font-medium text-fg-muted-token">WhatsApp</label>
                 <input
                   type="text"
                   value={storeForm.whatsapp_number}
                   onChange={(e) => setStoreForm({ ...storeForm, whatsapp_number: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
-              <button
+              <Button
                 onClick={handleSaveStore}
                 disabled={saving}
-                className="w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                className="w-full justify-center"
               >
                 {saving ? 'Salvando...' : 'Salvar Informações'}
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-6 shadow-sm">
+          <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <MapPinIcon className="w-5 h-5 text-gray-600 dark:text-[var(--dark-text-primary,#FAF9F7)]" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Localização</h2>
+              <MapPinIcon className="w-5 h-5 text-fg-muted-token" />
+              <h2 className="text-lg font-semibold text-fg-token">Localização</h2>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Endereço</label>
+                <label className="text-sm font-medium text-fg-muted-token">Endereço</label>
                 <input
                   type="text"
                   value={storeForm.address}
                   onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Cidade</label>
+                  <label className="text-sm font-medium text-fg-muted-token">Cidade</label>
                   <input
                     type="text"
                     value={storeForm.city}
                     onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Estado</label>
+                  <label className="text-sm font-medium text-fg-muted-token">Estado</label>
                   <input
                     type="text"
                     value={storeForm.state}
                     onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">CEP</label>
+                <label className="text-sm font-medium text-fg-muted-token">CEP</label>
                 <input
                   type="text"
                   value={storeForm.zip_code}
                   onChange={(e) => setStoreForm({ ...storeForm, zip_code: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Latitude</label>
+                  <label className="text-sm font-medium text-fg-muted-token">Latitude</label>
                   <input
                     type="text"
                     value={storeForm.latitude}
                     onChange={(e) => setStoreForm({ ...storeForm, latitude: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Longitude</label>
+                  <label className="text-sm font-medium text-fg-muted-token">Longitude</label>
                   <input
                     type="text"
                     value={storeForm.longitude}
                     onChange={(e) => setStoreForm({ ...storeForm, longitude: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
-              <button
+              <Button
                 onClick={handleSaveLocation}
                 disabled={saving}
-                className="w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                className="w-full justify-center"
               >
                 {saving ? 'Salvando...' : 'Salvar Localização'}
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
 
-        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-6 shadow-sm">
+        <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <TruckIcon className="w-5 h-5 text-gray-600 dark:text-[var(--dark-text-primary,#FAF9F7)]" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Entrega</h2>
+            <TruckIcon className="w-5 h-5 text-fg-muted-token" />
+            <h2 className="text-lg font-semibold text-fg-token">Entrega</h2>
           </div>
           <div className="grid grid-cols-2 max-md:grid-cols-1 gap-6">
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Taxa Base</label>
+                <label className="text-sm font-medium text-fg-muted-token">Taxa Base</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_base_fee}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_base_fee: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Taxa por KM</label>
+                <label className="text-sm font-medium text-fg-muted-token">Taxa por KM</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_fee_per_km}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_fee_per_km: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">KM Grátis</label>
+                <label className="text-sm font-medium text-fg-muted-token">KM Grátis</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_free_km}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_free_km: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Taxa Máxima</label>
+                <label className="text-sm font-medium text-fg-muted-token">Taxa Máxima</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_max_fee}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_max_fee: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Distância Máxima</label>
+                <label className="text-sm font-medium text-fg-muted-token">Distância Máxima</label>
                 <input
                   type="number"
                   value={deliveryConfig.delivery_max_distance}
                   onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_max_distance: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
-              <div className="bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-lg p-4">
-                <div className="flex items-center gap-2 text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2">
+              <div className="bg-surface-2 rounded p-4">
+                <div className="flex items-center gap-2 text-fg-muted-token mb-2">
                   <CurrencyDollarIcon className="w-4 h-4" />
                   <span className="text-sm font-medium">Exemplo</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-sm text-fg-token">
                   <span>5 km</span>
                   <span className="font-semibold">R$ {calculateExampleFee(5).toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
-          <button
+          <Button
             onClick={handleSaveDeliveryConfig}
             disabled={saving}
-            className="mt-6 w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+            className="mt-6 w-full justify-center"
           >
             {saving ? 'Salvando...' : 'Salvar Configurações de Entrega'}
-          </button>
-        </div>
+          </Button>
+        </Card>
 
         {/* Horários de Funcionamento */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6 shadow-sm">
+        <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <ClockIcon className="w-5 h-5 text-gray-400" />
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Horários de funcionamento</h3>
+            <ClockIcon className="w-5 h-5 text-fg-muted-token" />
+            <h3 className="text-base font-semibold text-fg-token">Horários de funcionamento</h3>
           </div>
           <div className="space-y-3">
             {DAYS.map(day => {
@@ -498,10 +497,10 @@ export const StoreSettingsPage: React.FC = () => {
                         ...prev,
                         [day.key]: { ...h, is_open: !h.is_open }
                       }))}
-                      className={`w-full text-xs font-semibold px-2 py-1.5 rounded-lg transition-colors ${
+                      className={`w-full text-xs font-semibold px-2 py-1.5 rounded transition-colors ${
                         h.is_open
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-500'
+                          ? 'bg-brand-soft text-brand hover:bg-brand-soft/80'
+                          : 'bg-surface-2 text-fg-muted-token hover:bg-surface-2/80'
                       }`}
                     >
                       {h.is_open ? '✓ ' : ''}{day.label}
@@ -516,9 +515,9 @@ export const StoreSettingsPage: React.FC = () => {
                           ...prev,
                           [day.key]: { ...h, open: e.target.value }
                         }))}
-                        className="border border-gray-300 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-zinc-300 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="border border-border-token bg-surface rounded px-2 py-1.5 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
                       />
-                      <span className="text-gray-400 text-sm">até</span>
+                      <span className="text-fg-muted-token text-sm">até</span>
                       <input
                         type="time"
                         value={h.close}
@@ -526,53 +525,33 @@ export const StoreSettingsPage: React.FC = () => {
                           ...prev,
                           [day.key]: { ...h, close: e.target.value }
                         }))}
-                        className="border border-gray-300 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-zinc-300 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="border border-border-token bg-surface rounded px-2 py-1.5 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
                       />
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400 italic">Fechado</span>
+                    <span className="text-sm text-fg-muted-token italic">Fechado</span>
                   )}
                 </div>
               );
             })}
           </div>
-          <button
+          <Button
             onClick={handleSaveOperatingHours}
             disabled={saving}
-            className="mt-6 w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+            className="mt-6 w-full justify-center"
           >
             {saving ? 'Salvando...' : 'Salvar Horários'}
-          </button>
-        </div>
+          </Button>
+        </Card>
 
         <div className="grid grid-cols-3 max-md:grid-cols-1 gap-4">
-          <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Cog6ToothIcon className="w-5 h-5 text-gray-500" />
-              <span className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Status</span>
-            </div>
-            <p className="text-lg font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mt-2">
-              {store?.status === 'active' ? 'Ativa' : 'Inativa'}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 shadow-sm">
-            <div className="flex items-center gap-2">
-              <CheckCircleIcon className="w-5 h-5 text-green-500" />
-              <span className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Pedidos</span>
-            </div>
-            <p className="text-lg font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mt-2">
-              {store?.orders_count ?? 0}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 shadow-sm">
-            <div className="flex items-center gap-2">
-              <ClockIcon className="w-5 h-5 text-blue-500" />
-              <span className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Produtos</span>
-            </div>
-            <p className="text-lg font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mt-2">
-              {store?.products_count ?? 0}
-            </p>
-          </div>
+          <StatCard
+            label="Status"
+            value={store?.status === 'active' ? 'Ativa' : 'Inativa'}
+            tone={store?.status === 'active' ? 'brand' : 'default'}
+          />
+          <StatCard label="Pedidos" value={store?.orders_count ?? 0} />
+          <StatCard label="Produtos" value={store?.products_count ?? 0} />
         </div>
       </div>
     </div>

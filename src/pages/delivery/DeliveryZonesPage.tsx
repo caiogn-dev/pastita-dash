@@ -7,12 +7,11 @@ import {
   PencilIcon,
   TrashIcon,
   MagnifyingGlassIcon,
-  TruckIcon,
   MapPinIcon,
-  CheckCircleIcon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
-import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
+import { Input, Modal, Loading } from '../../components/common';
+import { Card, Button, Badge, StatCard } from '../../components/ui';
 import {
   deliveryService,
   DeliveryZone,
@@ -272,11 +271,10 @@ export const DeliveryZonesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Zonas de Entrega</h1>
-          <p className="text-sm md:text-base text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Calcule frete por quilometragem e gerencie faixas de preço</p>
+          <h1 className="text-xl md:text-2xl font-bold text-fg-token">Zonas de Entrega</h1>
+          <p className="text-sm md:text-base text-fg-muted-token">Calcule frete por quilometragem e gerencie faixas de preço</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto">
-          <PlusIcon className="w-5 h-5 mr-2" />
+        <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto justify-center" leftIcon={<PlusIcon className="w-5 h-5" />}>
           Nova Faixa
         </Button>
       </div>
@@ -285,14 +283,14 @@ export const DeliveryZonesPage: React.FC = () => {
       <Card className="p-4 md:p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Localização da Loja</h2>
-            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
+            <h2 className="text-lg font-semibold text-fg-token">Localização da Loja</h2>
+            <p className="text-sm text-fg-muted-token mt-1">
               A localização é usada para calcular a distância de entrega.
             </p>
           </div>
           <Link
             to={settingsPath}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 rounded-lg hover:bg-blue-100 dark:bg-blue-900/40 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand bg-brand-soft rounded hover:bg-brand-soft/80 transition-colors"
           >
             <Cog6ToothIcon className="w-4 h-4" />
             Editar Localização
@@ -303,16 +301,16 @@ export const DeliveryZonesPage: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
               <div className="sm:col-span-2">
-                <p className="text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Nome da Loja</p>
-                <p className="text-base text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{storeLocation.name || '-'}</p>
+                <p className="text-sm font-medium text-fg-muted-token">Nome da Loja</p>
+                <p className="text-base text-fg-token">{storeLocation.name || '-'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">CEP</p>
-                <p className="text-base text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{storeLocation.zip_code || '-'}</p>
+                <p className="text-sm font-medium text-fg-muted-token">CEP</p>
+                <p className="text-base text-fg-token">{storeLocation.zip_code || '-'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Cidade/Estado</p>
-                <p className="text-base text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                <p className="text-sm font-medium text-fg-muted-token">Cidade/Estado</p>
+                <p className="text-base text-fg-token">
                   {storeLocation.city && storeLocation.state 
                     ? `${storeLocation.city}/${storeLocation.state}` 
                     : '-'}
@@ -321,13 +319,13 @@ export const DeliveryZonesPage: React.FC = () => {
             </div>
             
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Endereço</p>
-              <p className="text-base text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{storeLocation.address || '-'}</p>
+              <p className="text-sm font-medium text-fg-muted-token">Endereço</p>
+              <p className="text-base text-fg-token">{storeLocation.address || '-'}</p>
             </div>
 
             {mapInfo && (
               <div className="mt-4">
-                <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
+                <div className="rounded overflow-hidden border border-border-token">
                   <iframe
                     title="Mapa da loja"
                     src={mapInfo.mapUrl}
@@ -339,7 +337,7 @@ export const DeliveryZonesPage: React.FC = () => {
                   href={mapInfo.externalUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
+                  className="text-sm text-brand hover:text-brand-hover inline-flex items-center mt-2"
                 >
                   Ver no Google Maps →
                 </a>
@@ -348,11 +346,11 @@ export const DeliveryZonesPage: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-8">
-            <MapPinIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">Localização não configurada</p>
+            <MapPinIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
+            <p className="text-fg-muted-token mb-4">Localização não configurada</p>
             <Link
               to={settingsPath}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand rounded hover:bg-brand-hover transition-colors"
             >
               <Cog6ToothIcon className="w-4 h-4" />
               Configurar Localização
@@ -364,50 +362,10 @@ export const DeliveryZonesPage: React.FC = () => {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-4 max-lg:grid-cols-2 gap-3 md:gap-4">
-          <Card className="p-3 md:p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg shrink-0">
-                <MapPinIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate">Total de Faixas</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.total}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-3 md:p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg shrink-0">
-                <CheckCircleIcon className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
-              </div>
-              <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate">Ativas</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.active}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-3 md:p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg shrink-0">
-                <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
-              <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate">Valor Médio</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">R$ {formatMoney(stats.avg_fee)}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-3 md:p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg shrink-0">
-                <TruckIcon className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate">Prazo Médio</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatDays(stats.avg_days)} dias</p>
-              </div>
-            </div>
-          </Card>
+          <StatCard label="Total de Faixas" value={stats.total} />
+          <StatCard label="Ativas" value={stats.active} tone="brand" />
+          <StatCard label="Valor Médio" value={`R$ ${formatMoney(stats.avg_fee)}`} />
+          <StatCard label="Prazo Médio" value={`${formatDays(stats.avg_days)} dias`} />
         </div>
       )}
 
@@ -416,7 +374,7 @@ export const DeliveryZonesPage: React.FC = () => {
         <div className="flex flex-row max-sm:flex-col gap-3 md:gap-4">
           <div className="flex-1">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-fg-muted-token z-10" />
               <Input
                 type="text"
                 placeholder="Buscar por nome..."
@@ -429,7 +387,7 @@ export const DeliveryZonesPage: React.FC = () => {
           <select
             value={filterActive === undefined ? '' : String(filterActive)}
             onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
-            className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
+            className="w-full sm:w-auto px-3 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand text-sm md:text-base"
           >
             <option value="">Todos os status</option>
             <option value="true">Ativas</option>
@@ -441,27 +399,27 @@ export const DeliveryZonesPage: React.FC = () => {
       {/* Zones Table */}
       <Card>
         {/* Mobile Cards View */}
-        <div className="block md:hidden divide-y divide-gray-200">
+        <div className="block md:hidden divide-y divide-border-token">
           {zones.map((zone) => (
             <div key={zone.id} className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <MapPinIcon className="w-5 h-5 text-gray-400" />
-                  <span className="font-medium text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{zone.name}</span>
+                  <MapPinIcon className="w-5 h-5 text-fg-muted-token" />
+                  <span className="font-medium text-fg-token">{zone.name}</span>
                 </div>
                 <button
                   onClick={() => handleToggleActive(zone)}
                   className="focus:outline-none"
                 >
-                  <Badge variant={zone.is_active ? 'success' : 'danger'}>
+                  <Badge tone={zone.is_active ? 'success' : 'danger'}>
                     {zone.is_active ? 'Ativa' : 'Inativa'}
                   </Badge>
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Distância:</span>
-                  <span className="ml-1 font-mono text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                  <span className="text-fg-muted-token">Distância:</span>
+                  <span className="ml-1 font-mono text-fg-token">
                     {zone.distance_label
                       ? zone.distance_label
                       : zone.min_km !== null && zone.min_km !== undefined
@@ -470,20 +428,20 @@ export const DeliveryZonesPage: React.FC = () => {
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Prazo:</span>
-                  <span className="ml-1 text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                  <span className="text-fg-muted-token">Prazo:</span>
+                  <span className="ml-1 text-fg-token">
                     {zone.estimated_days} {zone.estimated_days === 1 ? 'dia útil' : 'dias úteis'}
                   </span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-lg font-semibold text-green-600 dark:text-green-400">
+                <span className="text-lg font-semibold text-brand">
                   R$ {formatMoney(zone.delivery_fee)}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenModal(zone)}
-                    className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
+                    className="p-2 text-fg-muted-token hover:text-brand hover:bg-surface-2 rounded"
                   >
                     <PencilIcon className="w-5 h-5" />
                   </button>
@@ -492,7 +450,7 @@ export const DeliveryZonesPage: React.FC = () => {
                       setDeletingZone(zone);
                       setIsDeleteModalOpen(true);
                     }}
-                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
+                    className="p-2 text-[var(--danger)] hover:bg-red-50 rounded"
                   >
                     <TrashIcon className="w-5 h-5" />
                   </button>
@@ -504,40 +462,40 @@ export const DeliveryZonesPage: React.FC = () => {
 
         {/* Desktop Table View */}
         <div className="block max-md:hidden overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]">
+          <table className="min-w-full divide-y divide-border-token">
+            <thead className="bg-surface-2">
               <tr>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                   Faixa
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                   Distância (KM)
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                   Valor
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                   Prazo
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] divide-y divide-gray-200">
+            <tbody className="bg-surface divide-y divide-border-token">
               {zones.map((zone) => (
-                <tr key={zone.id} className="hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]">
+                <tr key={zone.id} className="hover:bg-surface-2">
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <MapPinIcon className="w-5 h-5 text-gray-400 mr-2" />
-                      <span className="font-medium text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{zone.name}</span>
+                      <MapPinIcon className="w-5 h-5 text-fg-muted-token mr-2" />
+                      <span className="font-medium text-fg-token">{zone.name}</span>
                     </div>
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <span className="font-mono text-sm text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                    <span className="font-mono text-sm text-fg-token">
                       {zone.distance_label
                         ? zone.distance_label
                         : zone.min_km !== null && zone.min_km !== undefined
@@ -546,11 +504,11 @@ export const DeliveryZonesPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <span className="text-base font-semibold text-green-600 dark:text-green-400">
+                    <span className="text-base font-semibold text-brand">
                       R$ {formatMoney(zone.delivery_fee)}
                     </span>
                   </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
                     {zone.estimated_days} {zone.estimated_days === 1 ? 'dia útil' : 'dias úteis'}
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
@@ -558,7 +516,7 @@ export const DeliveryZonesPage: React.FC = () => {
                       onClick={() => handleToggleActive(zone)}
                       className="focus:outline-none"
                     >
-                      <Badge variant={zone.is_active ? 'success' : 'danger'}>
+                      <Badge tone={zone.is_active ? 'success' : 'danger'}>
                         {zone.is_active ? 'Ativa' : 'Inativa'}
                       </Badge>
                     </button>
@@ -567,7 +525,7 @@ export const DeliveryZonesPage: React.FC = () => {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => handleOpenModal(zone)}
-                        className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                        className="p-2 text-fg-muted-token hover:text-brand hover:bg-surface-2 rounded transition-colors"
                         title="Editar"
                       >
                         <PencilIcon className="w-5 h-5" />
@@ -577,7 +535,7 @@ export const DeliveryZonesPage: React.FC = () => {
                           setDeletingZone(zone);
                           setIsDeleteModalOpen(true);
                         }}
-                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-[var(--danger)] hover:bg-red-50 rounded transition-colors"
                         title="Excluir"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -592,14 +550,13 @@ export const DeliveryZonesPage: React.FC = () => {
 
         {zones.length === 0 && (
           <div className="text-center py-12 px-4">
-            <MapPinIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Nenhuma faixa encontrada</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            <MapPinIcon className="mx-auto h-12 w-12 text-fg-muted-token" />
+            <h3 className="mt-2 text-sm font-medium text-fg-token">Nenhuma faixa encontrada</h3>
+            <p className="mt-1 text-sm text-fg-muted-token">
               Cadastre faixas de quilometragem para calcular o frete.
             </p>
-            <div className="mt-6">
-              <Button onClick={() => handleOpenModal()}>
-                <PlusIcon className="w-5 h-5 mr-2" />
+            <div className="mt-6 flex justify-center">
+              <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
                 Nova Faixa
               </Button>
             </div>
@@ -623,7 +580,7 @@ export const DeliveryZonesPage: React.FC = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+            <label className="block text-sm font-medium text-fg-token mb-1">
               Faixa de Distância *
             </label>
             <select
@@ -637,7 +594,7 @@ export const DeliveryZonesPage: React.FC = () => {
                   name: prev.name || matched?.label || prev.name,
                 }));
               }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm md:text-base"
+              className="w-full px-3 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand text-sm md:text-base"
             >
               <option value="">Selecione uma faixa</option>
               {DISTANCE_BANDS.map((band) => (
@@ -670,22 +627,22 @@ export const DeliveryZonesPage: React.FC = () => {
                 id="is_active"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded"
+                className="h-4 w-4 text-brand focus:ring-brand border-border-token rounded"
               />
-              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+              <label htmlFor="is_active" className="ml-2 block text-sm text-fg-token">
                 Faixa ativa
               </label>
             </div>
           </div>
 
-          <div className="flex flex-row max-sm:flex-col-reverse justify-end gap-3 pt-4 border-t border-gray-100">
-            <Button variant="secondary" onClick={handleCloseModal} className="w-full sm:w-auto">
+          <div className="flex flex-row max-sm:flex-col-reverse justify-end gap-3 pt-4 border-t border-border-token">
+            <Button variant="outline" onClick={handleCloseModal} className="w-full sm:w-auto justify-center">
               Cancelar
             </Button>
             <Button
               onClick={handleSave}
               disabled={saving || !formData.name || !formData.distance_band}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto justify-center"
             >
               {saving ? 'Salvando...' : editingZone ? 'Salvar Alterações' : 'Criar Faixa'}
             </Button>
@@ -703,22 +660,22 @@ export const DeliveryZonesPage: React.FC = () => {
         title="Excluir Faixa de Entrega"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-            Tem certeza que deseja excluir a faixa <strong className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{deletingZone?.name}</strong>?
+          <p className="text-fg-muted-token">
+            Tem certeza que deseja excluir a faixa <strong className="text-fg-token">{deletingZone?.name}</strong>?
             Esta ação não pode ser desfeita.
           </p>
-          <div className="flex flex-row max-sm:flex-col-reverse justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex flex-row max-sm:flex-col-reverse justify-end gap-3 pt-4 border-t border-border-token">
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => {
                 setIsDeleteModalOpen(false);
                 setDeletingZone(null);
               }}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto justify-center"
             >
               Cancelar
             </Button>
-            <Button variant="danger" onClick={handleDelete} disabled={saving} className="w-full sm:w-auto">
+            <Button variant="danger" onClick={handleDelete} disabled={saving} className="w-full sm:w-auto justify-center">
               {saving ? 'Excluindo...' : 'Excluir Faixa'}
             </Button>
           </div>

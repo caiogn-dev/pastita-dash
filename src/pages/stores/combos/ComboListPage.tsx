@@ -20,7 +20,8 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Modal, Loading } from '../../../components/common';
+import { Card, Button, StatCard } from '../../../components/ui';
+import { Modal, Loading } from '../../../components/common';
 import ComboList from '../../../components/Combos/ComboList';
 import { useStore } from '../../../hooks';
 import storesApi, {
@@ -122,10 +123,10 @@ export const ComboListPage: React.FC = () => {
     return (
       <div className="p-6 text-center">
         <ExclamationTriangleIcon className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-xl font-semibold text-fg-token mb-2">
           Nenhuma loja selecionada
         </h2>
-        <p className="text-gray-500 dark:text-zinc-400 mb-4">
+        <p className="text-fg-muted-token mb-4">
           Selecione uma loja para gerenciar combos.
         </p>
         <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
@@ -140,17 +141,16 @@ export const ComboListPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Combos</h1>
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+          <h1 className="text-2xl font-bold text-fg-token">Combos</h1>
+          <p className="text-fg-muted-token">
             {storeName ? `Combos de ${storeName}` : 'Gerencie combos e kits de produtos'}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={loadData} title="Atualizar">
+          <Button variant="outline" onClick={loadData} title="Atualizar">
             <ArrowPathIcon className="w-5 h-5" />
           </Button>
-          <Button onClick={() => navigate(`/stores/${storeSlug}/combos/new`)}>
-            <PlusIcon className="w-5 h-5 mr-2" />
+          <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />} onClick={() => navigate(`/stores/${storeSlug}/combos/new`)}>
             Novo Combo
           </Button>
         </div>
@@ -159,30 +159,25 @@ export const ComboListPage: React.FC = () => {
       {/* Stats */}
       {combos.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Total', value: combos.length, color: 'text-gray-900 dark:text-white' },
+          {([
+            { label: 'Total', value: combos.length, tone: 'default' as const },
             {
               label: 'Ativos',
               value: combos.filter(c => c.is_active).length,
-              color: 'text-green-600 dark:text-green-400',
+              tone: 'brand' as const,
             },
             {
               label: 'Destaques',
               value: combos.filter(c => c.featured).length,
-              color: 'text-yellow-600 dark:text-yellow-400',
+              tone: 'warning' as const,
             },
             {
               label: 'Com produtos',
               value: combos.filter(c => (c.groups?.length ?? 0) > 0).length,
-              color: 'text-blue-600 dark:text-blue-400',
+              tone: 'brand' as const,
             },
-          ].map(s => (
-            <Card key={s.label} className="p-4 text-center">
-              <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-0.5">
-                {s.label}
-              </p>
-            </Card>
+          ]).map(s => (
+            <StatCard key={s.label} label={s.label} value={s.value} tone={s.tone} />
           ))}
         </div>
       )}
@@ -207,12 +202,12 @@ export const ComboListPage: React.FC = () => {
         title="Excluir Combo"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-zinc-400">
+          <p className="text-fg-muted-token">
             Tem certeza que deseja excluir o combo <strong>{deletingCombo?.name}</strong>?
           </p>
-          <p className="text-sm text-red-600 dark:text-red-400">Esta ação não pode ser desfeita.</p>
+          <p className="text-sm text-[var(--danger)]">Esta ação não pode ser desfeita.</p>
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setDeletingCombo(null)}>
+            <Button variant="outline" onClick={() => setDeletingCombo(null)}>
               Cancelar
             </Button>
             <Button variant="danger" onClick={handleDelete}>

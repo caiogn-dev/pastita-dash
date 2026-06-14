@@ -1,3 +1,5 @@
+// TODO dedup: API difere do ui/Badge (este usa variant/colorPalette/size + helpers de status;
+// o ui/Badge usa tone). Consolidar depois sem quebrar consumidores.
 /**
  * Badge - Componente de badge sem Chakra UI
  */

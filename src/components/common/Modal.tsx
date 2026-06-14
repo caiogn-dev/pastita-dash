@@ -1,3 +1,5 @@
+// TODO dedup: API difere do ui/modal (este usa isOpen + exporta ConfirmModal e usa @headlessui;
+// o ui/modal usa open e não tem ConfirmModal). Consolidar depois sem quebrar consumidores.
 import React, { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';

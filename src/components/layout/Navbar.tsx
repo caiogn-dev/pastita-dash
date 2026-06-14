@@ -77,12 +77,12 @@ function PortalDropdown({
     <div
       id="navbar-dropdown-portal"
       style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
-      className="w-52 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-2xl py-1"
+      className="w-52 bg-surface border border-border-token rounded-xl shadow-2xl py-1"
     >
       {section.items.map((item) => (
         <React.Fragment key={item.href}>
           {item.sectionHeader && (
-            <p className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500 border-t border-gray-100 dark:border-zinc-800 first:border-t-0 mt-1 first:mt-0">
+            <p className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted-token border-t border-border-token first:border-t-0 mt-1 first:mt-0">
               {item.sectionHeader}
             </p>
           )}
@@ -93,15 +93,15 @@ function PortalDropdown({
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
                 isActive
-                  ? 'bg-primary-50 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 font-medium'
-                  : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                  ? 'bg-brand text-white font-medium'
+                  : 'text-fg-token hover:bg-surface-2'
               }`
             }
           >
             <item.icon className="w-4 h-4 flex-shrink-0" />
             <span>{item.name}</span>
             {item.badge && (
-              <span className="ml-auto text-[10px] bg-primary-100 dark:bg-zinc-700 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded-full font-medium">
+              <span className="ml-auto text-[10px] bg-brand-soft text-brand px-1.5 py-0.5 rounded-full font-medium">
                 {item.badge}
               </span>
             )}
@@ -134,8 +134,8 @@ function NavBtn({ section }: { section: NavSection }) {
         className={({ isActive: a }) =>
           `flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
             a
-              ? 'bg-primary-50 dark:bg-zinc-800 text-primary-700 dark:text-primary-400'
-              : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100'
+              ? 'bg-brand text-white'
+              : 'text-white/70 hover:bg-white/10 hover:text-white'
           }`
         }
       >
@@ -152,8 +152,8 @@ function NavBtn({ section }: { section: NavSection }) {
         onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
           isActive || open
-            ? 'bg-primary-50 dark:bg-zinc-800 text-primary-700 dark:text-primary-400'
-            : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100'
+            ? 'bg-brand text-white'
+            : 'text-white/70 hover:bg-white/10 hover:text-white'
         }`}
       >
         <section.icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -286,7 +286,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-zinc-800">
+      <header className="sticky top-0 z-40 bg-[var(--brand-strong)] text-white backdrop-blur-xl border-b border-[var(--border)]">
         <div className="flex items-center gap-3 px-4 h-12">
 
           {/* Logo */}
@@ -314,7 +314,7 @@ export const Navbar: React.FC = () => {
             title={wsConnected ? 'Online' : 'Offline'}
           />
 
-          <div className="w-px h-5 bg-gray-200 dark:bg-zinc-700 flex-shrink-0" />
+          <div className="w-px h-5 bg-white/20 flex-shrink-0" />
 
           {/* Desktop nav — no overflow scroll */}
           <nav className="flex max-lg:hidden items-center gap-0.5 flex-1 min-w-0">
@@ -331,7 +331,7 @@ export const Navbar: React.FC = () => {
               <select
                 value={selectedAccount?.id || ''}
                 onChange={(e) => setSelectedAccount(accounts.find((a) => a.id === e.target.value) || null)}
-                className="block max-xl:hidden rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 outline-none focus:border-primary-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 max-w-[130px]"
+                className="block max-xl:hidden rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs text-white outline-none focus:border-white/40 max-w-[130px]"
               >
                 <option value="">Todas as contas</option>
                 {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -342,18 +342,18 @@ export const Navbar: React.FC = () => {
             <PushNotificationToggle />
             <NotificationDropdown />
 
-            <div className="flex items-center gap-1.5 pl-2 border-l border-gray-200 dark:border-zinc-700">
-              <div className="w-6 h-6 bg-primary-100 dark:bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-[10px] font-semibold text-primary-700 dark:text-primary-400">
+            <div className="flex items-center gap-1.5 pl-2 border-l border-white/20">
+              <div className="w-6 h-6 bg-white/15 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-[10px] font-semibold text-white">
                   {user?.first_name?.[0] || user?.username?.[0] || 'U'}
                 </span>
               </div>
-              <span className="block max-md:hidden text-xs font-medium text-gray-900 dark:text-white truncate max-w-[70px]">
+              <span className="block max-md:hidden text-xs font-medium text-white truncate max-w-[70px]">
                 {user?.first_name || user?.username}
               </span>
               <button
                 onClick={() => { logout(); navigate('/login'); }}
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                className="p-1 text-white/70 hover:text-white rounded-md hover:bg-white/10 transition-colors"
                 title="Sair"
               >
                 <ArrowRightOnRectangleIcon className="w-3.5 h-3.5" />
@@ -362,7 +362,7 @@ export const Navbar: React.FC = () => {
 
             <button
               onClick={() => setMobileOpen(true)}
-              className="hidden max-lg:block p-1.5 text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+              className="hidden max-lg:block p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
               <Bars3Icon className="w-5 h-5" />
             </button>
@@ -374,10 +374,10 @@ export const Navbar: React.FC = () => {
       {mobileOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 z-40 hidden max-lg:block" onClick={() => setMobileOpen(false)} />
-          <div className="fixed top-0 left-0 bottom-0 w-72 bg-white dark:bg-zinc-900 z-50 hidden max-lg:flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-4 h-12 border-b border-gray-200 dark:border-zinc-700 flex-shrink-0">
-              <span className="font-bold text-sm text-gray-900 dark:text-white">{brandInfo.name}</span>
-              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400">
+          <div className="fixed top-0 left-0 bottom-0 w-72 bg-surface z-50 hidden max-lg:flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-4 h-12 bg-[var(--brand-strong)] text-white border-b border-[var(--border)] flex-shrink-0">
+              <span className="font-bold text-sm text-white">{brandInfo.name}</span>
+              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white">
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
@@ -391,8 +391,8 @@ export const Navbar: React.FC = () => {
                       className={({ isActive }) =>
                         `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           isActive
-                            ? 'bg-primary-50 dark:bg-zinc-800 text-primary-700 dark:text-primary-400'
-                            : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                            ? 'bg-brand text-white'
+                            : 'text-fg-token hover:bg-surface-2'
                         }`
                       }
                     >
@@ -401,13 +401,13 @@ export const Navbar: React.FC = () => {
                     </NavLink>
                   ) : (
                     <>
-                      <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
+                      <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted-token">
                         {section.label}
                       </p>
                       {section.items.map((item) => (
                         <React.Fragment key={item.href}>
                           {item.sectionHeader && (
-                            <p className="px-3 pt-2 pb-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-300 dark:text-zinc-600">
+                            <p className="px-3 pt-2 pb-0.5 text-[10px] font-medium uppercase tracking-wider text-fg-muted-token">
                               {item.sectionHeader}
                             </p>
                           )}
@@ -417,15 +417,15 @@ export const Navbar: React.FC = () => {
                             className={({ isActive }) =>
                               `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
                                 isActive
-                                  ? 'bg-primary-50 dark:bg-zinc-800 text-primary-700 dark:text-primary-400 font-medium'
-                                  : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                                  ? 'bg-brand text-white font-medium'
+                                  : 'text-fg-token hover:bg-surface-2'
                               }`
                             }
                           >
                             <item.icon className="w-4 h-4 flex-shrink-0" />
                             {item.name}
                             {item.badge && (
-                              <span className="ml-auto text-[10px] bg-primary-100 dark:bg-zinc-700 text-primary-700 dark:text-primary-400 px-1.5 py-0.5 rounded-full font-medium">
+                              <span className="ml-auto text-[10px] bg-brand-soft text-brand px-1.5 py-0.5 rounded-full font-medium">
                                 {item.badge}
                               </span>
                             )}

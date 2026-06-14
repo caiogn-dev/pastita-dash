@@ -1,19 +1,4 @@
-export {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  cardVariants,
-} from './Card';
-export type { CardProps } from './Card';
-
-export { Modal } from './Modal';
-export type { ModalProps } from './Modal';
-
+// Card, Modal e Pagination removidos: zero consumidores e duplicavam src/components/ui/*.
+// Fonte única de verdade: src/components/ui (Card, Modal) e src/components/common/Table (Pagination).
 export { Toast, ToastContainer } from './Toast';
 export type { ToastType, ToastProps, ToastContainerProps } from './Toast';
-
-export { Pagination } from './Pagination';
-export type { PaginationProps } from './Pagination';

@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../services/storesApi';
 import { useStore } from '../../hooks';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
+import { Card, Button } from '../../components/ui';
 
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -153,172 +154,172 @@ export const StorefrontPage: React.FC = () => {
     }
   };
 
-  if (!store) return <div className="p-6 text-gray-500">Carregando...</div>;
+  if (!store) return <div className="p-6 text-fg-muted-token">Carregando...</div>;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-8">
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Storefront</h1>
-        <p className="text-gray-500 mt-1">Configure a aparência do site da loja.</p>
+        <h1 className="text-2xl font-bold text-fg-token">Storefront</h1>
+        <p className="text-fg-muted-token mt-1">Configure a aparência do site da loja.</p>
       </div>
 
       {/* Logo */}
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold text-gray-700">Logo da loja</h2>
+      <Card className="p-6 space-y-3">
+        <h2 className="text-base font-semibold text-fg-token">Logo da loja</h2>
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full border-2 border-gray-200 overflow-hidden flex items-center justify-center bg-gray-50 flex-shrink-0">
+          <div className="w-20 h-20 rounded-full border-2 border-border-token overflow-hidden flex items-center justify-center bg-surface-2 flex-shrink-0">
             {logoPreview || store?.logo_url ? (
               <img src={logoPreview || store?.logo_url || ''} alt="Logo" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-2xl text-gray-300">🏪</span>
+              <span className="text-2xl text-fg-muted-token">🏪</span>
             )}
           </div>
           <label className="cursor-pointer">
-            <span className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <span className="inline-flex items-center px-4 py-2 rounded border border-border-token text-sm font-medium text-fg-token hover:bg-surface-2 transition-colors">
               {logoFile ? 'Trocar logo' : 'Enviar logo'}
             </span>
             <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
           </label>
           {logoPreview && (
-            <button onClick={clearLogo} className="text-sm text-red-500 hover:text-red-700">Remover</button>
+            <button onClick={clearLogo} className="text-sm text-[var(--danger)] hover:opacity-80">Remover</button>
           )}
         </div>
-        <p className="text-xs text-gray-400">PNG ou JPG. Recomendado: 400×400px.</p>
-      </section>
+        <p className="text-xs text-fg-muted-token">PNG ou JPG. Recomendado: 400×400px.</p>
+      </Card>
 
       {/* Banner */}
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold text-gray-700">Banner do cardápio</h2>
-        <div className="relative w-full h-32 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden bg-gray-50">
+      <Card className="p-6 space-y-3">
+        <h2 className="text-base font-semibold text-fg-token">Banner do cardápio</h2>
+        <div className="relative w-full h-32 rounded border-2 border-dashed border-border-token overflow-hidden bg-surface-2">
           {bannerPreview || store?.banner_url ? (
             <img src={bannerPreview || store?.banner_url || ''} alt="Banner" className="w-full h-full object-cover" />
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-gray-300">
+            <div className="flex flex-col items-center justify-center h-full text-fg-muted-token">
               <span className="text-3xl">🖼️</span>
               <span className="text-xs mt-1">Sem banner</span>
             </div>
           )}
         </div>
         <label className="cursor-pointer inline-block">
-          <span className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+          <span className="inline-flex items-center px-4 py-2 rounded border border-border-token text-sm font-medium text-fg-token hover:bg-surface-2 transition-colors">
             {bannerFile ? 'Trocar banner' : 'Enviar banner'}
           </span>
           <input type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
         </label>
         {bannerPreview && (
-          <button onClick={clearBanner} className="ml-3 text-sm text-red-500 hover:text-red-700">Remover</button>
+          <button onClick={clearBanner} className="ml-3 text-sm text-[var(--danger)] hover:opacity-80">Remover</button>
         )}
-        <p className="text-xs text-gray-400">PNG ou JPG. Recomendado: 1200×300px.</p>
-      </section>
+        <p className="text-xs text-fg-muted-token">PNG ou JPG. Recomendado: 1200×300px.</p>
+      </Card>
 
       {/* Template */}
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold text-gray-700">Template</h2>
+      <Card className="p-6 space-y-3">
+        <h2 className="text-base font-semibold text-fg-token">Template</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {TEMPLATES.map(t => (
             <button
               key={t.id}
               onClick={() => setForm(f => ({ ...f, template: t.id }))}
-              className={`p-4 rounded-xl border-2 text-left transition-all ${
+              className={`p-4 rounded border-2 text-left transition-all ${
                 form.template === t.id
-                  ? 'border-indigo-600 bg-indigo-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-brand bg-brand-soft'
+                  : 'border-border-token hover:bg-surface-2'
               }`}
             >
               <div className="text-2xl mb-2">{t.preview}</div>
-              <div className="font-semibold text-sm text-gray-800">{t.label}</div>
-              <div className="text-xs text-gray-500 mt-1">{t.description}</div>
+              <div className="font-semibold text-sm text-fg-token">{t.label}</div>
+              <div className="text-xs text-fg-muted-token mt-1">{t.description}</div>
             </button>
           ))}
         </div>
-      </section>
+      </Card>
 
       {/* Cores */}
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold text-gray-700">Cores da marca</h2>
+      <Card className="p-6 space-y-3">
+        <h2 className="text-base font-semibold text-fg-token">Cores da marca</h2>
         <div className="grid grid-cols-2 gap-4">
           <label className="block">
-            <span className="text-sm text-gray-600">Cor primária</span>
+            <span className="text-sm text-fg-muted-token">Cor primária</span>
             <div className="mt-1 flex items-center gap-3">
               <input
                 type="color"
                 value={form.primary_color}
                 onChange={e => setForm(f => ({ ...f, primary_color: e.target.value }))}
-                className="w-10 h-10 rounded cursor-pointer border border-gray-200"
+                className="w-10 h-10 rounded cursor-pointer border border-border-token"
               />
               <input
                 type="text"
                 value={form.primary_color}
                 onChange={e => setForm(f => ({ ...f, primary_color: e.target.value }))}
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono"
+                className="flex-1 rounded border border-border-token bg-surface text-fg-token px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand"
                 maxLength={7}
               />
             </div>
           </label>
           <label className="block">
-            <span className="text-sm text-gray-600">Cor secundária</span>
+            <span className="text-sm text-fg-muted-token">Cor secundária</span>
             <div className="mt-1 flex items-center gap-3">
               <input
                 type="color"
                 value={form.secondary_color}
                 onChange={e => setForm(f => ({ ...f, secondary_color: e.target.value }))}
-                className="w-10 h-10 rounded cursor-pointer border border-gray-200"
+                className="w-10 h-10 rounded cursor-pointer border border-border-token"
               />
               <input
                 type="text"
                 value={form.secondary_color}
                 onChange={e => setForm(f => ({ ...f, secondary_color: e.target.value }))}
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono"
+                className="flex-1 rounded border border-border-token bg-surface text-fg-token px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand"
                 maxLength={7}
               />
             </div>
           </label>
         </div>
-      </section>
+      </Card>
 
       {/* Tagline */}
-      <section className="space-y-2">
-        <h2 className="text-base font-semibold text-gray-700">Tagline</h2>
+      <Card className="p-6 space-y-2">
+        <h2 className="text-base font-semibold text-fg-token">Tagline</h2>
         <input
           type="text"
           value={form.tagline}
           onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
           placeholder="Ex: Saladas frescas todo dia"
           maxLength={200}
-          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
+          className="w-full rounded border border-border-token bg-surface text-fg-token px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
         />
-      </section>
+      </Card>
 
       {/* Domínio */}
-      <section className="space-y-2">
-        <h2 className="text-base font-semibold text-gray-700">Domínio próprio</h2>
+      <Card className="p-6 space-y-2">
+        <h2 className="text-base font-semibold text-fg-token">Domínio próprio</h2>
         <input
           type="text"
           value={form.custom_domain}
           onChange={e => setForm(f => ({ ...f, custom_domain: e.target.value }))}
           placeholder="loja.com.br"
-          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-mono"
+          className="w-full rounded border border-border-token bg-surface text-fg-token px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand"
         />
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-fg-muted-token">
           Sem domínio próprio, o cardápio público usa cardapidex.com.br/{store.slug}.
           Com domínio próprio, a loja abre direto no domínio configurado.
         </p>
-      </section>
+      </Card>
 
       <div className="flex gap-3">
-        <button
+        <Button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="flex-1 justify-center py-3"
         >
           {saving ? 'Salvando...' : 'Salvar storefront'}
-        </button>
+        </Button>
         {store && buildStorefrontUrl(store) && (
           <a
             href={buildStorefrontUrl(store)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-5 py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 font-semibold hover:bg-indigo-50 transition-colors whitespace-nowrap"
+            className="inline-flex items-center px-5 py-3 rounded border border-border-token text-fg-token font-semibold hover:bg-surface-2 transition-colors whitespace-nowrap"
           >
             Ver prévia
           </a>
