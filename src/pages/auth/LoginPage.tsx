@@ -61,7 +61,7 @@ export const LoginPage: React.FC = () => {
               <Input
                 label="Usuário"
                 type="email"
-                isRequired
+                required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="Digite seu e-mail"
@@ -71,7 +71,7 @@ export const LoginPage: React.FC = () => {
               <Input
                 label="Senha"
                 type="password"
-                isRequired
+                required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="Digite sua senha"

@@ -1,6 +1,12 @@
 /**
- * Input Component - Modern input with animations and validation states
- * Design inspired by Linear and Stripe
+ * Input Component — fonte única (superset)
+ * Design painel Cardapidex: tokens de superfície/borda, cantos retos, foco brand.
+ *
+ * Suporta:
+ * - InputHTMLAttributes nativos.
+ * - label, error (texto + borda danger), helperText/hint.
+ * - leftElement/rightElement (e aliases leftIcon/rightIcon).
+ * - leftAddon/rightAddon.
  */
 import React, { forwardRef, useState } from 'react';
 import { cn } from '../../utils/cn';
@@ -8,8 +14,14 @@ import { cn } from '../../utils/cn';
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
   error?: string;
+  /** Texto auxiliar (sob o input). Alias: hint. */
+  helperText?: string;
   hint?: string;
   size?: 'sm' | 'md' | 'lg';
+  /** Elemento à esquerda (ícone). Alias: leftIcon. */
+  leftElement?: React.ReactNode;
+  /** Elemento à direita (ícone). Alias: rightIcon. */
+  rightElement?: React.ReactNode;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   leftAddon?: React.ReactNode;
@@ -28,8 +40,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       className,
       label,
       error,
+      helperText,
       hint,
       size = 'md',
+      leftElement,
+      rightElement,
       leftIcon,
       rightIcon,
       leftAddon,
@@ -42,6 +57,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const [focused, setFocused] = useState(false);
     const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const left = leftElement ?? leftIcon;
+    const right = rightElement ?? rightIcon;
+    const helper = helperText ?? hint;
 
     return (
       <div className="space-y-1.5">
@@ -50,34 +68,36 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             htmlFor={inputId}
             className={cn(
               'block text-sm font-medium transition-colors duration-200',
-              focused ? 'text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-zinc-300',
-              error && 'text-error-600 dark:text-error-400'
+              focused ? 'text-brand' : 'text-fg-token',
+              error && 'text-danger-500'
             )}
           >
             {label}
           </label>
         )}
-        
+
         <div className="relative flex">
           {leftAddon && (
-            <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+            <span className="inline-flex items-center px-3 rounded-l border border-r-0 border-border-token bg-surface-2 text-fg-muted-token text-sm">
               {leftAddon}
             </span>
           )}
-          
+
           <div className="relative flex-1">
-            {leftIcon && (
+            {left && (
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className={cn(
-                  'text-gray-400 dark:text-zinc-500 transition-colors',
-                  focused && 'text-primary-500 dark:text-primary-400',
-                  error && 'text-error-500'
-                )}>
-                  {leftIcon}
+                <span
+                  className={cn(
+                    'text-fg-muted-token transition-colors',
+                    focused && 'text-brand',
+                    error && 'text-danger-500'
+                  )}
+                >
+                  {left}
                 </span>
               </div>
             )}
-            
+
             <input
               ref={ref}
               id={inputId}
@@ -91,70 +111,67 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 props.onBlur?.(e);
               }}
               className={cn(
-                // Base styles
-                'w-full bg-white dark:bg-zinc-900',
-                'border border-gray-300 dark:border-zinc-700',
-                'text-gray-900 dark:text-zinc-100',
-                'placeholder-gray-400 dark:placeholder-zinc-500',
+                // Base
+                'w-full bg-surface',
+                'border border-border-token',
+                'text-fg-token placeholder-fg-muted-token',
                 'transition-all duration-200 ease-out',
-                
-                // Focus styles
-                'focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500',
-                'dark:focus:ring-primary-500/30 dark:focus:border-primary-500',
-                
-                // Hover styles
-                'hover:border-gray-400 dark:hover:border-zinc-600',
-                
-                // Error styles
-                error && 'border-error-500 focus:ring-error-500/20 focus:border-error-500',
-                
-                // Disabled styles
-                disabled && 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-zinc-800',
-                
-                // Size
+
+                // Foco
+                'focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand',
+
+                // Erro
+                error && 'border-danger-500 focus:ring-danger-500 focus:border-danger-500',
+
+                // Disabled
+                disabled && 'opacity-60 cursor-not-allowed bg-surface-2',
+
+                // Tamanho
                 sizes[size],
-                
-                // Border radius based on addons
-                leftAddon ? 'rounded-l-none' : 'rounded-l-lg',
-                rightAddon ? 'rounded-r-none' : 'rounded-r-lg',
-                
-                // Padding for icons
-                leftIcon && 'pl-10',
-                rightIcon && 'pr-10',
-                
+
+                // Cantos retos (com addons)
+                leftAddon ? 'rounded-l-none' : 'rounded-l',
+                rightAddon ? 'rounded-r-none' : 'rounded-r',
+
+                // Padding p/ ícones
+                left && 'pl-10',
+                right && 'pr-10',
+
                 className
               )}
               {...props}
             />
-            
-            {rightIcon && (
+
+            {right && (
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className={cn(
-                  'text-gray-400 dark:text-zinc-500 transition-colors',
-                  focused && 'text-primary-500 dark:text-primary-400',
-                  error && 'text-error-500'
-                )}>
-                  {rightIcon}
+                <span
+                  className={cn(
+                    'text-fg-muted-token transition-colors',
+                    focused && 'text-brand',
+                    error && 'text-danger-500'
+                  )}
+                >
+                  {right}
                 </span>
               </div>
             )}
           </div>
-          
+
           {rightAddon && (
-            <span className="inline-flex items-center px-3 rounded-r-lg border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+            <span className="inline-flex items-center px-3 rounded-r border border-l-0 border-border-token bg-surface-2 text-fg-muted-token text-sm">
               {rightAddon}
             </span>
           )}
         </div>
-        
-        {(error || hint) && (
+
+        {(error || helper) && (
           <p
             className={cn(
               'text-xs transition-colors',
-              error ? 'text-error-600 dark:text-error-400' : 'text-gray-500 dark:text-zinc-400'
+              error ? 'text-danger-500' : 'text-fg-muted-token'
             )}
           >
-            {error || hint}
+            {error || helper}
           </p>
         )}
       </div>
@@ -202,7 +219,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
             <button
               type="button"
               onClick={() => setValue('')}
-              className="cursor-pointer hover:text-gray-600 dark:hover:text-zinc-300"
+              className="cursor-pointer hover:text-fg-token"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
