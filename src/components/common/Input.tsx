@@ -1,3 +1,5 @@
+// TODO dedup: API difere do ui/input (este tem leftElement/rightElement e props próprias;
+// o ui/input estende InputHTMLAttributes). Consolidar depois sem quebrar consumidores.
 /**
  * Input - Componente de input sem Chakra UI
  */

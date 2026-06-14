@@ -31,7 +31,7 @@ import {
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Loading, Tabs, StatCard, Badge } from '@/components/common';
+import { Card, Button, Loading, Tabs, Badge } from '@/components/common';
 import { 
   instagramAccountService, 
   instagramMediaService, 

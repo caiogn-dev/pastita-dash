@@ -1,3 +1,6 @@
+// TODO dedup: API difere do ui/Button (este tem size/isLoading/isDisabled/rightIcon/width/mt e
+// variantes solid/secondary/link; o ui/Button só tem variant primary/outline/ghost/danger + leftIcon).
+// Consolidar depois sem quebrar consumidores.
 import React from 'react';
 import { cn } from '../../utils/cn';
 
