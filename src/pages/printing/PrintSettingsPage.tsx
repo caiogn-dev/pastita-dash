@@ -13,7 +13,8 @@ import {
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Card, Button, Badge, Modal, Loading } from '../../components/common';
+import { Card, Button, Badge } from '../../components/ui';
+import { Modal, Loading } from '../../components/common';
 import {
   PrintAgent,
   PrintJob,
@@ -26,7 +27,7 @@ import {
   requeuePrintJob,
 } from '../../services/printing';
 
-const JOB_STATUS_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'subtle'> = {
+const JOB_STATUS_TONE: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
   completed: 'success',
   printed: 'success',
   pending: 'warning',
@@ -152,34 +153,34 @@ const PrintSettingsPage: React.FC = () => {
     <div className="p-6 flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-fg-primary flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-fg-token flex items-center gap-2">
             <PrinterIcon className="w-7 h-7" />
             Impressão automática
           </h1>
-          <p className="text-sm text-fg-muted mt-0.5">
+          <p className="text-sm text-fg-muted-token mt-0.5">
             Comandas impressas automaticamente quando entra pedido — sem dialog do navegador.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={loadData} isLoading={loading} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
-            Atualizar
+          <Button variant="ghost" onClick={loadData} disabled={loading} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
+            {loading ? 'Atualizando…' : 'Atualizar'}
           </Button>
-          <Button size="sm" onClick={() => setIsCreateOpen(true)} leftIcon={<PlusIcon className="w-4 h-4" />}>
+          <Button onClick={() => setIsCreateOpen(true)} leftIcon={<PlusIcon className="w-4 h-4" />}>
             Novo agente
           </Button>
         </div>
       </div>
 
       {/* Agentes */}
-      <Card>
-        <h2 className="text-lg font-semibold text-fg-primary mb-4">Agentes (computadores com impressora)</h2>
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-fg-token mb-4">Agentes (computadores com impressora)</h2>
         {loading && agents.length === 0 ? (
           <Loading />
         ) : agents.length === 0 ? (
           <div className="text-center py-8">
-            <PrinterIcon className="w-12 h-12 text-fg-muted mx-auto mb-3" />
-            <p className="font-medium text-fg-primary">Nenhum agente configurado</p>
-            <p className="text-sm text-fg-muted mt-1 max-w-md mx-auto">
+            <PrinterIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
+            <p className="font-medium text-fg-token">Nenhum agente configurado</p>
+            <p className="text-sm text-fg-muted-token mt-1 max-w-md mx-auto">
               Instale o print-agent no computador do caixa (Windows + impressora térmica),
               crie um agente aqui e cole a chave no <code>config/agent.json</code>.
             </p>
@@ -188,27 +189,27 @@ const PrintSettingsPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border-primary text-left">
-                  <th className="pb-2 px-2 text-fg-muted font-medium">Agente</th>
-                  <th className="pb-2 px-2 text-fg-muted font-medium">Impressora</th>
-                  <th className="pb-2 px-2 text-fg-muted font-medium">Status</th>
-                  <th className="pb-2 px-2 text-fg-muted font-medium">Último contato</th>
-                  <th className="pb-2 px-2 text-fg-muted font-medium text-right">Ações</th>
+                <tr className="border-b border-border-token text-left">
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Agente</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Impressora</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Status</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Último contato</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {agents.map((agent) => (
-                  <tr key={agent.id} className="border-b border-border-primary last:border-0">
+                  <tr key={agent.id} className="border-b border-border-token last:border-0">
                     <td className="py-2.5 px-2">
-                      <p className="font-medium text-fg-primary">{agent.name}</p>
-                      <p className="text-xs text-fg-muted">{agent.host_name || agent.platform}</p>
+                      <p className="font-medium text-fg-token">{agent.name}</p>
+                      <p className="text-xs text-fg-muted-token">{agent.host_name || agent.platform}</p>
                     </td>
                     <td className="py-2.5 px-2">
                       {(agent.available_printers?.length ?? 0) > 0 ? (
                         <select
                           value={agent.printer_name || ''}
                           onChange={(e) => handleSelectPrinter(agent, e.target.value)}
-                          className="text-sm border border-border-primary rounded-lg px-2 py-1.5 bg-bg-card text-fg-primary max-w-[220px]"
+                          className="text-sm border border-border-token rounded px-2 py-1.5 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand max-w-[220px]"
                           title="Impressoras detectadas no computador do agent"
                         >
                           {!agent.printer_name && <option value="">Escolha a impressora…</option>}
@@ -220,44 +221,44 @@ const PrintSettingsPage: React.FC = () => {
                           ))}
                         </select>
                       ) : (
-                        <span className="text-fg-primary" title="Conecte o agent para detectar as impressoras automaticamente">
+                        <span className="text-fg-token" title="Conecte o agent para detectar as impressoras automaticamente">
                           {agent.printer_name || '—'}
-                          <span className="block text-[11px] text-fg-muted">aguardando detecção…</span>
+                          <span className="block text-[11px] text-fg-muted-token">aguardando detecção…</span>
                         </span>
                       )}
                     </td>
                     <td className="py-2.5 px-2">
                       {agent.is_online ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+                        <Badge tone="success" className="gap-1">
                           <SignalIcon className="w-3.5 h-3.5" /> Online
-                        </span>
+                        </Badge>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-red-500 text-xs font-medium">
+                        <Badge tone="danger" className="gap-1">
                           <SignalSlashIcon className="w-3.5 h-3.5" /> Offline
-                        </span>
+                        </Badge>
                       )}
                       {agent.last_error && (
-                        <p className="text-xs text-red-400 mt-0.5 max-w-[200px] truncate" title={agent.last_error}>
+                        <p className="text-xs text-[var(--danger)] mt-0.5 max-w-[200px] truncate" title={agent.last_error}>
                           {agent.last_error}
                         </p>
                       )}
                     </td>
-                    <td className="py-2.5 px-2 text-fg-muted">{fmtDate(agent.last_seen_at)}</td>
+                    <td className="py-2.5 px-2 text-fg-muted-token">{fmtDate(agent.last_seen_at)}</td>
                     <td className="py-2.5 px-2">
                       <div className="flex justify-end gap-1">
                         <button
                           onClick={() => handleRotateKey(agent)}
-                          className="p-1.5 rounded-lg hover:bg-bg-hover"
+                          className="p-1.5 rounded hover:bg-surface-2"
                           title="Gerar nova chave (a atual para de funcionar)"
                         >
-                          <KeyIcon className="w-4 h-4 text-fg-muted" />
+                          <KeyIcon className="w-4 h-4 text-fg-muted-token" />
                         </button>
                         <button
                           onClick={() => handleDelete(agent)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                          className="p-1.5 rounded hover:bg-red-50"
                           title="Remover agente"
                         >
-                          <TrashIcon className="w-4 h-4 text-red-500" />
+                          <TrashIcon className="w-4 h-4 text-[var(--danger)]" />
                         </button>
                       </div>
                     </td>
@@ -270,43 +271,43 @@ const PrintSettingsPage: React.FC = () => {
       </Card>
 
       {/* Fila de jobs */}
-      <Card>
-        <h2 className="text-lg font-semibold text-fg-primary mb-4">Últimas impressões</h2>
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-fg-token mb-4">Últimas impressões</h2>
         {loading && jobs.length === 0 ? (
           <Loading />
         ) : jobs.length === 0 ? (
-          <p className="text-sm text-fg-muted py-4 text-center">Nenhum job de impressão ainda. Eles aparecem aqui quando entra pedido.</p>
+          <p className="text-sm text-fg-muted-token py-4 text-center">Nenhum job de impressão ainda. Eles aparecem aqui quando entra pedido.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border-primary text-left">
-                  <th className="pb-2 px-2 text-fg-muted font-medium">Pedido</th>
-                  <th className="pb-2 px-2 text-fg-muted font-medium">Template</th>
-                  <th className="pb-2 px-2 text-fg-muted font-medium">Status</th>
-                  <th className="pb-2 px-2 text-fg-muted font-medium">Criado</th>
-                  <th className="pb-2 px-2 text-fg-muted font-medium">Impresso</th>
-                  <th className="pb-2 px-2 text-fg-muted font-medium text-right">Ações</th>
+                <tr className="border-b border-border-token text-left">
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Pedido</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Template</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Status</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Criado</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Impresso</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {jobs.map((job) => (
-                  <tr key={job.id} className="border-b border-border-primary last:border-0">
-                    <td className="py-2 px-2 font-medium text-fg-primary">{job.order_number || job.title || '—'}</td>
-                    <td className="py-2 px-2 text-fg-muted">{job.template}</td>
+                  <tr key={job.id} className="border-b border-border-token last:border-0">
+                    <td className="py-2 px-2 font-medium text-fg-token">{job.order_number || job.title || '—'}</td>
+                    <td className="py-2 px-2 text-fg-muted-token">{job.template}</td>
                     <td className="py-2 px-2">
-                      <Badge variant={JOB_STATUS_VARIANT[job.status] || 'subtle'}>{job.status}</Badge>
+                      <Badge tone={JOB_STATUS_TONE[job.status] || 'neutral'}>{job.status}</Badge>
                       {job.last_error && (
-                        <p className="text-xs text-red-400 mt-0.5 max-w-[180px] truncate" title={job.last_error}>
+                        <p className="text-xs text-[var(--danger)] mt-0.5 max-w-[180px] truncate" title={job.last_error}>
                           {job.last_error}
                         </p>
                       )}
                     </td>
-                    <td className="py-2 px-2 text-fg-muted">{fmtDate(job.created_at)}</td>
-                    <td className="py-2 px-2 text-fg-muted">{fmtDate(job.printed_at)}</td>
+                    <td className="py-2 px-2 text-fg-muted-token">{fmtDate(job.created_at)}</td>
+                    <td className="py-2 px-2 text-fg-muted-token">{fmtDate(job.printed_at)}</td>
                     <td className="py-2 px-2">
                       <div className="flex justify-end">
-                        <Button variant="ghost" size="sm" onClick={() => handleRequeue(job)}>
+                        <Button variant="ghost" onClick={() => handleRequeue(job)}>
                           Reimprimir
                         </Button>
                       </div>
@@ -323,34 +324,34 @@ const PrintSettingsPage: React.FC = () => {
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Novo agente de impressão">
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-fg-primary mb-1">Nome do agente</label>
+            <label className="block text-sm font-medium text-fg-token mb-1">Nome do agente</label>
             <input
               type="text"
               value={newAgentName}
               onChange={(e) => setNewAgentName(e.target.value)}
               placeholder="Ex.: Caixa principal"
-              className="w-full text-sm border border-border-primary rounded-lg px-3 py-2 bg-bg-card text-fg-primary"
+              className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-fg-primary mb-1">
-              Impressora <span className="text-fg-muted font-normal">(opcional)</span>
+            <label className="block text-sm font-medium text-fg-token mb-1">
+              Impressora <span className="text-fg-muted-token font-normal">(opcional)</span>
             </label>
             <input
               type="text"
               value={newPrinterName}
               onChange={(e) => setNewPrinterName(e.target.value)}
               placeholder="Deixe vazio — detectamos automaticamente"
-              className="w-full text-sm border border-border-primary rounded-lg px-3 py-2 bg-bg-card text-fg-primary"
+              className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
             />
-            <p className="text-xs text-fg-muted mt-1">
+            <p className="text-xs text-fg-muted-token mt-1">
               Assim que o agent conectar, as impressoras do computador aparecem aqui num dropdown para você escolher.
             </p>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} isLoading={creating} disabled={!newAgentName.trim()}>
-              Criar agente
+            <Button onClick={handleCreate} disabled={creating || !newAgentName.trim()}>
+              {creating ? 'Criando…' : 'Criar agente'}
             </Button>
           </div>
         </div>
@@ -359,15 +360,15 @@ const PrintSettingsPage: React.FC = () => {
       {/* Modal da chave (exibida uma única vez) */}
       <Modal isOpen={Boolean(revealedKey)} onClose={() => setRevealedKey(null)} title="Chave do agente — copie agora">
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-fg-muted">
+          <p className="text-sm text-fg-muted-token">
             Esta chave do agente <strong>{revealedKey?.agentName}</strong> é exibida{' '}
             <strong>uma única vez</strong>. Cole no <code>config/agent.json</code> do print-agent.
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 text-xs bg-bg-hover rounded-lg px-3 py-2 break-all select-all">
+            <code className="flex-1 text-xs bg-surface-2 rounded px-3 py-2 break-all select-all">
               {revealedKey?.key}
             </code>
-            <Button variant="outline" size="sm" onClick={copyKey} leftIcon={<ClipboardDocumentIcon className="w-4 h-4" />}>
+            <Button variant="outline" onClick={copyKey} leftIcon={<ClipboardDocumentIcon className="w-4 h-4" />}>
               Copiar
             </Button>
           </div>
