@@ -4,7 +4,8 @@ import { BanknotesIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, LockClosedIcon } fro
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Card, Button, Loading } from '../../components/common';
+import { Card, Button } from '../../components/ui';
+import { Loading } from '../../components/common';
 import {
   CashSession,
   getCurrentCashSession,
@@ -98,30 +99,30 @@ const CashPage: React.FC = () => {
   return (
     <div className="p-6 flex flex-col gap-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-fg-primary flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-fg-token flex items-center gap-2">
           <BanknotesIcon className="w-7 h-7" />
           Caixa
         </h1>
-        <p className="text-sm text-fg-muted mt-0.5">
+        <p className="text-sm text-fg-muted-token mt-0.5">
           Abertura, sangria/reforço e fechamento com conferência.
         </p>
       </div>
 
       {/* Resultado do último fechamento */}
       {closedResult && (
-        <Card>
-          <h2 className="text-lg font-semibold text-fg-primary mb-3">Fechamento concluído</h2>
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold text-fg-token mb-3">Fechamento concluído</h2>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-fg-muted">Esperado</p>
-              <p className="font-bold text-fg-primary">{fmtMoney(closedResult.expected_amount)}</p>
+              <p className="text-fg-muted-token">Esperado</p>
+              <p className="font-bold text-fg-token">{fmtMoney(closedResult.expected_amount)}</p>
             </div>
             <div>
-              <p className="text-fg-muted">Contado</p>
-              <p className="font-bold text-fg-primary">{fmtMoney(closedResult.counted_amount)}</p>
+              <p className="text-fg-muted-token">Contado</p>
+              <p className="font-bold text-fg-token">{fmtMoney(closedResult.counted_amount)}</p>
             </div>
             <div>
-              <p className="text-fg-muted">Diferença</p>
+              <p className="text-fg-muted-token">Diferença</p>
               <p className={`font-bold ${Number(closedResult.difference) < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                 {fmtMoney(closedResult.difference)}
               </p>
@@ -132,11 +133,11 @@ const CashPage: React.FC = () => {
 
       {!session ? (
         /* Caixa fechado → abertura */
-        <Card>
-          <h2 className="text-lg font-semibold text-fg-primary mb-4">Abrir caixa</h2>
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold text-fg-token mb-4">Abrir caixa</h2>
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <label htmlFor="opening-amount" className="block text-sm font-medium text-fg-primary mb-1">
+              <label htmlFor="opening-amount" className="block text-sm font-medium text-fg-token mb-1">
                 Fundo de troco (R$)
               </label>
               <input
@@ -147,28 +148,28 @@ const CashPage: React.FC = () => {
                 value={openingAmount}
                 onChange={(e) => setOpeningAmount(e.target.value)}
                 placeholder="Ex.: 100.00"
-                className="w-full text-sm border border-border-primary rounded-lg px-3 py-2 bg-bg-card text-fg-primary"
+                className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
-            <Button onClick={handleOpen} isLoading={busy}>Abrir caixa</Button>
+            <Button variant="primary" onClick={handleOpen} disabled={busy}>Abrir caixa</Button>
           </div>
         </Card>
       ) : (
         <>
           {/* Status do caixa aberto */}
-          <Card>
+          <Card className="p-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm text-fg-muted">
+                <p className="text-sm text-fg-muted-token">
                   {session.opened_at && !Number.isNaN(new Date(session.opened_at).getTime())
                     ? `Aberto em ${format(new Date(session.opened_at), "dd/MM 'às' HH:mm", { locale: ptBR })} · `
                     : ''}
                   fundo {fmtMoney(session.opening_amount)}
                 </p>
-                <p className="text-2xl font-bold text-fg-primary mt-1">
+                <p className="text-2xl font-bold text-fg-token mt-1">
                   Esperado em caixa: {fmtMoney(session.expected_cash)}
                 </p>
-                <p className="text-xs text-fg-muted mt-0.5">
+                <p className="text-xs text-fg-muted-token mt-0.5">
                   Fundo + reforços − sangrias (vendas em dinheiro: confira no relatório de pedidos)
                 </p>
               </div>
@@ -176,11 +177,11 @@ const CashPage: React.FC = () => {
           </Card>
 
           {/* Movimentos */}
-          <Card>
-            <h2 className="text-lg font-semibold text-fg-primary mb-4">Sangria / Reforço</h2>
+          <Card className="p-4">
+            <h2 className="text-lg font-semibold text-fg-token mb-4">Sangria / Reforço</h2>
             <div className="flex flex-wrap items-end gap-3">
               <div>
-                <label htmlFor="movement-amount" className="block text-sm font-medium text-fg-primary mb-1">
+                <label htmlFor="movement-amount" className="block text-sm font-medium text-fg-token mb-1">
                   Valor do movimento (R$)
                 </label>
                 <input
@@ -190,11 +191,11 @@ const CashPage: React.FC = () => {
                   step="0.01"
                   value={movementAmount}
                   onChange={(e) => setMovementAmount(e.target.value)}
-                  className="w-40 text-sm border border-border-primary rounded-lg px-3 py-2 bg-bg-card text-fg-primary"
+                  className="w-40 text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div className="flex-1 min-w-[180px]">
-                <label htmlFor="movement-reason" className="block text-sm font-medium text-fg-primary mb-1">
+                <label htmlFor="movement-reason" className="block text-sm font-medium text-fg-token mb-1">
                   Motivo (opcional)
                 </label>
                 <input
@@ -203,7 +204,7 @@ const CashPage: React.FC = () => {
                   value={movementReason}
                   onChange={(e) => setMovementReason(e.target.value)}
                   placeholder="Ex.: depósito no banco"
-                  className="w-full text-sm border border-border-primary rounded-lg px-3 py-2 bg-bg-card text-fg-primary"
+                  className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <Button
@@ -228,13 +229,13 @@ const CashPage: React.FC = () => {
               <table className="w-full text-sm mt-4">
                 <tbody>
                   {session.movements.map((mv) => (
-                    <tr key={mv.id} className="border-t border-border-primary">
-                      <td className="py-1.5 capitalize">{mv.kind}</td>
+                    <tr key={mv.id} className="border-t border-border-token">
+                      <td className="py-1.5 capitalize text-fg-token">{mv.kind}</td>
                       <td className={`py-1.5 font-medium ${mv.kind === 'sangria' ? 'text-red-600' : 'text-emerald-600'}`}>
                         {mv.kind === 'sangria' ? '−' : '+'}{fmtMoney(mv.amount)}
                       </td>
-                      <td className="py-1.5 text-fg-muted">{mv.reason || '—'}</td>
-                      <td className="py-1.5 text-fg-muted text-right">
+                      <td className="py-1.5 text-fg-muted-token">{mv.reason || '—'}</td>
+                      <td className="py-1.5 text-fg-muted-token text-right">
                         {format(new Date(mv.created_at), 'HH:mm', { locale: ptBR })}
                       </td>
                     </tr>
@@ -245,14 +246,14 @@ const CashPage: React.FC = () => {
           </Card>
 
           {/* Fechamento */}
-          <Card>
-            <h2 className="text-lg font-semibold text-fg-primary mb-4 flex items-center gap-2">
+          <Card className="p-4">
+            <h2 className="text-lg font-semibold text-fg-token mb-4 flex items-center gap-2">
               <LockClosedIcon className="w-5 h-5" />
               Fechar caixa
             </h2>
             <div className="flex flex-wrap items-end gap-3">
               <div>
-                <label htmlFor="counted-amount" className="block text-sm font-medium text-fg-primary mb-1">
+                <label htmlFor="counted-amount" className="block text-sm font-medium text-fg-token mb-1">
                   Valor contado (R$)
                 </label>
                 <input
@@ -262,11 +263,11 @@ const CashPage: React.FC = () => {
                   step="0.01"
                   value={countedAmount}
                   onChange={(e) => setCountedAmount(e.target.value)}
-                  className="w-40 text-sm border border-border-primary rounded-lg px-3 py-2 bg-bg-card text-fg-primary"
+                  className="w-40 text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div className="flex-1 min-w-[180px]">
-                <label htmlFor="close-notes" className="block text-sm font-medium text-fg-primary mb-1">
+                <label htmlFor="close-notes" className="block text-sm font-medium text-fg-token mb-1">
                   Observações (opcional)
                 </label>
                 <input
@@ -274,7 +275,7 @@ const CashPage: React.FC = () => {
                   type="text"
                   value={closeNotes}
                   onChange={(e) => setCloseNotes(e.target.value)}
-                  className="w-full text-sm border border-border-primary rounded-lg px-3 py-2 bg-bg-card text-fg-primary"
+                  className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <Button onClick={handleClose} disabled={busy || !countedAmount} variant="danger">
