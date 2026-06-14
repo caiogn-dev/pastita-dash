@@ -11,7 +11,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Loading } from '../../../components/common';
+import { Card, Button } from '../../../components/ui';
+import { Loading } from '../../../components/common';
 import ComboForm from '../../../components/Combos/ComboForm';
 import { useStore } from '../../../hooks';
 import storesApi, {
@@ -100,8 +101,8 @@ export const ComboFormPage: React.FC = () => {
     return (
       <div className="p-6 text-center">
         <ExclamationTriangleIcon className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-gray-500 dark:text-zinc-400 mb-4">Selecione uma loja para gerenciar combos.</p>
+        <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma loja selecionada</h2>
+        <p className="text-fg-muted-token mb-4">Selecione uma loja para gerenciar combos.</p>
         <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
       </div>
     );
@@ -112,9 +113,9 @@ export const ComboFormPage: React.FC = () => {
   if (isEditing && !combo) {
     return (
       <div className="p-6 text-center">
-        <ExclamationTriangleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Combo não encontrado</h2>
-        <p className="text-gray-500 dark:text-zinc-400 mb-4">O combo solicitado não existe.</p>
+        <ExclamationTriangleIcon className="w-16 h-16 text-[var(--danger)] mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-fg-token mb-2">Combo não encontrado</h2>
+        <p className="text-fg-muted-token mb-4">O combo solicitado não existe.</p>
         <Button onClick={() => navigate(`/stores/${storeId}/combos`)}>Voltar</Button>
       </div>
     );
@@ -126,16 +127,16 @@ export const ComboFormPage: React.FC = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+          className="p-2 rounded hover:bg-surface-2 transition-colors"
           title="Voltar"
         >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <ArrowLeftIcon className="w-5 h-5 text-fg-muted-token" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-fg-token">
             {isEditing ? `Editar Combo — ${combo?.name}` : 'Novo Combo'}
           </h1>
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+          <p className="text-fg-muted-token">
             {storeName ? `Loja: ${storeName}` : 'Configure um novo combo para sua loja'}
           </p>
         </div>
