@@ -287,7 +287,7 @@ export const Navbar: React.FC = () => {
   return (
     <>
       <header className="sticky top-0 z-40 bg-[var(--brand-strong)] text-white backdrop-blur-xl border-b border-[var(--border)]">
-        <div className="flex items-center gap-3 px-4 h-32">
+        <div className="flex items-center gap-3 px-4 h-24">
 
           {/* Logo */}
           <button onClick={() => navigate('/')} className="flex items-center flex-shrink-0">
