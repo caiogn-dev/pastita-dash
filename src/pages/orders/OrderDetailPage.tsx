@@ -119,6 +119,15 @@ const getManualSurcharge = (metadata?: Record<string, unknown>) => {
   return 0;
 };
 
+const getAdjustmentReason = (metadata?: Record<string, unknown>): string | null => {
+  if (metadata?.manual_adjustment && typeof metadata.manual_adjustment === 'object') {
+    const adjustment = metadata.manual_adjustment as Record<string, unknown>;
+    const reason = adjustment.reason;
+    if (typeof reason === 'string' && reason.trim()) return reason.trim();
+  }
+  return null;
+};
+
 const getInitials = (name?: string | null) => {
   if (!name) return 'CL';
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -354,6 +363,7 @@ export const OrderDetailPage: React.FC = () => {
   const compactAddress = buildCompactAddress(address);
   const customerInitials = getInitials(order.customer_name);
   const manualSurcharge = getManualSurcharge(order.metadata);
+  const adjustmentReason = getAdjustmentReason(order.metadata);
 
   return (
     <div className="min-h-screen bg-[#f5f1e8] text-[#171717] dark:bg-[#050505] dark:text-[#f4efe6]">
@@ -528,6 +538,11 @@ export const OrderDetailPage: React.FC = () => {
                     <div className="flex items-center justify-between gap-3 sm:col-span-2">
                       <span className="text-[#746b5f] dark:text-[#9d9385]">Acréscimo</span>
                       <span className="font-semibold">{formatMoney(manualSurcharge)}</span>
+                    </div>
+                  ) : null}
+                  {adjustmentReason ? (
+                    <div className="sm:col-span-2 text-xs text-[#9a8f7e] dark:text-[#8b816f] italic">
+                      {adjustmentReason}
                     </div>
                   ) : null}
                   <div className="flex items-center justify-between gap-3 border-t border-black/10 pt-3 text-base sm:col-span-2 dark:border-white/10">

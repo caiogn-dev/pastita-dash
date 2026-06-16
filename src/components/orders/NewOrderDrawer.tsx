@@ -553,8 +553,7 @@ function StepAjustes({
       </div>
 
       <p className="text-xs text-gray-400 dark:text-zinc-500">
-        Os campos de desconto/acréscimo ficam como TODO no backend até a Fase 1 do
-        plano ser concluída.
+        Desconto e acréscimo são aplicados ao total do pedido.
       </p>
     </div>
   );
