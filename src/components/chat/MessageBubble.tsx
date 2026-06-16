@@ -562,7 +562,7 @@ const InteractiveContent: React.FC<{
   return null;
 };
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({
+const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
   id,
   direction,
   messageType,
@@ -663,4 +663,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   );
 };
 
+// memo: evita re-render de cada bolha já renderizada quando chega msg nova
+// ou a cada keystroke no parent (ChatWindow re-renderiza muito). Memoiza o
+// NAMED export — é o que o ChatWindow importa ({ MessageBubble }).
+export const MessageBubble = React.memo(MessageBubbleImpl);
 export default MessageBubble;

@@ -1,7 +1,7 @@
 /**
  * ChatWindow - Interface de Chat WhatsApp estilo WhatsApp Web
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -354,7 +354,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     setTimeout(() => setInsertText(undefined), 100);
   };
 
-  const groupedMessages = ensureArray<Message>(messages).reduce((groups, message) => {
+  // Memoizado: antes recalculava o agrupamento de TODAS as mensagens a cada
+  // render (cada keystroke na busca, cada tick). Agora só quando `messages` muda.
+  const groupedMessages = useMemo(() => ensureArray<Message>(messages).reduce((groups, message) => {
     if (!message.created_at) return groups;
     try {
       const date = format(new Date(message.created_at), 'yyyy-MM-dd');
@@ -362,14 +364,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
       groups[date].push(message);
     } catch { /* ignore invalid dates */ }
     return groups;
-  }, {} as Record<string, Message[]>);
+  }, {} as Record<string, Message[]>), [messages]);
 
-  const filteredConversations = ensureArray<Conversation>(conversations).filter(conv => {
+  const filteredConversations = useMemo(() => ensureArray<Conversation>(conversations).filter(conv => {
     if (filter === 'unread') return (conv.unread_count ?? 0) > 0;
     if (filter === 'human') return conv.mode === 'human';
     if (filter === 'bot') return conv.mode !== 'human';
     return true;
-  });
+  }), [conversations, filter]);
 
   return (
     <div className="flex h-[calc(100vh-56px)] overflow-hidden bg-[var(--bg-primary,#fff)] dark:bg-[var(--dark-bg-primary,#0D0907)]">
