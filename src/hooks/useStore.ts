@@ -22,10 +22,10 @@ export interface UseStoreReturn {
   storeName: string | null;
   /** Whether a store is currently selected */
   isStoreSelected: boolean;
-  /** The full store object */
-  store: any;
+  /** The full store object as loaded from the API */
+  store: ApiStore | null;
   /** All available stores */
-  stores: any[];
+  stores: ApiStore[];
   /** Loading state */
   loading: boolean;
   /** Throws an error if no store is selected */
@@ -108,7 +108,7 @@ export function getStoreSlug(): string | null {
 export function getStoreSlugWithFallback(): string | null {
   const { selectedStoreId, stores } = useRootStore.getState();
   if (selectedStoreId) {
-    const match = stores.find((s: any) => s.id === selectedStoreId || s.slug === selectedStoreId);
+    const match = stores.find((s) => s.id === selectedStoreId || s.slug === selectedStoreId);
     if (match?.slug) return match.slug;
     return selectedStoreId; // já pode ser um slug; backend resolve id ou slug
   }

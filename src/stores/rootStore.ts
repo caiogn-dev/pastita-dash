@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { StoreOrder } from '../services/storesApi';
+import type { Store, StoreOrder } from '../services/storesApi';
 
 /**
  * Root Store - Single source of truth for app state
@@ -14,12 +14,6 @@ interface User {
   id: string;
   email: string;
   name?: string;
-}
-
-interface Store {
-  id: string;
-  slug: string;
-  name: string;
 }
 
 interface RootStore {
