@@ -27,8 +27,12 @@ import type { ProjectHealth } from '../../types/dashboard';
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number.isFinite(n) ? n : 0);
+const fmt = (n: number | string) => {
+  // A API serializa Decimal como STRING ("219.98"). Number.isFinite(string) é
+  // sempre false -> caía em 0 (R$ 0,00 em todo pedido). Coage antes.
+  const v = Number(n);
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number.isFinite(v) ? v : 0);
+};
 
 const PIPELINE = [
   { key: 'pending',          label: 'Pendentes',   color: 'bg-yellow-500' },
