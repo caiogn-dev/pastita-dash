@@ -140,7 +140,7 @@ test.describe('WebSocket Real-Time Orders', () => {
     await page.goto(`${APP_URL}/orders`);
 
     // Should be live
-    let liveIndicator = page.locator('text=Live');
+    const liveIndicator = page.locator('text=Live');
     await expect(liveIndicator).toBeVisible({ timeout: 5000 });
 
     // Brief offline
