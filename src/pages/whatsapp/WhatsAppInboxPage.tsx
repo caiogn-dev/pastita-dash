@@ -211,16 +211,20 @@ const WhatsAppInboxPage: React.FC = () => {
 
   const handleDirectSend = async (text: string) => {
     if (!text.trim() || !selectedConversation) return;
-    await whatsappService.sendMessage({
-      account_id: selectedConversation.account,
-      to: selectedConversation.phone_number,
-      text: text.trim(),
-      metadata: {
-        client_request_id: crypto.randomUUID(),
-        source: 'whatsapp_inbox_tools',
-      },
-    });
-    void loadMessages(selectedConversation.id);
+    try {
+      await whatsappService.sendMessage({
+        account_id: selectedConversation.account,
+        to: selectedConversation.phone_number,
+        text: text.trim(),
+        metadata: {
+          client_request_id: crypto.randomUUID(),
+          source: 'whatsapp_inbox_tools',
+        },
+      });
+      void loadMessages(selectedConversation.id);
+    } catch (error) {
+      toast.error(getErrorMessage(error) || 'Erro ao enviar mensagem');
+    }
   };
 
   const scrollToBottom = () => {
