@@ -672,7 +672,7 @@ describe('ComboForm', () => {
             store: 'store-1',
             name: 'Test Combo',
             price: 15,
-            items: [],
+            groups: [],
           })
         );
       });
@@ -720,9 +720,9 @@ describe('ComboForm', () => {
             store: 'store-1',
             name: 'Test Combo',
             price: 15,
-            items: expect.arrayContaining([
+            groups: expect.arrayContaining([
               expect.objectContaining({
-                product: 'prod-1',
+                product_id: 'prod-1',
               }),
             ]),
           })
