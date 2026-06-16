@@ -398,7 +398,7 @@ export const OrdersPage: React.FC = () => {
   useRealTimeOrders({
     enabled: Boolean(storeQuery),
     apiUrl: import.meta.env.VITE_API_URL,
-    wsUrl: `${import.meta.env.VITE_WS_URL}/stores/${storeQuery}/orders/`,
+    wsUrl: import.meta.env.VITE_WS_URL,
   });
 
   // Clean up local state when external data catches up
