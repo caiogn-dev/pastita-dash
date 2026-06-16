@@ -333,6 +333,21 @@ export interface StoreOrderItem {
   created_at: string;
 }
 
+export interface StoreOrderComboSelectedItem {
+  group_name?: string;
+  product_name?: string;
+  variant_name?: string;
+  quantity?: number;
+}
+
+export interface StoreOrderComboItemLite {
+  id: string;
+  combo_name: string;
+  order_item?: string;
+  quantity: number;
+  selected_variants_data?: StoreOrderComboSelectedItem[];
+}
+
 export interface StoreOrder {
   id: string;
   store: string;
@@ -375,6 +390,7 @@ export interface StoreOrder {
   delivered_at?: string;
   cancelled_at?: string;
   items: StoreOrderItem[];
+  combo_items?: StoreOrderComboItemLite[];
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;

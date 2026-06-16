@@ -4,7 +4,7 @@
  * Optimized for thermal printing with high contrast
  */
 import { useRef, useCallback } from 'react';
-import { Order } from '../../types';
+import { Order, OrderComboItem } from '../../types';
 
 // Type alias for backwards compatibility
 type Pedido = Order;
@@ -158,6 +158,11 @@ export const useOrderPrint = () => {
       .map((line) => `<div class="${className}">${escapeHtml(line)}</div>`)
       .join('');
 
+    const comboByOrderItem = new Map<string, OrderComboItem>();
+    (pedido.combo_items || []).forEach((c) => {
+      if (c.order_item) comboByOrderItem.set(c.order_item, c);
+    });
+
     const itemsHtml = pedido.items?.map((item) => {
       const itemAny = item as unknown as Record<string, unknown>;
       const variantName = itemAny.variant_name as string | undefined;
@@ -166,8 +171,14 @@ export const useOrderPrint = () => {
       const ingredientLines = Array.isArray(item.options?.ingredients)
         ? formatIngredients(item.options.ingredients)
         : [];
+      // Sabores/saladas escolhidos no combo, ligados a esta linha
+      const combo = comboByOrderItem.get(item.id);
+      const comboLines = (combo?.selected_variants_data || [])
+        .map((sv) => `${sv.quantity ?? 1}x ${sv.product_name || sv.variant_name || ''}`.trim())
+        .filter((l) => l && !l.endsWith('x'));
       const detailLines = [
         variantName,
+        ...comboLines,
         ...ingredientLines,
       ].filter((line): line is string => Boolean(line));
 

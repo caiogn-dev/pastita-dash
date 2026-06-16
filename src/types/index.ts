@@ -247,14 +247,32 @@ export interface OrderItem {
   };
 }
 
+export interface ComboSelectedItem {
+  group_id?: string;
+  group_name?: string;
+  product_id?: string;
+  product_name?: string;
+  variant_id?: string;
+  variant_name?: string;
+  quantity?: number;
+  sku?: string;
+}
+
 export interface OrderComboItem {
   id: string;
   combo_id?: string;
   combo_name: string;
+  order_item?: string; // FK do StoreOrderItem ligado (liga a seleção à linha)
   quantity: number;
   unit_price: number;
   subtotal: number;
   notes?: string;
+  // Sabores/saladas escolhidos (produtos OU variantes) — fonte p/ exibir.
+  selected_variants_data?: ComboSelectedItem[];
+  display_data?: {
+    groups?: Array<{ group_name?: string; items?: ComboSelectedItem[] }>;
+    [key: string]: unknown;
+  };
   customizations?: {
     is_salad_builder?: boolean;
     ingredients?: Array<{ id: string; name: string; price: number; role: string }>;

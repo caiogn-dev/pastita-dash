@@ -113,16 +113,29 @@ const KdsPage: React.FC = () => {
                     </div>
 
                     <ul className="space-y-1 mb-3">
-                      {(order.items || []).map((item) => (
-                        <li key={item.id} className="text-lg leading-snug">
-                          <span className="font-bold">{item.quantity}×</span>{' '}
-                          {item.product_name}
-                          {item.variant_name ? ` (${item.variant_name})` : ''}
-                          {item.notes && (
-                            <p className="text-sm text-amber-400 pl-6">Obs.: {item.notes}</p>
-                          )}
-                        </li>
-                      ))}
+                      {(order.items || []).map((item) => {
+                        // Seleções do combo (saladas/sabores) ligadas a esta linha
+                        const combo = (order.combo_items || []).find(
+                          (c) => c.order_item === item.id,
+                        );
+                        const comboPicks = combo?.selected_variants_data || [];
+                        return (
+                          <li key={item.id} className="text-lg leading-snug">
+                            <span className="font-bold">{item.quantity}×</span>{' '}
+                            {item.product_name}
+                            {item.variant_name ? ` (${item.variant_name})` : ''}
+                            {comboPicks.map((sv, i) => (
+                              <span key={i} className="block text-base pl-6 text-emerald-300">
+                                {(sv.quantity ?? 1)}× {sv.product_name || sv.variant_name}
+                                {sv.group_name ? ` — ${sv.group_name}` : ''}
+                              </span>
+                            ))}
+                            {item.notes && (
+                              <p className="text-sm text-amber-400 pl-6">Obs.: {item.notes}</p>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
 
                     {order.customer_notes && (
