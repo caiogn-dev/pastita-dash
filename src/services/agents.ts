@@ -282,20 +282,8 @@ const agentsService = {
     agentId: string,
     data: ProcessMessageRequest
   ): Promise<ProcessMessageResponse> => {
-    console.log(`[AgentService] Processing message for agent ${agentId}:`, {
-      messageLength: data.message?.length,
-      sessionId: data.session_id,
-      hasPhoneNumber: !!data.phone_number,
-    });
-    
     try {
       const response = await api.post(`/agents/${agentId}/process/`, data);
-      console.log('[AgentService] Process message success:', {
-        hasResponse: !!response.data?.response,
-        sessionId: response.data?.session_id,
-        tokensUsed: response.data?.tokens_used,
-        responseTimeMs: response.data?.response_time_ms,
-      });
       return response.data;
     } catch (error) {
       console.error('[AgentService] Process message failed:', error);

@@ -335,7 +335,6 @@ export function useWhatsAppWS(options: UseWhatsAppWSOptions = {}): UseWhatsAppWS
     const onVisible = () => {
       if (document.visibilityState === 'visible' && enabled) {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-          console.log('[WhatsApp WS] Tab visible, reconnecting...');
           attempts.current = 0;
           connect();
         }
