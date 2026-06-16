@@ -3,6 +3,7 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   PaperAirplaneIcon,
   MagnifyingGlassIcon,
@@ -56,7 +57,10 @@ export default function MessengerInbox() {
           }
         }
       })
-      .catch(() => setConversations([]))
+      .catch(() => {
+        toast.error('Erro ao carregar conversas do Messenger');
+        setConversations([]);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -79,6 +83,7 @@ export default function MessengerInbox() {
         );
       }
     } catch {
+      toast.error('Erro ao carregar mensagens');
       setMessages([]);
     } finally {
       setLoadingMessages(false);
@@ -113,6 +118,8 @@ export default function MessengerInbox() {
         message_type: 'text',
       });
       setMessages(prev => [...prev, r.data]);
+    } catch {
+      toast.error('Erro ao enviar mensagem');
     } finally {
       setSending(false);
     }
