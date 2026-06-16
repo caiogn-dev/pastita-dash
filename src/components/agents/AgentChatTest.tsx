@@ -313,7 +313,7 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
                   ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 rounded-bl-md"
                   : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-bl-md"
               )}>
-                <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                <p className="whitespace-pre-wrap break-words">{typeof message.content === 'string' ? message.content : message.content != null ? JSON.stringify(message.content) : ''}</p>
                 
                 {/* Metadata for assistant messages */}
                 {message.role === 'assistant' && (message.tokens_used || message.response_time_ms) && (

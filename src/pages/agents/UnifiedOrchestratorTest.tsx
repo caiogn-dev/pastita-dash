@@ -367,7 +367,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
                   )}
                   
                   {/* Content */}
-                  <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                  <p className="whitespace-pre-wrap break-words">{typeof message.content === 'string' ? message.content : message.content != null ? JSON.stringify(message.content) : ''}</p>
                   
                   {/* Buttons */}
                   {message.buttons && message.buttons.length > 0 && (
