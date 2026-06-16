@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   ClipboardDocumentIcon,
+  EyeIcon,
+  EyeSlashIcon,
   KeyIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
@@ -41,6 +43,7 @@ const CompanyProfileDetailPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<UpdateCompanyProfile>({});
   const [businessHours, setBusinessHours] = useState<BusinessHours>({});
+  const [showApiKey, setShowApiKey] = useState(false);
   const [createLinks, setCreateLinks] = useState({
     store_id: '',
     account_id: '',
@@ -587,9 +590,21 @@ const CompanyProfileDetailPage: React.FC = () => {
                   <input
                     type="text"
                     readOnly
-                    value={profile?.external_api_key || 'Não gerada'}
+                    value={
+                      profile?.external_api_key
+                        ? (showApiKey ? profile.external_api_key : '••••••••••••••••••••••••••••••••')
+                        : 'Não gerada'
+                    }
                     className="flex-1 block w-full rounded-l-md border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey((v) => !v)}
+                    title={showApiKey ? 'Ocultar API key' : 'Revelar API key'}
+                    className="inline-flex items-center px-3 border border-l-0 border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
+                  >
+                    {showApiKey ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                  </button>
                   <button
                     type="button"
                     onClick={handleCopyApiKey}
