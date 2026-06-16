@@ -15,6 +15,18 @@ export const getAccount = (id: string) =>
 export const createAccount = (data: any) =>
   api.post('/whatsapp/accounts/', data);
 
+/**
+ * Embedded Signup (Coexistence): troca o code do fluxo ES por token no backend,
+ * registra o número, inscreve o app na WABA e VINCULA à loja.
+ */
+export const embeddedSignup = (data: {
+  code: string;
+  waba_id: string;
+  phone_number_id: string;
+  pin: string;
+  store_id?: string;
+}) => api.post('/whatsapp/accounts/embedded_signup/', data);
+
 export const updateAccount = (id: string, data: any) =>
   api.patch(`/whatsapp/accounts/${id}/`, data);
 

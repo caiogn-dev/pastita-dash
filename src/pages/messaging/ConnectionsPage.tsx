@@ -11,6 +11,7 @@ import {
 import toast from 'react-hot-toast';
 import { Card, Button, Badge } from '../../components/common';
 import * as whatsappService from '../../services/whatsapp';
+import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsAppButton';
 import { messengerService } from '../../services/messenger';
 import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
@@ -558,6 +559,17 @@ export default function ConnectionsPage() {
           <Button onClick={handleSubmit} isLoading={submitting}>{editingConnection ? 'Salvar Alterações' : 'Criar Conexão'}</Button>
         </>}
       >
+        {selectedPlatform === 'whatsapp' && !editingConnection && (
+          <div className="mb-4 p-3 rounded-lg border border-border-primary bg-bg-hover/30">
+            <p className="text-sm font-semibold text-fg-primary mb-1">Conexão rápida (recomendado)</p>
+            <p className="text-xs text-fg-muted mb-3">
+              Conecte oficialmente via Meta (Embedded Signup) — sem copiar tokens à mão.
+            </p>
+            <ConnectWhatsAppButton onConnected={() => { closeDialog(); loadConnections(); }} />
+            <p className="text-xs text-fg-muted mt-3">Ou preencha manualmente abaixo (avançado):</p>
+          </div>
+        )}
+
         {selectedPlatform && PLATFORMS[selectedPlatform as keyof typeof PLATFORMS].fields.length > 0 && (
           <div className="flex flex-col gap-4">
             {PLATFORMS[selectedPlatform as keyof typeof PLATFORMS].fields.map((f) => (
