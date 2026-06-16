@@ -335,7 +335,7 @@ function StepItens({
     productsService
       .getProducts({ store: storeId, is_active: true, page_size: 40, ordering: 'name' })
       .then((data) => setProducts(data.results || []))
-      .catch(() => setProducts([]))
+      .catch(() => { setProducts([]); toast.error('Erro ao carregar produtos'); })
       .finally(() => setLoadingProducts(false));
   }, [storeId]);
 
