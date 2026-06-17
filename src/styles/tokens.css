@@ -1,20 +1,22 @@
 /* ============================================
-   DESIGN TOKENS — Identidade Verde Floresta
-   Cantos retos, bordas firmes, profundidade neutra.
+   DESIGN TOKENS — Identidade Cardapidex
+   Terracota/laranja sobre creme. Cantos retos, bordas firmes.
+   Paleta: primária #C7492E, secundária #E08A3A, destaque #F2A23A,
+   creme #FFF5E8, texto #2B2B2B.
    light em :root, dark em .dark
    ============================================ */
 :root {
-  --brand: #166534;
-  --brand-hover: #14532d;
-  --brand-strong: #11241c;
-  --brand-soft: #dcfce7;
-  --canvas: #eef0ec;
+  --brand: #C7492E;
+  --brand-hover: #A83A23;
+  --brand-strong: #2B2B2B;
+  --brand-soft: #FCE6D6;
+  --canvas: #FFF5E8;
   --surface: #ffffff;
-  --surface-2: #f7f8f7;
-  --border: #cfd8d1;
-  --border-strong: #b7c2ba;
-  --fg: #0f1f17;
-  --fg-muted: #5b6b62;
+  --surface-2: #FBF1E4;
+  --border: #E6D6C2;
+  --border-strong: #D8C2A8;
+  --fg: #2B2B2B;
+  --fg-muted: #7A6E61;
   --warning: #b45309;
   --warning-soft: #fef3c7;
   --danger: #dc2626;
@@ -24,17 +26,17 @@
 }
 
 .dark {
-  --brand: #22c55e;
-  --brand-hover: #16a34a;
-  --brand-strong: #0a0f0c;
-  --brand-soft: #14271c;
-  --canvas: #0a0f0c;
-  --surface: #121a15;
-  --surface-2: #0e1511;
-  --border: #1f2a23;
-  --border-strong: #2a382f;
-  --fg: #e8f0ec;
-  --fg-muted: #9fb3a8;
+  --brand: #E08A3A;
+  --brand-hover: #F2A23A;
+  --brand-strong: #1A1614;
+  --brand-soft: #3A2418;
+  --canvas: #14110F;
+  --surface: #1F1A16;
+  --surface-2: #181410;
+  --border: #2E261F;
+  --border-strong: #3D3328;
+  --fg: #F5ECE0;
+  --fg-muted: #B8A894;
 }
 
 html,

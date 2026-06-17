@@ -35,7 +35,7 @@ export const FullPageLoading: React.FC = () => {
     <div className="fixed inset-0 bg-white dark:bg-black flex items-center justify-center z-50 transition-colors">
       <div className="text-center">
         <img
-          src="/cardapidex-logo.svg"
+          src="/brand/symbol-256.png"
           alt="Cardapidex"
           className="w-20 h-20 mx-auto mb-4 animate-pulse"
         />

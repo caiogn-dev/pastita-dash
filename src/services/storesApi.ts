@@ -107,6 +107,7 @@ export interface StoreInput {
   operating_hours?: Record<string, { open: string; close: string; is_open: boolean }>;
   primary_color?: string;
   secondary_color?: string;
+  logo_url?: string;
   template?: 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'premium';
   tagline?: string;
   custom_domain?: string | null;

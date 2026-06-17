@@ -330,7 +330,7 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden;">
           <tr>
-            <td style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 40px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #F2A23A 0%, #C7492E 100%); padding: 40px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0;">✅ Pedido Confirmado!</h1>
               <p style="color: #ffffff; font-size: 20px; margin: 10px 0 0;">#{{order_number}}</p>
             </td>

@@ -270,15 +270,17 @@ export const Navbar: React.FC = () => {
   const brandInfo = useMemo(() => {
     if (!store) return {
       name: 'Cardapidex',
-      logo: '/cardapidex-logo.svg',
+      logo: '/brand/symbol-256.png',
       initial: 'Cx',
-      color: '#059669',
+      color: '#C7492E',
+      isPlatform: true,
     };
     return {
       name: store.name || 'Cardapidex',
       logo: store.logo_url || null,
       initial: store.name?.[0]?.toUpperCase() || 'C',
-      color: store.primary_color || '#059669',
+      color: store.primary_color || '#C7492E',
+      isPlatform: false,
     };
   }, [store]);
 
@@ -290,12 +292,12 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-3 px-4 h-24">
 
           {/* Logo */}
-          <button onClick={() => navigate('/')} className="flex items-center flex-shrink-0">
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 flex-shrink-0">
             {brandInfo.logo ? (
               <img
                 src={brandInfo.logo}
                 alt={brandInfo.name}
-                className="w-7 h-7 rounded-md object-cover"
+                className="w-7 h-7 rounded-md object-cover bg-white/10"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
             ) : (
@@ -305,6 +307,11 @@ export const Navbar: React.FC = () => {
               >
                 {brandInfo.initial}
               </div>
+            )}
+            {brandInfo.isPlatform && (
+              <span className="hidden sm:block text-base font-bold tracking-tight text-white font-brand">
+                Cardapidex
+              </span>
             )}
           </button>
 

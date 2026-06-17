@@ -35,7 +35,7 @@
 
   /* Brand color — única var setada pelo JS com o hex da API.
      O resto da paleta é derivado automaticamente via color-mix(). */
-  --primary-500: #059669; /* Cardapidex emerald (padrão até a loja carregar) */
+  --primary-500: #C7492E; /* Cardapidex terracota (padrão até a loja carregar) */
 
   /* Paleta derivada — não editar manualmente */
   --primary-50:  color-mix(in srgb, var(--primary-500)  8%, white);
