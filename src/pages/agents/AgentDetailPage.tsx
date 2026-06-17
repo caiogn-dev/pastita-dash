@@ -432,7 +432,7 @@ export const AgentDetailPage: React.FC = () => {
                             : "bg-zinc-100 dark:bg-[var(--dark-bg-hover,#161616)]"
                         )}
                       >
-                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        <p className="whitespace-pre-wrap">{typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}</p>
                         <p className="text-xs opacity-70 mt-1">
                           {new Date(message.created_at).toLocaleTimeString('pt-BR')}
                         </p>

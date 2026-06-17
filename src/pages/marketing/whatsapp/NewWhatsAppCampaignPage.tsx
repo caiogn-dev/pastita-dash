@@ -394,7 +394,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         source: 'all',
         limit: 500,
       });
-      const contacts: SystemContact[] = response.results.map(contact => ({
+      const contacts: SystemContact[] = (response.results ?? []).map(contact => ({
         phone: contact.phone,
         name: contact.name || '',
         source: contact.source,
