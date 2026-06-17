@@ -46,17 +46,30 @@ export interface VariantLimitDraft {
   price_override?: number;
 }
 
-/** Product group draft for editing in UI */
-export interface ComboGroupDraft {
+/** Product option draft (grupo do tipo "escolha N produtos") */
+export interface ProductOptionDraft {
   _key: string;
   product_id: string;
   product_name: string;
+  max_selections: number;
+  price_override?: number;
+}
+
+/** Product group draft for editing in UI */
+export interface ComboGroupDraft {
+  _key: string;
+  // 'variant' = produto-âncora + variantes; 'product' = título + lista de produtos.
+  group_type: 'variant' | 'product';
+  product_id: string;
+  product_name: string;
+  title: string;
   is_required: boolean;
   min_selections: number;
   max_selections: number;
   allow_duplicate_variants: boolean;
   position: number;
   variant_limits: VariantLimitDraft[];
+  product_options: ProductOptionDraft[];
   _expanded?: boolean;
 }
 
@@ -134,8 +147,13 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
           className={`w-4 h-4 text-gray-500 transition-transform ${group._expanded ? 'rotate-180' : ''}`}
         />
         <div className="flex-1">
-          <p className="font-medium text-gray-900 dark:text-white">{group.product_name}</p>
+          <p className="font-medium text-gray-900 dark:text-white">
+            {group.group_type === 'product'
+              ? (group.title || 'Grupo de produtos')
+              : (group.product_name || 'Selecionar produto')}
+          </p>
           <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            {group.group_type === 'product' ? 'Produtos · ' : 'Variantes · '}
             {group.min_selections}–{group.max_selections} seleções{group.allow_duplicate_variants && ' (duplicatas permitidas)'}
           </p>
         </div>
@@ -155,25 +173,40 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
       {/* Expanded Content */}
       {group._expanded && (
         <div className="p-4 space-y-4 border-t border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
-          {/* Product Selection & Required Toggle */}
+          {/* Seleção: produto-âncora (variante) OU título do grupo (produtos) */}
           <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
-                Produto
-              </label>
-              <select
-                value={group.product_id}
-                onChange={e => onUpdate(group._key, { product_id: e.target.value })}
-                className="w-full text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                <option value="">Selecionar produto...</option>
-                {products.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {group.group_type === 'product' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
+                  Título do grupo
+                </label>
+                <input
+                  type="text"
+                  value={group.title}
+                  onChange={e => onUpdate(group._key, { title: e.target.value })}
+                  placeholder="Ex: Escolha suas 5 saladas"
+                  className="w-full text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
+                  Produto
+                </label>
+                <select
+                  value={group.product_id}
+                  onChange={e => onUpdate(group._key, { product_id: e.target.value })}
+                  className="w-full text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                  <option value="">Selecionar produto...</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Selection Rules */}
             <div>
@@ -202,7 +235,8 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                   </div>
                 </div>
 
-                {/* Allow Duplicates */}
+                {/* Allow Duplicates (só variantes) */}
+                {group.group_type === 'variant' && (
                 <div
                   className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
                     group.allow_duplicate_variants
@@ -222,6 +256,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                     {group.allow_duplicate_variants && <CheckIcon className="w-3 h-3" />}
                   </div>
                 </div>
+                )}
               </div>
             </div>
 
@@ -244,8 +279,8 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
             </div>
           </div>
 
-          {/* Variants Table */}
-          {group.variant_limits.length > 0 && (
+          {/* Variantes (grupo do tipo variante) */}
+          {group.group_type === 'variant' && group.variant_limits.length > 0 && (
             <div className="overflow-x-auto -mx-4 px-4">
               <table className="w-full text-sm">
                 <thead>
@@ -284,13 +319,127 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
               </table>
             </div>
           )}
-          {group.variant_limits.length === 0 && (
+          {group.group_type === 'variant' && group.variant_limits.length === 0 && (
             <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] text-center py-3">
               Nenhuma variante neste produto
             </p>
           )}
+
+          {/* Checklist de produtos (grupo do tipo produtos) */}
+          {group.group_type === 'product' && (
+            <ProductOptionsChecklist
+              group={group}
+              products={products}
+              onUpdate={onUpdate}
+            />
+          )}
         </div>
       )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProductOptionsChecklist — checklist de produtos para grupo do tipo "produtos"
+// ─────────────────────────────────────────────────────────────────────────────
+interface ProductOptionsChecklistProps {
+  group: ComboGroupDraft;
+  products: Product[];
+  onUpdate: (key: string, changes: Partial<ComboGroupDraft>) => void;
+}
+
+const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group, products, onUpdate }) => {
+  const selectedByProduct = new Map(group.product_options.map(o => [o.product_id, o]));
+
+  const toggle = (product: Product) => {
+    const existing = selectedByProduct.get(product.id);
+    const next = existing
+      ? group.product_options.filter(o => o.product_id !== product.id)
+      : [
+          ...group.product_options,
+          {
+            _key: product.id,
+            product_id: product.id,
+            product_name: product.name,
+            max_selections: 1,
+            price_override: undefined,
+          },
+        ];
+    onUpdate(group._key, { product_options: next });
+  };
+
+  const patch = (productId: string, changes: Partial<ProductOptionDraft>) => {
+    onUpdate(group._key, {
+      product_options: group.product_options.map(o =>
+        o.product_id === productId ? { ...o, ...changes } : o
+      ),
+    });
+  };
+
+  if (products.length === 0) {
+    return (
+      <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] text-center py-3">
+        Nenhum produto cadastrado na loja
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2">
+        Marque os produtos que o cliente pode escolher neste grupo ({group.product_options.length} selecionado{group.product_options.length === 1 ? '' : 's'})
+      </p>
+      <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+        {products.map(product => {
+          const opt = selectedByProduct.get(product.id);
+          const checked = !!opt;
+          return (
+            <div
+              key={product.id}
+              className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${
+                checked
+                  ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-700'
+                  : 'border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggle(product)}
+                className={`w-5 h-5 rounded flex items-center justify-center transition-colors shrink-0 ${
+                  checked
+                    ? 'bg-brand-600 text-white'
+                    : 'border-2 border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]'
+                }`}
+                aria-label={checked ? `Remover ${product.name}` : `Adicionar ${product.name}`}
+              >
+                {checked && <CheckIcon className="w-3 h-3" />}
+              </button>
+              <span className="flex-1 text-sm text-gray-900 dark:text-white truncate">{product.name}</span>
+              {checked && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <label className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">max</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={opt!.max_selections}
+                    onChange={e => patch(product.id, { max_selections: parseInt(e.target.value) || 1 })}
+                    className="w-14 text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="R$ override"
+                    value={opt!.price_override ?? ''}
+                    onChange={e => patch(product.id, { price_override: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    className="w-24 text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -321,10 +470,16 @@ export const ComboForm: React.FC<ComboFormProps> = ({
             max_selections: 1,
             price_override: undefined,
           })));
+      const productOptions = item.product_options || [];
+      // Sem produto-âncora e/ou com product_options → grupo do tipo "produtos".
+      const groupType: 'variant' | 'product' =
+        productOptions.length > 0 || !productId ? 'product' : 'variant';
       return {
         _key: item.id,
-        product_id: productId,
+        group_type: groupType,
+        product_id: productId || '',
         product_name: item.product_name || product?.name || '',
+        title: item.title || '',
         is_required: item.is_required ?? true,
         min_selections: item.min_selections ?? item.quantity ?? 1,
         max_selections: item.max_selections ?? item.quantity ?? 1,
@@ -338,6 +493,13 @@ export const ComboForm: React.FC<ComboFormProps> = ({
           stock: v.stock || v.stock_quantity || 0,
           max_selections: v.max_selections || 1,
           price_override: v.price_override ?? undefined,
+        })),
+        product_options: productOptions.map((o: any) => ({
+          _key: o.product_id || o.product,
+          product_id: o.product_id || o.product,
+          product_name: o.name || o.product_name || '',
+          max_selections: o.max_selections || 1,
+          price_override: o.price_override ?? undefined,
         })),
         _expanded: false,
       };
@@ -364,21 +526,24 @@ export const ComboForm: React.FC<ComboFormProps> = ({
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const addGroup = () => {
+  const addGroup = (groupType: 'variant' | 'product') => {
     setForm(prev => ({
       ...prev,
       items: [
         ...prev.items,
         {
           _key: `new_${Date.now()}`,
+          group_type: groupType,
           product_id: '',
           product_name: '',
+          title: '',
           is_required: true,
           min_selections: 1,
-          max_selections: 1,
-          allow_duplicate_variants: false,
+          max_selections: groupType === 'product' ? 5 : 1,
+          allow_duplicate_variants: groupType === 'product',
           position: prev.items.length,
           variant_limits: [],
+          product_options: [],
           _expanded: true,
         },
       ],
@@ -434,26 +599,35 @@ export const ComboForm: React.FC<ComboFormProps> = ({
       return;
     }
 
-    // Validate items have products selected
-    const validItems = form.items.filter(g => g.product_id);
-    if (form.items.length > 0 && validItems.length !== form.items.length) {
-      toast.error('Selecione um produto para cada item do combo');
+    // Cada grupo precisa estar completo: variante → produto-âncora; produtos → pelo menos 1 opção.
+    const incomplete = form.items.filter(g =>
+      g.group_type === 'product' ? g.product_options.length === 0 : !g.product_id
+    );
+    if (incomplete.length > 0) {
+      toast.error('Cada grupo precisa de um produto-âncora (variantes) ou ao menos 1 produto (grupo de produtos)');
       return;
     }
+    const validItems = form.items;
 
     try {
       const groups = validItems.map((item, idx) => ({
-        product_id: item.product_id,
+        product_id: item.group_type === 'product' ? null : item.product_id,
+        title: item.group_type === 'product' ? item.title : '',
         is_required: item.is_required,
         min_selections: item.min_selections,
         max_selections: item.max_selections,
         allow_duplicate_variants: item.allow_duplicate_variants,
         position: idx,
-        variant_limits: item.variant_limits.map(limit => ({
+        variant_limits: item.group_type === 'product' ? [] : item.variant_limits.map(limit => ({
           variant_id: limit.variant_id,
           max_selections: limit.max_selections,
           price_override: limit.price_override,
         })),
+        product_options: item.group_type === 'product' ? item.product_options.map(o => ({
+          product_id: o.product_id,
+          max_selections: o.max_selections,
+          price_override: o.price_override,
+        })) : [],
       }));
 
       const payload: StoreComboPayload = {
@@ -555,14 +729,20 @@ export const ComboForm: React.FC<ComboFormProps> = ({
       {/* Tab: Itens */}
       {activeTab === 'groups' && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
             <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-              Adicione produtos ao combo
+              Adicione grupos ao combo
             </p>
-            <Button type="button" size="sm" onClick={addGroup}>
-              <PlusIcon className="w-4 h-4 mr-1" />
-              Adicionar Item
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button type="button" size="sm" variant="secondary" onClick={() => addGroup('variant')}>
+                <PlusIcon className="w-4 h-4 mr-1" />
+                Grupo de variantes
+              </Button>
+              <Button type="button" size="sm" onClick={() => addGroup('product')}>
+                <PlusIcon className="w-4 h-4 mr-1" />
+                Grupo de produtos
+              </Button>
+            </div>
           </div>
           {form.items.length === 0 ? (
             <div className="text-center py-10 rounded-lg border-2 border-dashed border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]">

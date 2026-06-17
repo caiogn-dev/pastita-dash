@@ -1416,16 +1416,28 @@ export interface ComboVariantLimit {
   price_override?: number;
 }
 
+export interface ComboProductOption {
+  product_id: string;
+  name: string;
+  price: number;
+  price_override?: number | null;
+  stock?: number;
+  max_selections: number;
+  image_url?: string;
+}
+
 export interface ComboProductGroup {
   id: string;
-  product_id: string;
+  product_id: string | null;
   product_name: string;
+  title?: string;
   is_required: boolean;
   min_selections: number;
   max_selections: number;
   allow_duplicate_variants: boolean;
   position: number;
   variant_limits: ComboVariantLimit[];
+  product_options?: ComboProductOption[];
 }
 
 export interface ComboVariantLimitInput {
@@ -1434,14 +1446,22 @@ export interface ComboVariantLimitInput {
   price_override?: number;
 }
 
-export interface ComboProductGroupInput {
+export interface ComboProductOptionInput {
   product_id: string;
+  max_selections: number;
+  price_override?: number;
+}
+
+export interface ComboProductGroupInput {
+  product_id: string | null;
+  title?: string;
   is_required: boolean;
   min_selections: number;
   max_selections: number;
   allow_duplicate_variants: boolean;
   position: number;
   variant_limits: ComboVariantLimitInput[];
+  product_options?: ComboProductOptionInput[];
 }
 
 export interface StoreCombo {
