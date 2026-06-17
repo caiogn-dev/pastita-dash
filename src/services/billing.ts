@@ -86,6 +86,18 @@ export function trialDaysRemaining(
 }
 
 /**
+ * Inicia a assinatura de um plano (preapproval MercadoPago). Retorna o
+ * init_point — o dono autoriza o cartão lá. NÃO cobra automaticamente.
+ */
+export async function subscribe(
+  storeSlug: string,
+  plan: PlanKey,
+): Promise<{ init_point: string; preapproval_id: string }> {
+  const { data } = await api.post(`/stores/${storeSlug}/subscribe/`, { plan });
+  return data;
+}
+
+/**
  * GET /public/plans/ — catálogo público de planos (sem auth).
  * `skipAutoLogout` evita que um eventual 401 derrube a sessão (é público).
  */

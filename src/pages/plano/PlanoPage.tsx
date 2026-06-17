@@ -22,6 +22,7 @@ import { useStore } from '../../hooks/useStore';
 import { formatCurrency } from '../../utils/formatters';
 import {
   getPlans,
+  subscribe,
   getStoreBilling,
   trialDaysRemaining,
   type Plan,
@@ -180,12 +181,31 @@ export const PlanoPage: React.FC = () => {
     void load();
   }, [load]);
 
-  const handleSubscribe = React.useCallback((plan: Plan) => {
-    // Placeholder — checkout/MercadoPago ainda não implementado.
-    toast('Cobrança em breve. Em breve você poderá assinar o ' + plan.name + ' por aqui.', {
-      icon: '🕒',
-    });
-  }, []);
+  const [subscribing, setSubscribing] = React.useState<PlanKey | null>(null);
+
+  const handleSubscribe = React.useCallback(async (plan: Plan) => {
+    if (subscribing) return; // anti-duplo-clique (evita 2 preapprovals)
+    const slug = (store as { slug?: string } | null)?.slug;
+    if (!slug) {
+      toast.error('Selecione uma loja primeiro.');
+      return;
+    }
+    setSubscribing(plan.key);
+    try {
+      const { init_point } = await subscribe(slug, plan.key);
+      if (init_point) {
+        // Redireciona pro checkout MercadoPago (dono autoriza o cartão lá).
+        window.location.href = init_point;
+      } else {
+        toast.error('Não foi possível iniciar a assinatura.');
+      }
+    } catch (err) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail || 'Falha ao iniciar a assinatura. Tente novamente.');
+    } finally {
+      setSubscribing(null);
+    }
+  }, [store]);
 
   // Ordena starter → pro → premium; planos desconhecidos vão para o fim.
   const orderedPlans = React.useMemo(() => {
