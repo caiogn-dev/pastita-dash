@@ -150,11 +150,13 @@ const AppContent: React.FC = () => {
           </Suspense>
         )
       } />
-      <Route path="/signup" element={
+      {/* Onboarding self-service. /cadastro é o que a landing (cardapidex.com.br) linka; /signup é alias. */}
+      <Route path="/cadastro" element={
         <Suspense fallback={<FullPageLoading />}>
           <SignupWizard />
         </Suspense>
       } />
+      <Route path="/signup" element={<Navigate to="/cadastro" replace />} />
 
       {/* KDS fullscreen — sem sidebar, para a tela da cozinha */}
       <Route path="/stores/:storeId/kds" element={
