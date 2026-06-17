@@ -27,6 +27,7 @@ const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPage').then
 const OrderNewPage = lazy(() => import('./pages/orders/OrderNewPage').then(m => ({ default: m.OrderNewPage })));
 const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const PlanoPage = lazy(() => import('./pages/plano/PlanoPage').then(m => ({ default: m.PlanoPage })));
 
 // Agents Pages (Langchain AI)
 const AgentsPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentsPage })));
@@ -192,6 +193,9 @@ const AppContent: React.FC = () => {
         
         {/* Settings */}
         <Route path="settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />
+
+        {/* Planos / assinatura */}
+        <Route path="plano" element={<PageBoundary><PlanoPage /></PageBoundary>} />
         
         {/* Automation Routes */}
         <Route path="automation/companies" element={<PageBoundary><CompanyProfilesPage /></PageBoundary>} />

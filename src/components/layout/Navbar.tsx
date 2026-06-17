@@ -263,6 +263,7 @@ export const Navbar: React.FC = () => {
         { name: 'Contas WhatsApp',  href: '/accounts',    icon: DevicePhoneMobileIcon },
         { name: 'Conexões',         href: '/connections', icon: LinkIcon },
         { name: 'Sistema',          href: '/settings',    icon: Cog6ToothIcon },
+        { name: 'Planos',           href: '/plano',       icon: SparklesIcon, sectionHeader: 'Assinatura' },
       ],
     },
   ], [storeHref, totalUnreadCount]);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
+import { TrialBanner } from './TrialBanner';
 
 export const MainLayout: React.FC = () => {
   const location = useLocation();
@@ -20,6 +21,7 @@ export const MainLayout: React.FC = () => {
     return (
       <div className="min-h-screen bg-bg-secondary text-fg-primary flex flex-col relative">
         <Navbar />
+        <TrialBanner />
         <div className="flex-1 overflow-hidden">
           <Outlet />
         </div>
@@ -34,6 +36,7 @@ export const MainLayout: React.FC = () => {
         style={{ background: 'radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 55%)' }}
       />
       <Navbar />
+      <TrialBanner />
       <main className="flex-1 overflow-auto bg-transparent px-7 py-5 max-xl:px-5 max-md:px-3 max-md:py-3 z-10">
         <Outlet />
       </main>
