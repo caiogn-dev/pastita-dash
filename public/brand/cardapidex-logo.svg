@@ -1,0 +1,30 @@
+<svg width="600" height="170" viewBox="0 0 600 170" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cdxGrad" x1="20" y1="180" x2="180" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F2A23A"/>
+      <stop offset="0.55" stop-color="#E0732A"/>
+      <stop offset="1" stop-color="#C7492E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Symbol -->
+  <g transform="translate(8 -3) scale(0.85)">
+    <path d="M 71 48 A 62 62 0 1 0 129 48"
+          fill="none" stroke="url(#cdxGrad)" stroke-width="18" stroke-linecap="round"/>
+    <path d="M 119 22 L 152 34 L 130 62 Z" fill="url(#cdxGrad)"/>
+    <g fill="url(#cdxGrad)" transform="rotate(-30 100 102)">
+      <rect x="79"  y="54" width="10" height="46" rx="5"/>
+      <rect x="95"  y="54" width="10" height="46" rx="5"/>
+      <rect x="111" y="54" width="10" height="46" rx="5"/>
+      <path d="M 79 92 Q 100 108 121 92 L 121 103 Q 100 118 79 103 Z"/>
+      <rect x="95" y="104" width="10" height="56" rx="5"/>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="186" y="90" font-family="Poppins, Montserrat, 'Segoe UI', Arial, sans-serif"
+        font-size="62" font-weight="700" fill="#2B2B2B" letter-spacing="-1">Cardapidex</text>
+  <!-- Tagline -->
+  <text x="190" y="124" font-family="Poppins, Montserrat, 'Segoe UI', Arial, sans-serif"
+        font-size="20" font-weight="500" fill="#E0732A" letter-spacing="0.3">Seu cardápio. Suas vendas. Mais simples.</text>
+</svg>
