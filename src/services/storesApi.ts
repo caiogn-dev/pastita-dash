@@ -1480,6 +1480,7 @@ export interface StoreCombo {
   featured: boolean;
   track_stock: boolean;
   stock_quantity: number;
+  dynamic_pricing?: boolean;
   groups: ComboProductGroup[];
   created_at: string;
   updated_at: string;
@@ -1497,6 +1498,7 @@ export interface StoreComboInput {
   featured?: boolean;
   track_stock?: boolean;
   stock_quantity?: number;
+  dynamic_pricing?: boolean;
 }
 
 export const getCombos = async (storeId?: string): Promise<PaginatedResponse<StoreCombo>> => {

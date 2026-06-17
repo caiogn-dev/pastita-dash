@@ -23,6 +23,7 @@ import {
   EyeSlashIcon,
   TagIcon,
   ChevronDownIcon,
+  CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Input, Button } from '../common';
@@ -516,6 +517,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
       featured: combo?.featured || false,
       track_stock: combo?.track_stock || false,
       stock_quantity: combo?.stock_quantity || 0,
+      dynamic_pricing: combo?.dynamic_pricing || false,
       items,
     };
   });
@@ -594,8 +596,13 @@ export const ComboForm: React.FC<ComboFormProps> = ({
       toast.error('Nome obrigatório');
       return;
     }
-    if (!form.price || form.price <= 0) {
+    // Preço dinâmico pode ser 0 (base): o total vem da soma dos itens selecionados.
+    if (!form.dynamic_pricing && (!form.price || form.price <= 0)) {
       toast.error('Preço inválido');
+      return;
+    }
+    if (form.dynamic_pricing && (form.price === undefined || form.price === null || form.price < 0)) {
+      toast.error('Preço-base inválido');
       return;
     }
 
@@ -641,6 +648,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
         featured: form.featured,
         track_stock: form.track_stock,
         stock_quantity: form.track_stock ? form.stock_quantity || 0 : 0,
+        dynamic_pricing: form.dynamic_pricing,
         groups,
       };
       await onSubmit(payload);
@@ -699,13 +707,13 @@ export const ComboForm: React.FC<ComboFormProps> = ({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Preço do combo (R$) *"
+              label={form.dynamic_pricing ? 'Preço-base (R$) — itens somam por cima' : 'Preço do combo (R$) *'}
               type="number"
               min="0"
               step="0.01"
               value={form.price}
               onChange={e => set('price', parseFloat(e.target.value) || 0)}
-              required
+              required={!form.dynamic_pricing}
             />
             <Input
               label="Preço original (opcional)"
@@ -787,6 +795,12 @@ export const ComboForm: React.FC<ComboFormProps> = ({
                 label: 'Controlar estoque',
                 desc: 'Limitar quantidade disponível',
                 icon: TagIcon,
+              },
+              {
+                key: 'dynamic_pricing' as const,
+                label: 'Preço dinâmico',
+                desc: 'Total = preço-base + soma dos itens selecionados (permite preço-base 0)',
+                icon: CurrencyDollarIcon,
               },
             ].map(({ key, label, desc, icon: Icon }) => {
               const isOn = !!form[key];
