@@ -69,11 +69,14 @@ api.interceptors.response.use(
       hadAuthHeader &&
       !isAuthEndpoint
     ) {
-      useAuthStore.getState().logout(); // also clears chatStore + rootStore
-      try {
-        delete api.defaults.headers.common.Authorization;
-      } catch {
-        /* ignore */
+      const auth = useAuthStore.getState();
+      if (auth.isAuthenticated) {
+        auth.logout(); // also clears chatStore + rootStore
+        try {
+          delete api.defaults.headers.common.Authorization;
+        } catch {
+          /* ignore */
+        }
       }
     }
     return Promise.reject(error);
