@@ -17,13 +17,14 @@ export const createAccount = (data: any) =>
 
 /**
  * Embedded Signup (Coexistence): troca o code do fluxo ES por token no backend,
- * registra o número, inscreve o app na WABA e VINCULA à loja.
+ * inscreve o app na WABA e VINCULA à loja. `pin` é opcional — na coexistência
+ * (whatsapp_business_app_onboarding) a verificação é via QR, não há PIN.
  */
 export const embeddedSignup = (data: {
   code: string;
   waba_id: string;
   phone_number_id: string;
-  pin: string;
+  pin?: string;
   store_id?: string;
 }) => api.post('/whatsapp/accounts/embedded_signup/', data);
 

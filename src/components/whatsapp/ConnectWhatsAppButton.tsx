@@ -1,10 +1,14 @@
 /**
  * ConnectWhatsAppButton — Embedded Signup (Coexistence) oficial do Meta.
  *
- * Fluxo: FB.login(config_id, response_type='code') → recebe `code` +,
- * via postMessage (WA_EMBEDDED_SIGNUP), o waba_id e phone_number_id →
- * pede um PIN (2FA do número) → POST /whatsapp/accounts/embedded_signup/
- * (backend troca code→token, registra, inscreve na WABA e vincula à loja).
+ * Fluxo: FB.login(config_id, featureType='whatsapp_business_app_onboarding',
+ * response_type='code') → o Meta mostra um QR que o lojista escaneia no app
+ * WhatsApp Business → recebe `code` +, via postMessage (WA_EMBEDDED_SIGNUP),
+ * o waba_id e phone_number_id → POST /whatsapp/accounts/embedded_signup/
+ * (backend troca code→token, inscreve na WABA e vincula à loja).
+ *
+ * Coexistência NÃO usa PIN: a verificação é o QR, não SMS. Por isso enviamos
+ * direto, sem pedir PIN.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -55,8 +59,6 @@ interface Props {
 
 export const ConnectWhatsAppButton: React.FC<Props> = ({ storeId, onConnected }) => {
   const sessionRef = useRef<{ waba_id?: string; phone_number_id?: string }>({});
-  const [pendingCode, setPendingCode] = useState<string | null>(null);
-  const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Listener do postMessage do Embedded Signup (traz waba_id + phone_number_id)
@@ -84,10 +86,45 @@ export const ConnectWhatsAppButton: React.FC<Props> = ({ storeId, onConnected })
     return () => window.removeEventListener('message', onMessage);
   }, []);
 
+  // Aguarda o postMessage do Embedded Signup popular waba_id + phone_number_id.
+  // Ele costuma chegar antes do callback do FB.login, mas damos uma margem.
+  const waitForSession = async (): Promise<boolean> => {
+    for (let i = 0; i < 20; i++) {
+      const { waba_id, phone_number_id } = sessionRef.current;
+      if (waba_id && phone_number_id) return true;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    return false;
+  };
+
+  const submit = async (code: string) => {
+    const ok = await waitForSession();
+    const { waba_id, phone_number_id } = sessionRef.current;
+    if (!ok || !waba_id || !phone_number_id) {
+      toast.error('Faltou WABA/número do fluxo. Refaça a conexão.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await whatsappService.embeddedSignup({
+        code,
+        waba_id,
+        phone_number_id,
+        store_id: storeId,
+      });
+      toast.success('WhatsApp conectado com sucesso! 🎉');
+      onConnected?.();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || 'Falha ao conectar o WhatsApp.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fbLoginCallback = (response: any) => {
     const code = response?.authResponse?.code;
     if (code) {
-      setPendingCode(code); // abre o modal de PIN
+      submit(code);
     } else {
       toast.error('Conexão cancelada (sem código do Embedded Signup).');
     }
@@ -109,89 +146,22 @@ export const ConnectWhatsAppButton: React.FC<Props> = ({ storeId, onConnected })
       config_id: ES_CONFIG_ID,
       response_type: 'code',
       override_default_response_type: true,
-      extras: { version: 'v4' },
+      // featureType: dispara o fluxo de Coexistence (QR no app WhatsApp Business).
+      // O valor 'coexistence' foi descontinuado pelo Meta — usar 'whatsapp_business_app_onboarding'.
+      extras: { version: 'v4', featureType: 'whatsapp_business_app_onboarding' },
     });
   };
 
-  const finish = async () => {
-    const { waba_id, phone_number_id } = sessionRef.current;
-    if (!pendingCode || !waba_id || !phone_number_id) {
-      toast.error('Faltou code/WABA/número do fluxo. Refaça a conexão.');
-      return;
-    }
-    if (!/^\d{6}$/.test(pin)) {
-      toast.error('O PIN deve ter 6 dígitos.');
-      return;
-    }
-    setLoading(true);
-    try {
-      await whatsappService.embeddedSignup({
-        code: pendingCode,
-        waba_id,
-        phone_number_id,
-        pin,
-        store_id: storeId,
-      });
-      toast.success('WhatsApp conectado com sucesso! 🎉');
-      setPendingCode(null);
-      setPin('');
-      onConnected?.();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.error || 'Falha ao conectar o WhatsApp.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <>
-      <button
-        type="button"
-        onClick={launch}
-        className="inline-flex items-center gap-2 rounded-md bg-[#1877f2] px-4 h-10 text-sm font-bold text-white hover:bg-[#166fe0] transition-colors"
-      >
-        <span aria-hidden>🟢</span> Conectar WhatsApp (oficial)
-      </button>
-
-      {pendingCode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-zinc-900 p-5 shadow-xl">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-              Defina o PIN do número
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-zinc-400 mb-3">
-              Um PIN de 6 dígitos (verificação em duas etapas). Guarde-o — será
-              pedido se o número precisar ser re-registrado.
-            </p>
-            <input
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="000000"
-              className="w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent px-3 h-11 text-lg tracking-widest text-center mb-3"
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => { setPendingCode(null); setPin(''); }}
-                className="px-3 h-9 rounded-md text-sm text-gray-600 dark:text-zinc-300"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={finish}
-                disabled={loading || pin.length !== 6}
-                className="px-4 h-9 rounded-md bg-brand text-white text-sm font-medium disabled:opacity-50"
-              >
-                {loading ? 'Conectando…' : 'Finalizar conexão'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    <button
+      type="button"
+      onClick={launch}
+      disabled={loading}
+      className="inline-flex items-center gap-2 rounded-md bg-[#1877f2] px-4 h-10 text-sm font-bold text-white hover:bg-[#166fe0] transition-colors disabled:opacity-60"
+    >
+      <span aria-hidden>🟢</span>{' '}
+      {loading ? 'Conectando…' : 'Conectar WhatsApp (oficial)'}
+    </button>
   );
 };
 
