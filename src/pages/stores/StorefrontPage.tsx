@@ -21,7 +21,7 @@ function validateImageFile(file: File, maxBytes: number): string | null {
   return null;
 }
 
-type Template = 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'premium';
+type Template = 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'elegant';
 
 const TEMPLATES: { id: Template; label: string; description: string; preview: string }[] = [
   { id: 'fresh', label: 'Fresh', description: 'Claro, leve e visual. Ideal para saladas, bowls e comida saudável.', preview: '🥗' },
@@ -29,7 +29,7 @@ const TEMPLATES: { id: Template; label: string; description: string; preview: st
   { id: 'classic', label: 'Classic', description: 'Tradicional e editorial. Ideal para restaurantes, marmitas e cardápios clássicos.', preview: '🍱' },
   { id: 'minimal', label: 'Minimal', description: 'Compacto e rápido. Ideal para cardápio estilo app de delivery.', preview: '⚡' },
   { id: 'dark', label: 'Dark', description: 'Escuro e contrastado. Ideal para marcas noturnas, adegas e lanches premium.', preview: '🌙' },
-  { id: 'premium', label: 'Premium', description: 'Mais calmo e sofisticado. Ideal para restaurantes e produtos especiais.', preview: '✨' },
+  { id: 'elegant', label: 'Elegant', description: 'Cards horizontais, tipografia serifada e fundo aconchegante. Ideal para confeitarias, doces e bolos.', preview: '🍰' },
 ];
 
 export const StorefrontPage: React.FC = () => {

@@ -52,7 +52,7 @@ export interface Store {
   banner_url?: string;
   primary_color: string;
   secondary_color: string;
-  template: 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'premium';
+  template: 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'elegant';
   tagline: string;
   custom_domain: string | null;
   email: string;
@@ -108,7 +108,7 @@ export interface StoreInput {
   primary_color?: string;
   secondary_color?: string;
   logo_url?: string;
-  template?: 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'premium';
+  template?: 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'elegant';
   tagline?: string;
   custom_domain?: string | null;
 }

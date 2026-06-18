@@ -2,7 +2,7 @@
  * Button canônico — fonte única (superset).
  * Identidade Pastita/Cardapidex: cantos retos (rounded), tokens de marca, sem gradientes.
  *
- * Suporta a API moderna (variant primary/outline/ghost/danger + leftIcon) e a API
+ * Suporta a API moderna (variant primary/outline/ghost/danger/success/warning/info + leftIcon) e a API
  * legada de common/ (solid/secondary/link, size xs/sm/md/lg, isLoading, isDisabled,
  * rightIcon, width, mt) via aliases, sem quebrar consumidores.
  */
@@ -15,6 +15,9 @@ export type ButtonVariant =
   | 'outline'
   | 'ghost'
   | 'danger'
+  | 'success'
+  | 'warning'
+  | 'info'
   | 'solid'
   | 'secondary'
   | 'link';
@@ -44,7 +47,10 @@ const VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-brand text-white hover:bg-brand-hover',
   outline: 'border border-border-token text-fg-token hover:bg-surface-2',
   ghost: 'text-fg-muted-token hover:bg-surface-2',
-  danger: 'border border-[var(--danger)] text-[var(--danger)] hover:bg-red-50',
+  danger: 'border border-[var(--danger)] text-[var(--danger)] hover:bg-[var(--danger-soft)]',
+  success: 'border border-[var(--success)] bg-[var(--success)] text-white hover:bg-[var(--success-strong)]',
+  warning: 'border border-[var(--warning)] bg-[var(--warning)] text-white hover:brightness-95',
+  info: 'border border-[var(--info)] bg-[var(--info)] text-white hover:brightness-95',
   // aliases legados
   solid: 'bg-brand text-white hover:bg-brand-hover',
   secondary: 'border border-border-token text-fg-token hover:bg-surface-2',

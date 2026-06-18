@@ -8,7 +8,7 @@
 import React, { forwardRef } from 'react';
 import { cn } from '../../utils/cn';
 
-export type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
+export type BadgeTone = 'brand' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
 // Variantes/paletas legadas suportadas pelos consumidores de common/.
 export type BadgeVariant =
@@ -44,9 +44,11 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 const BASE = 'inline-flex items-center rounded font-semibold';
 
 const TONES: Record<BadgeTone, string> = {
-  success: 'bg-brand-soft text-brand',
+  brand: 'bg-brand-soft text-brand',
+  success: 'bg-[var(--success-soft)] text-[var(--success)]',
   warning: 'bg-[var(--warning-soft)] text-[var(--warning)]',
-  danger: 'bg-red-50 text-[var(--danger)]',
+  danger: 'bg-[var(--danger-soft)] text-[var(--danger)]',
+  info: 'bg-[var(--info-soft)] text-[var(--info)]',
   neutral: 'bg-surface-2 text-fg-muted-token',
 };
 
@@ -65,19 +67,19 @@ const VARIANT_TONE: Record<BadgeVariant, BadgeTone> = {
   success: 'success',
   warning: 'warning',
   danger: 'danger',
-  info: 'neutral',
+  info: 'info',
   purple: 'neutral',
 };
 
 // Paletas legadas → tons de token canônicos.
 const PALETTE_TONE: Record<BadgeColorPalette, BadgeTone> = {
-  brand: 'success',
+  brand: 'brand',
   accent: 'neutral',
   success: 'success',
   warning: 'warning',
   danger: 'danger',
   gray: 'neutral',
-  info: 'neutral',
+  info: 'info',
   purple: 'neutral',
 };
 

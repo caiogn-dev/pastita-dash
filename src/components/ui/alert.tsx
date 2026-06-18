@@ -5,10 +5,11 @@ import React, { forwardRef } from 'react';
 import { cn } from '../../utils/cn';
 
 const variants = {
-  default: 'bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-zinc-100',
-  destructive: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
-  warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  success: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  default: 'bg-surface-2 text-fg-token border-border-token',
+  destructive: 'bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger)]/30',
+  warning: 'bg-[var(--warning-soft)] text-[var(--warning)] border-[var(--warning)]/30',
+  success: 'bg-[var(--success-soft)] text-[var(--success)] border-[var(--success)]/30',
+  info: 'bg-[var(--info-soft)] text-[var(--info)] border-[var(--info)]/30',
 };
 
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {

@@ -15,28 +15,28 @@ export interface ToastProps {
 
 const toastStyles = {
   success: {
-    container: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
-    icon: 'text-green-500',
-    title: 'text-green-800 dark:text-green-200',
-    message: 'text-green-600 dark:text-green-300',
+    container: 'bg-[var(--success-soft)] border-[var(--success)]/30',
+    icon: 'text-[var(--success)]',
+    title: 'text-[var(--success)]',
+    message: 'text-[var(--success)]',
   },
   error: {
-    container: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
-    icon: 'text-red-500',
-    title: 'text-red-800 dark:text-red-200',
-    message: 'text-red-600 dark:text-red-300',
+    container: 'bg-[var(--danger-soft)] border-[var(--danger)]/30',
+    icon: 'text-[var(--danger)]',
+    title: 'text-[var(--danger)]',
+    message: 'text-[var(--danger)]',
   },
   warning: {
-    container: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800',
-    icon: 'text-yellow-500',
-    title: 'text-yellow-800 dark:text-yellow-200',
-    message: 'text-yellow-600 dark:text-yellow-300',
+    container: 'bg-[var(--warning-soft)] border-[var(--warning)]/30',
+    icon: 'text-[var(--warning)]',
+    title: 'text-[var(--warning)]',
+    message: 'text-[var(--warning)]',
   },
   info: {
-    container: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
-    icon: 'text-blue-500',
-    title: 'text-blue-800 dark:text-blue-200',
-    message: 'text-blue-600 dark:text-blue-300',
+    container: 'bg-[var(--info-soft)] border-[var(--info)]/30',
+    icon: 'text-[var(--info)]',
+    title: 'text-[var(--info)]',
+    message: 'text-[var(--info)]',
   },
 };
 

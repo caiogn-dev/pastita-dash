@@ -22,9 +22,16 @@ describe('Card (canônico)', () => {
 });
 
 describe('Badge (canônico)', () => {
-  it('tone success aplica brand-soft', () => {
+  it('tone success aplica token semântico verde', () => {
     render(<Badge tone="success">OK</Badge>);
     const el = screen.getByText('OK');
+    expect(el.className).toContain('bg-[var(--success-soft)]');
+    expect(el.className).toContain('text-[var(--success)]');
+  });
+
+  it('tone brand preserva identidade da marca', () => {
+    render(<Badge tone="brand">Marca</Badge>);
+    const el = screen.getByText('Marca');
     expect(el.className).toContain('bg-brand-soft');
     expect(el.className).toContain('text-brand');
   });
