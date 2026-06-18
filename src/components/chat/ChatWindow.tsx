@@ -88,6 +88,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   const shouldAutoScrollRef = useRef(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sendLockRef = useRef(false);
+  const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadingConvIdRef = useRef<string | null>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -126,12 +128,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
 
   const loadMessages = useCallback(async () => {
     if (!selectedConversation || !accountId) return;
+    const convId = selectedConversation.id;
+    loadingConvIdRef.current = convId;
     setIsLoadingMessages(true);
     try {
-      const historyRes = await conversationsService.getMessages(selectedConversation.id, 100);
-      setMessages(ensureArray<Message>(historyRes.results));
+      const historyRes = await conversationsService.getMessages(convId, 100);
+      if (loadingConvIdRef.current === convId) {
+        setMessages(ensureArray<Message>(historyRes.results));
+      }
     } catch (error) { toast.error(getErrorMessage(error)); }
-    finally { setIsLoadingMessages(false); }
+    finally {
+      if (loadingConvIdRef.current === convId) setIsLoadingMessages(false);
+    }
   }, [accountId, selectedConversation]);
 
   useEffect(() => {
@@ -169,8 +177,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
   }, [selectedConversation, loadMessages, subscribeToConversation, unsubscribeFromConversation, onConversationSelect]);
 
   const handleAutoScroll = useCallback((isReceived = true) => {
-    if (isReceived && shouldAutoScrollRef.current) setTimeout(() => scrollToBottom(), 100);
+    if (isReceived && shouldAutoScrollRef.current) {
+      if (autoScrollTimerRef.current) clearTimeout(autoScrollTimerRef.current);
+      autoScrollTimerRef.current = setTimeout(() => scrollToBottom(), 100);
+    }
   }, [scrollToBottom]);
+
+  useEffect(() => {
+    return () => {
+      if (autoScrollTimerRef.current) clearTimeout(autoScrollTimerRef.current);
+    };
+  }, []);
 
   const handleContainerScroll = useCallback(() => {
     if (messagesContainerRef.current) {
