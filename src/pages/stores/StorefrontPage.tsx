@@ -60,15 +60,29 @@ export const StorefrontPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+    setLogoPreview(prev => {
+      if (prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
   };
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setBannerFile(file);
-    setBannerPreview(URL.createObjectURL(file));
+    setBannerPreview(prev => {
+      if (prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
   };
+
+  useEffect(() => {
+    return () => {
+      if (logoPreview.startsWith('blob:')) URL.revokeObjectURL(logoPreview);
+      if (bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSave = async () => {
     if (!effectiveStoreId) return;

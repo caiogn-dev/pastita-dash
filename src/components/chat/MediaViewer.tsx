@@ -1,5 +1,5 @@
 // MediaViewer - Versão simplificada
-import React from 'react';
+import React, { useEffect } from 'react';
 import './MediaViewer.css';
 
 export interface MediaViewerProps {
@@ -20,6 +20,12 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   const isVideo = type.startsWith('video/') || type === 'video';
   const isAudio = type.startsWith('audio/') || type === 'audio';
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = url;
@@ -36,8 +42,8 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
         </div>
 
         <div className="media-viewer-body">
-          {isImage && <img src={url} alt={fileName} className="viewer-image" />}
-          {isVideo && <video src={url} controls className="viewer-video" />}
+          {isImage && <img src={url} alt={fileName} className="viewer-image" crossOrigin="anonymous" />}
+          {isVideo && <video src={url} controls className="viewer-video" crossOrigin="anonymous" />}
           {isAudio && (
             <div className="viewer-audio">
               <div className="audio-icon">🎵</div>
