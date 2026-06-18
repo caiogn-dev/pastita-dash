@@ -165,6 +165,18 @@ export default function ConnectionsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (instagramMessageHandlerRef.current) {
+        window.removeEventListener('message', instagramMessageHandlerRef.current);
+        instagramMessageHandlerRef.current = null;
+      }
+      if (instagramPopupRef.current && !instagramPopupRef.current.closed) {
+        instagramPopupRef.current.close();
+      }
+    };
+  }, []);
+
   const loadConnections = async () => {
     try {
       setLoading(true);

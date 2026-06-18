@@ -461,6 +461,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     }
   }, [isOpen, product, storeId]);
 
+  useEffect(() => {
+    const preview = imagePreview;
+    return () => {
+      if (preview?.startsWith('blob:')) URL.revokeObjectURL(preview);
+    };
+  }, [imagePreview]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
