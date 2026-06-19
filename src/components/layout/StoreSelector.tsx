@@ -1,125 +1,30 @@
-/**
- * Store Selector Component
- * Dropdown to select the active store for dashboard operations.
- * Used in the Header to provide global store context.
- */
-import React, { useEffect, useState } from 'react';
-import { Store, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
+import React from 'react';
 import { useRootStore } from '../../stores/rootStore';
-import storesApi from '../../services/storesApi';
 
+/**
+ * Read-only store picker. Stores are loaded globally by useBootstrapStores;
+ * this component only displays them and updates the selection.
+ */
 export const StoreSelector: React.FC = () => {
-  const {
-    stores,
-    selectedStoreId,
-    setStores,
-    setSelectedStore
-  } = useRootStore();
+  const stores = useRootStore((s) => s.stores);
+  const selectedStoreId = useRootStore((s) => s.selectedStoreId);
+  const setSelectedStore = useRootStore((s) => s.setSelectedStore);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);
-
-  const fetchStores = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await storesApi.getStores();
-      setStores(response.results || []);
-      setInitialized(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar lojas');
-      setInitialized(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const selectedStore = stores.find(s => s.id === selectedStoreId) || null;
-
-  // Fetch stores on mount if not initialized
-  useEffect(() => {
-    if (!initialized) {
-      fetchStores();
-    }
-  }, [initialized, fetchStores]);
-
-  // Loading state
-  if (loading && !initialized) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse">
-        <Store className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-        <div className="w-32 h-4 bg-gray-200 dark:bg-gray-600 rounded" />
-      </div>
-    );
-  }
-
-  // Error state
-  if (error && stores.length === 0) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
-        <AlertCircle className="w-4 h-4" />
-        <span className="text-sm">Erro ao carregar lojas</span>
-        <button 
-          onClick={() => fetchStores()}
-          className="p-1 hover:bg-red-100 dark:hover:bg-red-900/50 rounded"
-          title="Tentar novamente"
-        >
-          <RefreshCw className="w-3 h-3" />
-        </button>
-      </div>
-    );
-  }
-
-  // No stores available
-  if (stores.length === 0) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-lg">
-        <Store className="w-4 h-4" />
-        <span className="text-sm">Nenhuma loja disponível</span>
-      </div>
-    );
-  }
+  if (stores.length === 0) return null;
 
   return (
-    <div className="relative flex items-center gap-2">
-      <Store className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-      <div className="relative">
-        <select
-          value={selectedStoreId || ''}
-          onChange={(e) => {
-            setSelectedStore(e.target.value || null);
-          }}
-          className="appearance-none bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 pr-8 text-sm font-medium text-gray-700 dark:text-zinc-300 hover:border-gray-300 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer min-w-[180px] transition-colors"
-          disabled={loading}
-        >
-          {stores.map((store) => (
-            <option key={store.id} value={store.id}>
-              {store.name}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
-      </div>
-      
-      {/* Refresh button */}
-      <button
-        onClick={() => fetchStores()}
-        disabled={loading}
-        className={`p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors ${loading ? 'animate-spin' : ''}`}
-        title="Atualizar lojas"
-      >
-        <RefreshCw className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-      </button>
-      
-      {/* Store indicator */}
-      {selectedStore && (
-        <div
-          className="w-2 h-2 rounded-full bg-blue-500"
-          title={`Selected: ${selectedStore.name}`}
-        />
-      )}
-    </div>
+    <select
+      aria-label="Loja"
+      value={selectedStoreId || ''}
+      onChange={(e) => setSelectedStore(e.target.value || null)}
+      className="rounded-lg border border-border-primary bg-bg-card px-3 py-1.5 text-sm text-fg-primary"
+    >
+      {stores.map((store) => (
+        <option key={store.id} value={store.id}>
+          {store.name}
+        </option>
+      ))}
+    </select>
   );
 };
 
