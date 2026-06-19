@@ -2,6 +2,7 @@
 import React from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { BottomNav } from './BottomNav';
+import { MobileOrdersScreen } from './screens/MobileOrdersScreen';
 
 type TabKey = 'pedidos' | 'novo' | 'cozinha' | 'mais';
 
@@ -12,6 +13,13 @@ const Placeholder: React.FC<{ tab: TabKey }> = ({ tab }) => (
   </div>
 );
 
+function renderTab(tab: TabKey) {
+  switch (tab) {
+    case 'pedidos': return <MobileOrdersScreen />;
+    default: return <Placeholder tab={tab} />;
+  }
+}
+
 export const MobileShell: React.FC = () => {
   const location = useLocation();
   const [params] = useSearchParams();
@@ -21,7 +29,7 @@ export const MobileShell: React.FC = () => {
   return (
     <div className="min-h-screen bg-bg-secondary text-fg-primary flex flex-col">
       <main className="flex-1 overflow-auto pb-20">
-        {isHome ? <Placeholder tab={tab} /> : <Outlet />}
+        {isHome ? renderTab(tab) : <Outlet />}
       </main>
       <BottomNav />
     </div>

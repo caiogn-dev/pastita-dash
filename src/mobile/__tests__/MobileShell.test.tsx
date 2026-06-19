@@ -1,4 +1,6 @@
 // src/mobile/__tests__/MobileShell.test.tsx
+jest.mock('../screens/MobileOrdersScreen', () => ({ MobileOrdersScreen: () => <div data-testid="mobile-screen-pedidos" /> }));
+
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { MobileShell } from '../MobileShell';
