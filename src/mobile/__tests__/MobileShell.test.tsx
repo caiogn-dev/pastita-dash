@@ -1,4 +1,5 @@
 // src/mobile/__tests__/MobileShell.test.tsx
+jest.mock('../useStoreOrdersFeed', () => ({ useStoreOrdersFeed: () => ({ orders: [], loading: false, error: null, refetch: jest.fn() }) }));
 jest.mock('../MobileTopBar', () => ({ MobileTopBar: () => null }));
 jest.mock('../screens/MobileOrdersScreen', () => ({ MobileOrdersScreen: () => <div data-testid="mobile-screen-pedidos" /> }));
 jest.mock('../screens/MobileKdsScreen', () => ({ MobileKdsScreen: () => <div data-testid="mobile-screen-cozinha" /> }));

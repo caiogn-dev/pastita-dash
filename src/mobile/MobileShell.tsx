@@ -7,6 +7,7 @@ import { MobileOrdersScreen } from './screens/MobileOrdersScreen';
 import { MobileKdsScreen } from './screens/MobileKdsScreen';
 import { MobileNewOrderScreen } from './screens/MobileNewOrderScreen';
 import { MobileMoreScreen } from './screens/MobileMoreScreen';
+import { MobileOrdersProvider } from './MobileOrdersContext';
 
 type TabKey = 'pedidos' | 'novo' | 'cozinha' | 'mais';
 
@@ -27,13 +28,15 @@ export const MobileShell: React.FC = () => {
   const tab = (params.get('tab') as TabKey) || 'pedidos';
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg-secondary text-fg-primary">
-      <MobileTopBar />
-      <main className="flex-1 overflow-auto pb-[calc(5rem+env(safe-area-inset-bottom))]">
-        {isHome ? renderTab(tab) : <Outlet />}
-      </main>
-      <BottomNav />
-    </div>
+    <MobileOrdersProvider>
+      <div className="flex min-h-screen flex-col bg-bg-secondary text-fg-primary">
+        <MobileTopBar />
+        <main className="flex-1 overflow-auto pb-[calc(5rem+env(safe-area-inset-bottom))]">
+          {isHome ? renderTab(tab) : <Outlet />}
+        </main>
+        <BottomNav />
+      </div>
+    </MobileOrdersProvider>
   );
 };
 
