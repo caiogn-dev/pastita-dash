@@ -1,5 +1,6 @@
 // src/mobile/__tests__/MobileShell.test.tsx
 jest.mock('../screens/MobileOrdersScreen', () => ({ MobileOrdersScreen: () => <div data-testid="mobile-screen-pedidos" /> }));
+jest.mock('../screens/MobileKdsScreen', () => ({ MobileKdsScreen: () => <div data-testid="mobile-screen-cozinha" /> }));
 
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
