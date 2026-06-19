@@ -12,6 +12,7 @@ import { setAuthToken } from './services';
 import api from './services/api';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { WhatsAppWsProvider } from './context/WhatsAppWsContext';
+import { useBootstrapStores } from './mobile/useBootstrapStores';
 import './App.css';
 
 // Lazy load pages for better performance
@@ -114,6 +115,7 @@ const AppContent: React.FC = () => {
   const { isAuthenticated, token } = useAuthStore();
   const { setAccounts } = useAccountStore();
   const [isInitializing, setIsInitializing] = useState(true);
+  useBootstrapStores();
 
   useEffect(() => {
     const initialize = async () => {
