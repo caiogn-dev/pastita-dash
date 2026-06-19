@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+jest.mock('../useInstallPrompt', () => ({ useInstallPrompt: () => ({ canInstall: false, promptInstall: jest.fn(), isIOS: false, isStandalone: false }) }));
 import { MemoryRouter } from 'react-router-dom';
 import { useRootStore } from '../../stores/rootStore';
 import { MobileMoreScreen } from '../screens/MobileMoreScreen';
