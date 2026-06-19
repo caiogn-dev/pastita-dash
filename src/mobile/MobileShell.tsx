@@ -4,6 +4,7 @@ import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { BottomNav } from './BottomNav';
 import { MobileOrdersScreen } from './screens/MobileOrdersScreen';
 import { MobileKdsScreen } from './screens/MobileKdsScreen';
+import { MobileNewOrderScreen } from './screens/MobileNewOrderScreen';
 
 type TabKey = 'pedidos' | 'novo' | 'cozinha' | 'mais';
 
@@ -17,6 +18,7 @@ const Placeholder: React.FC<{ tab: TabKey }> = ({ tab }) => (
 function renderTab(tab: TabKey) {
   switch (tab) {
     case 'pedidos': return <MobileOrdersScreen />;
+    case 'novo': return <MobileNewOrderScreen />;
     case 'cozinha': return <MobileKdsScreen />;
     default: return <Placeholder tab={tab} />;
   }
