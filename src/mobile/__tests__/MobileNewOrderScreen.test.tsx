@@ -1,47 +1,36 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+// src/mobile/__tests__/MobileNewOrderScreen.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react';
 
-const createOrder = jest.fn();
-const getProducts = jest.fn();
-jest.mock('../../services', () => ({
-  ordersService: { createOrder: (...a: unknown[]) => createOrder(...a) },
-  productsService: { getProducts: (...a: unknown[]) => getProducts(...a) },
-}));
-jest.mock('react-hot-toast', () => ({ __esModule: true, default: { error: jest.fn(), success: jest.fn() } }));
+const navigate = jest.fn();
+jest.mock('react-router-dom', () => ({ ...jest.requireActual('react-router-dom'), useNavigate: () => navigate }));
+jest.mock('../../components/crm/CustomerSearchInput', () => ({ CustomerSearchInput: () => <div data-testid="customer-search" /> }));
+jest.mock('../../services/orders', () => ({ ordersService: { calculateDeliveryFee: jest.fn(), createOrder: jest.fn() } }));
+jest.mock('../../services/products', () => ({ productsService: { getProducts: jest.fn().mockResolvedValue({ results: [] }) } }));
+jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
 
 import { useRootStore } from '../../stores/rootStore';
 import { MobileNewOrderScreen } from '../screens/MobileNewOrderScreen';
 
 beforeEach(() => {
-  createOrder.mockResolvedValue({ id: 'o9', order_number: '#1009' });
-  getProducts.mockResolvedValue({ results: [{ id: 'p1', name: 'X-Salada', price: 20 }] });
-  useRootStore.setState({ selectedStoreId: 's1' } as never);
+  navigate.mockClear();
+  useRootStore.setState({ selectedStoreId: 's1', stores: [{ id: 's1', name: 'Loja 1', slug: 'loja-1' }] } as never);
 });
 
-test('adds a product, shows total, and creates a pickup/cash order', async () => {
+test('starts on step 1 (Cliente) with progress and X', () => {
   render(<MobileNewOrderScreen />);
-  fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'Ana' } });
-  fireEvent.change(screen.getByLabelText(/telefone/i), { target: { value: '6399' } });
-  fireEvent.click(await screen.findByRole('button', { name: /x-salada/i }));
-  expect(screen.getAllByText(/R\$\s?20,00/).length).toBeGreaterThanOrEqual(1); // product card + total
-  fireEvent.click(screen.getByRole('button', { name: /finalizar pedido/i }));
-  await waitFor(() => expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({
-    store: 's1', customer_name: 'Ana', customer_phone: '6399',
-    delivery_method: 'pickup', payment_method: 'cash',
-    items: [{ product_id: 'p1', quantity: 1 }],
-  })));
+  expect(screen.getByText(/Passo 1 de 5/i)).toBeInTheDocument();
+  expect(screen.getByTestId('customer-search')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /pr.ximo/i })).toBeDisabled(); // no customer yet
 });
 
-test('increments and removes cart items', async () => {
+test('X navigates back to the orders tab', () => {
   render(<MobileNewOrderScreen />);
-  fireEvent.click(await screen.findByRole('button', { name: /x-salada/i }));
-  fireEvent.click(screen.getByRole('button', { name: /aumentar/i }));
-  expect(screen.getByText('x2')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /remover/i }));
-  expect(screen.queryByText(/no pedido/i)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /fechar/i }));
+  expect(navigate).toHaveBeenCalledWith('/?tab=pedidos');
 });
 
-test('shows empty-products message when none returned', async () => {
-  getProducts.mockResolvedValue({ results: [] });
+test('shows placeholder when no store is selected', () => {
+  useRootStore.setState({ selectedStoreId: null, stores: [] } as never);
   render(<MobileNewOrderScreen />);
-  expect(await screen.findByText(/nenhum produto ativo/i)).toBeInTheDocument();
+  expect(screen.getByText(/selecione uma loja/i)).toBeInTheDocument();
 });
