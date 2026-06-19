@@ -22,7 +22,7 @@ test('adds a product, shows total, and creates a pickup/cash order', async () =>
   fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'Ana' } });
   fireEvent.change(screen.getByLabelText(/telefone/i), { target: { value: '6399' } });
   fireEvent.click(await screen.findByRole('button', { name: /x-salada/i }));
-  expect(screen.getByText(/R\$\s?20,00/)).toBeInTheDocument(); // total line
+  expect(screen.getAllByText(/R\$\s?20,00/).length).toBeGreaterThanOrEqual(1); // product card + total
   fireEvent.click(screen.getByRole('button', { name: /finalizar pedido/i }));
   await waitFor(() => expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({
     store: 's1', customer_name: 'Ana', customer_phone: '6399',

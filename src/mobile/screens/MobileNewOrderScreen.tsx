@@ -97,7 +97,7 @@ export const MobileNewOrderScreen: React.FC = () => {
                   <button type="button" onClick={() => addItem(p)}
                     className="w-full rounded-lg border border-border-primary bg-bg-card p-2 text-left text-sm text-fg-primary active:bg-bg-secondary">
                     {p.name}
-                    <span className="block text-xs text-fg-muted">R${Number(p.price).toFixed(2)}</span>
+                    <span className="block text-xs text-fg-muted">{formatCurrency(Number(p.price))}</span>
                   </button>
                 </li>
               ))}
