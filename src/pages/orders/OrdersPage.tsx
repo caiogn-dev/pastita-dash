@@ -766,11 +766,11 @@ export const OrdersPage: React.FC = () => {
       {ConfirmDialog}
 
       {/* PDV: Novo Pedido Drawer */}
-      {storeQuery && (
+      {storeSlug && (
         <NewOrderDrawer
           isOpen={isNewOrderOpen}
           onClose={() => setIsNewOrderOpen(false)}
-          storeSlug={storeQuery}
+          storeSlug={storeSlug}
           storeId={storeId || undefined}
           onOrderCreated={() => {
             setIsNewOrderOpen(false);

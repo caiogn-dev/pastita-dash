@@ -1,0 +1,121 @@
+import React from 'react';
+import { PAYMENT_LABELS, fmt } from '../types';
+import type { CartItem, PaymentMethod } from '../types';
+import type { DiscountType, RouteQuote } from '../../../../types/crm';
+
+/** Step 5 */
+export function StepConfirmar({
+  cart,
+  deliveryMethod,
+  deliveryAddress,
+  routeQuote,
+  discountType,
+  discountValue,
+  surchargeValue,
+  paymentMethod,
+  setPaymentMethod,
+  submitting,
+  onSubmit,
+}: {
+  cart: CartItem[];
+  deliveryMethod: 'delivery' | 'pickup';
+  deliveryAddress: string;
+  routeQuote: RouteQuote | null;
+  discountType: DiscountType;
+  discountValue: string;
+  surchargeValue: string;
+  paymentMethod: PaymentMethod;
+  setPaymentMethod: (m: PaymentMethod) => void;
+  submitting: boolean;
+  onSubmit: () => void;
+}) {
+  const subtotal = cart.reduce((s, c) => s + c.product.price * c.quantity, 0);
+  const deliveryFee = deliveryMethod === 'delivery' ? (routeQuote?.fee ?? 0) : 0;
+  const surcharge = parseFloat(surchargeValue) || 0;
+  const discountRaw = parseFloat(discountValue) || 0;
+  const discountAmount =
+    discountType === 'percent' ? subtotal * (discountRaw / 100) : discountRaw;
+  const total = subtotal + deliveryFee + surcharge - discountAmount;
+
+  return (
+    <div className="space-y-4">
+      {/* Summary rows */}
+      <div className="rounded-xl border border-gray-100 dark:border-zinc-800 divide-y divide-gray-100 dark:divide-zinc-800 overflow-hidden">
+        {cart.map((item) => (
+          <div key={item.product.id} className="flex justify-between px-3 py-2 text-sm">
+            <span className="text-gray-700 dark:text-zinc-300">
+              {item.quantity}× {item.product.name}
+            </span>
+            <span className="font-medium text-gray-900 dark:text-white">
+              {fmt(item.product.price * item.quantity)}
+            </span>
+          </div>
+        ))}
+        <div className="flex justify-between px-3 py-2 text-sm">
+          <span className="text-gray-500 dark:text-zinc-400">Subtotal</span>
+          <span className="text-gray-900 dark:text-white">{fmt(subtotal)}</span>
+        </div>
+        {deliveryMethod === 'delivery' && (
+          <div className="flex justify-between px-3 py-2 text-sm">
+            <span className="text-gray-500 dark:text-zinc-400">
+              Taxa de entrega
+              {deliveryAddress && ` (${deliveryAddress.slice(0, 25)}...)`}
+            </span>
+            <span className="text-gray-900 dark:text-white">{fmt(deliveryFee)}</span>
+          </div>
+        )}
+        {surcharge > 0 && (
+          <div className="flex justify-between px-3 py-2 text-sm">
+            <span className="text-gray-500 dark:text-zinc-400">Acréscimo</span>
+            <span className="text-gray-900 dark:text-white">+ {fmt(surcharge)}</span>
+          </div>
+        )}
+        {discountAmount > 0 && (
+          <div className="flex justify-between px-3 py-2 text-sm">
+            <span className="text-gray-500 dark:text-zinc-400">Desconto</span>
+            <span className="text-emerald-600 dark:text-emerald-400">- {fmt(discountAmount)}</span>
+          </div>
+        )}
+        <div className="flex justify-between px-3 py-3 bg-gray-50 dark:bg-zinc-800/50">
+          <span className="font-bold text-gray-900 dark:text-white">Total</span>
+          <span className="font-bold text-lg text-primary-600 dark:text-primary-400">
+            {fmt(total)}
+          </span>
+        </div>
+      </div>
+
+      {/* Payment method */}
+      <div>
+        <label className="block text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-2">
+          Forma de pagamento
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {(Object.keys(PAYMENT_LABELS) as PaymentMethod[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setPaymentMethod(m)}
+              className={`py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                paymentMethod === m
+                  ? 'bg-primary-600 border-primary-600 text-white'
+                  : 'border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800'
+              }`}
+            >
+              {PAYMENT_LABELS[m]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Submit */}
+      <button
+        type="button"
+        onClick={onSubmit}
+        disabled={submitting || cart.length === 0}
+        className="w-full py-3 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold text-sm transition-colors"
+      >
+        {submitting ? 'Criando pedido...' : 'Criar Pedido'}
+      </button>
+    </div>
+  );
+}
