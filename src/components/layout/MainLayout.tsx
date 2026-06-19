@@ -2,12 +2,24 @@ import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { TrialBanner } from './TrialBanner';
+import { useIsMobileViewport } from '../../mobile/useIsMobileViewport';
+import { MobileShell } from '../../mobile/MobileShell';
+import { useRootStore } from '../../stores/rootStore';
 
 export const MainLayout: React.FC = () => {
   const location = useLocation();
 
   const isDedicatedOrderRoute = /^\/stores\/[^/]+\/orders(?:\/.*)?$/.test(location.pathname);
   const isFullscreenRoute = /^\/(whatsapp\/(inbox|chat)|conversations)/.test(location.pathname);
+
+  const isMobile = useIsMobileViewport();
+  const isAuthed = useRootStore((s) => Boolean(s.auth.token));
+
+  // Phone-sized + authenticated: render the mobile shell instead of the desktop
+  // chrome. Fullscreen routes (inbox/chat) keep their own full-bleed layout.
+  if (isMobile && isAuthed && !isFullscreenRoute) {
+    return <MobileShell />;
+  }
 
   if (isDedicatedOrderRoute) {
     return (
