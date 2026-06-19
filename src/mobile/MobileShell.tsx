@@ -5,22 +5,17 @@ import { BottomNav } from './BottomNav';
 import { MobileOrdersScreen } from './screens/MobileOrdersScreen';
 import { MobileKdsScreen } from './screens/MobileKdsScreen';
 import { MobileNewOrderScreen } from './screens/MobileNewOrderScreen';
+import { MobileMoreScreen } from './screens/MobileMoreScreen';
 
 type TabKey = 'pedidos' | 'novo' | 'cozinha' | 'mais';
-
-// Placeholder screens — replaced by real screens in later tasks.
-const Placeholder: React.FC<{ tab: TabKey }> = ({ tab }) => (
-  <div data-testid={`mobile-screen-${tab}`} className="p-4 text-fg-primary">
-    {tab}
-  </div>
-);
 
 function renderTab(tab: TabKey) {
   switch (tab) {
     case 'pedidos': return <MobileOrdersScreen />;
     case 'novo': return <MobileNewOrderScreen />;
     case 'cozinha': return <MobileKdsScreen />;
-    default: return <Placeholder tab={tab} />;
+    case 'mais': return <MobileMoreScreen />;
+    default: return <MobileOrdersScreen />;
   }
 }
 
