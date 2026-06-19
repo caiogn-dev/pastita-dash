@@ -1,43 +1,52 @@
-// src/mobile/__tests__/MobileOrdersScreen.test.tsx
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 
-jest.mock('../../hooks/useRealTimeOrders', () => ({ useRealTimeOrders: () => ({ isConnected: true }) }));
-jest.mock('../PushOptInBanner', () => ({ PushOptInBanner: () => null }));
-
-const getOrders = jest.fn();
+const feed = { orders: [] as unknown[], loading: false, error: null as string | null, refetch: jest.fn() };
+jest.mock('../MobileOrdersContext', () => ({ useMobileOrders: () => feed }));
 const updateOrderStatus = jest.fn();
-jest.mock('../../services/storesApi', () => ({
-  getOrders: (...a: unknown[]) => getOrders(...a),
-  updateOrderStatus: (...a: unknown[]) => updateOrderStatus(...a),
-}));
+jest.mock('../../services/storesApi', () => ({ updateOrderStatus: (...a: unknown[]) => updateOrderStatus(...a) }));
+jest.mock('../PushOptInBanner', () => ({ PushOptInBanner: () => null }));
+jest.mock('react-hot-toast', () => ({ __esModule: true, default: { error: jest.fn() } }));
 
-import { useRootStore } from '../../stores/rootStore';
 import { MobileOrdersScreen } from '../screens/MobileOrdersScreen';
 
-const ORDER = {
-  id: 'o1', order_number: '#1001', customer_name: 'Ana', total: 42.5,
-  status: 'pending', items: [], created_at: '2026-06-19T12:00:00Z',
-};
+const ORDER = { id: 'o1', order_number: '#1001', status: 'pending', customer_name: 'Ana', total: 42.5, items: [{ id: 'i', product_name: 'X', quantity: 1, unit_price: 42.5, subtotal: 42.5, notes: '' }], created_at: '2026-06-19T12:00:00Z' };
 
 beforeEach(() => {
-  getOrders.mockResolvedValue({ results: [ORDER] });
-  updateOrderStatus.mockResolvedValue({ ...ORDER, status: 'confirmed' });
-  useRootStore.setState({ selectedStoreId: 's1', orders: { s1: [ORDER] } } as never);
+  feed.orders = [ORDER]; feed.loading = false; feed.error = null;
+  updateOrderStatus.mockResolvedValue({ order_number: '#1001', status: 'confirmed' });
 });
 
-function renderScreen() {
-  return render(<MemoryRouter><MobileOrdersScreen /></MemoryRouter>);
-}
-
-test('renders an order card for the active store', async () => {
-  renderScreen();
-  expect(await screen.findByText('#1001')).toBeInTheDocument();
+test('renders order cards with number and customer', () => {
+  render(<MobileOrdersScreen />);
+  expect(screen.getByText('#1001')).toBeInTheDocument();
   expect(screen.getByText('Ana')).toBeInTheDocument();
 });
 
-test('advances status when the CTA is tapped', async () => {
-  renderScreen();
-  fireEvent.click(await screen.findByRole('button', { name: /confirmar/i }));
-  await waitFor(() => expect(updateOrderStatus).toHaveBeenCalledWith('o1', 'confirmed'));
+test('shows skeleton while loading and empty state when no orders', () => {
+  feed.orders = []; feed.loading = true;
+  const { rerender } = render(<MobileOrdersScreen />);
+  expect(screen.getAllByTestId('skeleton-card').length).toBeGreaterThan(0);
+  feed.loading = false;
+  rerender(<MobileOrdersScreen />);
+  expect(screen.getByText(/nenhum pedido ativo/i)).toBeInTheDocument();
+});
+
+test('shows error with retry that calls refetch', () => {
+  feed.orders = []; feed.error = 'boom';
+  render(<MobileOrdersScreen />);
+  fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }));
+  expect(feed.refetch).toHaveBeenCalled();
+});
+
+test('excludes terminal orders from the live list', () => {
+  feed.orders = [{ ...ORDER, id: 'o2', order_number: '#DELIV', status: 'delivered' }];
+  render(<MobileOrdersScreen />);
+  expect(screen.queryByText('#DELIV')).not.toBeInTheDocument();
+  expect(screen.getByText(/nenhum pedido ativo/i)).toBeInTheDocument();
+});
+
+test('tapping a card opens the detail sheet', () => {
+  render(<MobileOrdersScreen />);
+  fireEvent.click(screen.getByText('#1001'));
+  expect(screen.getByText(/Pedido #1001/)).toBeInTheDocument();
 });

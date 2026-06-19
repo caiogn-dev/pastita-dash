@@ -10,7 +10,7 @@ export const MainLayout: React.FC = () => {
   const location = useLocation();
 
   const isDedicatedOrderRoute = /^\/stores\/[^/]+\/orders(?:\/.*)?$/.test(location.pathname);
-  const isFullscreenRoute = /^\/(whatsapp\/(inbox|chat)|conversations)/.test(location.pathname);
+  const isFullscreenRoute = /^\/(whatsapp\/(inbox|chat)|conversations|inbox)/.test(location.pathname);
 
   const isMobile = useIsMobileViewport();
   const isAuthed = useAuthStore((s) => s.isAuthenticated);
