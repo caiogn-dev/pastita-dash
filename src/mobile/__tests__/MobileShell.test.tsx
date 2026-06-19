@@ -1,4 +1,5 @@
 // src/mobile/__tests__/MobileShell.test.tsx
+jest.mock('../MobileTopBar', () => ({ MobileTopBar: () => null }));
 jest.mock('../screens/MobileOrdersScreen', () => ({ MobileOrdersScreen: () => <div data-testid="mobile-screen-pedidos" /> }));
 jest.mock('../screens/MobileKdsScreen', () => ({ MobileKdsScreen: () => <div data-testid="mobile-screen-cozinha" /> }));
 jest.mock('../screens/MobileNewOrderScreen', () => ({ MobileNewOrderScreen: () => <div data-testid="mobile-screen-novo" /> }));
