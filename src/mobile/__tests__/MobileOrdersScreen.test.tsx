@@ -7,7 +7,7 @@ jest.mock('../PushOptInBanner', () => ({ PushOptInBanner: () => null }));
 
 const getOrders = jest.fn();
 const updateOrderStatus = jest.fn();
-jest.mock('../../services/orders', () => ({
+jest.mock('../../services/storesApi', () => ({
   getOrders: (...a: unknown[]) => getOrders(...a),
   updateOrderStatus: (...a: unknown[]) => updateOrderStatus(...a),
 }));

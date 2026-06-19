@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRootStore } from '../../stores/rootStore';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
-import { getOrders, updateOrderStatus } from '../../services/orders';
+import { getOrders, updateOrderStatus } from '../../services/storesApi';
 import { COLUMNS, statusToColumn } from '../../pages/orders/orderColumns';
 import { nextOrderStatus, STATUS_LABEL } from '../mobileStatus';
 import { PushOptInBanner } from '../PushOptInBanner';

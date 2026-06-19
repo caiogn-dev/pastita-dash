@@ -213,10 +213,3 @@ export const ordersService = {
 };
 
 export default ordersService;
-
-// Named convenience exports used by mobile screens — mirrors the storesApi interface
-// so mobile components can use a stable import path.
-export {
-  getOrders,
-  updateOrderStatus,
-} from './storesApi';

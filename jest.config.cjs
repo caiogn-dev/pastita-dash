@@ -1,4 +1,5 @@
 module.exports = {
+  preset: 'ts-jest',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   moduleNameMapper: {
@@ -6,6 +7,7 @@ module.exports = {
   },
   testMatch: ['**/__tests__/**/*.test.ts?(x)'],
   transform: {
-    '^.+\\.tsx?$': '<rootDir>/jestViteEnvTransform.cjs',
+    '/src/mobile/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
+    '^.+\\.(ts|tsx)$': 'ts-jest',
   },
 };

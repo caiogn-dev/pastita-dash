@@ -12,13 +12,6 @@ const tsJest = require('ts-jest');
 const { TsJestTransformer } = tsJest;
 
 const tsJestInstance = new TsJestTransformer({
-  tsconfig: {
-    module: 'CommonJS',
-    moduleResolution: 'node',
-    jsx: 'react-jsx',
-    allowSyntheticDefaultImports: true,
-    esModuleInterop: true,
-  },
   diagnostics: false,
 });
 
