@@ -17,7 +17,9 @@ jest.mock('../../hooks/usePushNotifications', () => ({
 beforeEach(() => {
   mockState.permission = 'default';
   mockState.isSubscribed = false;
+  mockState.error = null;
   mockState.subscribe = jest.fn();
+  localStorage.clear();
 });
 
 test('shows opt-in and calls subscribe on click', () => {
@@ -36,4 +38,19 @@ test('renders nothing when permission is denied', () => {
   mockState.permission = 'denied';
   const { container } = render(<PushOptInBanner />);
   expect(container).toBeEmptyDOMElement();
+});
+
+test('persists dismissal across remounts', () => {
+  localStorage.clear();
+  const { rerender, container } = render(<PushOptInBanner />);
+  fireEvent.click(screen.getByRole('button', { name: /dispensar/i }));
+  rerender(<PushOptInBanner />);
+  expect(container).toBeEmptyDOMElement();
+  expect(localStorage.getItem('cdx_push_dismissed')).toBe('1');
+});
+
+test('shows the hook error message when present', () => {
+  mockState.error = 'falhou';
+  render(<PushOptInBanner />);
+  expect(screen.getByText('falhou')).toBeInTheDocument();
 });
