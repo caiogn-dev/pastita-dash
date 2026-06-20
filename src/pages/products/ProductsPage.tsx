@@ -53,7 +53,8 @@ export const ProductsPage: React.FC = () => {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [storeId]);
 
   const mut = useInlineProductMutations({ products, setProducts, onError });
   const { onDragEnd } = useProductReorder({ products, setProducts, categories, setCategories, onError });
