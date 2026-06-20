@@ -52,14 +52,31 @@ export function useProductReorder({ products, setProducts, categories, setCatego
       return;
     }
 
-    // mover entre categorias
+    // mover entre categorias: reindexa AS DUAS listas (origem sem o moved, destino com o moved)
     const moved = products.find((p) => p.id === String(active.id))!;
-    const dstList = [...products.filter((p) => (p.category ?? null) === dstCat), moved];
-    const reidx = reindex(dstList);
-    const newOrder = reidx.find((r) => r.id === moved.id)!.sort_order;
-    setProducts((prev) => prev.map((p) => p.id === moved.id ? { ...p, category: dstCat, sort_order: newOrder } : p));
-    try { await storesApi.updateProduct(moved.id, { category: dstCat, sort_order: newOrder } as any); }
-    catch (e) { setProducts(() => snapshot); onError(e); }
+
+    // origem: remove o moved e recompacta sort_order dos que ficam
+    const srcBefore = inSrc.map((p) => ({ id: p.id, sort_order: p.sort_order ?? 0 }));
+    const srcReidx = reindex(inSrc.filter((p) => p.id !== moved.id));
+    const srcOrderMap = new Map(srcReidx.map((r) => [r.id, r.sort_order]));
+    const srcChanged = diffSortOrders(srcBefore.filter((b) => b.id !== moved.id), srcReidx);
+
+    // destino: anexa o moved no fim e reindexa
+    const dstList = [...products.filter((p) => (p.category ?? null) === dstCat && p.id !== moved.id), moved];
+    const dstReidx = reindex(dstList);
+    const newOrder = dstReidx.find((r) => r.id === moved.id)!.sort_order;
+
+    setProducts((prev) => prev.map((p) => {
+      if (p.id === moved.id) return { ...p, category: dstCat, sort_order: newOrder };
+      if (srcOrderMap.has(p.id)) return { ...p, sort_order: srcOrderMap.get(p.id)! };
+      return p;
+    }));
+    try {
+      await Promise.all([
+        storesApi.updateProduct(moved.id, { category: dstCat, sort_order: newOrder }),
+        ...srcChanged.map((c) => storesApi.updateProduct(c.id, { sort_order: c.sort_order })),
+      ]);
+    } catch (e) { setProducts(() => snapshot); onError(e); }
   }, [products, setProducts, categories, setCategories, onError]);
 
   return { onDragEnd };

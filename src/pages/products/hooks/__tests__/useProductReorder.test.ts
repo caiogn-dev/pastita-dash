@@ -28,4 +28,31 @@ describe('useProductReorder', () => {
     expect(products.find((p) => p.id === 'p1').sort_order).toBe(1);
     expect(storesApi.updateProduct).toHaveBeenCalledWith('p1', { sort_order: 1 });
   });
+
+  it('move produto entre categorias: reindexa origem E destino', async () => {
+    (storesApi.updateProduct as any).mockResolvedValue({});
+    let products = [
+      { id: 'p1', category: 'a', sort_order: 0 },
+      { id: 'p2', category: 'a', sort_order: 1 },
+      { id: 'p3', category: 'b', sort_order: 0 },
+    ] as any[];
+    const setProducts = (fn: any) => { products = typeof fn === 'function' ? fn(products) : fn; };
+    const { result } = renderHook(() => useProductReorder({
+      products, setProducts,
+      categories: [{ id: 'a', sort_order: 0 } as any, { id: 'b', sort_order: 1 } as any],
+      setCategories: () => {}, onError: jest.fn(),
+    }));
+    await act(async () => {
+      await result.current.onDragEnd({
+        active: { id: 'p1', data: { current: { type: 'product', category: 'a' } } },
+        over: { id: 'p3', data: { current: { type: 'product', category: 'b' } } },
+      } as any);
+    });
+    // moved foi pra categoria b no fim (sort_order 1, depois de p3)
+    expect(products.find((p) => p.id === 'p1').category).toBe('b');
+    expect(storesApi.updateProduct).toHaveBeenCalledWith('p1', { category: 'b', sort_order: 1 });
+    // origem 'a' reindexada: p2 (era 1) vira 0 e é persistido
+    expect(products.find((p) => p.id === 'p2').sort_order).toBe(0);
+    expect(storesApi.updateProduct).toHaveBeenCalledWith('p2', { sort_order: 0 });
+  });
 });
