@@ -48,6 +48,7 @@ import {
   StoreOrder,
 } from '../../services/storesApi';
 import { useNotificationSound, useOrdersWebSocket, useStore, useConfirm } from '../../hooks';
+import { getErrorMessage } from '../../services';
 
 // ─── Column config ────────────────────────────────────────────────────────────
 
@@ -454,8 +455,9 @@ export const OrdersPage: React.FC = () => {
       const res = await getOrders({ store: storeQuery, page_size: 500 });
       setOrders(res.results ?? []);
       setLastSync(new Date());
-    } catch {
-      toast.error('Erro ao carregar pedidos');
+    } catch (err) {
+      console.error('[OrdersPage] loadOrders:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao carregar pedidos');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -528,8 +530,9 @@ export const OrdersPage: React.FC = () => {
       await updateOrderStatus(order.id, action.status);
       patchOrder(order.id, { status: action.status });
       toast.success(`#${order.order_number} → ${action.label}`);
-    } catch {
-      toast.error('Erro ao atualizar status');
+    } catch (err) {
+      console.error('[OrdersPage] handleAdvance:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao atualizar status');
     } finally {
       setAdvancingId(null);
     }
@@ -541,8 +544,9 @@ export const OrdersPage: React.FC = () => {
       await markOrderPaid(order.id);
       patchOrder(order.id, { payment_status: 'paid' });
       toast.success(`Pagamento lançado #${order.order_number}`);
-    } catch {
-      toast.error('Erro ao lançar pagamento');
+    } catch (err) {
+      console.error('[OrdersPage] handlePay:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao lançar pagamento');
     } finally {
       setPayingId(null);
     }
@@ -560,8 +564,9 @@ export const OrdersPage: React.FC = () => {
       await cancelOrder(order.id);
       patchOrder(order.id, { status: 'cancelled' });
       toast.success(`Pedido #${order.order_number} cancelado`);
-    } catch {
-      toast.error('Erro ao cancelar pedido');
+    } catch (err) {
+      console.error('[OrdersPage] handleCancel:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao cancelar pedido');
     } finally {
       setCancellingId(null);
     }
@@ -635,9 +640,10 @@ export const OrdersPage: React.FC = () => {
       setSuccessIds(prev => new Set(prev).add(orderId));
       setTimeout(() => setSuccessIds(prev => { const n = new Set(prev); n.delete(orderId); return n; }), 2000);
       toast.success(`#${order.order_number} movido`);
-    } catch {
+    } catch (err) {
+      console.error('[OrdersPage] handleDragEnd:', err);
       setLocalStates(prev => { const n = new Map(prev); n.delete(orderId); return n; });
-      toast.error('Erro ao mover pedido');
+      toast.error(getErrorMessage(err) || 'Erro ao mover pedido');
     }
   };
 
