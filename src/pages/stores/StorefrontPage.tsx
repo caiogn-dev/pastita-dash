@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../services/storesApi';
+import { getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
 
@@ -43,15 +44,20 @@ export const StorefrontPage: React.FC = () => {
 
   const loadStore = useCallback(async () => {
     if (!effectiveStoreId) return;
-    const data = await getStore(effectiveStoreId);
-    setStore(data);
-    setForm({
-      template: (data.template as Template) || 'fresh',
-      primary_color: data.primary_color || '#2D6A4F',
-      secondary_color: data.secondary_color || '#1B4332',
-      tagline: data.tagline || '',
-      custom_domain: data.custom_domain || '',
-    });
+    try {
+      const data = await getStore(effectiveStoreId);
+      setStore(data);
+      setForm({
+        template: (data.template as Template) || 'fresh',
+        primary_color: data.primary_color || '#2D6A4F',
+        secondary_color: data.secondary_color || '#1B4332',
+        tagline: data.tagline || '',
+        custom_domain: data.custom_domain || '',
+      });
+    } catch (err) {
+      console.error('[StorefrontPage] loadStore:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao carregar configurações da loja');
+    }
   }, [effectiveStoreId]);
 
   useEffect(() => { loadStore(); }, [loadStore]);
@@ -86,8 +92,9 @@ export const StorefrontPage: React.FC = () => {
       toast.success('Storefront salvo com sucesso!');
       setLogoFile(null);
       setBannerFile(null);
-    } catch {
-      toast.error('Erro ao salvar. Tente novamente.');
+    } catch (err) {
+      console.error('[StorefrontPage] handleSave:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao salvar. Tente novamente.');
     } finally {
       setSaving(false);
     }
