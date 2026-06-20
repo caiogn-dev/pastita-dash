@@ -272,7 +272,8 @@ export const DashboardPage: React.FC = () => {
 
       checkAndNotify(resolvedPendingCount);
       setRefreshedAt(new Date());
-    } catch {
+    } catch (err) {
+      console.error('[DashboardPage] loadData:', err);
       toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
@@ -287,7 +288,8 @@ export const DashboardPage: React.FC = () => {
       await updateOrderStatus(orderId, nextStatus);
       toast.success('Status atualizado ✓');
       await loadData();
-    } catch {
+    } catch (err) {
+      console.error('[DashboardPage] handleAdvance:', err);
       toast.error('Erro ao atualizar status');
     } finally {
       setAdvancing(null);
