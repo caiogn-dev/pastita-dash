@@ -39,7 +39,7 @@ const UnifiedOrchestratorTest = lazy(() => import('./pages/agents').then(m => ({
 
 // E-commerce Pages
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
-const ProductsPage = lazy(() => import('./pages/products/ProductsPageNew').then(m => ({ default: m.ProductsPageNew })));
+const ProductsPage = lazy(() => import('./pages/products').then(m => ({ default: m.ProductsPage })));
 const ComboListPage = lazy(() => import('./pages/stores/combos').then(m => ({ default: m.ComboListPage })));
 const ComboFormPage = lazy(() => import('./pages/stores/combos').then(m => ({ default: m.ComboFormPage })));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
