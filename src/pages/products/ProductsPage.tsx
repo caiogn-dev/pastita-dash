@@ -69,6 +69,9 @@ export const ProductsPage: React.FC = () => {
     return groupProducts(filtered, categories);
   }, [products, categories, search, categoryFilter]);
 
+  // Lista achatada na ORDEM exibida (categoria + sort_order) — usada pelas setas ‹ › do modal
+  const flatProducts = useMemo(() => groups.flatMap((g) => g.products), [groups]);
+
   const rowHandlers = {
     onOpen: (p: Product) => setModalProduct(p),
     onStock: mut.setStock,
@@ -126,7 +129,7 @@ export const ProductsPage: React.FC = () => {
           isOpen
           product={modalProduct as any}
           categories={categories}
-          flatProducts={products as any}
+          flatProducts={flatProducts as any}
           storeId={sid}
           productTypes={productTypes}
           onClose={() => setModalProduct(undefined)}

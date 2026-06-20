@@ -19,7 +19,10 @@ interface Props {
 }
 
 export const ProductRow: React.FC<Props> = ({ product, onOpen, onStock, onPrice, onStatus, onFeatured, onMenuAction }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: product.id });
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: product.id,
+    data: { type: 'product', category: product.category ?? null },
+  });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const img = (product as any).main_image_url || product.image_url || product.image;
   return (
