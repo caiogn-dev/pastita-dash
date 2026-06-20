@@ -16,8 +16,11 @@ export interface Product {
   main_image_url?: string | null;
   category?: string | null;
   category_name?: string | null;
+  sort_order?: number;
   sku: string;
   is_active: boolean;
+  track_stock?: boolean;
+  featured?: boolean;
   status?: string;
   is_paused?: boolean;
   paused_until?: string | null;
