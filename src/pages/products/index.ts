@@ -1,2 +1,1 @@
-// New modern page
-export { ProductsPageNew as ProductsPage } from './ProductsPageNew';
+export { ProductsPage } from './ProductsPage';
