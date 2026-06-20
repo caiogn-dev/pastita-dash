@@ -53,6 +53,13 @@ export default {
         'fg-token': 'var(--fg)',
         'fg-muted-token': 'var(--fg-muted)',
         'border-token': 'var(--border)',
+        'primary-token': 'var(--brand)',
+        'bg-token': 'var(--surface-2)',
+        'surface-token': 'var(--surface)',
+        'surface-muted-token': 'var(--surface-2)',
+        'success-token': 'var(--success)',
+        'danger-token': 'var(--danger)',
+        'warning-token': 'var(--warning)',
         border: {
           primary: 'var(--border-default)',
           subtle: 'var(--border-subtle)',
