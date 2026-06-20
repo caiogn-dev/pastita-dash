@@ -5,7 +5,6 @@ import {
   PhotoIcon,
   TagIcon,
   CubeIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button } from '../../components/ui';
@@ -57,6 +56,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [currentId, setCurrentId] = useState<string | undefined>(editingProduct?.id);
 
   useEffect(() => {
+    if (!isOpen) return;
     setCurrentId(editingProduct?.id);
     setActiveTab('basic');
   }, [isOpen, product]);
@@ -158,7 +158,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       });
       setImagePreview(null);
     }
-  }, [isOpen, currentId, effectiveProduct]);
+  }, [isOpen, currentId, effectiveProduct, storeId, product]);
 
   const selectedProductType = useMemo(() => {
     if (!formData.product_type) return null;
