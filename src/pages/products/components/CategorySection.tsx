@@ -1,6 +1,7 @@
 import React from 'react';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Plus } from 'lucide-react';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical, Plus } from 'lucide-react';
 import { CategoryHeader } from './CategoryHeader';
 import { ProductRow, RowMenuAction } from './ProductRow';
 import type { CategoryGroup } from '../hooks/useProductsGrouped';
@@ -18,13 +19,26 @@ interface Props {
   group: CategoryGroup;
   collapsed: boolean;
   rowHandlers: RowHandlers;
+  reorderMode?: boolean;
   onToggleCollapse: () => void;
   onTogglePause: (active: boolean) => void;
   onAddItem: (categoryId: string | null) => void;
 }
-export const CategorySection: React.FC<Props> = ({ group, collapsed, rowHandlers, onToggleCollapse, onTogglePause, onAddItem }) => (
-  <section className="mb-4 rounded-lg border bg-surface-token">
-    <CategoryHeader group={group} collapsed={collapsed} onToggleCollapse={onToggleCollapse} onTogglePause={onTogglePause} />
+export const CategorySection: React.FC<Props> = ({ group, collapsed, rowHandlers, reorderMode, onToggleCollapse, onTogglePause, onAddItem }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: group.id ?? '__uncategorized__',
+    data: { type: 'category', category: group.id },
+  });
+  const sortable = reorderMode && !!group.id;
+  const style = sortable ? { transform: CSS.Transform.toString(transform), transition } : undefined;
+  const dragHandle = sortable ? (
+    <button {...attributes} {...listeners} aria-label="arrastar categoria" className="cursor-grab text-fg-muted-token">
+      <GripVertical size={16} />
+    </button>
+  ) : undefined;
+  return (
+  <section ref={sortable ? setNodeRef : undefined} style={style} className="mb-4 rounded-lg border bg-surface-token">
+    <CategoryHeader group={group} collapsed={collapsed} onToggleCollapse={onToggleCollapse} onTogglePause={onTogglePause} dragHandle={dragHandle} />
     {!collapsed && (
       <>
         <SortableContext items={group.products.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -40,4 +54,5 @@ export const CategorySection: React.FC<Props> = ({ group, collapsed, rowHandlers
       </>
     )}
   </section>
-);
+  );
+};

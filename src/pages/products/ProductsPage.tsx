@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import * as storesApi from '../../services/storesApi';
 import type { StoreCategory, StoreProductType } from '../../services/storesApi';
 import type { Product } from '../../services/products';
@@ -10,6 +11,7 @@ import { useInlineProductMutations } from './hooks/useInlineProductMutations';
 import { useProductReorder } from './hooks/useProductReorder';
 import { ProductsToolbar } from './components/ProductsToolbar';
 import { CategorySection } from './components/CategorySection';
+import { AddCategoryModal } from './components/AddCategoryModal';
 import { ProductFormModal } from './ProductFormModal';
 
 export const ProductsPage: React.FC = () => {
@@ -23,6 +25,9 @@ export const ProductsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string | null>>(new Set());
+  const [reorderMode, setReorderMode] = useState(false);
+  const [addCatOpen, setAddCatOpen] = useState(false);
+  const [addCatSaving, setAddCatSaving] = useState(false);
   const [modalProduct, setModalProduct] = useState<
     Product | null | { category?: string | null; [key: string]: unknown } | undefined
   >(undefined);
@@ -72,6 +77,30 @@ export const ProductsPage: React.FC = () => {
   // Lista achatada na ORDEM exibida (categoria + sort_order) — usada pelas setas ‹ › do modal
   const flatProducts = useMemo(() => groups.flatMap((g) => g.products), [groups]);
 
+  // Ids de categorias reais (exclui o grupo "Sem categoria") — usado pelo SortableContext de categorias
+  const categoryIds = useMemo(
+    () => groups.map((g) => g.id).filter((id): id is string => !!id),
+    [groups],
+  );
+
+  const handleCreateCategory = async (name: string) => {
+    if (!sid) {
+      onError(new Error('Nenhuma loja selecionada'));
+      return;
+    }
+    setAddCatSaving(true);
+    try {
+      const nextOrder = categories.reduce((max, c) => Math.max(max, c.sort_order ?? 0), -1) + 1;
+      await storesApi.createCategory({ store: sid, name, sort_order: nextOrder, is_active: true });
+      setAddCatOpen(false);
+      await load();
+    } catch (e) {
+      onError(e);
+    } finally {
+      setAddCatSaving(false);
+    }
+  };
+
   const rowHandlers = {
     onOpen: (p: Product) => setModalProduct(p),
     onStock: mut.setStock,
@@ -93,16 +122,19 @@ export const ProductsPage: React.FC = () => {
         categoryFilter={categoryFilter}
         categories={categories}
         onCategoryFilter={setCategoryFilter}
-        onReorderCategories={() => {}}
-        onAddCategory={() => {}}
+        reorderMode={reorderMode}
+        onReorderCategories={() => setReorderMode((v) => !v)}
+        onAddCategory={() => setAddCatOpen(true)}
       />
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+        <SortableContext items={categoryIds} strategy={verticalListSortingStrategy}>
         {groups.map((g) => (
           <CategorySection
             key={String(g.id)}
             group={g}
             collapsed={collapsed.has(g.id)}
             rowHandlers={rowHandlers}
+            reorderMode={reorderMode}
             onToggleCollapse={() =>
               setCollapsed((s) => {
                 const n = new Set(s);
@@ -123,7 +155,14 @@ export const ProductsPage: React.FC = () => {
             onAddItem={(catId) => setModalProduct({ category: catId })}
           />
         ))}
+        </SortableContext>
       </DndContext>
+      <AddCategoryModal
+        isOpen={addCatOpen}
+        saving={addCatSaving}
+        onClose={() => setAddCatOpen(false)}
+        onCreate={handleCreateCategory}
+      />
       {modalProduct !== undefined && (
         <ProductFormModal
           isOpen

@@ -55,4 +55,41 @@ describe('useProductReorder', () => {
     expect(products.find((p) => p.id === 'p2').sort_order).toBe(0);
     expect(storesApi.updateProduct).toHaveBeenCalledWith('p2', { sort_order: 0 });
   });
+
+  it('reordena categorias e persiste só as alteradas', async () => {
+    (storesApi.updateCategory as any).mockResolvedValue({});
+    let categories = [
+      { id: 'a', sort_order: 0 },
+      { id: 'b', sort_order: 1 },
+    ] as any[];
+    const setCategories = (fn: any) => { categories = typeof fn === 'function' ? fn(categories) : fn; };
+    const { result } = renderHook(() => useProductReorder({
+      products: [], setProducts: () => {}, categories, setCategories, onError: jest.fn(),
+    }));
+    await act(async () => {
+      await result.current.onDragEnd({
+        active: { id: 'a', data: { current: { type: 'category', category: 'a' } } },
+        over: { id: 'b', data: { current: { type: 'category', category: 'b' } } },
+      } as any);
+    });
+    expect(categories.find((c) => c.id === 'a').sort_order).toBe(1);
+    expect(categories.find((c) => c.id === 'b').sort_order).toBe(0);
+    expect(storesApi.updateCategory).toHaveBeenCalled();
+  });
+
+  it('ignora drop de categoria sobre alvo inválido (over não é categoria)', async () => {
+    const categories = [{ id: 'a', sort_order: 0 }, { id: 'b', sort_order: 1 }] as any[];
+    const setCategories = jest.fn();
+    const { result } = renderHook(() => useProductReorder({
+      products: [], setProducts: () => {}, categories, setCategories, onError: jest.fn(),
+    }));
+    await act(async () => {
+      await result.current.onDragEnd({
+        active: { id: 'a', data: { current: { type: 'category', category: 'a' } } },
+        over: { id: 'p99', data: { current: { type: 'product', category: 'b' } } },
+      } as any);
+    });
+    expect(setCategories).not.toHaveBeenCalled();
+    expect(storesApi.updateCategory).not.toHaveBeenCalled();
+  });
 });

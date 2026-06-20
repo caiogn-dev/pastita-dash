@@ -8,6 +8,7 @@ interface Props {
   categoryFilter: string;
   categories: StoreCategory[];
   onCategoryFilter: (v: string) => void;
+  reorderMode?: boolean;
   onReorderCategories: () => void;
   onAddCategory: () => void;
 }
@@ -17,6 +18,7 @@ export const ProductsToolbar: React.FC<Props> = ({
   categoryFilter,
   categories,
   onCategoryFilter,
+  reorderMode,
   onReorderCategories,
   onAddCategory,
 }) => (
@@ -46,10 +48,10 @@ export const ProductsToolbar: React.FC<Props> = ({
       ))}
     </select>
     <button
-      className="flex items-center gap-1 rounded bg-primary-token px-3 py-2 text-white"
+      className={`flex items-center gap-1 rounded px-3 py-2 ${reorderMode ? 'bg-emerald-600 text-white' : 'bg-primary-token text-white'}`}
       onClick={onReorderCategories}
     >
-      <ArrowUpDown size={16} /> Ordenar categorias
+      <ArrowUpDown size={16} /> {reorderMode ? 'Concluir ordenação' : 'Ordenar categorias'}
     </button>
     <button
       className="flex items-center gap-1 rounded bg-primary-token px-3 py-2 text-white"

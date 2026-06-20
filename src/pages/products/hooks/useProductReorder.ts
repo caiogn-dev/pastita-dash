@@ -24,6 +24,8 @@ export function useProductReorder({ products, setProducts, categories, setCatego
       const ids = categories.map((c) => c.id);
       const from = ids.indexOf(String(active.id));
       const to = ids.indexOf(String(over.id));
+      // over pode ser uma linha de produto (contextos sortable aninhados); ignora drop inválido
+      if (from === -1 || to === -1) return;
       const reordered = moveItem(categories, from, to);
       const reidx = reindex(reordered);
       setCategories(() => reordered.map((c, i) => ({ ...c, sort_order: i })));
