@@ -44,7 +44,7 @@ export const ProductsPage: React.FC = () => {
     try {
       const [cats, prods, pt] = await Promise.all([
         storesApi.getCategories(sid),
-        storesApi.getProducts({ store: sid }),
+        storesApi.getProducts({ store: sid, page_size: 500 }),
         storesApi.getProductTypes(sid),
       ]);
       setCategories(Array.isArray(cats) ? cats : (cats?.results ?? []));
