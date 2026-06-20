@@ -25,6 +25,7 @@ import toast from 'react-hot-toast';
 import { CustomerSearchInput } from '../crm/CustomerSearchInput';
 import { ordersService } from '../../services/orders';
 import { productsService } from '../../services/products';
+import { getErrorMessage } from '../../services';
 import type { Product } from '../../services/products';
 import type {
   CustomerSearchResult,
@@ -749,8 +750,9 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
     try {
       const data = await ordersService.calculateDeliveryFee(storeSlug, address);
       setRouteQuote({ fee: data.fee, distance_km: data.distance_km, duration_minutes: data.duration_minutes });
-    } catch {
-      toast.error('Erro ao calcular rota');
+    } catch (err) {
+      console.error('[NewOrderDrawer] handleCalculateRoute:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao calcular rota');
       setRouteQuote(null);
     } finally {
       setCalculatingRoute(false);
@@ -832,8 +834,9 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
       toast.success('Pedido criado com sucesso!');
       onOrderCreated?.();
       handleClose();
-    } catch {
-      toast.error('Erro ao criar pedido');
+    } catch (err) {
+      console.error('[NewOrderDrawer] handleSubmit:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao criar pedido');
     } finally {
       setSubmitting(false);
     }

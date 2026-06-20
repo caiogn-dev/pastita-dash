@@ -13,6 +13,7 @@ import {
 import toast from 'react-hot-toast';
 import { Card, Button, Badge, Modal, Input, Loading } from '../../components/common';
 import { agentFlowService, AgentFlow } from '../../services/automation';
+import { getErrorMessage } from '../../services';
 import { useStore, useConfirm } from '../../hooks';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -40,8 +41,9 @@ export const AgentFlowsPage: React.FC = () => {
       if (storeId) params.store_id = storeId;
       const res = await agentFlowService.list(params);
       setFlows(res.results);
-    } catch {
-      toast.error('Erro ao carregar flows');
+    } catch (err) {
+      console.error('[AgentFlowsPage] loadFlows:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao carregar flows');
     } finally {
       setLoading(false);
     }
@@ -90,8 +92,9 @@ export const AgentFlowsPage: React.FC = () => {
       }
       setIsFormOpen(false);
       loadFlows();
-    } catch {
-      toast.error('Erro ao salvar flow');
+    } catch (err) {
+      console.error('[AgentFlowsPage] handleSubmit:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao salvar flow');
     }
   };
 
@@ -100,8 +103,9 @@ export const AgentFlowsPage: React.FC = () => {
       await agentFlowService.update(flow.id, { is_active: !flow.is_active });
       toast.success(flow.is_active ? 'Flow desativado' : 'Flow ativado');
       loadFlows();
-    } catch {
-      toast.error('Erro ao atualizar flow');
+    } catch (err) {
+      console.error('[AgentFlowsPage] handleToggleActive:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao atualizar flow');
     }
   };
 
@@ -115,8 +119,9 @@ export const AgentFlowsPage: React.FC = () => {
       await agentFlowService.delete(id);
       toast.success('Flow excluído');
       loadFlows();
-    } catch {
-      toast.error('Erro ao excluir flow');
+    } catch (err) {
+      console.error('[AgentFlowsPage] handleDelete:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao excluir flow');
     }
   };
 
