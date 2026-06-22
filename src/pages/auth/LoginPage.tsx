@@ -2,7 +2,7 @@
  * LoginPage - Página de login
  */
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Button, Input, Card } from '../../components/common';
 import { authService, getErrorMessage, setAuthToken } from '../../services';
@@ -10,6 +10,7 @@ import { useAuthStore } from '../../stores/authStore';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,9 +31,9 @@ export const LoginPage: React.FC = () => {
         last_name: response.last_name,
       });
       setAuthToken(response.token);
-      await new Promise((res) => setTimeout(res, 100));
       toast.success('Login realizado com sucesso!');
-      navigate('/');
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
