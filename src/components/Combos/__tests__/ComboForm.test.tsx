@@ -121,6 +121,25 @@ describe('ComboForm', () => {
     jest.clearAllMocks();
   });
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // Helpers — o form usa abas (Informações / Itens / Configurações) e dois tipos
+  // de grupo: "Grupo de variantes" (produto-âncora + variantes) e "Grupo de
+  // produtos" (título + checklist de produtos).
+  // ───────────────────────────────────────────────────────────────────────────
+  const goToItemsTab = () => {
+    fireEvent.click(screen.getByRole('button', { name: /Itens/ }));
+  };
+
+  const addVariantGroup = async (user: ReturnType<typeof userEvent.setup>) => {
+    goToItemsTab();
+    await user.click(screen.getByRole('button', { name: /Grupo de variantes/i }));
+  };
+
+  const addProductGroup = async (user: ReturnType<typeof userEvent.setup>) => {
+    goToItemsTab();
+    await user.click(screen.getByRole('button', { name: /Grupo de produtos/i }));
+  };
+
   describe('Section 1: Basic Info', () => {
     it('renders basic info tab with all required fields', () => {
       render(
@@ -182,7 +201,7 @@ describe('ComboForm', () => {
   });
 
   describe('Section 2: Product Items', () => {
-    it('renders groups tab with add group button', () => {
+    it('renders groups tab with add group buttons', () => {
       render(
         <>
           <ComboForm
@@ -194,13 +213,13 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
+      goToItemsTab();
 
-      expect(screen.getByText(/Adicionar Item/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Grupo de variantes/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Grupo de produtos/i })).toBeInTheDocument();
     });
 
-    it('adds a new group when clicking add group button', async () => {
+    it('adds a variant group when clicking "Grupo de variantes"', async () => {
       const user = userEvent.setup();
       render(
         <>
@@ -213,17 +232,13 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
+      await addVariantGroup(user);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
-
-      // Group should be expanded and showing empty state
-      expect(screen.getByText(/Selecionar produto\.\.\./i)).toBeInTheDocument();
+      // Group should be expanded and showing the product selector (empty state)
+      expect(screen.getByDisplayValue('Selecionar produto...')).toBeInTheDocument();
     });
 
-    it('allows selecting product for a group', async () => {
+    it('allows selecting product for a variant group', async () => {
       const user = userEvent.setup();
       render(
         <>
@@ -236,14 +251,9 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
+      await addVariantGroup(user);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
-
-      const selects = screen.getAllByDisplayValue('Selecionar produto...');
-      const productSelect = selects[0];
+      const productSelect = screen.getByDisplayValue('Selecionar produto...');
       fireEvent.change(productSelect, { target: { value: 'prod-1' } });
 
       // Product should be loaded and header shown with product name
@@ -266,11 +276,7 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
-
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
+      await addVariantGroup(user);
 
       expect(screen.getByText(/Seleções mínimas/i)).toBeInTheDocument();
       expect(screen.getByText(/Seleções máximas/i)).toBeInTheDocument();
@@ -289,19 +295,14 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
-
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
+      await addVariantGroup(user);
 
       const requiredToggle = screen.getByText('Obrigatório').closest('div[class*="border"]');
-      if (requiredToggle) {
-        fireEvent.click(requiredToggle);
-      }
+      expect(requiredToggle).toBeInTheDocument();
+      fireEvent.click(requiredToggle!);
     });
 
-    it('toggles allow_duplicates checkbox for group', async () => {
+    it('shows and toggles allow_duplicates for a variant group', async () => {
       const user = userEvent.setup();
       render(
         <>
@@ -314,16 +315,13 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
+      await addVariantGroup(user);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
-
-      const duplicatesToggle = screen.getByText(/Permitir duplicatas/i).closest('div[class*="border"]');
-      if (duplicatesToggle) {
-        fireEvent.click(duplicatesToggle);
-      }
+      const duplicatesToggle = screen
+        .getByText(/Permitir duplicatas de variantes/i)
+        .closest('div[class*="border"]');
+      expect(duplicatesToggle).toBeInTheDocument();
+      fireEvent.click(duplicatesToggle!);
     });
 
     it('removes group when clicking delete button', async () => {
@@ -339,24 +337,19 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
+      await addVariantGroup(user);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
-
-      // Should show empty group
-      expect(screen.getByText(/Selecionar produto/i)).toBeInTheDocument();
+      // Should show empty group with product selector
+      expect(screen.getByDisplayValue('Selecionar produto...')).toBeInTheDocument();
 
       // Click delete trash icon
       const trashButtons = screen.getAllByTitle('Remover grupo');
-      if (trashButtons.length > 0) {
-        fireEvent.click(trashButtons[0]);
-      }
+      expect(trashButtons.length).toBeGreaterThan(0);
+      fireEvent.click(trashButtons[0]);
 
       // Group should be removed
       await waitFor(() => {
-        expect(screen.queryByText(/Selecionar produto/i)).not.toBeInTheDocument();
+        expect(screen.queryByDisplayValue('Selecionar produto...')).not.toBeInTheDocument();
       });
     });
   });
@@ -375,14 +368,10 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
+      await addVariantGroup(user);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
-
-      const selects = screen.getAllByDisplayValue('Selecionar produto...');
-      fireEvent.change(selects[0], { target: { value: 'prod-1' } });
+      const select = screen.getByDisplayValue('Selecionar produto...');
+      fireEvent.change(select, { target: { value: 'prod-1' } });
 
       // Variants should be loaded - check variants table headers appear
       await waitFor(() => {
@@ -404,14 +393,10 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
+      await addVariantGroup(user);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
-
-      const selects = screen.getAllByDisplayValue('Selecionar produto...');
-      fireEvent.change(selects[0], { target: { value: 'prod-1' } });
+      const select = screen.getByDisplayValue('Selecionar produto...');
+      fireEvent.change(select, { target: { value: 'prod-1' } });
 
       await waitFor(() => {
         const rondelli = screen.getAllByText('Rondelli');
@@ -424,6 +409,10 @@ describe('ComboForm', () => {
       expect(screen.getByText('Estoque')).toBeInTheDocument();
       expect(screen.getByText('Max no Combo')).toBeInTheDocument();
       expect(screen.getByText('Preço Override (R$)')).toBeInTheDocument();
+
+      // And the variant rows
+      expect(screen.getByText('Frango')).toBeInTheDocument();
+      expect(screen.getByText('Queijo')).toBeInTheDocument();
     });
 
     it('edits max_selections for variant', async () => {
@@ -439,25 +428,20 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/i });
-      fireEvent.click(groupsTab);
+      await addVariantGroup(user);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
-
-      const selects = screen.getAllByDisplayValue('Selecionar produto...');
-      fireEvent.change(selects[0], { target: { value: 'prod-1' } });
+      const select = screen.getByDisplayValue('Selecionar produto...');
+      fireEvent.change(select, { target: { value: 'prod-1' } });
 
       await waitFor(() => {
         expect(screen.getByText('Frango')).toBeInTheDocument();
       });
 
-      // Find and edit max_selections input
+      // Find and edit max_selections input (defaults to 1)
       const maxInputs = screen.getAllByDisplayValue('1');
-      if (maxInputs.length > 0) {
-        fireEvent.change(maxInputs[0], { target: { value: '2' } });
-        expect(maxInputs[0]).toHaveValue(2);
-      }
+      expect(maxInputs.length).toBeGreaterThan(0);
+      fireEvent.change(maxInputs[0], { target: { value: '2' } });
+      expect(maxInputs[0]).toHaveValue(2);
     });
 
     it('edits price_override for variant', async () => {
@@ -473,14 +457,10 @@ describe('ComboForm', () => {
         </>
       );
 
-      const groupsTab = screen.getByRole('button', { name: /Itens/ });
-      fireEvent.click(groupsTab);
+      await addVariantGroup(user);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
-
-      const selects = screen.getAllByDisplayValue('Selecionar produto...');
-      fireEvent.change(selects[0], { target: { value: 'prod-1' } });
+      const select = screen.getByDisplayValue('Selecionar produto...');
+      fireEvent.change(select, { target: { value: 'prod-1' } });
 
       await waitFor(() => {
         expect(screen.getByText('Frango')).toBeInTheDocument();
@@ -488,10 +468,59 @@ describe('ComboForm', () => {
 
       // Find price override input
       const priceOverrideInputs = screen.getAllByPlaceholderText('Sem override');
-      if (priceOverrideInputs.length > 0) {
-        fireEvent.change(priceOverrideInputs[0], { target: { value: '8.5' } });
-        expect(priceOverrideInputs[0]).toHaveValue(8.5);
-      }
+      expect(priceOverrideInputs.length).toBeGreaterThan(0);
+      fireEvent.change(priceOverrideInputs[0], { target: { value: '8.5' } });
+      expect(priceOverrideInputs[0]).toHaveValue(8.5);
+    });
+  });
+
+  describe('Section 2.2: Product Groups', () => {
+    it('adds a product group with title and product checklist', async () => {
+      const user = userEvent.setup();
+      render(
+        <>
+          <ComboForm
+            storeId="store-1"
+            products={mockProducts}
+            onSubmit={mockOnSubmit}
+          />
+          <Toaster />
+        </>
+      );
+
+      await addProductGroup(user);
+
+      // Product group shows a title input and the product checklist (no anchor select)
+      expect(screen.getByText(/Título do grupo/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/Ex: Escolha suas 5 saladas/i)).toBeInTheDocument();
+      expect(screen.queryByDisplayValue('Selecionar produto...')).not.toBeInTheDocument();
+      // Both products available to check
+      expect(screen.getByText('Rondelli')).toBeInTheDocument();
+      expect(screen.getByText('Molho Branco')).toBeInTheDocument();
+    });
+
+    it('selects a product option in a product group', async () => {
+      const user = userEvent.setup();
+      render(
+        <>
+          <ComboForm
+            storeId="store-1"
+            products={mockProducts}
+            onSubmit={mockOnSubmit}
+          />
+          <Toaster />
+        </>
+      );
+
+      await addProductGroup(user);
+
+      // Toggle the first product on via its aria-labelled checkbox button
+      const addButton = screen.getByRole('button', { name: /Adicionar Rondelli/i });
+      await user.click(addButton);
+
+      // Now it shows the "max" control and a remove affordance
+      expect(screen.getByRole('button', { name: /Remover Rondelli/i })).toBeInTheDocument();
+      expect(screen.getByText(/1 selecionado/i)).toBeInTheDocument();
     });
   });
 
@@ -629,11 +658,8 @@ describe('ComboForm', () => {
       const priceInputs = screen.getAllByRole('spinbutton');
       fireEvent.change(priceInputs[0], { target: { value: '15' } });
 
-      const groupsTab = screen.getByText(/Itens \(0\)/);
-      fireEvent.click(groupsTab);
-
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
+      // Variant group without a selected anchor product → incomplete
+      await addVariantGroup(user);
 
       // Try to submit without selecting product
       const submitButton = screen.getByText(/Criar combo/i);
@@ -697,14 +723,10 @@ describe('ComboForm', () => {
       const priceInputs = screen.getAllByRole('spinbutton');
       fireEvent.change(priceInputs[0], { target: { value: '15' } });
 
-      const groupsTab = screen.getByText(/Itens \(0\)/);
-      fireEvent.click(groupsTab);
+      await addVariantGroup(user);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
-      await user.click(addButton);
-
-      const selects = screen.getAllByDisplayValue('Selecionar produto...');
-      fireEvent.change(selects[0], { target: { value: 'prod-1' } });
+      const select = screen.getByDisplayValue('Selecionar produto...');
+      fireEvent.change(select, { target: { value: 'prod-1' } });
 
       await waitFor(() => {
         const rondelli = screen.getAllByText('Rondelli');
@@ -770,11 +792,12 @@ describe('ComboForm', () => {
       // Start in basic tab
       expect(screen.getByPlaceholderText(/Ex: Combo Executivo/i)).toBeInTheDocument();
 
-      // Switch to items tab
-      const itemsTab = screen.getByRole('button', { name: /Itens/i });
-      fireEvent.click(itemsTab);
+      // Switch to items tab — assert via button role to avoid colliding with
+      // any toast text that happens to contain "grupo de produtos".
+      goToItemsTab();
 
-      expect(screen.getByText(/Adicionar Item/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Grupo de variantes/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Grupo de produtos/i })).toBeInTheDocument();
 
       // Switch to settings tab
       const settingsTab = screen.getByText(/Configurações/);
