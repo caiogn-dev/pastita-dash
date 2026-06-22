@@ -51,7 +51,9 @@ function PortalDropdown({
     const update = () => {
       if (!anchorRef.current) return;
       const r = anchorRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: r.left });
+      const dropdownWidth = 208; // w-52
+      const left = Math.min(r.left, window.innerWidth - dropdownWidth - 8);
+      setPos({ top: r.bottom + 6, left: Math.max(0, left) });
     };
     update();
     window.addEventListener('scroll', update, true);

@@ -43,7 +43,7 @@ const toInstagramConversation = (conversation: InstagramConversation): ChannelCo
   unreadCount: conversation.unread_count || 0,
   status: conversation.status || (conversation.is_active ? 'active' : 'closed'),
   lastMessageAt: conversation.last_message_at,
-  lastMessagePreview: conversation.last_message_preview || conversation.last_message?.content || '',
+  lastMessagePreview: conversation.last_message_preview || (typeof conversation.last_message?.content === 'string' ? conversation.last_message.content : '') || '',
   raw: conversation,
 });
 
@@ -57,7 +57,7 @@ const toMessengerConversation = (conversation: MessengerConversation): ChannelCo
   unreadCount: conversation.unread_count || 0,
   status: conversation.status || (conversation.is_active ? 'active' : 'closed'),
   lastMessageAt: conversation.last_message_at,
-  lastMessagePreview: conversation.last_message_preview || conversation.last_message?.content || '',
+  lastMessagePreview: conversation.last_message_preview || (typeof conversation.last_message?.content === 'string' ? conversation.last_message.content : '') || '',
   raw: conversation,
 });
 
@@ -67,7 +67,7 @@ const toInstagramMessage = (message: InstagramMessage): ChannelMessage => ({
   conversationId: message.conversation,
   direction: message.direction || (message.is_from_business ? 'outbound' : 'inbound'),
   type: message.message_type || 'TEXT',
-  text: message.content,
+  text: typeof message.content === 'string' ? message.content : undefined,
   mediaUrl: message.media_url,
   status: message.status,
   createdAt: message.created_at,
@@ -80,7 +80,7 @@ const toMessengerMessage = (message: MessengerMessage): ChannelMessage => ({
   conversationId: message.conversation,
   direction: message.direction || (message.is_from_page ? 'outbound' : 'inbound'),
   type: message.message_type,
-  text: message.content,
+  text: typeof message.content === 'string' ? message.content : undefined,
   mediaUrl: message.attachment_url,
   status: message.status,
   createdAt: message.created_at,
