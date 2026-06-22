@@ -128,7 +128,8 @@ export default function MessengerInbox() {
 
   const filtered = conversations.filter((c) => {
     const name = (c.participant_name || c.psid || '').toLowerCase();
-    const preview = (c.last_message as any)?.content?.toLowerCase() || '';
+    const rawContent = (c.last_message as any)?.content;
+    const preview = (typeof rawContent === 'string' ? rawContent : '').toLowerCase();
     const q = searchQuery.toLowerCase();
     return name.includes(q) || preview.includes(q);
   });
@@ -209,7 +210,7 @@ export default function MessengerInbox() {
                       )}
                     </div>
                     <p className="mt-0.5 truncate text-xs text-fg-muted">
-                      {(conv.last_message as any)?.content || '—'}
+                      {(() => { const c = (conv.last_message as any)?.content; return typeof c === 'string' ? c : '—'; })()}
                     </p>
                   </div>
                 </div>
