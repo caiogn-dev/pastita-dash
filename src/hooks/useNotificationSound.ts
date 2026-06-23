@@ -150,7 +150,7 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
       try {
         new Notification('Novo Pedido!', {
           body: 'Você tem um novo pedido para processar',
-          icon: '/favicon.ico',
+          icon: '/brand/icon-192.png',
           tag: 'new-order',
           requireInteraction: true,
         });
