@@ -46,7 +46,7 @@ export const LoginPage: React.FC = () => {
         {/* Logo e Título */}
         <div className="flex flex-col items-center mb-8">
           <img
-            src="/brand/cardapidex-logo.svg"
+            src="/brand/cardapidex-logo.png"
             alt="Cardapidex"
             className="h-16 w-auto mb-4"
           />

@@ -72,7 +72,7 @@ export const CadastroPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
       <header className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-3">
-          <img src="/brand/cardapidex-logo.svg" alt="Cardapidex" className="h-9 w-auto" />
+          <img src="/brand/cardapidex-logo.png" alt="Cardapidex" className="h-9 w-auto" />
         </div>
         <a href="/login" className="text-sm text-emerald-600 hover:text-emerald-800 font-medium">
           Já tenho conta →
