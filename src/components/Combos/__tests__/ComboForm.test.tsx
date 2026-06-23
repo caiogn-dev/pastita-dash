@@ -197,7 +197,9 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      expect(screen.getByText(/Adicionar Item/i)).toBeInTheDocument();
+      // O editor expõe dois botões de adição (variante e produtos)
+      expect(screen.getByText(/Grupo de variantes/i)).toBeInTheDocument();
+      expect(screen.getByText(/Grupo de produtos/i)).toBeInTheDocument();
     });
 
     it('adds a new group when clicking add group button', async () => {
@@ -216,7 +218,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       // Group should be expanded and showing empty state
@@ -239,7 +241,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       const selects = screen.getAllByDisplayValue('Selecionar produto...');
@@ -269,7 +271,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       expect(screen.getByText(/Seleções mínimas/i)).toBeInTheDocument();
@@ -292,7 +294,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       const requiredToggle = screen.getByText('Obrigatório').closest('div[class*="border"]');
@@ -317,7 +319,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       const duplicatesToggle = screen.getByText(/Permitir duplicatas/i).closest('div[class*="border"]');
@@ -342,11 +344,11 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
-      // Should show empty group
-      expect(screen.getByText(/Selecionar produto/i)).toBeInTheDocument();
+      // Should show empty group (header + option ambos batem no matcher)
+      expect(screen.getAllByText(/Selecionar produto/i).length).toBeGreaterThan(0);
 
       // Click delete trash icon
       const trashButtons = screen.getAllByTitle('Remover grupo');
@@ -356,7 +358,7 @@ describe('ComboForm', () => {
 
       // Group should be removed
       await waitFor(() => {
-        expect(screen.queryByText(/Selecionar produto/i)).not.toBeInTheDocument();
+        expect(screen.queryAllByText(/Selecionar produto/i)).toHaveLength(0);
       });
     });
   });
@@ -378,7 +380,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       const selects = screen.getAllByDisplayValue('Selecionar produto...');
@@ -407,7 +409,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       const selects = screen.getAllByDisplayValue('Selecionar produto...');
@@ -442,7 +444,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/i });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       const selects = screen.getAllByDisplayValue('Selecionar produto...');
@@ -476,7 +478,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByRole('button', { name: /Itens/ });
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       const selects = screen.getAllByDisplayValue('Selecionar produto...');
@@ -632,7 +634,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByText(/Itens \(0\)/);
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       // Try to submit without selecting product
@@ -700,7 +702,7 @@ describe('ComboForm', () => {
       const groupsTab = screen.getByText(/Itens \(0\)/);
       fireEvent.click(groupsTab);
 
-      const addButton = screen.getByText(/Adicionar Item/i);
+      const addButton = screen.getByText(/Grupo de variantes/i);
       await user.click(addButton);
 
       const selects = screen.getAllByDisplayValue('Selecionar produto...');
@@ -774,7 +776,7 @@ describe('ComboForm', () => {
       const itemsTab = screen.getByRole('button', { name: /Itens/i });
       fireEvent.click(itemsTab);
 
-      expect(screen.getByText(/Adicionar Item/i)).toBeInTheDocument();
+      expect(screen.getByText(/Grupo de variantes/i)).toBeInTheDocument();
 
       // Switch to settings tab
       const settingsTab = screen.getByText(/Configurações/);
