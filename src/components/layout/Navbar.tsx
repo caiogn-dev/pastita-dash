@@ -273,7 +273,7 @@ export const Navbar: React.FC = () => {
       name: 'Cardapidex',
       logo: '/brand/symbol-256.png',
       initial: 'Cx',
-      color: '#C7492E',
+      color: 'var(--brand)',
       isPlatform: true,
     };
     return {

@@ -82,8 +82,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: payload.body,
-    icon: '/cardapidex-logo.svg',
-    badge: '/cardapidex-logo.svg',
+    icon: '/brand/cardapidex-logo.png',
+    badge: '/brand/symbol-256.png',
     tag: payload.tag || 'cardapidex-notification',
     data: payload.data || {},
     requireInteraction: false,
