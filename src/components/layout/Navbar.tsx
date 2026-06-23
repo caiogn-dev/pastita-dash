@@ -289,7 +289,22 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-[var(--brand-strong)] text-white backdrop-blur-xl border-b border-[var(--border)]">
+      <header
+        className="sticky top-0 z-40 text-white backdrop-blur-xl"
+        style={{
+          background: 'linear-gradient(180deg, #1F1A15 0%, var(--brand-strong) 100%)',
+          boxShadow: '0 10px 30px -16px rgba(0,0,0,0.7)',
+        }}
+      >
+        {/* hairline dourado na base */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+          style={{
+            background:
+              'linear-gradient(90deg, transparent 0%, rgba(222,190,121,0.45) 50%, transparent 100%)',
+          }}
+        />
         <div className="flex items-center gap-3 px-4 h-24">
 
           {/* Logo */}

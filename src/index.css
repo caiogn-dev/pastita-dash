@@ -314,6 +314,28 @@ textarea::placeholder {
   background-clip: text;
 }
 
+/* Gold sheen sweeping across brand wordmark (Cardapidex premium) */
+.cdx-gold-shimmer {
+  background: linear-gradient(110deg, #C9A24B 18%, #F4E3B0 38%, #FFF6DC 50%, #DEBE79 62%, #C9A24B 82%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 4.5s linear infinite;
+}
+
+/* Soft pulsing gold halo for splash/login */
+@keyframes cdx-halo {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.85; transform: translate(-50%, -50%) scale(1.06); }
+}
+.cdx-halo { animation: cdx-halo 6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cdx-gold-shimmer, .cdx-halo { animation: none; }
+}
+
 /* Focus Visible */
 .focus-ring {
   @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2;
