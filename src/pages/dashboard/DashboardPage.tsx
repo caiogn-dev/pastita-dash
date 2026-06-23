@@ -163,15 +163,20 @@ export const DashboardPage: React.FC = () => {
   const loadData = useCallback(async () => {
     if (!storeId) return;
     setLoading(true);
-    setHealthLoading(true);
 
-    // project-health é o request mais caro (~24 queries) E o menos crítico do
-    // dashboard. Fora do caminho crítico: não bloqueia os KPIs/tabela — preenche
-    // sozinho quando chegar. Antes, todo card ficava em '—' até ELE responder.
-    dashboardService.getProjectHealth({ store: storeId })
-      .then((h) => setProjectHealth(h))
-      .catch(() => {})
-      .finally(() => setHealthLoading(false));
+    // O card "Saúde do sistema" SÓ é renderizado p/ is_staff (admin). Pra dono de
+    // loja comum ele nunca aparece — então NÃO buscar é o certo: era o request mais
+    // caro do dashboard (~24 queries, ~4s no cache frio) sendo pago por todo mundo
+    // p/ um widget que ninguém via. Staff: fica fora do caminho crítico (não trava KPIs).
+    if (user?.is_staff) {
+      setHealthLoading(true);
+      dashboardService.getProjectHealth({ store: storeId })
+        .then((h) => setProjectHealth(h))
+        .catch(() => {})
+        .finally(() => setHealthLoading(false));
+    } else {
+      setHealthLoading(false);
+    }
 
     try {
       const [ordersResp, statsResp, overviewResp] = await Promise.allSettled([
