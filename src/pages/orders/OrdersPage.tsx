@@ -35,6 +35,7 @@ import {
   PhoneIcon,
   FireIcon,
   CheckCircleIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -109,6 +110,18 @@ const formatElapsed = (minutes: number): string => {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return m > 0 ? `${h}h ${m}min` : `${h}h`;
+};
+
+// Rótulo curto de agendamento p/ o card ("15/01 14:30"). Vazio se não houver agendamento.
+const formatScheduledShort = (order: { scheduled_date?: string | null; scheduled_time?: string | null }): string => {
+  const date = order.scheduled_date;
+  const time = order.scheduled_time ? order.scheduled_time.slice(0, 5) : '';
+  let datePart = '';
+  if (date) {
+    const [, m, d] = date.split('-');
+    datePart = m && d ? `${d}/${m}` : date;
+  }
+  return [datePart, time].filter(Boolean).join(' ');
 };
 
 // ─── PaymentBadge ─────────────────────────────────────────────────────────────
@@ -219,6 +232,14 @@ const OrderCardBase: React.FC<CardProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Agendamento — destaque quando o cliente agendou data/hora */}
+      {formatScheduledShort(order) && (
+        <div className="mb-1.5 flex items-center gap-1 rounded-md bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand w-fit">
+          <CalendarDaysIcon className="h-2.5 w-2.5" />
+          Agendado {formatScheduledShort(order)}
+        </div>
+      )}
 
       {/* Row 2: customer name + value */}
       <div className="flex items-start justify-between gap-2 mb-1.5">

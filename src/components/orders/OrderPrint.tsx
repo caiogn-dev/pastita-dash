@@ -17,7 +17,10 @@ export const useOrderPrint = () => {
     storeName?: string;
     storePhone?: string;
     storeAddress?: string;
+    /** Comanda da cozinha: oculta preços, totais e pagamento. */
+    hidePrices?: boolean;
   }) => {
+    const hidePrices = options?.hidePrices ?? false;
     // Create a hidden iframe for printing
     if (!printFrameRef.current) {
       const iframe = document.createElement('iframe');
@@ -150,7 +153,7 @@ export const useOrderPrint = () => {
     const formatIngredients = (ingredients: Array<{ name: string; role?: string; price?: number }>) => ingredients
       .map((ingredient) => {
         const role = ingredient.role ? `${ingredient.role}: ` : '';
-        const price = ingredient.price && ingredient.price > 0 ? ` (+${formatMoney(ingredient.price)})` : '';
+        const price = !hidePrices && ingredient.price && ingredient.price > 0 ? ` (+${formatMoney(ingredient.price)})` : '';
         return `${role}${ingredient.name}${price}`;
       });
 
@@ -189,7 +192,7 @@ export const useOrderPrint = () => {
               <span class="item-qty">${item.quantity}x</span>
               <span class="item-name">${escapeHtml(item.product_name)}</span>
             </div>
-            <div class="item-price">${formatMoney(itemTotal)}</div>
+            ${hidePrices ? '' : `<div class="item-price">${formatMoney(itemTotal)}</div>`}
           </div>
           ${detailLines.length ? renderDetailLines(detailLines) : ''}
           ${itemNotes ? `<div class="item-note-box">OBS. ITEM: ${escapeHtml(itemNotes)}</div>` : ''}
@@ -209,7 +212,7 @@ export const useOrderPrint = () => {
               <span class="item-qty">${combo.quantity}x</span>
               <span class="item-name">${escapeHtml(combo.combo_name)}</span>
             </div>
-            <div class="item-price">${formatMoney(combo.subtotal)}</div>
+            ${hidePrices ? '' : `<div class="item-price">${formatMoney(combo.subtotal)}</div>`}
           </div>
           <div class="item-detail">COMBO</div>
           ${customizationLines.length ? renderDetailLines(customizationLines) : ''}
@@ -610,6 +613,7 @@ export const useOrderPrint = () => {
           <div class="order-number">PEDIDO #${pedido.order_number}</div>
           <div class="order-date">${formatDate(pedido.created_at)}</div>
           <div class="delivery-badge">${getDeliveryMethod()}</div>
+          ${hidePrices ? '<div class="delivery-badge">COMANDA · COZINHA</div>' : ''}
         </div>
 
         ${scheduledLabel ? `
@@ -648,6 +652,7 @@ export const useOrderPrint = () => {
           </div>
         </div>
 
+        ${hidePrices ? '' : `
         <!-- Totals -->
         <div class="totals-section">
           <div class="total-row">
@@ -689,6 +694,7 @@ export const useOrderPrint = () => {
             <span class="payment-status">${getPaymentStatus()}</span>
           </div>
         </div>
+        `}
 
         <!-- Footer -->
         <div class="footer">

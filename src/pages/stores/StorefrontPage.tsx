@@ -5,6 +5,7 @@ import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../s
 import { useStore } from '../../hooks';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
 import { Card, Button } from '../../components/ui';
+import { PhotoIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -163,53 +164,96 @@ export const StorefrontPage: React.FC = () => {
         <p className="text-fg-muted-token mt-1">Configure a aparência do site da loja.</p>
       </div>
 
-      {/* Logo */}
-      <Card className="p-6 space-y-3">
-        <h2 className="text-base font-semibold text-fg-token">Logo da loja</h2>
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full border-2 border-border-token overflow-hidden flex items-center justify-center bg-surface-2 flex-shrink-0">
-            {logoPreview || store?.logo_url ? (
-              <img src={logoPreview || store?.logo_url || ''} alt="Logo" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+      {/* Identidade do cardápio — capa + logo compostos como aparecem no cardápio real (WYSIWYG) */}
+      <Card noPadding className="overflow-hidden">
+        <div className="px-6 pt-5 pb-3 border-b border-border-token">
+          <h2 className="font-display text-lg tracking-wide text-fg-token">Identidade do cardápio</h2>
+          <p className="mt-0.5 text-sm text-fg-muted-token">Capa e logo, exatamente como abrem o topo do seu cardápio.</p>
+        </div>
+
+        {/* Composição capa + logo sobreposto */}
+        <div className="relative">
+          {/* Capa (banner) */}
+          <label className="group relative block h-44 w-full cursor-pointer overflow-hidden bg-surface-2">
+            {bannerPreview || store?.banner_url ? (
+              <img
+                src={bannerPreview || store?.banner_url || ''}
+                alt="Capa do cardápio"
+                className="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
             ) : (
-              <span className="text-2xl text-fg-muted-token">🏪</span>
+              <div
+                className="flex h-full flex-col items-center justify-center text-fg-muted-token"
+                style={{ background: 'linear-gradient(135deg, var(--surface-2), var(--surface))' }}
+              >
+                <PhotoIcon className="mb-1.5 h-7 w-7 opacity-70" />
+                <span className="text-sm font-medium">Adicionar capa do cardápio</span>
+                <span className="mt-0.5 text-xs opacity-70">1200 × 400px</span>
+              </div>
+            )}
+            {/* scrim inferior p/ legibilidade do logo/nome */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+            {/* realce no hover/foco com o ouro da marca */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold text-[#1A1613]"
+                style={{ backgroundColor: 'var(--brand)' }}
+              >
+                <ArrowUpTrayIcon className="h-4 w-4" />
+                {bannerFile || store?.banner_url ? 'Trocar capa' : 'Enviar capa'}
+              </span>
+            </div>
+            <input type="file" accept="image/*" className="sr-only" onChange={handleBannerChange} aria-label="Enviar capa do cardápio" />
+          </label>
+
+          {/* Logo sobreposto à capa (avatar sobre cover) */}
+          <div className="absolute -bottom-10 left-6 z-10">
+            <label
+              className="group relative block h-24 w-24 cursor-pointer overflow-hidden rounded-2xl bg-surface-2"
+              style={{ boxShadow: '0 0 0 4px var(--surface), 0 10px 26px -10px rgba(0,0,0,.5)' }}
+            >
+              {logoPreview || store?.logo_url ? (
+                <img
+                  src={logoPreview || store?.logo_url || ''}
+                  alt="Logo da loja"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center text-fg-muted-token">
+                  <span className="text-2xl">🏪</span>
+                  <span className="mt-0.5 text-[10px] font-medium">Logo</span>
+                </div>
+              )}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+                <ArrowUpTrayIcon className="h-5 w-5" style={{ color: 'var(--brand)' }} />
+              </div>
+              <input type="file" accept="image/*" className="sr-only" onChange={handleLogoChange} aria-label="Enviar logo da loja" />
+            </label>
+          </div>
+        </div>
+
+        {/* Nome da loja + acento da cor primária + ações contextuais */}
+        <div className="flex items-end justify-between gap-4 pb-5 pl-32 pr-6 pt-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="h-3.5 w-1 rounded-full" style={{ backgroundColor: HEX_COLOR_RE.test(form.primary_color) ? form.primary_color : 'var(--brand)' }} />
+              <h3 className="truncate font-display text-base text-fg-token">{store?.name || 'Sua loja'}</h3>
+            </div>
+            <p className="mt-1 text-xs text-fg-muted-token">PNG ou JPG. Capa 1200×400px, logo 400×400px.</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-3 pb-0.5">
+            {logoPreview && (
+              <button type="button" onClick={clearLogo} className="text-xs text-fg-muted-token transition-colors hover:text-[var(--danger)]">Remover logo</button>
+            )}
+            {bannerPreview && (
+              <button type="button" onClick={clearBanner} className="text-xs text-fg-muted-token transition-colors hover:text-[var(--danger)]">Remover capa</button>
             )}
           </div>
-          <label className="cursor-pointer">
-            <span className="inline-flex items-center px-4 py-2 rounded border border-border-token text-sm font-medium text-fg-token hover:bg-surface-2 transition-colors">
-              {logoFile ? 'Trocar logo' : 'Enviar logo'}
-            </span>
-            <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-          </label>
-          {logoPreview && (
-            <button onClick={clearLogo} className="text-sm text-[var(--danger)] hover:opacity-80">Remover</button>
-          )}
         </div>
-        <p className="text-xs text-fg-muted-token">PNG ou JPG. Recomendado: 400×400px.</p>
-      </Card>
-
-      {/* Banner */}
-      <Card className="p-6 space-y-3">
-        <h2 className="text-base font-semibold text-fg-token">Banner do cardápio</h2>
-        <div className="relative w-full h-32 rounded border-2 border-dashed border-border-token overflow-hidden bg-surface-2">
-          {bannerPreview || store?.banner_url ? (
-            <img src={bannerPreview || store?.banner_url || ''} alt="Banner" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-fg-muted-token">
-              <span className="text-3xl">🖼️</span>
-              <span className="text-xs mt-1">Sem banner</span>
-            </div>
-          )}
-        </div>
-        <label className="cursor-pointer inline-block">
-          <span className="inline-flex items-center px-4 py-2 rounded border border-border-token text-sm font-medium text-fg-token hover:bg-surface-2 transition-colors">
-            {bannerFile ? 'Trocar banner' : 'Enviar banner'}
-          </span>
-          <input type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
-        </label>
-        {bannerPreview && (
-          <button onClick={clearBanner} className="ml-3 text-sm text-[var(--danger)] hover:opacity-80">Remover</button>
-        )}
-        <p className="text-xs text-fg-muted-token">PNG ou JPG. Recomendado: 1200×300px.</p>
       </Card>
 
       {/* Template */}

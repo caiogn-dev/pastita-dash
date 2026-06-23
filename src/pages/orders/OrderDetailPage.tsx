@@ -155,6 +155,31 @@ const formatOrderCreatedAt = (value?: string | null) => {
   return format(parsed, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR });
 };
 
+// Monta o rótulo de agendamento ("15 de janeiro às 14:30") a partir de scheduled_date/time.
+const formatScheduledLabel = (
+  order: { scheduled_date?: string | null; scheduled_time?: string | null },
+): string => {
+  const { scheduled_date, scheduled_time } = order;
+  if (!scheduled_date && !scheduled_time) return '';
+
+  let datePart = '';
+  if (scheduled_date) {
+    const [y, m, d] = scheduled_date.split('-').map(Number);
+    if (y && m && d) {
+      const parsed = new Date(y, m - 1, d);
+      datePart = Number.isNaN(parsed.getTime())
+        ? scheduled_date
+        : format(parsed, "dd 'de' MMMM", { locale: ptBR });
+    } else {
+      datePart = scheduled_date;
+    }
+  }
+
+  const timePart = scheduled_time ? scheduled_time.slice(0, 5) : '';
+  if (datePart && timePart) return `${datePart} às ${timePart}`;
+  return datePart || timePart;
+};
+
 const getStatusIndex = (status: string): number => {
   const normalized = STATUS_FLOW_ALIAS[status.toLowerCase()] ?? status.toLowerCase();
   const index = STATUS_FLOW.findIndex(s => s.id === normalized);
@@ -255,6 +280,25 @@ export const OrderDetailPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showUberModal, setShowUberModal] = useState(false);
+
+  // Imprime o pedido. hidePrices=true gera a comanda da cozinha (sem valores/pagamento).
+  const handlePrint = async (hidePrices = false) => {
+    if (!order) return;
+    const printOpts = (target: Order | null | undefined) => ({
+      storeName: store?.name || target?.store_name || order.store_name || 'Loja',
+      storePhone: store?.phone || store?.whatsapp_number || '',
+      storeAddress: store?.address && store?.city && store?.state
+        ? `${store.address} - ${store.city}/${store.state}`
+        : (store?.address || store?.city || store?.state || ''),
+      hidePrices,
+    });
+    try {
+      const freshOrder = id ? await ordersService.getOrder(id) : order;
+      printOrder(freshOrder as any, printOpts(freshOrder));
+    } catch {
+      printOrder(order as any, printOpts(order));
+    }
+  };
 
   useEffect(() => {
     if (id) loadOrder();
@@ -439,6 +483,12 @@ export const OrderDetailPage: React.FC = () => {
                       </>
                     )}
                   </div>
+                  {formatScheduledLabel(order) && (
+                    <div className="mt-2 flex items-center gap-2 rounded-lg bg-[var(--brand)]/10 px-2 py-1.5 text-xs font-semibold text-[var(--brand)]">
+                      <ClockIcon className="h-4 w-4" />
+                      Agendado: {formatScheduledLabel(order)}
+                    </div>
+                  )}
                 </div>
 
                 <div className="rounded-2xl border border-black/10 bg-white/65 px-4 py-3 dark:border-white/10 dark:bg-white/5">
@@ -674,30 +724,19 @@ export const OrderDetailPage: React.FC = () => {
 
               <div className="mt-6 grid gap-2">
                 <button
-                  onClick={async () => {
-                    try {
-                      const freshOrder = id ? await ordersService.getOrder(id) : order;
-                      printOrder(freshOrder as any, {
-                        storeName: store?.name || freshOrder?.store_name || order.store_name || 'Loja',
-                        storePhone: store?.phone || store?.whatsapp_number || '',
-                        storeAddress: store?.address && store?.city && store?.state
-                          ? `${store.address} - ${store.city}/${store.state}`
-                          : (store?.address || store?.city || store?.state || ''),
-                      });
-                    } catch {
-                      printOrder(order as any, {
-                        storeName: store?.name || order.store_name || 'Loja',
-                        storePhone: store?.phone || store?.whatsapp_number || '',
-                        storeAddress: store?.address && store?.city && store?.state
-                          ? `${store.address} - ${store.city}/${store.state}`
-                          : (store?.address || store?.city || store?.state || ''),
-                      });
-                    }
-                  }}
+                  onClick={() => handlePrint(false)}
                   className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 px-4 py-3 text-sm font-medium text-[#f5f1e8] transition hover:bg-white/5"
                 >
                   <PrinterIcon className="h-4 w-4" />
-                  Imprimir
+                  Imprimir (completo)
+                </button>
+
+                <button
+                  onClick={() => handlePrint(true)}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--brand)]/30 px-4 py-3 text-sm font-medium text-[var(--brand)] transition hover:bg-[var(--brand)]/10"
+                >
+                  <PrinterIcon className="h-4 w-4" />
+                  Comanda cozinha (sem preços)
                 </button>
 
                 {!isCancelled && !isCompleted && (
