@@ -40,7 +40,7 @@ Regra prática:
 --fg-muted:      #A89880
 --brand:         #DEBE79   /* ouro da logo, claro p/ contraste sobre grafite */
 --brand-hover:   #E8CE92
---brand-strong:  #C9A24B
+--brand-strong:  #0B0908   /* CHROME escuro (barra da navbar) — NÃO é gold */
 --brand-soft:    rgba(222,190,121,.12)
 ```
 
@@ -55,7 +55,7 @@ Regra prática:
 --fg-muted:      #8A7E6C
 --brand:         #C9A24B   /* ouro profundo: #DEBE79 lavaria sobre marfim */
 --brand-hover:   #B8923E
---brand-strong:  #A87E2E
+--brand-strong:  #1A1613   /* CHROME escuro (navbar fica escura mesmo no light) */
 --brand-soft:    rgba(201,162,75,.14)
 ```
 
