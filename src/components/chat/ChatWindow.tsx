@@ -233,6 +233,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
           (converted.whatsapp_message_id && m.whatsapp_message_id === converted.whatsapp_message_id)
         );
         if (isDuplicate) return prev;
+        // If there's a pending optimistic outbound message (id starts with 'temp-'),
+        // the API response will replace it. Suppress this WS echo to prevent a
+        // duplicate when WS fires before the API response resolves.
+        const hasPendingOptimistic = prev.some(m =>
+          typeof m.id === 'string' && m.id.startsWith('temp-') && m.direction === 'outbound'
+        );
+        if (hasPendingOptimistic) return prev;
         return [...prev, converted];
       });
     }
