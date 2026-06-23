@@ -136,21 +136,18 @@ export const PaymentsPage: React.FC = () => {
     setPage(1);
   };
 
-  // KPIs derivados do endpoint de stats agregadas.
-  // revenue.today/total somam apenas pedidos com payment_status='paid'.
-  // by_status é contado por STATUS do pedido (não payment_status).
+  // KPIs derivados do endpoint de stats agregadas (/orders/stats/).
+  // revenue.* soma apenas pedidos com payment_status='paid'; revenue.pending soma os 'pending'.
+  // by_payment_status traz a contagem EXATA por payment_status (paid/pending).
   const stats = useMemo(() => {
-    const byStatus = orderStats?.by_status ?? {};
     return {
       totalRevenue: Number(orderStats?.revenue?.total ?? 0),
       todayRevenue: Number(orderStats?.revenue?.today ?? 0),
+      pendingRevenue: Number(orderStats?.revenue?.pending ?? 0),
       todayCount: orderStats?.today ?? 0,
       total: orderStats?.total ?? 0,
-      // TODO(backend): /orders/stats/ não expõe contagem por payment_status.
-      // Usamos status do pedido como aproximação: 'delivered'/'completed' ~ pago.
-      paidCount: Number(byStatus.delivered ?? 0) + Number(byStatus.completed ?? 0),
-      // 'pending' aqui é o STATUS do pedido (aproxima "aguardando pagamento").
-      pendingCount: Number(byStatus.pending ?? 0),
+      paidCount: Number(orderStats?.by_payment_status?.paid ?? 0),
+      pendingCount: Number(orderStats?.by_payment_status?.pending ?? 0),
     };
   }, [orderStats]);
 
@@ -349,7 +346,7 @@ export const PaymentsPage: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">Aguardando</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.pendingCount}</p>
-                <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">pedido(s) pendente(s)</p>
+                <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">{formatMoney(stats.pendingRevenue)} a receber</p>
               </div>
             </div>
           </Card>

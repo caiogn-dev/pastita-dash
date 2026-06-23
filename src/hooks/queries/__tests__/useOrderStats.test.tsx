@@ -20,7 +20,8 @@ const STATS = {
   this_week: 40,
   this_month: 110,
   by_status: { pending: 5, confirmed: 3, delivered: 100 },
-  revenue: { total: '12345.67', today: '321.00', week: '4000.00' },
+  by_payment_status: { paid: 103, pending: 5 },
+  revenue: { total: '12345.67', today: '321.00', week: '4000.00', pending: '250.00' },
 };
 
 function makeWrapper() {

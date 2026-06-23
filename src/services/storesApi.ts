@@ -1096,10 +1096,16 @@ export interface OrderStats {
   this_week: number;
   this_month: number;
   by_status: Record<string, number>;
+  // Contagem EXATA por payment_status (não confundir com by_status = status do pedido).
+  by_payment_status: {
+    paid: number;
+    pending: number;
+  };
   revenue: {
     total: number | string;
     today: number | string;
     week: number | string;
+    pending: number | string;
   };
 }
 
