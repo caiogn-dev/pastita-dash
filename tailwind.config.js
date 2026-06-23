@@ -206,7 +206,8 @@ export default {
       // TYPOGRAPHY
       // ============================================
       fontFamily: {
-        display: ['Playfair Display', 'Georgia', 'serif'],
+        display: ['Cinzel', 'Georgia', 'serif'],
+        brand: ['Cinzel', 'Georgia', 'serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       // ============================================
