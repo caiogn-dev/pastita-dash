@@ -93,7 +93,7 @@ function PortalDropdown({
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
                 isActive
-                  ? 'bg-brand text-white font-medium'
+                  ? 'bg-brand text-[var(--brand-strong)] font-medium'
                   : 'text-fg-token hover:bg-surface-2'
               }`
             }
@@ -134,7 +134,7 @@ function NavBtn({ section }: { section: NavSection }) {
         className={({ isActive: a }) =>
           `flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
             a
-              ? 'bg-brand text-white'
+              ? 'bg-brand text-[var(--brand-strong)] font-medium'
               : 'text-white/70 hover:bg-white/10 hover:text-white'
           }`
         }
@@ -152,7 +152,7 @@ function NavBtn({ section }: { section: NavSection }) {
         onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
           isActive || open
-            ? 'bg-brand text-white'
+            ? 'bg-brand text-[var(--brand-strong)] font-medium'
             : 'text-white/70 hover:bg-white/10 hover:text-white'
         }`}
       >
@@ -273,7 +273,7 @@ export const Navbar: React.FC = () => {
       name: 'Cardapidex',
       logo: '/brand/symbol-256.png',
       initial: 'Cx',
-      color: '#C7492E',
+      color: 'var(--brand)',
       isPlatform: true,
     };
     return {
@@ -298,7 +298,7 @@ export const Navbar: React.FC = () => {
               <img
                 src={brandInfo.logo}
                 alt={brandInfo.name}
-                className="w-7 h-7 rounded-md object-cover bg-white/10"
+                className="w-7 h-7 rounded-md object-contain"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
             ) : (
@@ -310,7 +310,7 @@ export const Navbar: React.FC = () => {
               </div>
             )}
             {brandInfo.isPlatform && (
-              <span className="hidden sm:block text-base font-bold tracking-tight text-white font-brand">
+              <span className="hidden sm:block text-lg tracking-[0.18em] uppercase text-[var(--brand)] font-brand">
                 Cardapidex
               </span>
             )}
@@ -399,7 +399,7 @@ export const Navbar: React.FC = () => {
                       className={({ isActive }) =>
                         `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           isActive
-                            ? 'bg-brand text-white'
+                            ? 'bg-brand text-[var(--brand-strong)] font-medium'
                             : 'text-fg-token hover:bg-surface-2'
                         }`
                       }
@@ -425,7 +425,7 @@ export const Navbar: React.FC = () => {
                             className={({ isActive }) =>
                               `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
                                 isActive
-                                  ? 'bg-brand text-white font-medium'
+                                  ? 'bg-brand text-[var(--brand-strong)] font-medium'
                                   : 'text-fg-token hover:bg-surface-2'
                               }`
                             }

@@ -41,12 +41,12 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-secondary p-4">
+    <div className="min-h-screen flex items-center justify-center bg-canvas p-4">
       <div className="flex flex-col gap-8 w-full max-w-md">
         {/* Logo e Título */}
         <div className="flex flex-col items-center mb-8">
           <img
-            src="/brand/cardapidex-logo.svg"
+            src="/brand/cardapidex-logo.png"
             alt="Cardapidex"
             className="h-16 w-auto mb-4"
           />

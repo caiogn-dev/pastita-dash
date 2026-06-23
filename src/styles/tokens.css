@@ -1,22 +1,21 @@
 /* ============================================
-   DESIGN TOKENS — Identidade Cardapidex
-   Terracota/laranja sobre creme. Cantos retos, bordas firmes.
-   Paleta: primária #C7492E, secundária #E08A3A, destaque #F2A23A,
-   creme #FFF5E8, texto #2B2B2B.
-   light em :root, dark em .dark
+   DESIGN TOKENS — Cardapidex Premium (Dark Luxe)
+   Carvão + ouro. light (marfim) em :root, dark (grafite) em .dark.
+   Ouro: #DEBE79 (dark) / #C9A24B (light). Chrome: --brand-strong.
+   Semânticos (success/danger/warning/info) e --primary-* NÃO são marca.
    ============================================ */
 :root {
-  --brand: #C7492E;
-  --brand-hover: #A83A23;
-  --brand-strong: #2B2B2B;
-  --brand-soft: #FCE6D6;
-  --canvas: #FFF5E8;
+  --brand: #C9A24B;
+  --brand-hover: #B8923E;
+  --brand-strong: #1A1613;        /* chrome escuro — navbar fica escura mesmo no light */
+  --brand-soft: rgba(201,162,75,.14);
+  --canvas: #FBF7EF;
   --surface: #ffffff;
-  --surface-2: #FBF1E4;
-  --border: #E6D6C2;
-  --border-strong: #D8C2A8;
-  --fg: #2B2B2B;
-  --fg-muted: #7A6E61;
+  --surface-2: #F4EEE2;
+  --border: #E6DAC4;
+  --border-strong: #D8C8AC;
+  --fg: #2B2620;
+  --fg-muted: #8A7E6C;
   --success: #047857;
   --success-strong: #065f46;
   --success-soft: #d1fae5;
@@ -26,23 +25,24 @@
   --danger-soft: #fee2e2;
   --info: #2563eb;
   --info-soft: #dbeafe;
-  --radius: 2px;
+  --radius: 4px;
   --radius-pill: 999px;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Cinzel', Georgia, serif;
 }
 
 .dark {
-  --brand: #E08A3A;
-  --brand-hover: #F2A23A;
-  --brand-strong: #1A1614;
-  --brand-soft: #3A2418;
-  --canvas: #14110F;
-  --surface: #1F1A16;
-  --surface-2: #181410;
-  --border: #2E261F;
-  --border-strong: #3D3328;
-  --fg: #F5ECE0;
-  --fg-muted: #B8A894;
+  --brand: #DEBE79;
+  --brand-hover: #E8CE92;
+  --brand-strong: #0B0908;        /* chrome escuro — barra da navbar */
+  --brand-soft: rgba(222,190,121,.12);
+  --canvas: #0F0D0B;
+  --surface: #1A1613;
+  --surface-2: #131009;
+  --border: #2A2219;
+  --border-strong: #3A2F22;
+  --fg: #F5ECDE;
+  --fg-muted: #A89880;
   --success: #34d399;
   --success-strong: #6ee7b7;
   --success-soft: rgba(6, 95, 70, 0.36);
