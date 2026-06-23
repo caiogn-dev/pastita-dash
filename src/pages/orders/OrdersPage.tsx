@@ -396,11 +396,17 @@ export const OrdersPage: React.FC = () => {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   // WebSocket real-time sync
-  useRealTimeOrders({
+  const { connectionError: wsConnectionError } = useRealTimeOrders({
     enabled: Boolean(storeQuery),
     apiUrl: import.meta.env.VITE_API_URL,
     wsUrl: import.meta.env.VITE_WS_URL,
   });
+
+  useEffect(() => {
+    if (wsConnectionError) {
+      toast.error('Conexão em tempo real indisponível — atualizações automáticas de pedidos desativadas');
+    }
+  }, [wsConnectionError]);
 
   // Clean up local state when external data catches up
   useEffect(() => {

@@ -8,7 +8,7 @@
  * - Handles reconnection
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRootStore } from '../stores/rootStore';
 import { createWebSocket, clearWebSocketInstance } from '../services/websocket';
 import { applyOrderEventToOrders, type OrderRealtimeEvent } from './orderRealtimeEvents';
@@ -33,6 +33,8 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   });
   const wsRef = useRef<ReturnType<typeof createWebSocket> | null>(null);
   const refreshAbortRef = useRef<AbortController | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
     if (!enabled || !authToken || !selectedStoreId || !selectedStoreSlug) {
@@ -48,11 +50,13 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
 
       wsRef.current = ws;
 
-      // Connect
       try {
         await ws.connect();
-      } catch (error) {
-        console.error('WebSocket connection failed:', error);
+        setIsConnected(true);
+        setConnectionError(false);
+      } catch {
+        setIsConnected(false);
+        setConnectionError(true);
         return;
       }
 
@@ -80,6 +84,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       }
       refreshAbortRef.current?.abort();
       refreshAbortRef.current = null;
+      setIsConnected(false);
       clearWebSocketInstance();
     };
   }, [enabled, authToken, selectedStoreId, selectedStoreSlug, wsUrl]);
@@ -133,13 +138,17 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   };
 
   return {
-    isConnected: wsRef.current !== null,
+    isConnected,
+    connectionError,
     reconnect: async () => {
       if (wsRef.current && selectedStoreId && authToken) {
         try {
           await wsRef.current.connect();
-        } catch (error) {
-          console.error('Reconnection failed:', error);
+          setIsConnected(true);
+          setConnectionError(false);
+        } catch {
+          setIsConnected(false);
+          setConnectionError(true);
         }
       }
     },
