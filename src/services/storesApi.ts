@@ -1088,6 +1088,33 @@ export const getOrderStats = async (storeId?: string): Promise<{
   }
 };
 
+// Raw order stats endpoint shape (sem reshape — usado pela PaymentsPage).
+// Backend: apps/stores/api/views/order_views.py::stats
+export interface OrderStats {
+  total: number;
+  today: number;
+  this_week: number;
+  this_month: number;
+  by_status: Record<string, number>;
+  revenue: {
+    total: number | string;
+    today: number | string;
+    week: number | string;
+  };
+}
+
+export const getOrderStatsRaw = async (params: {
+  store?: string;
+}): Promise<OrderStats> => {
+  try {
+    const response = await api.get(`${BASE_URL}/orders/stats/`, { params });
+    return response.data as OrderStats;
+  } catch (error) {
+    logger.error('Failed to fetch order stats (raw)', error);
+    throw error;
+  }
+};
+
 // Customers
 export const getCustomers = async (params?: {
   store?: string;
@@ -1747,6 +1774,7 @@ export default {
   cancelOrder,
   refundOrder,
   getOrderStats,
+  getOrderStatsRaw,
   // Customers
   getCustomers,
   getCustomerStats,

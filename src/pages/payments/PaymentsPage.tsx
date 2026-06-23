@@ -2,8 +2,9 @@
  * Payments Page - Shows payment information from store orders
  * Uses the unified stores API to fetch orders with payment data
  */
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -23,6 +24,7 @@ import {
   Card,
   Button,
   Table,
+  Pagination,
   PageLoading,
   StatusFilter,
   PageTitle,
@@ -31,7 +33,12 @@ import { ordersService } from '../../services';
 import { Order } from '../../types';
 import logger from '../../services/logger';
 import { useStore } from '../../hooks';
+import { useOrderStats } from '../../hooks/queries/useOrderStats';
+import { usePaymentsOrders } from '../../hooks/queries/usePaymentsOrders';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
+
+// DRF default page size (apps/stores/api/views/order_views.py / settings PAGE_SIZE)
+const PAGE_SIZE = 20;
 
 // Payment status options based on StoreOrder.PaymentStatus
 const PAYMENT_STATUS_OPTIONS = [
@@ -76,9 +83,9 @@ const PaymentStatusBadge: React.FC<{ status: string }> = ({ status }) => {
 };
 
 export const PaymentsPage: React.FC = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId, stores } = useStore();
   const selectedStore = useMemo(() => {
@@ -95,94 +102,63 @@ export const PaymentsPage: React.FC = () => {
   }, [routeStoreId, selectedStore, storeId]);
   const storefrontUrl = useMemo(() => buildStorefrontUrl(selectedStore), [selectedStore]);
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Get all orders from store, ordered by most recent
-      const params: Record<string, string | number> = { ordering: '-created_at', page_size: 500 };
-      if (effectiveStoreId) params.store = effectiveStoreId;
-      const ordersData = await ordersService.getOrders(params);
-      setOrders(ordersData.results);
-    } catch (error) {
-      logger.error('Error loading payments:', error);
-      toast.error('Erro ao carregar pagamentos');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [effectiveStoreId]);
+  // Lista paginada + filtro por payment_status server-side (count/results do backend).
+  const ordersQuery = usePaymentsOrders(effectiveStoreId, page, statusFilter);
+  const orders = ordersQuery.data?.results ?? [];
+  const totalCount = ordersQuery.data?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // KPIs agregados pelo backend (/orders/stats/) — não computados de um array baixado.
+  const statsQuery = useOrderStats(effectiveStoreId);
+  const orderStats = statsQuery.data;
+
+  const isLoading = ordersQuery.isLoading || statsQuery.isLoading;
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['orders', 'payments'] });
+    queryClient.invalidateQueries({ queryKey: ['order-stats'] });
+  };
 
   // Handle confirm payment (mark as paid)
   const handleConfirmPayment = async (order: Order) => {
     try {
-      const updatedOrder = await ordersService.markPaid(order.id);
-      setOrders(orders.map(o =>
-        o.id === order.id
-          ? { ...o, payment_status: updatedOrder.payment_status, status: updatedOrder.status }
-          : o
-      ));
+      await ordersService.markPaid(order.id);
       toast.success(`Pagamento do pedido #${order.order_number} confirmado!`);
+      refresh();
     } catch (error) {
       logger.error('Error confirming payment:', error);
       toast.error('Erro ao confirmar pagamento');
     }
   };
 
-  // Calculate stats
+  const changeStatusFilter = (value: string | null) => {
+    setStatusFilter(value);
+    setPage(1);
+  };
+
+  // KPIs derivados do endpoint de stats agregadas.
+  // revenue.today/total somam apenas pedidos com payment_status='paid'.
+  // by_status é contado por STATUS do pedido (não payment_status).
   const stats = useMemo(() => {
-    const totalRevenue = orders
-      .filter(o => o.payment_status === 'paid')
-      .reduce((sum, o) => sum + Number(o.total || 0), 0);
-    
-    const pendingAmount = orders
-      .filter(o => o.payment_status === 'pending')
-      .reduce((sum, o) => sum + Number(o.total || 0), 0);
-    
-    const todayOrders = orders.filter(o => {
-      const orderDate = new Date(o.created_at);
-      const today = new Date();
-      return orderDate.toDateString() === today.toDateString();
-    });
-    
-    const todayRevenue = todayOrders
-      .filter(o => o.payment_status === 'paid')
-      .reduce((sum, o) => sum + Number(o.total || 0), 0);
-    
+    const byStatus = orderStats?.by_status ?? {};
     return {
-      totalRevenue,
-      pendingAmount,
-      todayRevenue,
-      todayCount: todayOrders.length,
-      paidCount: orders.filter(o => o.payment_status === 'paid').length,
-      pendingCount: orders.filter(o => o.payment_status === 'pending').length,
+      totalRevenue: Number(orderStats?.revenue?.total ?? 0),
+      todayRevenue: Number(orderStats?.revenue?.today ?? 0),
+      todayCount: orderStats?.today ?? 0,
+      total: orderStats?.total ?? 0,
+      // TODO(backend): /orders/stats/ não expõe contagem por payment_status.
+      // Usamos status do pedido como aproximação: 'delivered'/'completed' ~ pago.
+      paidCount: Number(byStatus.delivered ?? 0) + Number(byStatus.completed ?? 0),
+      // 'pending' aqui é o STATUS do pedido (aproxima "aguardando pagamento").
+      pendingCount: Number(byStatus.pending ?? 0),
     };
-  }, [orders]);
+  }, [orderStats]);
 
-  // Count by payment status
-  const paymentStatusCounts = useMemo(() => {
-    return orders.reduce<Record<string, number>>((acc, order) => {
-      const status = order.payment_status || 'pending';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-  }, [orders]);
-
-  // Filter orders by payment status
-  const filteredOrders = useMemo(() => {
-    if (!statusFilter) return orders;
-    return orders.filter(order => order.payment_status === statusFilter);
-  }, [orders, statusFilter]);
-
-  // Filter options with counts
+  // Filter options. Contagens por payment_status não vêm do stats agregado,
+  // então não exibimos badges de contagem nos filtros (eram derivadas dos 500).
   const filterOptions = useMemo(() => {
-    return PAYMENT_STATUS_OPTIONS.map(option => ({
-      ...option,
-      count: paymentStatusCounts[option.value] || 0,
-    }));
-  }, [paymentStatusCounts]);
+    return PAYMENT_STATUS_OPTIONS.map(option => ({ ...option }));
+  }, []);
 
   // Format currency
   const formatMoney = (value: number | string) => {
@@ -334,7 +310,7 @@ export const PaymentsPage: React.FC = () => {
     <div className="p-6 space-y-6">
       <PageTitle
         title="Pagamentos"
-        subtitle={`${orders.length} pedido(s) | ${formatMoney(stats.totalRevenue)} recebido`}
+        subtitle={`${stats.total} pedido(s) | ${formatMoney(stats.totalRevenue)} recebido`}
       />
 
         {/* Stats Cards */}
@@ -372,8 +348,8 @@ export const PaymentsPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">Aguardando</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(stats.pendingAmount)}</p>
-                <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">{stats.pendingCount} pendente(s)</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.pendingCount}</p>
+                <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">pedido(s) pendente(s)</p>
               </div>
             </div>
           </Card>
@@ -385,7 +361,7 @@ export const PaymentsPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total Pedidos</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{orders.length}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.total}</p>
                 <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">todos os tempos</p>
               </div>
             </div>
@@ -397,13 +373,13 @@ export const PaymentsPage: React.FC = () => {
           <StatusFilter
             options={filterOptions}
             value={statusFilter}
-            onChange={setStatusFilter}
+            onChange={changeStatusFilter}
             className="flex-wrap"
           />
           <Button
             variant="secondary"
             size="sm"
-            onClick={loadData}
+            onClick={refresh}
           >
             <ArrowPathIcon className="w-4 h-4 mr-1" />
             Atualizar
@@ -414,10 +390,19 @@ export const PaymentsPage: React.FC = () => {
         <Card noPadding>
           <Table
             columns={columns}
-            data={filteredOrders}
+            data={orders}
             keyExtractor={(order) => order.id}
             emptyMessage="Nenhum pagamento encontrado"
           />
+          {totalCount > PAGE_SIZE && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={totalCount}
+              itemsPerPage={PAGE_SIZE}
+            />
+          )}
         </Card>
     </div>
   );
