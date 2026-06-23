@@ -7,7 +7,7 @@
  * 3. Handle notification click — focus existing tab or open new one
  */
 
-const CACHE_NAME = 'cardapidex-dash-v1';
+const CACHE_NAME = 'cardapidex-dash-v2';
 
 // Assets to pre-cache on install
 const PRE_CACHE = ['/'];
