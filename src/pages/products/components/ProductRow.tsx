@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, MoreVertical } from 'lucide-react';
@@ -18,7 +18,7 @@ interface Props {
   onMenuAction: (id: string, action: RowMenuAction) => void;
 }
 
-export const ProductRow: React.FC<Props> = ({ product, onOpen, onStock, onPrice, onStatus, onFeatured, onMenuAction }) => {
+const ProductRowBase: React.FC<Props> = ({ product, onOpen, onStock, onPrice, onStatus, onFeatured, onMenuAction }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: product.id,
     data: { type: 'product', category: product.category ?? null },
@@ -38,3 +38,8 @@ export const ProductRow: React.FC<Props> = ({ product, onOpen, onStock, onPrice,
     </div>
   );
 };
+
+// Memoizado: com rowHandlers estável (useMemo no ProductsPage), um re-render que
+// não toca a lista de produtos (busca, filtro, colapso, reorderMode) deixa de
+// re-renderizar todas as linhas.
+export const ProductRow = memo(ProductRowBase);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import * as storesApi from '../../services/storesApi';
@@ -113,16 +113,23 @@ export const ProductsPage: React.FC = () => {
     }
   };
 
-  const rowHandlers = {
-    onOpen: (p: Product) => setModalProduct(p),
+  // Handlers estáveis: onOpen só usa o setter (estável); onMenuAction precisa de
+  // `products` fresco, então entra nas deps. mut.* já são useCallback estáveis.
+  const onOpen = useCallback((p: Product) => setModalProduct(p), []);
+  const onMenuAction = useCallback((id: string, action: string) => {
+    if (action === 'edit') setModalProduct(products.find((p) => p.id === id) ?? null);
+  }, [products]);
+
+  // Objeto memoizado: literal recriado a cada render quebrava o React.memo do
+  // ProductRow downstream. Agora a referência só muda quando um handler muda.
+  const rowHandlers = useMemo(() => ({
+    onOpen,
     onStock: mut.setStock,
     onPrice: mut.setPrice,
     onStatus: mut.setStatus,
     onFeatured: mut.setFeatured,
-    onMenuAction: (id: string, action: string) => {
-      if (action === 'edit') setModalProduct(products.find((p) => p.id === id) ?? null);
-    },
-  };
+    onMenuAction,
+  }), [onOpen, onMenuAction, mut.setStock, mut.setPrice, mut.setStatus, mut.setFeatured]);
 
   // Spinner apenas na carga inicial real (sem dados ainda). Na renavegação a
   // query de produtos vem do cache (isLoading=false) e não bloqueia a tela.

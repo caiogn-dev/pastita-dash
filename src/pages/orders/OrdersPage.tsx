@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
@@ -149,7 +149,7 @@ interface CardProps {
   storeSlug?: string;
 }
 
-const OrderCard: React.FC<CardProps> = ({
+const OrderCardBase: React.FC<CardProps> = ({
   order, advancing, paying, cancelling, isUpdating, isSuccess, isDragging,
   onAdvance, onPay, onCancel, onDetail, onUberClick, storeSlug,
 }) => {
@@ -298,6 +298,12 @@ const OrderCard: React.FC<CardProps> = ({
     </div>
   );
 };
+
+// Memoizado: o tick de 60s vive DENTRO de cada card (atualiza só o próprio label
+// de tempo). Com React.memo, um re-render do board (ex.: WebSocket de outro
+// pedido, mudança de selectedIds) não re-renderiza cards cujas props não mudaram.
+// Pré-requisito: os handlers passados precisam ter referência estável (useCallback).
+const OrderCard = memo(OrderCardBase);
 
 // Sortable wrapper for DnD
 interface SortableCardProps extends CardProps {
@@ -482,6 +488,16 @@ export const OrdersPage: React.FC = () => {
       setCancellingId(null);
     }
   }, [patchOrder]);
+
+  // Handlers estáveis para os cards: sem isto, o object/closure recriado a cada
+  // render quebra o React.memo do OrderCard e re-renderiza o board inteiro.
+  const handleDetail = useCallback((o: StoreOrder) => {
+    navigate(`/stores/${storeQuery}/orders/${o.id}`);
+  }, [navigate, storeQuery]);
+
+  const handleUberClick = useCallback((o: StoreOrder) => {
+    setUberModalOrderId(o.id);
+  }, []);
 
   // DnD sensors
   const sensors = useSensors(
@@ -737,8 +753,8 @@ export const OrdersPage: React.FC = () => {
                           onAdvance={handleAdvance}
                           onPay={handlePay}
                           onCancel={handleCancel}
-                          onDetail={(o: StoreOrder) => navigate(`/stores/${storeQuery}/orders/${o.id}`)}
-                          onUberClick={(o: StoreOrder) => setUberModalOrderId(o.id)}
+                          onDetail={handleDetail}
+                          onUberClick={handleUberClick}
                           storeSlug={storeSlug || undefined}
                         />
                       ))
