@@ -238,7 +238,7 @@ export const MessagesPage: React.FC = () => {
               const account = accounts.find((a) => a.id === e.target.value);
               setSelectedAccount(account || null);
             }}
-            className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316]"
+            className="px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)] focus:border-[var(--border-focus)]"
           >
             <option value="">Todas as contas</option>
             {accounts.map((account) => (

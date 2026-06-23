@@ -214,14 +214,14 @@ export default {
       // SHADOWS
       // ============================================
       boxShadow: {
-        'soft': '0 10px 30px rgba(249, 115, 22, 0.1)',
-        'soft-lg': '0 20px 40px rgba(249, 115, 22, 0.15)',
+        'soft': '0 10px 30px rgba(0, 0, 0, 0.25)',
+        'soft-lg': '0 20px 40px rgba(0, 0, 0, 0.30)',
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-        'inner-primary': 'inset 0 -3px 0 0 #F97316',
+        'inner-primary': 'inset 0 -3px 0 0 var(--brand)',
         'inner-secondary': 'inset 0 -3px 0 0 #22C55E',
-        'glow-primary': '0 0 20px rgba(249, 115, 22, 0.4)',
+        'glow-primary': '0 0 20px rgba(222, 190, 121, 0.30)',
         'glow-secondary': '0 0 20px rgba(34, 197, 94, 0.4)',
       },
       // ============================================

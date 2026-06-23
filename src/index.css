@@ -316,7 +316,7 @@ textarea::placeholder {
 
 /* Focus Visible */
 .focus-ring {
-  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2;
+  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2;
 }
 
 /* Selection */

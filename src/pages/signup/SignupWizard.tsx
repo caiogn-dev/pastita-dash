@@ -23,8 +23,8 @@ import {
   type FieldErrors,
 } from '../../services/onboarding';
 
-const BRAND = '#C7492E';
-const BRAND_2 = '#E08A3A';
+const BRAND = 'var(--brand)';
+const BRAND_2 = 'var(--brand-hover)';
 
 const TEMPLATES = [
   { value: 'fresh', label: 'Fresh' },
@@ -226,7 +226,7 @@ export const SignupWizard: React.FC = () => {
   const pwStrength = password.length === 0 ? null : password.length < 8 ? 'weak' : 'ok';
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#FFF5E8' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--canvas)' }}>
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8">
         <div className="flex flex-col items-center mb-6">
           <img src="/brand/logo.png" alt="Cardapidex" className="h-12 mb-1" />
