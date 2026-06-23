@@ -456,7 +456,7 @@ export default function ConnectionsPage() {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   {conn.profile_picture_url ? (
-                    <img src={conn.profile_picture_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    <img src={conn.profile_picture_url} alt="" className="w-10 h-10 rounded-full object-cover" loading="lazy" decoding="async" />
                   ) : (
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white ${conn.platform === 'whatsapp' ? 'bg-green-500' : conn.platform === 'instagram' ? 'bg-pink-500' : 'bg-blue-500'}`}>
                       {initials(conn.name)}

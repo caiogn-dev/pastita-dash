@@ -196,6 +196,8 @@ export default function MessengerInbox() {
                       src={conv.participant_profile_pic}
                       alt={conv.participant_name || ''}
                       className="h-10 w-10 shrink-0 rounded-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
@@ -301,7 +303,7 @@ export default function MessengerInbox() {
                         }`}
                       >
                         {msg.attachment_url ? (
-                          <img src={msg.attachment_url} alt="attachment" className="max-w-full rounded-xl" crossOrigin="anonymous" />
+                          <img src={msg.attachment_url} alt="attachment" className="max-w-full rounded-xl" loading="lazy" decoding="async" crossOrigin="anonymous" />
                         ) : (
                           <p className="whitespace-pre-wrap break-words text-sm">{typeof msg.content === 'string' ? msg.content : ''}</p>
                         )}

@@ -115,7 +115,7 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
                 style={{ backgroundColor: profilePic ? undefined : avatarColor }}
               >
                 {profilePic
-                  ? <img src={profilePic} alt={conversation.contact_name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                  ? <img src={profilePic} alt={conversation.contact_name} className="w-full h-full object-cover" loading="lazy" decoding="async" crossOrigin="anonymous" />
                   : initials}
               </div>
               <div className="text-center">

@@ -28,7 +28,7 @@ const ProductRowBase: React.FC<Props> = ({ product, onOpen, onStock, onPrice, on
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 border-b px-3 py-2">
       <button {...attributes} {...listeners} aria-label="arrastar" className="cursor-grab text-fg-muted-token"><GripVertical size={16} /></button>
-      {img ? <img src={img} alt="" className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 rounded bg-surface-muted-token" />}
+      {img ? <img src={img} alt="" className="h-10 w-10 rounded object-cover" loading="lazy" decoding="async" /> : <div className="h-10 w-10 rounded bg-surface-muted-token" />}
       <button className="flex-1 text-left" onClick={() => onOpen(product)}>{product.name}</button>
       {product.track_stock && <InlineStockStepper value={product.stock_quantity} onChange={(q) => onStock(product.id, q)} />}
       <InlinePriceField value={product.price} onCommit={(v) => onPrice(product.id, v)} />

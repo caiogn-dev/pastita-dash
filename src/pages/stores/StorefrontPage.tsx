@@ -169,7 +169,7 @@ export const StorefrontPage: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-full border-2 border-border-token overflow-hidden flex items-center justify-center bg-surface-2 flex-shrink-0">
             {logoPreview || store?.logo_url ? (
-              <img src={logoPreview || store?.logo_url || ''} alt="Logo" className="w-full h-full object-cover" />
+              <img src={logoPreview || store?.logo_url || ''} alt="Logo" className="w-full h-full object-cover" loading="lazy" decoding="async" />
             ) : (
               <span className="text-2xl text-fg-muted-token">🏪</span>
             )}
@@ -192,7 +192,7 @@ export const StorefrontPage: React.FC = () => {
         <h2 className="text-base font-semibold text-fg-token">Banner do cardápio</h2>
         <div className="relative w-full h-32 rounded border-2 border-dashed border-border-token overflow-hidden bg-surface-2">
           {bannerPreview || store?.banner_url ? (
-            <img src={bannerPreview || store?.banner_url || ''} alt="Banner" className="w-full h-full object-cover" />
+            <img src={bannerPreview || store?.banner_url || ''} alt="Banner" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-fg-muted-token">
               <span className="text-3xl">🖼️</span>

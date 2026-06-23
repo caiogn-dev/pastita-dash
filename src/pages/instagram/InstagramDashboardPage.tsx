@@ -335,6 +335,8 @@ const MediaGrid: React.FC<MediaGridProps> = ({ media, type, onRefresh }) => {
               src={item.thumbnail_url || item.media_url}
               alt={item.caption || 'Mídia'}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

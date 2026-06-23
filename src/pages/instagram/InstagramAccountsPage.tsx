@@ -330,6 +330,8 @@ export const InstagramAccountsPage: React.FC = () => {
                         src={account.profile_picture_url}
                         alt={account.username}
                         className="h-16 w-16 rounded-full object-cover"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">

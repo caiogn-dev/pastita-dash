@@ -1019,6 +1019,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                                     src={product.main_image_url}
                                     alt={product.name}
                                     className="w-full h-full object-cover"
+                                    loading="lazy"
+                                    decoding="async"
                                   />
                                 ) : (
                                   <PhotoIcon className="w-7 h-7 text-gray-400 m-4" />
@@ -1109,6 +1111,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         src={mediaPreviewUrl}
                         alt="Preview da imagem do template"
                         className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors">
@@ -1200,6 +1204,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         src={mediaPreviewUrl}
                         alt="Preview do card promocional"
                         className="w-40 h-40 rounded-lg object-cover border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]"
+                        loading="lazy"
+                        decoding="async"
                       />
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 dark:text-white truncate">
@@ -1433,6 +1439,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         src={mediaPreviewUrl || formData.mediaUrl}
                         alt="Imagem do template"
                         className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </div>
                   )}
@@ -1452,6 +1460,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         src={mediaPreviewUrl || formData.mediaUrl}
                         alt="Card promocional"
                         className="w-48 h-48 rounded-lg object-cover border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </div>
                   )}

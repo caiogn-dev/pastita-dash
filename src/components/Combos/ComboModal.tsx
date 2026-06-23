@@ -275,6 +275,8 @@ export const ComboModal: React.FC<ComboModalProps> = ({
               src={combo.image_url}
               alt={combo.name}
               className="w-full h-48 object-cover"
+              loading="lazy"
+              decoding="async"
               onError={e => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}

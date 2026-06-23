@@ -210,6 +210,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               src={imagePreviewUrl}
               alt="preview"
               className="w-full max-h-40 object-cover"
+              loading="lazy"
+              decoding="async"
             />
             <button
               onClick={onClearFile}

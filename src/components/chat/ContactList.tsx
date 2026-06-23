@@ -58,6 +58,8 @@ const ContactAvatar: React.FC<{
         src={profilePictureUrl}
         alt={name || 'Contato'}
         className="w-12 h-12 rounded-full object-cover"
+        loading="lazy"
+        decoding="async"
         onError={(e) => {
           // Se imagem falhar, esconde e mostra iniciais
           (e.target as HTMLImageElement).style.display = 'none';

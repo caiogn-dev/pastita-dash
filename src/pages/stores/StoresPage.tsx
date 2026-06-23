@@ -192,6 +192,8 @@ const StoresPage: React.FC = () => {
                           src={store.logo_url}
                           alt={store.name}
                           className="w-12 h-12 rounded-lg object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] flex items-center justify-center">
