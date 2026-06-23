@@ -1055,6 +1055,9 @@ export const getOrderStats = async (storeId?: string): Promise<{
   total_revenue: number;
   today_revenue: number;
   week_revenue: number;
+  // Mapa cru de contagem por status do pedido (pipeline do dashboard).
+  // Vem do /orders/stats/ agregado — evita baixar a lista inteira só p/ contar.
+  by_status: Record<string, number>;
 }> => {
   try {
     const params = storeId ? { store: storeId } : {};
@@ -1081,6 +1084,7 @@ export const getOrderStats = async (storeId?: string): Promise<{
       total_revenue: Number(revenue.total ?? 0),
       today_revenue: Number(revenue.today ?? 0),
       week_revenue: Number(revenue.week ?? 0),
+      by_status: byStatus,
     };
   } catch (error) {
     logger.error('Failed to fetch order stats', error);

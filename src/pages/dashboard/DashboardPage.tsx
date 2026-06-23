@@ -156,35 +156,47 @@ export const DashboardPage: React.FC = () => {
   const [pipelineCounts, setPipelineCounts]     = useState<Record<string, number>>({});
   const [projectHealth, setProjectHealth]       = useState<ProjectHealth | null>(null);
   const [loading, setLoading]                   = useState(true);
+  const [healthLoading, setHealthLoading]       = useState(true);
   const [advancing, setAdvancing]               = useState<string | null>(null);
   const [refreshedAt, setRefreshedAt]           = useState(new Date());
 
   const loadData = useCallback(async () => {
     if (!storeId) return;
     setLoading(true);
+    setHealthLoading(true);
+
+    // project-health é o request mais caro (~24 queries) E o menos crítico do
+    // dashboard. Fora do caminho crítico: não bloqueia os KPIs/tabela — preenche
+    // sozinho quando chegar. Antes, todo card ficava em '—' até ELE responder.
+    dashboardService.getProjectHealth({ store: storeId })
+      .then((h) => setProjectHealth(h))
+      .catch(() => {})
+      .finally(() => setHealthLoading(false));
+
     try {
-      const [ordersResp, statsResp, overviewResp, healthResp] = await Promise.allSettled([
-        getOrders({ store: storeId }),
+      const [ordersResp, statsResp, overviewResp] = await Promise.allSettled([
+        // Só os 10 recentes p/ a tabela — NÃO baixar a lista inteira (page_size
+        // default=500 trazia ~3MB numa loja cheia só p/ mostrar 10 + contar status).
+        getOrders({ store: storeId, page_size: 10, ordering: '-created_at' }),
         getOrderStats(storeId),
         dashboardService.getOverview({ store: storeId }),
-        dashboardService.getProjectHealth({ store: storeId }),
       ]);
 
       let resolvedPendingCount = 0;
 
       if (ordersResp.status === 'fulfilled') {
-        const orders = ordersResp.value.results;
-        setRecentOrders(orders.slice(0, 10));
-        const counts: Record<string, number> = {};
-        orders.forEach((o) => { counts[o.status] = (counts[o.status] || 0) + 1; });
-        setPipelineCounts(counts);
-        resolvedPendingCount = counts['pending'] || 0;
-        setPendingCount(resolvedPendingCount);
+        setRecentOrders(ordersResp.value.results.slice(0, 10));
       }
 
       if (statsResp.status === 'fulfilled' && statsResp.value) {
         setOrdersToday(Number(statsResp.value.total_orders || 0));
         setRevenueToday(Number(statsResp.value.today_revenue || 0));
+        // Pipeline vem do agregado por status (correto p/ qualquer volume,
+        // não limitado à 1ª página de pedidos como antes).
+        const byStatus = statsResp.value.by_status || {};
+        setPipelineCounts(byStatus);
+        resolvedPendingCount = Number(byStatus.pending || 0);
+        setPendingCount(resolvedPendingCount);
       }
 
       if (overviewResp.status === 'fulfilled') {
@@ -202,10 +214,6 @@ export const DashboardPage: React.FC = () => {
             setOrdersToday(Number(ov.today ?? 0));
           }
         }
-      }
-
-      if (healthResp.status === 'fulfilled') {
-        setProjectHealth(healthResp.value);
       }
 
       checkAndNotify(resolvedPendingCount);
@@ -441,7 +449,7 @@ export const DashboardPage: React.FC = () => {
           </button>
         </div>
 
-        {loading && !projectHealth ? (
+        {healthLoading && !projectHealth ? (
           <div className="flex justify-center items-center h-32"><Loading /></div>
         ) : projectHealth ? (
           <div className="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-100 dark:divide-zinc-800">
