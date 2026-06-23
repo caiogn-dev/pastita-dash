@@ -171,8 +171,6 @@ export function normalizePaginatedResponse<T>(data: unknown): T[] {
     return data as T[];
   }
 
-  // Log unexpected format — avoid logging data which may contain sensitive fields
-  console.error('[API] Unexpected response format (type:', typeof data, ')');
   return [];
 }
 
@@ -207,7 +205,6 @@ export function normalizePaginatedEnvelope<T>(data: unknown): {
     };
   }
 
-  console.error('[API] Unexpected paginated response format (type:', typeof data, ')');
   return {
     count: 0,
     next: null,

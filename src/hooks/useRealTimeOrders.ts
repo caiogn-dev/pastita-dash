@@ -57,33 +57,17 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       }
 
       // Subscribe to order events
-      ws.subscribe('order.created', (event) => {
-        console.log('Order created:', event.order_id);
+      ws.subscribe('order.created', () => {
         // Pedido novo: o payload do evento não traz items — precisa refetch
         refreshOrdersFromAPI();
       });
 
       ws.subscribe('order.updated', (event) => {
-        console.log('Order updated:', event.order_id, event.status);
         applyEventOrRefresh(event as OrderRealtimeEvent);
       });
 
       ws.subscribe('order.payment_received', (event) => {
-        console.log('Payment received:', event.order_id, event.amount);
         applyEventOrRefresh(event as OrderRealtimeEvent);
-      });
-
-      // Listen for connection events
-      ws.on('connected', () => {
-        console.log('WebSocket connected');
-      });
-
-      ws.on('disconnected', () => {
-        console.log('WebSocket disconnected - will reconnect automatically');
-      });
-
-      ws.on('error', (error: Error) => {
-        console.error('WebSocket error:', error);
       });
     };
 

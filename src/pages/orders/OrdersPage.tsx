@@ -51,6 +51,7 @@ import {
 import { useNotificationSound, useStore, useConfirm } from '../../hooks';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { useRootStore } from '../../stores/rootStore';
+import { getErrorMessage } from '../../services';
 
 // ─── Column config ────────────────────────────────────────────────────────────
 // Extraído para orderColumns.ts (fonte única — usado também pelo drill-down dos KPIs)
@@ -582,8 +583,8 @@ export const OrdersPage: React.FC = () => {
       setLastSync(new Date());
       setRtConnected(true);
     } catch (error) {
-      console.error('Erro ao carregar pedidos:', error);
       setRtConnected(false);
+      toast.error(`Erro ao carregar pedidos: ${getErrorMessage(error)}`);
     } finally {
       setRefreshing(false);
       setLoading(false);
