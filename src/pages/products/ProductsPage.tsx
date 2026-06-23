@@ -9,6 +9,7 @@ import { useToast } from '../../hooks/useToast';
 import { groupProducts } from './hooks/useProductsGrouped';
 import { useInlineProductMutations } from './hooks/useInlineProductMutations';
 import { useProductReorder } from './hooks/useProductReorder';
+import { useProducts } from '../../hooks/queries/useProducts';
 import { ProductsToolbar } from './components/ProductsToolbar';
 import { CategorySection } from './components/CategorySection';
 import { AddCategoryModal } from './components/AddCategoryModal';
@@ -18,6 +19,9 @@ export const ProductsPage: React.FC = () => {
   const { storeId } = useStore();
   const { error: showError } = useToast();
 
+  // Produtos: fetch/cache/dedup via react-query; estado local é semeado a partir
+  // da query e continua sendo a fonte para edição inline + reorder (otimista).
+  const productsQuery = useProducts(storeId ?? undefined);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<StoreCategory[]>([]);
   const [productTypes, setProductTypes] = useState<StoreProductType[]>([]);
@@ -39,17 +43,16 @@ export const ProductsPage: React.FC = () => {
     showError('Erro ao salvar');
   };
 
+  // Categorias + tipos seguem em fetch manual (fora do escopo do react-query aqui).
+  // Produtos são servidos por useProducts (cache por loja → sem spinner ao renavegar).
   const load = async () => {
     setLoading(true);
     try {
-      const [cats, prods, pt] = await Promise.all([
+      const [cats, pt] = await Promise.all([
         storesApi.getCategories(sid),
-        storesApi.getProducts({ store: sid, page_size: 500 }),
         storesApi.getProductTypes(sid),
       ]);
       setCategories(Array.isArray(cats) ? cats : (cats?.results ?? []));
-      const rawProds = Array.isArray(prods) ? prods : (prods?.results ?? []);
-      setProducts(rawProds as unknown as Product[]);
       setProductTypes(Array.isArray(pt) ? pt : (pt?.results ?? []));
     } catch (e) {
       onError(e);
@@ -60,6 +63,15 @@ export const ProductsPage: React.FC = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [storeId]);
+
+  // Semeia o estado local de produtos a partir da query — preserva intacta a
+  // edição inline e o drag-and-drop, que operam sobre `products`/`setProducts`.
+  useEffect(() => {
+    if (productsQuery.data) {
+      const raw = productsQuery.data.results ?? [];
+      setProducts(raw as unknown as Product[]);
+    }
+  }, [productsQuery.data]);
 
   const mut = useInlineProductMutations({ products, setProducts, onError });
   const { onDragEnd } = useProductReorder({ products, setProducts, categories, setCategories, onError });
@@ -112,7 +124,10 @@ export const ProductsPage: React.FC = () => {
     },
   };
 
-  if (loading) return <div>Carregando…</div>;
+  // Spinner apenas na carga inicial real (sem dados ainda). Na renavegação a
+  // query de produtos vem do cache (isLoading=false) e não bloqueia a tela.
+  const initialLoading = (loading || productsQuery.isLoading) && categories.length === 0 && products.length === 0;
+  if (initialLoading) return <div>Carregando…</div>;
 
   return (
     <div className="p-4">

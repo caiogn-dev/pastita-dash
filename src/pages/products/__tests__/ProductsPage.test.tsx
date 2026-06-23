@@ -1,7 +1,17 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProductsPage } from '../ProductsPage';
 import * as storesApi from '../../../services/storesApi';
+
+const renderPage = () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <ProductsPage />
+    </QueryClientProvider>,
+  );
+};
 
 jest.mock('../../../services/storesApi', () => ({
   __esModule: true,
@@ -15,8 +25,8 @@ jest.mock('../../../services/storesApi', () => ({
 
 jest.mock('../../../hooks/useStore', () => ({
   __esModule: true,
-  useStore: () => ({ storeId: undefined }),
-  default: () => ({ storeId: undefined }),
+  useStore: () => ({ storeId: 'store-1' }),
+  default: () => ({ storeId: 'store-1' }),
 }));
 
 jest.mock('../ProductFormModal', () => ({
@@ -59,7 +69,7 @@ beforeEach(() => {
 });
 
 test('renders categories and products', async () => {
-  render(<ProductsPage />);
+  renderPage();
   await waitFor(() => expect(screen.getAllByText('Almoço').length).toBeGreaterThan(0));
   expect(screen.getByText('Arroz')).toBeInTheDocument();
 });
