@@ -18,6 +18,7 @@ import storesApi, {
   CustomField,
 } from '../../services/storesApi';
 import logger from '../../services/logger';
+import { compressImage } from '../../utils/compressImage';
 
 export interface ProductFormModalProps {
   isOpen: boolean;
@@ -165,15 +166,21 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     return productTypes.find((pt) => pt.id === formData.product_type) || null;
   }, [formData.product_type, productTypes]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, main_image: file }));
-      if (imagePreview?.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview);
-      }
-      setImagePreview(URL.createObjectURL(file));
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const original = e.target.files?.[0];
+    if (!original) return;
+    let file = original;
+    try {
+      file = await compressImage(original);
+    } catch (error) {
+      logger.error('Erro ao comprimir imagem, usando original:', error);
+      file = original;
     }
+    setFormData((prev) => ({ ...prev, main_image: file }));
+    if (imagePreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
