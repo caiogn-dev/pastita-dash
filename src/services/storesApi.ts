@@ -944,6 +944,7 @@ export const getOrders = async (params?: {
   status?: string;
   payment_status?: string;
   search?: string;
+  customer?: string;
   ordering?: string;
   page?: number;
   page_size?: number;
@@ -1099,6 +1100,25 @@ export const getCustomers = async (params?: {
     return normalizePaginatedResponse<StoreCustomer>(response.data);
   } catch (error) {
     logger.error('Failed to fetch customers', error);
+    throw error;
+  }
+};
+
+export interface CustomerStats {
+  total: number;
+  active: number;
+  with_orders: number;
+  total_revenue: string;
+}
+
+export const getCustomerStats = async (params: {
+  store: string;
+}): Promise<CustomerStats> => {
+  try {
+    const response = await api.get(`${BASE_URL}/customers/stats/`, { params });
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to fetch customer stats', error);
     throw error;
   }
 };
@@ -1729,6 +1749,7 @@ export default {
   getOrderStats,
   // Customers
   getCustomers,
+  getCustomerStats,
   getCustomer,
   updateCustomer,
   getCustomerOrders,

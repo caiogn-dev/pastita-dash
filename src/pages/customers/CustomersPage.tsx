@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ArrowPathIcon,
@@ -23,8 +23,11 @@ import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
 import { getErrorMessage } from '../../services';
-import storesApi, { StoreCustomer, StoreOrder } from '../../services/storesApi';
-import { useStore } from '../../hooks';
+import { StoreCustomer } from '../../services/storesApi';
+import { useStore, useDebounce } from '../../hooks';
+import { useCustomers } from '../../hooks/queries/useCustomers';
+import { useCustomerStats } from '../../hooks/queries/useCustomerStats';
+import { useCustomerOrders } from '../../hooks/queries/useCustomerOrders';
 import { getAvatarColor, getInitials } from '../../utils/avatar';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -74,22 +77,12 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) =>
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<StoreOrder[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(false);
 
-  useEffect(() => {
-    if (!customer || !storeQuery) return;
-    setOrders([]);
-    setLoadingOrders(true);
-    // getCustomerOrders endpoint is unreliable — fetch all store orders and filter by customer.user
-    storesApi.getOrders({ store: storeQuery, page_size: 200 })
-      .then(res => {
-        const all = res.results || [];
-        setOrders(all.filter(o => o.customer === customer.user));
-      })
-      .catch(() => toast.error('Erro ao carregar pedidos do cliente'))
-      .finally(() => setLoadingOrders(false));
-  }, [customer?.id, storeQuery]);
+  // Pedidos filtrados server-side por telefone (?customer=<phone>) — sem baixar 200.
+  const customerPhone = customer?.phone || customer?.whatsapp || '';
+  const ordersQuery = useCustomerOrders(storeQuery, customerPhone);
+  const orders = ordersQuery.data?.results ?? [];
+  const loadingOrders = ordersQuery.isLoading && ordersQuery.fetchStatus !== 'idle';
 
   const avgTicket = useMemo(() => {
     if (!customer || !customer.total_orders) return 0;
@@ -202,7 +195,12 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) =>
             <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
               Histórico de pedidos
             </p>
-            {loadingOrders ? (
+            {!customerPhone ? (
+              <div className="text-center py-8 rounded border border-dashed border-border-token">
+                <PhoneIcon className="h-7 w-7 mx-auto mb-2 text-fg-muted-token" />
+                <p className="text-sm text-fg-muted-token">Cliente sem telefone</p>
+              </div>
+            ) : loadingOrders ? (
               <div className="flex justify-center py-8">
                 <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
               </div>
@@ -354,58 +352,38 @@ export const CustomersPage: React.FC = () => {
     });
   };
 
-  const [customers, setCustomers] = useState<StoreCustomer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search.trim(), 400);
 
   const storeQuery = storeSlug || storeId;
 
-  const loadCustomers = useCallback(
-    async (background = false) => {
-      if (!storeQuery) { setLoading(false); return; }
-      background ? setRefreshing(true) : setLoading(true);
-      try {
-        const res = await storesApi.getCustomers({ store: storeQuery, page_size: 500 });
-        setCustomers(res.results || []);
-      } catch (err) {
-        toast.error(getErrorMessage(err));
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [storeQuery]
-  );
+  // Lista paginada + busca server-side (count/results vêm do backend).
+  const customersQuery = useCustomers(storeQuery, debouncedSearch, page, PAGE_SIZE);
+  const customers = customersQuery.data?.results ?? [];
+  const totalCount = customersQuery.data?.count ?? 0;
 
-  useEffect(() => { loadCustomers(false); }, [loadCustomers]);
+  // KPIs agregados pelo backend (sem reduce/filter sobre a página).
+  const statsQuery = useCustomerStats(storeQuery);
+  const kpis = {
+    total: statsQuery.data?.total ?? 0,
+    active: statsQuery.data?.active ?? 0,
+    withOrders: statsQuery.data?.with_orders ?? 0,
+    totalRevenue: Number(statsQuery.data?.total_revenue ?? 0),
+  };
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    if (!q) return customers;
-    return customers.filter((c) =>
-      c.user_name?.toLowerCase().includes(q) ||
-      c.user_email?.toLowerCase().includes(q) ||
-      c.phone?.includes(q) ||
-      c.whatsapp?.includes(q)
-    );
-  }, [customers, search]);
+  useEffect(() => {
+    if (customersQuery.error) toast.error(getErrorMessage(customersQuery.error));
+  }, [customersQuery.error]);
 
-  const kpis = useMemo(() => ({
-    total: customers.length,
-    active: customers.filter((c) => c.is_active).length,
-    withOrders: customers.filter((c) => (c.total_orders ?? 0) > 0).length,
-    totalRevenue: customers.reduce((s, c) => s + Number(c.total_spent ?? 0), 0),
-  }), [customers]);
-
-  const paginated = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, page]);
+  const refreshing = customersQuery.isFetching || statsQuery.isFetching;
+  const refresh = () => {
+    customersQuery.refetch();
+    statsQuery.refetch();
+  };
 
   const [selectedCustomer, setSelectedCustomer] = useState<StoreCustomer | null>(null);
 
-  if (loading) return <PageLoading />;
+  if (customersQuery.isLoading) return <PageLoading />;
 
   return (
     <>
@@ -429,12 +407,12 @@ export const CustomersPage: React.FC = () => {
               type="text"
               placeholder="Buscar por nome, email ou telefone…"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => { setSearch(e.target.value); if (page !== 1) setPage(1); }}
               className="w-64 bg-surface border border-border-token text-fg-token placeholder-fg-muted-token rounded pl-9 pr-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand transition-colors"
             />
           </div>
           <button
-            onClick={() => loadCustomers(true)}
+            onClick={refresh}
             disabled={refreshing}
             className="p-1.5 rounded bg-surface border border-border-token text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors disabled:opacity-50"
           >
@@ -445,7 +423,7 @@ export const CustomersPage: React.FC = () => {
 
       {/* ── Table ── */}
       <Card className="overflow-hidden">
-        {filtered.length === 0 ? (
+        {customers.length === 0 ? (
           <div className="py-16 text-center">
             <UserGroupIcon className="h-8 w-8 mx-auto mb-3 text-fg-muted-token" />
             <p className="text-fg-muted-token text-sm">Nenhum cliente encontrado.</p>
@@ -464,7 +442,7 @@ export const CustomersPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-token">
-                {paginated.map((customer) => {
+                {customers.map((customer) => {
                   const avatarBg = getAvatarColor(customer.user_name || customer.user_email || '');
                   const avatarInitials = getInitials(customer.user_name, customer.whatsapp || customer.phone);
                   const ltv = Number(customer.total_spent ?? 0);
@@ -533,7 +511,7 @@ export const CustomersPage: React.FC = () => {
                 })}
               </tbody>
             </table>
-            <Pagination page={page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
+            <Pagination page={page} total={totalCount} pageSize={PAGE_SIZE} onChange={setPage} />
           </>
         )}
       </Card>
