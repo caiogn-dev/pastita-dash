@@ -51,7 +51,6 @@ export const ComboListPage: React.FC = () => {
   }, [storeId, routeStoreId, stores]);
 
   const [combos, setCombos] = useState<StoreCombo[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingCombo, setDeletingCombo] = useState<StoreCombo | null>(null);
 
@@ -63,12 +62,10 @@ export const ComboListPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const [combosRes, productsRes] = await Promise.all([
-        getCombos(storeId),
-        storesApi.getProducts({ store: storeId, status: 'active', page_size: 200 }),
-      ]);
+      // Antes buscava 200 produtos só p/ passar pro <ComboList products={...}>,
+      // mas ComboList nunca usa essa prop (o editor é que carrega produtos).
+      const combosRes = await getCombos(storeId);
       setCombos(combosRes.results || []);
-      setProducts(productsRes.results || []);
     } catch (err) {
       logger.error('Error loading combos:', err);
       toast.error('Erro ao carregar combos');
@@ -186,7 +183,6 @@ export const ComboListPage: React.FC = () => {
       <Card className="p-6">
         <ComboList
           combos={combos}
-          products={products}
           loading={loading}
           onEdit={combo => navigate(`/stores/${storeSlug}/combos/${combo.id}/edit`)}
           onDelete={setDeletingCombo}

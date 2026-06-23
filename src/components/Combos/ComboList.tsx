@@ -27,7 +27,6 @@ const fmt = (v: number | string) => CURRENCY.format(Number(v));
 
 export interface ComboListProps {
   combos: StoreCombo[];
-  products: Product[];
   loading?: boolean;
   onEdit: (combo: StoreCombo) => void;
   onDelete: (combo: StoreCombo) => void;
@@ -38,7 +37,6 @@ export interface ComboListProps {
 
 export const ComboList: React.FC<ComboListProps> = ({
   combos,
-  products,
   loading = false,
   onEdit,
   onDelete,
