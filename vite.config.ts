@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true, template: 'treemap' }),
+  ],
   base: '/',
   server: {
     host: '0.0.0.0',
@@ -28,7 +32,7 @@ export default defineConfig({
           // Vendor chunks
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-ui': ['@headlessui/react', '@heroicons/react', 'lucide-react'],
-          'vendor-charts': ['chart.js', 'react-chartjs-2', 'recharts'],
+          'vendor-charts': ['recharts'],
           'vendor-utils': ['axios', 'date-fns', 'zustand'],
 
           // Feature chunks
