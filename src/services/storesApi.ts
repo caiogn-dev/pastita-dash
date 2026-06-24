@@ -1170,7 +1170,28 @@ export const getCustomer = async (id: string): Promise<StoreCustomer> => {
   }
 };
 
-export const updateCustomer = async (id: string, data: Partial<StoreCustomer>): Promise<StoreCustomer> => {
+export interface CustomerWritePayload {
+  name?: string;
+  phone?: string;
+  whatsapp?: string;
+  notes?: string;
+  addresses?: Array<Record<string, string>>;
+}
+
+export const createCustomer = async (
+  storeSlug: string | undefined,
+  data: CustomerWritePayload
+): Promise<StoreCustomer> => {
+  try {
+    const response = await api.post(`${BASE_URL}/customers/`, data, { params: storeSlug ? { store: storeSlug } : undefined });
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to create customer', error);
+    throw error;
+  }
+};
+
+export const updateCustomer = async (id: string, data: Partial<StoreCustomer> & { name?: string }): Promise<StoreCustomer> => {
   try {
     const response = await api.patch(`${BASE_URL}/customers/${id}/`, data);
     return response.data;
@@ -1789,6 +1810,7 @@ export default {
   getCustomers,
   getCustomerStats,
   getCustomer,
+  createCustomer,
   updateCustomer,
   getCustomerOrders,
   // Coupons
