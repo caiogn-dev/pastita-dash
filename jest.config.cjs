@@ -7,7 +7,7 @@ module.exports = {
   },
   testMatch: ['**/__tests__/**/*.test.ts?(x)'],
   transform: {
-    '/src/mobile/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
+    '/src/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
 };

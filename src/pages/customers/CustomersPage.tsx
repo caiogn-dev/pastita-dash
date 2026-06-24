@@ -23,7 +23,7 @@ import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
 import { getErrorMessage } from '../../services';
-import { StoreCustomer } from '../../services/storesApi';
+import { StoreCustomer, createCustomer, updateCustomer } from '../../services/storesApi';
 import { useStore, useDebounce } from '../../hooks';
 import { useCustomers } from '../../hooks/queries/useCustomers';
 import { useCustomerStats } from '../../hooks/queries/useCustomerStats';
@@ -66,14 +66,91 @@ const STATUS_COLOR: Record<string, string> = {
   failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 };
 
+// ─── Customer Form Drawer ─────────────────────────────────────────────────────
+
+export interface CustomerFormDrawerProps {
+  storeSlug?: string;
+  customer?: StoreCustomer | null;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlug, customer, onClose, onSaved }) => {
+  const [name, setName] = useState(customer?.user_name ?? '');
+  const [phone, setPhone] = useState(customer?.phone ?? '');
+  const [whatsapp, setWhatsapp] = useState(customer?.whatsapp ?? '');
+  const [notes, setNotes] = useState(customer?.notes ?? '');
+  const [saving, setSaving] = useState(false);
+  const isEdit = Boolean(customer);
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (isEdit && customer) {
+        await updateCustomer(customer.id, { name, phone, whatsapp, notes });
+      } else {
+        await createCustomer(storeSlug, { name, phone, whatsapp, notes });
+      }
+      toast.success(isEdit ? 'Cliente atualizado' : 'Cliente criado');
+      onSaved();
+    } catch {
+      toast.error('Erro ao salvar cliente');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputCls = 'w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:border-brand';
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-[9998]" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 z-[9999] w-full max-w-md bg-surface border-l border-border-token shadow-2xl flex flex-col animate-slide-in-right">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
+          <p className="font-bold text-fg-token">{isEdit ? 'Editar cliente' : 'Novo cliente'}</p>
+          <button onClick={onClose} className="p-2 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2">
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div>
+            <label htmlFor="cf-name" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Nome</label>
+            <input id="cf-name" className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="cf-phone" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Telefone</label>
+            <input id="cf-phone" className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="cf-wa" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">WhatsApp</label>
+            <input id="cf-wa" className={inputCls} value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="cf-notes" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Notas</label>
+            <textarea id="cf-notes" className={inputCls} rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+        </div>
+        <div className="px-6 py-4 border-t border-border-token flex gap-2">
+          <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-border-token text-sm font-semibold text-fg-token hover:bg-surface-2">Cancelar</button>
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-2 rounded-xl bg-brand text-white text-sm font-semibold disabled:opacity-50">
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ─── Customer Drawer ──────────────────────────────────────────────────────────
 
 interface CustomerDrawerProps {
   customer: StoreCustomer | null;
   onClose: () => void;
+  onEdit?: (customer: StoreCustomer) => void;
 }
 
-const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) => {
+const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEdit }) => {
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
   const navigate = useNavigate();
@@ -257,10 +334,18 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) =>
         </div>
 
         {/* Footer actions */}
-        {cleanPhone && (
-          <div className="px-6 py-4 border-t border-border-token">
+        <div className="px-6 py-4 border-t border-border-token flex gap-2">
+          {onEdit && (
             <Button
-              className="w-full justify-center"
+              className="flex-1 justify-center"
+              onClick={() => { onClose(); onEdit(customer); }}
+            >
+              Editar
+            </Button>
+          )}
+          {cleanPhone && (
+            <Button
+              className="flex-1 justify-center"
               leftIcon={<ChatBubbleLeftRightIcon className="h-4 w-4" />}
               onClick={() => {
                 onClose();
@@ -269,8 +354,8 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) =>
             >
               Iniciar conversa WhatsApp
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </>
   );
@@ -382,6 +467,8 @@ export const CustomersPage: React.FC = () => {
   };
 
   const [selectedCustomer, setSelectedCustomer] = useState<StoreCustomer | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<StoreCustomer | null>(null);
 
   if (customersQuery.isLoading) return <PageLoading />;
 
@@ -417,6 +504,12 @@ export const CustomersPage: React.FC = () => {
             className="p-1.5 rounded bg-surface border border-border-token text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors disabled:opacity-50"
           >
             <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => { setEditingCustomer(null); setFormOpen(true); }}
+            className="px-3 py-1.5 rounded bg-brand text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+          >
+            + Novo cliente
           </button>
         </div>
       </div>
@@ -518,7 +611,23 @@ export const CustomersPage: React.FC = () => {
 
     </div>
 
-    <CustomerDrawer customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} />
+    <CustomerDrawer
+      customer={selectedCustomer}
+      onClose={() => setSelectedCustomer(null)}
+      onEdit={(c) => { setEditingCustomer(c); setFormOpen(true); }}
+    />
+    {formOpen && (
+      <CustomerFormDrawer
+        storeSlug={storeSlug ?? storeId ?? undefined}
+        customer={editingCustomer}
+        onClose={() => setFormOpen(false)}
+        onSaved={() => {
+          setFormOpen(false);
+          customersQuery.refetch();
+          statsQuery.refetch();
+        }}
+      />
+    )}
     </>
   );
 };
