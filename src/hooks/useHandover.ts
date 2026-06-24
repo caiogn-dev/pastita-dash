@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { handoverService, HandoverStatus, HandoverResponse } from '../services/handover';
+import { handoverService, HandoverStatus } from '../services/handover';
 import toast from 'react-hot-toast';
 
 // ============================================

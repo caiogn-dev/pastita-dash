@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Store, Settings, Package, ShoppingCart, Users, BarChart3, Zap } from 'lucide-react';
+import { Plus, Store, Settings, Package, ShoppingCart, BarChart3, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge, Modal, Input } from '../../components/common';
 import logger from '../../services/logger';

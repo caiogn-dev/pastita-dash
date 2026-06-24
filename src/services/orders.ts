@@ -1,5 +1,5 @@
 import api, { normalizePaginatedEnvelope } from './api';
-import { Order, OrderItem, OrderEvent, CreateOrder, PaginatedResponse } from '../types';
+import { Order, OrderEvent, CreateOrder, PaginatedResponse } from '../types';
 
 /**
  * Orders Service - API V2

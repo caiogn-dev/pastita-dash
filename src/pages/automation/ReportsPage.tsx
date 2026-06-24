@@ -4,32 +4,11 @@ import logger from '../../services/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import {
-  DocumentChartBarIcon,
-  PlusIcon,
-  PlayIcon,
-  PauseIcon,
-  ArrowDownTrayIcon,
-  EnvelopeIcon,
-  ArrowPathIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-} from '@heroicons/react/24/outline';
+import { DocumentChartBarIcon, PlusIcon, PlayIcon, PauseIcon, ArrowDownTrayIcon, EnvelopeIcon, ArrowPathIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { Card, Button, Badge, Loading, Modal, Input } from '../../components/common';
-import {
-  reportSchedulesService,
-  generatedReportsService,
-} from '../../services/scheduling';
+import { reportSchedulesService, generatedReportsService } from '../../services/scheduling';
 import { whatsappService, companyProfileService } from '../../services';
-import {
-  ReportSchedule,
-  CreateReportSchedule,
-  GeneratedReport,
-  WhatsAppAccount,
-  CompanyProfile,
-  PaginatedResponse,
-} from '../../types';
+import { ReportSchedule, GeneratedReport, WhatsAppAccount, CompanyProfile } from '../../types';
 
 const statusVariants: Record<string, 'gray' | 'info' | 'success' | 'danger' | 'warning'> = {
   active: 'success',

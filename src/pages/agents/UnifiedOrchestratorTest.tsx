@@ -1,25 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  PaperAirplaneIcon,
-  TrashIcon,
-  UserCircleIcon,
-  CpuChipIcon,
-  ClockIcon,
-  ServerIcon,
-  DocumentTextIcon,
-  VariableIcon,
-  PlayIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-  ChatBubbleLeftRightIcon,
-  BoltIcon,
-  SparklesIcon,
-  ChatBubbleBottomCenterTextIcon,
-  ShoppingCartIcon,
-  ShoppingBagIcon,
-  CreditCardIcon,
-  QuestionMarkCircleIcon,
-} from '@heroicons/react/24/outline';
+import { PaperAirplaneIcon, TrashIcon, UserCircleIcon, CpuChipIcon, ClockIcon, ServerIcon, DocumentTextIcon, VariableIcon, PlayIcon, CheckCircleIcon, ChatBubbleLeftRightIcon, BoltIcon, SparklesIcon, ShoppingCartIcon, ShoppingBagIcon, CreditCardIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import agentsService from '../../services/agents';
 import { useAccountStore } from '../../stores/accountStore';

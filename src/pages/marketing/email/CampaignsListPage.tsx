@@ -5,20 +5,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  PlusIcon,
-  PaperAirplaneIcon,
-  PauseIcon,
-  PlayIcon,
-  TrashIcon,
-  EyeIcon,
-  ChartBarIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  EnvelopeIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+import { PlusIcon, PaperAirplaneIcon, PauseIcon, TrashIcon, EyeIcon, ClockIcon, CheckCircleIcon, XCircleIcon, EnvelopeIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';

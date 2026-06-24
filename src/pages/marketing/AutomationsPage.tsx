@@ -11,26 +11,11 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  BoltIcon,
-  PlusIcon,
-  PlayIcon,
-  PauseIcon,
-  PencilIcon,
-  TrashIcon,
-  EnvelopeIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  BeakerIcon,
-} from '@heroicons/react/24/outline';
+import { BoltIcon, PlusIcon, PlayIcon, PauseIcon, TrashIcon, EnvelopeIcon, ClockIcon, CheckCircleIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../components/common';
 import { useStore, useConfirm } from '../../hooks';
-import { 
-  automationsApi, 
-  EmailAutomation, 
-  TriggerType 
-} from '../../services/marketingService';
+import { automationsApi, EmailAutomation, TriggerType } from '../../services/marketingService';
 import logger from '../../services/logger';
 
 // =============================================================================

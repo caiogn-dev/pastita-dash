@@ -14,22 +14,13 @@
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  PlusIcon,
-  ArrowPathIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, StatCard } from '../../../components/ui';
 import { Modal, Loading } from '../../../components/common';
 import ComboList from '../../../components/Combos/ComboList';
 import { useStore } from '../../../hooks';
-import storesApi, {
-  StoreCombo,
-  StoreProduct as Product,
-  getCombos,
-  deleteCombo,
-} from '../../../services/storesApi';
+import storesApi, { StoreCombo, getCombos, deleteCombo } from '../../../services/storesApi';
 import logger from '../../../services/logger';
 
 export const ComboListPage: React.FC = () => {
@@ -114,7 +105,6 @@ export const ComboListPage: React.FC = () => {
       toast.error('Erro ao atualizar combo');
     }
   };
-
 
   if (!storeId) {
     return (

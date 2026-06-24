@@ -10,23 +10,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import {
-  CheckIcon,
-  ClockIcon,
-  ExclamationCircleIcon,
-  PhotoIcon,
-  DocumentIcon,
-  MapPinIcon,
-  UserIcon,
-  ShoppingCartIcon,
-  PlayIcon,
-  PauseIcon,
-  ArrowDownTrayIcon,
-  SpeakerWaveIcon,
-  SpeakerXMarkIcon,
-  FilmIcon,
-  MusicalNoteIcon,
-} from '@heroicons/react/24/outline';
+import { CheckIcon, ClockIcon, ExclamationCircleIcon, PhotoIcon, DocumentIcon, MapPinIcon, UserIcon, ShoppingCartIcon, PlayIcon, PauseIcon, ArrowDownTrayIcon, SpeakerWaveIcon, SpeakerXMarkIcon, FilmIcon, MusicalNoteIcon } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckIconSolid } from '@heroicons/react/24/solid';
 
 const renderText = (value: unknown): string => {

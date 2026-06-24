@@ -8,24 +8,9 @@
  * 4. Add recipients (manual, CSV, or contact list)
  * 5. Review & Send/Schedule
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ArrowLeftIcon,
-  DevicePhoneMobileIcon,
-  UserGroupIcon,
-  PaperAirplaneIcon,
-  CheckCircleIcon,
-  UsersIcon,
-  DocumentTextIcon,
-  ClockIcon,
-  PlusIcon,
-  TrashIcon,
-  ArrowUpTrayIcon,
-  ChatBubbleLeftRightIcon,
-  PhotoIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, DevicePhoneMobileIcon, UserGroupIcon, PaperAirplaneIcon, CheckCircleIcon, UsersIcon, DocumentTextIcon, ClockIcon, PlusIcon, TrashIcon, ArrowUpTrayIcon, ChatBubbleLeftRightIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Modal, Input } from '../../../components/common';
 import { getErrorMessage } from '../../../services';

@@ -8,18 +8,9 @@
  * - Edit/Delete/Duplicate actions
  */
 import React, { useState, useMemo } from 'react';
-import {
-  PencilIcon,
-  TrashIcon,
-  ArrowPathIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  StarIcon,
-  MagnifyingGlassIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, StarIcon, MagnifyingGlassIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import { StoreCombo, StoreProduct as Product } from '../../services/storesApi';
+import { StoreCombo } from '../../services/storesApi';
 import { Badge } from '../ui';
 
 const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });

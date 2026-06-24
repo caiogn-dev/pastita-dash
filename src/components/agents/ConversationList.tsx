@@ -1,10 +1,5 @@
 import React from 'react';
-import { 
-  ChatBubbleLeftRightIcon,
-  PhoneIcon,
-  ClockIcon,
-  ChevronRightIcon
-} from '@heroicons/react/24/outline';
+import { ChatBubbleLeftRightIcon, PhoneIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 
 interface Conversation {

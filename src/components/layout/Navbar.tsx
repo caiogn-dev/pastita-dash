@@ -1,15 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import {
-  HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon, InboxIcon,
-  ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
-  ArrowRightOnRectangleIcon, BoltIcon, UserGroupIcon, ChevronDownIcon,
-  TagIcon, Squares2X2Icon, XMarkIcon, BuildingStorefrontIcon, MegaphoneIcon,
-  SparklesIcon, LinkIcon, DocumentTextIcon, DocumentChartBarIcon, EnvelopeIcon,
-  PlusIcon, BuildingOfficeIcon, ClockIcon, Bars3Icon, ChatBubbleBottomCenterTextIcon,
-  PresentationChartLineIcon,
-} from '@heroicons/react/24/outline';
+import { HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon, ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon, BoltIcon, UserGroupIcon, ChevronDownIcon, TagIcon, Squares2X2Icon, XMarkIcon, BuildingStorefrontIcon, MegaphoneIcon, SparklesIcon, LinkIcon, DocumentTextIcon, DocumentChartBarIcon, EnvelopeIcon, ClockIcon, Bars3Icon, PresentationChartLineIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
 import { useTotalUnreadCount, useWsConnected } from '../../stores/chatStore';

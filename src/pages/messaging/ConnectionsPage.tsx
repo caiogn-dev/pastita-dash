@@ -3,13 +3,9 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { useConfirm } from '../../hooks';
-import {
-  PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon,
-  CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
-  LinkIcon, QrCodeIcon, XMarkIcon,
-} from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon, LinkIcon, QrCodeIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Badge } from '../../components/common';
+import { Button, Badge } from '../../components/common';
 import * as whatsappService from '../../services/whatsapp';
 import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsAppButton';
 import { messengerService } from '../../services/messenger';

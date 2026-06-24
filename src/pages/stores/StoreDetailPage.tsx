@@ -11,21 +11,9 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-  ArrowLeftIcon,
-  Cog6ToothIcon,
-  CubeIcon,
-  ShoppingCartIcon,
-  TagIcon,
-  TruckIcon,
-  ChartBarIcon,
-  BuildingStorefrontIcon,
-  PencilIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, Cog6ToothIcon, CubeIcon, ShoppingCartIcon, TagIcon, TruckIcon, ChartBarIcon, BuildingStorefrontIcon, PencilIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Badge, Loading, Modal, Input } from '../../components/common';
+import { Card, Button, Badge, Loading, Modal } from '../../components/common';
 import storesApi, { Store, StoreStats } from '../../services/storesApi';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';

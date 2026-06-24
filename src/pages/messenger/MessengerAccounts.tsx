@@ -2,12 +2,8 @@
  * MessengerAccounts - Contas do Messenger (sem Chakra UI)
  */
 import React, { useState, useEffect } from 'react';
-import {
-  PlusIcon, PencilIcon, TrashIcon, ArrowPathIcon,
-  CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
-  MagnifyingGlassIcon, XMarkIcon,
-} from '@heroicons/react/24/outline';
-import { Card, Button, Badge } from '../../components/common';
+import { PlusIcon, PencilIcon, TrashIcon, ArrowPathIcon, CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Button, Badge } from '../../components/common';
 import { messengerService, MessengerAccount } from '../../services/messenger';
 import { useConfirm } from '../../hooks';
 

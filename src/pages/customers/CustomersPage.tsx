@@ -1,22 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import {
-  ArrowPathIcon,
-  MagnifyingGlassIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  ShoppingBagIcon,
-  CheckBadgeIcon,
-  NoSymbolIcon,
-  UserGroupIcon,
-  XMarkIcon,
-  ChatBubbleLeftRightIcon,
-  CalendarDaysIcon,
-  CurrencyDollarIcon,
-  TagIcon,
-} from '@heroicons/react/24/outline';
+import { ArrowPathIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon, PhoneIcon, EnvelopeIcon, ShoppingBagIcon, CheckBadgeIcon, NoSymbolIcon, UserGroupIcon, XMarkIcon, ChatBubbleLeftRightIcon, CalendarDaysIcon, TagIcon } from '@heroicons/react/24/outline';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';

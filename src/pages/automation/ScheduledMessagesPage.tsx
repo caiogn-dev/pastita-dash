@@ -4,26 +4,11 @@ import logger from '../../services/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import {
-  ClockIcon,
-  PlusIcon,
-  PaperAirplaneIcon,
-  XMarkIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-  CalendarIcon,
-} from '@heroicons/react/24/outline';
+import { ClockIcon, PlusIcon, PaperAirplaneIcon, XMarkIcon, ArrowPathIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { Card, Button, Badge, Loading, Modal, Input } from '../../components/common';
 import { scheduledMessagesService } from '../../services/scheduling';
 import { whatsappService } from '../../services';
-import {
-  ScheduledMessage,
-  CreateScheduledMessage,
-  ScheduledMessageStats,
-  WhatsAppAccount,
-  PaginatedResponse,
-} from '../../types';
+import { ScheduledMessage, CreateScheduledMessage, ScheduledMessageStats, WhatsAppAccount } from '../../types';
 
 const statusVariants: Record<string, 'gray' | 'info' | 'success' | 'danger' | 'warning'> = {
   pending: 'info',

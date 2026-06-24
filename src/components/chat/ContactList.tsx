@@ -11,13 +11,7 @@
 import React, { useState, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import {
-  MagnifyingGlassIcon,
-  UserCircleIcon,
-  ChatBubbleLeftIcon,
-  FunnelIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, ChatBubbleLeftIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 // Type-safe helper to ensure value is array
 function ensureArray<T>(value: unknown): T[] {

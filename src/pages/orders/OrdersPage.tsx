@@ -1,54 +1,17 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
-import {
-  DndContext,
-  DragOverlay,
-  closestCorners,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  useDroppable,
-  DragStartEvent,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
+import { DndContext, DragOverlay, closestCorners, PointerSensor, KeyboardSensor, useSensor, useSensors, useDroppable, DragStartEvent, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import {
-  CheckIcon,
-  CurrencyDollarIcon,
-  XMarkIcon,
-  ArrowPathIcon,
-  SignalIcon,
-  SignalSlashIcon,
-  ShoppingCartIcon,
-  TruckIcon,
-  HomeIcon,
-  ClockIcon,
-  PhoneIcon,
-  FireIcon,
-  CheckCircleIcon,
-  CalendarDaysIcon,
-} from '@heroicons/react/24/outline';
+import { CheckIcon, CurrencyDollarIcon, XMarkIcon, ArrowPathIcon, SignalIcon, SignalSlashIcon, ShoppingCartIcon, TruckIcon, HomeIcon, ClockIcon, PhoneIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
 import { Button, Card } from '../../components/ui';
-import {
-  getOrders,
-  updateOrderStatus,
-  markOrderPaid,
-  cancelOrder,
-  StoreOrder,
-} from '../../services/storesApi';
+import { getOrders, updateOrderStatus, markOrderPaid, cancelOrder, StoreOrder } from '../../services/storesApi';
 import { useNotificationSound, useStore, useConfirm } from '../../hooks';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { useRootStore } from '../../stores/rootStore';
@@ -56,7 +19,7 @@ import { useRootStore } from '../../stores/rootStore';
 // ─── Column config ────────────────────────────────────────────────────────────
 // Extraído para orderColumns.ts (fonte única — usado também pelo drill-down dos KPIs)
 
-import { COLUMNS, statusToColumn, resolveFocusColumn } from './orderColumns';
+import { COLUMNS, resolveFocusColumn } from './orderColumns';
 import type { ColumnId } from './orderColumns';
 import { getStageStart, getAvgPrepMinutes } from './orderSla';
 

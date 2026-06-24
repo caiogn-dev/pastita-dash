@@ -3,22 +3,7 @@
  * Ensures all data from backend is properly validated and type-safe
  */
 
-import {
-  DashboardOverview,
-  DashboardCharts,
-  MessageStatus,
-  MessageDirection,
-  ConversationMode,
-  ConversationStatus,
-  OrderStatus,
-  PaymentStatus,
-  isDashboardOverview,
-  isMessageDirection,
-  isMessageStatus,
-  isConversationMode,
-  isConversationStatus,
-  isOrderStatus,
-} from '../types/dashboard';
+import { DashboardOverview, DashboardCharts, isDashboardOverview, isMessageDirection, isMessageStatus, isConversationMode, isConversationStatus, isOrderStatus } from '../types/dashboard';
 
 /**
  * Validator for backend DashboardOverview response

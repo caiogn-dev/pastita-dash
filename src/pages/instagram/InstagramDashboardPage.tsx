@@ -9,38 +9,14 @@
  * - Estatísticas
  * - Acesso rápido a Lives e Shopping
  */
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
+import React, { useState, useCallback } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  PhotoIcon,
-  VideoCameraIcon,
-  PlayIcon,
-  ShoppingBagIcon,
-  RadioIcon,
-  PlusIcon,
-  CalendarIcon,
-  ChartBarIcon,
-  HeartIcon,
-  ChatBubbleLeftIcon,
-  BookmarkIcon,
-  ShareIcon,
-  EyeIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
-import { Card, Button, Loading, Tabs, Badge } from '@/components/common';
-import { 
-  instagramAccountService, 
-  instagramMediaService, 
-  InstagramAccount, 
-  InstagramMedia 
-} from '@/services';
+import { PhotoIcon, VideoCameraIcon, PlayIcon, ShoppingBagIcon, RadioIcon, PlusIcon, CalendarIcon, ChartBarIcon, HeartIcon, ChatBubbleLeftIcon, ShareIcon, EyeIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+
+import { Card, Button, Loading, Badge } from '@/components/common';
+import { instagramAccountService, instagramMediaService, InstagramAccount, InstagramMedia } from '@/services';
 import { useFetch } from '@/hooks';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 type TabType = 'feed' | 'stories' | 'reels' | 'insights';
 

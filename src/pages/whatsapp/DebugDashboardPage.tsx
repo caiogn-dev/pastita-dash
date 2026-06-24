@@ -5,14 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import {
-  ChatBubbleLeftRightIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
+import { ChatBubbleLeftRightIcon, ArrowPathIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { conversationsService } from '../../services/conversations';
 import { intentService } from '../../services/intents';
 import { automationLogService } from '../../services/automation';

@@ -3,14 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import {
-  ArrowPathIcon,
-  ChatBubbleLeftRightIcon,
-  ClockIcon,
-  MagnifyingGlassIcon,
-  PhoneIcon,
-  UserCircleIcon,
-} from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ChatBubbleLeftRightIcon, MagnifyingGlassIcon, PhoneIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
 import { Button, Modal, PageLoading, PageTitle, Textarea } from '../../components/common';
 import { conversationsService, getErrorMessage } from '../../services';

@@ -9,27 +9,11 @@
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  ArrowLeftIcon,
-  EnvelopeIcon,
-  UserGroupIcon,
-  PaperAirplaneIcon,
-  EyeIcon,
-  SparklesIcon,
-  CheckCircleIcon,
-  UsersIcon,
-  TagIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-} from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, EnvelopeIcon, UserGroupIcon, PaperAirplaneIcon, EyeIcon, SparklesIcon, CheckCircleIcon, UsersIcon, TagIcon, FunnelIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading } from '../../../components/common';
 import { useStore } from '../../../hooks';
-import {
-  marketingService,
-  EmailTemplate,
-  EMAIL_TEMPLATE_PRESETS,
-} from '../../../services/marketingService';
+import { marketingService, EmailTemplate } from '../../../services/marketingService';
 import logger from '../../../services/logger';
 
 // =============================================================================

@@ -11,11 +11,11 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Toaster } from 'react-hot-toast';
 import { ComboForm } from '../ComboForm';
-import type { ComboGroupDraft, VariantLimitDraft } from '../ComboForm';
+
 import type { StoreCombo, StoreProduct } from '../../../services/storesApi';
 
 // ─────────────────────────────────────────────────────────────────────────────

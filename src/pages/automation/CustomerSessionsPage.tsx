@@ -1,21 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import logger from '../../services/logger';
-import { Link } from 'react-router-dom';
-import {
-  UserGroupIcon,
-  ShoppingCartIcon,
-  CreditCardIcon,
-  TruckIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  EyeIcon,
-  BellIcon,
-} from '@heroicons/react/24/outline';
-import {
-  customerSessionService,
-  companyProfileService,
-  sessionStatusLabels,
-} from '../../services/automation';
+
+import { UserGroupIcon, ShoppingCartIcon, CreditCardIcon, TruckIcon, FunnelIcon, MagnifyingGlassIcon, EyeIcon, BellIcon } from '@heroicons/react/24/outline';
+import { customerSessionService, companyProfileService, sessionStatusLabels } from '../../services/automation';
 import { CustomerSession, CompanyProfile, SessionStatus } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';

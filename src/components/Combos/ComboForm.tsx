@@ -11,20 +11,8 @@
  * - Section 3: Settings (featured, track_stock, etc.)
  * - Save & Preview button
  */
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-  PlusIcon,
-  TrashIcon,
-  XMarkIcon,
-  CheckIcon,
-  CubeIcon,
-  StarIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  TagIcon,
-  ChevronDownIcon,
-  CurrencyDollarIcon,
-} from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import { PlusIcon, TrashIcon, CheckIcon, CubeIcon, StarIcon, EyeIcon, TagIcon, ChevronDownIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Input, Button } from '../common';
 import { StoreCombo, StoreComboInput, StoreComboPayload, StoreProduct as Product } from '../../services/storesApi';

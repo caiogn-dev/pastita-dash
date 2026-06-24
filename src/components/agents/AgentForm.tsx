@@ -1,19 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  XMarkIcon,
-  InformationCircleIcon,
-  CpuChipIcon,
-  ChatBubbleBottomCenterTextIcon,
-  LinkIcon
-} from '@heroicons/react/24/outline';
+import { XMarkIcon, InformationCircleIcon, CpuChipIcon, ChatBubbleBottomCenterTextIcon, LinkIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
-import agentsService, { 
-  PROVIDER_CONFIGS, 
-  DEFAULT_AGENT_VALUES, 
-  AgentProvider,
-  CreateAgentData,
-  getBackendProviderConfig,
-} from '../../services/agents';
+import { PROVIDER_CONFIGS, DEFAULT_AGENT_VALUES, AgentProvider, CreateAgentData, getBackendProviderConfig } from '../../services/agents';
 
 interface AgentFormProps {
   agent?: {
