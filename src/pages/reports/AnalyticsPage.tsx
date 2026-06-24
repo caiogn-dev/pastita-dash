@@ -1,7 +1,8 @@
 /**
  * AnalyticsPage - Relatórios (sem Chakra UI)
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
@@ -17,14 +18,14 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toCsv, downloadCsv } from '../../utils/csv';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
+import { reportsService } from '../../services/reports';
 import {
-  reportsService,
-  RevenueReport,
-  ProductsReport,
-  StockReport,
-  CustomersReport,
-  DashboardStats,
-} from '../../services/reports';
+  useDashboardStats,
+  useRevenueReport,
+  useProductsReport,
+  useStockReport,
+  useCustomersReport,
+} from '../../hooks/queries/useReports';
 
 type Period = '7d' | '30d' | '90d' | '1y';
 type GroupBy = 'day' | 'week' | 'month';
@@ -88,39 +89,58 @@ const AnalyticsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
   const [period, setPeriod] = useState<Period>('30d');
   const [groupBy, setGroupBy] = useState<GroupBy>('day');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorDismissed, setErrorDismissed] = useState(false);
+  const queryClient = useQueryClient();
 
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-  const [revenueReport, setRevenueReport] = useState<RevenueReport | null>(null);
-  const [productsReport, setProductsReport] = useState<ProductsReport | null>(null);
-  const [stockReport, setStockReport] = useState<StockReport | null>(null);
-  const [customersReport, setCustomersReport] = useState<CustomersReport | null>(null);
+  // Cada relatório só é buscado quando a aba ativa precisa dele. A queryKey
+  // (em useReports) garante que trocar groupBy só refaz o faturamento e que
+  // navegar entre abas reaproveita o cache.
+  const needsRevenue = activeTab === 'overview' || activeTab === 'revenue';
+  const needsProducts = activeTab === 'overview' || activeTab === 'products';
+  const needsCustomers = activeTab === 'overview' || activeTab === 'customers';
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [stats, revenue, products, stock, customers] = await Promise.all([
-        reportsService.getDashboardStats(),
-        reportsService.getRevenueReport({ period, group_by: groupBy }),
-        reportsService.getProductsReport({ period }),
-        reportsService.getStockReport(),
-        reportsService.getCustomersReport({ period }),
-      ]);
-      setDashboardStats(stats);
-      setRevenueReport(revenue);
-      setProductsReport(products);
-      setStockReport(stock);
-      setCustomersReport(customers);
-    } catch {
-      setError('Erro ao carregar relatórios. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  }, [period, groupBy]);
+  const statsQuery = useDashboardStats(activeTab === 'overview');
+  const revenueQuery = useRevenueReport(period, groupBy, needsRevenue);
+  const productsQuery = useProductsReport(period, needsProducts);
+  const stockQuery = useStockReport(activeTab === 'stock');
+  const customersQuery = useCustomersReport(period, needsCustomers);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  const dashboardStats = statsQuery.data ?? null;
+  const revenueReport = revenueQuery.data ?? null;
+  const productsReport = productsQuery.data ?? null;
+  const stockReport = stockQuery.data ?? null;
+  const customersReport = customersQuery.data ?? null;
+
+  // Loadings granulares: cada seção mostra spinner só enquanto o SEU dado carrega.
+  const statsLoading = statsQuery.isLoading;
+  const revenueLoading = revenueQuery.isLoading;
+  const productsLoading = productsQuery.isLoading;
+  const stockLoading = stockQuery.isLoading;
+  const customersLoading = customersQuery.isLoading;
+
+  // Erro derivado de qualquer query ativa (sem setState no render).
+  const hasError = [
+    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery,
+  ].some(q => q.isError);
+  const error = hasError && !errorDismissed
+    ? 'Erro ao carregar relatórios. Tente novamente.'
+    : null;
+
+  const activeTabLoading =
+    activeTab === 'revenue' ? revenueLoading
+    : activeTab === 'products' ? productsLoading
+    : activeTab === 'stock' ? stockLoading
+    : activeTab === 'customers' ? customersLoading
+    : statsLoading;
+  const anyFetching = [
+    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery,
+  ].some(q => q.isFetching);
+
+  // "Atualizar" reativa o banner de erro e invalida os relatórios em cache.
+  const loadData = () => {
+    setErrorDismissed(false);
+    queryClient.invalidateQueries({ queryKey: ['reports'] });
+  };
 
   const handleExportOrders = async () => {
     try {
@@ -191,10 +211,10 @@ const AnalyticsPage: React.FC = () => {
     <div className="flex flex-col gap-6">
       {/* KPI cards */}
       <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-        <KpiCard title="Faturamento Hoje" value={formatCurrency(dashboardStats?.today.revenue || 0)} change={dashboardStats?.today.revenue_change_percent} tone="brand" loading={loading} />
-        <KpiCard title="Pedidos Hoje" value={dashboardStats?.today.orders || 0} subtitle={`${dashboardStats?.week.orders || 0} esta semana`} loading={loading} />
-        <KpiCard title="Pedidos Pendentes" value={dashboardStats?.alerts.pending_orders || 0} subtitle="Aguardando ação" tone="warning" loading={loading} />
-        <KpiCard title="Estoque Baixo" value={dashboardStats?.alerts.low_stock_products || 0} subtitle="Produtos para repor" tone="warning" loading={loading} />
+        <KpiCard title="Faturamento Hoje" value={formatCurrency(dashboardStats?.today.revenue || 0)} change={dashboardStats?.today.revenue_change_percent} tone="brand" loading={statsLoading} />
+        <KpiCard title="Pedidos Hoje" value={dashboardStats?.today.orders || 0} subtitle={`${dashboardStats?.week.orders || 0} esta semana`} loading={statsLoading} />
+        <KpiCard title="Pedidos Pendentes" value={dashboardStats?.alerts.pending_orders || 0} subtitle="Aguardando ação" tone="warning" loading={statsLoading} />
+        <KpiCard title="Estoque Baixo" value={dashboardStats?.alerts.low_stock_products || 0} subtitle="Produtos para repor" tone="warning" loading={statsLoading} />
       </div>
 
       {/* Revenue chart */}
@@ -213,7 +233,7 @@ const AnalyticsPage: React.FC = () => {
             ))}
           </div>
         </div>
-        {loading ? (
+        {revenueLoading ? (
           <div className="flex justify-center py-16">
             <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
@@ -248,7 +268,7 @@ const AnalyticsPage: React.FC = () => {
             <h2 className="text-lg font-semibold text-fg-token">Produtos Mais Vendidos</h2>
             <Badge tone="neutral">Top {productsReport?.top_products.length || 0}</Badge>
           </div>
-          {loading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
+          {productsLoading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border-token">
@@ -278,7 +298,7 @@ const AnalyticsPage: React.FC = () => {
         {/* Customer Stats */}
         <Card>
           <h2 className="text-lg font-semibold text-fg-token mb-4">Clientes</h2>
-          {loading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
+          {customersLoading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
@@ -312,13 +332,13 @@ const AnalyticsPage: React.FC = () => {
   const renderStock = () => (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-3 max-sm:grid-cols-1 gap-4">
-        <KpiCard title="Total de Produtos" value={stockReport?.summary.total_products || 0} loading={loading} />
-        <KpiCard title="Estoque Baixo" value={stockReport?.summary.low_stock_count || 0} subtitle={`Limite: ${stockReport?.summary.low_stock_threshold || 10} unidades`} tone="warning" loading={loading} />
-        <KpiCard title="Sem Estoque" value={stockReport?.summary.out_of_stock_count || 0} subtitle="Reposição urgente" tone="warning" loading={loading} />
+        <KpiCard title="Total de Produtos" value={stockReport?.summary.total_products || 0} loading={stockLoading} />
+        <KpiCard title="Estoque Baixo" value={stockReport?.summary.low_stock_count || 0} subtitle={`Limite: ${stockReport?.summary.low_stock_threshold || 10} unidades`} tone="warning" loading={stockLoading} />
+        <KpiCard title="Sem Estoque" value={stockReport?.summary.out_of_stock_count || 0} subtitle="Reposição urgente" tone="warning" loading={stockLoading} />
       </div>
       <Card>
         <h2 className="text-lg font-semibold text-fg-token mb-4">Produtos com Estoque Baixo</h2>
-        {loading ? (
+        {stockLoading ? (
           <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
         ) : stockReport?.low_stock_products.length === 0 ? (
           <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
@@ -367,10 +387,10 @@ const AnalyticsPage: React.FC = () => {
   const renderRevenue = () => (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-        <KpiCard title="Faturamento" value={formatCurrency(revenueReport?.summary.total_revenue || 0)} tone="brand" loading={loading} />
-        <KpiCard title="Pedidos" value={revenueReport?.summary.total_orders || 0} loading={loading} />
-        <KpiCard title="Ticket Médio" value={formatCurrency(revenueReport?.summary.avg_order_value || 0)} loading={loading} />
-        <KpiCard title="Taxas de Entrega" value={formatCurrency(revenueReport?.summary.total_delivery_fees || 0)} loading={loading} />
+        <KpiCard title="Faturamento" value={formatCurrency(revenueReport?.summary.total_revenue || 0)} tone="brand" loading={revenueLoading} />
+        <KpiCard title="Pedidos" value={revenueReport?.summary.total_orders || 0} loading={revenueLoading} />
+        <KpiCard title="Ticket Médio" value={formatCurrency(revenueReport?.summary.avg_order_value || 0)} loading={revenueLoading} />
+        <KpiCard title="Taxas de Entrega" value={formatCurrency(revenueReport?.summary.total_delivery_fees || 0)} loading={revenueLoading} />
       </div>
       <Card>
         <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
@@ -387,7 +407,7 @@ const AnalyticsPage: React.FC = () => {
             ))}
           </div>
         </div>
-        {loading ? (
+        {revenueLoading ? (
           <div className="flex justify-center py-16">
             <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
@@ -418,7 +438,7 @@ const AnalyticsPage: React.FC = () => {
         <h2 className="text-lg font-semibold text-fg-token">Performance de Produtos</h2>
         <Badge tone="neutral">{productsReport?.top_products.length || 0} produtos</Badge>
       </div>
-      {loading ? (
+      {productsLoading ? (
         <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       ) : (
         <div className="overflow-x-auto">
@@ -452,14 +472,14 @@ const AnalyticsPage: React.FC = () => {
   const renderCustomers = () => (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-        <KpiCard title="Clientes" value={customersReport?.summary.total_customers || 0} tone="brand" loading={loading} />
-        <KpiCard title="Novos" value={customersReport?.summary.new_customers || 0} loading={loading} />
-        <KpiCard title="Recorrentes" value={customersReport?.summary.returning_customers || 0} loading={loading} />
-        <KpiCard title="Retenção" value={`${customersReport?.summary.retention_rate || 0}%`} loading={loading} />
+        <KpiCard title="Clientes" value={customersReport?.summary.total_customers || 0} tone="brand" loading={customersLoading} />
+        <KpiCard title="Novos" value={customersReport?.summary.new_customers || 0} loading={customersLoading} />
+        <KpiCard title="Recorrentes" value={customersReport?.summary.returning_customers || 0} loading={customersLoading} />
+        <KpiCard title="Retenção" value={`${customersReport?.summary.retention_rate || 0}%`} loading={customersLoading} />
       </div>
       <Card>
         <h2 className="text-lg font-semibold text-fg-token mb-4">Melhores Clientes</h2>
-        {loading ? (
+        {customersLoading ? (
           <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
         ) : (
           <div className="overflow-x-auto">
@@ -516,13 +536,13 @@ const AnalyticsPage: React.FC = () => {
             <Button
               variant="outline"
               onClick={exportForTab[activeTab]}
-              disabled={loading}
+              disabled={activeTabLoading}
               leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}
             >
               Exportar aba (CSV)
             </Button>
           )}
-          <Button variant="ghost" onClick={loadData} disabled={loading} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
+          <Button variant="ghost" onClick={loadData} disabled={anyFetching} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
             Atualizar
           </Button>
         </div>
@@ -533,7 +553,7 @@ const AnalyticsPage: React.FC = () => {
         <div className="flex items-center gap-3 p-4 mb-6 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
           <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
           <span className="text-sm text-red-700 dark:text-red-300 flex-1">{error}</span>
-          <button onClick={() => setError(null)} className="text-sm text-red-600 hover:underline">Fechar</button>
+          <button onClick={() => setErrorDismissed(true)} className="text-sm text-red-600 hover:underline">Fechar</button>
         </div>
       )}
 
