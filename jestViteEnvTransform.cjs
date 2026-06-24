@@ -20,7 +20,7 @@ const ENV_STUB = `({
   VITE_WS_URL: (typeof process !== 'undefined' && process.env.VITE_WS_URL) || '',
   VITE_STOREFRONT_BASE_URL: (typeof process !== 'undefined' && process.env.VITE_STOREFRONT_BASE_URL) || '',
   MODE: 'test',
-  DEV: true,
+  DEV: false,
   PROD: false,
   SSR: false,
 })`;

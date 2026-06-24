@@ -2,6 +2,23 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // Mock heavy dependencies before importing the component
+// api.ts usa import.meta.env (Vite-only); mockar aqui evita que o módulo seja
+// avaliado pelo ts-jest (CommonJS) sem o transform jestViteEnvTransform.
+jest.mock('../../../services/api', () => ({
+  __esModule: true,
+  default: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    patch: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
+// logger.ts também usa import.meta.env; mockar para evitar avaliação pelo ts-jest.
+jest.mock('../../../services/logger', () => ({
+  __esModule: true,
+  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+}));
 jest.mock('../../../services/storesApi');
 jest.mock('../../../services', () => ({ getErrorMessage: (e: unknown) => String(e) }));
 jest.mock('../../../hooks', () => ({
