@@ -2,13 +2,8 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-  HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon, InboxIcon,
-  ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
-  ArrowRightOnRectangleIcon, BoltIcon, UserGroupIcon, ChevronDownIcon,
-  TagIcon, Squares2X2Icon, XMarkIcon, BuildingStorefrontIcon, MegaphoneIcon,
-  SparklesIcon, LinkIcon, DocumentTextIcon, DocumentChartBarIcon, EnvelopeIcon,
-  PlusIcon, BuildingOfficeIcon, ClockIcon, Bars3Icon, ChatBubbleBottomCenterTextIcon,
-  PresentationChartLineIcon,
+  ArrowRightOnRectangleIcon, ChevronDownIcon,
+  XMarkIcon, Bars3Icon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -17,23 +12,8 @@ import { useAccountStore } from '../../stores/accountStore';
 import { StoreSelector } from './StoreSelector';
 import { ThemeToggle } from '../theme';
 import { NotificationDropdown, PushNotificationToggle } from '../notifications';
-
-interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge?: string;
-  /** Quando presente, renderiza um cabeçalho de seção acima deste item */
-  sectionHeader?: string;
-}
-
-interface NavSection {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  items: NavItem[];
-  href?: string;
-  badge?: string;
-}
+import { buildNavSections, type NavSection } from './navSections';
+import { useAutomationEnabled } from '../../hooks/useAutomationEnabled';
 
 // Portal dropdown — rendered at document.body level, positioned via getBoundingClientRect
 function PortalDropdown({
@@ -186,87 +166,15 @@ export const Navbar: React.FC = () => {
     [storeKey]
   );
 
-  const sections: NavSection[] = useMemo(() => [
-    { label: 'Início', icon: HomeIcon, href: '/', items: [] },
-
-    // ── Operação diária ─────────────────────────────────────
-    {
-      label: 'Pedidos',
-      icon: ShoppingCartIcon,
-      href: storeHref('orders'),
-      items: [],
-    },
-    {
-      label: 'Chat',
-      icon: ChatBubbleLeftRightIcon,
-      href: '/inbox/whatsapp',
-      badge: totalUnreadCount > 0 ? String(totalUnreadCount > 99 ? '99+' : totalUnreadCount) : undefined,
-      items: [],
-    },
-    {
-      label: 'PDV',
-      icon: CreditCardIcon,
-      items: [
-        { name: 'Caixa',              href: storeHref('cash'),     icon: CreditCardIcon },
-        { name: 'Modo Cozinha (KDS)', href: storeHref('kds'),      icon: ClockIcon },
-        { name: 'Impressão',          href: storeHref('printing'), icon: DocumentTextIcon },
-      ],
-    },
-    {
-      label: 'Clientes',
-      icon: UserGroupIcon,
-      href: storeHref('customers'),
-      items: [],
-    },
-    {
-      label: 'Cardápio',
-      icon: Squares2X2Icon,
-      items: [
-        { name: 'Produtos',  href: storeHref('products'), icon: Squares2X2Icon },
-        { name: 'Combos',    href: storeHref('combos'),   icon: Squares2X2Icon },
-        { name: 'Cupons',    href: storeHref('coupons'),  icon: TagIcon },
-      ],
-    },
-    {
-      label: 'Relatórios',
-      icon: PresentationChartLineIcon,
-      href: '/analytics',
-      items: [],
-    },
-
-    // ── Crescimento ─────────────────────────────────────────
-    {
-      label: 'Marketing',
-      icon: MegaphoneIcon,
-      items: [
-        { name: 'Campanhas WhatsApp', href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon, sectionHeader: 'Campanhas' },
-        { name: 'Templates WhatsApp', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-        { name: 'Campanhas Email',    href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
-        { name: 'Agentes IA',    href: '/agents',               icon: CpuChipIcon, badge: 'Beta', sectionHeader: 'Automação IA' },
-        { name: 'Automações',    href: '/automation/companies', icon: BoltIcon },
-        { name: 'Agendamentos',  href: '/automation/scheduled', icon: ClockIcon },
-        { name: 'Logs IA',       href: '/automation/logs',      icon: DocumentChartBarIcon },
-        { name: 'Handover',      href: '/whatsapp/handover',    icon: UserGroupIcon },
-      ],
-    },
-
-    // ── Configuração ────────────────────────────────────────
-    {
-      label: 'Loja',
-      icon: Cog6ToothIcon,
-      items: [
-        { name: 'Configurações', href: storeHref('settings'),   icon: Cog6ToothIcon, sectionHeader: 'Esta loja' },
-        { name: 'Entrega',       href: storeHref('delivery'),   icon: ShoppingCartIcon },
-        { name: 'Pagamentos',    href: storeHref('payments'),   icon: CreditCardIcon },
-        { name: 'Storefront',    href: storeHref('storefront'), icon: BuildingStorefrontIcon },
-        { name: 'Todas as Lojas',   href: '/stores',      icon: BuildingStorefrontIcon, sectionHeader: 'Conta' },
-        { name: 'Contas WhatsApp',  href: '/accounts',    icon: DevicePhoneMobileIcon },
-        { name: 'Conexões',         href: '/connections', icon: LinkIcon },
-        { name: 'Sistema',          href: '/settings',    icon: Cog6ToothIcon },
-        { name: 'Planos',           href: '/plano',       icon: SparklesIcon, sectionHeader: 'Assinatura' },
-      ],
-    },
-  ], [storeHref, totalUnreadCount]);
+  const automationEnabled = useAutomationEnabled();
+  const sections: NavSection[] = useMemo(
+    () => buildNavSections({
+      storeHref,
+      unreadBadge: totalUnreadCount > 0 ? String(totalUnreadCount > 99 ? '99+' : totalUnreadCount) : undefined,
+      automationEnabled,
+    }),
+    [storeHref, totalUnreadCount, automationEnabled],
+  );
 
   const brandInfo = useMemo(() => {
     if (!store) return {
