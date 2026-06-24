@@ -396,6 +396,9 @@ export interface CreateOrder {
   items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
   payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card';
   notes?: string;
+  scheduled_date?: string;
+  scheduled_time?: string;
+  customer_notes?: string;
 }
 
 // ============================================

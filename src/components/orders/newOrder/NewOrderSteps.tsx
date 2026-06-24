@@ -11,7 +11,7 @@ export const NewOrderSteps: React.FC<{ wiz: NewOrderWizard }> = ({ wiz }) => {
     case 0:
       return <StepCliente storeSlug={wiz.storeSlug} customer={wiz.customer} onCustomerSelected={wiz.setCustomer} onCustomerCleared={() => wiz.setCustomer(null)} />;
     case 1:
-      return <StepEntrega customer={wiz.customer} deliveryMethod={wiz.deliveryMethod} setDeliveryMethod={wiz.setDeliveryMethod} selectedAddress={wiz.selectedAddress} setSelectedAddress={wiz.setSelectedAddress} freeAddressText={wiz.freeAddressText} setFreeAddressText={wiz.setFreeAddressText} routeQuote={wiz.routeQuote} calculatingRoute={wiz.calculatingRoute} onCalculateRoute={wiz.handleCalculateRoute} />;
+      return <StepEntrega customer={wiz.customer} deliveryMethod={wiz.deliveryMethod} setDeliveryMethod={wiz.setDeliveryMethod} selectedAddress={wiz.selectedAddress} setSelectedAddress={wiz.setSelectedAddress} freeAddressText={wiz.freeAddressText} setFreeAddressText={wiz.setFreeAddressText} routeQuote={wiz.routeQuote} calculatingRoute={wiz.calculatingRoute} onCalculateRoute={wiz.handleCalculateRoute} enableScheduling={wiz.enableScheduling} setEnableScheduling={wiz.setEnableScheduling} scheduledDate={wiz.scheduledDate} setScheduledDate={wiz.setScheduledDate} scheduledTime={wiz.scheduledTime} setScheduledTime={wiz.setScheduledTime} />;
     case 2:
       return <StepItens storeId={wiz.productStoreKey} cart={wiz.cart} onAdd={wiz.addToCart} onQtyChange={wiz.changeQty} onRemove={wiz.removeFromCart} />;
     case 3:

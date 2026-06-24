@@ -24,6 +24,9 @@ export interface NewOrderWizard {
   discountValue: string; setDiscountValue: (v: string) => void; discountReason: string; setDiscountReason: (v: string) => void;
   surchargeValue: string; setSurchargeValue: (v: string) => void; surchargeReason: string; setSurchargeReason: (v: string) => void;
   paymentMethod: PaymentMethod; setPaymentMethod: (m: PaymentMethod) => void; submitting: boolean; handleSubmit: () => Promise<void>;
+  enableScheduling: boolean; setEnableScheduling: (v: boolean) => void;
+  scheduledDate: string; setScheduledDate: (v: string) => void;
+  scheduledTime: string; setScheduledTime: (v: string) => void;
   reset: () => void; productStoreKey: string; storeSlug: string;
 }
 
@@ -46,12 +49,16 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
   const [surchargeReason, setSurchargeReason] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [submitting, setSubmitting] = useState(false);
+  const [enableScheduling, setEnableScheduling] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
 
   const reset = () => {
     setStep(0); setCustomer(null); setDeliveryMethod('delivery'); setSelectedAddress(null);
     setFreeAddressText(''); setRouteQuote(null); setCart([]); setDiscountType('percent');
     setDiscountValue(''); setDiscountReason(''); setSurchargeValue(''); setSurchargeReason('');
     setPaymentMethod('pix'); setSubmitting(false);
+    setEnableScheduling(false); setScheduledDate(''); setScheduledTime('');
   };
 
   const next = () => setStep((s) => Math.min(4, s + 1));
@@ -122,6 +129,9 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         ...(discountAmount > 0 ? { discount: Number(discountAmount.toFixed(2)) } : {}),
         ...(surchargeAmount > 0 ? { surcharge: Number(surchargeAmount.toFixed(2)) } : {}),
         ...(adjustmentReason ? { adjustment_reason: adjustmentReason } : {}),
+        ...(enableScheduling && scheduledDate && scheduledTime
+          ? { scheduled_date: scheduledDate, scheduled_time: scheduledTime }
+          : {}),
       });
 
       const pixLink = (created as { pix_ticket_url?: string })?.pix_ticket_url || '';
@@ -155,6 +165,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     discountType, setDiscountType, discountValue, setDiscountValue, discountReason, setDiscountReason,
     surchargeValue, setSurchargeValue, surchargeReason, setSurchargeReason,
     paymentMethod, setPaymentMethod, submitting, handleSubmit,
+    enableScheduling, setEnableScheduling, scheduledDate, setScheduledDate, scheduledTime, setScheduledTime,
     reset, productStoreKey, storeSlug,
   };
 }
