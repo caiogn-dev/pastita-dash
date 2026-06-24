@@ -4,9 +4,11 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   ChevronDownIcon,
   XMarkIcon, Bars3Icon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
-import { AccountMenu } from './AccountMenu';
+import { AccountMenu, ACCOUNT_LINKS } from './AccountMenu';
 import { useStore } from '../../hooks/useStore';
+import { useAuthStore } from '../../stores/authStore';
 import { useTotalUnreadCount, useWsConnected } from '../../stores/chatStore';
 import { useAccountStore } from '../../stores/accountStore';
 import { StoreSelector } from './StoreSelector';
@@ -152,6 +154,7 @@ function NavBtn({ section }: { section: NavSection }) {
 
 export const Navbar: React.FC = () => {
   const { store } = useStore();
+  const { logout } = useAuthStore();
   const navigate = useNavigate();
   const totalUnreadCount = useTotalUnreadCount();
   const wsConnected = useWsConnected();
@@ -350,6 +353,33 @@ export const Navbar: React.FC = () => {
                   )}
                 </div>
               ))}
+              {/* Conta — no mobile não há avatar-dropdown, então os itens de conta entram aqui */}
+              <div className="mt-2 border-t border-[var(--border)] pt-2">
+                <p className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted-token">
+                  Conta
+                </p>
+                {ACCOUNT_LINKS.map((l) => (
+                  <NavLink
+                    key={l.href}
+                    to={l.href}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive ? 'bg-brand text-[var(--brand-strong)] font-medium' : 'text-fg-token hover:bg-surface-2'
+                      }`
+                    }
+                  >
+                    <l.icon className="w-4 h-4 flex-shrink-0" />
+                    {l.name}
+                  </NavLink>
+                ))}
+                <button
+                  onClick={() => { logout(); navigate('/login'); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-fg-token hover:bg-surface-2 transition-colors"
+                >
+                  <ArrowRightOnRectangleIcon className="w-4 h-4 flex-shrink-0" />
+                  Sair
+                </button>
+              </div>
             </nav>
           </div>
         </>

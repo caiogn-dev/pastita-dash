@@ -8,14 +8,14 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
 
-interface AccountLink {
+export interface AccountLink {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   sectionHeader?: string;
 }
 
-const ACCOUNT_LINKS: AccountLink[] = [
+export const ACCOUNT_LINKS: AccountLink[] = [
   { name: 'Todas as Lojas',  href: '/stores',      icon: BuildingStorefrontIcon },
   { name: 'Contas WhatsApp', href: '/accounts',    icon: DevicePhoneMobileIcon, sectionHeader: 'Integrações' },
   { name: 'Conexões',        href: '/connections', icon: LinkIcon },
