@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-  ArrowRightOnRectangleIcon, ChevronDownIcon,
+  ChevronDownIcon,
   XMarkIcon, Bars3Icon,
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '../../stores/authStore';
+import { AccountMenu } from './AccountMenu';
 import { useStore } from '../../hooks/useStore';
 import { useTotalUnreadCount, useWsConnected } from '../../stores/chatStore';
 import { useAccountStore } from '../../stores/accountStore';
@@ -151,7 +151,6 @@ function NavBtn({ section }: { section: NavSection }) {
 }
 
 export const Navbar: React.FC = () => {
-  const { logout, user } = useAuthStore();
   const { store } = useStore();
   const navigate = useNavigate();
   const totalUnreadCount = useTotalUnreadCount();
@@ -273,23 +272,7 @@ export const Navbar: React.FC = () => {
             <PushNotificationToggle />
             <NotificationDropdown />
 
-            <div className="flex items-center gap-1.5 pl-2 border-l border-white/20">
-              <div className="w-6 h-6 bg-white/15 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-[10px] font-semibold text-white">
-                  {user?.first_name?.[0] || user?.username?.[0] || 'U'}
-                </span>
-              </div>
-              <span className="block max-md:hidden text-xs font-medium text-white truncate max-w-[70px]">
-                {user?.first_name || user?.username}
-              </span>
-              <button
-                onClick={() => { logout(); navigate('/login'); }}
-                className="p-1 text-white/70 hover:text-white rounded-md hover:bg-white/10 transition-colors"
-                title="Sair"
-              >
-                <ArrowRightOnRectangleIcon className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <AccountMenu />
 
             <button
               onClick={() => setMobileOpen(true)}
