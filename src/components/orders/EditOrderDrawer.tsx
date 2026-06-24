@@ -25,7 +25,7 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
     if (name !== (order.customer_name ?? '')) patch.customer_name = name;
     if (phone !== (order.customer_phone ?? '')) patch.customer_phone = phone;
     if (notes !== (order.customer_notes ?? '')) patch.customer_notes = notes;
-    if (enableScheduling) {
+    if (enableScheduling && scheduledDate && scheduledTime) {
       if (scheduledDate !== (order.scheduled_date ?? '')) patch.scheduled_date = scheduledDate;
       if (scheduledTime !== (order.scheduled_time ?? '')) patch.scheduled_time = scheduledTime;
     } else if (order.scheduled_date) {

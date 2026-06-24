@@ -9,9 +9,8 @@ jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest
 import { useNewOrderWizard } from '../useNewOrderWizard';
 
 beforeEach(() => {
-  calculateDeliveryFee.mockResolvedValue({ fee: 0, distance_km: 0, duration_minutes: 0 });
-  createOrder.mockResolvedValue({ order_number: '#1010' });
   jest.clearAllMocks();
+  calculateDeliveryFee.mockResolvedValue({ fee: 0, distance_km: 0, duration_minutes: 0 });
   createOrder.mockResolvedValue({ order_number: '#1010' });
 });
 
