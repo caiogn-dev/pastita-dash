@@ -386,7 +386,6 @@ export const OrdersPage: React.FC = () => {
 
   // ── Loading state (local) ────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
-  const [rtConnected, setRtConnected] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -422,7 +421,7 @@ export const OrdersPage: React.FC = () => {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   // WebSocket real-time sync
-  useRealTimeOrders({
+  const { isConnected: wsConnected } = useRealTimeOrders({
     enabled: Boolean(storeQuery),
     apiUrl: import.meta.env.VITE_API_URL,
     wsUrl: import.meta.env.VITE_WS_URL,
@@ -617,10 +616,8 @@ export const OrdersPage: React.FC = () => {
       const { setOrders } = useRootStore.getState();
       setOrders(storeQuery, response.results);
       setLastSync(new Date());
-      setRtConnected(true);
     } catch (error) {
       console.error('Erro ao carregar pedidos:', error);
-      setRtConnected(false);
     } finally {
       setRefreshing(false);
       setLoading(false);
@@ -652,12 +649,12 @@ export const OrdersPage: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-fg-token">Pedidos</h1>
             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-              rtConnected
+              wsConnected
                 ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
                 : 'bg-surface-2 text-fg-muted-token'
             }`}>
-              {rtConnected ? <SignalIcon className="h-3 w-3" /> : <SignalSlashIcon className="h-3 w-3" />}
-              {rtConnected ? 'Ao vivo' : 'Offline'}
+              {wsConnected ? <SignalIcon className="h-3 w-3" /> : <SignalSlashIcon className="h-3 w-3" />}
+              {wsConnected ? 'Ao vivo' : 'Offline'}
             </span>
             {lastSync && (
               <span className="text-xs text-fg-muted-token hidden sm:block">

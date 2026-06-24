@@ -140,8 +140,9 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         toast.success('Pedido criado com sucesso!');
       }
       onCreated?.();
-    } catch {
-      toast.error('Erro ao criar pedido');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao criar pedido';
+      toast.error(msg, { duration: 6000 });
     } finally {
       setSubmitting(false);
     }
