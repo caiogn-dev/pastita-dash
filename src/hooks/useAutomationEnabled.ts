@@ -13,6 +13,9 @@ export function useAutomationEnabled(): boolean {
 
   const hasWhatsApp = Boolean(store?.whatsapp_number) || (store?.integrations_count ?? 0) > 0;
 
+  // `/agents/` é account-scoped (só o Authorization Token, sem param de loja),
+  // então a lista cacheada vale para qualquer loja da conta — NÃO adicione store id
+  // à queryKey "pra corrigir multi-tenant": o endpoint ignora.
   const { data: agents } = useQuery({
     queryKey: ['agents', 'gating'],
     queryFn: () => agentsService.getAgents(),
