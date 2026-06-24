@@ -46,6 +46,7 @@ const parseAddress = (addr: string | Record<string, unknown> | undefined): Recor
   return addr as Record<string, string>;
 };
 import { useOrderPrint } from '../../components/orders/OrderPrint';
+import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
 import { useStore } from '../../hooks';
 
 // =============================================================================
@@ -280,6 +281,7 @@ export const OrderDetailPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showUberModal, setShowUberModal] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   // Imprime o pedido. hidePrices=true gera a comanda da cozinha (sem valores/pagamento).
   const handlePrint = async (hidePrices = false) => {
@@ -739,6 +741,13 @@ export const OrderDetailPage: React.FC = () => {
                   Comanda cozinha (sem preços)
                 </button>
 
+                <button
+                  onClick={() => setEditing(true)}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 px-4 py-3 text-sm font-medium text-[#f5f1e8] transition hover:bg-white/5"
+                >
+                  Editar pedido
+                </button>
+
                 {!isCancelled && !isCompleted && (
                   <button
                     onClick={() => setShowCancelModal(true)}
@@ -777,6 +786,15 @@ export const OrderDetailPage: React.FC = () => {
           </aside>
         </div>
       </div>
+
+      {/* Edit Order Drawer */}
+      {editing && (
+        <EditOrderDrawer
+          order={order}
+          onClose={() => setEditing(false)}
+          onSaved={() => { setEditing(false); loadOrder(); }}
+        />
+      )}
 
       {/* Cancel Modal */}
       <Modal
