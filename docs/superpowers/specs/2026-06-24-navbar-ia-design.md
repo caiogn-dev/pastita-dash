@@ -52,13 +52,15 @@ Existe um **drawer mobile** (`max-lg:flex`, Navbar.tsx:~400) que renderiza as me
 | 6 | Cardápio | dropdown | Produtos `products` · Combos `combos` · Cupons `coupons` |
 | 7 | Relatórios | link | `/analytics` |
 | 8 | **Campanhas** | dropdown | WhatsApp `/marketing/whatsapp` · Templates `/marketing/whatsapp/templates` · Email `/marketing/email/campaigns` |
-| 9 | **Automação** | dropdown | **Principal:** Agentes IA `/agents` (badge Beta) · Automações `/automation/companies` · Agendamentos `/automation/scheduled` · Handover `/whatsapp/handover` — **Monitoramento (sectionHeader):** Logs IA `/automation/logs` · Intenções `/automation/intents/stats` · Sessões `/automation/sessions` |
-| 10 | **Config da Loja** | dropdown | Geral `storeHref('settings')` · Entrega `storeHref('delivery')` · Storefront `storeHref('storefront')` · Pagamentos `storeHref('payments')` |
+| 9 | **Automação** | dropdown | **GATEADA — só aparece com número conectado E agente configurado (ver C).** **Principal:** Agentes IA `/agents` (badge Beta) · Automações `/automation/companies` · Agendamentos `/automation/scheduled` · Handover `/whatsapp/handover` — **Monitoramento (sectionHeader):** Logs IA `/automation/logs` · Intenções `/automation/intents/stats` · Sessões `/automation/sessions` |
+| 10 | **Configurações** | dropdown | Geral `storeHref('settings')` · Entrega `storeHref('delivery')` · Storefront `storeHref('storefront')` · Pagamentos `storeHref('payments')` |
+
+> A seção 9 (Automação) é condicional: lojas sem número/agente veem **9 itens**, não 10. Progressive disclosure (ver C).
 
 Mudanças vs. hoje:
-- **"Marketing" deixa de existir** → split em **Campanhas** (8) e **Automação** (9).
-- **"Loja" deixa de existir** → parte operacional vira **Config da Loja** (10); nível-conta vai pro menu do avatar (B).
-- Rename de item: dentro de Config da Loja, "Configurações" → **"Geral"**.
+- **"Marketing" deixa de existir** → split em **Campanhas** (8) e **Automação** (9, gateada).
+- **"Loja" deixa de existir** → parte operacional vira **Configurações** (10); nível-conta vai pro menu do avatar (B). ("Configurações" = loja; "Preferências" = conta, no avatar — sem colisão.)
+- Rename de item: dentro de Configurações, o antigo item "Configurações" → **"Geral"**.
 
 ### B. Menu do avatar (novo dropdown, canto direito) — nível-conta
 
@@ -73,6 +75,25 @@ Sair                   (logout existente)
 ```
 
 O avatar atual (inicial + nome) vira o **gatilho** do dropdown. "Sair" migra do botão solto para dentro do menu. "Integrações" pode ser um subgrupo (sectionHeader) ou submenu — implementação escolhe o mais simples que caiba no padrão de dropdown já existente.
+
+### C. Progressive disclosure — gating da Automação
+
+A seção **Automação** (9) **só é renderizada** quando a loja atual já tem automação ativável de verdade — senão é gaveta vazia que confunde o lojista novo. Predicado:
+
+```
+mostrarAutomacao = hasWhatsApp && hasAgent
+```
+
+- **`hasWhatsApp`** — a loja tem número de WhatsApp conectado. Sinal: `store.whatsapp_number` preenchido **OU** existe integração `integration_type === 'whatsapp'` (via `store.integrations_count > 0` + checagem no endpoint de integrações). Na implementação, usar o sinal **mais barato já disponível no contexto da loja** (de preferência o campo no objeto `store`, sem fetch extra); só cair pro endpoint de integrações se o campo não existir.
+- **`hasAgent`** — a loja tem ≥1 agente configurado. Sinal: `agentsService.getAgents()` (`src/services/agents.ts:236`) retorna lista não-vazia.
+
+Regras:
+1. O cálculo do predicado **não pode bloquear o render da navbar**. Enquanto os sinais carregam (ou se a chamada falhar), trata-se como `false` → Automação fica oculta. Navbar nunca espera por isso.
+2. Idealmente reusar dados que o app já tem em cache/contexto (store já carregada, React Query de agents) — **não** introduzir fetch novo no caminho crítico da navbar. Se `getAgents()` ainda não roda em lugar nenhum cedo, usar `useQuery` com `staleTime` alto e `false` como fallback.
+3. Vale tanto pro desktop quanto pro **drawer mobile** — mesma seção, mesmo gate.
+4. Os **itens internos** da Automação seguem a regra de "verificar antes de linkar" (ver órfãs abaixo): o gate decide se a *seção* aparece; cada *item* só entra se a rota existir e estiver viva.
+
+> Efeito: loja recém-criada (sem número, sem agente) vê barra de **9 seções**. Quando conecta WhatsApp **e** cria um agente, a Automação (10ª) aparece sozinha. Descoberta progressiva, sem treinar o lojista em features que ele ainda não pode usar.
 
 ### Órfãs reveladas vs. mantidas órfãs
 
@@ -96,7 +117,7 @@ Aqui NÃO se faz; os itens seguem apontando pras páginas atuais como estão:
 ## Mudanças de código (resumo)
 
 1. **`src/components/layout/Navbar.tsx`**
-   - Reescrever o array `sections` para a estrutura alvo (A). Remover "Marketing" e "Loja"; adicionar "Campanhas", "Automação", "Config da Loja". Mover nível-conta pra fora do array.
+   - Reescrever o array `sections` para a estrutura alvo (A). Remover "Marketing" e "Loja"; adicionar "Campanhas", "Automação" (gateada, ver C), "Configurações". Mover nível-conta pra fora do array.
    - Converter o bloco do avatar (canto direito) num **dropdown** (B), reusando o mesmo mecanismo de dropdown/portal já usado pelas seções (não introduzir lib nova). Mover o `logout` pra dentro.
    - Garantir que o **drawer mobile** (`max-lg`) renderize a nova estrutura + um bloco "Conta" (já que o avatar-dropdown desktop não existe no mobile — no mobile os itens de conta entram no fim do drawer).
 2. Sem mudança de rotas em `App.tsx`. Sem mudança em páginas. Sem novas dependências.
