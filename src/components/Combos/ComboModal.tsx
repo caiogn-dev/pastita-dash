@@ -9,8 +9,8 @@
  * - Real-time feedback on selections
  * - "Adicionar ao Carrinho" button (disabled until valid)
  */
-import React, { useState, useMemo, useEffect } from 'react';
-import { XMarkIcon, CheckIcon, ExclamationCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from 'react';
+import { CheckIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Modal } from '../common';
 import { StoreCombo } from '../../services/storesApi';
@@ -79,7 +79,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
     if (!group) return null;
 
     const variantLimit = group.variant_limits?.find(vl => vl.variant_id === variantId);
-    const variant = variantLimit?.variant_id ? variantLimit : null;
+    const _variant = variantLimit?.variant_id ? variantLimit : null;
 
     // Check stock
     if (variantLimit && variantLimit.stock === 0) {
@@ -195,7 +195,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                         const isSelected = selected.includes(variantId);
                         const disabledReason = getVariantDisabledReason(groupId, variantId);
                         const canSelect = !disabledReason && selected.length < group.max_selections;
-                        const currentVariantCount = selected.filter(v => v === variantId).length;
+                        const _currentVariantCount = selected.filter(v => v === variantId).length;
                         const maxForVariant = variantLimit.max_selections;
 
                         return (

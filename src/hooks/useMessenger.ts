@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { messengerService, MessengerAccount, MessengerConversation, MessengerMessage, MessengerProfile, BroadcastMessage, SponsoredMessage } from '../services/messenger';
+import { messengerService, MessengerAccount, MessengerConversation, MessengerMessage, BroadcastMessage, SponsoredMessage } from '../services/messenger';
 import toast from 'react-hot-toast';
 
 // ============================================

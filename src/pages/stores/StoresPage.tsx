@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Store, Settings, Package, ShoppingCart, Users, BarChart3, Zap } from 'lucide-react';
+import { Plus, Store, Settings, Package, ShoppingCart, BarChart3, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge, Modal, Input } from '../../components/common';
 import logger from '../../services/logger';
@@ -15,7 +15,7 @@ const StoresPage: React.FC = () => {
   const [stores, setStores] = useState<StoreType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedStore, setSelectedStore] = useState<StoreType | null>(null);
+  const [_selectedStore, _setSelectedStore] = useState<StoreType | null>(null);
   const [storeStats, setStoreStats] = useState<Record<string, StoreStats>>({});
 
   useEffect(() => {
@@ -57,7 +57,7 @@ const StoresPage: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = async (store: StoreType) => {
+  const _handleToggleStatus = async (store: StoreType) => {
     try {
       if (store.status === 'active') {
         await storesApi.deactivateStore(store.id);

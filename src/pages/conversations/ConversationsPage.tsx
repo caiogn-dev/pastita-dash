@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 import {
   ArrowPathIcon,
   ChatBubbleLeftRightIcon,
-  ClockIcon,
   MagnifyingGlassIcon,
   PhoneIcon,
   UserCircleIcon,

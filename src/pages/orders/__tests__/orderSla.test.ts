@@ -1,6 +1,5 @@
 import { getStageStart, getAvgPrepMinutes } from '../orderSla';
 
-const NOW = new Date('2026-06-11T12:00:00Z');
 
 describe('orderSla', () => {
   describe('getStageStart', () => {

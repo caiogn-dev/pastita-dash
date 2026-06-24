@@ -335,12 +335,12 @@ export const instagramService = {
     instagramMediaService.create({ ...data, media_type: 'CAROUSEL_ALBUM' } as Partial<InstagramMedia>),
   
   // Stories
-  getStories: (accountId: string) => instagramMediaService.getStories(),
+  getStories: (_accountId: string) => instagramMediaService.getStories(),
   createStory: (data: { account: string; media_url: string; caption?: string }) =>
     instagramMediaService.create({ ...data, media_type: 'STORY' } as Partial<InstagramMedia>),
   
   // Reels
-  getReels: (accountId: string) => instagramMediaService.getReels(),
+  getReels: (_accountId: string) => instagramMediaService.getReels(),
   createReel: (data: { account: string; video_url: string; caption?: string; cover_url?: string }) =>
     instagramMediaService.create({ ...data, media_type: 'REELS' } as Partial<InstagramMedia>),
   

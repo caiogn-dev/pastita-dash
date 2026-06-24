@@ -372,13 +372,11 @@ export function useConnectionStatus() {
  * Pode ser usado em qualquer lugar da aplicação
  */
 export function ConnectionIndicator() {
-  const { 
-    isConnected, 
-    status, 
-    transport, 
-    statusColor, 
-    statusText, 
-    transportIcon 
+  const {
+    status,
+    statusColor,
+    statusText,
+    transportIcon
   } = useConnectionStatus();
 
   const bgColors: Record<string, string> = {

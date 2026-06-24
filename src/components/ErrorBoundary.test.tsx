@@ -78,7 +78,7 @@ describe('ErrorBoundary', () => {
       return <div>Success after retry</div>;
     };
 
-    const { rerender } = render(
+    render(
       <ErrorBoundary>
         <ConditionalThrow />
       </ErrorBoundary>

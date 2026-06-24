@@ -15,9 +15,6 @@ export function StepCliente({
   onCustomerCleared: () => void;
 }) {
   const isNewCustomer = customer && customer.id === '';
-  const displayPhone = isNewCustomer
-    ? (customer.phone_number_edited || customer.phone_number)
-    : customer?.phone_number;
 
   const handlePhoneChange = (phone: string) => {
     if (customer && isNewCustomer) {

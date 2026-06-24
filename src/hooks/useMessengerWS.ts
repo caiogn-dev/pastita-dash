@@ -25,7 +25,6 @@ interface MessengerConversationEvent {
   };
 }
 
-type MessengerWSEvent = MessengerMessageEvent | MessengerConversationEvent;
 
 interface UseMessengerWSOptions {
   accountId?: string;
@@ -38,7 +37,6 @@ interface UseMessengerWSOptions {
 
 export const useMessengerWS = (options: UseMessengerWSOptions) => {
   const { accountId, onMessage, onConversationUpdate, onConnect, onDisconnect, onError } = options;
-  const { token } = useAuthStore();
   
   // WebSocket reference
   const wsRef = useRef<WebSocket | null>(null);

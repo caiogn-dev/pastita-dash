@@ -16,7 +16,6 @@ import {
   PlusIcon,
   PlayIcon,
   PauseIcon,
-  PencilIcon,
   TrashIcon,
   EnvelopeIcon,
   ClockIcon,
@@ -58,7 +57,7 @@ const TRIGGER_CONFIG: Record<string, { icon: string; color: string; bgColor: str
 // =============================================================================
 
 export default function AutomationsPage() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { storeId } = useStore();
   const [ConfirmDialog, confirm] = useConfirm();
 

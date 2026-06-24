@@ -11,7 +11,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { ComboForm, ComboList, ComboModal } from '../components/Combos';
-import type { StoreCombo, StoreComboInput, StoreProduct } from '../services/storesApi';
+import type { StoreCombo, StoreProduct } from '../services/storesApi';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock Data
@@ -410,7 +410,7 @@ describe('ComboForm Component', () => {
   });
 
   it('displays savings preview when items are added', async () => {
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
     const onSubmit = jest.fn();
 
     render(
@@ -476,7 +476,7 @@ describe('ComboModal Component', () => {
   });
 
   it('validates selections before adding to cart', async () => {
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
     const onAddToCart = jest.fn();
 
     render(

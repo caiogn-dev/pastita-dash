@@ -11,7 +11,6 @@ import React, { useState, useMemo } from 'react';
 import {
   PencilIcon,
   TrashIcon,
-  ArrowPathIcon,
   EyeIcon,
   EyeSlashIcon,
   StarIcon,
@@ -19,7 +18,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import { StoreCombo, StoreProduct as Product } from '../../services/storesApi';
+import { StoreCombo } from '../../services/storesApi';
 import { Badge } from '../ui';
 
 const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -37,12 +36,12 @@ export interface ComboListProps {
 
 export const ComboList: React.FC<ComboListProps> = ({
   combos,
-  loading = false,
+  loading: _loading = false,
   onEdit,
   onDelete,
   onToggleActive,
   onToggleFeatured,
-  onDuplicate,
+  onDuplicate: _onDuplicate,
 }) => {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');

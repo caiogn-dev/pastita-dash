@@ -10,7 +10,6 @@ import {
   ArrowPathIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ClockIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { conversationsService } from '../../services/conversations';

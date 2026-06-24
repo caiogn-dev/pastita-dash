@@ -28,7 +28,6 @@ import { useStore } from '../../../hooks';
 import {
   marketingService,
   EmailTemplate,
-  EMAIL_TEMPLATE_PRESETS,
 } from '../../../services/marketingService';
 import logger from '../../../services/logger';
 

@@ -60,10 +60,6 @@ const formatCurrency = (value: number | string | null | undefined) => {
 
 const onlyDigits = (value: string) => value.replace(/\D/g, '');
 
-const truncate = (value: string, max: number) => {
-  const clean = value.trim();
-  return clean.length > max ? `${clean.slice(0, Math.max(0, max - 1)).trim()}…` : clean;
-};
 
 const getBodyTextFromComponents = (components?: Array<Record<string, unknown>>) => {
   const body = components?.find(c => String(c.type || '').toUpperCase() === 'BODY');

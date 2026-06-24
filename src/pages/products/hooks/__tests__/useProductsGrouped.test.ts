@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { groupProducts, CategoryGroup } from '../useProductsGrouped';
+import { groupProducts } from '../useProductsGrouped';
 
 const cat = (id: string, name: string, sort_order: number, is_active = true) =>
   ({ id, name, sort_order, is_active }) as any;

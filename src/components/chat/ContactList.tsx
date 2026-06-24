@@ -13,7 +13,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   MagnifyingGlassIcon,
-  UserCircleIcon,
   ChatBubbleLeftIcon,
   FunnelIcon,
   XMarkIcon,

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
@@ -33,8 +33,6 @@ import {
   HomeIcon,
   ClockIcon,
   PhoneIcon,
-  FireIcon,
-  CheckCircleIcon,
   CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
@@ -56,7 +54,7 @@ import { useRootStore } from '../../stores/rootStore';
 // ─── Column config ────────────────────────────────────────────────────────────
 // Extraído para orderColumns.ts (fonte única — usado também pelo drill-down dos KPIs)
 
-import { COLUMNS, statusToColumn, resolveFocusColumn } from './orderColumns';
+import { COLUMNS, resolveFocusColumn } from './orderColumns';
 import type { ColumnId } from './orderColumns';
 import { getStageStart, getAvgPrepMinutes } from './orderSla';
 
@@ -411,7 +409,7 @@ export const OrdersPage: React.FC = () => {
   const storeOrders = useRootStore(
     (s) => (storeQuery ? s.orders[storeQuery] : undefined)
   ) ?? EMPTY_ORDERS;
-  const { playNotificationSound } = useNotificationSound();
+  const { playNotificationSound: _playNotificationSound } = useNotificationSound();
 
   // DnD state
   const [activeId, setActiveId] = useState<string | null>(null);

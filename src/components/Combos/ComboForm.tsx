@@ -11,16 +11,14 @@
  * - Section 3: Settings (featured, track_stock, etc.)
  * - Save & Preview button
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   PlusIcon,
   TrashIcon,
-  XMarkIcon,
   CheckIcon,
   CubeIcon,
   StarIcon,
   EyeIcon,
-  EyeSlashIcon,
   TagIcon,
   ChevronDownIcon,
   CurrencyDollarIcon,
@@ -29,8 +27,6 @@ import toast from 'react-hot-toast';
 import { Input, Button } from '../common';
 import { StoreCombo, StoreComboInput, StoreComboPayload, StoreProduct as Product } from '../../services/storesApi';
 
-const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const fmt = (v: number | string) => CURRENCY.format(Number(v));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -137,7 +133,7 @@ interface ComboGroupRowProps {
 }
 
 const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate, onRemove }) => {
-  const selectedProduct = products.find(p => p.id === group.product_id);
+  const _selectedProduct = products.find(p => p.id === group.product_id);
 
   return (
     <div className="border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg overflow-hidden bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]">
@@ -565,7 +561,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
               updated.product_name = product.name;
               // Load variants from product
               const variants = (product as any)?.variants || [];
-              updated.variant_limits = variants.map((v: any, idx: number) => ({
+              updated.variant_limits = variants.map((v: any, _idx: number) => ({
                 _key: v.id,
                 variant_id: v.id,
                 variant_name: v.name,
@@ -764,7 +760,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-              {form.items.map((group, idx) => (
+              {form.items.map((group, _idx) => (
                 <ComboGroupRow
                   key={group._key}
                   group={group}

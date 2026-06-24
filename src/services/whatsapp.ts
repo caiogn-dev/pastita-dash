@@ -151,7 +151,7 @@ export const getAccountStats = (accountId: string, startDate?: string, endDate?:
   });
 };
 
-export const getMessageStats = (accountId?: any, dateParams?: any) =>
+export const getMessageStats = (accountId?: any, _dateParams?: any) =>
   getAccountStats(accountId as string);
 
 // Billing is not exposed by the backend; business profile is proxied by WhatsAppAccountViewSet.

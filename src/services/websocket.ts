@@ -25,8 +25,6 @@ export interface WebSocketEvent {
 }
 
 type EventHandler = (event: WebSocketEvent) => void;
-type ConnectionHandler = () => void;
-type ErrorHandler = (error: Error) => void;
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;

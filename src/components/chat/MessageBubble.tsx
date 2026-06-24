@@ -483,7 +483,7 @@ const MediaPreview: React.FC<{
 const InteractiveContent: React.FC<{
   content: string | Record<string, unknown>;
   isInbound: boolean;
-}> = ({ content, isInbound }) => {
+}> = ({ content, isInbound: _isInbound }) => {
   const raw: Record<string, unknown> = typeof content === 'string'
     ? (() => { try { return JSON.parse(content); } catch { return {}; } })()
     : content;
@@ -563,20 +563,20 @@ const InteractiveContent: React.FC<{
 };
 
 const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
-  id,
+  id: _id,
   direction,
   messageType,
   status,
   textBody,
   content,
   mediaUrl,
-  mediaType,
+  mediaType: _mediaType,
   fileName,
   mimeType,
   createdAt,
-  sentAt,
-  deliveredAt,
-  readAt,
+  sentAt: _sentAt,
+  deliveredAt: _deliveredAt,
+  readAt: _readAt,
   errorMessage,
   onMediaClick,
 }) => {

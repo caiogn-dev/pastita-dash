@@ -10,8 +10,6 @@ import {
   PaperAirplaneIcon,
   XMarkIcon,
   ArrowPathIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
   CalendarIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Badge, Loading, Modal, Input } from '../../components/common';
@@ -22,7 +20,6 @@ import {
   CreateScheduledMessage,
   ScheduledMessageStats,
   WhatsAppAccount,
-  PaginatedResponse,
 } from '../../types';
 
 const statusVariants: Record<string, 'gray' | 'info' | 'success' | 'danger' | 'warning'> = {

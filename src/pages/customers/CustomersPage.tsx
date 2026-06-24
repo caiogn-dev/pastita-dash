@@ -14,7 +14,6 @@ import {
   XMarkIcon,
   ChatBubbleLeftRightIcon,
   CalendarDaysIcon,
-  CurrencyDollarIcon,
   TagIcon,
 } from '@heroicons/react/24/outline';
 import { format, formatDistanceToNow } from 'date-fns';

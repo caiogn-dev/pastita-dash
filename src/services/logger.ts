@@ -44,7 +44,7 @@ function formatMessage(level: string, message: string, context: LogContext = {})
 /**
  * Send error to external monitoring service (Sentry-ready)
  */
-function sendToMonitoring(error: Error | string, context: LogContext = {}): void {
+function sendToMonitoring(error: Error | string, _context: LogContext = {}): void {
   // Sentry integration placeholder
   // if (typeof window !== 'undefined' && (window as any).Sentry) {
   //   (window as any).Sentry.captureException(error, { extra: context });

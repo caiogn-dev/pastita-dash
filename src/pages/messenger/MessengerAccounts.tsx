@@ -7,7 +7,7 @@ import {
   CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
   MagnifyingGlassIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { Card, Button, Badge } from '../../components/common';
+import { Button, Badge } from '../../components/common';
 import { messengerService, MessengerAccount } from '../../services/messenger';
 import { useConfirm } from '../../hooks';
 

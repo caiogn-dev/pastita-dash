@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import logger from '../../services/logger';
-import { Link } from 'react-router-dom';
 import {
   UserGroupIcon,
   ShoppingCartIcon,

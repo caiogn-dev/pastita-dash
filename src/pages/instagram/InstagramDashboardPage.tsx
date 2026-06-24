@@ -9,7 +9,7 @@
  * - Estatísticas
  * - Acesso rápido a Lives e Shopping
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
@@ -25,13 +25,11 @@ import {
   ChartBarIcon,
   HeartIcon,
   ChatBubbleLeftIcon,
-  BookmarkIcon,
   ShareIcon,
   EyeIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
-import { Card, Button, Loading, Tabs, Badge } from '@/components/common';
+import { Card, Button, Loading, Badge } from '@/components/common';
 import { 
   instagramAccountService, 
   instagramMediaService, 
@@ -39,8 +37,6 @@ import {
   InstagramMedia 
 } from '@/services';
 import { useFetch } from '@/hooks';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 type TabType = 'feed' | 'stories' | 'reels' | 'insights';
 
@@ -48,7 +44,7 @@ export const InstagramDashboardPage: React.FC = () => {
   const { accountId } = useParams<{ accountId: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('feed');
-  const [isCreating, setIsCreating] = useState(false);
+  const [_isCreating, _setIsCreating] = useState(false);
 
   const fetchAccount = useCallback(
     () => instagramAccountService.get(accountId!).then((r: any) => r.data ?? r),

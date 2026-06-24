@@ -1,5 +1,5 @@
 import api, { normalizePaginatedEnvelope } from './api';
-import { Order, OrderItem, OrderEvent, CreateOrder, PaginatedResponse } from '../types';
+import { Order, OrderEvent, CreateOrder, PaginatedResponse } from '../types';
 
 /**
  * Orders Service - API V2
@@ -52,7 +52,7 @@ export const ordersService = {
     params?: Record<string, string | number | undefined> & { store_slug?: string }
   ): Promise<PaginatedResponse<Order>> => {
     const storeSlug = params?.store_slug;
-    const { store_slug, ...apiParams } = params || {};
+    const { store_slug: _store_slug, ...apiParams } = params || {};
     const response = await api.get<PaginatedResponse<Order>>(`${getBaseUrl(storeSlug)}/`, { params: apiParams });
     const page = normalizePaginatedEnvelope<Order>(response.data);
     return { ...page, results: page.results.map(normalizeOrder) };
@@ -167,7 +167,7 @@ export const ordersService = {
 
   exportOrders: async (params?: Record<string, string> & { store_slug?: string }): Promise<Blob> => {
     const storeSlug = params?.store_slug;
-    const { store_slug, ...apiParams } = params || {};
+    const { store_slug: _store_slug, ...apiParams } = params || {};
     const response = await api.get(`${getBaseUrl(storeSlug)}/export/`, {
       params: apiParams,
       responseType: 'blob',
@@ -184,7 +184,7 @@ export const ordersService = {
     revenue: number;
   }> => {
     const storeSlug = params?.store_slug;
-    const { store_slug, ...apiParams } = params || {};
+    const { store_slug: _store_slug, ...apiParams } = params || {};
     const response = await api.get(`${getBaseUrl(storeSlug)}/stats/`, { params: apiParams });
     return response.data;
   },

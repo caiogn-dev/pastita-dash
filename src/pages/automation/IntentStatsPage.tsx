@@ -10,14 +10,6 @@ import {
 import { intentService, intentTypeLabels } from '../../services';
 import type { IntentStats, IntentType } from '../../types';
 
-const methodLabels: Record<string, string> = {
-  regex: 'Regex/Handler',
-  llm: 'LLM / IA',
-  none: 'Nenhum',
-  handler: 'Handler',
-  automessage: 'AutoMessage',
-  fallback: 'Fallback',
-};
 
 export const IntentStatsPage: React.FC = () => {
   const [stats, setStats] = useState<IntentStats | null>(null);

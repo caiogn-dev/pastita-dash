@@ -61,7 +61,7 @@ export default function InstagramInbox() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
-  const [insertText, setInsertText] = useState<string | undefined>(undefined);
+  const [_insertText, setInsertText] = useState<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const markingConversationIdRef = useRef<string | null>(null);
 

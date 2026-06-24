@@ -523,8 +523,7 @@ export class RealtimeConnection {
   private buildUrl(transport: TransportType): string {
     const wsHost = this.getWSHost();
     const storeSlug = this.options.storeSlug || 'default';
-    const token = this.token;
-    
+
     switch (transport) {
       case 'websocket': {
         const proto = this.isSecure() ? 'wss' : 'ws';

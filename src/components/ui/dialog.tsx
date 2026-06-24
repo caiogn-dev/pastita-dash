@@ -2,7 +2,7 @@
  * Dialog Component - Alias for Modal with Dialog-like API
  */
 import React from 'react';
-import { Modal, ModalHeader, ModalBody } from './modal';
+import { Modal } from './modal';
 import { cn } from '../../utils/cn';
 
 // Dialog is just an alias for Modal

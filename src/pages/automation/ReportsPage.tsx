@@ -13,8 +13,6 @@ import {
   EnvelopeIcon,
   ArrowPathIcon,
   ClockIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Badge, Loading, Modal, Input } from '../../components/common';
 import {
@@ -24,11 +22,9 @@ import {
 import { whatsappService, companyProfileService } from '../../services';
 import {
   ReportSchedule,
-  CreateReportSchedule,
   GeneratedReport,
   WhatsAppAccount,
   CompanyProfile,
-  PaginatedResponse,
 } from '../../types';
 
 const statusVariants: Record<string, 'gray' | 'info' | 'success' | 'danger' | 'warning'> = {
@@ -69,8 +65,8 @@ export default function ReportsPage() {
   const [ConfirmDialog, confirm] = useConfirm();
   const [schedules, setSchedules] = useState<ReportSchedule[]>([]);
   const [reports, setReports] = useState<GeneratedReport[]>([]);
-  const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
-  const [companies, setCompanies] = useState<CompanyProfile[]>([]);
+  const [_accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
+  const [_companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'schedules' | 'reports'>('schedules');
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -17,7 +17,7 @@ import { useStore } from '../../hooks';
 
 export const CouponsPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName, isStoreSelected, stores } = useStore();
+  const { storeId: contextStoreId, stores } = useStore();
 
   // Resolve route param (could be slug or UUID) to UUID
   const storeId = useMemo(() => {
@@ -38,7 +38,7 @@ export const CouponsPage: React.FC = () => {
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [deletingCoupon, setDeletingCoupon] = useState<Coupon | null>(null);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
   // Form state - includes store ID
   const getInitialFormData = useCallback((): CreateCoupon => ({

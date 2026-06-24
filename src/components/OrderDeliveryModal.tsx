@@ -18,7 +18,7 @@ interface OrderDeliveryModalProps {
 }
 
 export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId, storeSlug, isOpen, onClose, onAccept }) => {
-  const { state, cancelDelivery, retryDelivery } = useUberDeliveryPolling(orderId, storeSlug, isOpen);
+  const { state, retryDelivery } = useUberDeliveryPolling(orderId, storeSlug, isOpen);
 
   if (!isOpen) return null;
 

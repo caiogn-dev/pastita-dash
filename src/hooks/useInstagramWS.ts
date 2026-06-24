@@ -142,19 +142,19 @@ export interface UseInstagramWSReturn {
 export function useInstagramWS(options: UseInstagramWSOptions): UseInstagramWSReturn {
   const {
     accountId,
-    onMessageReceived,
-    onMessageSent,
-    onMessageSeen,
-    onTyping,
-    onConversationUpdated,
-    onStoryMention,
-    onStoryReply,
-    onConnected,
-    onDisconnected,
-    onError,
-    autoReconnect = true,
-    reconnectInterval = 3000,
-    maxReconnectAttempts = 5,
+    onMessageReceived: _onMessageReceived,
+    onMessageSent: _onMessageSent,
+    onMessageSeen: _onMessageSeen,
+    onTyping: _onTyping,
+    onConversationUpdated: _onConversationUpdated,
+    onStoryMention: _onStoryMention,
+    onStoryReply: _onStoryReply,
+    onConnected: _onConnected,
+    onDisconnected: _onDisconnected,
+    onError: _onError,
+    autoReconnect: _autoReconnect = true,
+    reconnectInterval: _reconnectInterval = 3000,
+    maxReconnectAttempts: _maxReconnectAttempts = 5,
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);

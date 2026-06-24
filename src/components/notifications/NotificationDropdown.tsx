@@ -12,7 +12,7 @@ export const NotificationDropdown: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { isConnected, on } = useWS();
+  const { on } = useWS();
 
   const loadNotifications = useCallback(async () => {
     setIsLoading(true);

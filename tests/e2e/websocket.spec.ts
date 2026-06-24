@@ -10,7 +10,6 @@
 
 import { test, expect } from '@playwright/test';
 
-const API_URL = process.env.VITE_API_URL || 'http://localhost:8000';
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 
 test.describe('WebSocket Real-Time Orders', () => {
@@ -31,9 +30,9 @@ test.describe('WebSocket Real-Time Orders', () => {
     await expect(liveIndicator).toBeVisible({ timeout: 5000 });
   });
 
-  test('should display real-time order creation', async ({ page, context }) => {
+  test('should display real-time order creation', async ({ page, context: _context }) => {
     // Open browser console to capture WebSocket messages
-    let wsMessageReceived = false;
+    let _wsMessageReceived = false;
 
     page.on('websocket', (ws) => {
       console.log('WebSocket opened:', ws.url());
@@ -41,7 +40,7 @@ test.describe('WebSocket Real-Time Orders', () => {
       ws.on('framereceived', (event) => {
         const data = JSON.parse(event.payload.toString());
         if (data.type === 'order.created') {
-          wsMessageReceived = true;
+          _wsMessageReceived = true;
           console.log('Order created event received:', data);
         }
       });
@@ -88,7 +87,7 @@ test.describe('WebSocket Real-Time Orders', () => {
     await expect(liveIndicator).toBeVisible({ timeout: 5000 });
   });
 
-  test('should update order status in real-time', async ({ page, context }) => {
+  test('should update order status in real-time', async ({ page, context: _context }) => {
     // This test requires backend cooperation
     // In a real scenario, you'd have a test API endpoint to trigger events
 

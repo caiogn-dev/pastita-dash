@@ -6,12 +6,6 @@
 import {
   DashboardOverview,
   DashboardCharts,
-  MessageStatus,
-  MessageDirection,
-  ConversationMode,
-  ConversationStatus,
-  OrderStatus,
-  PaymentStatus,
   isDashboardOverview,
   isMessageDirection,
   isMessageStatus,

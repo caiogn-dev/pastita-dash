@@ -90,7 +90,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
     return `w-[${width}px]`;
   };
 
-  const renderItem = (item: DropdownItem, isSubmenuItem = false) => {
+  const renderItem = (item: DropdownItem, _isSubmenuItem = false) => {
     if (item.divider) {
       return (
         <div

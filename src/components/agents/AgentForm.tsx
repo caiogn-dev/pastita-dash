@@ -7,7 +7,7 @@ import {
   LinkIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
-import agentsService, { 
+import {
   PROVIDER_CONFIGS, 
   DEFAULT_AGENT_VALUES, 
   AgentProvider,

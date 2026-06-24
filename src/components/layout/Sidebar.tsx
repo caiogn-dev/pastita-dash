@@ -5,7 +5,6 @@ import {
   DevicePhoneMobileIcon,
   ChatBubbleLeftRightIcon,
   ChatBubbleBottomCenterTextIcon,
-  InboxIcon,
   ShoppingCartIcon,
   CreditCardIcon,
   CpuChipIcon,
@@ -13,7 +12,6 @@ import {
   PrinterIcon,
   BanknotesIcon,
   ArrowRightOnRectangleIcon,
-  BoltIcon,
   UserGroupIcon,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -28,8 +26,6 @@ import {
   DocumentChartBarIcon,
   EnvelopeIcon,
   PlusIcon,
-  BuildingOfficeIcon,
-  ClockIcon,
   PresentationChartLineIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';

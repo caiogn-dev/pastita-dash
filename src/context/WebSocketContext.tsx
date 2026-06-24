@@ -192,7 +192,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Emitir evento para listeners locais
-  const emit = useCallback((event: string, data: OrderEvent) => {
+  const _emit = useCallback((event: string, data: OrderEvent) => {
     const eventListeners = listenersRef.current.get(event);
     const wildcardListeners = listenersRef.current.get('*');
     

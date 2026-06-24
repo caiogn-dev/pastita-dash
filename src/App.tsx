@@ -5,7 +5,7 @@ import logger from './services/logger';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout';
 import { FullPageLoading } from './components/common';
-import { ErrorBoundary, PageBoundary } from './components/ErrorBoundary';
+import { PageBoundary } from './components/ErrorBoundary';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
 import { setAuthToken } from './services';

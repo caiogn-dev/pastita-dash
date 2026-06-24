@@ -81,7 +81,7 @@ const buildMapUrls = ({
 
 export const DeliveryZonesPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName, isStoreSelected, stores } = useStore();
+  const { storeId: contextStoreId, stores } = useStore();
 
   const storeId = useMemo(() => {
     if (!routeStoreId) return contextStoreId || null;
@@ -92,7 +92,7 @@ export const DeliveryZonesPage: React.FC = () => {
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

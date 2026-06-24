@@ -26,7 +26,6 @@ import ComboList from '../../../components/Combos/ComboList';
 import { useStore } from '../../../hooks';
 import storesApi, {
   StoreCombo,
-  StoreProduct as Product,
   getCombos,
   deleteCombo,
 } from '../../../services/storesApi';

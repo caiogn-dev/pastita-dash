@@ -19,7 +19,7 @@ import { ptBR } from 'date-fns/locale';
 
 export const AgentFlowsPage: React.FC = () => {
   const { storeId } = useStore();
-  const [ConfirmDialog, confirm] = useConfirm();
+  const [_ConfirmDialog, confirm] = useConfirm();
   const [flows, setFlows] = useState<AgentFlow[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);

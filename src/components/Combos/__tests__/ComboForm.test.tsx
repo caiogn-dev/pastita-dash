@@ -11,11 +11,10 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Toaster } from 'react-hot-toast';
 import { ComboForm } from '../ComboForm';
-import type { ComboGroupDraft, VariantLimitDraft } from '../ComboForm';
 import type { StoreCombo, StoreProduct } from '../../../services/storesApi';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -540,7 +539,7 @@ describe('ComboForm', () => {
     });
 
     it('shows stock quantity input when track_stock is enabled', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       render(
         <>
           <ComboForm
@@ -733,7 +732,7 @@ describe('ComboForm', () => {
     });
 
     it('shows loading state while submitting', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const slowSubmit = jest.fn(
         () => new Promise(resolve => setTimeout(resolve, 100))
       );
@@ -757,7 +756,7 @@ describe('ComboForm', () => {
 
   describe('Tab Navigation', () => {
     it('switches between tabs', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       render(
         <>
           <ComboForm
