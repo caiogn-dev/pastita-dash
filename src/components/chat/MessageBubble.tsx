@@ -404,18 +404,28 @@ const MediaPreview: React.FC<{
 
   // Contatos
   if (type === 'contacts') {
+    const contactsRaw = typeof content === 'string'
+      ? (() => { try { return JSON.parse(content); } catch { return null; } })()
+      : content;
+    const contactsList: Array<{ name?: { formatted_name?: string }; phones?: Array<{ phone?: string }> }> =
+      Array.isArray(contactsRaw) ? contactsRaw : contactsRaw ? [contactsRaw] : [];
+    const displayName = contactsList[0]?.name?.formatted_name || 'Contato';
+    const displayPhone = contactsList[0]?.phones?.[0]?.phone;
+    const extra = contactsList.length > 1 ? ` +${contactsList.length - 1}` : '';
     return (
       <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg mb-2 max-w-[280px]">
         <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
           <UserIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            Contato
+          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+            {displayName}{extra}
           </p>
-          <p className="text-xs text-gray-500 dark:text-zinc-400">
-            {renderText(content)}
-          </p>
+          {displayPhone && (
+            <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
+              {displayPhone}
+            </p>
+          )}
         </div>
       </div>
     );
