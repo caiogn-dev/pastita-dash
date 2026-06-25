@@ -282,6 +282,12 @@ export const OrderDetailPage: React.FC = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showUberModal, setShowUberModal] = useState(false);
   const [editing, setEditing] = useState(false);
+  // Fase 3 — geração de cobrança PIX (link de pagamento)
+  const [chargeAmount, setChargeAmount] = useState<string>('');
+  const [generatingCharge, setGeneratingCharge] = useState(false);
+  const [generatedPix, setGeneratedPix] = useState<
+    { pix_code?: string; pix_qr_code?: string; ticket_url?: string } | null
+  >(null);
 
   // Imprime o pedido. hidePrices=true gera a comanda da cozinha (sem valores/pagamento).
   const handlePrint = async (hidePrices = false) => {
@@ -305,6 +311,49 @@ export const OrderDetailPage: React.FC = () => {
   useEffect(() => {
     if (id) loadOrder();
   }, [id]);
+
+  // Default do valor da cobrança = saldo faltante (amount_due) ao carregar o pedido.
+  useEffect(() => {
+    if (order?.amount_due !== undefined && order?.amount_due !== null) {
+      setChargeAmount(String(order.amount_due));
+    }
+  }, [order?.id]);
+
+  const handleGenerateCharge = async () => {
+    if (!order) return;
+    const raw = chargeAmount.trim().replace(',', '.');
+    const parsed = raw ? Number(raw) : undefined;
+    if (parsed !== undefined && (Number.isNaN(parsed) || parsed <= 0)) {
+      toast.error('Informe um valor válido para a cobrança.');
+      return;
+    }
+    setGeneratingCharge(true);
+    try {
+      // "igual ao adjust": usa a rota global (sem slug), mesma da edição de pedido.
+      const { payment, order: updated } = await ordersService.generatePayment(order.id, {
+        amount: parsed,
+        payment_method: 'pix',
+      });
+      setOrder(updated);
+      setGeneratedPix({
+        pix_code: (payment.pix_code as string) || undefined,
+        pix_qr_code: (payment.pix_qr_code as string) || undefined,
+        ticket_url: (payment.ticket_url as string) || (payment.pix_ticket_url as string) || undefined,
+      });
+      const fresh = await paymentsService.getByOrder(order.id).catch(() => payments);
+      setPayments(fresh);
+      toast.success('Cobrança PIX gerada!');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setGeneratingCharge(false);
+    }
+  };
+
+  const handleCopyPix = (code: string) => {
+    navigator.clipboard?.writeText(code);
+    toast.success('Código PIX copiado!');
+  };
 
   const loadOrder = async () => {
     if (!id) return;
@@ -406,6 +455,10 @@ export const OrderDetailPage: React.FC = () => {
     mercadopago: 'Mercado Pago',
   };
   const paymentLink = order.pix_ticket_url || order.payment_url || order.payment_link || order.init_point || null;
+  // Fase 3 — saldo de pagamento (campos read-only do backend; podem não existir em respostas antigas)
+  const hasPaymentBalance = order.amount_due !== undefined && order.amount_due !== null;
+  const amountDue = Number(order.amount_due ?? 0);
+  const isFullyPaid = order.is_fully_paid === true || (hasPaymentBalance && amountDue <= 0);
   const compactAddress = buildCompactAddress(address);
   const customerInitials = getInitials(order.customer_name);
   const manualSurcharge =
@@ -622,6 +675,27 @@ export const OrderDetailPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Saldo de pagamento (Fase 3) */}
+              {hasPaymentBalance && (
+                amountDue > 0 ? (
+                  <div
+                    role="status"
+                    className="flex items-center justify-between gap-3 rounded-[24px] border border-amber-200/80 bg-[#f8edd0] px-4 py-4 text-[#6a5731] dark:border-amber-800/40 dark:bg-[#2b2417] dark:text-[#d8c18c] sm:px-5"
+                  >
+                    <span className="text-sm font-semibold">Falta receber</span>
+                    <span className="text-lg font-semibold tracking-[-0.02em]">{formatMoney(amountDue)}</span>
+                  </div>
+                ) : (
+                  <div
+                    role="status"
+                    className="flex items-center gap-2 rounded-[24px] border border-green-200/80 bg-green-50 px-4 py-4 text-sm font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-300 sm:px-5"
+                  >
+                    <CheckIcon className="h-5 w-5" />
+                    Pago integralmente
+                  </div>
+                )
+              )}
+
               {/* Notes — always visible, critical for kitchen ops */}
               {(order.customer_notes || order.notes) && (
                 <div className="rounded-[24px] border border-amber-200/80 bg-[#f8edd0] px-4 py-4 text-[#6a5731] dark:border-amber-800/40 dark:bg-[#2b2417] dark:text-[#d8c18c] sm:px-5">
@@ -642,8 +716,8 @@ export const OrderDetailPage: React.FC = () => {
               )}
 
               {/* Payment details — secondary info in collapsible */}
-              {(paymentLink || order.pix_code || payments.length > 0) && (
-                <details className="group rounded-[24px] border border-black/10 bg-white/55 px-4 py-4 dark:border-white/10 dark:bg-white/5 sm:px-5">
+              {(paymentLink || order.pix_code || payments.length > 0 || (hasPaymentBalance && amountDue > 0)) && (
+                <details className="group rounded-[24px] border border-black/10 bg-white/55 px-4 py-4 dark:border-white/10 dark:bg-white/5 sm:px-5" open>
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                     <div>
                       <h2 className="text-base font-semibold">Dados de pagamento</h2>
@@ -652,8 +726,86 @@ export const OrderDetailPage: React.FC = () => {
                   </summary>
 
                   <div className="mt-4 space-y-4 text-sm">
+                    {/* F3 — gerar cobrança PIX da diferença */}
+                    {amountDue > 0 && (
+                      <div className="space-y-3 rounded-2xl border border-dashed border-[#c97a36]/40 bg-white/60 px-4 py-4 dark:border-[#c97a36]/30 dark:bg-white/5">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#9a8f7e] dark:text-[#8b816f]">
+                          Gerar cobrança PIX
+                        </p>
+                        <div className="flex flex-wrap items-end gap-3">
+                          <label className="flex flex-col gap-1 text-xs">
+                            <span className="text-[#746b5f] dark:text-[#9d9385]">Valor da cobrança (R$)</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              inputMode="decimal"
+                              aria-label="Valor da cobrança"
+                              value={chargeAmount}
+                              onChange={(e) => setChargeAmount(e.target.value)}
+                              className="w-36 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#c97a36] dark:border-white/10 dark:bg-white/5"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleGenerateCharge}
+                            disabled={generatingCharge}
+                            className="rounded-full bg-[#c97a36] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#b86b2c] disabled:opacity-60"
+                          >
+                            {generatingCharge ? 'Gerando...' : 'Gerar cobrança PIX'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* F3 — PIX recém-gerado: copia-e-cola + QR + link */}
+                    {generatedPix && (
+                      <div className="space-y-3 rounded-2xl border border-[#c97a36]/30 bg-white/70 px-4 py-4 dark:border-[#c97a36]/30 dark:bg-white/5">
+                        {generatedPix.pix_code && (
+                          <div className="space-y-2">
+                            <span className="text-xs font-semibold">PIX copia e cola</span>
+                            <div className="flex items-center gap-2">
+                              <code className="block flex-1 break-all rounded-xl border border-dashed border-black/10 px-3 py-2 text-xs dark:border-white/10">
+                                {generatedPix.pix_code}
+                              </code>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyPix(generatedPix.pix_code!)}
+                                className="shrink-0 rounded-full border border-black/10 px-3 py-2 text-xs font-medium hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+                              >
+                                Copiar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {generatedPix.pix_qr_code && (
+                          <img
+                            src={generatedPix.pix_qr_code.startsWith('data:')
+                              ? generatedPix.pix_qr_code
+                              : `data:image/png;base64,${generatedPix.pix_qr_code}`}
+                            alt="QR Code PIX"
+                            className="h-40 w-40 rounded-xl border border-black/10 dark:border-white/10"
+                          />
+                        )}
+                        {generatedPix.ticket_url && (
+                          <a
+                            href={generatedPix.ticket_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex rounded-full border border-black/10 px-4 py-2 font-medium hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+                          >
+                            Abrir link de pagamento
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {/* F4 — lista de cobranças do pedido */}
                     {payments.length > 0 && (
                       <div className="space-y-2">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#9a8f7e] dark:text-[#8b816f]">
+                          Cobranças
+                        </p>
                         {payments.map((payment) => (
                           <div key={payment.id} className="flex items-center justify-between gap-3 rounded-2xl border border-black/5 px-4 py-3 dark:border-white/5">
                             <div>
@@ -663,7 +815,9 @@ export const OrderDetailPage: React.FC = () => {
                                  payment.payment_method === 'cash' ? 'Dinheiro' :
                                  payment.payment_method}
                               </p>
-                              <p className="text-xs text-[#746b5f] dark:text-[#9d9385]">{payment.status}</p>
+                              <p className="text-xs text-[#746b5f] dark:text-[#9d9385]">
+                                {paymentStatusLabel[payment.status] || payment.status}
+                              </p>
                             </div>
                             <span className="font-semibold">{formatMoney(payment.amount)}</span>
                           </div>
