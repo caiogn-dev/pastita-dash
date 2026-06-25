@@ -262,6 +262,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
                     onClick={() => startEdit(v)}
                     className="p-1.5 rounded-md text-gray-500 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-zinc-800"
                     title="Editar"
+                    aria-label={`Editar variante ${v.name}`}
                   >
                     <PencilIcon className="w-4 h-4" />
                   </button>
@@ -270,6 +271,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
                     onClick={() => handleDelete(v)}
                     className="p-1.5 rounded-md text-gray-500 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-zinc-800"
                     title="Excluir"
+                    aria-label={`Excluir variante ${v.name}`}
                   >
                     <TrashIcon className="w-4 h-4" />
                   </button>

@@ -280,6 +280,7 @@ export const Navbar: React.FC = () => {
             <button
               onClick={() => setMobileOpen(true)}
               className="hidden max-lg:block p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Abrir menu de navegação"
             >
               <Bars3Icon className="w-5 h-5" />
             </button>
@@ -294,7 +295,7 @@ export const Navbar: React.FC = () => {
           <div className="fixed top-0 left-0 bottom-0 w-72 bg-surface z-50 hidden max-lg:flex flex-col shadow-2xl">
             <div className="flex items-center justify-between px-4 h-12 bg-[var(--brand-strong)] text-white border-b border-[var(--border)] flex-shrink-0">
               <span className="font-bold text-sm text-white">{brandInfo.name}</span>
-              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white">
+              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white" aria-label="Fechar menu de navegação">
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
