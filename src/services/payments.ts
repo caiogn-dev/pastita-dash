@@ -113,6 +113,22 @@ export const paymentsService = {
   },
 
   /**
+   * Cria um link de pagamento PIX AVULSO (Fase 3), sem pedido vinculado.
+   * POST /stores/payments/create_link/ → { payment, store_payment }.
+   * `store_payment.order` é null no avulso.
+   */
+  createPaymentLink: async (data: {
+    store: string;
+    amount: number;
+    description?: string;
+    payer_name?: string;
+    payer_email?: string;
+  }): Promise<{ payment: Record<string, unknown>; store_payment: Record<string, unknown> }> => {
+    const response = await api.post(`${BASE_URL}/create_link/`, data);
+    return response.data;
+  },
+
+  /**
    * Get all payments for a specific order
    */
   getByOrder: async (orderId: string): Promise<Payment[]> => {
