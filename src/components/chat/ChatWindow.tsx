@@ -140,9 +140,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ accountId, accountName, 
     try {
       const historyRes = await conversationsService.getMessages(selectedConversation.id, 100);
       setMessages(ensureArray<Message>(historyRes.results));
+      // Rola para a última mensagem após o histórico carregar
+      setTimeout(() => scrollToBottom(), 100);
     } catch (error) { toast.error(getErrorMessage(error)); }
     finally { setIsLoadingMessages(false); }
-  }, [accountId, selectedConversation]);
+  }, [accountId, selectedConversation, scrollToBottom]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
