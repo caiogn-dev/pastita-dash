@@ -99,6 +99,7 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
         <button
           onClick={onClose}
           className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] transition-colors"
+          aria-label="Fechar painel de contato"
         >
           <XMarkIcon className="w-4 h-4 text-[var(--fg-secondary)]" />
         </button>
@@ -124,7 +125,7 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
                 </p>
                 <div className="flex items-center gap-1.5 justify-center mt-0.5">
                   <p className="text-sm text-[var(--fg-secondary)]">{conversation.phone_number}</p>
-                  <button onClick={handleCopyPhone} title="Copiar telefone">
+                  <button onClick={handleCopyPhone} title="Copiar telefone" aria-label="Copiar telefone">
                     <ClipboardDocumentIcon className="w-3.5 h-3.5 text-[var(--fg-muted)] hover:text-primary-600 transition-colors" />
                   </button>
                 </div>

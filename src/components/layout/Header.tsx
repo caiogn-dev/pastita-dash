@@ -102,6 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onMenuClick}
               className="lg:hidden rounded-lg border border-gray-200 bg-white/70 p-2 text-gray-600 transition hover:border-gray-300 hover:text-gray-900 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:text-white"
+              aria-label="Abrir menu de navegação"
             >
               <Bars3Icon className="h-6 w-6" />
             </button>
