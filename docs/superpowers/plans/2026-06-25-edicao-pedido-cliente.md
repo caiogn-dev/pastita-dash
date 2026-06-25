@@ -516,6 +516,21 @@ class OrderAdjustItemsTestCase(APITestCase):
             'item_ops': [{'op': 'update', 'item_id': str(alien.id), 'quantity': 2}],
         }, format='json')
         self.assertEqual(resp.status_code, 400, resp.content)
+
+    def test_failed_op_rolls_back_earlier_ops(self):
+        """Um add válido seguido de um op inválido NÃO pode persistir o add
+        (rollback do atomic via raise, não return)."""
+        import uuid
+        resp = self.client.post(self.url, {
+            'item_ops': [
+                {'op': 'add', 'product_id': str(self.p25.id), 'quantity': 1},
+                {'op': 'remove', 'item_id': str(uuid.uuid4())},  # falha → rollback
+            ],
+        }, format='json')
+        self.assertEqual(resp.status_code, 400, resp.content)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.items.count(), 1)  # add desfeito
+        self.assertEqual(self.order.total, Decimal('10.00'))  # total intacto
 ```
 
 - [ ] **Step 2: Rodar e confirmar a falha**
@@ -537,11 +552,9 @@ Em `apps/stores/api/views/order_views.py`, dentro do `adjust`, substituir o come
                         status=StoreProduct.ProductStatus.ACTIVE,
                     ).first()
                     if not product:
-                        return Response(
+                        raise DRFValidationError(
                             {'error': 'Produto não encontrado ou inativo.',
-                             'code': 'product_not_found'},
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
+                             'code': 'product_not_found'})
                     qty = op['quantity']
                     unit_price = product.price or Decimal('0.00')
                     StoreOrderItem.objects.create(
@@ -553,30 +566,24 @@ Em `apps/stores/api/views/order_views.py`, dentro do `adjust`, substituir o come
                 elif kind == 'update':
                     item = order.items.filter(id=op['item_id']).first()
                     if not item:
-                        return Response(
+                        raise DRFValidationError(
                             {'error': 'Item não pertence a este pedido.',
-                             'code': 'item_not_found'},
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
+                             'code': 'item_not_found'})
                     item.quantity = op['quantity']
                     item.subtotal = item.unit_price * item.quantity
                     item.save(update_fields=['quantity', 'subtotal'])
                 elif kind == 'remove':
                     item = order.items.filter(id=op['item_id']).first()
                     if not item:
-                        return Response(
+                        raise DRFValidationError(
                             {'error': 'Item não pertence a este pedido.',
-                             'code': 'item_not_found'},
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
+                             'code': 'item_not_found'})
                     item.delete()
 
             if not order.items.exists():
-                return Response(
+                raise DRFValidationError(
                     {'error': 'O pedido precisa manter pelo menos um item.',
-                     'code': 'order_empty'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                     'code': 'order_empty'})
 ```
 
 `StoreProduct` precisa estar importado em `order_views.py`. O import atual (linha 18) é `from apps.stores.models import Store, StoreOrder, StoreOrderItem, StoreCustomer`; acrescentar `StoreProduct`:
@@ -585,7 +592,9 @@ Em `apps/stores/api/views/order_views.py`, dentro do `adjust`, substituir o come
 from apps.stores.models import Store, StoreOrder, StoreOrderItem, StoreCustomer, StoreProduct
 ```
 
-> Nota: os `return Response(...)` dentro do `with transaction.atomic()` retornam e fazem rollback do bloco — comportamento correto (nada persiste num op inválido).
+> **CRÍTICO (rollback):** um `return Response(...)` dentro de `with transaction.atomic()` faz o bloco sair NORMALMENTE → o Django **COMMITA** (não faz rollback). Como agora há escritas de item ANTES dos guards, um `return` deixaria itens persistidos parcialmente num op inválido. Por isso todos os guards dentro do `atomic` usam **`raise DRFValidationError(...)`** (a exceção dispara o rollback e o handler do DRF a converte em 400). `DRFValidationError` JÁ está importado no topo de `order_views.py` (linha 9: `from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied`) — não reimportar.
+>
+> **Converter também o guard de total-negativo da Task 3:** dentro do mesmo `adjust`, o guard `if prospective < _D('0.00'): return Response(...)` foi escrito na Task 3 com `return Response`. Como o processamento de item_ops agora escreve ANTES dele, troque esse `return Response(...)` por `raise DRFValidationError({'error': 'Desconto deixa o total negativo.', 'code': 'total_negative'})` para garantir rollback das mudanças de item quando o desconto for rejeitado.
 
 - [ ] **Step 4: Rodar e confirmar que passa (suite inteira do arquivo)**
 
