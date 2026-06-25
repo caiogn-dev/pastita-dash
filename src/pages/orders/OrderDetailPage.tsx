@@ -408,8 +408,12 @@ export const OrderDetailPage: React.FC = () => {
   const paymentLink = order.pix_ticket_url || order.payment_url || order.payment_link || order.init_point || null;
   const compactAddress = buildCompactAddress(address);
   const customerInitials = getInitials(order.customer_name);
-  const manualSurcharge = getManualSurcharge(order.metadata);
-  const adjustmentReason = getAdjustmentReason(order.metadata);
+  const manualSurcharge =
+    Number(order.surcharge_value ?? order.metadata?.manual_surcharge ?? 0) || 0;
+  const adjustmentReason =
+    order.surcharge_reason?.trim() ||
+    order.manual_discount_reason?.trim() ||
+    getAdjustmentReason(order.metadata);
 
   return (
     <div className="min-h-screen bg-[#f5f1e8] text-[#171717] dark:bg-[#050505] dark:text-[#f4efe6]">
@@ -581,18 +585,32 @@ export const OrderDetailPage: React.FC = () => {
                     <span className="font-semibold">{formatMoney(order.delivery_fee || order.shipping_cost)}</span>
                   </div>
                   {order.discount ? (
-                    <div className="flex items-center justify-between gap-3 sm:col-span-2">
-                      <span className="text-[#746b5f] dark:text-[#9d9385]">Desconto</span>
-                      <span className="font-semibold text-green-600 dark:text-green-400">-{formatMoney(order.discount)}</span>
+                    <div className="sm:col-span-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[#746b5f] dark:text-[#9d9385]">Desconto</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">-{formatMoney(order.discount)}</span>
+                      </div>
+                      {order.manual_discount_reason?.trim() ? (
+                        <p className="mt-0.5 text-xs italic text-[#9a8f7e] dark:text-[#8b816f]">
+                          {order.manual_discount_reason.trim()}
+                        </p>
+                      ) : null}
                     </div>
                   ) : null}
                   {manualSurcharge > 0 ? (
-                    <div className="flex items-center justify-between gap-3 sm:col-span-2">
-                      <span className="text-[#746b5f] dark:text-[#9d9385]">Acréscimo</span>
-                      <span className="font-semibold">{formatMoney(manualSurcharge)}</span>
+                    <div className="sm:col-span-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[#746b5f] dark:text-[#9d9385]">Acréscimo</span>
+                        <span className="font-semibold">{formatMoney(manualSurcharge)}</span>
+                      </div>
+                      {order.surcharge_reason?.trim() ? (
+                        <p className="mt-0.5 text-xs italic text-[#9a8f7e] dark:text-[#8b816f]">
+                          {order.surcharge_reason.trim()}
+                        </p>
+                      ) : null}
                     </div>
                   ) : null}
-                  {adjustmentReason ? (
+                  {!order.surcharge_reason?.trim() && !order.manual_discount_reason?.trim() && adjustmentReason ? (
                     <div className="sm:col-span-2 text-xs text-[#9a8f7e] dark:text-[#8b816f] italic">
                       {adjustmentReason}
                     </div>
