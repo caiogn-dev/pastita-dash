@@ -4,7 +4,10 @@ import { EditOrderDrawer } from '../EditOrderDrawer';
 import { ordersService } from '../../../services/orders';
 
 jest.mock('../../../services/orders', () => ({
-  ordersService: { updateOrder: jest.fn().mockResolvedValue({ id: 'o1' }) },
+  ordersService: {
+    updateOrder: jest.fn().mockResolvedValue({ id: 'o1' }),
+    adjustOrder: jest.fn().mockResolvedValue({}),
+  },
 }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
 
@@ -46,4 +49,29 @@ test('habilitar agendamento com apenas horario (sem data) nao envia campos de ag
   const patch = (ordersService.updateOrder as jest.Mock).mock.calls[0][1];
   expect(patch).not.toHaveProperty('scheduled_date');
   expect(patch).not.toHaveProperty('scheduled_time');
+});
+
+// Task 7: discount / surcharge / delivery-fee editing
+const moneyOrder = {
+  id: 'ord-1', customer_name: 'Maria', customer_phone: '6300', customer_notes: '',
+  discount: 0, surcharge_value: 0, surcharge_reason: '', delivery_fee: 0,
+  manual_discount_reason: '', items: [], subtotal: 20, total: 20,
+} as unknown as import('../../../types').Order;
+
+it('envia adjustOrder com desconto e acréscimo alterados', async () => {
+  (ordersService.adjustOrder as jest.Mock).mockClear();
+  render(<EditOrderDrawer order={moneyOrder} onClose={jest.fn()} onSaved={jest.fn()} />);
+  fireEvent.change(screen.getByLabelText(/desconto/i), { target: { value: '5' } });
+  fireEvent.change(screen.getByLabelText(/acréscimo/i), { target: { value: '3' } });
+  fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+  await waitFor(() => expect(ordersService.adjustOrder).toHaveBeenCalledWith(
+    'ord-1', expect.objectContaining({ discount: 5, surcharge_value: 3 }), undefined,
+  ));
+});
+
+it('não chama adjustOrder quando dinheiro não mudou', async () => {
+  (ordersService.adjustOrder as jest.Mock).mockClear();
+  render(<EditOrderDrawer order={moneyOrder} onClose={jest.fn()} onSaved={jest.fn()} />);
+  fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+  await waitFor(() => expect(ordersService.adjustOrder).not.toHaveBeenCalled());
 });

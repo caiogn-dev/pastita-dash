@@ -19,6 +19,11 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
   const [scheduledDate, setScheduledDate] = useState(order.scheduled_date ?? '');
   const [scheduledTime, setScheduledTime] = useState(order.scheduled_time ?? '');
   const [saving, setSaving] = useState(false);
+  const [discount, setDiscount] = useState(String(order.discount ?? 0));
+  const [discountReason, setDiscountReason] = useState(order.manual_discount_reason ?? '');
+  const [surcharge, setSurcharge] = useState(String(order.surcharge_value ?? 0));
+  const [surchargeReason, setSurchargeReason] = useState(order.surcharge_reason ?? '');
+  const [deliveryFee, setDeliveryFee] = useState(String(order.delivery_fee ?? 0));
 
   const buildPatch = (): Record<string, unknown> => {
     const patch: Record<string, unknown> = {};
@@ -35,13 +40,24 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
     return patch;
   };
 
+  const buildAdjust = (): import('../../types').OrderAdjustPayload | null => {
+    const adj: import('../../types').OrderAdjustPayload = {};
+    const num = (s: string) => Number(s) || 0;
+    if (num(discount) !== (order.discount ?? 0)) { adj.discount = num(discount); adj.discount_reason = discountReason; }
+    if (num(surcharge) !== (order.surcharge_value ?? 0)) { adj.surcharge_value = num(surcharge); adj.surcharge_reason = surchargeReason; }
+    if (num(deliveryFee) !== (order.delivery_fee ?? 0)) { adj.delivery_fee = num(deliveryFee); }
+    return Object.keys(adj).length ? adj : null;
+  };
+
   const handleSave = async () => {
     if (saving) return;
     const patch = buildPatch();
-    if (Object.keys(patch).length === 0) { onClose(); return; }
+    const adjust = buildAdjust();
+    if (Object.keys(patch).length === 0 && !adjust) { onClose(); return; }
     setSaving(true);
     try {
-      await ordersService.updateOrder(order.id, patch);
+      if (Object.keys(patch).length > 0) await ordersService.updateOrder(order.id, patch);
+      if (adjust) await ordersService.adjustOrder(order.id, adjust, undefined);
       toast.success('Pedido atualizado');
       onSaved();
     } catch {
@@ -118,6 +134,24 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
+          </div>
+
+          {/* Desconto / Acréscimo / Taxa */}
+          <div className="rounded-xl border border-border-token p-3 space-y-3">
+            <div>
+              <label htmlFor="edit-discount" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Desconto (R$)</label>
+              <input id="edit-discount" type="number" min="0" step="0.01" className={inputCls} value={discount} onChange={(e) => setDiscount(e.target.value)} />
+              <input aria-label="Motivo do abatimento" className={`${inputCls} mt-2`} placeholder="Motivo (opcional)" value={discountReason} onChange={(e) => setDiscountReason(e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="edit-surcharge" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Acréscimo (R$)</label>
+              <input id="edit-surcharge" type="number" min="0" step="0.01" className={inputCls} value={surcharge} onChange={(e) => setSurcharge(e.target.value)} />
+              <input aria-label="Motivo do adicional" className={`${inputCls} mt-2`} placeholder="Motivo (opcional)" value={surchargeReason} onChange={(e) => setSurchargeReason(e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="edit-delivery" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Taxa de entrega (R$)</label>
+              <input id="edit-delivery" type="number" min="0" step="0.01" className={inputCls} value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} />
+            </div>
           </div>
 
           {/* Scheduling */}
