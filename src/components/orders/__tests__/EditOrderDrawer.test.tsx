@@ -9,6 +9,13 @@ jest.mock('../../../services/orders', () => ({
     adjustOrder: jest.fn().mockResolvedValue({}),
   },
 }));
+jest.mock('../../../services/products', () => ({
+  productsService: {
+    getProducts: jest.fn().mockResolvedValue({
+      results: [{ id: 'prod-9', name: 'Suco', price: 7 }],
+    }),
+  },
+}));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
 
 const baseOrder = { id: 'o1', customer_name: 'Antigo', customer_phone: '63999990000', store: 'loja-1' } as never;
@@ -96,5 +103,34 @@ it('envia item_ops ao mudar quantidade e remover item', async () => {
       { op: 'update', item_id: 'it-1', quantity: 2 },
       { op: 'remove', item_id: 'it-2' },
     ]));
+  });
+});
+
+// Task 8 (add-picker): adicionar produto pelo seletor
+it('envia item_ops com op add ao selecionar produto no seletor', async () => {
+  (ordersService.adjustOrder as jest.Mock).mockClear();
+  const orderWithStore = {
+    ...moneyOrder,
+    store: 'store-1',
+    items: [
+      { id: 'it-1', product: 'p1', product_name: 'X', quantity: 1, unit_price: 10, subtotal: 10 },
+    ],
+  } as unknown as import('../../../types').Order;
+  render(<EditOrderDrawer order={orderWithStore} onClose={jest.fn()} onSaved={jest.fn()} />);
+  // Wait for the product option to appear in the select
+  const option = await screen.findByRole('option', { name: /suco/i });
+  expect(option).toBeInTheDocument();
+  // Select the product
+  fireEvent.change(screen.getByRole('combobox', { name: /adicionar produto/i }), {
+    target: { value: 'prod-9' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+  await waitFor(() => {
+    const call = (ordersService.adjustOrder as jest.Mock).mock.calls[0][1];
+    expect(call.item_ops).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ op: 'add', product_id: 'prod-9', quantity: 1 }),
+      ]),
+    );
   });
 });

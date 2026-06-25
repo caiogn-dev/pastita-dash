@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { ordersService } from '../../services/orders';
+import { productsService } from '../../services/products';
+import type { Product } from '../../services/products';
 import { TIME_SLOTS } from '../../utils/schedulingSlots';
 import type { Order, OrderItemOp } from '../../types';
 
@@ -30,11 +32,28 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
     })),
   );
   const [addedOps, setAddedOps] = useState<OrderItemOp[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [discount, setDiscount] = useState(String(order.discount ?? 0));
   const [discountReason, setDiscountReason] = useState(order.manual_discount_reason ?? '');
   const [surcharge, setSurcharge] = useState(String(order.surcharge_value ?? 0));
   const [surchargeReason, setSurchargeReason] = useState(order.surcharge_reason ?? '');
   const [deliveryFee, setDeliveryFee] = useState(String(order.delivery_fee ?? 0));
+
+  useEffect(() => {
+    const storeId = (order as unknown as { store?: string }).store;
+    if (!storeId) return;
+    productsService
+      .getProducts({ store: storeId, is_active: true, page_size: 40, ordering: 'name' } as never)
+      .then((res) => setProducts(res.results))
+      .catch(() => { /* non-blocking */ });
+  }, [order]);
+
+  const addProduct = (productId: string) => {
+    if (!productId) return;
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+    setAddedOps((prev) => [...prev, { op: 'add', product_id: product.id, quantity: 1 } as OrderItemOp]);
+  };
 
   const incItem = (id: string) => setItems((xs) => xs.map((i) => i.id === id ? { ...i, quantity: i.quantity + 1 } : i));
   const decItem = (id: string) => setItems((xs) => xs.map((i) => i.id === id && i.quantity > 1 ? { ...i, quantity: i.quantity - 1 } : i));
@@ -165,20 +184,50 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
           </div>
 
           {/* Itens */}
-          {items.length > 0 && (
-            <div className="rounded-xl border border-border-token p-3 space-y-2">
-              <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">Itens</p>
-              {items.filter((i) => !i.removed).map((it) => (
-                <div key={it.id} className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-fg-token flex-1 truncate">{it.product_name}</span>
-                  <button type="button" aria-label={`Diminuir ${it.product_name}`} onClick={() => decItem(it.id)} className="px-2 rounded border border-border-token">−</button>
-                  <span className="w-6 text-center text-sm">{it.quantity}</span>
-                  <button type="button" aria-label={`Aumentar ${it.product_name}`} onClick={() => incItem(it.id)} className="px-2 rounded border border-border-token">+</button>
-                  <button type="button" aria-label={`Remover ${it.product_name}`} onClick={() => removeItem(it.id)} className="px-2 rounded text-red-500">×</button>
+          <div className="rounded-xl border border-border-token p-3 space-y-2">
+            <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">Itens</p>
+            {items.filter((i) => !i.removed).map((it) => (
+              <div key={it.id} className="flex items-center justify-between gap-2">
+                <span className="text-sm text-fg-token flex-1 truncate">{it.product_name}</span>
+                <button type="button" aria-label={`Diminuir ${it.product_name}`} onClick={() => decItem(it.id)} className="px-2 rounded border border-border-token">−</button>
+                <span className="w-6 text-center text-sm">{it.quantity}</span>
+                <button type="button" aria-label={`Aumentar ${it.product_name}`} onClick={() => incItem(it.id)} className="px-2 rounded border border-border-token">+</button>
+                <button type="button" aria-label={`Remover ${it.product_name}`} onClick={() => removeItem(it.id)} className="px-2 rounded text-red-500">×</button>
+              </div>
+            ))}
+            {addedOps.map((op, idx) => {
+              const p = products.find((x) => x.id === (op as { product_id?: string }).product_id);
+              return (
+                <div key={`added-${idx}`} className="flex items-center justify-between gap-2 opacity-80">
+                  <span className="text-sm text-fg-token flex-1 truncate">{p?.name ?? 'Produto'} <span className="text-xs text-fg-muted-token">(novo)</span></span>
+                  <span className="w-6 text-center text-sm">1</span>
+                  <button
+                    type="button"
+                    aria-label={`Remover produto adicionado ${p?.name ?? ''}`}
+                    onClick={() => setAddedOps((prev) => prev.filter((_, i) => i !== idx))}
+                    className="px-2 rounded text-red-500"
+                  >×</button>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+            {products.length > 0 && (
+              <div className="pt-1">
+                <label htmlFor="add-product-select" className="block text-xs text-fg-muted-token mb-1">Adicionar produto</label>
+                <select
+                  id="add-product-select"
+                  aria-label="Adicionar produto"
+                  className="w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:border-brand"
+                  value=""
+                  onChange={(e) => { addProduct(e.target.value); e.target.value = ''; }}
+                >
+                  <option value="">— selecionar produto —</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
 
           {/* Desconto / Acréscimo / Taxa */}
           <div className="rounded-xl border border-border-token p-3 space-y-3">
