@@ -341,6 +341,12 @@ export interface Order {
   surcharge_reason?: string;
   manual_discount_reason?: string;
   total: number;
+  /** Fase 3 — soma das cobranças (StorePayment) já pagas. Read-only do backend. */
+  amount_paid?: number;
+  /** Fase 3 — saldo faltante = max(0, total - amount_paid). Read-only do backend. */
+  amount_due?: number;
+  /** Fase 3 — true quando amount_due == 0. Read-only do backend. */
+  is_fully_paid?: boolean;
   status: 'pending' | 'processing' | 'confirmed' | 'preparing' | 'ready' | 'shipped' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'completed' | 'refunded' | 'failed' | 'paid';
   payment_status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
   payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card' | string;

@@ -28,6 +28,12 @@ const normalizeOrder = (order: Order): Order => ({
     : order.delivery_fee,
   tax: toNumber(order.tax),
   total: toNumber(order.total),
+  amount_paid: order.amount_paid !== undefined && order.amount_paid !== null
+    ? toNumber(order.amount_paid)
+    : order.amount_paid,
+  amount_due: order.amount_due !== undefined && order.amount_due !== null
+    ? toNumber(order.amount_due)
+    : order.amount_due,
   items_count: order.items_count ?? order.items?.length ?? 0,
 });
 
@@ -153,10 +159,20 @@ export const ordersService = {
     return response.data;
   },
 
-  generatePayment: async (orderId: string, paymentMethod?: string): Promise<{ payment: Record<string, unknown>; order: Order }> => {
-    const response = await api.post(`/stores/orders/${orderId}/generate_payment/`, {
-      payment_method: paymentMethod,
-    });
+  /**
+   * Gera uma cobrança PIX para o pedido (Fase 3 — link de pagamento).
+   * Rota SLUG, igual ao adjust. `amount` é opcional: quando omitido o backend
+   * cobra o `amount_due` (saldo faltante), NÃO o total.
+   */
+  generatePayment: async (
+    orderId: string,
+    options?: { amount?: number; payment_method?: string },
+    storeSlug?: string,
+  ): Promise<{ payment: Record<string, unknown>; order: Order }> => {
+    const body: Record<string, unknown> = {};
+    if (options?.amount !== undefined) body.amount = options.amount;
+    if (options?.payment_method) body.payment_method = options.payment_method;
+    const response = await api.post(`${getBaseUrl(storeSlug)}/${orderId}/generate_payment/`, body);
     return { ...response.data, order: normalizeOrder(response.data.order) };
   },
 

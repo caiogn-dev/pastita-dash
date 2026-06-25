@@ -311,7 +311,7 @@ export const OrderNewPage: React.FC = () => {
       });
       if (['pix', 'credit_card', 'debit_card'].includes(data.payment_method)) {
         try {
-          await ordersService.generatePayment(order.id, data.payment_method);
+          await ordersService.generatePayment(order.id, { payment_method: data.payment_method });
           toast.success(`Pedido #${order.order_number} criado com link de pagamento!`);
         } catch {
           toast.success(`Pedido #${order.order_number} criado. Gere o pagamento na próxima tela.`);

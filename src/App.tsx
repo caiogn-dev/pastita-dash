@@ -27,6 +27,7 @@ const OrdersPage = lazy(() => import('./pages/orders/OrdersPage').then(m => ({ d
 const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
 const OrderNewPage = lazy(() => import('./pages/orders/OrderNewPage').then(m => ({ default: m.OrderNewPage })));
 const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
+const PaymentLinkPage = lazy(() => import('./pages/payments/PaymentLinkPage').then(m => ({ default: m.PaymentLinkPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const PlanoPage = lazy(() => import('./pages/plano/PlanoPage').then(m => ({ default: m.PlanoPage })));
 
@@ -198,6 +199,9 @@ const AppContent: React.FC = () => {
 
         {/* Planos / assinatura */}
         <Route path="plano" element={<PageBoundary><PlanoPage /></PageBoundary>} />
+
+        {/* Link de pagamento avulso (Fase 3) */}
+        <Route path="payments/link" element={<PageBoundary><PaymentLinkPage /></PageBoundary>} />
         
         {/* Automation Routes */}
         <Route path="automation/companies" element={<PageBoundary><CompanyProfilesPage /></PageBoundary>} />
