@@ -106,6 +106,36 @@ it('envia item_ops ao mudar quantidade e remover item', async () => {
   });
 });
 
+// Task 8 (add-picker + qty): adicionar produto com quantidade personalizada
+it('envia item_ops com quantidade personalizada ao adicionar produto', async () => {
+  (ordersService.adjustOrder as jest.Mock).mockClear();
+  const orderWithStore = {
+    ...moneyOrder,
+    store: 'store-1',
+    items: [
+      { id: 'it-1', product: 'p1', product_name: 'X', quantity: 1, unit_price: 10, subtotal: 10 },
+    ],
+  } as unknown as import('../../../types').Order;
+  render(<EditOrderDrawer order={orderWithStore} onClose={jest.fn()} onSaved={jest.fn()} />);
+  // Wait for the product option to appear in the select
+  await screen.findByRole('option', { name: /suco/i });
+  // Set quantity to 3
+  fireEvent.change(screen.getByLabelText(/quantidade do novo item/i), { target: { value: '3' } });
+  // Select the product
+  fireEvent.change(screen.getByRole('combobox', { name: /adicionar produto/i }), {
+    target: { value: 'prod-9' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+  await waitFor(() => {
+    const call = (ordersService.adjustOrder as jest.Mock).mock.calls[0][1];
+    expect(call.item_ops).toEqual(
+      expect.arrayContaining([
+        { op: 'add', product_id: 'prod-9', quantity: 3 },
+      ]),
+    );
+  });
+});
+
 // Task 8 (add-picker): adicionar produto pelo seletor
 it('envia item_ops com op add ao selecionar produto no seletor', async () => {
   (ordersService.adjustOrder as jest.Mock).mockClear();
