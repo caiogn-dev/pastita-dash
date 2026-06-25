@@ -66,6 +66,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       icon: CreditCardIcon,
       items: [
         { name: 'Caixa',              href: storeHref('cash'),     icon: CreditCardIcon },
+        { name: 'Link de pagamento',  href: '/payments/link',      icon: CreditCardIcon },
         { name: 'Modo Cozinha (KDS)', href: storeHref('kds'),      icon: ClockIcon },
         { name: 'Impressão',          href: storeHref('printing'), icon: DocumentTextIcon },
       ],
