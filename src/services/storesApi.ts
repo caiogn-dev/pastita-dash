@@ -398,6 +398,20 @@ export interface StoreOrder {
   is_active: boolean;
 }
 
+export interface StoreCustomerAddress {
+  id?: string;
+  label?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  reference?: string;
+  is_default?: boolean;
+}
+
 export interface StoreCustomer {
   id: string;
   store: string;
@@ -410,6 +424,7 @@ export interface StoreCustomer {
   twitter: string;
   facebook: string;
   addresses: Array<Record<string, string>>;
+  address_list?: StoreCustomerAddress[];
   default_address_index: number;
   default_address?: Record<string, string>;
   total_orders: number;
@@ -1176,6 +1191,7 @@ export interface CustomerWritePayload {
   whatsapp?: string;
   notes?: string;
   addresses?: Array<Record<string, string>>;
+  address_list?: StoreCustomerAddress[];
 }
 
 export const createCustomer = async (

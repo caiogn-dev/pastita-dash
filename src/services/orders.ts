@@ -1,5 +1,5 @@
 import api, { normalizePaginatedEnvelope } from './api';
-import { Order, OrderEvent, CreateOrder, PaginatedResponse } from '../types';
+import { Order, OrderEvent, CreateOrder, OrderAdjustPayload, PaginatedResponse } from '../types';
 
 /**
  * Orders Service - API V2
@@ -90,6 +90,11 @@ export const ordersService = {
 
   updateOrder: async (id: string, data: Partial<Order>, storeSlug?: string): Promise<Order> => {
     const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, data);
+    return normalizeOrder(response.data);
+  },
+
+  adjustOrder: async (id: string, payload: OrderAdjustPayload, storeSlug?: string): Promise<Order> => {
+    const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/${id}/adjust/`, payload);
     return normalizeOrder(response.data);
   },
 
