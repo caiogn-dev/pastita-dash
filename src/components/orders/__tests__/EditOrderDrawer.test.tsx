@@ -75,3 +75,26 @@ it('não chama adjustOrder quando dinheiro não mudou', async () => {
   fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
   await waitFor(() => expect(ordersService.adjustOrder).not.toHaveBeenCalled());
 });
+
+// Task 8: item ops (quantity change + remove)
+it('envia item_ops ao mudar quantidade e remover item', async () => {
+  (ordersService.adjustOrder as jest.Mock).mockClear();
+  const order = {
+    ...moneyOrder,
+    items: [
+      { id: 'it-1', product: 'p1', product_name: 'X', quantity: 1, unit_price: 10, subtotal: 10 },
+      { id: 'it-2', product: 'p2', product_name: 'Y', quantity: 1, unit_price: 5, subtotal: 5 },
+    ],
+  } as unknown as import('../../../types').Order;
+  render(<EditOrderDrawer order={order} onClose={jest.fn()} onSaved={jest.fn()} />);
+  fireEvent.click(screen.getByRole('button', { name: /aumentar X/i }));   // qty de it-1 → 2
+  fireEvent.click(screen.getByRole('button', { name: /remover Y/i }));    // remove it-2
+  fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+  await waitFor(() => {
+    const call = (ordersService.adjustOrder as jest.Mock).mock.calls[0][1];
+    expect(call.item_ops).toEqual(expect.arrayContaining([
+      { op: 'update', item_id: 'it-1', quantity: 2 },
+      { op: 'remove', item_id: 'it-2' },
+    ]));
+  });
+});

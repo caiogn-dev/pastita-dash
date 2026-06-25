@@ -3,7 +3,9 @@ import toast from 'react-hot-toast';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { ordersService } from '../../services/orders';
 import { TIME_SLOTS } from '../../utils/schedulingSlots';
-import type { Order } from '../../types';
+import type { Order, OrderItemOp } from '../../types';
+
+type EditableItem = { id: string; product_name: string; unit_price: number; quantity: number; removed?: boolean };
 
 interface Props {
   order: Order;
@@ -19,11 +21,35 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
   const [scheduledDate, setScheduledDate] = useState(order.scheduled_date ?? '');
   const [scheduledTime, setScheduledTime] = useState(order.scheduled_time ?? '');
   const [saving, setSaving] = useState(false);
+  const [items, setItems] = useState<EditableItem[]>(
+    (order.items ?? []).map((i) => ({
+      id: String((i as unknown as { id: string }).id),
+      product_name: i.product_name,
+      unit_price: Number(i.unit_price) || 0,
+      quantity: Number(i.quantity) || 1,
+    })),
+  );
+  const [addedOps, setAddedOps] = useState<OrderItemOp[]>([]);
   const [discount, setDiscount] = useState(String(order.discount ?? 0));
   const [discountReason, setDiscountReason] = useState(order.manual_discount_reason ?? '');
   const [surcharge, setSurcharge] = useState(String(order.surcharge_value ?? 0));
   const [surchargeReason, setSurchargeReason] = useState(order.surcharge_reason ?? '');
   const [deliveryFee, setDeliveryFee] = useState(String(order.delivery_fee ?? 0));
+
+  const incItem = (id: string) => setItems((xs) => xs.map((i) => i.id === id ? { ...i, quantity: i.quantity + 1 } : i));
+  const decItem = (id: string) => setItems((xs) => xs.map((i) => i.id === id && i.quantity > 1 ? { ...i, quantity: i.quantity - 1 } : i));
+  const removeItem = (id: string) => setItems((xs) => xs.map((i) => i.id === id ? { ...i, removed: true } : i));
+
+  const buildItemOps = (): OrderItemOp[] => {
+    const ops: OrderItemOp[] = [];
+    const original = new Map((order.items ?? []).map((i) => [String((i as unknown as { id: string }).id), Number(i.quantity)]));
+    for (const it of items) {
+      if (it.removed) { ops.push({ op: 'remove', item_id: it.id }); continue; }
+      const before = original.get(it.id);
+      if (before !== undefined && before !== it.quantity) ops.push({ op: 'update', item_id: it.id, quantity: it.quantity });
+    }
+    return [...ops, ...addedOps];
+  };
 
   const buildPatch = (): Record<string, unknown> => {
     const patch: Record<string, unknown> = {};
@@ -46,6 +72,8 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
     if (num(discount) !== (order.discount ?? 0)) { adj.discount = num(discount); adj.discount_reason = discountReason; }
     if (num(surcharge) !== (order.surcharge_value ?? 0)) { adj.surcharge_value = num(surcharge); adj.surcharge_reason = surchargeReason; }
     if (num(deliveryFee) !== (order.delivery_fee ?? 0)) { adj.delivery_fee = num(deliveryFee); }
+    const itemOps = buildItemOps();
+    if (itemOps.length) adj.item_ops = itemOps;
     return Object.keys(adj).length ? adj : null;
   };
 
@@ -135,6 +163,22 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
+
+          {/* Itens */}
+          {items.length > 0 && (
+            <div className="rounded-xl border border-border-token p-3 space-y-2">
+              <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">Itens</p>
+              {items.filter((i) => !i.removed).map((it) => (
+                <div key={it.id} className="flex items-center justify-between gap-2">
+                  <span className="text-sm text-fg-token flex-1 truncate">{it.product_name}</span>
+                  <button type="button" aria-label={`Diminuir ${it.product_name}`} onClick={() => decItem(it.id)} className="px-2 rounded border border-border-token">−</button>
+                  <span className="w-6 text-center text-sm">{it.quantity}</span>
+                  <button type="button" aria-label={`Aumentar ${it.product_name}`} onClick={() => incItem(it.id)} className="px-2 rounded border border-border-token">+</button>
+                  <button type="button" aria-label={`Remover ${it.product_name}`} onClick={() => removeItem(it.id)} className="px-2 rounded text-red-500">×</button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Desconto / Acréscimo / Taxa */}
           <div className="rounded-xl border border-border-token p-3 space-y-3">
