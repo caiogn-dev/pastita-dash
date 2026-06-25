@@ -8,7 +8,7 @@
  * - Last activity time
  * - Status and mode indicators
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -45,13 +45,32 @@ export interface ContactListProps {
   emptyMessage?: string;
 }
 
-const ContactAvatar: React.FC<{ 
-  name: string; 
+const AVATAR_COLORS = [
+  'bg-blue-500',
+  'bg-green-500',
+  'bg-yellow-500',
+  'bg-purple-500',
+  'bg-pink-500',
+  'bg-indigo-500',
+  'bg-red-500',
+  'bg-teal-500',
+];
+
+const ContactAvatar: React.FC<{
+  name: string;
   phoneNumber: string;
   profilePictureUrl?: string;
 }> = ({ name, phoneNumber, profilePictureUrl }) => {
-  // NOVO: Se tem foto de perfil, mostra ela
-  if (profilePictureUrl) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const handleError = useCallback(() => setImgFailed(true), []);
+
+  const initials = name
+    ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : phoneNumber.slice(-2);
+  const colorIndex = phoneNumber.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % AVATAR_COLORS.length;
+  const bgColor = AVATAR_COLORS[colorIndex];
+
+  if (profilePictureUrl && !imgFailed) {
     return (
       <img
         src={profilePictureUrl}
@@ -59,33 +78,11 @@ const ContactAvatar: React.FC<{
         className="w-12 h-12 rounded-full object-cover"
         loading="lazy"
         decoding="async"
-        onError={(e) => {
-          // Se imagem falhar, esconde e mostra iniciais
-          (e.target as HTMLImageElement).style.display = 'none';
-        }}
+        crossOrigin="anonymous"
+        onError={handleError}
       />
     );
   }
-  
-  // Comportamento existente: mostra iniciais
-  const initials = name
-    ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    : phoneNumber.slice(-2);
-
-  const colors = [
-    'bg-blue-500',
-    'bg-green-500',
-    'bg-yellow-500',
-    'bg-purple-500',
-    'bg-pink-500',
-    'bg-indigo-500',
-    'bg-red-500',
-    'bg-teal-500',
-  ];
-
-  // Generate consistent color based on phone number
-  const colorIndex = phoneNumber.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
-  const bgColor = colors[colorIndex];
 
   return (
     <div className={`w-12 h-12 rounded-full ${bgColor} flex items-center justify-center text-white font-semibold text-sm`}>
