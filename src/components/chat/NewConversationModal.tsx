@@ -46,6 +46,12 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
   const canSend = isPhoneValid && selectedTemplate !== null && (variableKeys.length === 0 || allVarsFilled);
 
   useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  useEffect(() => {
     setIsLoading(true);
     whatsappService.getTemplates(accountId)
       .then(res => {

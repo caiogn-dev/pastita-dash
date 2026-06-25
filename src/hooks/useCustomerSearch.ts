@@ -8,6 +8,8 @@ export function useCustomerSearch(storeSlug: string) {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<CustomerSearchResult | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  // Tracks the latest request so stale responses are discarded
+  const requestIdRef = useRef(0);
 
   const search = useCallback(
     (q: string) => {
@@ -18,14 +20,16 @@ export function useCustomerSearch(storeSlug: string) {
         return;
       }
       debounceRef.current = setTimeout(async () => {
+        const requestId = ++requestIdRef.current;
         setLoading(true);
         try {
           const { data } = await crmApi.searchCustomers(storeSlug, q);
+          if (requestId !== requestIdRef.current) return;
           setResults(Array.isArray(data) ? data : []);
         } catch {
-          setResults([]);
+          if (requestId === requestIdRef.current) setResults([]);
         } finally {
-          setLoading(false);
+          if (requestId === requestIdRef.current) setLoading(false);
         }
       }, 300);
     },
