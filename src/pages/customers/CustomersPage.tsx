@@ -22,7 +22,7 @@ import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
 import { getErrorMessage } from '../../services';
-import { StoreCustomer, createCustomer, updateCustomer } from '../../services/storesApi';
+import { StoreCustomer, StoreCustomerAddress, createCustomer, updateCustomer } from '../../services/storesApi';
 import { useStore, useDebounce } from '../../hooks';
 import { useCustomers } from '../../hooks/queries/useCustomers';
 import { useCustomerStats } from '../../hooks/queries/useCustomerStats';
@@ -82,14 +82,35 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
   const [saving, setSaving] = useState(false);
   const isEdit = Boolean(customer);
 
+  const addr0 = customer?.address_list?.[0];
+  const [street, setStreet] = useState(addr0?.street ?? '');
+  const [number, setNumber] = useState(addr0?.number ?? '');
+  const [complement, setComplement] = useState(addr0?.complement ?? '');
+  const [neighborhood, setNeighborhood] = useState(addr0?.neighborhood ?? '');
+  const [city, setCity] = useState(addr0?.city ?? '');
+  const [uf, setUf] = useState(addr0?.state ?? '');
+  const [zip, setZip] = useState(addr0?.zip_code ?? '');
+
+  const buildAddressList = (): StoreCustomerAddress[] | undefined => {
+    const filled = street || number || neighborhood || city || zip;
+    if (!filled) return undefined;
+    const addr: StoreCustomerAddress = {
+      street, number, complement, neighborhood, city, state: uf, zip_code: zip, is_default: true,
+    };
+    if (addr0?.id) addr.id = addr0.id;
+    return [addr];
+  };
+
   const handleSave = async () => {
     if (saving) return;
     setSaving(true);
     try {
+      const address_list = buildAddressList();
+      const payload = { name, phone, whatsapp, notes, ...(address_list ? { address_list } : {}) };
       if (isEdit && customer) {
-        await updateCustomer(customer.id, { name, phone, whatsapp, notes });
+        await updateCustomer(customer.id, payload);
       } else {
-        await createCustomer(storeSlug, { name, phone, whatsapp, notes });
+        await createCustomer(storeSlug, payload);
       }
       toast.success(isEdit ? 'Cliente atualizado' : 'Cliente criado');
       onSaved();
@@ -128,6 +149,26 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
           <div>
             <label htmlFor="cf-notes" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Notas</label>
             <textarea id="cf-notes" className={inputCls} rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+          <div className="pt-2 border-t border-border-token space-y-3">
+            <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">Endereço</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-2">
+                <label htmlFor="cf-street" className="sr-only">Rua</label>
+                <input id="cf-street" aria-label="Rua" className={inputCls} placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="cf-number" className="sr-only">Número</label>
+                <input id="cf-number" aria-label="Número" className={inputCls} placeholder="Nº" value={number} onChange={(e) => setNumber(e.target.value)} />
+              </div>
+            </div>
+            <input aria-label="Complemento" className={inputCls} placeholder="Complemento" value={complement} onChange={(e) => setComplement(e.target.value)} />
+            <input aria-label="Bairro" className={inputCls} placeholder="Bairro" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} />
+            <div className="grid grid-cols-3 gap-2">
+              <input aria-label="Cidade" className={`${inputCls} col-span-2`} placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
+              <input aria-label="UF" maxLength={2} className={inputCls} placeholder="UF" value={uf} onChange={(e) => setUf(e.target.value)} />
+            </div>
+            <input aria-label="CEP" className={inputCls} placeholder="CEP" value={zip} onChange={(e) => setZip(e.target.value)} />
           </div>
         </div>
         <div className="px-6 py-4 border-t border-border-token flex gap-2">
