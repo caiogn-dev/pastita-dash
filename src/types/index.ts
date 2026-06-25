@@ -337,6 +337,9 @@ export interface Order {
   delivery_fee: number;
   shipping_cost?: number;
   discount: number;
+  surcharge_value?: number;
+  surcharge_reason?: string;
+  manual_discount_reason?: string;
   total: number;
   status: 'pending' | 'processing' | 'confirmed' | 'preparing' | 'ready' | 'shipped' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'completed' | 'refunded' | 'failed' | 'paid';
   payment_status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
@@ -399,6 +402,22 @@ export interface CreateOrder {
   scheduled_date?: string;
   scheduled_time?: string;
   customer_notes?: string;
+}
+
+export interface OrderItemOp {
+  op: 'add' | 'update' | 'remove';
+  item_id?: string;
+  product_id?: string;
+  quantity?: number;
+}
+
+export interface OrderAdjustPayload {
+  discount?: number;
+  discount_reason?: string;
+  surcharge_value?: number;
+  surcharge_reason?: string;
+  delivery_fee?: number;
+  item_ops?: OrderItemOp[];
 }
 
 // ============================================

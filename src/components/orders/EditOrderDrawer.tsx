@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { ordersService } from '../../services/orders';
+import { productsService } from '../../services/products';
+import type { Product } from '../../services/products';
 import { TIME_SLOTS } from '../../utils/schedulingSlots';
-import type { Order } from '../../types';
+import type { Order, OrderItemOp } from '../../types';
+
+type EditableItem = { id: string; product_name: string; unit_price: number; quantity: number; removed?: boolean };
 
 interface Props {
   order: Order;
@@ -19,6 +23,54 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
   const [scheduledDate, setScheduledDate] = useState(order.scheduled_date ?? '');
   const [scheduledTime, setScheduledTime] = useState(order.scheduled_time ?? '');
   const [saving, setSaving] = useState(false);
+  const [items, setItems] = useState<EditableItem[]>(
+    (order.items ?? []).map((i) => ({
+      id: i.id,
+      product_name: i.product_name,
+      unit_price: Number(i.unit_price) || 0,
+      quantity: Number(i.quantity) || 1,
+    })),
+  );
+  const [addedOps, setAddedOps] = useState<OrderItemOp[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [newItemQty, setNewItemQty] = useState(1);
+  const [discount, setDiscount] = useState(String(order.discount ?? 0));
+  const [discountReason, setDiscountReason] = useState(order.manual_discount_reason ?? '');
+  const [surcharge, setSurcharge] = useState(String(order.surcharge_value ?? 0));
+  const [surchargeReason, setSurchargeReason] = useState(order.surcharge_reason ?? '');
+  const [deliveryFee, setDeliveryFee] = useState(String(order.delivery_fee ?? 0));
+
+  useEffect(() => {
+    const storeId = order.store;
+    if (!storeId) return;
+    productsService
+      .getProducts({ store: storeId, is_active: true, page_size: 40, ordering: 'name' })
+      .then((res) => setProducts(res.results))
+      .catch(() => { /* non-blocking */ });
+  }, [order]);
+
+  const addProduct = (productId: string) => {
+    if (!productId) return;
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+    setAddedOps((prev) => [...prev, { op: 'add', product_id: product.id, quantity: newItemQty } as OrderItemOp]);
+    setNewItemQty(1);
+  };
+
+  const incItem = (id: string) => setItems((xs) => xs.map((i) => i.id === id ? { ...i, quantity: i.quantity + 1 } : i));
+  const decItem = (id: string) => setItems((xs) => xs.map((i) => i.id === id && i.quantity > 1 ? { ...i, quantity: i.quantity - 1 } : i));
+  const removeItem = (id: string) => setItems((xs) => xs.map((i) => i.id === id ? { ...i, removed: true } : i));
+
+  const buildItemOps = (): OrderItemOp[] => {
+    const ops: OrderItemOp[] = [];
+    const original = new Map((order.items ?? []).map((i) => [i.id, Number(i.quantity)]));
+    for (const it of items) {
+      if (it.removed) { ops.push({ op: 'remove', item_id: it.id }); continue; }
+      const before = original.get(it.id);
+      if (before !== undefined && before !== it.quantity) ops.push({ op: 'update', item_id: it.id, quantity: it.quantity });
+    }
+    return [...ops, ...addedOps];
+  };
 
   const buildPatch = (): Record<string, unknown> => {
     const patch: Record<string, unknown> = {};
@@ -35,13 +87,26 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
     return patch;
   };
 
+  const buildAdjust = (): import('../../types').OrderAdjustPayload | null => {
+    const adj: import('../../types').OrderAdjustPayload = {};
+    const num = (s: string) => Number(s) || 0;
+    if (num(discount) !== (order.discount ?? 0)) { adj.discount = num(discount); adj.discount_reason = discountReason; }
+    if (num(surcharge) !== (order.surcharge_value ?? 0)) { adj.surcharge_value = num(surcharge); adj.surcharge_reason = surchargeReason; }
+    if (num(deliveryFee) !== (order.delivery_fee ?? 0)) { adj.delivery_fee = num(deliveryFee); }
+    const itemOps = buildItemOps();
+    if (itemOps.length) adj.item_ops = itemOps;
+    return Object.keys(adj).length ? adj : null;
+  };
+
   const handleSave = async () => {
     if (saving) return;
     const patch = buildPatch();
-    if (Object.keys(patch).length === 0) { onClose(); return; }
+    const adjust = buildAdjust();
+    if (Object.keys(patch).length === 0 && !adjust) { onClose(); return; }
     setSaving(true);
     try {
-      await ordersService.updateOrder(order.id, patch);
+      if (Object.keys(patch).length > 0) await ordersService.updateOrder(order.id, patch);
+      if (adjust) await ordersService.adjustOrder(order.id, adjust, undefined);
       toast.success('Pedido atualizado');
       onSaved();
     } catch {
@@ -118,6 +183,79 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
+          </div>
+
+          {/* Itens */}
+          <div className="rounded-xl border border-border-token p-3 space-y-2">
+            <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">Itens</p>
+            {items.filter((i) => !i.removed).map((it) => (
+              <div key={it.id} className="flex items-center justify-between gap-2">
+                <span className="text-sm text-fg-token flex-1 truncate">{it.product_name}</span>
+                <button type="button" aria-label={`Diminuir ${it.product_name}`} onClick={() => decItem(it.id)} className="px-2 rounded border border-border-token">−</button>
+                <span className="w-6 text-center text-sm">{it.quantity}</span>
+                <button type="button" aria-label={`Aumentar ${it.product_name}`} onClick={() => incItem(it.id)} className="px-2 rounded border border-border-token">+</button>
+                <button type="button" aria-label={`Remover ${it.product_name}`} onClick={() => removeItem(it.id)} className="px-2 rounded text-red-500">×</button>
+              </div>
+            ))}
+            {addedOps.map((op, idx) => {
+              const p = products.find((x) => x.id === (op as { product_id?: string }).product_id);
+              return (
+                <div key={`added-${idx}`} className="flex items-center justify-between gap-2 opacity-80">
+                  <span className="text-sm text-fg-token flex-1 truncate">{p?.name ?? 'Produto'} <span className="text-xs text-fg-muted-token">(novo)</span></span>
+                  <span className="w-6 text-center text-sm">1</span>
+                  <button
+                    type="button"
+                    aria-label={`Remover produto adicionado ${p?.name ?? ''}`}
+                    onClick={() => setAddedOps((prev) => prev.filter((_, i) => i !== idx))}
+                    className="px-2 rounded text-red-500"
+                  >×</button>
+                </div>
+              );
+            })}
+            <div className="pt-1">
+              <label htmlFor="add-product-select" className="block text-xs text-fg-muted-token mb-1">Adicionar produto</label>
+              <div className="flex gap-2">
+                <select
+                  id="add-product-select"
+                  aria-label="Adicionar produto"
+                  className="flex-1 px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:border-brand disabled:opacity-60"
+                  value=""
+                  disabled={products.length === 0}
+                  onChange={(e) => { addProduct(e.target.value); e.target.value = ''; }}
+                >
+                  <option value="">{products.length === 0 ? 'Carregando...' : '— selecionar produto —'}</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min={1}
+                  aria-label="Quantidade do novo item"
+                  className="w-16 px-2 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:border-brand text-center"
+                  value={newItemQty}
+                  onChange={(e) => setNewItemQty(Math.max(1, Number(e.target.value) || 1))}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Desconto / Acréscimo / Taxa */}
+          <div className="rounded-xl border border-border-token p-3 space-y-3">
+            <div>
+              <label htmlFor="edit-discount" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Desconto (R$)</label>
+              <input id="edit-discount" type="number" min="0" step="0.01" className={inputCls} value={discount} onChange={(e) => setDiscount(e.target.value)} />
+              <input aria-label="Motivo do abatimento" className={`${inputCls} mt-2`} placeholder="Motivo (opcional)" value={discountReason} onChange={(e) => setDiscountReason(e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="edit-surcharge" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Acréscimo (R$)</label>
+              <input id="edit-surcharge" type="number" min="0" step="0.01" className={inputCls} value={surcharge} onChange={(e) => setSurcharge(e.target.value)} />
+              <input aria-label="Motivo do adicional" className={`${inputCls} mt-2`} placeholder="Motivo (opcional)" value={surchargeReason} onChange={(e) => setSurchargeReason(e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="edit-delivery" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Taxa de entrega (R$)</label>
+              <input id="edit-delivery" type="number" min="0" step="0.01" className={inputCls} value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} />
+            </div>
           </div>
 
           {/* Scheduling */}
