@@ -4,6 +4,7 @@ import { ordersService } from '../../../services/orders';
 import type { Product } from '../../../services/products';
 import type { CustomerSearchResult, UserAddress, DiscountType, RouteQuote } from '../../../types/crm';
 import type { CartItem, PaymentMethod, Customer } from './types';
+import { copyToClipboard } from '../../../utils/clipboard';
 
 export interface UseNewOrderWizardOpts {
   storeSlug: string;
@@ -138,10 +139,10 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
       const pixCode = (created as { pix_code?: string })?.pix_code || '';
       const paymentError = (created as { payment_error?: string })?.payment_error;
       if (paymentMethod === 'pix' && (pixLink || pixCode)) {
-        try {
-          await navigator.clipboard.writeText(pixLink || pixCode);
+        const copied = await copyToClipboard(pixLink || pixCode);
+        if (copied) {
           toast.success('Pedido criado! Link PIX copiado — cole no WhatsApp do cliente.', { duration: 6000 });
-        } catch {
+        } else {
           toast.success('Pedido criado! Abra o pedido para ver o PIX.', { duration: 6000 });
         }
       } else if (paymentMethod === 'pix' && paymentError) {

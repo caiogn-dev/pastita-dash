@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, Button, Badge } from '../../components/ui';
 import { Modal, Loading } from '../../components/common';
+import { copyToClipboard } from '../../utils/clipboard';
 import {
   PrintAgent,
   PrintJob,
@@ -143,10 +144,11 @@ const PrintSettingsPage: React.FC = () => {
     }
   };
 
-  const copyKey = () => {
+  const copyKey = async () => {
     if (!revealedKey) return;
-    navigator.clipboard.writeText(revealedKey.key);
-    toast.success('Chave copiada');
+    const ok = await copyToClipboard(revealedKey.key);
+    if (ok) toast.success('Chave copiada');
+    else toast.error('Não foi possível copiar. Copie manualmente.');
   };
 
   return (

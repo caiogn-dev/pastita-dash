@@ -36,6 +36,7 @@ import { useStore } from '../../hooks';
 import { useOrderStats } from '../../hooks/queries/useOrderStats';
 import { usePaymentsOrders } from '../../hooks/queries/usePaymentsOrders';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
+import { copyToClipboard } from '../../utils/clipboard';
 
 // DRF default page size (apps/stores/api/views/order_views.py / settings PAGE_SIZE)
 const PAGE_SIZE = 20;
@@ -241,10 +242,11 @@ export const PaymentsPage: React.FC = () => {
                 Abrir
               </a>
               <button
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  navigator.clipboard.writeText(finalPaymentLink);
-                  toast.success('Link copiado! Envie para o cliente.');
+                  const ok = await copyToClipboard(finalPaymentLink);
+                  if (ok) toast.success('Link copiado! Envie para o cliente.');
+                  else toast.error('Não foi possível copiar. Copie manualmente.');
                 }}
                 className="p-1.5 text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] hover:text-gray-700 dark:hover:text-zinc-300 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-hover,#161616)] rounded"
                 title="Copiar link"

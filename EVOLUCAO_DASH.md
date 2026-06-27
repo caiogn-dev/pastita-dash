@@ -3,14 +3,38 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-25)
+## Baseline atual (2026-06-27)
 
 - `npm ci`: ok (22 vulnerabilidades reportadas pelo npm — ver backlog).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **309 testes / 73 suítes verdes**.
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **334 testes / 78 suítes verdes** (humanos adicionaram a Fase 3 de
+  pagamentos desde o último loop; o número antigo 309/73 estava defasado).
+- `npm run lint`: gate em 400 warnings; **269 warnings** restantes (0 erros).
 
 ## Histórico
+
+### 2026-06-27 — Cópia para área de transferência resiliente (UX correctness + a11y de contexto inseguro)
+- **Medido:** auditoria de `navigator.clipboard` no código — **9 chamadas**
+  espalhadas e inconsistentes. Padrões problemáticos encontrados:
+  - `navigator.clipboard.writeText(...)` direto (lança `TypeError` em contexto
+    inseguro/HTTP ou navegador legado, sem `try/catch` na maioria);
+  - `navigator.clipboard?.writeText(...)` (falha silenciosa mas **mostrava toast
+    de sucesso mesmo sem copiar nada**);
+  - nenhuma tratava a rejeição da promise (permissão negada) — todas afirmavam
+    "copiado!" independentemente do resultado real.
+- **Mudado:**
+  - Novo utilitário `src/utils/clipboard.ts` → `copyToClipboard(text): Promise<boolean>`:
+    tenta a Async Clipboard API e **aguarda** o resultado; cai para fallback
+    `document.execCommand('copy')` via `<textarea>` temporário (cobre HTTP e
+    navegadores legados); retorna `true`/`false` para feedback correto.
+  - Refatorados os 8 call sites para `await` + toast condicional (sucesso real vs.
+    "Não foi possível copiar. Copie manualmente."): `PaymentLinkPage`,
+    `OrderDetailPage`, `ContactInfoPanel`, `CompanyProfileDetailPage` (2x),
+    `CompanyProfilesPage`, `PrintSettingsPage`, `PaymentsPage`, `useNewOrderWizard`.
+- **Teste (TDD):** novo `clipboard.test.ts` — escrito vermelho antes, verde depois.
+  Cobre: API disponível (true), API ausente → fallback, API rejeita → fallback,
+  ambos falham → false.
+- **Antes/depois:** 77→78 suítes, 330→334 testes; tsc limpo nos dois lados; lint 0 erros.
 
 ### 2026-06-25 — Acessibilidade: nomes acessíveis em botões icon-only
 - **Medido:** auditoria de botões "icon-only" (apenas ícone, sem texto) sem
@@ -31,8 +55,8 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 ## Próximos passos priorizados
 
 1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
+   (`InstagramInbox`) e diálogos. Adicionar teste de regressão de acessibilidade
+   por componente conforme tocar.
 2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
    moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,

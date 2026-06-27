@@ -28,6 +28,7 @@ import { Button, Modal, PageLoading } from '../../components/common';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import { Order, Payment } from '../../types';
+import { copyToClipboard } from '../../utils/clipboard';
 
 // Helper para parsear endereço (string JSON ou objeto)
 const parseAddress = (addr: string | Record<string, unknown> | undefined): Record<string, string> => {
@@ -350,9 +351,10 @@ export const OrderDetailPage: React.FC = () => {
     }
   };
 
-  const handleCopyPix = (code: string) => {
-    navigator.clipboard?.writeText(code);
-    toast.success('Código PIX copiado!');
+  const handleCopyPix = async (code: string) => {
+    const ok = await copyToClipboard(code);
+    if (ok) toast.success('Código PIX copiado!');
+    else toast.error('Não foi possível copiar. Copie manualmente.');
   };
 
   const loadOrder = async () => {

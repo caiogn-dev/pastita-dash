@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useConfirm } from '../../hooks';
 import logger from '../../services/logger';
+import { copyToClipboard } from '../../utils/clipboard';
 import { Link } from 'react-router-dom';
 import {
   PlusIcon,
@@ -53,8 +54,8 @@ const CompanyProfilesPage: React.FC = () => {
     try {
       const result = await companyProfileService.regenerateApiKey(id);
       toast.success('Nova API key gerada!');
-      navigator.clipboard.writeText(result.api_key);
-      toast.success('API key copiada para a área de transferência');
+      const copied = await copyToClipboard(result.api_key);
+      if (copied) toast.success('API key copiada para a área de transferência');
       loadProfiles();
     } catch {
       toast.error('Erro ao gerar nova API key');

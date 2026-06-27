@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { paymentsService, getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
+import { copyToClipboard } from '../../utils/clipboard';
 
 interface GeneratedLink {
   pix_code?: string;
@@ -66,9 +67,10 @@ export const PaymentLinkPage: React.FC = () => {
     }
   };
 
-  const handleCopy = (code: string) => {
-    navigator.clipboard?.writeText(code);
-    toast.success('Código PIX copiado!');
+  const handleCopy = async (code: string) => {
+    const ok = await copyToClipboard(code);
+    if (ok) toast.success('Código PIX copiado!');
+    else toast.error('Não foi possível copiar. Copie manualmente.');
   };
 
   return (
