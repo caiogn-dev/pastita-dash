@@ -1,8 +1,10 @@
 /**
  * PaymentLinkPage — Link de pagamento AVULSO (Fase 3)
  *
- * Gera uma cobrança PIX de valor arbitrário SEM pedido vinculado (StorePayment.order=null).
- * Fluxo: valor + descrição (+ pagador opcional) → createPaymentLink → PIX copia-e-cola + QR + link.
+ * Gera um LINK DE PAGAMENTO (Checkout Pro / preference do Mercado Pago) de valor
+ * arbitrário SEM pedido vinculado (StorePayment.order=null). É uma página hospedada
+ * onde o cliente escolhe cartão/PIX/boleto — não apenas um PIX copia-e-cola.
+ * Fluxo: valor + descrição (+ pagador opcional) → createPaymentLink → payment_url.
  *
  * TODO (Fase 3b): listar as cobranças avulsas já geradas. O backend ainda escopa
  * a listagem por order__store, então a lista de avulsas depende de evolução do backend.
@@ -13,9 +15,7 @@ import { paymentsService, getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
 
 interface GeneratedLink {
-  pix_code?: string;
-  pix_qr_code?: string;
-  ticket_url?: string;
+  payment_url?: string;
   amount?: number | string;
 }
 
@@ -52,13 +52,16 @@ export const PaymentLinkPage: React.FC = () => {
         ...(payerName.trim() ? { payer_name: payerName.trim() } : {}),
         ...(payerEmail.trim() ? { payer_email: payerEmail.trim() } : {}),
       });
+      const url = (payment.payment_url as string) || (payment.init_point as string) || undefined;
+      if (!url) {
+        toast.error('Não foi possível gerar o link. Verifique as credenciais de pagamento da loja.');
+        return;
+      }
       setGenerated({
-        pix_code: (payment.pix_code as string) || undefined,
-        pix_qr_code: (payment.pix_qr_code as string) || (payment.qr_code_base64 as string) || undefined,
-        ticket_url: (payment.ticket_url as string) || (payment.pix_ticket_url as string) || undefined,
+        payment_url: url,
         amount: (payment.amount as number | string) ?? parsed,
       });
-      toast.success('Cobrança PIX gerada!');
+      toast.success('Link de pagamento gerado!');
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -68,7 +71,7 @@ export const PaymentLinkPage: React.FC = () => {
 
   const handleCopy = (code: string) => {
     navigator.clipboard?.writeText(code);
-    toast.success('Código PIX copiado!');
+    toast.success('Link copiado!');
   };
 
   return (
@@ -76,7 +79,8 @@ export const PaymentLinkPage: React.FC = () => {
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-fg-token">Link de pagamento</h1>
         <p className="mt-1 text-sm text-fg-muted-token">
-          Cobre um valor avulso via PIX, sem precisar de um pedido.
+          Gere um link para cobrar um valor avulso, sem precisar de um pedido. O cliente
+          abre o link e paga por cartão, PIX ou boleto.
           {storeName ? ` Loja: ${storeName}.` : ''}
         </p>
       </header>
@@ -152,61 +156,44 @@ export const PaymentLinkPage: React.FC = () => {
           disabled={generating || !isStoreSelected}
           className="w-full rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-[var(--brand-strong)] transition hover:opacity-90 disabled:opacity-60"
         >
-          {generating ? 'Gerando...' : 'Gerar cobrança PIX'}
+          {generating ? 'Gerando...' : 'Gerar link de pagamento'}
         </button>
       </form>
 
       {generated && (
         <section className="mt-6 space-y-4 rounded-2xl border border-border-token bg-surface p-5">
           <h2 className="text-base font-semibold text-fg-token">
-            Cobrança gerada {generated.amount != null ? `— ${formatMoney(Number(generated.amount))}` : ''}
+            Link gerado {generated.amount != null ? `— ${formatMoney(Number(generated.amount))}` : ''}
           </h2>
 
-          {generated.pix_code && (
+          {generated.payment_url && (
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-fg-muted-token">PIX copia e cola</span>
+              <span className="text-xs font-semibold text-fg-muted-token">Link de pagamento</span>
               <div className="flex items-center gap-2">
                 <code className="block flex-1 break-all rounded-xl border border-dashed border-border-token px-3 py-2 text-xs text-fg-token">
-                  {generated.pix_code}
+                  {generated.payment_url}
                 </code>
                 <button
                   type="button"
-                  onClick={() => handleCopy(generated.pix_code!)}
+                  onClick={() => handleCopy(generated.payment_url!)}
                   className="shrink-0 rounded-full border border-border-token px-3 py-2 text-xs font-medium text-fg-token hover:bg-surface-2"
                 >
                   Copiar
                 </button>
               </div>
-            </div>
-          )}
-
-          {generated.pix_qr_code && (
-            <img
-              src={generated.pix_qr_code.startsWith('data:')
-                ? generated.pix_qr_code
-                : `data:image/png;base64,${generated.pix_qr_code}`}
-              alt="QR Code PIX"
-              className="h-44 w-44 rounded-xl border border-border-token"
-            />
-          )}
-
-          {generated.ticket_url && (
-            <div className="flex flex-wrap items-center gap-2">
-              <a
-                href={generated.ticket_url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex rounded-full border border-border-token px-4 py-2 text-sm font-medium text-fg-token hover:bg-surface-2"
-              >
-                Abrir link de pagamento
-              </a>
-              <button
-                type="button"
-                onClick={() => handleCopy(generated.ticket_url!)}
-                className="inline-flex rounded-full border border-border-token px-4 py-2 text-sm font-medium text-fg-token hover:bg-surface-2"
-              >
-                Copiar link
-              </button>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <a
+                  href={generated.payment_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex rounded-full bg-brand px-4 py-2 text-sm font-semibold text-[var(--brand-strong)] transition hover:opacity-90"
+                >
+                  Abrir link de pagamento
+                </a>
+                <span className="text-xs text-fg-muted-token">
+                  Envie este link para o cliente — ele paga por cartão, PIX ou boleto.
+                </span>
+              </div>
             </div>
           )}
         </section>

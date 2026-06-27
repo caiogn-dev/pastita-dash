@@ -113,7 +113,8 @@ export const paymentsService = {
   },
 
   /**
-   * Cria um link de pagamento PIX AVULSO (Fase 3), sem pedido vinculado.
+   * Cria um LINK DE PAGAMENTO AVULSO (Fase 3), sem pedido vinculado.
+   * Checkout Pro do Mercado Pago (cartão/PIX/boleto). `payment.payment_url` é o link.
    * POST /stores/payments/create_link/ → { payment, store_payment }.
    * `store_payment.order` é null no avulso.
    */
