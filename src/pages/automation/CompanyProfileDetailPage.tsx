@@ -20,6 +20,7 @@ import {
 } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
+import { copyToClipboard } from '../../utils/clipboard';
 
 const daysOfWeek = [
   { key: 'monday', label: 'Segunda-feira' },
@@ -187,10 +188,11 @@ const CompanyProfileDetailPage: React.FC = () => {
     }
   };
 
-  const handleCopyApiKey = () => {
+  const handleCopyApiKey = async () => {
     if (profile?.external_api_key) {
-      navigator.clipboard.writeText(profile.external_api_key);
-      toast.success('API key copiada!');
+      const ok = await copyToClipboard(profile.external_api_key);
+      if (ok) toast.success('API key copiada!');
+      else toast.error('Não foi possível copiar. Copie manualmente.');
     }
   };
 
@@ -200,7 +202,7 @@ const CompanyProfileDetailPage: React.FC = () => {
     try {
       const result = await companyProfileService.regenerateApiKey(id);
       toast.success('Nova API key gerada!');
-      navigator.clipboard.writeText(result.api_key);
+      await copyToClipboard(result.api_key);
       await loadInitialData();
     } catch (error) {
       toast.error('Erro ao gerar nova API key');
