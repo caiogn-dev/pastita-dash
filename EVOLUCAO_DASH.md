@@ -3,14 +3,34 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-25)
+## Baseline atual (2026-06-28)
 
-- `npm ci`: ok (22 vulnerabilidades reportadas pelo npm — ver backlog).
+- `npm ci`: ok (vulnerabilidades reportadas pelo npm — ver backlog).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **309 testes / 73 suítes verdes**.
+- `npm test`: **332 testes / 77 suítes verdes** (após o fix de hoje; estava 327/330 com 3 falhas).
 - `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
 
 ## Histórico
+
+### 2026-06-28 — Correção: suíte vermelha em `PaymentLinkPage` (regressão de teste)
+- **Medido:** ao rodar `npm test` na main, a suíte estava **vermelha** —
+  `PaymentLinkPage.test.tsx` com 3 testes falhando (3 failed / 327 passed). A Vercel
+  só bloqueia build por erro de TypeScript (tsc estava limpo), então produção não
+  quebrou, mas a disciplina de zero-regressão estava furada na main.
+- **Causa:** o commit `3b72fc8` reescreveu a `PaymentLinkPage` para gerar um **link
+  real do Checkout Pro** (cartão/PIX/boleto via `payment.payment_url`/`init_point`),
+  abandonando o fluxo antigo de PIX copia-e-cola (`pix_code`/`pix_qr_code`/QR) e
+  renomeando o botão para "Gerar link de pagamento". Os testes não foram atualizados
+  e continuavam afirmando o comportamento antigo.
+- **Mudado:** reescrita de `PaymentLinkPage.test.tsx` alinhada ao comportamento
+  intencional atual (componente é a fonte da verdade). Cobertura ampliada de 3→5 casos:
+  - gera link e exibe a URL + botão "Abrir link de pagamento" com `href` correto;
+  - usa `init_point` como fallback quando `payment_url` está ausente (novo);
+  - exibe `toast.error` quando o backend não retorna URL (novo, caminho de erro);
+  - não chama o serviço com valor inválido;
+  - envia pagador opcional (nome **e e-mail**) quando preenchido.
+- **Antes/depois:** testes 327 verdes / 3 vermelhos → **332 verdes / 0 vermelhos**;
+  76→77 suítes verdes; tsc limpo nos dois lados.
 
 ### 2026-06-25 — Acessibilidade: nomes acessíveis em botões icon-only
 - **Medido:** auditoria de botões "icon-only" (apenas ícone, sem texto) sem
