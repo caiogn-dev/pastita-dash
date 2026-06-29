@@ -68,6 +68,27 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, change, tone 
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
+// Rótulos do gráfico adaptados ao agrupamento. Antes era 'dd/MM' fixo: no modo
+// Mês saía "01/06" (parece dia) e na aba Faturamento o tooltip nem formatava →
+// mostrava a string ISO crua "2026-06-01T00:00:00-03:00". day vem como date,
+// week/month como datetime com timezone — parseISO cobre os dois.
+const axisTickLabel = (v: string, gb: GroupBy) => {
+  try {
+    const d = parseISO(v);
+    if (gb === 'month') return format(d, 'MMM/yy', { locale: ptBR });
+    if (gb === 'week') return format(d, "'sem' dd/MM", { locale: ptBR });
+    return format(d, 'dd/MM', { locale: ptBR });
+  } catch { return v; }
+};
+const tooltipDateLabel = (l: unknown, gb: GroupBy) => {
+  try {
+    const d = parseISO(String(l));
+    if (gb === 'month') return format(d, "MMMM 'de' yyyy", { locale: ptBR });
+    if (gb === 'week') return format(d, "'Semana de' dd/MM", { locale: ptBR });
+    return format(d, "dd 'de' MMMM", { locale: ptBR });
+  } catch { return String(l); }
+};
+
 const TABS: { value: TabValue; label: string }[] = [
   { value: 'overview', label: 'Visão Geral' },
   { value: 'revenue', label: 'Faturamento' },
@@ -247,14 +268,14 @@ const AnalyticsPage: React.FC = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="period" tickFormatter={(v) => { try { return format(parseISO(v), 'dd/MM', { locale: ptBR }); } catch { return v; } }} stroke="#6b7280" fontSize={12} />
+              <XAxis dataKey="period" tickFormatter={(v) => axisTickLabel(v, groupBy)} stroke="#6b7280" fontSize={12} minTickGap={20} />
               <YAxis tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} stroke="#6b7280" fontSize={12} />
               <RechartsTooltip
                 formatter={(v) => [formatCurrency(Number(v) || 0), 'Faturamento']}
-                labelFormatter={(l) => { try { return format(parseISO(String(l)), "dd 'de' MMMM", { locale: ptBR }); } catch { return String(l); } }}
+                labelFormatter={(l) => tooltipDateLabel(l, groupBy)}
                 contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px' }}
               />
-              <Area type="monotone" dataKey="total_revenue" stroke="#166534" strokeWidth={2} fill="url(#colorRevenue)" />
+              <Area type="monotone" dataKey="total_revenue" stroke="#166534" strokeWidth={2} fill="url(#colorRevenue)" dot={{ r: 3, fill: '#166534' }} />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -421,10 +442,14 @@ const AnalyticsPage: React.FC = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="period" tickFormatter={(v) => { try { return format(parseISO(v), 'dd/MM', { locale: ptBR }); } catch { return v; } }} stroke="#6b7280" fontSize={12} />
+              <XAxis dataKey="period" tickFormatter={(v) => axisTickLabel(v, groupBy)} stroke="#6b7280" fontSize={12} minTickGap={20} />
               <YAxis tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} stroke="#6b7280" fontSize={12} />
-              <RechartsTooltip formatter={(v) => [formatCurrency(Number(v) || 0), 'Faturamento']} />
-              <Area type="monotone" dataKey="total_revenue" stroke="#166534" strokeWidth={2} fill="url(#colorRevenueTab)" />
+              <RechartsTooltip
+                formatter={(v) => [formatCurrency(Number(v) || 0), 'Faturamento']}
+                labelFormatter={(l) => tooltipDateLabel(l, groupBy)}
+                contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+              />
+              <Area type="monotone" dataKey="total_revenue" stroke="#166534" strokeWidth={2} fill="url(#colorRevenueTab)" dot={{ r: 3, fill: '#166534' }} />
             </AreaChart>
           </ResponsiveContainer>
         )}
