@@ -47,7 +47,9 @@ export interface PrintJob {
   created_at: string;
 }
 
-const base = (slug: string) => `/stores/stores/${slug}`;
+// Rota é /stores/{slug}/print-agents/ (stores_router aninhado). O 'stores/stores'
+// duplicado fazia TODA operação de impressão dar 404.
+const base = (slug: string) => `/stores/${slug}`;
 
 export const listPrintAgents = (storeSlug: string) =>
   api.get(`${base(storeSlug)}/print-agents/`);
