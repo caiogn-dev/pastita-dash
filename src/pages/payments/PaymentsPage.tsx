@@ -207,11 +207,8 @@ export const PaymentsPage: React.FC = () => {
       key: 'payment_link',
       header: 'Link Pagamento',
       render: (order: Order) => {
-        const { payment_method, pix_code, access_token, pix_ticket_url, payment_url, payment_link, init_point, payment_preference_id } = order;
-        
-        // Check for direct payment link (for card payments)
-        const directLink = payment_url || payment_link || init_point;
-        
+        const { payment_method, pix_code, access_token, pix_ticket_url, payment_preference_id } = order;
+
         // Generate link from payment_preference_id if available (for card payments)
         const preferenceLink = payment_preference_id 
           ? `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${payment_preference_id}`
@@ -223,8 +220,8 @@ export const PaymentsPage: React.FC = () => {
             ? `${storefrontUrl}/pendente?token=${encodeURIComponent(access_token)}`
           : null;
         
-        // Priority: pix_ticket_url > client payment page (with token) > direct link > preference link
-        const finalPaymentLink = pix_ticket_url || clientPaymentLink || directLink || preferenceLink;
+        // Priority: pix_ticket_url > client payment page (with token) > preference link
+        const finalPaymentLink = pix_ticket_url || clientPaymentLink || preferenceLink;
         
         // Show link if available
         if (finalPaymentLink) {
