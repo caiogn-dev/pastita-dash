@@ -180,7 +180,9 @@ export default function ConnectionsPage() {
       }
       if (messengerRes.status === 'fulfilled') {
         const d = messengerRes.value.data as any;
-        (d?.results || d || []).forEach((acc: any) => all.push({ ...acc, platform: 'messenger' }));
+        // Serializer do Messenger expõe page_name (não `name`); sem isso conn.name
+        // ficava undefined → initials(undefined).split() quebrava a grade inteira.
+        (d?.results || d || []).forEach((acc: any) => all.push({ ...acc, platform: 'messenger', name: acc.name || acc.page_name }));
       }
       if (instagramRes.status === 'fulfilled') {
         instagramRes.value.forEach(acc => all.push({

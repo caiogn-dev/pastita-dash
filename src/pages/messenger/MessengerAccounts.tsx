@@ -28,7 +28,10 @@ export default function MessengerAccounts() {
     try {
       setLoading(true);
       const response = await messengerService.getAccounts();
-      setAccounts(response.data || []);
+      // Endpoint pagina ({count,results}); ler response.data direto deixava accounts
+      // como objeto → accounts.filter(...) quebrava no render.
+      const d = response.data as MessengerAccount[] | { results?: MessengerAccount[] };
+      setAccounts(Array.isArray(d) ? d : (d.results || []));
       setError(null);
     } catch { setError('Erro ao carregar contas do Messenger'); }
     finally { setLoading(false); }

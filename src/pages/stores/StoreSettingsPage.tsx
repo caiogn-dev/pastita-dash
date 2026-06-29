@@ -201,6 +201,11 @@ export const StoreSettingsPage: React.FC = () => {
     try {
       const currentMetadata = store?.metadata || {};
       const payload = {
+        // Campos do modelo (o form recarrega a partir destes; antes só gravava em
+        // metadata.store_* e a localização "sumia" no reload). Mantém metadata como
+        // fallback legado lido por geo/service.py e maps_views.py.
+        latitude: lat,
+        longitude: lng,
         metadata: {
           ...currentMetadata,
           store_latitude: lat,

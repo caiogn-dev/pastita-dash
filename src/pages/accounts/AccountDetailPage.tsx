@@ -200,7 +200,7 @@ export const AccountDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Mensagens Enviadas</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as Record<string, number>).sent || 0}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as { by_status?: Record<string, number> }).by_status?.sent || 0}</p>
                 </div>
               </div>
             </Card>
@@ -211,7 +211,7 @@ export const AccountDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Mensagens Entregues</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as Record<string, number>).delivered || 0}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as { by_status?: Record<string, number> }).by_status?.delivered || 0}</p>
                 </div>
               </div>
             </Card>
@@ -222,7 +222,7 @@ export const AccountDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Mensagens Lidas</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as Record<string, number>).read || 0}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as { by_status?: Record<string, number> }).by_status?.read || 0}</p>
                 </div>
               </div>
             </Card>
@@ -233,7 +233,7 @@ export const AccountDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Mensagens Falhas</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as Record<string, number>).failed || 0}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as { by_status?: Record<string, number> }).by_status?.failed || 0}</p>
                 </div>
               </div>
             </Card>

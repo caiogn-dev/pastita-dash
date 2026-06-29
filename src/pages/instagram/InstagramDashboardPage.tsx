@@ -403,7 +403,9 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
   const [days, setDays] = useState(30);
 
   const fetchInsights = useCallback(
-    () => instagramAccountService.getInsights(accountId, days),
+    // Desembrulha .data como fetchAccount faz; sem isso insights ficava sendo a
+    // resposta axios crua → insights.reduce(...) indefinido, aba quebrava/zerava.
+    () => instagramAccountService.getInsights(accountId, days).then((r: any) => r.data ?? r),
     [accountId, days]
   );
 
