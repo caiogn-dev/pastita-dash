@@ -3,14 +3,29 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-25)
+## Baseline atual (2026-06-29)
 
-- `npm ci`: ok (22 vulnerabilidades reportadas pelo npm — ver backlog).
+- `npm ci`: ok (vulnerabilidades reportadas pelo npm — ver backlog).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **309 testes / 73 suítes verdes**.
+- `npm test`: **331 testes / 77 suítes verdes** (após correção abaixo).
 - `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
 
 ## Histórico
+
+### 2026-06-29 — Correção: testes vermelhos da PaymentLinkPage na main
+- **Medido:** o baseline encontrou a `main` com **3 testes vermelhos** em
+  `PaymentLinkPage.test.tsx` (76/77 suítes, 327/330 testes). O commit `3b72fc8`
+  redesenhou a `PaymentLinkPage` para gerar um **link de pagamento real** (Checkout
+  Pro: cartão/PIX/boleto via `payment.payment_url`/`init_point`) em vez de um PIX
+  copia-e-cola, e renomeou o botão para "Gerar link de pagamento" — mas os testes
+  ficaram presos no contrato antigo (`pix_code`, QR, `ticket_url`, botão "Gerar
+  cobrança PIX"). Risco: suíte vermelha mascara regressões futuras.
+- **Mudado:** `PaymentLinkPage.test.tsx` atualizado para o contrato vigente
+  (fonte da verdade = componente intencionalmente alterado): novo label do botão,
+  asserção sobre `payment_url` e o link "Abrir link de pagamento". Adicionado caso
+  extra cobrindo o fallback para `init_point` quando `payment_url` não vem na resposta.
+  **Sem alteração de código de produção** (apenas testes).
+- **Antes/depois:** 327→331 testes verdes, 76→77 suítes; tsc limpo nos dois lados.
 
 ### 2026-06-25 — Acessibilidade: nomes acessíveis em botões icon-only
 - **Medido:** auditoria de botões "icon-only" (apenas ícone, sem texto) sem
