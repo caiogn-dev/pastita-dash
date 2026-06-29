@@ -151,8 +151,13 @@ export const getAccountStats = (accountId: string, startDate?: string, endDate?:
   });
 };
 
-export const getMessageStats = (accountId?: any, _dateParams?: any) =>
-  getAccountStats(accountId as string);
+export const getMessageStats = (
+  accountId?: any,
+  dateParams?: { start_date?: string; end_date?: string },
+) =>
+  // Antes descartava dateParams → getAccountStats caía no default (mês atual),
+  // ignorando o range de 30 dias que a tela passa. Repassa start/end agora.
+  getAccountStats(accountId as string, dateParams?.start_date, dateParams?.end_date);
 
 // Billing is not exposed by the backend; business profile is proxied by WhatsAppAccountViewSet.
 export const getBillingInfo = (_accountId: string) =>
