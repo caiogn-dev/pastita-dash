@@ -666,13 +666,15 @@ export const marketingStatsApi = {
           click_rate: data.rates?.click_rate || 0,
         },
         whatsapp: {
-          total_campaigns: 0,
-          total_sent: 0,
-          total_delivered: 0,
-          total_read: 0,
-          total_replied: 0,
-          delivery_rate: 0,
-          read_rate: 0,
+          // Backend agrega campanhas WhatsApp da loja (via StoreIntegration→account).
+          // Antes vinha tudo 0 hardcoded → card "WhatsApp Enviados" sempre zerado.
+          total_campaigns: data.whatsapp?.total_campaigns || 0,
+          total_sent: data.whatsapp?.total_sent || 0,
+          total_delivered: data.whatsapp?.total_delivered || 0,
+          total_read: data.whatsapp?.total_read || 0,
+          total_replied: data.whatsapp?.total_replied || 0,
+          delivery_rate: data.whatsapp?.delivery_rate || 0,
+          read_rate: data.whatsapp?.read_rate || 0,
         },
         subscribers: {
           total: data.subscribers?.total || 0,

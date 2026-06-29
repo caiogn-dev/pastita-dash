@@ -1,4 +1,4 @@
-import api from './api';
+import api, { normalizePaginatedResponse } from './api';
 
 export interface Campaign {
   id: string;
@@ -15,7 +15,8 @@ export interface Campaign {
   started_at: string | null;
   completed_at: string | null;
   messages_per_minute: number;
-  delay_between_messages: number;
+  // Serializer expõe como `delay_between_seconds` (source='delay_between_messages').
+  delay_between_seconds: number;
   total_recipients: number;
   messages_sent: number;
   messages_delivered: number;
@@ -90,7 +91,7 @@ export const campaignsService = {
     contact_list?: Array<{ phone: string; name?: string; variables?: Record<string, unknown> }>;
     scheduled_at?: string;
     messages_per_minute?: number;
-    delay_between_messages?: number;
+    delay_between_seconds?: number;
   }): Promise<Campaign> => {
     const response = await api.post<Campaign>('/campaigns/campaigns/', data);
     return response.data;
@@ -166,8 +167,10 @@ export const campaignsService = {
   getCampaignRecipients: async (id: string, status?: string): Promise<CampaignRecipient[]> => {
     const params: Record<string, string> = {};
     if (status) params.status = status;
-    const response = await api.get<CampaignRecipient[]>(`/campaigns/campaigns/${id}/recipients/`, { params });
-    return response.data;
+    const response = await api.get(`/campaigns/campaigns/${id}/recipients/`, { params });
+    // O endpoint pagina (envelope {count,results}). Antes retornava o objeto cru
+    // como se fosse array → recipients.length = undefined ("Processando: undefined").
+    return normalizePaginatedResponse<CampaignRecipient>(response.data);
   },
 
   addRecipients: async (

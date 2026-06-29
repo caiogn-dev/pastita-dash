@@ -8,7 +8,7 @@ interface KdsOrder {
 }
 
 export const KDS_COLUMNS = [
-  { id: 'todo', label: 'A iniciar', statuses: ['confirmed', 'paid', 'payment_confirmed'] },
+  { id: 'todo', label: 'A iniciar', statuses: ['confirmed', 'paid'] },
   { id: 'preparing', label: 'Preparando', statuses: ['preparing'] },
   { id: 'ready', label: 'Pronto', statuses: ['ready'] },
 ] as const;

@@ -103,8 +103,11 @@ const STATUS_LABELS: Record<string, string> = {
 // HELPER FUNCTIONS
 // =============================================================================
 
-const formatMoney = (value: number | undefined | null) => {
-  return `R$ ${(value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+const formatMoney = (value: number | string | undefined | null) => {
+  // A API serializa Decimal como STRING ("1234.5"). String.toLocaleString ignora
+  // as opções → saía "R$ 1234.5" sem separador BR. Coage pra número antes.
+  const n = Number(value);
+  return `R$ ${(Number.isFinite(n) ? n : 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const getManualSurcharge = (metadata?: Record<string, unknown>) => {
@@ -621,7 +624,7 @@ export const OrderDetailPage: React.FC = () => {
                           )}
                         </div>
                         <div className="text-right text-sm font-semibold">
-                          {formatMoney(item.subtotal || item.total_price)}
+                          {formatMoney(item.subtotal)}
                         </div>
                       </div>
                     );
