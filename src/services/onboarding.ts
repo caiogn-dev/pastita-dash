@@ -128,3 +128,28 @@ export async function saveStoreBranding(
     throw toSignupError(err);
   }
 }
+
+/**
+ * Checklist "Primeiros Passos" — progresso do onboarding pós-signup.
+ * GET /api/v1/stores/<slug>/onboarding/checklist/ (Tasks 1-2, backend).
+ */
+export type ChecklistKey =
+  | 'account' | 'logo' | 'product' | 'delivery' | 'hours' | 'whatsapp';
+
+export interface ChecklistStepDTO {
+  key: ChecklistKey;
+  label: string;
+  done: boolean;
+}
+
+export interface OnboardingChecklist {
+  steps: ChecklistStepDTO[];
+  completed: number;
+  total: number;
+  all_done: boolean;
+}
+
+export async function getChecklist(storeSlug: string): Promise<OnboardingChecklist> {
+  const { data } = await api.get(`/stores/${storeSlug}/onboarding/checklist/`);
+  return data;
+}
