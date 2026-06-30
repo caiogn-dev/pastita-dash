@@ -13,7 +13,7 @@ import api from './api';
 import type { Store } from './storesApi';
 
 /** Chaves canônicas de plano expostas pelo backend. */
-export type PlanKey = 'starter' | 'pro' | 'premium';
+export type PlanKey = 'free' | 'starter' | 'pro' | 'premium';
 
 /** Limites/recursos de um plano. `max_products: null` significa ilimitado. */
 export interface PlanLimits {
