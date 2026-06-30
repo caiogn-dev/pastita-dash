@@ -33,7 +33,7 @@ function buildRouteByKey(storeId: string | null | undefined): Record<ChecklistKe
   };
 }
 
-const OnboardingChecklist: FC = () => {
+const OnboardingChecklist: FC<{ onContinue?: () => void }> = ({ onContinue }) => {
   const { store, storeId } = useStore();
   const slug = store?.slug;
   const [data, setData] = useState<Checklist | null>(null);
@@ -88,6 +88,14 @@ const OnboardingChecklist: FC = () => {
           );
         })}
       </ul>
+      {onContinue && (
+        <div className="border-t border-border-token px-5 py-3">
+          <button onClick={onContinue}
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
+            Continuar configuração →
+          </button>
+        </div>
+      )}
     </section>
   );
 };

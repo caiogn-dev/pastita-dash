@@ -17,6 +17,9 @@ import toast from 'react-hot-toast';
 import { Badge, Button, Loading } from '../../components/common';
 import { Card, StatCard } from '../../components/ui';
 import OnboardingChecklist from '../../components/onboarding/OnboardingChecklist';
+import OnboardingWizard from '../../components/onboarding/wizard/OnboardingWizard';
+import { buildWizardSteps } from '../../components/onboarding/wizard/buildWizardSteps';
+import { getChecklist, markWizardSeen } from '../../services/onboarding';
 import { useStore } from '../../hooks';
 import { useAuthStore } from '../../stores/authStore';
 import { useOrderSound } from '../../hooks/useOrderSound';
@@ -147,6 +150,19 @@ export const DashboardPage: React.FC = () => {
   const { storeId, storeSlug } = useStore();
   const storeRoute = storeSlug || storeId || '';
 
+  // Onboarding wizard: auto-abre 1× no 1º login de loja incompleta (derivado
+  // do checklist + flag wizard_seen do backend; markWizardSeen garante 1 vez só).
+  const [wizardOpen, setWizardOpen] = useState(false);
+  useEffect(() => {
+    if (!storeSlug) return;
+    getChecklist(storeSlug).then((c) => {
+      if (!c.all_done && !c.wizard_seen) {
+        setWizardOpen(true);
+        markWizardSeen(storeSlug).catch(() => {});
+      }
+    }).catch(() => {});
+  }, [storeSlug]);
+
   const { checkAndNotify } = useOrderSound();
 
   const [ordersToday, setOrdersToday]           = useState(0);
@@ -260,7 +276,10 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-5">
 
-      <OnboardingChecklist />
+      {storeId && (
+        <OnboardingWizard open={wizardOpen} steps={buildWizardSteps(storeId)} onClose={() => setWizardOpen(false)} />
+      )}
+      <OnboardingChecklist onContinue={storeId ? () => setWizardOpen(true) : undefined} />
 
       {/* ── Alert bar ── */}
       {pendingCount > 0 && !loading && (
