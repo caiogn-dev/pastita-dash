@@ -19,6 +19,7 @@ import storesApi, {
 } from '../../services/storesApi';
 import logger from '../../services/logger';
 import { compressImage } from '../../utils/compressImage';
+import { PaywallModal } from '../../components/billing/PaywallModal';
 
 export interface ProductFormModalProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const editingProduct = isEditing ? (product as Product) : null;
 
   const [saving, setSaving] = useState(false);
+  const [paywall, setPaywall] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'inventory' | 'variants' | 'media' | 'seo'>('basic');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -208,6 +210,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       onSaved();
       onClose();
     } catch (error) {
+      const axiosErr = error as { response?: { status?: number; data?: { detail?: string } } };
+      const detail = axiosErr?.response?.data?.detail ?? '';
+      if (axiosErr?.response?.status === 400 && /limite do plano/i.test(detail)) {
+        setPaywall(detail);
+        return;
+      }
       logger.error('Error saving product:', error);
       toast.error('Erro ao salvar produto');
     } finally {
@@ -850,6 +858,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           </Button>
         </div>
       </form>
+      <PaywallModal open={!!paywall} message={paywall ?? ''} onClose={() => setPaywall(null)} />
     </Modal>
   );
 };
