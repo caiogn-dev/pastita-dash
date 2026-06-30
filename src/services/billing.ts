@@ -1,9 +1,9 @@
 /**
  * Billing / Planos — leitura pública dos planos do SaaS.
  *
- * Pagamento (MercadoPago) ainda NÃO existe: a UI de assinatura é placeholder.
- * Este serviço só lê o catálogo público de planos e expõe os tipos de billing
- * que o backend já anexa ao objeto Store (plan/trial_ends_at/onboarding_completed).
+ * Pagamento via MercadoPago: subscribe, cancelar e trocar plano.
+ * Este serviço lê o catálogo público de planos, expõe os tipos de billing
+ * que o backend anexa ao Store, e gerencia o ciclo de vida da assinatura.
  *
  * Contrato backend (live):
  *   GET /api/v1/public/plans/  (público, sem auth)
@@ -106,4 +106,31 @@ export async function getPlans(): Promise<Plan[]> {
     skipAutoLogout: true,
   });
   return Array.isArray(data?.plans) ? data.plans : [];
+}
+
+/** Estado da assinatura retornado pelo backend (Task 8). */
+export interface SubscriptionStatus {
+  status: 'none' | 'trialing' | 'active' | 'past_due' | 'suspended' | 'canceled';
+  plan?: PlanKey;
+  current_period_end?: string | null;
+  setup_fee_paid?: boolean;
+  grace_until?: string | null;
+}
+
+export async function getSubscription(storeSlug: string): Promise<SubscriptionStatus> {
+  const { data } = await api.get(`/stores/${storeSlug}/subscription/`);
+  return data;
+}
+
+export async function cancelSubscription(storeSlug: string): Promise<{ status: string }> {
+  const { data } = await api.post(`/stores/${storeSlug}/subscription/cancel/`);
+  return data;
+}
+
+export async function changePlan(
+  storeSlug: string,
+  plan: PlanKey,
+): Promise<{ init_point: string; preapproval_id?: string }> {
+  const { data } = await api.post(`/stores/${storeSlug}/subscription/change-plan/`, { plan });
+  return data;
 }
