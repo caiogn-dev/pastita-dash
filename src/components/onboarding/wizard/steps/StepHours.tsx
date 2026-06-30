@@ -10,8 +10,8 @@ const StepHours: FC<{ storeId: string; onSaved: () => void }> = ({ storeId, onSa
   const [busy, setBusy] = useState(false);
   async function save() {
     setBusy(true); setErr(null);
-    const hours = Object.fromEntries(DIAS.map((d) => [d, { open, close }]));
-    try { await updateStore(storeId, { operating_hours: hours } as Record<string, unknown>); onSaved(); }
+    const hours = Object.fromEntries(DIAS.map((d) => [d, { open, close, is_open: true }]));
+    try { await updateStore(storeId, { operating_hours: hours }); onSaved(); }
     catch { setErr('Não foi possível salvar o horário.'); } finally { setBusy(false); }
   }
   return (

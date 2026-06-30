@@ -15,7 +15,7 @@ const StepDelivery: FC<{ storeId: string; onSaved: () => void }> = ({ storeId, o
   }
   async function pickupOnly() {
     setBusy(true); setErr(null);
-    try { await updateStore(storeId, { delivery_enabled: false, pickup_enabled: true } as Record<string, unknown>); onSaved(); }
+    try { await updateStore(storeId, { delivery_enabled: false, pickup_enabled: true }); onSaved(); }
     catch { setErr('Não foi possível salvar.'); } finally { setBusy(false); }
   }
   return (
