@@ -16,6 +16,7 @@ import {
 import toast from 'react-hot-toast';
 import { Badge, Button, Loading } from '../../components/common';
 import { Card, StatCard } from '../../components/ui';
+import OnboardingChecklist from '../../components/onboarding/OnboardingChecklist';
 import { useStore } from '../../hooks';
 import { useAuthStore } from '../../stores/authStore';
 import { useOrderSound } from '../../hooks/useOrderSound';
@@ -258,6 +259,8 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-5">
+
+      <OnboardingChecklist />
 
       {/* ── Alert bar ── */}
       {pendingCount > 0 && !loading && (
