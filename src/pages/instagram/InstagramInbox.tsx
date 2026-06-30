@@ -399,6 +399,7 @@ export default function InstagramInbox() {
               type="button"
               onClick={() => void loadConversations(false)}
               className="ml-auto rounded-lg p-2 text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg-primary"
+              aria-label="Atualizar conversas"
               title="Atualizar conversas"
             >
               <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -559,6 +560,8 @@ export default function InstagramInbox() {
                 type="button"
                 className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
                 onClick={() => togglePanel('templates')}
+                aria-label="Templates"
+                aria-pressed={activePanel === 'templates'}
                 title="Templates"
               >
                 <DocumentTextIcon className="h-5 w-5" />
@@ -567,6 +570,8 @@ export default function InstagramInbox() {
                 type="button"
                 className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
                 onClick={() => togglePanel('tools')}
+                aria-label="Ferramentas"
+                aria-pressed={activePanel === 'tools'}
                 title="Ferramentas"
               >
                 <BoltIcon className="h-5 w-5" />
@@ -651,6 +656,8 @@ export default function InstagramInbox() {
                   type="button"
                   onClick={() => void handleSendMessage()}
                   disabled={!messageText.trim() || sending}
+                  aria-label="Enviar mensagem"
+                  title="Enviar mensagem"
                   className="rounded-xl bg-pink-500 p-3 text-white transition-colors hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <PaperAirplaneIcon className="h-5 w-5" />
