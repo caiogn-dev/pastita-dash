@@ -9,7 +9,7 @@
  *
  * Integrado no MainLayout, logo abaixo da Navbar.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import { ClockIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useStore } from '../../hooks/useStore';
@@ -23,7 +23,7 @@ import {
 /** Chave de sessionStorage para o dismiss (volta a aparecer em novo acesso). */
 const DISMISS_KEY = 'trial-banner-dismissed';
 
-export const TrialBanner: React.FC = () => {
+export const TrialBanner: FC = () => {
   const { store } = useStore();
   const slug = (store as { slug?: string } | null)?.slug ?? null;
 

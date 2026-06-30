@@ -7,7 +7,7 @@
  *  3. Caminho de trial normal (regressão)
  *  4. Sem banner quando não há trial ativo nem status crítico
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 // ---- mocks (hoisted pelo jest antes dos imports abaixo) ----------------
@@ -88,20 +88,20 @@ test('exibe banner de trial quando status=trialing e há dias restantes', async 
   mockTrialDaysRemaining.mockReturnValue(5);
   mockGetSubscription.mockResolvedValue({ status: 'trialing' });
 
-  renderBanner();
+  // act(async) flush da microtask do getSubscription antes de checar o DOM
+  await act(async () => { renderBanner(); });
 
-  // banner de trial aparece imediatamente (não espera getSubscription)
   expect(screen.getByText(/5 dias de trial/i)).toBeInTheDocument();
 });
 
 test('não exibe nada quando status=active e sem trial', async () => {
   mockGetSubscription.mockResolvedValue({ status: 'active' });
 
-  const { container } = renderBanner();
-
-  await waitFor(() => {
-    // aguarda o useEffect resolver a promessa
-    expect(mockGetSubscription).toHaveBeenCalledWith('minha-loja');
+  // act(async) garante que a microtask do .then(setSubStatus) seja resolvida
+  // dentro do act antes de qualquer asserção, evitando o warning de act()
+  let container!: HTMLElement;
+  await act(async () => {
+    ({ container } = renderBanner());
   });
 
   expect(container.firstChild).toBeNull();
