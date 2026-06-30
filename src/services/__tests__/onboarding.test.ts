@@ -1,5 +1,5 @@
 import api from '../api';
-import { getChecklist } from '../onboarding';
+import { getChecklist, markWizardSeen } from '../onboarding';
 
 jest.mock('../api', () => ({
   __esModule: true,
@@ -32,5 +32,12 @@ describe('getChecklist', () => {
     expect(mockGet).toHaveBeenCalledWith('/stores/loja/onboarding/checklist/');
     expect(res.total).toBe(6);
     expect(res.steps[0].key).toBe('account');
+  });
+
+  it('markWizardSeen faz POST no endpoint seen', async () => {
+    const mockPost = (api as unknown as { post: jest.Mock }).post;
+    mockPost.mockResolvedValue({ data: { wizard_seen: true } });
+    await markWizardSeen('loja');
+    expect(mockPost).toHaveBeenCalledWith('/stores/loja/onboarding/seen/');
   });
 });

@@ -147,9 +147,15 @@ export interface OnboardingChecklist {
   completed: number;
   total: number;
   all_done: boolean;
+  wizard_seen?: boolean;
 }
 
 export async function getChecklist(storeSlug: string): Promise<OnboardingChecklist> {
   const { data } = await api.get(`/stores/${storeSlug}/onboarding/checklist/`);
   return data;
+}
+
+/** Marca que o dono já viu o wizard de setup (controla o auto-open). */
+export async function markWizardSeen(storeSlug: string): Promise<void> {
+  await api.post(`/stores/${storeSlug}/onboarding/seen/`);
 }
