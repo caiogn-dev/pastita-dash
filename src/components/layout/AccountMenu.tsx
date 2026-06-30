@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   ArrowRightOnRectangleIcon, BuildingStorefrontIcon, DevicePhoneMobileIcon,
-  LinkIcon, Cog6ToothIcon, SparklesIcon,
+  LinkIcon, Cog6ToothIcon, SparklesIcon, CreditCardIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -21,6 +21,7 @@ export const ACCOUNT_LINKS: AccountLink[] = [
   { name: 'Conexões',        href: '/connections', icon: LinkIcon },
   { name: 'Preferências',    href: '/settings',    icon: Cog6ToothIcon, sectionHeader: 'Conta' },
   { name: 'Plano',           href: '/plano',       icon: SparklesIcon },
+  { name: 'Assinatura',      href: '/assinatura',  icon: CreditCardIcon },
 ];
 
 export const AccountMenu: React.FC = () => {

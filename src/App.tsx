@@ -30,6 +30,7 @@ const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m =
 const PaymentLinkPage = lazy(() => import('./pages/payments/PaymentLinkPage').then(m => ({ default: m.PaymentLinkPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const PlanoPage = lazy(() => import('./pages/plano/PlanoPage').then(m => ({ default: m.PlanoPage })));
+const SubscriptionManagementPage = lazy(() => import('./pages/plano/SubscriptionManagementPage'));
 
 // Agents Pages (Langchain AI)
 const AgentsPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentsPage })));
@@ -199,6 +200,7 @@ const AppContent: React.FC = () => {
 
         {/* Planos / assinatura */}
         <Route path="plano" element={<PageBoundary><PlanoPage /></PageBoundary>} />
+        <Route path="assinatura" element={<PageBoundary><SubscriptionManagementPage /></PageBoundary>} />
 
         {/* Link de pagamento avulso (Fase 3) */}
         <Route path="payments/link" element={<PageBoundary><PaymentLinkPage /></PageBoundary>} />
