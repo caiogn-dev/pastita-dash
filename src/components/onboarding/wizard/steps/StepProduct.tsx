@@ -1,5 +1,6 @@
 import { useState, type FC } from 'react';
 import productsService from '../../../../services/products';
+import { Field, TextInput, MoneyInput } from './fields';
 
 function slugify(s: string) {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -24,18 +25,16 @@ const StepProduct: FC<{ storeId: string; onSaved: () => void }> = ({ storeId, on
   return (
     <div className="space-y-4">
       <p className="text-sm text-fg-muted-token">Cadastre um item pra sua loja começar a vender.</p>
-      <label className="block text-sm"><span className="text-fg-token">Nome</span>
-        <input aria-label="Nome" value={name} onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-border-token bg-surface-muted-token px-3 py-2 text-fg-token" />
-      </label>
-      <label className="block text-sm"><span className="text-fg-token">Preço (R$)</span>
-        <input aria-label="Preço" type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-border-token bg-surface-muted-token px-3 py-2 text-fg-token" />
-      </label>
+      <Field label="Nome do produto">
+        <TextInput value={name} onChange={setName} ariaLabel="Nome" placeholder="Ex: Salada Caesar" />
+      </Field>
+      <Field label="Preço">
+        <MoneyInput value={price} onChange={setPrice} ariaLabel="Preço" />
+      </Field>
       {err && <p className="text-sm text-red-500">{err}</p>}
       <button onClick={save} disabled={busy || !name || !price}
-        className="w-full rounded-lg bg-brand px-4 py-2 font-medium text-white disabled:opacity-50">
-        Salvar e continuar
+        className="w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white transition-opacity disabled:opacity-50">
+        {busy ? 'Salvando…' : 'Salvar e continuar'}
       </button>
     </div>
   );

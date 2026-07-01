@@ -1,7 +1,12 @@
 import { useState, type FC } from 'react';
 import { updateStore } from '../../../../services/storesApi';
+import { Field } from './fields';
 
 const DIAS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+const TIME_CLS =
+  'w-full rounded-lg border border-border-token bg-surface-muted-token px-3 py-2.5 text-fg-token ' +
+  'outline-none transition-shadow focus:border-brand focus:ring-2 focus:ring-brand/30';
 
 const StepHours: FC<{ storeId: string; onSaved: () => void }> = ({ storeId, onSaved }) => {
   const [open, setOpen] = useState('09:00');
@@ -18,19 +23,21 @@ const StepHours: FC<{ storeId: string; onSaved: () => void }> = ({ storeId, onSa
     <div className="space-y-4">
       <p className="text-sm text-fg-muted-token">Um horário padrão pra todos os dias (ajuste depois nas configurações).</p>
       <div className="flex gap-3">
-        <label className="flex-1 text-sm"><span className="text-fg-token">Abre</span>
-          <input aria-label="Abre" type="time" value={open} onChange={(e) => setOpen(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border-token bg-surface-muted-token px-3 py-2 text-fg-token" />
-        </label>
-        <label className="flex-1 text-sm"><span className="text-fg-token">Fecha</span>
-          <input aria-label="Fecha" type="time" value={close} onChange={(e) => setClose(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border-token bg-surface-muted-token px-3 py-2 text-fg-token" />
-        </label>
+        <div className="flex-1">
+          <Field label="Abre">
+            <input aria-label="Abre" type="time" value={open} onChange={(e) => setOpen(e.target.value)} className={TIME_CLS} />
+          </Field>
+        </div>
+        <div className="flex-1">
+          <Field label="Fecha">
+            <input aria-label="Fecha" type="time" value={close} onChange={(e) => setClose(e.target.value)} className={TIME_CLS} />
+          </Field>
+        </div>
       </div>
       {err && <p className="text-sm text-red-500">{err}</p>}
       <button onClick={save} disabled={busy}
-        className="w-full rounded-lg bg-brand px-4 py-2 font-medium text-white disabled:opacity-50">
-        Salvar e continuar
+        className="w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white transition-opacity disabled:opacity-50">
+        {busy ? 'Salvando…' : 'Salvar e continuar'}
       </button>
     </div>
   );
