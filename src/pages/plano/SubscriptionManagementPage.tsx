@@ -35,7 +35,11 @@ export default function SubscriptionManagementPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug) {
+      // Sem loja selecionada: não fica preso no "Carregando…" pra sempre.
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     Promise.all([getSubscription(slug), getPlans()])
       .then(([s, p]) => {
@@ -73,6 +77,10 @@ export default function SubscriptionManagementPage() {
 
   if (loading) {
     return <div className="p-6 text-fg-muted-token">Carregando assinatura…</div>;
+  }
+
+  if (!slug) {
+    return <div className="p-6 text-fg-muted-token">Nenhuma loja selecionada.</div>;
   }
 
   if (error) {
