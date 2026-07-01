@@ -1,8 +1,8 @@
 /**
  * PlanoPage — planos do SaaS (rota protegida /plano).
  *
- * Mostra o plano ATUAL da loja selecionada + o catálogo de 3 planos
- * (starter/pro/premium), destacando o atual.
+ * Mostra o plano ATUAL da loja selecionada + o catálogo de 4 planos
+ * (free/starter/pro/premium), destacando o atual.
  *
  * IMPORTANTE: pagamento (MercadoPago) ainda NÃO existe. O botão "Assinar" é
  * placeholder — dispara um toast "Cobrança em breve" e não inicia checkout.
@@ -31,7 +31,7 @@ import {
 } from '../../services/billing';
 
 /** Ordem visual canônica dos planos. */
-const PLAN_ORDER: PlanKey[] = ['starter', 'pro', 'premium'];
+const PLAN_ORDER: PlanKey[] = ['free', 'starter', 'pro', 'premium'];
 
 /** Plano destacado como recomendado quando não há plano atual. */
 const RECOMMENDED_PLAN: PlanKey = 'pro';
@@ -115,9 +115,9 @@ function PlanCard({
 
         <div className="mt-3 flex items-baseline gap-1">
           <span className="text-3xl font-extrabold text-fg-token">
-            {formatCurrency(plan.monthly_price)}
+            {plan.monthly_price === 0 ? 'Grátis' : formatCurrency(plan.monthly_price)}
           </span>
-          <span className="text-sm text-fg-muted-token">/mês</span>
+          {plan.monthly_price > 0 && <span className="text-sm text-fg-muted-token">/mês</span>}
         </div>
         <p className="mt-1 text-xs text-fg-muted-token">
           {plan.setup_fee > 0
@@ -223,7 +223,7 @@ export const PlanoPage: React.FC = () => {
     <div className="mx-auto max-w-5xl">
       <PageTitle
         title="Planos e assinatura"
-        subtitle="Escolha o plano ideal para a sua loja."
+        subtitle="Tudo incluso, 0% de comissão, com bot + IA. Escolha o plano ideal para a sua loja."
       />
 
       {/* Faixa de status atual: plano atual + trial */}
