@@ -741,7 +741,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
+                type="button"
                 onClick={() => navigate('/marketing/whatsapp')}
+                aria-label="Voltar para campanhas WhatsApp"
                 className="p-2 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] rounded-lg transition-colors"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
@@ -1357,7 +1359,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         )}
                       </div>
                       <button
+                        type="button"
                         onClick={() => handleRemoveContact(index)}
+                        aria-label={`Remover contato ${contact.phone}`}
                         className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                       >
                         <TrashIcon className="w-4 h-4" />
