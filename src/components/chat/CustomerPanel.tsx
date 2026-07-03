@@ -112,7 +112,9 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
           Cliente CRM
         </span>
         <button
+          type="button"
           onClick={onClose}
+          aria-label="Fechar painel do cliente"
           className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
         >
           <XMarkIcon className="h-4 w-4" />

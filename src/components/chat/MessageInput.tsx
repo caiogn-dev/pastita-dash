@@ -214,7 +214,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               decoding="async"
             />
             <button
+              type="button"
               onClick={onClearFile}
+              aria-label="Remover arquivo selecionado"
               className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
             >
               <XMarkIcon className="w-4 h-4" />
@@ -231,7 +233,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{selectedFile.name}</p>
               <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
-            <button onClick={onClearFile} className="p-1 text-gray-400 hover:text-red-500 transition-colors">
+            <button type="button" onClick={onClearFile} aria-label="Remover arquivo selecionado" className="p-1 text-gray-400 hover:text-red-500 transition-colors">
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>

@@ -224,8 +224,10 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
         <>
           <div className="flex items-center gap-2 mb-2">
             <button
+              type="button"
               onClick={togglePlay}
               disabled={isLoading}
+              aria-label={isPlaying ? 'Pausar áudio' : 'Reproduzir áudio'}
               className="w-10 h-10 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
             >
               {isPlaying ? (
@@ -249,8 +251,10 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
             </div>
 
             <button
+              type="button"
               onClick={toggleMute}
               disabled={isLoading}
+              aria-label={isMuted ? 'Ativar som do áudio' : 'Silenciar áudio'}
               className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
             >
               {isMuted ? (
