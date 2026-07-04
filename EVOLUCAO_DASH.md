@@ -3,14 +3,35 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-04)
 
 - `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **373 testes / 89 suítes verdes**.
+- `npm run lint`: gate em 400 warnings; ~265 warnings restantes (limpeza incremental em curso).
 
 ## Histórico
+
+### 2026-07-04 — A11y: controles do player de áudio do chat (WhatsApp)
+- **Medido:** varredura de botões icon-only continuou pela área crítica do fluxo
+  WhatsApp (`ChatWindow` → `MessageBubble`). O player de áudio inline (`AudioPlayer`
+  em `MessageBubble.tsx`) tinha três controles **sem nome acessível**: play/pause,
+  mudo e o slider de posição (`<input type="range">`). Leitores de tela não
+  anunciavam nada — áudios (notas de voz) são mensagens comuns no WhatsApp.
+- **Mudado (`src/components/chat/MessageBubble.tsx`):**
+  - play/pause: `aria-label` dinâmico "Reproduzir áudio" / "Pausar áudio";
+  - mudo: `aria-label` dinâmico "Silenciar áudio" / "Ativar som do áudio";
+  - slider: `aria-label="Posição do áudio"`;
+  - `type="button"` explícito nos dois botões (evita submit acidental em forms);
+  - troca `React.memo` → `memo` (named import). O único uso runtime de `React.`
+    no arquivo; sob ts-jest (sem `esModuleInterop`) o default `React` era
+    `undefined` e impedia importar o componente em teste. Mudança idiomática,
+    alinhada ao JSX automático (`jsx: react-jsx`) — build da Vite intacto.
+- **Teste (TDD):** novo `MessageBubble.a11y.test.tsx` — escrito vermelho antes,
+  verde depois. Cobre nome acessível nos 3 controles e a troca dinâmica do rótulo
+  de mudo ao acionar (simula `loadedmetadata` para habilitar os controles).
+- **Antes/depois:** 371→373 testes, 88→89 suítes; `tsc --noEmit` limpo nos dois
+  lados. Sem alteração de comportamento visual/funcional.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,10 +71,13 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
+1. **A11y — continuar varredura:** gaps icon-only já mapeados e ainda abertos:
+   `InstagramInbox.tsx` (botão de enviar mensagem, `PaperAirplaneIcon`, linha ~650,
+   sem `aria-label`/`title`); `NewWhatsAppCampaignPage.tsx` (botão voltar
+   `ArrowLeftIcon` ~743 e remover contato `TrashIcon` ~1359). Essas páginas exigem
+   mock pesado (contexto de loja/API/router) para testar — priorizar extração
+   testável ou teste de página com mocks. Seguir com diálogos.
+2. **Segurança/deps:** triar as 5 vulnerabilidades do `npm audit` (1 low, 2
    moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
