@@ -47,9 +47,11 @@ import {
   cancelOrder,
   StoreOrder,
 } from '../../services/storesApi';
-import { useNotificationSound, useStore, useConfirm } from '../../hooks';
+import { useNotificationSound, useStore, useConfirm, useOrderDetailModal } from '../../hooks';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { useRootStore } from '../../stores/rootStore';
+import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
+import type { Order } from '../../types';
 
 // ─── Column config ────────────────────────────────────────────────────────────
 // Extraído para orderColumns.ts (fonte única — usado também pelo drill-down dos KPIs)
@@ -507,11 +509,21 @@ export const OrdersPage: React.FC = () => {
     }
   }, [patchOrder]);
 
+  // Detalhe do pedido abre em MODAL (sem sair do board). O estado vive na URL
+  // (?pedido=<id>) → deep-link + botão voltar do navegador fecham naturalmente.
+  const { openOrder } = useOrderDetailModal();
+
   // Handlers estáveis para os cards: sem isto, o object/closure recriado a cada
   // render quebra o React.memo do OrderCard e re-renderiza o board inteiro.
   const handleDetail = useCallback((o: StoreOrder) => {
-    navigate(`/stores/${storeQuery}/orders/${o.id}`);
-  }, [navigate, storeQuery]);
+    openOrder(o.id);
+  }, [openOrder]);
+
+  // Ação dentro do modal (avançar status / PIX / edição) reflete no card do board
+  // sem reload: aplica o patch otimista no rootStore.
+  const handleModalOrderChanged = useCallback((o: Order) => {
+    patchOrder(o.id, { status: o.status, payment_status: o.payment_status });
+  }, [patchOrder]);
 
   const handleUberClick = useCallback((o: StoreOrder) => {
     setUberModalOrderId(o.id);
@@ -824,6 +836,9 @@ export const OrdersPage: React.FC = () => {
           }}
         />
       )}
+
+      {/* Detalhe do pedido em modal (aberto via ?pedido=<id>) */}
+      <OrderDetailModal onOrderChanged={handleModalOrderChanged} />
     </DndContext>
   );
 };

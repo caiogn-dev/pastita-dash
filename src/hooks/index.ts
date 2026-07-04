@@ -51,6 +51,8 @@ export type {
 
 // Notification sound hook
 export { useNotificationSound } from './useNotificationSound';
+export { useOrderDetailModal } from './useOrderDetailModal';
+export type { UseOrderDetailModal } from './useOrderDetailModal';
 
 // Store context hook
 export { 

@@ -20,11 +20,13 @@ import OnboardingChecklist from '../../components/onboarding/OnboardingChecklist
 import OnboardingWizard from '../../components/onboarding/wizard/OnboardingWizard';
 import { buildWizardSteps } from '../../components/onboarding/wizard/buildWizardSteps';
 import { getChecklist, markWizardSeen } from '../../services/onboarding';
-import { useStore } from '../../hooks';
+import { useStore, useOrderDetailModal } from '../../hooks';
 import { useAuthStore } from '../../stores/authStore';
 import { useOrderSound } from '../../hooks/useOrderSound';
 import { getOrders, getOrderStats, updateOrderStatus, StoreOrder } from '../../services/storesApi';
 import { dashboardService } from '../../services';
+import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
+import type { Order } from '../../types';
 import type { ProjectHealth } from '../../types/dashboard';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,20 +87,19 @@ const healthLabel: Record<string, string> = {
 
 interface OrderRowProps {
   order: StoreOrder;
-  storeRoute: string;
   advancing: string | null;
   onAdvance: (id: string, next: string) => Promise<void>;
+  onOpen: (id: string) => void;
 }
 
-const OrderRow: React.FC<OrderRowProps> = ({ order, storeRoute, advancing, onAdvance }) => {
-  const navigate = useNavigate();
+const OrderRow: React.FC<OrderRowProps> = ({ order, advancing, onAdvance, onOpen }) => {
   const action = NEXT_ACTION[order.status];
 
   return (
     <tr
       className="border-b border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-900/50
                  transition-colors cursor-pointer"
-      onClick={() => navigate(`/stores/${storeRoute}/orders/${order.id}`)}
+      onClick={() => onOpen(order.id)}
     >
       <td className="px-4 py-3 whitespace-nowrap">
         <p className="text-sm font-mono font-semibold text-gray-900 dark:text-white">
@@ -149,6 +150,19 @@ export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
   const { storeId, storeSlug } = useStore();
   const storeRoute = storeSlug || storeId || '';
+
+  // Detalhe do pedido em modal (?pedido=<id>) — abre sem sair do dashboard.
+  const { openOrder } = useOrderDetailModal();
+  // Reflete no card da lista "pedidos recentes" o que mudar dentro do modal.
+  const handleOrderChanged = useCallback((updated: Order) => {
+    setRecentOrders((prev) =>
+      prev.map((o) =>
+        o.id === updated.id
+          ? { ...o, status: updated.status, payment_status: updated.payment_status ?? o.payment_status }
+          : o,
+      ),
+    );
+  }, []);
 
   // Onboarding wizard: auto-abre 1× no 1º login de loja incompleta (derivado
   // do checklist + flag wizard_seen do backend; markWizardSeen garante 1 vez só).
@@ -281,6 +295,9 @@ export const DashboardPage: React.FC = () => {
       )}
       <OnboardingChecklist onContinue={storeId ? () => setWizardOpen(true) : undefined} />
 
+      {/* Detalhe do pedido em modal (aberto via ?pedido=<id> ao clicar numa linha) */}
+      <OrderDetailModal onOrderChanged={handleOrderChanged} />
+
       {/* ── Alert bar ── */}
       {pendingCount > 0 && !loading && (
         <div className={[
@@ -389,9 +406,9 @@ export const DashboardPage: React.FC = () => {
                     <OrderRow
                       key={order.id}
                       order={order}
-                      storeRoute={storeRoute}
                       advancing={advancing}
                       onAdvance={handleAdvance}
+                      onOpen={openOrder}
                     />
                   ))}
                 </tbody>

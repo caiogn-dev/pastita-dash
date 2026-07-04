@@ -38,6 +38,12 @@ const sizes = {
   full: 'max-w-6xl',
 };
 
+// Ref-count global do lock de scroll do body. Modais aninhados (ex.: modal de
+// pedido + modal de cancelar dentro dele) cada um "segura" o lock; o body só
+// volta a rolar quando o ÚLTIMO fecha. Sem isso, fechar o modal interno
+// resetava overflow='' e o fundo passava a rolar atrás do modal externo.
+let bodyScrollLockCount = 0;
+
 const CloseIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -63,24 +69,36 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
     const overlayRef = useRef<HTMLDivElement>(null);
     const isVisible = open ?? isOpen ?? false;
 
-    // Handle escape key + body scroll lock
+    // Escape → onClose. Listener só existe quando o modal está visível E
+    // closeOnEscape está ligado. Modais externos que embrulham outros modais
+    // desligam closeOnEscape enquanto um sub-modal está aberto, pra o Escape
+    // não fechar os dois de uma vez.
     useEffect(() => {
-      if (!closeOnEscape) return;
+      if (!isVisible || !closeOnEscape) return;
 
       const handleEscape = (e: KeyboardEvent) => {
         if (e.key === 'Escape') onClose();
       };
 
-      if (isVisible) {
-        document.addEventListener('keydown', handleEscape);
-        document.body.style.overflow = 'hidden';
-      }
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }, [isVisible, onClose, closeOnEscape]);
+
+    // Lock de scroll do body, ref-contado (ver bodyScrollLockCount). Independente
+    // do closeOnEscape pra não vazar quando um modal externo desliga o Escape.
+    useEffect(() => {
+      if (!isVisible) return;
+
+      bodyScrollLockCount += 1;
+      document.body.style.overflow = 'hidden';
 
       return () => {
-        document.removeEventListener('keydown', handleEscape);
-        document.body.style.overflow = '';
+        bodyScrollLockCount = Math.max(0, bodyScrollLockCount - 1);
+        if (bodyScrollLockCount === 0) {
+          document.body.style.overflow = '';
+        }
       };
-    }, [isVisible, onClose, closeOnEscape]);
+    }, [isVisible]);
 
     const handleOverlayClick = (e: React.MouseEvent) => {
       if (closeOnOverlayClick && e.target === overlayRef.current) {

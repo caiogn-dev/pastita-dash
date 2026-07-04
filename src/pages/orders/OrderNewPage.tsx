@@ -319,7 +319,9 @@ export const OrderNewPage: React.FC = () => {
       } else {
         toast.success(`Pedido #${order.order_number} criado com sucesso!`);
       }
-      navigate(`/stores/${effectiveStoreId}/orders/${order.id}`);
+      // Vai para o board com o detalhe do novo pedido aberto em modal (?pedido=)
+      // — mesma UX de clicar no card, sem cair numa página isolada.
+      navigate(`/stores/${effectiveStoreId}/orders?pedido=${order.id}`);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally { setIsSubmitting(false); }
