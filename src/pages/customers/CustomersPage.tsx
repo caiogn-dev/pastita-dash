@@ -389,7 +389,8 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEd
               leftIcon={<ChatBubbleLeftRightIcon className="h-4 w-4" />}
               onClick={() => {
                 onClose();
-                navigate(`/whatsapp/chat?phone=${cleanPhone}`);
+                // Rota viva do inbox; WhatsAppInboxPage lê `?search` (não `?phone`).
+                navigate(`/inbox/whatsapp?search=${cleanPhone}`);
               }}
             >
               Iniciar conversa WhatsApp

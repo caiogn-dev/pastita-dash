@@ -547,7 +547,7 @@ export const ConversationsPage: React.FC = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => navigate(`/whatsapp/inbox?conversation=${whatsAppConversation.id}`)}
+                  onClick={() => navigate(`/inbox/whatsapp?conversation=${whatsAppConversation.id}`)}
                 >
                   Abrir inbox completa
                 </Button>

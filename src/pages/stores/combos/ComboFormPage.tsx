@@ -68,7 +68,7 @@ export const ComboFormPage: React.FC = () => {
     } catch (err) {
       logger.error('Error loading data:', err);
       toast.error('Erro ao carregar dados');
-      navigate(`/stores/${storeSlug || ''}/combos`);
+      navigate(`/stores/${storeSlug || storeId}/combos`);
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export const ComboFormPage: React.FC = () => {
         await createComboWithItems(data);
         toast.success('Combo criado com sucesso!');
       }
-      navigate(`/stores/${storeSlug || ''}/combos`);
+      navigate(`/stores/${storeSlug || storeId}/combos`);
     } catch (err) {
       logger.error('Error saving combo:', err);
       toast.error('Erro ao salvar combo');
