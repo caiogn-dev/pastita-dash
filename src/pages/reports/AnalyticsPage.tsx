@@ -10,10 +10,6 @@ import {
   CheckCircleIcon,
   StarIcon,
 } from '@heroicons/react/24/outline';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip as RechartsTooltip, ResponsiveContainer,
-} from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toCsv, downloadCsv } from '../../utils/csv';
@@ -276,25 +272,18 @@ const AnalyticsPage: React.FC = () => {
             <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={350}>
-            <AreaChart data={revenueReport?.data || []}>
-              <defs>
-                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#166534" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#166534" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="period" tickFormatter={(v) => axisTickLabel(v, groupBy)} stroke="#6b7280" fontSize={12} minTickGap={20} />
-              <YAxis tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} stroke="#6b7280" fontSize={12} />
-              <RechartsTooltip
-                formatter={(v) => [formatCurrency(Number(v) || 0), 'Faturamento']}
-                labelFormatter={(l) => tooltipDateLabel(l, groupBy)}
-                contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-              />
-              <Area type="monotone" dataKey="total_revenue" stroke="#166534" strokeWidth={2} fill="url(#colorRevenue)" dot={{ r: 3, fill: '#166534' }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <TimeSeriesChart
+            data={revenueReport?.data || []}
+            xKey="period"
+            yKey="total_revenue"
+            label="Faturamento"
+            color="#166534"
+            height={350}
+            valueFormat={formatCurrency}
+            yTickFormat={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
+            xTickFormat={(v) => axisTickLabel(v, groupBy)}
+            tooltipLabelFormat={(v) => tooltipDateLabel(v, groupBy)}
+          />
         )}
       </Card>
 
@@ -529,7 +518,20 @@ const AnalyticsPage: React.FC = () => {
   );
 
   const renderProducts = () => (
-    <Card>
+    <div className="flex flex-col gap-6">
+      <Card>
+        <h2 className="text-lg font-semibold text-fg-token mb-4">Top produtos por receita</h2>
+        {productsLoading ? (
+          <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <RankBarList
+            items={(productsReport?.top_products || []).map((p) => ({ label: p.product_name, value: p.total_revenue }))}
+            valueFormat={formatCurrency}
+            max={8}
+          />
+        )}
+      </Card>
+      <Card>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-fg-token">Performance de Produtos</h2>
         <Badge tone="neutral">{productsReport?.top_products.length || 0} produtos</Badge>
@@ -562,7 +564,8 @@ const AnalyticsPage: React.FC = () => {
           </table>
         </div>
       )}
-    </Card>
+      </Card>
+    </div>
   );
 
   const renderCustomers = () => (
@@ -573,6 +576,18 @@ const AnalyticsPage: React.FC = () => {
         <KpiCard title="Recorrentes" value={customersReport?.summary.returning_customers || 0} loading={customersLoading} />
         <KpiCard title="Retenção" value={`${customersReport?.summary.retention_rate || 0}%`} loading={customersLoading} />
       </div>
+      <Card>
+        <h2 className="text-lg font-semibold text-fg-token mb-4">Top clientes por total gasto</h2>
+        {customersLoading ? (
+          <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <RankBarList
+            items={(customersReport?.top_customers || []).map((c) => ({ label: c.name || 'Cliente', value: c.total_spent }))}
+            valueFormat={formatCurrency}
+            max={8}
+          />
+        )}
+      </Card>
       <Card>
         <h2 className="text-lg font-semibold text-fg-token mb-4">Melhores Clientes</h2>
         {customersLoading ? (
