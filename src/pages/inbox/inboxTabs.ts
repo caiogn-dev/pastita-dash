@@ -1,18 +1,16 @@
-// Inbox unificado: 1 página com abas substitui as 7 rotas de chat antigas.
+// Inbox unificado. Canais do produto = APENAS WhatsApp + Email; Instagram e
+// Messenger foram retirados da superfície. Sobram as abas de operação: o canal
+// WhatsApp e a visão unificada ("Todas").
 
-export type InboxTabId = 'whatsapp' | 'instagram' | 'messenger' | 'conversas';
+export type InboxTabId = 'whatsapp' | 'conversas';
 
 export interface InboxTab {
   id: InboxTabId;
   label: string;
 }
 
-// Ids válidos para resolução de rota (todos continuam acessíveis por URL direta).
-const ALL_TAB_IDS: InboxTabId[] = ['whatsapp', 'instagram', 'messenger', 'conversas'];
+const ALL_TAB_IDS: InboxTabId[] = ['whatsapp', 'conversas'];
 
-// Instagram/Messenger estão congelados: as abas ficam OCULTAS pra focar o inbox
-// em WhatsApp + visão unificada. O conteúdo segue acessível por URL direta
-// (/inbox/instagram, /inbox/messenger) via TAB_CONTENT — só não aparece como aba.
 export const INBOX_TABS: InboxTab[] = [
   { id: 'whatsapp', label: 'WhatsApp' },
   { id: 'conversas', label: 'Todas' },
@@ -24,8 +22,6 @@ export const resolveInboxTab = (param: string | undefined | null): InboxTabId =>
 const LEGACY_MAP: Record<string, InboxTabId> = {
   '/whatsapp/inbox': 'whatsapp',
   '/whatsapp/chat': 'whatsapp',
-  '/instagram/inbox': 'instagram',
-  '/messenger/inbox': 'messenger',
   '/conversations': 'conversas',
   '/messages': 'conversas',
 };

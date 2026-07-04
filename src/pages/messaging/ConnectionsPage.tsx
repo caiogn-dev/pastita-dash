@@ -366,11 +366,10 @@ export default function ConnectionsPage() {
       || c.username?.toLowerCase().includes(q);
   });
 
+  // Canais do produto = APENAS WhatsApp + Email; Instagram/Messenger fora da superfície.
   const TABS = [
     { value: 'all', label: `Todas (${connections.length})` },
     { value: 'whatsapp', label: `📱 WhatsApp (${connections.filter(c => c.platform === 'whatsapp').length})` },
-    { value: 'instagram', label: `📸 Instagram (${connections.filter(c => c.platform === 'instagram').length})` },
-    { value: 'messenger', label: `💬 Messenger (${connections.filter(c => c.platform === 'messenger').length})` },
   ];
 
   return (
@@ -396,11 +395,9 @@ export default function ConnectionsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-2 gap-4 mb-8">
         {[
           { icon: '📱', label: 'WhatsApp', count: connections.filter(c => c.platform === 'whatsapp').length },
-          { icon: '📸', label: 'Instagram', count: connections.filter(c => c.platform === 'instagram').length },
-          { icon: '💬', label: 'Messenger', count: connections.filter(c => c.platform === 'messenger').length },
           { icon: <CheckCircleIcon className="w-6 h-6" />, label: 'Ativas', count: connections.filter(c => c.is_active).length, iconClass: 'text-green-600 bg-green-100 dark:bg-green-900/30' },
         ].map((s, i) => (
           <div key={i} className="bg-bg-card border border-border-primary rounded-xl p-4 flex items-center gap-3">
@@ -522,7 +519,7 @@ export default function ConnectionsPage() {
       <Modal open={dialogOpen && !selectedPlatform} onClose={closeDialog} title="Escolher Plataforma" maxW="max-w-lg">
         <p className="text-fg-muted mb-4">Selecione a plataforma de mensagens que deseja conectar:</p>
         <div className="flex flex-col gap-3">
-          {Object.entries(PLATFORMS).map(([key, p]) => (
+          {Object.entries(PLATFORMS).filter(([key]) => key === 'whatsapp').map(([key, p]) => (
             <button
               key={key}
               disabled={p.disabled}

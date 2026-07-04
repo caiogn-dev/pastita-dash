@@ -6,14 +6,10 @@ import { INBOX_TABS, resolveInboxTab } from './inboxTabs';
 // Conteúdo de cada aba reaproveita as páginas existentes (consolidação por rota;
 // a fusão real dos componentes vem depois).
 const WhatsAppInboxPage = lazy(() => import('../whatsapp').then((m) => ({ default: m.WhatsAppInboxPage })));
-const InstagramInbox = lazy(() => import('../instagram').then((m) => ({ default: m.InstagramInbox })));
-const MessengerInbox = lazy(() => import('../messenger').then((m) => ({ default: m.MessengerInbox })));
 const ConversationsPage = lazy(() => import('../conversations/ConversationsPage').then((m) => ({ default: m.ConversationsPage })));
 
 const TAB_CONTENT: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   whatsapp: WhatsAppInboxPage,
-  instagram: InstagramInbox,
-  messenger: MessengerInbox,
   conversas: ConversationsPage,
 };
 

@@ -22,10 +22,14 @@ function PortalDropdown({
   section,
   anchorRef,
   onClose,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   section: NavSection;
   anchorRef: React.RefObject<HTMLElement>;
   onClose: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }) {
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
@@ -60,6 +64,8 @@ function PortalDropdown({
   return createPortal(
     <div
       id="navbar-dropdown-portal"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
       className="w-52 bg-surface border border-border-token rounded-xl shadow-2xl py-1"
     >
@@ -100,14 +106,26 @@ function PortalDropdown({
 function NavBtn({ section }: { section: NavSection }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null!);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const location = useLocation();
 
   const isActive =
     section.items.some((i) => i.href !== '/' && location.pathname.startsWith(i.href)) ||
     (section.href === '/' ? location.pathname === '/' : !!section.href && location.pathname.startsWith(section.href));
 
-  const close = useCallback(() => setOpen(false), []);
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
+  }, []);
+  const close = useCallback(() => { clearCloseTimer(); setOpen(false); }, [clearCloseTimer]);
+  // Abre no hover; fecha com pequeno atraso pra dar tempo de mover o mouse do
+  // botão até o dropdown (que é um portal separado, sem relação DOM de hover).
+  const openNow = useCallback(() => { clearCloseTimer(); setOpen(true); }, [clearCloseTimer]);
+  const scheduleClose = useCallback(() => {
+    clearCloseTimer();
+    closeTimer.current = setTimeout(() => setOpen(false), 140);
+  }, [clearCloseTimer]);
 
+  useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
   if (!section.items.length && section.href) {
@@ -133,7 +151,9 @@ function NavBtn({ section }: { section: NavSection }) {
     <>
       <button
         ref={btnRef}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? close() : openNow())}
+        onMouseEnter={openNow}
+        onMouseLeave={scheduleClose}
         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
           isActive || open
             ? 'bg-brand text-[var(--brand-strong)] font-medium'
@@ -149,7 +169,15 @@ function NavBtn({ section }: { section: NavSection }) {
         )}
         <ChevronDownIcon className={`w-3 h-3 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
-      {open && <PortalDropdown section={section} anchorRef={btnRef} onClose={close} />}
+      {open && (
+        <PortalDropdown
+          section={section}
+          anchorRef={btnRef}
+          onClose={close}
+          onMouseEnter={openNow}
+          onMouseLeave={scheduleClose}
+        />
+      )}
     </>
   );
 }

@@ -80,13 +80,7 @@ const PrintSettingsPage = lazy(() => import('./pages/printing/PrintSettingsPage'
 const CashPage = lazy(() => import('./pages/cash/CashPage'));
 const KdsPage = lazy(() => import('./pages/kds/KdsPage'));
 
-// Instagram Pages
-const InstagramAccountsPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramAccountsPage })));
-const InstagramDashboardPage = lazy(() => import('./pages/instagram').then(m => ({ default: m.InstagramDashboardPage })));
-const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCallbackPage'));
 
-// Messenger Pages
-const MessengerAccounts = lazy(() => import('./pages/messenger').then(m => ({ default: m.MessengerAccounts })));
 
 // Unified Messaging Connections Page
 const ConnectionsPage = lazy(() => import('./pages/messaging/ConnectionsPage').then(m => ({ default: m.default })));
@@ -244,21 +238,11 @@ const AppContent: React.FC = () => {
         <Route path="marketing/whatsapp/new" element={<PageBoundary><NewWhatsAppCampaignPage /></PageBoundary>} />
         <Route path="marketing/whatsapp/templates" element={<PageBoundary><WhatsAppTemplatesPage /></PageBoundary>} />
         
-        {/* Instagram Routes */}
-        <Route path="instagram" element={<Navigate to="/instagram/accounts" replace />} />
-        <Route path="instagram/accounts" element={<PageBoundary><InstagramAccountsPage /></PageBoundary>} />
-        <Route path="instagram/callback" element={<PageBoundary><InstagramCallbackPage /></PageBoundary>} />
-        <Route path="instagram/:accountId" element={<PageBoundary><InstagramDashboardPage /></PageBoundary>} />
-        <Route path="instagram/inbox" element={<Navigate to="/inbox/instagram" replace />} />
         
-        {/* Messenger Routes */}
-        {/* Messenger/WhatsApp Routes - NOVA PÁGINA UNIFICADA */}
+        {/* WhatsApp Routes */}
         <Route path="connections" element={<PageBoundary><ConnectionsPage /></PageBoundary>} />
         
         {/* Legacy Routes (mantidas para compatibilidade) */}
-        <Route path="messenger" element={<Navigate to="/inbox/messenger" replace />} />
-        <Route path="messenger/inbox" element={<Navigate to="/inbox/messenger" replace />} />
-        <Route path="messenger/accounts" element={<PageBoundary><MessengerAccounts /></PageBoundary>} />
         
         {/* WhatsApp Routes */}
         <Route path="whatsapp" element={<Navigate to="/inbox/whatsapp" replace />} />
