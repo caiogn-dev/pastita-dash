@@ -18,6 +18,8 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toCsv, downloadCsv } from '../../utils/csv';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
+import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
+import { RankBarList, type RankBarItem } from '../../components/reports/RankBarList';
 import { reportsService } from '../../services/reports';
 import {
   useDashboardStats,
@@ -25,11 +27,21 @@ import {
   useProductsReport,
   useStockReport,
   useCustomersReport,
+  useOrdersCharts,
 } from '../../hooks/queries/useReports';
 
 type Period = '7d' | '30d' | '90d' | '1y';
 type GroupBy = 'day' | 'week' | 'month';
-type TabValue = 'overview' | 'revenue' | 'products' | 'stock' | 'customers';
+type TabValue = 'overview' | 'orders' | 'revenue' | 'products' | 'stock' | 'customers';
+
+// Rótulos pt-BR dos status de pedido (para a distribuição na aba Pedidos).
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pendente', confirmed: 'Confirmado', processing: 'Processando',
+  paid: 'Pago', preparing: 'Preparando', ready: 'Pronto', shipped: 'Enviado',
+  out_for_delivery: 'Em entrega', delivered: 'Entregue', completed: 'Concluído',
+  cancelled: 'Cancelado', refunded: 'Reembolsado', failed: 'Falhou',
+};
+const NEGATIVE_STATUSES = new Set(['cancelled', 'refunded', 'failed']);
 
 // ─── KpiCard ─────────────────────────────────────────────────────────────────
 // Adapta as KPIs ao StatCard canônico (tone via tokens) preservando os dados
@@ -91,6 +103,7 @@ const tooltipDateLabel = (l: unknown, gb: GroupBy) => {
 
 const TABS: { value: TabValue; label: string }[] = [
   { value: 'overview', label: 'Visão Geral' },
+  { value: 'orders', label: 'Pedidos' },
   { value: 'revenue', label: 'Faturamento' },
   { value: 'products', label: 'Produtos' },
   { value: 'stock', label: 'Estoque' },
@@ -125,12 +138,15 @@ const AnalyticsPage: React.FC = () => {
   const productsQuery = useProductsReport(period, needsProducts);
   const stockQuery = useStockReport(activeTab === 'stock');
   const customersQuery = useCustomersReport(period, needsCustomers);
+  const ordersQuery = useOrdersCharts(period, activeTab === 'orders');
 
   const dashboardStats = statsQuery.data ?? null;
   const revenueReport = revenueQuery.data ?? null;
   const productsReport = productsQuery.data ?? null;
   const stockReport = stockQuery.data ?? null;
   const customersReport = customersQuery.data ?? null;
+  const ordersCharts = ordersQuery.data ?? null;
+  const ordersLoading = ordersQuery.isLoading;
 
   // Loadings granulares: cada seção mostra spinner só enquanto o SEU dado carrega.
   const statsLoading = statsQuery.isLoading;
@@ -141,20 +157,21 @@ const AnalyticsPage: React.FC = () => {
 
   // Erro derivado de qualquer query ativa (sem setState no render).
   const hasError = [
-    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery,
+    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery, ordersQuery,
   ].some(q => q.isError);
   const error = hasError && !errorDismissed
     ? 'Erro ao carregar relatórios. Tente novamente.'
     : null;
 
   const activeTabLoading =
-    activeTab === 'revenue' ? revenueLoading
+    activeTab === 'orders' ? ordersLoading
+    : activeTab === 'revenue' ? revenueLoading
     : activeTab === 'products' ? productsLoading
     : activeTab === 'stock' ? stockLoading
     : activeTab === 'customers' ? customersLoading
     : statsLoading;
   const anyFetching = [
-    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery,
+    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery, ordersQuery,
   ].some(q => q.isFetching);
 
   // "Atualizar" reativa o banner de erro e invalida os relatórios em cache.
@@ -348,6 +365,67 @@ const AnalyticsPage: React.FC = () => {
     </div>
   );
 
+  // ─── Pedidos Tab ───────────────────────────────────────────────────────────
+
+  const renderOrders = () => {
+    const perDay = ordersCharts?.orders_per_day ?? [];
+    const statuses = ordersCharts?.order_statuses ?? {};
+    const totalOrders = perDay.reduce((acc, d) => acc + (d.count || 0), 0);
+    const totalRevenue = perDay.reduce((acc, d) => acc + (d.revenue || 0), 0);
+    const avgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const avgPerDay = perDay.length > 0 ? totalOrders / perDay.length : 0;
+    const cancelled = Object.entries(statuses)
+      .filter(([k]) => NEGATIVE_STATUSES.has(k))
+      .reduce((acc, [, v]) => acc + (Number(v) || 0), 0);
+    const cancelPct = totalOrders > 0 ? (cancelled / totalOrders) * 100 : 0;
+
+    const statusItems: RankBarItem[] = Object.entries(statuses).map(([k, v]) => ({
+      label: ORDER_STATUS_LABELS[k] || k,
+      value: Number(v) || 0,
+      tone: NEGATIVE_STATUSES.has(k) ? 'danger' : 'brand',
+    }));
+
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
+          <KpiCard title="Pedidos no período" value={totalOrders} tone="brand" loading={ordersLoading} />
+          <KpiCard title="Média por dia" value={avgPerDay.toFixed(1).replace('.', ',')} loading={ordersLoading} />
+          <KpiCard title="Ticket médio" value={formatCurrency(avgTicket)} loading={ordersLoading} />
+          <KpiCard title="Cancelados" value={cancelled} subtitle={`${cancelPct.toFixed(1)}% do total`} tone="warning" loading={ordersLoading} />
+        </div>
+
+        <Card>
+          <h2 className="text-lg font-semibold text-fg-token mb-4">Pedidos por dia</h2>
+          {ordersLoading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <TimeSeriesChart
+              data={perDay}
+              xKey="date"
+              yKey="count"
+              label="Pedidos"
+              type="bar"
+              valueFormat={(v) => new Intl.NumberFormat('pt-BR').format(v)}
+              xTickFormat={(v) => axisTickLabel(v, 'day')}
+              tooltipLabelFormat={(v) => tooltipDateLabel(v, 'day')}
+            />
+          )}
+        </Card>
+
+        <Card>
+          <h2 className="text-lg font-semibold text-fg-token mb-4">Distribuição por status</h2>
+          {ordersLoading ? (
+            <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <RankBarList items={statusItems} />
+          )}
+        </Card>
+      </div>
+    );
+  };
+
   // ─── Stock Tab ─────────────────────────────────────────────────────────────
 
   const renderStock = () => (
@@ -433,25 +511,18 @@ const AnalyticsPage: React.FC = () => {
             <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={350}>
-            <AreaChart data={revenueReport?.data || []}>
-              <defs>
-                <linearGradient id="colorRevenueTab" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#166534" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#166534" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="period" tickFormatter={(v) => axisTickLabel(v, groupBy)} stroke="#6b7280" fontSize={12} minTickGap={20} />
-              <YAxis tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} stroke="#6b7280" fontSize={12} />
-              <RechartsTooltip
-                formatter={(v) => [formatCurrency(Number(v) || 0), 'Faturamento']}
-                labelFormatter={(l) => tooltipDateLabel(l, groupBy)}
-                contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-              />
-              <Area type="monotone" dataKey="total_revenue" stroke="#166534" strokeWidth={2} fill="url(#colorRevenueTab)" dot={{ r: 3, fill: '#166534' }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <TimeSeriesChart
+            data={revenueReport?.data || []}
+            xKey="period"
+            yKey="total_revenue"
+            label="Faturamento"
+            color="#166534"
+            height={350}
+            valueFormat={formatCurrency}
+            yTickFormat={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
+            xTickFormat={(v) => axisTickLabel(v, groupBy)}
+            tooltipLabelFormat={(v) => tooltipDateLabel(v, groupBy)}
+          />
         )}
       </Card>
     </div>
@@ -600,6 +671,7 @@ const AnalyticsPage: React.FC = () => {
       </div>
 
       {/* Tab Content */}
+      {activeTab === 'orders' && renderOrders()}
       {activeTab === 'stock' && renderStock()}
       {activeTab === 'revenue' && renderRevenue()}
       {activeTab === 'products' && renderProducts()}

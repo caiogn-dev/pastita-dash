@@ -21,9 +21,15 @@ import {
   CustomersReport,
   DashboardStats,
 } from '../../services/reports';
+import { dashboardService } from '../../services/dashboard';
+import { getStoreSlugWithFallback } from '../useStore';
+import type { DashboardCharts } from '../../types/dashboard';
 
 type Period = '7d' | '30d' | '90d' | '1y';
 type GroupBy = 'day' | 'week' | 'month';
+
+// A rota de charts aceita no máximo 90 dias; 1y é limitado a 90.
+const PERIOD_TO_DAYS: Record<Period, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 90 };
 
 export function useDashboardStats(enabled: boolean) {
   return useQuery<DashboardStats>({
@@ -61,6 +67,18 @@ export function useCustomersReport(period: Period, enabled: boolean) {
   return useQuery<CustomersReport>({
     queryKey: ['reports', 'customers', period],
     queryFn: () => reportsService.getCustomersReport({ period }),
+    enabled,
+  });
+}
+
+// Aba Pedidos: séries por dia (contagem) + distribuição por status, do endpoint
+// /core/dashboard/charts/. Escopo de loja via getStoreSlugWithFallback (mesmo
+// padrão dos demais relatórios).
+export function useOrdersCharts(period: Period, enabled: boolean) {
+  const store = getStoreSlugWithFallback() || undefined;
+  return useQuery<DashboardCharts>({
+    queryKey: ['reports', 'orders-charts', period, store],
+    queryFn: () => dashboardService.getCharts({ days: PERIOD_TO_DAYS[period], store }),
     enabled,
   });
 }
