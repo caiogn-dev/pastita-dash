@@ -16,7 +16,8 @@ import { toCsv, downloadCsv } from '../../utils/csv';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankBarList, type RankBarItem } from '../../components/reports/RankBarList';
-import { reportsService } from '../../services/reports';
+import { ReportsFilterBar } from '../../components/reports/ReportsFilterBar';
+import { reportsService, type DateRange } from '../../services/reports';
 import {
   useDashboardStats,
   useRevenueReport,
@@ -26,7 +27,6 @@ import {
   useOrdersCharts,
 } from '../../hooks/queries/useReports';
 
-type Period = '7d' | '30d' | '90d' | '1y';
 type GroupBy = 'day' | 'week' | 'month';
 type TabValue = 'overview' | 'orders' | 'revenue' | 'products' | 'stock' | 'customers';
 
@@ -106,18 +106,11 @@ const TABS: { value: TabValue; label: string }[] = [
   { value: 'customers', label: 'Clientes' },
 ];
 
-const PERIOD_OPTIONS: { label: string; value: Period }[] = [
-  { label: '7 dias', value: '7d' },
-  { label: '30 dias', value: '30d' },
-  { label: '90 dias', value: '90d' },
-  { label: '1 ano', value: '1y' },
-];
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 const AnalyticsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
-  const [period, setPeriod] = useState<Period>('30d');
+  const [range, setRange] = useState<DateRange>({ period: '30d' });
   const [groupBy, setGroupBy] = useState<GroupBy>('day');
   const [errorDismissed, setErrorDismissed] = useState(false);
   const queryClient = useQueryClient();
@@ -130,11 +123,11 @@ const AnalyticsPage: React.FC = () => {
   const needsCustomers = activeTab === 'overview' || activeTab === 'customers';
 
   const statsQuery = useDashboardStats(activeTab === 'overview');
-  const revenueQuery = useRevenueReport(period, groupBy, needsRevenue);
-  const productsQuery = useProductsReport(period, needsProducts);
+  const revenueQuery = useRevenueReport(range, groupBy, needsRevenue);
+  const productsQuery = useProductsReport(range, needsProducts);
   const stockQuery = useStockReport(activeTab === 'stock');
-  const customersQuery = useCustomersReport(period, needsCustomers);
-  const ordersQuery = useOrdersCharts(period, activeTab === 'orders');
+  const customersQuery = useCustomersReport(range, needsCustomers);
+  const ordersQuery = useOrdersCharts(range, activeTab === 'orders');
 
   const dashboardStats = statsQuery.data ?? null;
   const revenueReport = revenueQuery.data ?? null;
@@ -178,7 +171,7 @@ const AnalyticsPage: React.FC = () => {
 
   const handleExportOrders = async () => {
     try {
-      const blob = await reportsService.exportOrdersCSV({ period });
+      const blob = await reportsService.exportOrdersCSV({ ...range });
       reportsService.downloadBlob(blob, `pedidos_${format(new Date(), 'yyyy-MM-dd')}.csv`);
     } catch { /* silent */ }
   };
@@ -633,13 +626,7 @@ const AnalyticsPage: React.FC = () => {
           <p className="text-sm text-fg-muted-token mt-0.5">Análise completa do seu negócio</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as Period)}
-            className="text-sm border border-border-token rounded px-3 py-1.5 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
-          >
-            {PERIOD_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <ReportsFilterBar value={range} onChange={setRange} />
           <Button variant="outline" onClick={handleExportOrders} leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}>
             Exportar pedidos
           </Button>

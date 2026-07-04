@@ -20,6 +20,7 @@ import {
   StockReport,
   CustomersReport,
   DashboardStats,
+  DateRange,
 } from '../../services/reports';
 import { dashboardService } from '../../services/dashboard';
 import { getStoreSlugWithFallback } from '../useStore';
@@ -31,6 +32,20 @@ type GroupBy = 'day' | 'week' | 'month';
 // A rota de charts aceita no máximo 90 dias; 1y é limitado a 90.
 const PERIOD_TO_DAYS: Record<Period, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 90 };
 
+// Deriva a janela em dias de um DateRange (para a rota de charts, que só aceita
+// `days`). Intervalo personalizado → diferença em dias (clampada 1-90).
+const rangeToDays = (range: DateRange): number => {
+  if (range.start_date && range.end_date) {
+    const start = new Date(range.start_date).getTime();
+    const end = new Date(range.end_date).getTime();
+    if (!Number.isNaN(start) && !Number.isNaN(end) && end >= start) {
+      const days = Math.ceil((end - start) / 86_400_000) + 1;
+      return Math.max(1, Math.min(days, 90));
+    }
+  }
+  return PERIOD_TO_DAYS[range.period ?? '30d'];
+};
+
 export function useDashboardStats(enabled: boolean) {
   return useQuery<DashboardStats>({
     queryKey: ['reports', 'dashboard-stats'],
@@ -39,18 +54,18 @@ export function useDashboardStats(enabled: boolean) {
   });
 }
 
-export function useRevenueReport(period: Period, groupBy: GroupBy, enabled: boolean) {
+export function useRevenueReport(range: DateRange, groupBy: GroupBy, enabled: boolean) {
   return useQuery<RevenueReport>({
-    queryKey: ['reports', 'revenue', period, groupBy],
-    queryFn: () => reportsService.getRevenueReport({ period, group_by: groupBy }),
+    queryKey: ['reports', 'revenue', range, groupBy],
+    queryFn: () => reportsService.getRevenueReport({ ...range, group_by: groupBy }),
     enabled,
   });
 }
 
-export function useProductsReport(period: Period, enabled: boolean) {
+export function useProductsReport(range: DateRange, enabled: boolean) {
   return useQuery<ProductsReport>({
-    queryKey: ['reports', 'products', period],
-    queryFn: () => reportsService.getProductsReport({ period }),
+    queryKey: ['reports', 'products', range],
+    queryFn: () => reportsService.getProductsReport(range),
     enabled,
   });
 }
@@ -63,10 +78,10 @@ export function useStockReport(enabled: boolean) {
   });
 }
 
-export function useCustomersReport(period: Period, enabled: boolean) {
+export function useCustomersReport(range: DateRange, enabled: boolean) {
   return useQuery<CustomersReport>({
-    queryKey: ['reports', 'customers', period],
-    queryFn: () => reportsService.getCustomersReport({ period }),
+    queryKey: ['reports', 'customers', range],
+    queryFn: () => reportsService.getCustomersReport(range),
     enabled,
   });
 }
@@ -74,11 +89,11 @@ export function useCustomersReport(period: Period, enabled: boolean) {
 // Aba Pedidos: séries por dia (contagem) + distribuição por status, do endpoint
 // /core/dashboard/charts/. Escopo de loja via getStoreSlugWithFallback (mesmo
 // padrão dos demais relatórios).
-export function useOrdersCharts(period: Period, enabled: boolean) {
+export function useOrdersCharts(range: DateRange, enabled: boolean) {
   const store = getStoreSlugWithFallback() || undefined;
   return useQuery<DashboardCharts>({
-    queryKey: ['reports', 'orders-charts', period, store],
-    queryFn: () => dashboardService.getCharts({ days: PERIOD_TO_DAYS[period], store }),
+    queryKey: ['reports', 'orders-charts', range, store],
+    queryFn: () => dashboardService.getCharts({ days: rangeToDays(range), store }),
     enabled,
   });
 }
