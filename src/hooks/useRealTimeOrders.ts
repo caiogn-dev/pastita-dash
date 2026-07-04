@@ -10,6 +10,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRootStore } from '../stores/rootStore';
+import { useAuthStore } from '../stores/authStore';
 import { createWebSocket, clearWebSocketInstance } from '../services/websocket';
 import { applyOrderEventToOrders, type OrderRealtimeEvent } from './orderRealtimeEvents';
 
@@ -24,8 +25,10 @@ export interface UseRealTimeOrdersConfig {
 
 export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   const { enabled = true, apiUrl, wsUrl } = config;
-  // Selectors estreitos: não re-renderizar a cada mudança em qualquer pedido
-  const authToken = useRootStore((s) => s.auth.token);
+  // Selectors estreitos: não re-renderizar a cada mudança em qualquer pedido.
+  // Token vem do authStore (store persistido, populado no login) — não do
+  // rootStore.auth, que ninguém popula. Mesma fonte dos demais hooks de WS.
+  const authToken = useAuthStore((s) => s.token);
   const selectedStoreId = useRootStore((s) => s.selectedStoreId);
   const selectedStoreSlug = useRootStore((s) => {
     const store = s.stores.find((st) => st.id === s.selectedStoreId);
