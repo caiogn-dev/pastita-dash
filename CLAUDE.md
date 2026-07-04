@@ -44,7 +44,7 @@ Current production API may still use `backend.pastita.com.br` until DNS/backend 
 - `src/pages/stores/StorefrontPage.tsx`: store branding, public menu template, colors and domain.
 - `src/utils/storefrontUrl.ts`: public menu URL builder.
 - `src/pages/orders/OrdersPage.tsx`: daily order operation.
-- `src/pages/whatsapp/WhatsAppChatPage.tsx` and `src/components/chat/ChatWindow.tsx`: main WhatsApp workflow.
+- `src/pages/inbox/InboxPage.tsx` (aba `whatsapp` → `src/pages/whatsapp/WhatsAppInboxPage.tsx`) and `src/components/chat/ChatWindow.tsx`: main WhatsApp workflow. (O antigo `WhatsAppChatPage.tsx` foi removido — o inbox unificado o substituiu.)
 - `src/services/storesApi.ts`: canonical frontend service for store management.
 
 ## Message Rendering

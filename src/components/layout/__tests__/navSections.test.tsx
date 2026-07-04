@@ -2,25 +2,28 @@ import { buildNavSections } from '../navSections';
 
 const storeHref = (p: string) => `/stores/loja-x/${p}`;
 
-it('main bar has the expected top-level labels (no Marketing, no Loja)', () => {
+it('main bar has the expected top-level labels (foco na operação, sem Campanhas/Automação)', () => {
   const labels = buildNavSections({ storeHref, automationEnabled: false }).map((s) => s.label);
   expect(labels).toEqual([
     'Início', 'Pedidos', 'Chat', 'PDV', 'Clientes',
-    'Cardápio', 'Relatórios', 'Campanhas', 'Configurações',
+    'Cardápio', 'Relatórios', 'Configurações',
   ]);
   expect(labels).not.toContain('Marketing');
   expect(labels).not.toContain('Loja');
 });
 
-it('omits Automação when automationEnabled is false', () => {
+it('omits Campanhas e Automação when automationEnabled is false', () => {
   const labels = buildNavSections({ storeHref, automationEnabled: false }).map((s) => s.label);
+  expect(labels).not.toContain('Campanhas');
   expect(labels).not.toContain('Automação');
 });
 
-it('inserts Automação (before Configurações) when automationEnabled is true', () => {
+it('inserts Campanhas + Automação (before Configurações) when automationEnabled is true', () => {
   const labels = buildNavSections({ storeHref, automationEnabled: true }).map((s) => s.label);
+  expect(labels).toContain('Campanhas');
   expect(labels).toContain('Automação');
   expect(labels.indexOf('Automação')).toBe(labels.indexOf('Configurações') - 1);
+  expect(labels.indexOf('Campanhas')).toBe(labels.indexOf('Automação') - 1);
 });
 
 it('Configurações renames the old "Configurações" item to "Geral"', () => {
@@ -39,8 +42,8 @@ it('does NOT contain account-level links anywhere (they live in the avatar menu)
   }
 });
 
-it('Campanhas holds the three campaign links', () => {
-  const camp = buildNavSections({ storeHref, automationEnabled: false }).find((s) => s.label === 'Campanhas')!;
+it('Campanhas holds the three campaign links (quando habilitado)', () => {
+  const camp = buildNavSections({ storeHref, automationEnabled: true }).find((s) => s.label === 'Campanhas')!;
   expect(camp.items.map((i) => i.href)).toEqual([
     '/marketing/whatsapp', '/marketing/whatsapp/templates', '/marketing/email/campaigns',
   ]);

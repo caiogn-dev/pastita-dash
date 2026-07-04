@@ -7,17 +7,19 @@ export interface InboxTab {
   label: string;
 }
 
+// Ids válidos para resolução de rota (todos continuam acessíveis por URL direta).
+const ALL_TAB_IDS: InboxTabId[] = ['whatsapp', 'instagram', 'messenger', 'conversas'];
+
+// Instagram/Messenger estão congelados: as abas ficam OCULTAS pra focar o inbox
+// em WhatsApp + visão unificada. O conteúdo segue acessível por URL direta
+// (/inbox/instagram, /inbox/messenger) via TAB_CONTENT — só não aparece como aba.
 export const INBOX_TABS: InboxTab[] = [
   { id: 'whatsapp', label: 'WhatsApp' },
-  { id: 'instagram', label: 'Instagram' },
-  { id: 'messenger', label: 'Messenger' },
   { id: 'conversas', label: 'Todas' },
 ];
 
-export const resolveInboxTab = (param: string | undefined | null): InboxTabId => {
-  const found = INBOX_TABS.find((t) => t.id === param);
-  return found ? found.id : 'whatsapp';
-};
+export const resolveInboxTab = (param: string | undefined | null): InboxTabId =>
+  ALL_TAB_IDS.includes(param as InboxTabId) ? (param as InboxTabId) : 'whatsapp';
 
 const LEGACY_MAP: Record<string, InboxTabId> = {
   '/whatsapp/inbox': 'whatsapp',

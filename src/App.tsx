@@ -37,7 +37,6 @@ const AgentsPage = lazy(() => import('./pages/agents').then(m => ({ default: m.A
 const AgentDetailPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentDetailPage })));
 const AgentCreatePage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentCreatePage })));
 const AgentTestPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentTestPage })));
-const UnifiedOrchestratorTest = lazy(() => import('./pages/agents').then(m => ({ default: m.UnifiedOrchestratorTest })));
 
 // E-commerce Pages
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
@@ -53,12 +52,9 @@ const AutoMessagesPage = lazy(() => import('./pages/automation').then(m => ({ de
 const CustomerSessionsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CustomerSessionsPage })));
 const AutomationLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutomationLogsPage })));
 const ScheduledMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ScheduledMessagesPage })));
-const ReportsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ReportsPage })));
-const AgentFlowsPage = lazy(() => import('./pages/automation/AgentFlowsPage').then(m => ({ default: m.AgentFlowsPage })));
 
 // Intent Detection Pages (Novo Sistema)
 const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentStatsPage })));
-const IntentLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentLogsPage })));
 
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
@@ -77,7 +73,6 @@ const CampaignsListPage = lazy(() => import('./pages/marketing/email').then(m =>
 const NewWhatsAppCampaignPage = lazy(() => import('./pages/marketing/whatsapp').then(m => ({ default: m.NewWhatsAppCampaignPage })));
 const WhatsAppCampaignsPage = lazy(() => import('./pages/marketing/whatsapp').then(m => ({ default: m.WhatsAppCampaignsPage })));
 const WhatsAppTemplatesPage = lazy(() => import('./pages/marketing/whatsapp/WhatsAppTemplatesPage').then(m => ({ default: m.default })));
-const AutomationsPage = lazy(() => import('./pages/marketing/AutomationsPage').then(m => ({ default: m.default })));
 
 // Delivery Pages
 const DeliveryZonesPage = lazy(() => import('./pages/delivery/DeliveryZonesPage').then(m => ({ default: m.default || m.DeliveryZonesPage })));
@@ -97,8 +92,6 @@ const MessengerAccounts = lazy(() => import('./pages/messenger').then(m => ({ de
 const ConnectionsPage = lazy(() => import('./pages/messaging/ConnectionsPage').then(m => ({ default: m.default })));
 
 // WhatsApp Pages
-const WebhookDiagnosticsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WebhookDiagnosticsPage })));
-const DebugDashboardPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.DebugDashboardPage })));
 const HandoverRequestsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.HandoverRequestsPage })));
 
 // Protected Route wrapper
@@ -193,7 +186,6 @@ const AppContent: React.FC = () => {
         <Route path="agents/:id" element={<PageBoundary><AgentDetailPage /></PageBoundary>} />
         <Route path="agents/:id/test" element={<PageBoundary><AgentTestPage /></PageBoundary>} />
         <Route path="agents/:id/conversations" element={<PageBoundary><AgentDetailPage /></PageBoundary>} />
-        <Route path="agents/test/orchestrator" element={<PageBoundary><UnifiedOrchestratorTest /></PageBoundary>} />
         
         {/* Settings */}
         <Route path="settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />
@@ -214,13 +206,10 @@ const AppContent: React.FC = () => {
         <Route path="automation/sessions" element={<PageBoundary><CustomerSessionsPage /></PageBoundary>} />
         <Route path="automation/logs" element={<PageBoundary><AutomationLogsPage /></PageBoundary>} />
         <Route path="automation/scheduled" element={<PageBoundary><ScheduledMessagesPage /></PageBoundary>} />
-        <Route path="automation/reports" element={<PageBoundary><ReportsPage /></PageBoundary>} />
-        <Route path="automation/flows" element={<PageBoundary><AgentFlowsPage /></PageBoundary>} />
 
         {/* Intent Detection Routes */}
         <Route path="automation/intents" element={<Navigate to="/automation/intents/stats" replace />} />
         <Route path="automation/intents/stats" element={<PageBoundary><IntentStatsPage /></PageBoundary>} />
-        <Route path="automation/intents/logs" element={<PageBoundary><IntentLogsPage /></PageBoundary>} />
         
         {/* Analytics/Reports Routes */}
         <Route path="analytics" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
@@ -238,7 +227,6 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/orders/new" element={<PageBoundary><OrderNewPage /></PageBoundary>} />
         <Route path="stores/:storeId/orders/:id" element={<PageBoundary><OrderDetailPage /></PageBoundary>} />
         <Route path="stores/:storeId/coupons" element={<PageBoundary><CouponsPage /></PageBoundary>} />
-        <Route path="stores/:storeId/analytics" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
         <Route path="stores/:storeId/payments" element={<PageBoundary><PaymentsPage /></PageBoundary>} />
         <Route path="stores/:storeId/settings" element={<PageBoundary><StoreSettingsPage /></PageBoundary>} />
         <Route path="stores/:storeId/storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
@@ -249,11 +237,9 @@ const AppContent: React.FC = () => {
         {/* Marketing Routes */}
         <Route path="marketing" element={<PageBoundary><MarketingPage /></PageBoundary>} />
         <Route path="marketing/subscribers" element={<PageBoundary><SubscribersPage /></PageBoundary>} />
-        <Route path="marketing/automations" element={<PageBoundary><AutomationsPage /></PageBoundary>} />
         <Route path="marketing/email" element={<Navigate to="/marketing/email/campaigns" replace />} />
         <Route path="marketing/email/campaigns" element={<PageBoundary><CampaignsListPage /></PageBoundary>} />
         <Route path="marketing/email/new" element={<PageBoundary><NewCampaignPage /></PageBoundary>} />
-        <Route path="marketing/email/templates" element={<PageBoundary><MarketingPage /></PageBoundary>} />
         <Route path="marketing/whatsapp" element={<PageBoundary><WhatsAppCampaignsPage /></PageBoundary>} />
         <Route path="marketing/whatsapp/new" element={<PageBoundary><NewWhatsAppCampaignPage /></PageBoundary>} />
         <Route path="marketing/whatsapp/templates" element={<PageBoundary><WhatsAppTemplatesPage /></PageBoundary>} />
@@ -279,8 +265,6 @@ const AppContent: React.FC = () => {
         <Route path="whatsapp/inbox" element={<Navigate to="/inbox/whatsapp" replace />} />
         <Route path="whatsapp/chat" element={<Navigate to="/inbox/whatsapp" replace />} />
         <Route path="whatsapp/handover" element={<PageBoundary><HandoverRequestsPage /></PageBoundary>} />
-        <Route path="whatsapp/debug" element={<PageBoundary><DebugDashboardPage /></PageBoundary>} />
-        <Route path="whatsapp/diagnostics" element={<PageBoundary><WebhookDiagnosticsPage /></PageBoundary>} />
       </Route>
 
       {/* Catch all */}

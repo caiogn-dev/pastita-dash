@@ -36,6 +36,18 @@ export interface BuildNavSectionsOpts {
  * intentionally NOT here — they live in the avatar menu (AccountMenu.tsx).
  */
 export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: BuildNavSectionsOpts): NavSection[] {
+  // Campanhas (marketing) é feature avançada: fica sob o mesmo gate da Automação
+  // pra manter o navbar focado na operação (pedidos/cardápio/chat). Reversível.
+  const campanhas: NavSection = {
+    label: 'Campanhas',
+    icon: MegaphoneIcon,
+    items: [
+      { name: 'WhatsApp',  href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
+      { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
+      { name: 'Email',     href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
+    ],
+  };
+
   const automacao: NavSection = {
     label: 'Automação',
     icon: SparklesIcon,
@@ -83,17 +95,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     },
     { label: 'Relatórios', icon: PresentationChartLineIcon, href: '/analytics', items: [] },
 
-    {
-      label: 'Campanhas',
-      icon: MegaphoneIcon,
-      items: [
-        { name: 'WhatsApp',  href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
-        { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-        { name: 'Email',     href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
-      ],
-    },
-
-    ...(automationEnabled ? [automacao] : []),
+    ...(automationEnabled ? [campanhas, automacao] : []),
 
     {
       label: 'Configurações',
