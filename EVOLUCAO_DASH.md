@@ -3,14 +3,35 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-06)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok (5 vulnerabilidades — 1 low, 2 moderate, 2 high — todas em deps de
+  build/dev: vite, esbuild, @babel/core, form-data, js-yaml. Não expostas no build
+  estático de produção da Vercel; sem valor de segurança em runtime).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **377 testes / 90 suítes verdes**.
+- `npm run lint`: gate em 400 warnings; **265 warnings** restantes (limpeza incremental).
 
 ## Histórico
+
+### 2026-07-06 — A11y: nomes acessíveis no `MessageInput` (core do WhatsApp)
+- **Medido:** `src/components/chat/MessageInput.tsx` (input principal do workflow de
+  WhatsApp, apontado como área crítica no CLAUDE.md) tinha botões icon-only sem nome
+  acessível. Os dois botões de **remover arquivo** (preview de imagem e de documento)
+  não tinham `aria-label` nem `title` — leitores de tela não anunciavam nada. Os
+  botões de anexar/emoji/enviar tinham apenas `title` (nome acessível fraco), e o
+  botão de enviar não sinalizava o estado de carregamento.
+- **Mudado (componente ativo):**
+  - remover arquivo (imagem e documento): `aria-label="Remover arquivo selecionado"`
+    + `title` + `type="button"`;
+  - anexar arquivo e emoji: `aria-label` explícito além do `title`;
+  - enviar: `aria-label="Enviar mensagem"` + `aria-busy={isLoading}` (anuncia o
+    spinner de envio); removido `title` duplicado.
+- **Teste (TDD):** novo `MessageInput.a11y.test.tsx` — escrito vermelho (4/4 falhando)
+  antes, verde depois. Cobre nome acessível dos botões de anexar/emoji/enviar, o
+  `aria-busy` no envio, e o botão de remover arquivo nos dois previews.
+- **Antes/depois:** `npm test` 373→**377** passando, 89→**90** suítes; tsc limpo nos
+  dois lados; lint estável em 265 warnings.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,11 +71,14 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
+1. **A11y — continuar varredura:** próximos alvos de botões icon-only sem nome
+   acessível: `ContactList.tsx`, `ChatToolsPanel.tsx`, `NewConversationModal.tsx`
+   (todos com 0 `aria-label`) e `InstagramInbox.tsx`. Adicionar teste de regressão
+   de acessibilidade por componente conforme tocar.
+2. **Segurança/deps:** as 5 vulnerabilidades do `npm audit` estão todas em deps de
+   build/dev (vite, esbuild, @babel/core, form-data, js-yaml) — sem exposição no
+   build estático de produção. Avaliar `npm audit fix` só se não houver breaking
+   change nas versões de vite/esbuild (major bumps exigem validação do build).
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.
