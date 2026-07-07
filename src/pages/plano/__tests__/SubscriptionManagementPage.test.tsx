@@ -129,6 +129,31 @@ describe('SubscriptionManagementPage — fatura atual + histórico + toggle', ()
     expect(screen.getByText(/2 meses grátis/i)).toBeInTheDocument();
   });
 
+  it('mostra aviso de cobrança anual em breve só no ciclo anual', async () => {
+    mockGetSubscription.mockResolvedValue(BASE_SUB);
+    mockGetPlans.mockResolvedValue(BASE_PLANS);
+    mockGetCurrentInvoice.mockResolvedValue(null);
+
+    render(<SubscriptionManagementPage />);
+
+    await waitFor(() => expect(mockGetPlans).toHaveBeenCalled());
+    expect(
+      screen.queryByText(/Cobrança anual chega em breve/i),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /anual/i }));
+
+    expect(
+      await screen.findByText(/Cobrança anual chega em breve — por enquanto a assinatura é mensal\./i),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /mensal/i }));
+
+    expect(
+      screen.queryByText(/Cobrança anual chega em breve/i),
+    ).not.toBeInTheDocument();
+  });
+
   it('exibe o histórico de faturas quando listInvoices retorna itens', async () => {
     mockGetSubscription.mockResolvedValue(BASE_SUB);
     mockGetPlans.mockResolvedValue(BASE_PLANS);
@@ -229,6 +254,38 @@ describe('SubscriptionManagementPage — fatura atual + histórico + toggle', ()
     });
 
     expect(mockGetCurrentInvoice).toHaveBeenCalledTimes(2);
+
+    jest.useRealTimers();
+  });
+
+  it('para o polling quando a fatura atual está cancelled/failed (status terminal sem ser paga)', async () => {
+    jest.useFakeTimers();
+    mockGetSubscription.mockResolvedValue(BASE_SUB);
+    mockGetPlans.mockResolvedValue(BASE_PLANS);
+    mockGetCurrentInvoice.mockResolvedValue({
+      id: 'inv1',
+      amount: 100,
+      status: 'cancelled',
+      kind: 'monthly',
+      pix_code: 'codigo-x',
+      pix_qr_code: null,
+      ticket_url: null,
+      expires_at: null,
+      period_key: '2026-07',
+      paid_at: null,
+    });
+
+    render(<SubscriptionManagementPage />);
+
+    await waitFor(() => expect(mockGetCurrentInvoice).toHaveBeenCalledTimes(1));
+
+    // Status já é terminal (cancelled) desde a primeira busca: o intervalo é
+    // limpo imediatamente, então nenhuma chamada extra deve ocorrer.
+    await act(async () => {
+      jest.advanceTimersByTime(15000);
+    });
+
+    expect(mockGetCurrentInvoice).toHaveBeenCalledTimes(1);
 
     jest.useRealTimers();
   });

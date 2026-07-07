@@ -37,11 +37,18 @@ function isInvoicePaid(invoice: Invoice): boolean {
   return status === 'completed' || status === 'paid';
 }
 
+const OPEN_INVOICE_STATUSES = new Set(['pending', 'processing', '']);
+
+/**
+ * Uma fatura só deve manter o polling ativo quando ainda está genuinamente
+ * aberta. Não paga NÃO significa pendente: `cancelled`/`failed`/`refunded`/
+ * qualquer status desconhecido são terminais e devem parar o polling.
+ */
 function isInvoicePending(invoice: Invoice | null): boolean {
   if (!invoice) return false;
   if (isInvoicePaid(invoice)) return false;
   const status = (invoice.status || '').toLowerCase();
-  return status !== 'expired';
+  return OPEN_INVOICE_STATUSES.has(status);
 }
 
 export default function SubscriptionManagementPage() {
@@ -247,6 +254,11 @@ export default function SubscriptionManagementPage() {
             </button>
           </div>
         </div>
+        {cycle === 'annual' && (
+          <p className="mb-3 text-xs text-fg-muted-token">
+            Cobrança anual chega em breve — por enquanto a assinatura é mensal.
+          </p>
+        )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {plans.map((p) => {
             const isCurrent = sub?.plan === p.key;
