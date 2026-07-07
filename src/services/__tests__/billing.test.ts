@@ -1,6 +1,6 @@
 // src/services/__tests__/billing.test.ts
 import api from '../api';
-import { getSubscription, cancelSubscription, changePlan } from '../billing';
+import { getSubscription, cancelSubscription, changePlan, getCurrentInvoice, listInvoices } from '../billing';
 
 jest.mock('../api', () => ({
   __esModule: true,
@@ -32,5 +32,59 @@ describe('billing subscription service', () => {
     const res = await changePlan('loja', 'premium');
     expect(mockPost).toHaveBeenCalledWith('/stores/loja/subscription/change-plan/', { plan: 'premium' });
     expect(res.init_point).toBe('https://mp/x');
+  });
+});
+
+describe('billing invoices service', () => {
+  it('getCurrentInvoice desembrulha data.invoice', async () => {
+    const invoice = {
+      id: 'inv_1',
+      amount: 99.9,
+      status: 'pending',
+      kind: 'monthly',
+      pix_code: '000201...copia-e-cola',
+      pix_qr_code: 'base64...',
+      ticket_url: null,
+      expires_at: '2026-07-08T00:00:00Z',
+      period_key: '2026-07',
+      paid_at: null,
+    };
+    mockGet.mockResolvedValueOnce({ data: { invoice } });
+    const res = await getCurrentInvoice('loja');
+    expect(mockGet).toHaveBeenCalledWith('/stores/loja/invoices/current/');
+    expect(res).toEqual(invoice);
+  });
+
+  it('getCurrentInvoice retorna null quando não há fatura', async () => {
+    mockGet.mockResolvedValueOnce({ data: { invoice: null } });
+    const res = await getCurrentInvoice('loja');
+    expect(res).toBeNull();
+  });
+
+  it('listInvoices desembrulha data.invoices', async () => {
+    const invoices = [
+      {
+        id: 'inv_1',
+        amount: 99.9,
+        status: 'completed',
+        kind: 'monthly',
+        pix_code: null,
+        pix_qr_code: null,
+        ticket_url: null,
+        expires_at: null,
+        period_key: '2026-06',
+        paid_at: '2026-06-05T00:00:00Z',
+      },
+    ];
+    mockGet.mockResolvedValueOnce({ data: { invoices } });
+    const res = await listInvoices('loja');
+    expect(mockGet).toHaveBeenCalledWith('/stores/loja/invoices/');
+    expect(res).toEqual(invoices);
+  });
+
+  it('listInvoices retorna [] quando a chave está ausente', async () => {
+    mockGet.mockResolvedValueOnce({ data: {} });
+    const res = await listInvoices('loja');
+    expect(res).toEqual([]);
   });
 });

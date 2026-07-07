@@ -35,6 +35,8 @@ export interface Plan {
   setup_fee: number;
   /** Mensalidade. Em BRL. */
   monthly_price: number;
+  /** Preço anual (cobrança única no plano anual). Só planos pagos trazem este campo. */
+  annual_price?: number;
   limits: PlanLimits;
 }
 
@@ -115,6 +117,8 @@ export interface SubscriptionStatus {
   current_period_end?: string | null;
   setup_fee_paid?: boolean;
   grace_until?: string | null;
+  /** Loja foi rebaixada para o plano gratuito por falta de pagamento (Task 1). */
+  downgraded_for_nonpayment?: boolean;
 }
 
 export async function getSubscription(storeSlug: string): Promise<SubscriptionStatus> {
@@ -133,4 +137,30 @@ export async function changePlan(
 ): Promise<{ init_point: string; preapproval_id?: string }> {
   const { data } = await api.post(`/stores/${storeSlug}/subscription/change-plan/`, { plan });
   return data;
+}
+
+/** Fatura PIX de assinatura (mensal/anual), gerada pelo backend de billing. */
+export interface Invoice {
+  id: string;
+  amount: number;
+  status: string; // ex.: 'pending' | 'completed' | 'expired'
+  kind: 'monthly' | 'annual' | null;
+  pix_code: string | null; // copia-e-cola (qr_code)
+  pix_qr_code: string | null; // base64 (qr_code_base64)
+  ticket_url: string | null;
+  expires_at: string | null; // vencimento
+  period_key: string | null; // 'YYYY-MM' | 'YYYY'
+  paid_at: string | null;
+}
+
+/** GET /stores/{slug}/invoices/current/ — fatura em aberto da loja, se houver. */
+export async function getCurrentInvoice(storeSlug: string): Promise<Invoice | null> {
+  const { data } = await api.get(`/stores/${storeSlug}/invoices/current/`);
+  return data?.invoice ?? null;
+}
+
+/** GET /stores/{slug}/invoices/ — histórico de faturas da loja. */
+export async function listInvoices(storeSlug: string): Promise<Invoice[]> {
+  const { data } = await api.get(`/stores/${storeSlug}/invoices/`);
+  return Array.isArray(data?.invoices) ? data.invoices : [];
 }
