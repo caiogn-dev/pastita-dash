@@ -182,4 +182,88 @@ describe('SubscriptionManagementPage — fatura atual + histórico + toggle', ()
 
     jest.useRealTimers();
   });
+
+  it('para o polling após a fatura ficar paga', async () => {
+    jest.useFakeTimers();
+    mockGetSubscription.mockResolvedValue(BASE_SUB);
+    mockGetPlans.mockResolvedValue(BASE_PLANS);
+    mockGetCurrentInvoice
+      .mockResolvedValueOnce({
+        id: 'inv1',
+        amount: 100,
+        status: 'pending',
+        kind: 'monthly',
+        pix_code: 'codigo-x',
+        pix_qr_code: null,
+        ticket_url: null,
+        expires_at: null,
+        period_key: '2026-07',
+        paid_at: null,
+      })
+      .mockResolvedValue({
+        id: 'inv1',
+        amount: 100,
+        status: 'completed',
+        kind: 'monthly',
+        pix_code: 'codigo-x',
+        pix_qr_code: null,
+        ticket_url: null,
+        expires_at: null,
+        period_key: '2026-07',
+        paid_at: '2026-07-05T00:00:00Z',
+      });
+
+    render(<SubscriptionManagementPage />);
+
+    await waitFor(() => expect(mockGetCurrentInvoice).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      jest.advanceTimersByTime(15000);
+    });
+
+    await waitFor(() => expect(mockGetCurrentInvoice).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText(/em dia/i)).toBeInTheDocument();
+
+    await act(async () => {
+      jest.advanceTimersByTime(15000);
+    });
+
+    expect(mockGetCurrentInvoice).toHaveBeenCalledTimes(2);
+
+    jest.useRealTimers();
+  });
+
+  it('limpa o intervalo de polling ao desmontar', async () => {
+    jest.useFakeTimers();
+    mockGetSubscription.mockResolvedValue(BASE_SUB);
+    mockGetPlans.mockResolvedValue(BASE_PLANS);
+    mockGetCurrentInvoice.mockResolvedValue({
+      id: 'inv1',
+      amount: 100,
+      status: 'pending',
+      kind: 'monthly',
+      pix_code: 'codigo-x',
+      pix_qr_code: null,
+      ticket_url: null,
+      expires_at: null,
+      period_key: '2026-07',
+      paid_at: null,
+    });
+
+    const { unmount } = render(<SubscriptionManagementPage />);
+
+    await waitFor(() => expect(mockGetCurrentInvoice).toHaveBeenCalledTimes(1));
+
+    const callsBeforeUnmount = mockGetCurrentInvoice.mock.calls.length;
+
+    unmount();
+
+    await act(async () => {
+      jest.advanceTimersByTime(15000);
+    });
+
+    expect(mockGetCurrentInvoice).toHaveBeenCalledTimes(callsBeforeUnmount);
+
+    jest.useRealTimers();
+  });
 });
