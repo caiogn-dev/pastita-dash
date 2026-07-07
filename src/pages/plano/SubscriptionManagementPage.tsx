@@ -4,16 +4,20 @@
  * Exibe o status atual da assinatura, permite trocar de plano (inicia checkout
  * MercadoPago) e cancelar a assinatura com confirmação.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../../hooks/useStore';
 import {
   getSubscription,
   cancelSubscription,
   changePlan,
   getPlans,
+  getCurrentInvoice,
+  listInvoices,
   type SubscriptionStatus,
   type Plan,
+  type Invoice,
 } from '../../services/billing';
+import PixInvoicePanel from '../../components/billing/PixInvoicePanel';
 
 const STATUS_LABEL: Record<string, string> = {
   none:      'Sem assinatura',
@@ -24,6 +28,22 @@ const STATUS_LABEL: Record<string, string> = {
   canceled:  'Cancelada',
 };
 
+const INVOICE_POLL_MS = 15000;
+
+/** Uma fatura é considerada quitada quando tem `paid_at` ou status completed/paid. */
+function isInvoicePaid(invoice: Invoice): boolean {
+  if (invoice.paid_at) return true;
+  const status = (invoice.status || '').toLowerCase();
+  return status === 'completed' || status === 'paid';
+}
+
+function isInvoicePending(invoice: Invoice | null): boolean {
+  if (!invoice) return false;
+  if (isInvoicePaid(invoice)) return false;
+  const status = (invoice.status || '').toLowerCase();
+  return status !== 'expired';
+}
+
 export default function SubscriptionManagementPage() {
   const { store } = useStore();
   const slug = (store as { slug?: string } | null)?.slug;
@@ -33,6 +53,11 @@ export default function SubscriptionManagementPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cycle, setCycle] = useState<'monthly' | 'annual'>('monthly');
+
+  const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
+  const [invoiceHistory, setInvoiceHistory] = useState<Invoice[]>([]);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     if (!slug) {
@@ -48,6 +73,51 @@ export default function SubscriptionManagementPage() {
       })
       .catch(() => setError('Não foi possível carregar a assinatura.'))
       .finally(() => setLoading(false));
+  }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    mountedRef.current = true;
+    listInvoices(slug)
+      .then((invoices) => {
+        if (mountedRef.current) setInvoiceHistory(invoices);
+      })
+      .catch(() => {
+        /* histórico é auxiliar: falha silenciosa não bloqueia a página */
+      });
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const fetchInvoice = async () => {
+      try {
+        const invoice = await getCurrentInvoice(slug);
+        if (cancelled) return;
+        setCurrentInvoice(invoice);
+        if (!isInvoicePending(invoice) && intervalId !== null) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      } catch {
+        /* fatura atual é auxiliar: falha silenciosa não bloqueia a página */
+      }
+    };
+
+    void fetchInvoice();
+    intervalId = setInterval(() => {
+      void fetchInvoice();
+    }, INVOICE_POLL_MS);
+
+    return () => {
+      cancelled = true;
+      if (intervalId !== null) clearInterval(intervalId);
+    };
   }, [slug]);
 
   async function handleCancel() {
@@ -124,13 +194,63 @@ export default function SubscriptionManagementPage() {
         </div>
       )}
 
+      {currentInvoice && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-fg-token">Fatura atual</h2>
+          {isInvoicePaid(currentInvoice) ? (
+            <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-emerald-700 text-sm">
+              Pagamento em dia
+              {currentInvoice.paid_at && (
+                <>
+                  {' '}— pago em{' '}
+                  {new Date(currentInvoice.paid_at).toLocaleDateString('pt-BR')}
+                </>
+              )}
+              .
+            </div>
+          ) : (
+            <PixInvoicePanel
+              pixCode={currentInvoice.pix_code}
+              pixQrCode={currentInvoice.pix_qr_code}
+              ticketUrl={currentInvoice.ticket_url}
+              amount={currentInvoice.amount}
+              status={currentInvoice.status}
+              expiresAt={currentInvoice.expires_at}
+            />
+          )}
+        </section>
+      )}
+
       <section>
-        <p className="mb-3 text-sm text-fg-muted-token">
-          Tudo incluso, 0% de comissão, com bot + IA.
-        </p>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-fg-muted-token">
+            Tudo incluso, 0% de comissão, com bot + IA.
+          </p>
+          <div className="inline-flex rounded-full border border-border-token p-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setCycle('monthly')}
+              className={`rounded-full px-3 py-1 font-medium transition-colors ${
+                cycle === 'monthly' ? 'bg-brand text-white' : 'text-fg-muted-token'
+              }`}
+            >
+              Mensal
+            </button>
+            <button
+              type="button"
+              onClick={() => setCycle('annual')}
+              className={`rounded-full px-3 py-1 font-medium transition-colors ${
+                cycle === 'annual' ? 'bg-brand text-white' : 'text-fg-muted-token'
+              }`}
+            >
+              Anual
+            </button>
+          </div>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {plans.map((p) => {
             const isCurrent = sub?.plan === p.key;
+            const annualPrice = p.annual_price ?? p.monthly_price * 10;
             return (
               <div
                 key={p.key}
@@ -147,6 +267,11 @@ export default function SubscriptionManagementPage() {
                 <p className="text-lg font-semibold text-fg-token">
                   {p.monthly_price === 0 ? (
                     'Grátis'
+                  ) : cycle === 'annual' ? (
+                    <>
+                      R$ {annualPrice.toFixed(2)}
+                      <span className="text-sm font-normal text-fg-muted-token">/ano</span>
+                    </>
                   ) : (
                     <>
                       R$ {p.monthly_price.toFixed(2)}
@@ -154,6 +279,11 @@ export default function SubscriptionManagementPage() {
                     </>
                   )}
                 </p>
+                {cycle === 'annual' && p.monthly_price > 0 && (
+                  <span className="text-[11px] font-semibold text-emerald-600">
+                    2 meses grátis
+                  </span>
+                )}
                 {p.setup_fee > 0 && (
                   <p className="text-xs text-fg-muted-token">
                     + R$ {p.setup_fee.toFixed(2)} de adesão (única)
@@ -171,6 +301,29 @@ export default function SubscriptionManagementPage() {
           })}
         </div>
       </section>
+
+      {invoiceHistory.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-fg-token">Histórico de faturas</h2>
+          <ul className="divide-y divide-border-token rounded-lg border border-border-token">
+            {invoiceHistory.map((inv) => (
+              <li
+                key={inv.id}
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm"
+              >
+                <span className="text-fg-token">{inv.period_key ?? '—'}</span>
+                <span className="text-fg-muted-token">R$ {inv.amount.toFixed(2)}</span>
+                <span className="text-fg-muted-token">{inv.status}</span>
+                {inv.paid_at && (
+                  <span className="text-xs text-fg-muted-token">
+                    pago em {new Date(inv.paid_at).toLocaleDateString('pt-BR')}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {sub && sub.status !== 'none' && sub.status !== 'canceled' && (
         <div className="border-t border-border-token pt-4">
