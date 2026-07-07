@@ -2,10 +2,12 @@
  * TrialBanner — faixa de aviso de trial/suspensão no topo do painel.
  *
  * Prioridade de exibição:
- *  1. Loja suspensa (status=suspended) → faixa vermelha com CTA de reativação.
- *  2. Pagamento atrasado (status=past_due) → faixa âmbar com CTA de regularização.
- *  3. Trial ativo → faixa de contagem regressiva (comportamento original).
- *  4. Caso contrário → nada (retorna null).
+ *  1. Rebaixado para o Grátis por falta de pagamento (downgraded_for_nonpayment)
+ *     → faixa vermelha NÃO-dismissível com CTA de reativação.
+ *  2. Loja suspensa (status=suspended) → faixa vermelha com CTA de reativação.
+ *  3. Pagamento atrasado (status=past_due) → faixa âmbar com CTA de regularização.
+ *  4. Trial ativo → faixa de contagem regressiva (comportamento original).
+ *  5. Caso contrário → nada (retorna null).
  *
  * Integrado no MainLayout, logo abaixo da Navbar.
  */
@@ -36,6 +38,8 @@ export const TrialBanner: FC = () => {
   });
 
   const [subStatus, setSubStatus] = useState<SubscriptionStatus['status'] | null>(null);
+  const [downgraded, setDowngraded] = useState<boolean>(false);
+  const [subPlan, setSubPlan] = useState<SubscriptionStatus['plan']>(undefined);
 
   const { trial_ends_at } = getStoreBilling(store);
   const daysLeft = trialDaysRemaining(trial_ends_at);
@@ -53,9 +57,40 @@ export const TrialBanner: FC = () => {
   useEffect(() => {
     if (!slug) return;
     getSubscription(slug)
-      .then((s) => setSubStatus(s.status))
+      .then((s) => {
+        setSubStatus(s.status);
+        setDowngraded(s.downgraded_for_nonpayment === true);
+        setSubPlan(s.plan ?? undefined);
+      })
       .catch(() => {/* ignora erros silenciosamente */});
   }, [slug]);
+
+  // --- Rebaixado para o plano Grátis por falta de pagamento: faixa vermelha
+  //     NÃO-dismissível com CTA de reativação (maior prioridade). ---
+  if (downgraded) {
+    return (
+      <div
+        role="alert"
+        aria-live="assertive"
+        className="z-30 flex items-center gap-3 px-4 py-2 text-sm bg-red-600 text-white border-b border-red-700 max-sm:px-3"
+      >
+        <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+        <p className="flex-1 min-w-0 leading-tight">
+          <span className="font-semibold">Você voltou pro plano Grátis por falta de pagamento.</span>
+          <span className="max-sm:hidden">
+            {' '}
+            Reative {subPlan ? `o ${subPlan}` : 'seu plano'} pra recuperar seus recursos.
+          </span>
+        </p>
+        <Link
+          to="/assinatura"
+          className="flex-shrink-0 rounded bg-white px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1"
+        >
+          Reativar
+        </Link>
+      </div>
+    );
+  }
 
   // --- Loja suspensa: faixa vermelha com CTA de reativação ---
   if (subStatus === 'suspended') {

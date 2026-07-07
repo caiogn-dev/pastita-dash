@@ -81,6 +81,35 @@ test('exibe banner de aviso quando status=past_due', async () => {
   expect(link).toHaveAttribute('href', '/assinatura');
 });
 
+// ---- rebaixamento por falta de pagamento (Fase 3 Task 5) ---------------
+
+test('exibe banner não-dismissível de reativação quando downgraded_for_nonpayment=true', async () => {
+  mockGetSubscription.mockResolvedValue({ status: 'active', downgraded_for_nonpayment: true, plan: 'pro' });
+
+  renderBanner();
+
+  await waitFor(() => {
+    expect(screen.getByText(/voltou pro plano Grátis/i)).toBeInTheDocument();
+  });
+
+  const link = screen.getByRole('link', { name: /reativar/i });
+  expect(link).toHaveAttribute('href', '/assinatura');
+
+  expect(screen.queryByLabelText('Dispensar aviso de trial')).not.toBeInTheDocument();
+});
+
+test('não exibe banner de reativação quando downgraded_for_nonpayment=false', async () => {
+  mockGetSubscription.mockResolvedValue({ status: 'active', downgraded_for_nonpayment: false });
+
+  let container!: HTMLElement;
+  await act(async () => {
+    ({ container } = renderBanner());
+  });
+
+  expect(screen.queryByText(/voltou pro plano Grátis/i)).not.toBeInTheDocument();
+  expect(container.firstChild).toBeNull();
+});
+
 // ---- regressão: trial normal -------------------------------------------
 
 test('exibe banner de trial quando status=trialing e há dias restantes', async () => {
