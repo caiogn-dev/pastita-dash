@@ -39,6 +39,8 @@ test('handleSubmit sends slug + delivery_fee from the quote and calls onCreated'
   });
   await act(async () => { await result.current.handleCalculateRoute('Rua X, 100'); });
   await act(async () => { await result.current.handleSubmit(); });
+  const payload = (createOrder as jest.Mock).mock.calls[0][0];
+  expect(payload.customer_email).toBeUndefined();
   expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({
     store: 'loja-1', delivery_method: 'delivery', delivery_fee: 9,
     items: [{ product_id: 'p1', quantity: 1 }],

@@ -119,7 +119,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         store: storeSlug,
         customer_name: customer.name || 'Cliente PDV',
         customer_phone: customerPhone.replace(/\D/g, ''),
-        customer_email: customer.email,
+        customer_email: customer.email || undefined,
         delivery_method: deliveryMethod,
         delivery_address: deliveryAddress,
         delivery_fee: deliveryMethod === 'delivery' ? (routeQuote?.fee ?? 0) : 0,
