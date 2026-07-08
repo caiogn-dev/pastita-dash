@@ -7,7 +7,7 @@
  * - Preview de mídia melhorado
  * - Melhor responsividade
  */
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -224,8 +224,10 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
         <>
           <div className="flex items-center gap-2 mb-2">
             <button
+              type="button"
               onClick={togglePlay}
               disabled={isLoading}
+              aria-label={isPlaying ? 'Pausar áudio' : 'Reproduzir áudio'}
               className="w-10 h-10 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
             >
               {isPlaying ? (
@@ -249,8 +251,10 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
             </div>
 
             <button
+              type="button"
               onClick={toggleMute}
               disabled={isLoading}
+              aria-label={isMuted ? 'Ativar som do áudio' : 'Silenciar áudio'}
               className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
             >
               {isMuted ? (
@@ -268,6 +272,7 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
             value={currentTime}
             onChange={handleSeek}
             disabled={isLoading || !duration}
+            aria-label="Posição do áudio"
             className="w-full h-1.5 bg-gray-300 dark:bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-violet-600 disabled:opacity-50"
           />
         </>
@@ -676,5 +681,5 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
 // memo: evita re-render de cada bolha já renderizada quando chega msg nova
 // ou a cada keystroke no parent (ChatWindow re-renderiza muito). Memoiza o
 // NAMED export — é o que o ChatWindow importa ({ MessageBubble }).
-export const MessageBubble = React.memo(MessageBubbleImpl);
+export const MessageBubble = memo(MessageBubbleImpl);
 export default MessageBubble;
