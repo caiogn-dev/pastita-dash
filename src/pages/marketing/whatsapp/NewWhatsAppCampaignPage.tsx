@@ -8,7 +8,7 @@
  * 4. Add recipients (manual, CSV, or contact list)
  * 5. Review & Send/Schedule
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -743,6 +743,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               <button
                 onClick={() => navigate('/marketing/whatsapp')}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] rounded-lg transition-colors"
+                aria-label="Voltar para campanhas WhatsApp"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
               </button>
@@ -773,7 +774,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               const isPast = STEPS.findIndex(s => s.id === currentStep) > index;
 
               return (
-                <React.Fragment key={step.id}>
+                <Fragment key={step.id}>
                   <button
                     onClick={() => isPast && setCurrentStep(step.id)}
                     disabled={!isPast && !isActive}
@@ -795,7 +796,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                   {index < STEPS.length - 1 && (
                     <div className={`w-8 h-0.5 ${isPast ? 'bg-green-300' : 'bg-gray-200'}`} />
                   )}
-                </React.Fragment>
+                </Fragment>
               );
             })}
           </div>
@@ -1283,7 +1284,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                   placeholder="Nome (opcional)"
                   className="flex-1"
                 />
-                <Button onClick={handleAddContact}>
+                <Button onClick={handleAddContact} aria-label="Adicionar contato">
                   <PlusIcon className="w-5 h-5" />
                 </Button>
               </div>
@@ -1359,6 +1360,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                       <button
                         onClick={() => handleRemoveContact(index)}
                         className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                        aria-label={`Remover contato ${contact.phone}`}
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>
