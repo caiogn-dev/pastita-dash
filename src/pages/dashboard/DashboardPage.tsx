@@ -187,6 +187,7 @@ export const DashboardPage: React.FC = () => {
   const [pipelineCounts, setPipelineCounts]     = useState<Record<string, number>>({});
   const [projectHealth, setProjectHealth]       = useState<ProjectHealth | null>(null);
   const [loading, setLoading]                   = useState(true);
+  const [loadError, setLoadError]               = useState(false);
   const [healthLoading, setHealthLoading]       = useState(true);
   const [advancing, setAdvancing]               = useState<string | null>(null);
   const [refreshedAt, setRefreshedAt]           = useState(new Date());
@@ -194,6 +195,7 @@ export const DashboardPage: React.FC = () => {
   const loadData = useCallback(async () => {
     if (!storeId) return;
     setLoading(true);
+    setLoadError(false);
 
     // O card "Saúde do sistema" SÓ é renderizado p/ is_staff (admin). Pra dono de
     // loja comum ele nunca aparece — então NÃO buscar é o certo: era o request mais
@@ -217,6 +219,16 @@ export const DashboardPage: React.FC = () => {
         getOrderStats(storeId),
         dashboardService.getOverview({ store: storeId }),
       ]);
+
+      // allSettled nunca rejeita, então uma falha TOTAL (as 3 chamadas caíram)
+      // passaria despercebida: KPIs ficariam em 0 e a tabela mostraria "Nenhum
+      // pedido ainda" — indistinguível de uma loja realmente vazia. Detectamos e
+      // sinalizamos explicitamente para o dono da loja poder tentar de novo.
+      const allFailed = [ordersResp, statsResp, overviewResp].every((r) => r.status === 'rejected');
+      if (allFailed) {
+        setLoadError(true);
+        toast.error('Erro ao carregar dados');
+      }
 
       let resolvedPendingCount = 0;
 
@@ -324,6 +336,33 @@ export const DashboardPage: React.FC = () => {
           </button>
           <button onClick={loadData} className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
             <ArrowPathIcon className="h-4 w-4 text-gray-400" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Error banner (falha total no carregamento) ── */}
+      {loadError && !loading && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-3 px-4 py-3.5 rounded-xl border
+                     bg-red-50 dark:bg-red-950/25 border-red-200 dark:border-red-900/50"
+        >
+          <ExclamationTriangleIcon className="h-5 w-5 shrink-0 text-red-500 dark:text-red-400" />
+          <div className="flex-1">
+            <span className="text-sm font-semibold text-red-800 dark:text-red-300">
+              Não foi possível carregar os dados do dashboard
+            </span>
+            <p className="text-xs text-red-700/80 dark:text-red-400/80 mt-0.5">
+              Verifique sua conexão e tente novamente.
+            </p>
+          </div>
+          <button
+            onClick={loadData}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg
+                       bg-red-600 hover:bg-red-700 text-white transition-colors"
+          >
+            <ArrowPathIcon className="h-3.5 w-3.5" />
+            Tentar novamente
           </button>
         </div>
       )}

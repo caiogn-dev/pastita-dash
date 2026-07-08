@@ -3,14 +3,35 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-08)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok (5 vulnerabilidades: 1 low, 2 moderate, 2 high — `form-data` high via axios,
+  `js-yaml` só em dev tooling, `esbuild/vite` dev-only exige vite 8, breaking).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **376 testes / 90 suítes verdes** (+3 testes, +1 suíte nesta execução).
+- `npm run lint`: gate em 400 warnings; **265 warnings** restantes.
 
 ## Histórico
+
+### 2026-07-08 — Correção/UX: dashboard mascarava falha TOTAL de carga como loja vazia
+- **Medido:** em `DashboardPage.tsx`, `loadData` envolvia `Promise.allSettled([...])`
+  num `try/catch`, mas `allSettled` **nunca rejeita** — logo o `catch` com
+  `toast.error('Erro ao carregar dados')` era **código morto** para falhas de API.
+  Se as 3 chamadas (`getOrders`, `getOrderStats`, `getOverview`) caíssem, todos os
+  ramos `status === 'fulfilled'` eram pulados, os KPIs ficavam em `0` e a tabela
+  mostrava "Nenhum pedido ainda" — **indistinguível de uma loja realmente vazia**,
+  sem banner de erro nem opção de retry. Dashboard é a 1ª tela do dono da loja.
+- **Mudado (só `DashboardPage.tsx`):**
+  - novo estado `loadError`, resetado no início de cada `loadData`;
+  - após o `allSettled`, detecta falha total (`every(r => r.status === 'rejected')`)
+    e seta `loadError` + dispara o toast;
+  - banner com `role="alert"` ("Não foi possível carregar os dados do dashboard" +
+    dica de conexão) e botão **"Tentar novamente"** que rechama `loadData`;
+  - carga **parcial** (ao menos 1 sucesso) continua renderizando normalmente, sem alerta.
+- **Teste (TDD):** novo `DashboardPage.test.tsx` (3 casos) — escrito **vermelho** antes,
+  **verde** depois: (1) alerta+retry quando todas falham; (2) sem alerta em sucesso
+  parcial; (3) botão "Tentar novamente" refaz as chamadas e limpa o erro.
+- **Antes/depois:** `npm test` 373/89 → **376/90**; `tsc` limpo nos dois lados; lint 265.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,11 +71,15 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
+1. **A11y — controles de mídia sem nome acessível (candidatos mapeados):**
+   `MessageBubble.tsx` player de áudio — botão play/pause (~l.226) e mudo (~l.251)
+   são icon-only sem `aria-label`, e o `<input type="range">` de seek (~l.264) sem
+   label; `Navbar.tsx` `<select>` de contas (~l.294) sem `aria-label` (o irmão
+   `StoreSelector` já usa `aria-label="Loja"`). Teste de regressão por componente.
+2. **Segurança/deps:** `form-data` (high, via `axios`) e `js-yaml` (moderate, só dev
+   tooling) têm fix **não-breaking** via `npm audit fix`; `esbuild/vite` (moderate,
+   dev-only) exige vite 8 (breaking) — avaliar à parte. Aplicar o fix não-breaking
+   e revalidar `tsc`/testes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.
