@@ -3,14 +3,29 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-09)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **404 testes / 96 suítes verdes**.
+- `npm run lint`: gate em 400 warnings; **271 warnings** restantes (limpeza incremental em curso).
 
 ## Histórico
+
+### 2026-07-09 — Correção: legenda (caption) de documento era descartada no chat
+- **Medido:** em `MessageBubble.tsx` (fluxo principal do WhatsApp), a condição de
+  render do texto excluía `document` do bloco de texto do topo (linha ~633) **e** o
+  bloco de legenda abaixo da mídia só contemplava `image`/`video` (linha ~640).
+  Resultado: uma mensagem de documento com legenda (`textBody`) **não exibia texto
+  algum** — a legenda era silenciosamente perdida. Imagem/vídeo já mostravam a
+  legenda corretamente; áudio também (não está na lista de exclusão do topo).
+- **Mudado:** adicionado `'document'` à lista do bloco de legenda abaixo da mídia,
+  de modo que o documento renderiza o card de download seguido da legenda — mesmo
+  padrão de imagem/vídeo, sem duplicar o texto (o topo continua excluindo `document`).
+- **Teste (TDD):** novo `MessageBubble.caption.test.tsx` — escrito vermelho antes,
+  verde depois. Cobre (1) documento com legenda exibindo o texto exatamente uma vez
+  (sem duplicação) e (2) imagem com legenda como caso de regressão de contorno.
+- **Antes/depois:** `npm test` 402/95 → **404/96**; tsc limpo nos dois lados.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
