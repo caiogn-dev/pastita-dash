@@ -121,7 +121,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
       <div className="space-y-6">
         {/* Header Info */}
         <div>
-          <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{combo.description}</p>
+          <p className="text-gray-600 dark:text-fg-muted-token">{combo.description}</p>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-2xl font-bold text-gray-900 dark:text-white">{fmt(combo.price)}</span>
             {combo.compare_at_price && Number(combo.compare_at_price) > combo.price && (
@@ -148,8 +148,8 @@ export const ComboModal: React.FC<ComboModalProps> = ({
 
         {/* Items/Groups */}
         {!combo.groups || combo.groups.length === 0 ? (
-          <div className="p-4 rounded-lg bg-gray-50 dark:bg-[var(--dark-bg-hover,#161616)]">
-            <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+          <div className="p-4 rounded-lg bg-gray-50 dark:bg-surface-muted-token">
+            <p className="text-sm text-gray-600 dark:text-fg-muted-token">
               Este combo não possui grupos de produtos. Configure no painel administrativo.
             </p>
           </div>
@@ -168,7 +168,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                       <h4 className="font-medium text-gray-900 dark:text-white">
                         {group.product_name}
                       </h4>
-                      <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
+                      <p className="text-xs text-gray-500 dark:text-fg-muted-token mt-1">
                         {group.is_required ? (
                           <span className="text-red-600 dark:text-red-400 font-medium">
                             Obrigatório: {group.min_selections} - {group.max_selections} seleção(ões)
@@ -204,9 +204,9 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                             className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
                               disabledReason
                                 ? 'bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700 cursor-not-allowed opacity-60'
-                                : 'border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] cursor-pointer hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
+                                : 'border-gray-200 dark:border-border-token cursor-pointer hover:bg-gray-50 dark:hover:bg-surface-muted-token'
                             } ${
-                              isSelected && !disabledReason ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/10' : ''
+                              isSelected && !disabledReason ? 'border-brand-500 bg-brand-soft dark:bg-brand-soft' : ''
                             }`}
                           >
                             <input
@@ -214,19 +214,19 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                               checked={isSelected}
                               onChange={() => handleToggleVariant(groupId, variantId, canSelect)}
                               disabled={!canSelect}
-                              className="w-4 h-4 rounded border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] text-brand-600 focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-4 h-4 rounded border-gray-300 dark:border-border-token text-brand-600 focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900 dark:text-white">
                                 {variantLimit.variant_name}
                                 {variantLimit.variant_sku && (
-                                  <span className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] ml-2">
+                                  <span className="text-xs text-gray-500 dark:text-fg-muted-token ml-2">
                                     ({variantLimit.variant_sku})
                                   </span>
                                 )}
                               </p>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                                <span className="text-xs text-gray-500 dark:text-fg-muted-token">
                                   {variantLimit.stock > 0 ? (
                                     <>Estoque: {variantLimit.stock}</>
                                   ) : (
@@ -234,7 +234,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                                   )}
                                 </span>
                                 {maxForVariant > 1 && (
-                                  <span className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                                  <span className="text-xs text-gray-500 dark:text-fg-muted-token">
                                     • Máx. {maxForVariant}
                                   </span>
                                 )}
@@ -246,7 +246,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                               {isSelected ? (
                                 <CheckIcon className="w-5 h-5 text-brand-600" />
                               ) : disabledReason ? (
-                                <span className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] font-medium">
+                                <span className="text-xs text-gray-500 dark:text-fg-muted-token font-medium">
                                   {disabledReason}
                                 </span>
                               ) : null}
@@ -256,7 +256,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                       })
                     ) : (
                       <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700">
-                        <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                        <p className="text-sm text-gray-600 dark:text-fg-muted-token">
                           Nenhuma variante configurada para este grupo.
                         </p>
                       </div>
@@ -285,7 +285,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
         )}
 
         {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
+        <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-border-token">
           <Button variant="secondary" onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>

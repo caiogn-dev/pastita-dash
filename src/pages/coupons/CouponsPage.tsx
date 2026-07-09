@@ -38,7 +38,6 @@ export const CouponsPage: React.FC = () => {
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [deletingCoupon, setDeletingCoupon] = useState<Coupon | null>(null);
   const [saving, setSaving] = useState(false);
-  const [_error, setError] = useState<string | null>(null);
 
   // Form state - includes store ID
   const getInitialFormData = useCallback((): CreateCoupon => ({
@@ -65,7 +64,6 @@ export const CouponsPage: React.FC = () => {
     
     try {
       setLoading(true);
-      setError(null);
       const [couponsData, statsData] = await Promise.all([
         couponsService.getCoupons({
           store: storeId,
@@ -79,7 +77,7 @@ export const CouponsPage: React.FC = () => {
       setStats(statsData);
     } catch (err) {
       logger.error('Error loading coupons:', err);
-      setError('Erro ao carregar cupons');
+      toast.error('Erro ao carregar cupons');
     } finally {
       setLoading(false);
     }
@@ -135,13 +133,12 @@ export const CouponsPage: React.FC = () => {
 
   const handleSave = async () => {
     if (!storeId) {
-      setError('Selecione uma loja antes de criar um cupom');
+      toast.error('Selecione uma loja antes de criar um cupom');
       return;
     }
 
     try {
       setSaving(true);
-      setError(null);
       
       // Ensure store is always included
       const dataToSave = { ...formData, store: storeId };
@@ -156,7 +153,7 @@ export const CouponsPage: React.FC = () => {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar cupom';
       logger.error('Error saving coupon:', err);
-      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

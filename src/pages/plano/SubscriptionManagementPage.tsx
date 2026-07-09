@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../../hooks/useStore';
+import { useConfirm } from '../../hooks/useConfirm';
 import {
   getSubscription,
   cancelSubscription,
@@ -54,6 +55,7 @@ function isInvoicePending(invoice: Invoice | null): boolean {
 export default function SubscriptionManagementPage() {
   const { store } = useStore();
   const slug = (store as { slug?: string } | null)?.slug;
+  const [ConfirmDialog, confirmAction] = useConfirm();
 
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -128,7 +130,16 @@ export default function SubscriptionManagementPage() {
   }, [slug]);
 
   async function handleCancel() {
-    if (!slug || !confirm('Cancelar a assinatura? A loja será rebaixada ao fim do período.')) return;
+    if (!slug) return;
+    const confirmed = await confirmAction({
+      title: 'Cancelar assinatura',
+      message:
+        'Sua loja continua ativa até o fim do período já pago e depois é rebaixada ao plano gratuito. Deseja cancelar?',
+      confirmText: 'Cancelar assinatura',
+      cancelText: 'Manter assinatura',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     setBusy(true);
     try {
       const r = await cancelSubscription(slug);
@@ -348,6 +359,7 @@ export default function SubscriptionManagementPage() {
           </button>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 }

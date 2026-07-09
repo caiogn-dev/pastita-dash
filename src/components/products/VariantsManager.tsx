@@ -18,6 +18,7 @@ import {
   deleteProductVariant,
 } from '../../services/storesApi';
 import logger from '../../services/logger';
+import { useConfirm } from '../../hooks/useConfirm';
 
 interface VariantsManagerProps {
   productId: string;
@@ -57,6 +58,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | 'new' | null>(null);
   const [form, setForm] = useState<VariantFormState>(EMPTY_FORM);
+  const [ConfirmDialog, confirmAction] = useConfirm();
 
   const load = useCallback(async () => {
     try {
@@ -124,7 +126,13 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
   };
 
   const handleDelete = async (variant: StoreProductVariant) => {
-    if (!window.confirm(`Excluir a variante "${variant.name}"?`)) return;
+    const confirmed = await confirmAction({
+      title: 'Excluir variante',
+      message: `Excluir a variante "${variant.name}"?`,
+      confirmText: 'Excluir',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await deleteProductVariant(productId, variant.id);
       toast.success('Variante excluída');
@@ -281,6 +289,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
           </li>
         ))}
       </ul>
+      {ConfirmDialog}
     </div>
   );
 };

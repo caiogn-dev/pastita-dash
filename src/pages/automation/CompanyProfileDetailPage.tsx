@@ -20,6 +20,7 @@ import {
 } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../hooks/useConfirm';
 
 const daysOfWeek = [
   { key: 'monday', label: 'Segunda-feira' },
@@ -37,6 +38,7 @@ const CompanyProfileDetailPage: React.FC = () => {
   const isCreateMode = !id;
 
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
+  const [ConfirmDialog, confirmAction] = useConfirm();
   const [stores, setStores] = useState<StoreRecord[]>([]);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,9 +177,13 @@ const CompanyProfileDetailPage: React.FC = () => {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!confirm('Tem certeza que deseja excluir este perfil? Esta ação não pode ser desfeita.')) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: 'Excluir perfil',
+      message: 'Tem certeza que deseja excluir este perfil? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await companyProfileService.delete(id);
       toast.success('Perfil excluído com sucesso');
@@ -196,7 +202,13 @@ const CompanyProfileDetailPage: React.FC = () => {
 
   const handleRegenerateApiKey = async () => {
     if (!id) return;
-    if (!confirm('Tem certeza? A chave atual será invalidada.')) return;
+    const confirmed = await confirmAction({
+      title: 'Regenerar API key',
+      message: 'Tem certeza? A chave atual será invalidada.',
+      confirmText: 'Regenerar',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
     try {
       const result = await companyProfileService.regenerateApiKey(id);
       toast.success('Nova API key gerada!');
@@ -693,6 +705,7 @@ const CompanyProfileDetailPage: React.FC = () => {
           </button>
         </div>
       </form>
+      {ConfirmDialog}
     </div>
   );
 };

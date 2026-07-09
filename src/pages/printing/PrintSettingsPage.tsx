@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, Button, Badge } from '../../components/ui';
 import { Modal, Loading } from '../../components/common';
+import { useConfirm } from '../../hooks/useConfirm';
 import {
   PrintAgent,
   PrintJob,
@@ -41,6 +42,7 @@ const fmtDate = (iso: string | null) =>
 const PrintSettingsPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const [agents, setAgents] = useState<PrintAgent[]>([]);
+  const [ConfirmDialog, confirmAction] = useConfirm();
   const [jobs, setJobs] = useState<PrintJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -122,7 +124,13 @@ const PrintSettingsPage: React.FC = () => {
 
   const handleDelete = async (agent: PrintAgent) => {
     if (!storeId) return;
-    if (!window.confirm(`Remover o agente "${agent.name}"? A impressão automática nessa estação para de funcionar.`)) return;
+    const confirmed = await confirmAction({
+      title: 'Remover agente de impressão',
+      message: `Remover o agente "${agent.name}"? A impressão automática nessa estação para de funcionar.`,
+      confirmText: 'Remover',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await deletePrintAgent(storeId, agent.id);
       toast.success('Agente removido');
@@ -377,6 +385,7 @@ const PrintSettingsPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+      {ConfirmDialog}
     </div>
   );
 };

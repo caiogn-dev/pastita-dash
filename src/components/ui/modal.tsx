@@ -44,6 +44,20 @@ const sizes = {
 // resetava overflow='' e o fundo passava a rolar atrás do modal externo.
 let bodyScrollLockCount = 0;
 
+// Seletor de elementos focáveis por teclado dentro do painel do modal.
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
+
+function getFocusable(panel: HTMLElement): HTMLElement[] {
+  return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+}
+
 const CloseIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -67,7 +81,59 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
     ref
   ) => {
     const overlayRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement | null>(null);
     const isVisible = open ?? isOpen ?? false;
+
+    // Encaminha o ref externo sem perder o interno (necessário pro focus trap).
+    const setPanelRef = (node: HTMLDivElement | null) => {
+      panelRef.current = node;
+      if (typeof ref === 'function') ref(node);
+      else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    };
+
+    // Gestão de foco: ao abrir, foca o primeiro focável do painel (ou o próprio
+    // painel); Tab/Shift+Tab ficam presos dentro do modal; ao fechar, o foco
+    // volta pro elemento que estava focado antes de abrir.
+    useEffect(() => {
+      if (!isVisible) return;
+
+      const previouslyFocused = document.activeElement as HTMLElement | null;
+      const panel = panelRef.current;
+      if (panel) {
+        const focusables = getFocusable(panel);
+        (focusables[0] ?? panel).focus();
+      }
+
+      const handleTab = (e: KeyboardEvent) => {
+        if (e.key !== 'Tab') return;
+        const currentPanel = panelRef.current;
+        if (!currentPanel) return;
+        const focusables = getFocusable(currentPanel);
+        if (focusables.length === 0) {
+          e.preventDefault();
+          currentPanel.focus();
+          return;
+        }
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        if (e.shiftKey) {
+          if (active === first || !currentPanel.contains(active)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else if (active === last || !currentPanel.contains(active)) {
+          e.preventDefault();
+          first.focus();
+        }
+      };
+
+      document.addEventListener('keydown', handleTab);
+      return () => {
+        document.removeEventListener('keydown', handleTab);
+        previouslyFocused?.focus?.();
+      };
+    }, [isVisible]);
 
     // Escape → onClose. Listener só existe quando o modal está visível E
     // closeOnEscape está ligado. Modais externos que embrulham outros modais
@@ -125,7 +191,8 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
         aria-modal="true"
       >
         <div
-          ref={ref}
+          ref={setPanelRef}
+          tabIndex={-1}
           className={cn(
             'relative w-full',
             'bg-surface',

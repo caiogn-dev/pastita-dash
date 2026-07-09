@@ -88,14 +88,14 @@ interface VariantLimitRowProps {
 
 const VariantLimitRow: React.FC<VariantLimitRowProps> = ({ limit, onUpdate }) => {
   return (
-    <tr className="border-t border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
-      <td className="px-3 py-2 text-sm text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+    <tr className="border-t border-gray-200 dark:border-border-token">
+      <td className="px-3 py-2 text-sm text-gray-700 dark:text-fg-token">
         {limit.variant_name}
       </td>
-      <td className="px-3 py-2 text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+      <td className="px-3 py-2 text-xs text-gray-500 dark:text-fg-muted-token">
         {limit.variant_sku || '—'}
       </td>
-      <td className="px-3 py-2 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+      <td className="px-3 py-2 text-sm text-gray-500 dark:text-fg-muted-token">
         {limit.stock}
       </td>
       <td className="px-3 py-2">
@@ -104,7 +104,7 @@ const VariantLimitRow: React.FC<VariantLimitRowProps> = ({ limit, onUpdate }) =>
           min="1"
           value={limit.max_selections}
           onChange={e => onUpdate(limit._key, { max_selections: parseInt(e.target.value) || 1 })}
-          className="w-16 text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="w-16 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </td>
       <td className="px-3 py-2">
@@ -115,7 +115,7 @@ const VariantLimitRow: React.FC<VariantLimitRowProps> = ({ limit, onUpdate }) =>
           placeholder="Sem override"
           value={limit.price_override ?? ''}
           onChange={e => onUpdate(limit._key, { price_override: e.target.value ? parseFloat(e.target.value) : undefined })}
-          className="w-24 text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="w-24 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </td>
     </tr>
@@ -136,9 +136,9 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
   const _selectedProduct = products.find(p => p.id === group.product_id);
 
   return (
-    <div className="border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg overflow-hidden bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]">
+    <div className="border border-gray-200 dark:border-border-token rounded-lg overflow-hidden bg-white dark:bg-surface">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-[var(--dark-bg-base,#0a0a0a)] cursor-pointer hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+      <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-canvas cursor-pointer hover:bg-gray-100 dark:hover:bg-surface-muted-token transition-colors"
         onClick={() => onUpdate(group._key, { _expanded: !group._expanded })}>
         <ChevronDownIcon
           className={`w-4 h-4 text-gray-500 transition-transform ${group._expanded ? 'rotate-180' : ''}`}
@@ -149,7 +149,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
               ? (group.title || 'Grupo de produtos')
               : (group.product_name || 'Selecionar produto')}
           </p>
-          <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+          <p className="text-xs text-gray-500 dark:text-fg-muted-token">
             {group.group_type === 'product' ? 'Produtos · ' : 'Variantes · '}
             {group.min_selections}–{group.max_selections} seleções{group.allow_duplicate_variants && ' (duplicatas permitidas)'}
           </p>
@@ -169,12 +169,12 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
 
       {/* Expanded Content */}
       {group._expanded && (
-        <div className="p-4 space-y-4 border-t border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
+        <div className="p-4 space-y-4 border-t border-gray-200 dark:border-border-token">
           {/* Seleção: produto-âncora (variante) OU título do grupo (produtos) */}
           <div className="grid grid-cols-1 gap-4">
             {group.group_type === 'product' ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-fg-token mb-2">
                   Título do grupo
                 </label>
                 <input
@@ -182,18 +182,18 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                   value={group.title}
                   onChange={e => onUpdate(group._key, { title: e.target.value })}
                   placeholder="Ex: Escolha suas 5 saladas"
-                  className="w-full text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-fg-token mb-2">
                   Produto
                 </label>
                 <select
                   value={group.product_id}
                   onChange={e => onUpdate(group._key, { product_id: e.target.value })}
-                  className="w-full text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="">Selecionar produto...</option>
                   {products.map(p => (
@@ -207,7 +207,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
 
             {/* Selection Rules */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-fg-token mb-2">
                 Configurações
               </label>
               <div className="space-y-3">
@@ -215,8 +215,8 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                 <div
                   className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
                     group.is_required
-                      ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-700'
-                      : 'border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]'
+                      ? 'border-brand-400 bg-brand-soft dark:bg-brand-soft dark:border-brand-600'
+                      : 'border-gray-200 dark:border-border-token bg-white dark:bg-surface'
                   }`}
                   onClick={() => onUpdate(group._key, { is_required: !group.is_required })}
                 >
@@ -225,7 +225,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                     className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
                       group.is_required
                         ? 'bg-brand-600 text-white'
-                        : 'border-2 border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]'
+                        : 'border-2 border-gray-300 dark:border-border-token'
                     }`}
                   >
                     {group.is_required && <CheckIcon className="w-3 h-3" />}
@@ -237,8 +237,8 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                 <div
                   className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
                     group.allow_duplicate_variants
-                      ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-700'
-                      : 'border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]'
+                      ? 'border-brand-400 bg-brand-soft dark:bg-brand-soft dark:border-brand-600'
+                      : 'border-gray-200 dark:border-border-token bg-white dark:bg-surface'
                   }`}
                   onClick={() => onUpdate(group._key, { allow_duplicate_variants: !group.allow_duplicate_variants })}
                 >
@@ -247,7 +247,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                     className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
                       group.allow_duplicate_variants
                         ? 'bg-brand-600 text-white'
-                        : 'border-2 border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]'
+                        : 'border-2 border-gray-300 dark:border-border-token'
                     }`}
                   >
                     {group.allow_duplicate_variants && <CheckIcon className="w-3 h-3" />}
@@ -281,20 +281,20 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
             <div className="overflow-x-auto -mx-4 px-4">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b-2 border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]">
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                  <tr className="border-b-2 border-gray-300 dark:border-border-token">
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-fg-token">
                       Variante
                     </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-fg-token">
                       SKU
                     </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-fg-token">
                       Estoque
                     </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-fg-token">
                       Max no Combo
                     </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 dark:text-fg-token">
                       Preço Override (R$)
                     </th>
                   </tr>
@@ -317,7 +317,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
             </div>
           )}
           {group.group_type === 'variant' && group.variant_limits.length === 0 && (
-            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] text-center py-3">
+            <p className="text-sm text-gray-500 dark:text-fg-muted-token text-center py-3">
               Nenhuma variante neste produto
             </p>
           )}
@@ -375,7 +375,7 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
 
   if (products.length === 0) {
     return (
-      <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] text-center py-3">
+      <p className="text-sm text-gray-500 dark:text-fg-muted-token text-center py-3">
         Nenhum produto cadastrado na loja
       </p>
     );
@@ -383,7 +383,7 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
 
   return (
     <div>
-      <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2">
+      <p className="text-xs text-gray-500 dark:text-fg-muted-token mb-2">
         Marque os produtos que o cliente pode escolher neste grupo ({group.product_options.length} selecionado{group.product_options.length === 1 ? '' : 's'})
       </p>
       <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
@@ -395,8 +395,8 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
               key={product.id}
               className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${
                 checked
-                  ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-700'
-                  : 'border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]'
+                  ? 'border-brand-400 bg-brand-soft dark:bg-brand-soft dark:border-brand-600'
+                  : 'border-gray-200 dark:border-border-token bg-white dark:bg-surface'
               }`}
             >
               <button
@@ -405,7 +405,7 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
                 className={`w-5 h-5 rounded flex items-center justify-center transition-colors shrink-0 ${
                   checked
                     ? 'bg-brand-600 text-white'
-                    : 'border-2 border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]'
+                    : 'border-2 border-gray-300 dark:border-border-token'
                 }`}
                 aria-label={checked ? `Remover ${product.name}` : `Adicionar ${product.name}`}
               >
@@ -414,13 +414,13 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
               <span className="flex-1 text-sm text-gray-900 dark:text-white truncate">{product.name}</span>
               {checked && (
                 <div className="flex items-center gap-2 shrink-0">
-                  <label className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">max</label>
+                  <label className="text-xs text-gray-500 dark:text-fg-muted-token">max</label>
                   <input
                     type="number"
                     min="1"
                     value={opt!.max_selections}
                     onChange={e => patch(product.id, { max_selections: parseInt(e.target.value) || 1 })}
-                    className="w-14 text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-14 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                   <input
                     type="number"
@@ -429,7 +429,7 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
                     placeholder="R$ override"
                     value={opt!.price_override ?? ''}
                     onChange={e => patch(product.id, { price_override: e.target.value ? parseFloat(e.target.value) : undefined })}
-                    className="w-24 text-sm rounded-md border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-24 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
               )}
@@ -662,7 +662,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-0">
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 border-b border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
+      <div className="flex gap-1 mb-5 border-b border-gray-200 dark:border-border-token">
         {tabs.map(t => (
           <button
             key={t.key}
@@ -670,8 +670,8 @@ export const ComboForm: React.FC<ComboFormProps> = ({
             onClick={() => setActiveTab(t.key)}
             className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors ${
               activeTab === t.key
-                ? 'text-brand-700 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-500 -mb-px bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]'
-                : 'text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] hover:text-gray-700 dark:hover:text-[var(--dark-text-primary,#FAF9F7)]'
+                ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-500 -mb-px bg-white dark:bg-surface'
+                : 'text-gray-500 dark:text-fg-muted-token hover:text-gray-700 dark:hover:text-fg-token'
             }`}
           >
             {t.label}
@@ -690,7 +690,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
             required
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-fg-token mb-1">
               Descrição
             </label>
             <textarea
@@ -698,7 +698,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
               onChange={e => set('description', e.target.value)}
               rows={3}
               placeholder="Descreva o combo para o cliente..."
-              className="w-full rounded-lg border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -734,7 +734,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
       {activeTab === 'groups' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
-            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            <p className="text-sm text-gray-500 dark:text-fg-muted-token">
               Adicione grupos ao combo
             </p>
             <div className="flex items-center gap-2">
@@ -749,12 +749,12 @@ export const ComboForm: React.FC<ComboFormProps> = ({
             </div>
           </div>
           {form.items.length === 0 ? (
-            <div className="text-center py-10 rounded-lg border-2 border-dashed border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]">
-              <CubeIcon className="w-10 h-10 mx-auto text-gray-300 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-2" />
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            <div className="text-center py-10 rounded-lg border-2 border-dashed border-gray-300 dark:border-border-token">
+              <CubeIcon className="w-10 h-10 mx-auto text-gray-300 dark:text-fg-muted-token mb-2" />
+              <p className="text-sm text-gray-500 dark:text-fg-muted-token">
                 Nenhum item no combo ainda
               </p>
-              <p className="text-xs text-gray-400 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
+              <p className="text-xs text-gray-400 dark:text-fg-muted-token mt-1">
                 Combos sem itens são válidos (ex: "Monte seu combo")
               </p>
             </div>
@@ -805,8 +805,8 @@ export const ComboForm: React.FC<ComboFormProps> = ({
                   key={key}
                   className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors ${
                     isOn
-                      ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-700'
-                      : 'border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)]'
+                      ? 'border-brand-400 bg-brand-soft dark:bg-brand-soft dark:border-brand-600'
+                      : 'border-gray-200 dark:border-border-token bg-white dark:bg-surface'
                   }`}
                   onClick={() => set(key, !isOn)}
                 >
@@ -814,14 +814,14 @@ export const ComboForm: React.FC<ComboFormProps> = ({
                     <Icon className="w-5 h-5 text-gray-500 dark:text-zinc-400" />
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{label}</p>
-                      <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{desc}</p>
+                      <p className="text-xs text-gray-500 dark:text-fg-muted-token">{desc}</p>
                     </div>
                   </div>
                   <div
                     className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
                       isOn
                         ? 'bg-brand-600 text-white'
-                        : 'border-2 border-gray-300 dark:border-[var(--dark-border,#2a2a2a)]'
+                        : 'border-2 border-gray-300 dark:border-border-token'
                     }`}
                   >
                     {isOn && <CheckIcon className="w-3 h-3" />}
@@ -842,7 +842,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
         </div>
       )}
 
-      <div className="flex justify-end gap-3 pt-5 mt-5 border-t border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
+      <div className="flex justify-end gap-3 pt-5 mt-5 border-t border-gray-200 dark:border-border-token">
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Salvando...' : combo ? 'Salvar alterações' : 'Criar combo'}
         </Button>
