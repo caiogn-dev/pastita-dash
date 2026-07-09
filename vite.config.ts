@@ -10,13 +10,14 @@ export default defineConfig({
   base: '/',
   server: {
     host: '0.0.0.0',
-    port: 3000,
+    port: Number(process.env.VITE_DEV_PORT) || 3000,
     strictPort: true,
     allowedHosts: true,
     cors: true,
+    // HMR client connects back over whatever host/port the page was loaded on
+    // (works through SSH SOCKS: browser -> localhost:<port> -> server).
     hmr: {
-      host: '0.0.0.0',
-      port: 3000,
+      clientPort: Number(process.env.VITE_DEV_PORT) || 3000,
     },
   },
   resolve: {
