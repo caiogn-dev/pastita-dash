@@ -3,14 +3,32 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-10)
 
 - `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **418 testes / 101 suítes verdes** (após a fatia de a11y do Toast abaixo).
+- `npm run lint`: gate em 400 warnings; **271 warnings** restantes, 0 erros.
 
 ## Histórico
+
+### 2026-07-10 — Acessibilidade: Toast global vira região viva anunciável
+- **Medido:** varredura de botões icon-only sem nome acessível achou 67 candidatos.
+  O maior alavancamento é o `Toast` global (`src/components/molecules/Toast.tsx`),
+  usado app-wide via `useToast`/`ToastContext` para todo sucesso/erro. Dois buracos:
+  (1) o botão de fechar (só `XMarkIcon`) não tinha nome acessível — leitor de tela
+  anunciava nada; (2) o toast não era uma live region — **nenhuma** notificação era
+  anunciada a quem usa leitor de tela (feedback de salvar/erro invisível).
+- **Mudado (`Toast.tsx`):**
+  - botão de fechar ganhou `type="button"` + `aria-label="Fechar notificação"`,
+    `focus-visible:ring` e `aria-hidden` no ícone;
+  - o container do toast virou live region: `role="alert"` + `aria-live="assertive"`
+    para `error`/`warning` (interrompe) e `role="status"` + `aria-live="polite"`
+    para `success`/`info` (anúncio educado).
+- **Teste (TDD):** novo `Toast.a11y.test.tsx` — escrito vermelho (5/5 falhando) antes,
+  verde depois. Cobre nome do botão e o role correto por tipo de toast.
+- **Antes/depois:** 100→101 suítes, 413→418 testes; tsc limpo e lint 271 warnings
+  (sem erros) nos dois lados. Componente ativo (o `ui/toast.tsx` legado não foi tocado).
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,11 +68,14 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
+1. **A11y — continuar varredura:** ainda restam ~66 botões icon-only sem nome
+   acessível (lista completa levantada em 2026-07-10). Priorizar primitivas
+   compartilhadas de alto alavancamento: `ui/input.tsx` (limpar busca),
+   `ui/toast.tsx` (legado, confirmar se ainda é usado) e diálogos (`modal.tsx`).
+   Depois páginas de marketing/instagram. Teste de regressão por componente.
+2. **Segurança/deps:** triar as 5 vulnerabilidades do `npm audit` (1 low, 2
+   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes (evitar o
+   `--force` que sobe `vite@8`).
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.

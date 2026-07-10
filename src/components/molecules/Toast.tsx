@@ -59,9 +59,13 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
 
   const Icon = iconMap[type];
   const styles = toastStyles[type];
+  // Erros/avisos interrompem (assertivo); sucesso/info são anunciados educadamente.
+  const isAssertive = type === 'error' || type === 'warning';
 
   return (
     <div
+      role={isAssertive ? 'alert' : 'status'}
+      aria-live={isAssertive ? 'assertive' : 'polite'}
       className={cn(
         'pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg border shadow-lg',
         'transform transition-all duration-300 ease-out animate-slide-in-right',
@@ -81,10 +85,12 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
           </div>
           <div className="ml-4 flex flex-shrink-0">
             <button
+              type="button"
+              aria-label="Fechar notificação"
               onClick={() => onClose(id)}
-              className="inline-flex rounded-md text-zinc-400 hover:text-zinc-500 focus:outline-none"
+              className="inline-flex rounded-md text-zinc-400 hover:text-zinc-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
             >
-              <XMarkIcon className="h-5 w-5" />
+              <XMarkIcon className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         </div>
