@@ -17,6 +17,6 @@ export const NewOrderSteps: React.FC<{ wiz: NewOrderWizard }> = ({ wiz }) => {
     case 3:
       return <StepAjustes discountType={wiz.discountType} setDiscountType={wiz.setDiscountType} discountValue={wiz.discountValue} setDiscountValue={wiz.setDiscountValue} discountReason={wiz.discountReason} setDiscountReason={wiz.setDiscountReason} surchargeValue={wiz.surchargeValue} setSurchargeValue={wiz.setSurchargeValue} surchargeReason={wiz.surchargeReason} setSurchargeReason={wiz.setSurchargeReason} />;
     default:
-      return <StepConfirmar cart={wiz.cart} deliveryMethod={wiz.deliveryMethod} deliveryAddress={wiz.freeAddressText} routeQuote={wiz.routeQuote} discountType={wiz.discountType} discountValue={wiz.discountValue} surchargeValue={wiz.surchargeValue} paymentMethod={wiz.paymentMethod} setPaymentMethod={wiz.setPaymentMethod} submitting={wiz.submitting} onSubmit={wiz.handleSubmit} />;
+      return <StepConfirmar cart={wiz.cart} deliveryMethod={wiz.deliveryMethod} deliveryAddress={wiz.freeAddressText} routeQuote={wiz.routeQuote} discountType={wiz.discountType} discountValue={wiz.discountValue} surchargeValue={wiz.surchargeValue} paymentMethod={wiz.paymentMethod} setPaymentMethod={wiz.setPaymentMethod} onEditItems={() => wiz.setStep(2)} />;
   }
 };

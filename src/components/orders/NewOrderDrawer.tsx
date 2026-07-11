@@ -95,18 +95,29 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
           </button>
         </div>
 
-        {/* Step indicator */}
+        {/* Step indicator — etapas já visitadas são clicáveis pra voltar direto */}
         <div className="flex px-4 py-2 gap-1 flex-shrink-0">
-          {STEP_LABELS.map((label, i) => (
-            <div
-              key={i}
-              className={`flex-1 h-1 rounded-full transition-colors ${
-                i <= wiz.step
-                  ? 'bg-primary-600'
-                  : 'bg-gray-200 dark:bg-zinc-700'
-              }`}
-            />
-          ))}
+          {STEP_LABELS.map((label, i) =>
+            i < wiz.step ? (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Ir para ${label}`}
+                title={`Voltar para ${label}`}
+                onClick={() => !wiz.submitting && wiz.setStep(i)}
+                className="flex-1 h-2 -my-0.5 rounded-full bg-primary-600 hover:bg-primary-500 transition-colors cursor-pointer"
+              />
+            ) : (
+              <div
+                key={i}
+                className={`flex-1 h-1 rounded-full transition-colors ${
+                  i <= wiz.step
+                    ? 'bg-primary-600'
+                    : 'bg-gray-200 dark:bg-zinc-700'
+                }`}
+              />
+            )
+          )}
         </div>
 
         {/* Content */}
@@ -114,18 +125,19 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
           <NewOrderSteps wiz={wiz} />
         </div>
 
-        {/* Footer navigation */}
-        {wiz.step < 4 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
-            <button
-              type="button"
-              onClick={wiz.back}
-              disabled={wiz.step === 0}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-default transition-colors"
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-              Voltar
-            </button>
+        {/* Footer navigation — Voltar disponível em TODAS as etapas (inclusive
+            na confirmação, pra corrigir um item errado antes de criar) */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
+          <button
+            type="button"
+            onClick={wiz.back}
+            disabled={wiz.step === 0 || wiz.submitting}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-default transition-colors"
+          >
+            <ChevronLeftIcon className="h-4 w-4" />
+            Voltar
+          </button>
+          {wiz.step < 4 ? (
             <button
               type="button"
               onClick={wiz.next}
@@ -135,8 +147,17 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
               Próximo
               <ChevronRightIcon className="h-4 w-4" />
             </button>
-          </div>
-        )}
+          ) : (
+            <button
+              type="button"
+              onClick={wiz.handleSubmit}
+              disabled={wiz.submitting || wiz.cart.length === 0}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-60 disabled:cursor-default text-white text-sm font-semibold transition-colors"
+            >
+              {wiz.submitting ? 'Criando pedido...' : 'Criar Pedido'}
+            </button>
+          )}
+        </div>
       </div>
     </>
   );

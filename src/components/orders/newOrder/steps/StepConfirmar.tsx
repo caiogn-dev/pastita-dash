@@ -3,7 +3,7 @@ import { PAYMENT_LABELS, fmt } from '../types';
 import type { CartItem, PaymentMethod } from '../types';
 import type { DiscountType, RouteQuote } from '../../../../types/crm';
 
-/** Step 5 */
+/** Step 5 — resumo + forma de pagamento (o submit vive no rodapé do container) */
 export function StepConfirmar({
   cart,
   deliveryMethod,
@@ -14,8 +14,7 @@ export function StepConfirmar({
   surchargeValue,
   paymentMethod,
   setPaymentMethod,
-  submitting,
-  onSubmit,
+  onEditItems,
 }: {
   cart: CartItem[];
   deliveryMethod: 'delivery' | 'pickup';
@@ -26,8 +25,7 @@ export function StepConfirmar({
   surchargeValue: string;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (m: PaymentMethod) => void;
-  submitting: boolean;
-  onSubmit: () => void;
+  onEditItems?: () => void;
 }) {
   const subtotal = cart.reduce((s, c) => s + c.product.price * c.quantity, 0);
   const deliveryFee = deliveryMethod === 'delivery' ? (routeQuote?.fee ?? 0) : 0;
@@ -40,6 +38,20 @@ export function StepConfirmar({
   return (
     <div className="space-y-4">
       {/* Summary rows */}
+      {onEditItems && (
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400">
+            Resumo
+          </span>
+          <button
+            type="button"
+            onClick={onEditItems}
+            className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline"
+          >
+            Editar itens
+          </button>
+        </div>
+      )}
       <div className="rounded-xl border border-gray-100 dark:border-zinc-800 divide-y divide-gray-100 dark:divide-zinc-800 overflow-hidden">
         {cart.map((item) => (
           <div key={item.product.id} className="flex justify-between px-3 py-2 text-sm">
@@ -106,16 +118,6 @@ export function StepConfirmar({
           ))}
         </div>
       </div>
-
-      {/* Submit */}
-      <button
-        type="button"
-        onClick={onSubmit}
-        disabled={submitting || cart.length === 0}
-        className="w-full py-3 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold text-sm transition-colors"
-      >
-        {submitting ? 'Criando pedido...' : 'Criar Pedido'}
-      </button>
     </div>
   );
 }
