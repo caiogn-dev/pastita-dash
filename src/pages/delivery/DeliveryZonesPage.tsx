@@ -442,6 +442,8 @@ export const DeliveryZonesPage: React.FC = () => {
                   <button
                     onClick={() => handleOpenModal(zone)}
                     className="p-2 text-fg-muted-token hover:text-brand hover:bg-surface-2 rounded"
+                    aria-label={`Editar faixa ${zone.name}`}
+                    title={`Editar faixa ${zone.name}`}
                   >
                     <PencilIcon className="w-5 h-5" />
                   </button>
@@ -451,6 +453,8 @@ export const DeliveryZonesPage: React.FC = () => {
                       setIsDeleteModalOpen(true);
                     }}
                     className="p-2 text-[var(--danger)] hover:bg-red-50 rounded"
+                    aria-label={`Excluir faixa ${zone.name}`}
+                    title={`Excluir faixa ${zone.name}`}
                   >
                     <TrashIcon className="w-5 h-5" />
                   </button>
@@ -526,7 +530,8 @@ export const DeliveryZonesPage: React.FC = () => {
                       <button
                         onClick={() => handleOpenModal(zone)}
                         className="p-2 text-fg-muted-token hover:text-brand hover:bg-surface-2 rounded transition-colors"
-                        title="Editar"
+                        aria-label={`Editar faixa ${zone.name}`}
+                        title={`Editar faixa ${zone.name}`}
                       >
                         <PencilIcon className="w-5 h-5" />
                       </button>
@@ -536,7 +541,8 @@ export const DeliveryZonesPage: React.FC = () => {
                           setIsDeleteModalOpen(true);
                         }}
                         className="p-2 text-[var(--danger)] hover:bg-red-50 rounded transition-colors"
-                        title="Excluir"
+                        aria-label={`Excluir faixa ${zone.name}`}
+                        title={`Excluir faixa ${zone.name}`}
                       >
                         <TrashIcon className="w-5 h-5" />
                       </button>
