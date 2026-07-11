@@ -736,14 +736,15 @@ export const OrdersPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Kanban columns */}
-        <div className="grid min-h-0 flex-1 gap-2 md:grid-cols-5 max-xl:grid-cols-2">
+        {/* Kanban columns — <xl: scroll horizontal (kanban-standard); xl+: 5 colunas na grade.
+            Altura das colunas vem do flex-1 do container (não há Navbar nesta rota dedicada). */}
+        <div className="min-h-0 flex-1 gap-2 max-xl:flex max-xl:snap-x max-xl:overflow-x-auto max-xl:pb-1 xl:grid xl:grid-cols-5">
           {columnData.map((col) => {
             const Icon = col.Icon;
             return (
               <div
                 key={col.id}
-                className={`flex min-h-[220px] flex-col overflow-hidden rounded border border-border-token xl:min-h-[calc(100vh-5.75rem)] ${col.colBg}`}
+                className={`flex min-h-[220px] flex-col overflow-hidden rounded border border-border-token max-xl:w-[300px] max-xl:min-w-[280px] max-xl:shrink-0 max-xl:snap-start ${col.colBg}`}
               >
                 {/* Column header */}
                 <div className={`${col.headerBg} text-white px-3 py-2.5 border-t-0 rounded-t`}>

@@ -271,6 +271,15 @@ textarea::placeholder {
   background: #a1a1a1;
 }
 
+/* Oculta a scrollbar mantendo o scroll (ex.: nav horizontal da Navbar) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* ============================================
    ANIMATIONS
    ============================================ */

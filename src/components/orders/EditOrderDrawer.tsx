@@ -122,10 +122,10 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-[9998]"
+        className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-50"
         onClick={onClose}
       />
-      <div className="fixed inset-y-0 right-0 z-[9999] w-full max-w-lg bg-surface border-l border-border-token shadow-2xl flex flex-col animate-slide-in-right">
+      <div className="fixed inset-y-0 right-0 z-[60] w-full max-w-lg bg-surface border-l border-border-token shadow-2xl flex flex-col animate-slide-in-right">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
           <p className="font-bold text-fg-token">Editar pedido</p>

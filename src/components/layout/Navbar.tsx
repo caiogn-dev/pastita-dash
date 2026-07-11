@@ -279,8 +279,8 @@ export const Navbar: React.FC = () => {
 
           <div className="w-px h-5 bg-white/20 flex-shrink-0" />
 
-          {/* Desktop nav — no overflow scroll */}
-          <nav className="flex max-lg:hidden items-center gap-0.5 flex-1 min-w-0">
+          {/* Desktop nav — scroll-x quando as seções não cabem (dropdowns são portais, não sofrem clip) */}
+          <nav className="flex max-lg:hidden items-center gap-0.5 flex-1 min-w-0 overflow-x-auto scrollbar-none">
             {sections.map((s) => <NavBtn key={s.label} section={s} />)}
           </nav>
 

@@ -44,7 +44,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ onOrderChang
       showCloseButton={false}
       closeOnEscape={!nestedOpen}
       closeOnOverlayClick={!nestedOpen}
-      className="!max-w-[1400px] bg-[#f5f1e8] text-[#171717] dark:bg-[#050505] dark:text-[#f4efe6]"
+      className="!max-w-[1400px] bg-canvas text-fg-token"
     >
       {orderId && (
         <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">

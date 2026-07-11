@@ -387,7 +387,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         )}
 
         {/* Tabs */}
-        <div className="flex border-b border-border-token mb-6 -mx-6 px-6">
+        <div className="flex overflow-x-auto border-b border-border-token mb-6 -mx-6 px-6">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -395,7 +395,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex shrink-0 items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === tab.id
                     ? 'border-brand text-brand'
                     : 'border-transparent text-fg-muted-token hover:text-fg-token'
@@ -559,7 +559,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           {/* Pricing Tab */}
           {activeTab === 'pricing' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-fg-token mb-1">
                     Preço de Venda *
@@ -667,7 +667,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </label>
 
               {formData.track_stock && (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-fg-token mb-1">
                       Quantidade em Estoque

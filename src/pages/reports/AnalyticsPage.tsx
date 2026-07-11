@@ -289,29 +289,31 @@ const AnalyticsPage: React.FC = () => {
             <Badge tone="neutral">Top {productsReport?.top_products.length || 0}</Badge>
           </div>
           {productsLoading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-token">
-                  <th className="pb-2 text-left text-fg-muted-token font-medium">Produto</th>
-                  <th className="pb-2 text-right text-fg-muted-token font-medium">Qtd</th>
-                  <th className="pb-2 text-right text-fg-muted-token font-medium">Receita</th>
-                </tr>
-              </thead>
-              <tbody>
-                {productsReport?.top_products.slice(0, 5).map((p, i) => (
-                  <tr key={p.product_id || i} className="border-b border-border-token last:border-0">
-                    <td className="py-2">
-                      <div className="flex items-center gap-2">
-                        {i < 3 && <StarIcon className={`w-4 h-4 flex-shrink-0 ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-400' : 'text-orange-400'}`} style={{ fill: 'currentColor' }} />}
-                        <span className="truncate max-w-[150px] text-fg-token">{p.product_name}</span>
-                      </div>
-                    </td>
-                    <td className="py-2 text-right font-medium text-fg-token">{p.total_quantity}</td>
-                    <td className="py-2 text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(p.total_revenue)}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border-token">
+                    <th className="pb-2 text-left text-fg-muted-token font-medium">Produto</th>
+                    <th className="pb-2 text-right text-fg-muted-token font-medium">Qtd</th>
+                    <th className="pb-2 text-right text-fg-muted-token font-medium">Receita</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {productsReport?.top_products.slice(0, 5).map((p, i) => (
+                    <tr key={p.product_id || i} className="border-b border-border-token last:border-0">
+                      <td className="py-2">
+                        <div className="flex items-center gap-2">
+                          {i < 3 && <StarIcon className={`w-4 h-4 flex-shrink-0 ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-400' : 'text-orange-400'}`} style={{ fill: 'currentColor' }} />}
+                          <span className="truncate max-w-[150px] text-fg-token">{p.product_name}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 text-right font-medium text-fg-token">{p.total_quantity}</td>
+                      <td className="py-2 text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(p.total_revenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
 

@@ -72,12 +72,12 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
         onClick={doClose}
       />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md flex flex-col bg-white dark:bg-zinc-950 shadow-2xl overflow-hidden">
+      <div className="fixed right-0 top-0 bottom-0 z-[60] w-full max-w-md flex flex-col bg-white dark:bg-zinc-950 shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
           <div>

@@ -72,7 +72,7 @@ export const TrialBanner: FC = () => {
       <div
         role="alert"
         aria-live="assertive"
-        className="z-30 flex items-center gap-3 px-4 py-2 text-sm bg-red-600 text-white border-b border-red-700 max-sm:px-3"
+        className="flex items-center gap-3 px-4 py-2 text-sm bg-red-600 text-white border-b border-red-700 max-sm:px-3"
       >
         <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
         <p className="flex-1 min-w-0 leading-tight">
@@ -98,7 +98,7 @@ export const TrialBanner: FC = () => {
       <div
         role="alert"
         aria-live="assertive"
-        className="z-30 flex items-center gap-3 px-4 py-2 text-sm bg-red-600 text-white border-b border-red-700 max-sm:px-3"
+        className="flex items-center gap-3 px-4 py-2 text-sm bg-red-600 text-white border-b border-red-700 max-sm:px-3"
       >
         <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
         <p className="flex-1 min-w-0 leading-tight">
@@ -121,7 +121,7 @@ export const TrialBanner: FC = () => {
       <div
         role="alert"
         aria-live="assertive"
-        className="z-30 flex items-center gap-3 px-4 py-2 text-sm bg-amber-500 text-white border-b border-amber-600 max-sm:px-3"
+        className="flex items-center gap-3 px-4 py-2 text-sm bg-amber-500 text-white border-b border-amber-600 max-sm:px-3"
       >
         <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
         <p className="flex-1 min-w-0 leading-tight">
@@ -158,7 +158,7 @@ export const TrialBanner: FC = () => {
     <div
       role="status"
       aria-live="polite"
-      className="z-30 flex items-center gap-3 px-4 py-2 text-sm bg-brand-soft text-brand border-b border-border-token max-sm:px-3"
+      className="flex items-center gap-3 px-4 py-2 text-sm bg-brand-soft text-brand border-b border-border-token max-sm:px-3"
     >
       <ClockIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
       <p className="flex-1 min-w-0 leading-tight">
