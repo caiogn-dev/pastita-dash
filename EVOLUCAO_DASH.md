@@ -3,14 +3,35 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-12)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok (vulnerabilidades reportadas pelo npm audit — triagem pendente).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **425 testes / 104 suítes verdes**.
+- `npm run lint`: gate em 400 warnings; limpeza incremental em curso.
 
 ## Histórico
+
+### 2026-07-12 — A11y: nomes acessíveis no Instagram Inbox + correção de config de teste
+- **Medido:** varredura de controles icon-only em `src/pages/instagram/InstagramInbox.tsx`
+  (item 1 do backlog). O botão de **enviar mensagem** (só ícone `PaperAirplaneIcon`)
+  não tinha nome acessível algum — leitores de tela não anunciavam nada. Toggles de
+  Templates/Ferramentas e o botão de atualizar tinham só `title` (nome acessível frágil);
+  os campos de busca e de mensagem tinham apenas `placeholder` (não é nome acessível
+  confiável).
+- **Mudado (aditivo, sem alterar comportamento):**
+  - Botão enviar → `aria-label="Enviar mensagem"`.
+  - Botão atualizar → `aria-label="Atualizar conversas"` (além do `title`).
+  - Toggles → `aria-label` "Templates" e "Ferramentas".
+  - Campo de busca → `aria-label="Buscar conversas"`; campo de mensagem → `aria-label="Mensagem"`.
+- **Correção de infra de teste:** o `moduleNameMapper` de CSS no `jest.config.cjs`
+  apontava para `identity-obj-proxy`, **pacote não instalado**. Nenhum teste importava
+  `.css` cru até agora, então a quebra estava latente. Trocado por um stub local
+  (`jest/styleMock.cjs`) — sem dependência externa e sem regressão (nada mapeava CSS antes).
+- **Teste (TDD):** novo `InstagramInbox.a11y.test.tsx` — escrito vermelho antes, verde
+  depois. Renderiza o inbox com serviços mockados, abre uma conversa e assegura nome
+  acessível no botão de enviar, no campo de mensagem, no botão de atualizar e na busca.
+- **Antes/depois:** 103→104 suítes, 423→425 testes; tsc limpo nos dois lados.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,9 +71,10 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
+1. **A11y — continuar varredura:** `InstagramInbox` ✅ (2026-07-12). Próximos alvos:
+   `MessengerInbox.tsx` (mesma estrutura icon-only: enviar/atualizar/toggles) e
+   diálogos/modais. Adicionar teste de regressão de acessibilidade por componente
+   conforme tocar.
 2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
    moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
