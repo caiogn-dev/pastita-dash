@@ -3,14 +3,34 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-13)
 
 - `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **425 testes / 104 suítes verdes**.
+- `npm run lint`: gate em 400 warnings; **273 warnings** restantes (0 erros).
 
 ## Histórico
+
+### 2026-07-13 — Acessibilidade: nome acessível no botão de enviar do Instagram Inbox
+- **Medido:** varredura de botões icon-only nas páginas de marketing/instagram (backlog
+  passo 1). O botão de **enviar mensagem** do `InstagramInbox.tsx` (ícone avião de papel,
+  `PaperAirplaneIcon`) não tinha texto, `aria-label` nem `title` — leitores de tela não
+  anunciavam nada no controle principal de resposta do inbox do Instagram. Os demais
+  botões icon-only da página (atualizar conversas, templates, ferramentas) já expunham
+  nome via `title`.
+- **Mudado (`InstagramInbox.tsx`):** botão de enviar recebeu `aria-label="Enviar mensagem"`
+  + `title` e o ícone recebeu `aria-hidden="true"` (evita que o SVG concorra com o nome
+  acessível).
+- **Infra de testes:** `jest.config.cjs` mapeava `*.css → identity-obj-proxy`, mas o pacote
+  **não estava instalado** (gap latente — nenhum teste importava CSS transitivamente até
+  agora). Adicionado `identity-obj-proxy` como devDependency, destravando testes de
+  componentes que importam folhas de estilo.
+- **Teste (TDD):** novo `InstagramInbox.a11y.test.tsx` — escrito vermelho antes (o botão
+  de enviar não tinha nome acessível), verde depois. Cobre também o botão "atualizar
+  conversas". Verificado red→green via `git stash` do fix.
+- **Antes/depois:** `npm test` 103→**104 suítes**, 423→**425 testes**; tsc limpo nos dois
+  lados; lint 273 warnings / 0 erros (dentro do gate de 400).
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,11 +70,13 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
+1. **A11y — continuar varredura:** revisar se os botões icon-only que hoje só têm
+   `title` (ex.: toggles de templates/ferramentas, atualizar) merecem `aria-label`
+   explícito + `aria-hidden` no ícone, e varrer diálogos/`ChatToolsPanel`. Adicionar
+   teste de regressão de acessibilidade por componente conforme tocar.
+2. **Segurança/deps:** triar as 5 vulnerabilidades do `npm audit` (1 low, 2 moderate,
+   2 high) e aplicar `npm audit fix` sem breaking changes (`form-data` high e
+   `@babel/core` têm fix sem breaking; `esbuild`/`vite` exigem major — validar à parte).
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.
