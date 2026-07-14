@@ -400,6 +400,7 @@ export default function InstagramInbox() {
               onClick={() => void loadConversations(false)}
               className="ml-auto rounded-lg p-2 text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg-primary"
               title="Atualizar conversas"
+              aria-label="Atualizar conversas"
             >
               <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -411,6 +412,7 @@ export default function InstagramInbox() {
               onChange={(event) => handleSelectAccount(event.target.value)}
               className={inputCls}
               disabled={loadingAccounts || accounts.length === 0}
+              aria-label="Selecionar conta do Instagram"
             >
               {accounts.length === 0 ? (
                 <option value="">Nenhuma conta conectada</option>
@@ -429,6 +431,7 @@ export default function InstagramInbox() {
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Buscar por nome, @usuario ou mensagem"
+                aria-label="Buscar conversas"
                 className={`${inputCls} pl-9`}
               />
             </div>
@@ -560,6 +563,7 @@ export default function InstagramInbox() {
                 className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
                 onClick={() => togglePanel('templates')}
                 title="Templates"
+                aria-label="Templates"
               >
                 <DocumentTextIcon className="h-5 w-5" />
               </button>
@@ -568,6 +572,7 @@ export default function InstagramInbox() {
                 className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
                 onClick={() => togglePanel('tools')}
                 title="Ferramentas"
+                aria-label="Ferramentas"
               >
                 <BoltIcon className="h-5 w-5" />
               </button>
@@ -645,12 +650,14 @@ export default function InstagramInbox() {
                     }
                   }}
                   placeholder="Digite uma mensagem para responder no Instagram..."
+                  aria-label="Mensagem"
                   className={`${inputCls} flex-1`}
                 />
                 <button
                   type="button"
                   onClick={() => void handleSendMessage()}
                   disabled={!messageText.trim() || sending}
+                  aria-label="Enviar mensagem"
                   className="rounded-xl bg-pink-500 p-3 text-white transition-colors hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <PaperAirplaneIcon className="h-5 w-5" />

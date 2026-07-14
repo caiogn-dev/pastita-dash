@@ -3,14 +3,33 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-14)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **378 testes / 90 suítes verdes** (era 373/89; +5 testes de a11y do Instagram Inbox).
+- `npm run lint`: 265 warnings, 0 erros (gate em 400).
 
 ## Histórico
+
+### 2026-07-14 — Acessibilidade: nomes acessíveis no Instagram Inbox (DM) + habilita testes que importam CSS
+- **Medido:** varredura de controles icon-only na `InstagramInbox.tsx` (workflow de
+  DM do Instagram). O **botão de enviar mensagem não tinha nome acessível algum**
+  (sem `aria-label`/`title`) — leitor de tela não anunciava nada. Também sem nome
+  acessível: campo de digitar mensagem, campo de busca e o seletor de conta
+  (apenas `placeholder`, que não é nome acessível confiável).
+- **Infra de teste:** o `jest.config` mapeava CSS para `identity-obj-proxy`, mas o
+  pacote **não estava instalado** — qualquer teste que renderizasse um componente
+  com `import './x.css'` quebrava. Adicionado `identity-obj-proxy` como devDependency
+  (era exatamente o que a config já esperava); destrava testes de componentes com CSS.
+- **Mudado (`InstagramInbox.tsx`):** `aria-label` em enviar mensagem, campo de
+  mensagem, busca de conversas, seletor de conta, e nos botões Templates/Ferramentas
+  e Atualizar (reforço além do `title`).
+- **Teste (TDD):** novo `InstagramInbox.a11y.test.tsx` — escrito vermelho antes
+  (4/5 falhando), verde depois. Mocka os serviços do Instagram e dirige o fluxo até
+  a conversa auto-selecionada, assertando nome acessível nos 5 controles.
+- **Antes/depois:** 373→378 testes, 89→90 suítes; tsc limpo nos dois lados; lint sem
+  novos warnings.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,9 +69,11 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
+1. **A11y — continuar varredura:** aplicar o mesmo tratamento no **WhatsApp Inbox**
+   (`WhatsAppInboxPage.tsx`, workflow principal): o `send-btn` e o campo de mensagem
+   também estão sem nome acessível; e nos botões icon-only de `NewWhatsAppCampaignPage`
+   e diálogos. Agora que `identity-obj-proxy` está instalado, dá para testar componentes
+   com CSS. Adicionar teste de regressão de a11y por componente conforme tocar.
 2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
    moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
