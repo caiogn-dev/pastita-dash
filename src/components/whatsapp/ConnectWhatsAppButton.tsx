@@ -13,6 +13,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import * as whatsappService from '../../services/whatsapp';
+import { authService } from '../../services/auth';
 
 const FB_APP_ID = import.meta.env.VITE_META_APP_ID || '2233885800471071';
 const ES_CONFIG_ID = import.meta.env.VITE_META_ES_CONFIG_ID || '1695683531769984';
@@ -115,7 +116,11 @@ export const ConnectWhatsAppButton: React.FC<Props> = ({ storeId, onConnected })
       toast.success('WhatsApp conectado com sucesso! 🎉');
       onConnected?.();
     } catch (e: any) {
-      toast.error(e?.response?.data?.error || 'Falha ao conectar o WhatsApp.');
+      if (e?.response?.status === 401) {
+        toast.error('Sua sessão expirou durante a conexão. Faça login e reconecte o WhatsApp.');
+      } else {
+        toast.error(e?.response?.data?.error || 'Falha ao conectar o WhatsApp.');
+      }
     } finally {
       setLoading(false);
     }
@@ -131,6 +136,15 @@ export const ConnectWhatsAppButton: React.FC<Props> = ({ storeId, onConnected })
   };
 
   const launch = async () => {
+    // Guarda de sessão: o `code` do Embedded Signup é de uso único. Se a
+    // sessão do painel estiver morta, o POST final leva 401 e o code é
+    // queimado — o lojista escaneia o QR à toa. Validar ANTES de abrir o Meta.
+    try {
+      await authService.getCurrentUser();
+    } catch {
+      toast.error('Sua sessão expirou. Faça login novamente e reconecte o WhatsApp.');
+      return;
+    }
     try {
       await loadFbSdk();
     } catch (e: any) {
