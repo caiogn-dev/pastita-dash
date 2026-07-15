@@ -3,14 +3,37 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-15)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **425 testes / 104 suítes verdes**.
+- `npm run build`: **ok** (build de produção conclui).
+- `npm run lint`: gate em 400 warnings; **273 warnings** restantes (limpeza incremental em curso).
+- `npm audit`: **2 vulnerabilidades** (1 moderate + 1 high), ambas na cadeia
+  `esbuild`/`vite` — só resolvem com bump major para `vite@8` (breaking), deixado
+  para upgrade dedicado e validado.
 
 ## Histórico
+
+### 2026-07-15 — Segurança: `npm audit fix` sem breaking changes (5 → 2 vulnerabilidades)
+- **Medido:** baseline verde (tsc limpo, 425/104 testes). `npm audit` reportava
+  **5 vulnerabilidades** (1 low, 2 moderate, 2 high), todas em dependências de
+  build/dev transitivas: `form-data` (high, CRLF injection em multipart),
+  `@babel/core` (leitura arbitrária de arquivo via `sourceMappingURL`),
+  `js-yaml` (DoS de complexidade quadrática em merge keys) e a cadeia
+  `esbuild`/`vite` (moderate).
+- **Mudado:** `npm audit fix` **sem `--force`** — aplica apenas correções
+  dentro do range semver (não altera `package.json`, só o `package-lock.json`;
+  131 inserções / 98 remoções no lock). Remove `form-data`, `@babel/core` e
+  `js-yaml`. A cadeia `esbuild`/`vite` **não** foi tocada porque só resolve com
+  `vite@8.1.4` (major/breaking) — risco ao build de produção, deixado para
+  upgrade dedicado com validação própria.
+- **Zero-regressão:** `package.json` inalterado; suíte completa **425/425**
+  igual antes/depois; `tsc --noEmit` limpo; `npm run build` conclui. Nenhum
+  código de aplicação alterado — só o lockfile.
+- **Antes/depois:** `npm audit` **5 → 2 vulnerabilidades** (removidos ambos os
+  highs de código + 1 moderate; restam 1 moderate + 1 high só em `esbuild`/`vite`).
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,14 +73,16 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
+1. **Segurança/deps — cadeia `vite`/`esbuild`:** restam 2 vulnerabilidades que só
+   resolvem com `vite@8` (major/breaking; altera plugins e config de build).
+   Fazer upgrade dedicado, testando `npm run build` e `npm run dev` a fundo antes
+   de mesclar. NÃO aplicar `audit fix --force` às cegas.
+2. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
    (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
    regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.
-4. **Lint:** reduzir warnings restantes (~266) rumo a baixar o teto de `--max-warnings`.
+4. **Lint:** reduzir warnings restantes (273) rumo a baixar o teto de `--max-warnings`.
 5. **Bundles pesados:** investigar `storesApi.ts` (1833 linhas) e
    `NewWhatsAppCampaignPage.tsx` (1704 linhas) para code-splitting/extração.
