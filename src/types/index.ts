@@ -408,6 +408,8 @@ export interface CreateOrder {
   scheduled_date?: string;
   scheduled_time?: string;
   customer_notes?: string;
+  /** Pedido de balcão: não enviar as mensagens automáticas de status ao cliente */
+  suppress_notifications?: boolean;
 }
 
 export interface OrderItemOp {

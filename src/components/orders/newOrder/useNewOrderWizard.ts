@@ -27,6 +27,7 @@ export interface NewOrderWizard {
   enableScheduling: boolean; setEnableScheduling: (v: boolean) => void;
   scheduledDate: string; setScheduledDate: (v: string) => void;
   scheduledTime: string; setScheduledTime: (v: string) => void;
+  suppressNotifications: boolean; setSuppressNotifications: (v: boolean) => void;
   reset: () => void; productStoreKey: string; storeSlug: string;
 }
 
@@ -52,6 +53,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
   const [enableScheduling, setEnableScheduling] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  const [suppressNotifications, setSuppressNotifications] = useState(false);
 
   const reset = () => {
     setStep(0); setCustomer(null); setDeliveryMethod('delivery'); setSelectedAddress(null);
@@ -59,6 +61,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     setDiscountValue(''); setDiscountReason(''); setSurchargeValue(''); setSurchargeReason('');
     setPaymentMethod('pix'); setSubmitting(false);
     setEnableScheduling(false); setScheduledDate(''); setScheduledTime('');
+    setSuppressNotifications(false);
   };
 
   const next = () => setStep((s) => Math.min(4, s + 1));
@@ -132,6 +135,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         ...(enableScheduling && scheduledDate && scheduledTime
           ? { scheduled_date: scheduledDate, scheduled_time: scheduledTime }
           : {}),
+        ...(suppressNotifications ? { suppress_notifications: true } : {}),
       });
 
       const pixLink = (created as { pix_ticket_url?: string })?.pix_ticket_url || '';
@@ -167,6 +171,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     surchargeValue, setSurchargeValue, surchargeReason, setSurchargeReason,
     paymentMethod, setPaymentMethod, submitting, handleSubmit,
     enableScheduling, setEnableScheduling, scheduledDate, setScheduledDate, scheduledTime, setScheduledTime,
+    suppressNotifications, setSuppressNotifications,
     reset, productStoreKey, storeSlug,
   };
 }

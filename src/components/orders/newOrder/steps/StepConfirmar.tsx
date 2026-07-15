@@ -15,6 +15,8 @@ export function StepConfirmar({
   paymentMethod,
   setPaymentMethod,
   onEditItems,
+  suppressNotifications,
+  setSuppressNotifications,
 }: {
   cart: CartItem[];
   deliveryMethod: 'delivery' | 'pickup';
@@ -26,6 +28,8 @@ export function StepConfirmar({
   paymentMethod: PaymentMethod;
   setPaymentMethod: (m: PaymentMethod) => void;
   onEditItems?: () => void;
+  suppressNotifications: boolean;
+  setSuppressNotifications: (v: boolean) => void;
 }) {
   const subtotal = cart.reduce((s, c) => s + c.product.price * c.quantity, 0);
   const deliveryFee = deliveryMethod === 'delivery' ? (routeQuote?.fee ?? 0) : 0;
@@ -118,6 +122,24 @@ export function StepConfirmar({
           ))}
         </div>
       </div>
+
+      {/* Pedido de balcão: silenciar mensagens automáticas de status */}
+      <label className="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-zinc-700 px-3 py-2.5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={suppressNotifications}
+          onChange={(e) => setSuppressNotifications(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+        />
+        <span>
+          <span className="block text-sm font-semibold text-gray-900 dark:text-white">
+            Não notificar o cliente
+          </span>
+          <span className="block text-xs text-gray-500 dark:text-zinc-400">
+            Nenhuma mensagem automática de status será enviada no WhatsApp (ex.: cliente no balcão).
+          </span>
+        </span>
+      </label>
     </div>
   );
 }

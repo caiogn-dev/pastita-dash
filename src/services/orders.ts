@@ -99,6 +99,18 @@ export const ordersService = {
     return normalizeOrder(response.data);
   },
 
+  /**
+   * Liga/desliga as mensagens automáticas de WhatsApp deste pedido (balcão).
+   * O backend grava em metadata.suppress_notifications e as tasks de
+   * notificação pulam o pedido enquanto a flag estiver ativa.
+   */
+  setSuppressNotifications: async (id: string, suppress: boolean, storeSlug?: string): Promise<Order> => {
+    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, {
+      suppress_notifications: suppress,
+    });
+    return normalizeOrder(response.data);
+  },
+
   adjustOrder: async (id: string, payload: OrderAdjustPayload, storeSlug?: string): Promise<Order> => {
     const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/${id}/adjust/`, payload);
     return normalizeOrder(response.data);

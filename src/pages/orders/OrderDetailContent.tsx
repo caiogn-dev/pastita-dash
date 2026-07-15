@@ -21,6 +21,8 @@ import {
   XMarkIcon,
   PrinterIcon,
   ChevronDownIcon,
+  BellIcon,
+  BellSlashIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -392,6 +394,29 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     toast.success('Código PIX copiado!');
   };
 
+  // Silenciar mensagens automáticas de WhatsApp deste pedido (balcão):
+  // enquanto ativo, o backend pula todas as notificações de status.
+  const [togglingNotifications, setTogglingNotifications] = useState(false);
+  const notificationsSuppressed = Boolean(order?.metadata?.suppress_notifications);
+  const handleToggleNotifications = async () => {
+    if (!order || togglingNotifications) return;
+    setTogglingNotifications(true);
+    try {
+      const updated = await ordersService.setSuppressNotifications(order.id, !notificationsSuppressed);
+      setOrder(updated);
+      onOrderChanged?.(updated);
+      toast.success(
+        !notificationsSuppressed
+          ? 'Notificações silenciadas — mudar o status não envia WhatsApp.'
+          : 'Notificações reativadas para este pedido.'
+      );
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setTogglingNotifications(false);
+    }
+  };
+
   const loadOrder = async () => {
     if (!id) return;
     setIsLoading(true);
@@ -599,6 +624,32 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                     <span className="text-fg-muted-token">Não informado</span>
                   )}
                 </div>
+                <button
+                  type="button"
+                  onClick={handleToggleNotifications}
+                  disabled={togglingNotifications}
+                  aria-pressed={notificationsSuppressed}
+                  title={notificationsSuppressed
+                    ? 'As mensagens automáticas de status estão silenciadas para este pedido. Clique para reativar.'
+                    : 'Silenciar as mensagens automáticas de WhatsApp deste pedido (ex.: pedido de balcão).'}
+                  className={`mt-2 flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                    notificationsSuppressed
+                      ? 'bg-[var(--warning)]/15 text-[var(--warning)]'
+                      : 'text-fg-muted-token hover:bg-surface-2'
+                  }`}
+                >
+                  {notificationsSuppressed ? (
+                    <>
+                      <BellSlashIcon className="h-4 w-4" />
+                      Notificações silenciadas
+                    </>
+                  ) : (
+                    <>
+                      <BellIcon className="h-4 w-4" />
+                      Notificar cliente: ativo
+                    </>
+                  )}
+                </button>
               </div>
 
               <div className="rounded border border-border-token bg-canvas px-4 py-3">
