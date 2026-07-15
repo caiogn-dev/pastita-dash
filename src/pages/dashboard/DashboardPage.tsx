@@ -26,6 +26,7 @@ import { useOrderSound } from '../../hooks/useOrderSound';
 import { getOrders, getOrderStats, updateOrderStatus, StoreOrder } from '../../services/storesApi';
 import { dashboardService } from '../../services';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
+import { AiDailySummaryCard } from '../../components/dashboard/AiDailySummaryCard';
 import type { Order } from '../../types';
 import type { ProjectHealth } from '../../types/dashboard';
 
@@ -393,6 +394,9 @@ export const DashboardPage: React.FC = () => {
           onClick={() => navigate('/conversations')}
         />
       </div>
+
+      {/* ── Resumo IA (ontem) ── */}
+      <AiDailySummaryCard store={storeSlug || storeId} />
 
       {/* ── Orders + Pipeline ── */}
       <div className="grid grid-cols-3 max-xl:grid-cols-1 gap-4">

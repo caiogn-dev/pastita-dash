@@ -42,6 +42,8 @@ jest.mock('../../../components/onboarding/OnboardingChecklist', () => ({ __esMod
 jest.mock('../../../components/onboarding/wizard/OnboardingWizard', () => ({ __esModule: true, default: () => null }));
 jest.mock('../../../components/onboarding/wizard/buildWizardSteps', () => ({ buildWizardSteps: () => [] }));
 jest.mock('../../../components/orders/OrderDetailModal', () => ({ __esModule: true, OrderDetailModal: () => null }));
+// Resumo IA usa react-query + services/api (import.meta) — fora do foco deste teste.
+jest.mock('../../../components/dashboard/AiDailySummaryCard', () => ({ __esModule: true, AiDailySummaryCard: () => null }));
 
 const mockedApi = storesApi as jest.Mocked<typeof storesApi>;
 const mockedDash = dashboardService as jest.Mocked<typeof dashboardService>;

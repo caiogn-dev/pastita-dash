@@ -56,6 +56,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       { name: 'Automações',   href: '/automation/companies', icon: BoltIcon },
       { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
       { name: 'Handover',     href: '/whatsapp/handover',    icon: UserGroupIcon },
+      { name: 'Insights (IA)', href: '/automation/conversation-insights', icon: ChatBubbleLeftRightIcon },
       { name: 'Logs IA',      href: '/automation/logs',         icon: DocumentChartBarIcon, sectionHeader: 'Monitoramento' },
       { name: 'Intenções',    href: '/automation/intents/stats', icon: DocumentChartBarIcon },
       { name: 'Sessões',      href: '/automation/sessions',      icon: ChatBubbleLeftRightIcon },

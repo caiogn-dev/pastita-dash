@@ -591,6 +591,13 @@ export interface CompanyProfile {
   use_ai_agent?: boolean;
   default_agent?: string;
   default_agent_id?: string;
+  /**
+   * Configurações livres do bot (JSON gravável no backend).
+   * Chaves conhecidas: bot_order_enabled (bool), bot_cta ({id,title}),
+   * allowed_intents (string[]), bot_upsell_categories (string[]).
+   * Sempre fazer MERGE ao salvar — nunca substituir o objeto inteiro.
+   */
+  settings?: Record<string, unknown>;
 }
 
 export interface CreateCompanyProfile {
@@ -635,6 +642,8 @@ export interface UpdateCompanyProfile {
   use_ai_agent?: boolean;
   default_agent?: string | null;
   default_agent_id?: string;
+  /** Configurações do bot — enviar SEMPRE mescladas com as existentes. */
+  settings?: Record<string, unknown>;
 }
 
 export interface AutomationStats {

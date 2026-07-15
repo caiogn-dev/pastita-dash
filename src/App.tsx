@@ -52,6 +52,7 @@ const AutoMessagesPage = lazy(() => import('./pages/automation').then(m => ({ de
 const CustomerSessionsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CustomerSessionsPage })));
 const AutomationLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutomationLogsPage })));
 const ScheduledMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ScheduledMessagesPage })));
+const ConversationInsightsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ConversationInsightsPage })));
 
 // Intent Detection Pages (Novo Sistema)
 const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentStatsPage })));
@@ -200,6 +201,7 @@ const AppContent: React.FC = () => {
         <Route path="automation/sessions" element={<PageBoundary><CustomerSessionsPage /></PageBoundary>} />
         <Route path="automation/logs" element={<PageBoundary><AutomationLogsPage /></PageBoundary>} />
         <Route path="automation/scheduled" element={<PageBoundary><ScheduledMessagesPage /></PageBoundary>} />
+        <Route path="automation/conversation-insights" element={<PageBoundary><ConversationInsightsPage /></PageBoundary>} />
 
         {/* Intent Detection Routes */}
         <Route path="automation/intents" element={<Navigate to="/automation/intents/stats" replace />} />

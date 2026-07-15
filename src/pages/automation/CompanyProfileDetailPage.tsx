@@ -19,6 +19,7 @@ import {
   WhatsAppAccount,
 } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
+import { Input, Switch, Textarea } from '../../components/common';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../hooks/useConfirm';
 
@@ -46,6 +47,12 @@ const CompanyProfileDetailPage: React.FC = () => {
   const [formData, setFormData] = useState<UpdateCompanyProfile>({});
   const [businessHours, setBusinessHours] = useState<BusinessHours>({});
   const [showApiKey, setShowApiKey] = useState(false);
+  // ── Bot de Pedidos (settings JSON livre no backend) ──
+  // Editados aqui: bot_order_enabled, bot_upsell_categories, allowed_intents.
+  // Qualquer outra chave (ex.: bot_cta) é PRESERVADA no merge do submit.
+  const [botOrderEnabled, setBotOrderEnabled] = useState(true);
+  const [upsellCategoriesText, setUpsellCategoriesText] = useState('');
+  const [allowedIntentsText, setAllowedIntentsText] = useState('');
   const [createLinks, setCreateLinks] = useState({
     store_id: '',
     account_id: '',
@@ -77,6 +84,58 @@ const CompanyProfileDetailPage: React.FC = () => {
       default_agent: data.default_agent || null,
     });
     setBusinessHours(data.business_hours || {});
+
+    const settings = data.settings || {};
+    // Default ON quando a chave está ausente (comportamento do bot).
+    setBotOrderEnabled(settings.bot_order_enabled !== false);
+    const upsell = Array.isArray(settings.bot_upsell_categories)
+      ? (settings.bot_upsell_categories as unknown[]).filter((c): c is string => typeof c === 'string')
+      : [];
+    setUpsellCategoriesText(upsell.join(', '));
+    setAllowedIntentsText(
+      Array.isArray(settings.allowed_intents)
+        ? JSON.stringify(settings.allowed_intents)
+        : ''
+    );
+  };
+
+  /**
+   * Mescla os campos do bot sobre as settings EXISTENTES do perfil.
+   * Retorna null se o JSON de intents for inválido (bloqueia o submit).
+   * Vazio em upsell/intents = remove a chave (volta ao default do bot).
+   */
+  const buildMergedSettings = (): Record<string, unknown> | null => {
+    const merged: Record<string, unknown> = { ...(profile?.settings || {}) };
+
+    merged.bot_order_enabled = botOrderEnabled;
+
+    const categories = upsellCategoriesText
+      .split(',')
+      .map((c) => c.trim())
+      .filter(Boolean);
+    if (categories.length > 0) {
+      merged.bot_upsell_categories = categories;
+    } else {
+      delete merged.bot_upsell_categories;
+    }
+
+    const rawIntents = allowedIntentsText.trim();
+    if (!rawIntents) {
+      delete merged.allowed_intents;
+    } else {
+      try {
+        const parsed: unknown = JSON.parse(rawIntents);
+        if (!Array.isArray(parsed) || !parsed.every((i) => typeof i === 'string')) {
+          throw new Error('not a string array');
+        }
+        merged.allowed_intents = parsed;
+      } catch {
+        toast.error('Intents permitidos: JSON inválido — esperado um array de strings, ex.: ["greeting", "order"]');
+        return null;
+      }
+    }
+
+    return merged;
   };
 
   const loadInitialData = async () => {
@@ -133,6 +192,10 @@ const CompanyProfileDetailPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Valida/mescla settings do bot ANTES de qualquer request.
+    const mergedSettings = buildMergedSettings();
+    if (mergedSettings === null) return;
+
     try {
       setSaving(true);
 
@@ -155,6 +218,7 @@ const CompanyProfileDetailPage: React.FC = () => {
         await companyProfileService.update(created.id, {
           ...formData,
           business_hours: businessHours,
+          settings: mergedSettings,
         });
 
         toast.success('Perfil criado com sucesso!');
@@ -165,6 +229,7 @@ const CompanyProfileDetailPage: React.FC = () => {
       await companyProfileService.update(id!, {
         ...formData,
         business_hours: businessHours,
+        settings: mergedSettings,
       });
       toast.success('Perfil atualizado com sucesso!');
       await loadInitialData();
@@ -686,6 +751,57 @@ const CompanyProfileDetailPage: React.FC = () => {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">🤖 Bot de Pedidos (WhatsApp)</h2>
+          <div className="space-y-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <label id="bot-order-enabled-label" className="text-sm font-medium text-gray-700 dark:text-zinc-300">
+                  Aceitar pedidos pelo bot
+                </label>
+                <p className="text-sm text-gray-500 dark:text-zinc-400">
+                  Quando desligado, o bot responde dúvidas mas não monta carrinho nem fecha pedidos
+                </p>
+              </div>
+              <Switch checked={botOrderEnabled} onChange={setBotOrderEnabled} />
+            </div>
+
+            <div>
+              <label htmlFor="bot-upsell-categories" className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                Categorias de upsell (separadas por vírgula)
+              </label>
+              <Input
+                id="bot-upsell-categories"
+                type="text"
+                value={upsellCategoriesText}
+                onChange={(e) => setUpsellCategoriesText(e.target.value)}
+                placeholder="Ex.: Bebidas, Sobremesas"
+              />
+              <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+                Nomes de categorias do cardápio usadas nas sugestões do bot. Vazio = seleção automática.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="bot-allowed-intents" className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                Intents permitidos (JSON, avançado)
+              </label>
+              <Textarea
+                id="bot-allowed-intents"
+                rows={2}
+                value={allowedIntentsText}
+                onChange={(e) => setAllowedIntentsText(e.target.value)}
+                placeholder='Ex.: ["greeting", "order", "menu"]'
+                spellCheck={false}
+                className="font-mono text-xs"
+              />
+              <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+                Modo restrito: array JSON de intents que o bot pode atender. Vazio = todos os intents.
+              </p>
+            </div>
           </div>
         </div>
 
