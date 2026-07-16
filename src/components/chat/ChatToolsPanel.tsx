@@ -767,7 +767,8 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
         store: storeSlug || storeId,
         customer_name: conversation.contact_name || 'Cliente WhatsApp',
         customer_phone: onlyDigits(conversation.phone_number),
-        customer_email: `${onlyDigits(conversation.phone_number) || 'cliente'}@whatsapp.chat`,
+        // Sem email fabricado: o backend trata identidade interna sozinho e
+        // email sintético vazaria depois como "email do cliente" (regra server2).
         delivery_method: deliveryMethod,
         delivery_address: deliveryMethod === 'delivery' ? deliveryAddress : undefined,
         payment_method: paymentMethod,

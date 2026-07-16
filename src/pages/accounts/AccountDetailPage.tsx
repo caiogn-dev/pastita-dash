@@ -370,15 +370,6 @@ export const AccountDetailPage: React.FC = () => {
           )}
         </Card>
 
-        {/* Metadata */}
-        {account.metadata && Object.keys(account.metadata).length > 0 && (
-          <Card title="Metadados">
-            <pre className="bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] p-4 rounded-lg overflow-x-auto text-sm">
-              {JSON.stringify(account.metadata, null, 2)}
-            </pre>
-          </Card>
-        )}
-
       {/* Rotate Token Modal */}
       <Modal
         isOpen={rotateTokenModal}

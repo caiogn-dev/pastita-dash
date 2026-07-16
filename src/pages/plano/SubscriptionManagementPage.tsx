@@ -29,6 +29,27 @@ const STATUS_LABEL: Record<string, string> = {
   canceled:  'Cancelada',
 };
 
+const PLAN_LABEL: Record<string, string> = {
+  free:      'Grátis',
+  essencial: 'Essencial',
+  pro:       'Pro',
+  premium:   'Premium',
+};
+
+const INVOICE_STATUS_LABEL: Record<string, string> = {
+  pending:    'Aguardando pagamento',
+  processing: 'Processando',
+  completed:  'Paga',
+  paid:       'Paga',
+  failed:     'Falhou',
+  canceled:   'Cancelada',
+  cancelled:  'Cancelada',
+  refunded:   'Estornada',
+};
+
+const invoiceStatusLabel = (status?: string | null): string =>
+  INVOICE_STATUS_LABEL[(status || '').toLowerCase()] ?? (status || '—');
+
 const INVOICE_POLL_MS = 15000;
 
 /** Uma fatura é considerada quitada quando tem `paid_at` ou status completed/paid. */
@@ -186,7 +207,7 @@ export default function SubscriptionManagementPage() {
           </strong>
           {sub?.plan && (
             <>
-              {' '}— plano <strong className="text-fg-token">{sub.plan}</strong>
+              {' '}— plano <strong className="text-fg-token">{PLAN_LABEL[sub.plan] ?? sub.plan}</strong>
             </>
           )}
           {sub?.current_period_end && (
@@ -336,7 +357,7 @@ export default function SubscriptionManagementPage() {
               >
                 <span className="text-fg-token">{inv.period_key ?? '—'}</span>
                 <span className="text-fg-muted-token">R$ {inv.amount.toFixed(2)}</span>
-                <span className="text-fg-muted-token">{inv.status}</span>
+                <span className="text-fg-muted-token">{invoiceStatusLabel(inv.status)}</span>
                 {inv.paid_at && (
                   <span className="text-xs text-fg-muted-token">
                     pago em {new Date(inv.paid_at).toLocaleDateString('pt-BR')}

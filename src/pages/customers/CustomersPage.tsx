@@ -28,6 +28,7 @@ import { useCustomers } from '../../hooks/queries/useCustomers';
 import { useCustomerStats } from '../../hooks/queries/useCustomerStats';
 import { useCustomerOrders } from '../../hooks/queries/useCustomerOrders';
 import { getAvatarColor, getInitials } from '../../utils/avatar';
+import { publicEmail } from '../../utils/internalEmail';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -280,10 +281,10 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEd
                   <span className="text-sm text-fg-token">{customer.whatsapp || customer.phone}</span>
                 </div>
               )}
-              {customer.user_email && (
+              {publicEmail(customer.user_email) && (
                 <div className="flex items-center gap-3 px-4 py-3">
                   <EnvelopeIcon className="h-4 w-4 text-fg-muted-token shrink-0" />
-                  <span className="text-sm text-fg-token">{customer.user_email}</span>
+                  <span className="text-sm text-fg-token">{publicEmail(customer.user_email)}</span>
                 </div>
               )}
               {customer.last_order_at && (
@@ -589,7 +590,7 @@ export const CustomersPage: React.FC = () => {
                         </div>
                         <div>
                           <p className="font-semibold text-fg-token">{customer.user_name || '—'}</p>
-                          <p className="text-xs text-fg-muted-token">{customer.user_email || ''}</p>
+                          <p className="text-xs text-fg-muted-token">{publicEmail(customer.user_email) || ''}</p>
                         </div>
                       </div>
                     </td>
@@ -601,10 +602,10 @@ export const CustomersPage: React.FC = () => {
                             {customer.whatsapp || customer.phone}
                           </div>
                         )}
-                        {customer.user_email && (
+                        {publicEmail(customer.user_email) && (
                           <div className="flex items-center gap-1.5 text-xs text-fg-muted-token">
                             <EnvelopeIcon className="h-3 w-3 shrink-0" />
-                            {customer.user_email}
+                            {publicEmail(customer.user_email)}
                           </div>
                         )}
                       </div>

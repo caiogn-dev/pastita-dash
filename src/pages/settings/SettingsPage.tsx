@@ -230,9 +230,9 @@ export const SettingsPage: React.FC = () => {
             <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.first_name || '-'} {user?.last_name || ''}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Tipo</label>
+            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Tipo de conta</label>
             <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
-              {user?.is_superuser ? 'Superusuário' : user?.is_staff ? 'Staff' : 'Usuário'}
+              {user?.is_superuser || user?.is_staff ? 'Administrador da plataforma' : 'Dono de loja'}
             </p>
           </div>
         </div>
@@ -337,38 +337,6 @@ export const SettingsPage: React.FC = () => {
         )}
       </Card>
 
-      {/* API Info */}
-      <Card title="Informações da API">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Base URL</label>
-            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] font-mono text-sm">
-              {import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Documentação</label>
-            <div className="flex gap-4 mt-1">
-              <a
-                href={`${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}/api/docs/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-600 hover:text-primary-700"
-              >
-                Swagger UI
-              </a>
-              <a
-                href={`${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}/api/redoc/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-600 hover:text-primary-700"
-              >
-                ReDoc
-              </a>
-            </div>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 };

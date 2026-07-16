@@ -404,7 +404,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 <div className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black p-4 text-sm text-gray-600 dark:text-zinc-300">
                   <p className="font-medium text-gray-900 dark:text-white">Loja selecionada</p>
                   <p>{selectedStore?.name || 'Nenhuma loja selecionada'}</p>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400">{selectedStore?.slug || 'Sem slug'}</p>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400">{selectedStore?.slug || ''}</p>
                 </div>
                 <div className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black p-4 text-sm text-gray-600 dark:text-zinc-300">
                   <p className="font-medium text-gray-900 dark:text-white">Conta selecionada</p>
@@ -422,7 +422,7 @@ const CompanyProfileDetailPage: React.FC = () => {
             <div className="mb-4 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black p-4 text-sm text-gray-600 dark:text-zinc-300">
               <p className="font-medium text-gray-900 dark:text-white">Fonte principal do negócio</p>
               <p>{profile.store_name}</p>
-              <p className="text-xs text-gray-500 dark:text-zinc-400">{profile.store_slug || 'Sem slug de loja'}</p>
+              <p className="text-xs text-gray-500 dark:text-zinc-400">{profile.store_slug || 'Nenhuma loja vinculada'}</p>
             </div>
           )}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
