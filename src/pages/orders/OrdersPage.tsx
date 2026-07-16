@@ -376,10 +376,21 @@ export const OrdersPage: React.FC = () => {
   const { storeId, storeSlug } = useStore();
   const [ConfirmDialog, confirm] = useConfirm();
   const storeQuery = storeSlug || storeId;
-  const orderCreateRoute = storeQuery ? `/stores/${storeQuery}/orders/new` : null;
 
   // ── Novo Pedido (PDV) drawer ─────────────────────────────────────────────
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
+
+  // Deep-link ?novo=1 abre o wizard direto (ex.: botão "Novo pedido" do
+  // dashboard). Substituiu a antiga página /orders/new (builder duplicado).
+  const [pageParams, setPageParams] = useSearchParams();
+  useEffect(() => {
+    if (pageParams.get('novo')) {
+      setIsNewOrderOpen(true);
+      pageParams.delete('novo');
+      setPageParams(pageParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Uber Delivery Modal ──────────────────────────────────────────────────
   const [uberModalOrderId, setUberModalOrderId] = useState<string | undefined>();
@@ -721,16 +732,6 @@ export const OrdersPage: React.FC = () => {
                 title="Atalho: tecla N"
               >
                 Novo Pedido (N)
-              </Button>
-            )}
-            {orderCreateRoute && (
-              <Button
-                variant="outline"
-                onClick={() => navigate(orderCreateRoute)}
-                className="py-1.5"
-                leftIcon={<ShoppingCartIcon className="h-4 w-4" />}
-              >
-                Formulário
               </Button>
             )}
             <Button

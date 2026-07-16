@@ -412,7 +412,7 @@ export const DashboardPage: React.FC = () => {
             </h2>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => navigate(`/stores/${storeRoute}/orders/new`)}
+                onClick={() => navigate(`/stores/${storeRoute}/orders?novo=1`)}
                 className="flex items-center gap-1 text-xs bg-brand hover:bg-brand-hover text-white px-2.5 py-1.5 rounded font-medium transition-colors"
               >
                 <PlusIcon className="h-3.5 w-3.5" />
