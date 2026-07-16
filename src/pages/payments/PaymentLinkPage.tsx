@@ -29,6 +29,7 @@ export const PaymentLinkPage: React.FC = () => {
   const [description, setDescription] = useState('');
   const [payerName, setPayerName] = useState('');
   const [payerEmail, setPayerEmail] = useState('');
+  const [payerDocument, setPayerDocument] = useState('');
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState<GeneratedLink | null>(null);
 
@@ -51,6 +52,7 @@ export const PaymentLinkPage: React.FC = () => {
         ...(description.trim() ? { description: description.trim() } : {}),
         ...(payerName.trim() ? { payer_name: payerName.trim() } : {}),
         ...(payerEmail.trim() ? { payer_email: payerEmail.trim() } : {}),
+        ...(payerDocument.trim() ? { payer_document: payerDocument.trim() } : {}),
       });
       const url = (payment.payment_url as string) || (payment.init_point as string) || undefined;
       if (!url) {
@@ -149,6 +151,24 @@ export const PaymentLinkPage: React.FC = () => {
               className="mt-1 w-full rounded-xl border border-border-token bg-surface-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
             />
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="pl-payer-document" className="block text-sm font-medium text-fg-token">
+            CPF do pagador (opcional)
+          </label>
+          <input
+            id="pl-payer-document"
+            type="text"
+            inputMode="numeric"
+            value={payerDocument}
+            onChange={(e) => setPayerDocument(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-border-token bg-surface-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
+            placeholder="000.000.000-00"
+          />
+          <p className="mt-1 text-xs text-fg-muted-token">
+            Informar os dados reais do cliente aumenta a taxa de aprovação do cartão.
+          </p>
         </div>
 
         <button

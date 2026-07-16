@@ -124,6 +124,7 @@ export const paymentsService = {
     description?: string;
     payer_name?: string;
     payer_email?: string;
+    payer_document?: string;
   }): Promise<{ payment: Record<string, unknown>; store_payment: Record<string, unknown> }> => {
     const response = await api.post(`${BASE_URL}/create_link/`, data);
     return response.data;
