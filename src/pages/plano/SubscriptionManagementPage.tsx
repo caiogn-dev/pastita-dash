@@ -193,7 +193,7 @@ export default function SubscriptionManagementPage() {
   }
 
   if (error) {
-    return <div className="p-6 text-red-600">{error}</div>;
+    return <div className="p-6 text-danger-token">{error}</div>;
   }
 
   return (
@@ -222,13 +222,13 @@ export default function SubscriptionManagementPage() {
       </header>
 
       {sub?.status === 'suspended' && (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 text-sm">
+        <div className="rounded-lg border border-[var(--danger)]/30 bg-[var(--danger-soft)] p-4 text-danger-token text-sm">
           Sua loja está suspensa por falta de pagamento. Reative assinando um plano abaixo.
         </div>
       )}
 
       {sub?.status === 'past_due' && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-700 text-sm">
+        <div className="rounded-lg border border-[var(--warning)]/30 bg-[var(--warning-soft)] p-4 text-warning-token text-sm">
           Pagamento atrasado. Regularize sua assinatura para evitar a suspensão da loja.
         </div>
       )}
@@ -237,7 +237,7 @@ export default function SubscriptionManagementPage() {
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-fg-token">Fatura atual</h2>
           {isInvoicePaid(currentInvoice) ? (
-            <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-emerald-700 text-sm">
+            <div className="rounded-lg border border-[var(--success)]/30 bg-[var(--success-soft)] p-4 text-success-token text-sm">
               Pagamento em dia
               {currentInvoice.paid_at && (
                 <>
@@ -324,7 +324,7 @@ export default function SubscriptionManagementPage() {
                   )}
                 </p>
                 {cycle === 'annual' && p.monthly_price > 0 && (
-                  <span className="text-[11px] font-semibold text-emerald-600">
+                  <span className="text-[11px] font-semibold text-success-token">
                     2 meses grátis
                   </span>
                 )}
@@ -372,9 +372,10 @@ export default function SubscriptionManagementPage() {
       {sub && sub.status !== 'none' && sub.status !== 'canceled' && (
         <div className="border-t border-border-token pt-4">
           <button
+            type="button"
             disabled={busy}
             onClick={() => void handleCancel()}
-            className="text-sm text-red-600 underline underline-offset-2 disabled:opacity-50 hover:text-red-700 transition-colors"
+            className="rounded-lg border border-[var(--danger)]/40 px-3 py-1.5 text-sm font-medium text-danger-token transition-colors hover:bg-[var(--danger-soft)] focus:outline-none focus-visible:ring-2 focus-visible:ring-danger-token disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancelar assinatura
           </button>

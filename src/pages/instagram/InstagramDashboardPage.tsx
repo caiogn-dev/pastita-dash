@@ -100,7 +100,7 @@ export const InstagramDashboardPage: React.FC = () => {
       <div className="p-6">
         <Card>
           <div className="text-center py-8">
-            <p className="text-gray-500">Conta não encontrada</p>
+            <p className="text-fg-muted-token">Conta não encontrada</p>
             <Button 
               onClick={() => navigate('/instagram')}
               variant="primary"
@@ -209,7 +209,7 @@ export const InstagramDashboardPage: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-b border-border-token">
           <nav className="flex -mb-px">
             {tabs.map((tab) => (
               <button
@@ -219,7 +219,7 @@ export const InstagramDashboardPage: React.FC = () => {
                   flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors
                   ${activeTab === tab.id
                     ? 'border-pink-500 text-pink-600 dark:text-pink-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-fg-muted-token hover:text-fg-token hover:border-border-token'
                   }
                 `}
               >
@@ -293,11 +293,11 @@ const MediaGrid: React.FC<MediaGridProps> = ({ media, type, onRefresh }) => {
     return (
       <Card>
         <div className="p-12 text-center">
-          <PhotoIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <PhotoIcon className="w-16 h-16 mx-auto text-fg-muted-token mb-4" />
+          <h3 className="text-lg font-medium text-fg-token mb-2">
             Nenhuma mídia encontrada
           </h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-fg-muted-token mb-4">
             {type === 'stories' && 'Você ainda não tem stories publicados'}
             {type === 'reels' && 'Você ainda não tem reels publicados'}
             {type === 'feed' && 'Você ainda não tem posts no feed'}
@@ -323,7 +323,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ media, type, onRefresh }) => {
         <div
           key={item.id}
           onClick={() => navigate(`/instagram/media/${item.id}`)}
-          className="group relative aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer"
+          className="group relative aspect-square bg-surface-2 rounded-lg overflow-hidden cursor-pointer"
         >
           {/* Thumbnail */}
           {item.thumbnail_url || item.media_url ? (
@@ -336,7 +336,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ media, type, onRefresh }) => {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <PhotoIcon className="w-12 h-12 text-gray-400" />
+              <PhotoIcon className="w-12 h-12 text-fg-muted-token" />
             </div>
           )}
 
@@ -420,7 +420,7 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
-          className="px-4 py-2 border border-gray-300 rounded-lg"
+          className="px-4 py-2 bg-surface text-fg-token border border-border-token rounded-lg"
         >
           <option value={7}>Últimos 7 dias</option>
           <option value={30}>Últimos 30 dias</option>
@@ -436,8 +436,8 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
                   <EyeIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">Alcance</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{insights?.reduce((sum, i) => sum + i.reach, 0).toLocaleString('pt-BR') || '0'}</p>
+                  <p className="text-sm text-fg-muted-token">Alcance</p>
+                  <p className="text-2xl font-bold text-fg-token">{insights?.reduce((sum, i) => sum + i.reach, 0).toLocaleString('pt-BR') || '0'}</p>
                 </div>
               </div>
             </Card>
@@ -447,8 +447,8 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
                   <ChartBarIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">Impressões</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{insights?.reduce((sum, i) => sum + i.impressions, 0).toLocaleString('pt-BR') || '0'}</p>
+                  <p className="text-sm text-fg-muted-token">Impressões</p>
+                  <p className="text-2xl font-bold text-fg-token">{insights?.reduce((sum, i) => sum + i.impressions, 0).toLocaleString('pt-BR') || '0'}</p>
                 </div>
               </div>
             </Card>
@@ -458,8 +458,8 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
                   <HeartIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">Engajamento</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{insights?.reduce((sum, i) => sum + i.engagement, 0).toLocaleString('pt-BR') || '0'}</p>
+                  <p className="text-sm text-fg-muted-token">Engajamento</p>
+                  <p className="text-2xl font-bold text-fg-token">{insights?.reduce((sum, i) => sum + i.engagement, 0).toLocaleString('pt-BR') || '0'}</p>
                 </div>
               </div>
             </Card>
@@ -469,8 +469,8 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
                   <ShareIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-zinc-400">Novos Seguidores</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{insights?.reduce((sum, i) => sum + i.followers_gained, 0).toLocaleString('pt-BR') || '0'}</p>
+                  <p className="text-sm text-fg-muted-token">Novos Seguidores</p>
+                  <p className="text-2xl font-bold text-fg-token">{insights?.reduce((sum, i) => sum + i.followers_gained, 0).toLocaleString('pt-BR') || '0'}</p>
                 </div>
               </div>
             </Card>
@@ -503,8 +503,8 @@ const InstagramInsights: React.FC<{ accountId: string }> = ({ accountId }) => {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-64 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800">
-              <p className="text-sm text-gray-400">Sem dados de insights para o período selecionado.</p>
+            <div className="flex h-64 items-center justify-center rounded-lg bg-surface-2">
+              <p className="text-sm text-fg-muted-token">Sem dados de insights para o período selecionado.</p>
             </div>
           )}
         </div>

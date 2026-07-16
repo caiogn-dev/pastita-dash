@@ -4,14 +4,12 @@ import {
   ArrowLeftIcon,
   ArrowPathIcon,
   KeyIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Card, Button, StatusBadge, Modal, Input, PageLoading, PageTitle } from '../../components/common';
+import { StatCard } from '../../components/ui';
 import { whatsappService, getErrorMessage } from '../../services';
 import { WhatsAppAccount, MessageTemplate } from '../../types';
 
@@ -193,50 +191,25 @@ export const AccountDetailPage: React.FC = () => {
         {/* Stats */}
         {messageStats && (
           <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4">
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-                  <ChartBarIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Mensagens Enviadas</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as { by_status?: Record<string, number> }).by_status?.sent || 0}</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
-                  <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Mensagens Entregues</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as { by_status?: Record<string, number> }).by_status?.delivered || 0}</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
-                  <CheckCircleIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Mensagens Lidas</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as { by_status?: Record<string, number> }).by_status?.read || 0}</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
-                  <XCircleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Mensagens Falhas</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{(messageStats as { by_status?: Record<string, number> }).by_status?.failed || 0}</p>
-                </div>
-              </div>
-            </Card>
+            <StatCard
+              label="Mensagens Enviadas"
+              value={(messageStats as { by_status?: Record<string, number> }).by_status?.sent || 0}
+            />
+            <StatCard
+              label="Mensagens Entregues"
+              value={(messageStats as { by_status?: Record<string, number> }).by_status?.delivered || 0}
+              tone="success"
+            />
+            <StatCard
+              label="Mensagens Lidas"
+              value={(messageStats as { by_status?: Record<string, number> }).by_status?.read || 0}
+              tone="brand"
+            />
+            <StatCard
+              label="Mensagens Falhas"
+              value={(messageStats as { by_status?: Record<string, number> }).by_status?.failed || 0}
+              tone="danger"
+            />
           </div>
         )}
 

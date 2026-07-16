@@ -29,11 +29,12 @@ export const PageTitle: React.FC<PageTitleProps> = ({
   return (
     <div className={`flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 md:mb-6 ${className}`}>
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+        {/* font-display (Cinzel) = tipografia da identidade Dark Luxe nos títulos */}
+        <h1 className="font-display text-xl md:text-2xl font-bold tracking-wide text-fg-token">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-fg-muted-token">
             {subtitle}
           </p>
         )}

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   ClipboardDocumentIcon,
+  CpuChipIcon,
   EyeIcon,
   EyeSlashIcon,
   KeyIcon,
@@ -319,15 +320,15 @@ const CompanyProfileDetailPage: React.FC = () => {
         <div className="flex items-center space-x-4">
           <Link
             to="/automation/companies"
-            className="p-2 text-gray-400 hover:text-gray-600 dark:text-zinc-400"
+            className="p-2 text-fg-muted-token hover:text-fg-token transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-fg-token">
               {isCreateMode ? 'Novo Perfil de Automação' : profile?.company_name}
             </h1>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">
+            <p className="text-sm text-fg-muted-token">
               {isCreateMode
                 ? 'Vincule uma loja e uma conta WhatsApp para centralizar automações'
                 : profile?.account_phone}
@@ -338,13 +339,13 @@ const CompanyProfileDetailPage: React.FC = () => {
           <div className="flex space-x-2">
             <Link
               to={`/automation/companies/${id}/messages`}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
+              className="inline-flex items-center px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface hover:bg-surface-2 transition-colors"
             >
               Mensagens Automáticas
             </Link>
             <button
               onClick={handleDelete}
-              className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 dark:text-red-300 bg-white dark:bg-zinc-900 hover:bg-red-50"
+              className="inline-flex items-center px-4 py-2 border border-[var(--danger)] rounded-md shadow-sm text-sm font-medium text-[var(--danger)] bg-surface hover:bg-[var(--danger-soft)] transition-colors"
             >
               <TrashIcon className="h-4 w-4 mr-2" />
               Excluir
@@ -355,17 +356,17 @@ const CompanyProfileDetailPage: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {isCreateMode && (
-          <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Vínculos obrigatórios</h2>
+          <div className="bg-surface border border-border-token shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-fg-token mb-4">Vínculos obrigatórios</h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                <label className="block text-sm font-medium text-fg-token">
                   Loja
                 </label>
                 <select
                   value={createLinks.store_id}
                   onChange={(e) => setCreateLinks((prev) => ({ ...prev, store_id: e.target.value }))}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
                 >
                   <option value="">Selecione uma loja</option>
                   {stores.map((store) => (
@@ -374,18 +375,18 @@ const CompanyProfileDetailPage: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <p className="mt-2 text-xs text-gray-500 dark:text-zinc-400">
+                <p className="mt-2 text-xs text-fg-muted-token">
                   A loja deve ser a fonte principal dos dados de negócio.
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                <label className="block text-sm font-medium text-fg-token">
                   Conta WhatsApp
                 </label>
                 <select
                   value={createLinks.account_id}
                   onChange={(e) => setCreateLinks((prev) => ({ ...prev, account_id: e.target.value }))}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
                 >
                   <option value="">Selecione uma conta</option>
                   {accounts.map((account) => (
@@ -394,57 +395,57 @@ const CompanyProfileDetailPage: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <p className="mt-2 text-xs text-gray-500 dark:text-zinc-400">
+                <p className="mt-2 text-xs text-fg-muted-token">
                   Essa conta será usada nas mensagens automáticas e sessões.
                 </p>
               </div>
             </div>
             {(selectedStore || selectedAccount) && (
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black p-4 text-sm text-gray-600 dark:text-zinc-300">
-                  <p className="font-medium text-gray-900 dark:text-white">Loja selecionada</p>
+                <div className="rounded-lg border border-border-token bg-surface-2 p-4 text-sm text-fg-token">
+                  <p className="font-medium text-fg-token">Loja selecionada</p>
                   <p>{selectedStore?.name || 'Nenhuma loja selecionada'}</p>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400">{selectedStore?.slug || ''}</p>
+                  <p className="text-xs text-fg-muted-token">{selectedStore?.slug || ''}</p>
                 </div>
-                <div className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black p-4 text-sm text-gray-600 dark:text-zinc-300">
-                  <p className="font-medium text-gray-900 dark:text-white">Conta selecionada</p>
+                <div className="rounded-lg border border-border-token bg-surface-2 p-4 text-sm text-fg-token">
+                  <p className="font-medium text-fg-token">Conta selecionada</p>
                   <p>{selectedAccount?.name || 'Nenhuma conta selecionada'}</p>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400">{selectedAccount?.phone_number || 'Sem telefone'}</p>
+                  <p className="text-xs text-fg-muted-token">{selectedAccount?.phone_number || 'Sem telefone'}</p>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
+        <div className="bg-surface border border-border-token shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-fg-token mb-4">Informações Básicas</h2>
           {!isCreateMode && profile?.store_name && (
-            <div className="mb-4 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black p-4 text-sm text-gray-600 dark:text-zinc-300">
-              <p className="font-medium text-gray-900 dark:text-white">Fonte principal do negócio</p>
+            <div className="mb-4 rounded-lg border border-border-token bg-surface-2 p-4 text-sm text-fg-token">
+              <p className="font-medium text-fg-token">Fonte principal do negócio</p>
               <p>{profile.store_name}</p>
-              <p className="text-xs text-gray-500 dark:text-zinc-400">{profile.store_slug || 'Nenhuma loja vinculada'}</p>
+              <p className="text-xs text-fg-muted-token">{profile.store_slug || 'Nenhuma loja vinculada'}</p>
             </div>
           )}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label className="block text-sm font-medium text-fg-token">
                 Nome da Empresa
               </label>
               <input
                 type="text"
                 value={formData.company_name || ''}
                 onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label className="block text-sm font-medium text-fg-token">
                 Tipo de Negócio
               </label>
               <select
                 value={formData.business_type || ''}
                 onChange={(e) => setFormData({ ...formData, business_type: e.target.value as UpdateCompanyProfile['business_type'] })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
               >
                 <option value="">Selecione</option>
                 {Object.entries(businessTypeLabels).map(([value, label]) => (
@@ -453,112 +454,112 @@ const CompanyProfileDetailPage: React.FC = () => {
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label className="block text-sm font-medium text-fg-token">
                 Descrição
               </label>
               <textarea
                 rows={3}
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label className="block text-sm font-medium text-fg-token">
                 URL do Site
               </label>
               <input
                 type="url"
                 value={formData.website_url || ''}
                 onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label className="block text-sm font-medium text-fg-token">
                 URL do Cardápio/Catálogo
               </label>
               <input
                 type="url"
                 value={formData.menu_url || ''}
                 onChange={(e) => setFormData({ ...formData, menu_url: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label className="block text-sm font-medium text-fg-token">
                 URL para Pedidos
               </label>
               <input
                 type="url"
                 value={formData.order_url || ''}
                 onChange={(e) => setFormData({ ...formData, order_url: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Configurações de Automação</h2>
+        <div className="bg-surface border border-border-token shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-fg-token mb-4">Configurações de Automação</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Respostas Automáticas</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Habilitar respostas automáticas para mensagens</p>
+                <label className="text-sm font-medium text-fg-token">Respostas Automáticas</label>
+                <p className="text-sm text-fg-muted-token">Habilitar respostas automáticas para mensagens</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.auto_reply_enabled || false}
                 onChange={(e) => setFormData({ ...formData, auto_reply_enabled: e.target.checked })}
-                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Mensagem de Boas-vindas</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Enviar boas-vindas na primeira mensagem</p>
+                <label className="text-sm font-medium text-fg-token">Mensagem de Boas-vindas</label>
+                <p className="text-sm text-fg-muted-token">Enviar boas-vindas na primeira mensagem</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.welcome_message_enabled || false}
                 onChange={(e) => setFormData({ ...formData, welcome_message_enabled: e.target.checked })}
-                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Enviar Cardápio Automaticamente</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Enviar cardápio junto com boas-vindas</p>
+                <label className="text-sm font-medium text-fg-token">Enviar Cardápio Automaticamente</label>
+                <p className="text-sm text-fg-muted-token">Enviar cardápio junto com boas-vindas</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.menu_auto_send || false}
                 onChange={(e) => setFormData({ ...formData, menu_auto_send: e.target.checked })}
-                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Notificações</h2>
+        <div className="bg-surface border border-border-token shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-fg-token mb-4">Notificações</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Carrinho Abandonado</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Notificar quando cliente abandona carrinho</p>
+                <label className="text-sm font-medium text-fg-token">Carrinho Abandonado</label>
+                <p className="text-sm text-fg-muted-token">Notificar quando cliente abandona carrinho</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.abandoned_cart_notification || false}
                 onChange={(e) => setFormData({ ...formData, abandoned_cart_notification: e.target.checked })}
-                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
               />
             </div>
             {formData.abandoned_cart_notification && (
               <div className="ml-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                <label className="block text-sm font-medium text-fg-token">
                   Tempo de espera (minutos)
                 </label>
                 <input
@@ -566,74 +567,74 @@ const CompanyProfileDetailPage: React.FC = () => {
                   min="1"
                   value={formData.abandoned_cart_delay_minutes || 30}
                   onChange={(e) => setFormData({ ...formData, abandoned_cart_delay_minutes: parseInt(e.target.value, 10) || 30 })}
-                  className="mt-1 block w-32 rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                  className="mt-1 block w-32 rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
                 />
               </div>
             )}
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">PIX Gerado</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Notificar quando PIX é gerado</p>
+                <label className="text-sm font-medium text-fg-token">PIX Gerado</label>
+                <p className="text-sm text-fg-muted-token">Notificar quando PIX é gerado</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.pix_notification_enabled || false}
                 onChange={(e) => setFormData({ ...formData, pix_notification_enabled: e.target.checked })}
-                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Confirmação de Pagamento</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Notificar quando pagamento é confirmado</p>
+                <label className="text-sm font-medium text-fg-token">Confirmação de Pagamento</label>
+                <p className="text-sm text-fg-muted-token">Notificar quando pagamento é confirmado</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.payment_confirmation_enabled || false}
                 onChange={(e) => setFormData({ ...formData, payment_confirmation_enabled: e.target.checked })}
-                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Status do Pedido</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Notificar mudanças no status do pedido</p>
+                <label className="text-sm font-medium text-fg-token">Status do Pedido</label>
+                <p className="text-sm text-fg-muted-token">Notificar mudanças no status do pedido</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.order_status_notification_enabled || false}
                 onChange={(e) => setFormData({ ...formData, order_status_notification_enabled: e.target.checked })}
-                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Entrega</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Notificar sobre entrega</p>
+                <label className="text-sm font-medium text-fg-token">Entrega</label>
+                <p className="text-sm text-fg-muted-token">Notificar sobre entrega</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.delivery_notification_enabled || false}
                 onChange={(e) => setFormData({ ...formData, delivery_notification_enabled: e.target.checked })}
-                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Horário de Funcionamento</h2>
+        <div className="bg-surface border border-border-token shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-fg-token mb-4">Horário de Funcionamento</h2>
           <div className="space-y-3">
             {daysOfWeek.map(({ key, label }) => (
               <div key={key} className="flex items-center space-x-4">
                 <div className="w-32">
-                  <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">{label}</label>
+                  <label className="text-sm font-medium text-fg-token">{label}</label>
                 </div>
                 <input
                   type="checkbox"
                   checked={businessHours[key as keyof BusinessHours]?.open || false}
                   onChange={(e) => handleBusinessHoursChange(key, 'open', e.target.checked)}
-                  className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                  className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
                 />
                 {businessHours[key as keyof BusinessHours]?.open && (
                   <>
@@ -641,14 +642,14 @@ const CompanyProfileDetailPage: React.FC = () => {
                       type="time"
                       value={businessHours[key as keyof BusinessHours]?.start || '08:00'}
                       onChange={(e) => handleBusinessHoursChange(key, 'start', e.target.value)}
-                      className="rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                      className="rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
                     />
-                    <span className="text-gray-500 dark:text-zinc-400">até</span>
+                    <span className="text-fg-muted-token">até</span>
                     <input
                       type="time"
                       value={businessHours[key as keyof BusinessHours]?.end || '18:00'}
                       onChange={(e) => handleBusinessHoursChange(key, 'end', e.target.value)}
-                      className="rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                      className="rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
                     />
                   </>
                 )}
@@ -658,11 +659,11 @@ const CompanyProfileDetailPage: React.FC = () => {
         </div>
 
         {!isCreateMode && (
-          <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Integração API</h2>
+          <div className="bg-surface border border-border-token shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-fg-token mb-4">Integração API</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">API Key</label>
+                <label className="block text-sm font-medium text-fg-token">API Key</label>
                 <div className="mt-1 flex rounded-md shadow-sm">
                   <input
                     type="text"
@@ -672,46 +673,46 @@ const CompanyProfileDetailPage: React.FC = () => {
                         ? (showApiKey ? profile.external_api_key : '••••••••••••••••••••••••••••••••')
                         : 'Não gerada'
                     }
-                    className="flex-1 block w-full rounded-l-md border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black"
+                    className="flex-1 block w-full rounded-l-md border-border-token bg-surface-2 text-fg-muted-token"
                   />
                   <button
                     type="button"
                     onClick={() => setShowApiKey((v) => !v)}
                     title={showApiKey ? 'Ocultar API key' : 'Revelar API key'}
-                    className="inline-flex items-center px-3 border border-l-0 border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
+                    className="inline-flex items-center px-3 border border-l-0 border-border-token bg-surface-2 text-fg-muted-token hover:text-fg-token transition-colors"
                   >
                     {showApiKey ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                   </button>
                   <button
                     type="button"
                     onClick={handleCopyApiKey}
-                    className="inline-flex items-center px-3 border border-l-0 border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
+                    className="inline-flex items-center px-3 border border-l-0 border-border-token bg-surface-2 text-fg-muted-token hover:text-fg-token transition-colors"
                   >
                     <ClipboardDocumentIcon className="h-5 w-5" />
                   </button>
                   <button
                     type="button"
                     onClick={handleRegenerateApiKey}
-                    className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
+                    className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-border-token bg-surface-2 text-fg-muted-token hover:text-fg-token transition-colors"
                   >
                     <KeyIcon className="h-5 w-5" />
                   </button>
                 </div>
-                <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+                <p className="mt-1 text-sm text-fg-muted-token">
                   Use esta chave no header X-API-Key para autenticar webhooks
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Webhook Secret</label>
+                <label className="block text-sm font-medium text-fg-token">Webhook Secret</label>
                 <div className="mt-1 flex rounded-md shadow-sm">
                   <input
                     type="text"
                     readOnly
                     value={profile?.webhook_secret ? '••••••••••••••••' : 'Não gerado'}
-                    className="flex-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-black"
+                    className="flex-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-muted-token"
                   />
                 </div>
-                <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+                <p className="mt-1 text-sm text-fg-muted-token">
                   Use para validar assinaturas de webhook (opcional)
                 </p>
               </div>
@@ -719,24 +720,24 @@ const CompanyProfileDetailPage: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Integração Agente IA</h2>
+        <div className="bg-surface border border-border-token shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-fg-token mb-4">Integração Agente IA</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">Usar Agente IA</label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">Usar Agente IA (Langchain) para respostas avançadas</p>
+                <label className="text-sm font-medium text-fg-token">Usar Agente IA</label>
+                <p className="text-sm text-fg-muted-token">Usar Agente IA (Langchain) para respostas avançadas</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.use_ai_agent || false}
                 onChange={(e) => setFormData({ ...formData, use_ai_agent: e.target.checked })}
-                className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
+                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
               />
             </div>
             {formData.use_ai_agent && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                <label className="block text-sm font-medium text-fg-token">
                   ID do Agente
                 </label>
                 <input
@@ -744,25 +745,28 @@ const CompanyProfileDetailPage: React.FC = () => {
                   value={formData.default_agent || ''}
                   onChange={(e) => setFormData({ ...formData, default_agent: e.target.value || null })}
                   placeholder="UUID do Agente IA"
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
                 />
-                <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-                  <Link to="/agents" className="text-green-600 hover:text-green-700">Gerenciar Agentes IA →</Link>
+                <p className="mt-1 text-sm text-fg-muted-token">
+                  <Link to="/agents" className="text-brand hover:underline">Gerenciar Agentes IA →</Link>
                 </p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">🤖 Bot de Pedidos (WhatsApp)</h2>
+        <div className="bg-surface border border-border-token shadow rounded-lg p-6">
+          <h2 className="flex items-center gap-2 text-lg font-medium text-fg-token mb-4">
+            <CpuChipIcon className="h-5 w-5 text-brand" aria-hidden="true" />
+            Bot de Pedidos (WhatsApp)
+          </h2>
           <div className="space-y-5">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <label id="bot-order-enabled-label" className="text-sm font-medium text-gray-700 dark:text-zinc-300">
+                <label id="bot-order-enabled-label" className="text-sm font-medium text-fg-token">
                   Aceitar pedidos pelo bot
                 </label>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">
+                <p className="text-sm text-fg-muted-token">
                   Quando desligado, o bot responde dúvidas mas não monta carrinho nem fecha pedidos
                 </p>
               </div>
@@ -770,7 +774,7 @@ const CompanyProfileDetailPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="bot-upsell-categories" className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+              <label htmlFor="bot-upsell-categories" className="block text-sm font-medium text-fg-token mb-1">
                 Categorias de upsell (separadas por vírgula)
               </label>
               <Input
@@ -780,13 +784,13 @@ const CompanyProfileDetailPage: React.FC = () => {
                 onChange={(e) => setUpsellCategoriesText(e.target.value)}
                 placeholder="Ex.: Bebidas, Sobremesas"
               />
-              <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+              <p className="mt-1 text-sm text-fg-muted-token">
                 Nomes de categorias do cardápio usadas nas sugestões do bot. Vazio = seleção automática.
               </p>
             </div>
 
             <div>
-              <label htmlFor="bot-allowed-intents" className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+              <label htmlFor="bot-allowed-intents" className="block text-sm font-medium text-fg-token mb-1">
                 Intents permitidos (JSON, avançado)
               </label>
               <Textarea
@@ -798,7 +802,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 spellCheck={false}
                 className="font-mono text-xs"
               />
-              <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+              <p className="mt-1 text-sm text-fg-muted-token">
                 Modo restrito: array JSON de intents que o bot pode atender. Vazio = todos os intents.
               </p>
             </div>
@@ -808,14 +812,14 @@ const CompanyProfileDetailPage: React.FC = () => {
         <div className="flex justify-end space-x-3">
           <Link
             to="/automation/companies"
-            className="px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
+            className="px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface hover:bg-surface-2 transition-colors"
           >
             Cancelar
           </Link>
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand hover:bg-brand-hover disabled:opacity-50 transition-colors"
           >
             {saving ? <LoadingSpinner size="sm" /> : isCreateMode ? 'Criar Perfil' : 'Salvar'}
           </button>

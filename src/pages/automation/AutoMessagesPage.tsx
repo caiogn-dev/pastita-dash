@@ -235,13 +235,13 @@ const AutoMessagesPage: React.FC = () => {
         <div className="flex items-center gap-4">
           <Link
             to={`/automation/companies/${companyId}`}
-            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+            className="p-2 rounded-lg text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Mensagens Automáticas</h1>
-            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{company?.company_name}</p>
+            <h1 className="text-2xl font-display font-bold text-fg-token">Mensagens Automáticas</h1>
+            <p className="text-sm text-fg-muted-token">{company?.company_name}</p>
           </div>
         </div>
         <button
@@ -250,7 +250,7 @@ const AutoMessagesPage: React.FC = () => {
             setEditingMessage(null);
             setShowModal(true);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium shadow-sm transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-medium shadow-sm transition-colors"
         >
           <PlusIcon className="h-5 w-5" />
           Nova Mensagem
@@ -261,15 +261,15 @@ const AutoMessagesPage: React.FC = () => {
       {Object.keys(eventTypeLabels).map((eventType) => {
         const eventMessages = groupedMessages[eventType] || [];
         return (
-          <div key={eventType} className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] shadow rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-black">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+          <div key={eventType} className="bg-surface border border-border-token shadow rounded-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-border-token bg-surface-2">
+              <h3 className="text-lg font-medium text-fg-token">
                 {eventTypeLabels[eventType as AutoMessageEventType]}
               </h3>
             </div>
             {eventMessages.length === 0 ? (
-              <div className="px-6 py-8 text-center text-gray-500 dark:text-zinc-400">
-                <ChatBubbleLeftRightIcon className="mx-auto h-8 w-8 text-gray-400" />
+              <div className="px-6 py-8 text-center text-fg-muted-token">
+                <ChatBubbleLeftRightIcon className="mx-auto h-8 w-8 text-fg-muted-token opacity-60" />
                 <p className="mt-2">Nenhuma mensagem configurada</p>
                 <button
                   onClick={() => {
@@ -277,35 +277,35 @@ const AutoMessagesPage: React.FC = () => {
                     setFormData(prev => ({ ...prev, event_type: eventType as AutoMessageEventType }));
                     setShowModal(true);
                   }}
-                  className="mt-2 text-green-600 dark:text-green-400 hover:text-green-700 dark:text-green-300 text-sm font-medium"
+                  className="mt-2 text-brand hover:underline text-sm font-medium"
                 >
                   + Adicionar mensagem
                 </button>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-200 dark:divide-zinc-800">
+              <ul className="divide-y divide-border-token">
                 {eventMessages.map((message) => (
-                  <li key={message.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <li key={message.id} className="px-6 py-4 hover:bg-surface-2 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          <h4 className="text-sm font-medium text-fg-token truncate">
                             {message.name}
                           </h4>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                             message.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                              ? 'bg-[var(--success-soft)] text-[var(--success)]'
+                              : 'bg-surface-2 text-fg-muted-token'
                           }`}>
                             {message.is_active ? 'Ativo' : 'Inativo'}
                           </span>
                           {message.delay_seconds && message.delay_seconds > 0 && (
-                            <span className="text-xs text-gray-500 dark:text-zinc-400">
+                            <span className="text-xs text-fg-muted-token">
                               Delay: {message.delay_seconds}s
                             </span>
                           )}
                         </div>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400 line-clamp-2">
+                        <p className="mt-1 text-sm text-fg-muted-token line-clamp-2">
                           {message.message_text}
                         </p>
                         {message.buttons && message.buttons.length > 0 && (
@@ -313,7 +313,7 @@ const AutoMessagesPage: React.FC = () => {
                             {message.buttons.map((btn, i) => (
                               <span
                                 key={i}
-                                className="inline-flex items-center px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-800 text-xs"
+                                className="inline-flex items-center px-2 py-1 rounded bg-brand-soft text-brand text-xs"
                               >
                                 {btn.title}
                               </span>
@@ -324,24 +324,24 @@ const AutoMessagesPage: React.FC = () => {
                       <div className="flex items-center space-x-2 ml-4">
                         <button
                           onClick={() => setTestModal(message)}
-                          className="p-2 text-gray-400 hover:text-blue-600 dark:text-blue-400"
+                          className="p-2 text-fg-muted-token hover:text-[var(--info)] transition-colors"
                           title="Testar"
                         >
                           <PlayIcon className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => handleEdit(message)}
-                          className="p-2 text-gray-400 hover:text-green-600 dark:text-green-400"
+                          className="p-2 text-fg-muted-token hover:text-brand transition-colors"
                           title="Editar"
                         >
                           <PencilIcon className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => handleToggleActive(message)}
-                          className={`p-2 ${
+                          className={`p-2 transition-colors ${
                             message.is_active
-                              ? 'text-green-600 hover:text-gray-400'
-                              : 'text-gray-400 hover:text-green-600'
+                              ? 'text-[var(--success)] hover:text-fg-muted-token'
+                              : 'text-fg-muted-token hover:text-[var(--success)]'
                           }`}
                           title={message.is_active ? 'Desativar' : 'Ativar'}
                         >
@@ -351,7 +351,7 @@ const AutoMessagesPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleDelete(message.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 dark:text-red-400"
+                          className="p-2 text-fg-muted-token hover:text-[var(--danger)] transition-colors"
                           title="Excluir"
                         >
                           <TrashIcon className="h-5 w-5" />
@@ -539,20 +539,20 @@ const AutoMessagesPage: React.FC = () => {
       {testModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black/75 bg-opacity-75" onClick={() => {
+            <div className="fixed inset-0 bg-black/60" onClick={() => {
               setTestModal(null);
               setTestPhone('');
               setTestResult(null);
             }} />
-            <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-lg w-full">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            <div className="relative bg-surface border border-border-token rounded-lg shadow-xl max-w-lg w-full">
+              <div className="px-6 py-4 border-b border-border-token">
+                <h3 className="text-lg font-medium text-fg-token">
                   Testar Mensagem: {testModal.name}
                 </h3>
               </div>
               <div className="px-6 py-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                  <label className="block text-sm font-medium text-fg-token">
                     Número de Telefone
                   </label>
                   <input
@@ -560,20 +560,20 @@ const AutoMessagesPage: React.FC = () => {
                     value={testPhone}
                     onChange={(e) => setTestPhone(e.target.value)}
                     placeholder="5511999999999"
-                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
+                    className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleTest}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
+                  className="w-full px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface hover:bg-surface-2 transition-colors"
                 >
                   Visualizar Preview
                 </button>
                 {testResult && (
-                  <div className="bg-gray-50 dark:bg-black rounded-lg p-4">
-                    <p className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Preview:</p>
-                    <div className="bg-green-100 dark:bg-green-900/40 rounded-lg p-3 text-sm whitespace-pre-wrap">
+                  <div className="bg-surface-2 rounded-lg p-4">
+                    <p className="text-sm font-medium text-fg-token mb-2">Preview:</p>
+                    <div className="bg-[var(--success-soft)] text-fg-token rounded-lg p-3 text-sm whitespace-pre-wrap">
                       {testResult}
                     </div>
                     {testModal.buttons && testModal.buttons.length > 0 && (
@@ -581,7 +581,7 @@ const AutoMessagesPage: React.FC = () => {
                         {testModal.buttons.map((btn, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center px-3 py-1 rounded-full bg-white dark:bg-zinc-900 border border-green-500 text-green-700 dark:text-green-300 text-sm"
+                            className="inline-flex items-center px-3 py-1 rounded-full bg-surface border border-brand text-brand text-sm"
                           >
                             {btn.title}
                           </span>
@@ -591,7 +591,7 @@ const AutoMessagesPage: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end space-x-3">
+              <div className="px-6 py-4 border-t border-border-token flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -599,7 +599,7 @@ const AutoMessagesPage: React.FC = () => {
                     setTestPhone('');
                     setTestResult(null);
                   }}
-                  className="px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
+                  className="px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface hover:bg-surface-2 transition-colors"
                 >
                   Fechar
                 </button>
@@ -607,7 +607,7 @@ const AutoMessagesPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleSendTest}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand hover:bg-brand-hover transition-colors"
                   >
                     Enviar Teste
                   </button>

@@ -84,7 +84,7 @@ export const TrialBanner: FC = () => {
         </p>
         <Link
           to="/assinatura"
-          className="flex-shrink-0 rounded bg-white px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1"
+          className="flex-shrink-0 rounded bg-surface px-3 py-1 text-xs font-semibold text-danger-token transition-colors hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1"
         >
           Reativar
         </Link>
@@ -107,7 +107,7 @@ export const TrialBanner: FC = () => {
         </p>
         <Link
           to="/assinatura"
-          className="flex-shrink-0 rounded bg-white px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1"
+          className="flex-shrink-0 rounded bg-surface px-3 py-1 text-xs font-semibold text-danger-token transition-colors hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1"
         >
           Reativar
         </Link>
@@ -130,7 +130,7 @@ export const TrialBanner: FC = () => {
         </p>
         <Link
           to="/assinatura"
-          className="flex-shrink-0 rounded bg-white px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1"
+          className="flex-shrink-0 rounded bg-surface px-3 py-1 text-xs font-semibold text-warning-token transition-colors hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1"
         >
           Regularize
         </Link>

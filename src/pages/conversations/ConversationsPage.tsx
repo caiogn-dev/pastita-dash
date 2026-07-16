@@ -45,7 +45,7 @@ function PlatformGlyph({ platform }: { platform: UniversalConversation['platform
 
   if (platform === 'messenger') {
     return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-sm">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--info)] text-white shadow-sm">
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current">
           <path d="M12 3C6.76 3 2.5 6.93 2.5 11.75c0 2.74 1.38 5.19 3.54 6.8V21l2.81-1.56c.9.25 1.85.38 2.85.38 5.24 0 9.5-3.93 9.5-8.75S17.24 3 12 3Zm1.06 10.03-2.37-2.53-4.38 2.53 4.84-5.14 2.39 2.53 4.34-2.53-4.82 5.14Z" />
         </svg>
@@ -418,9 +418,12 @@ export const ConversationsPage: React.FC = () => {
                 </div>
 
                 <div className="min-w-0">
-                  <p className="truncate text-sm text-fg-primary">
-                    {conversation.last_message_preview || 'Sem mensagem registrada'}
-                  </p>
+                  {/* Preview pode vir vazio da API (mídia sem texto) — omitimos em vez de repetir placeholder em toda linha */}
+                  {conversation.last_message_preview && (
+                    <p className="truncate text-sm text-fg-primary">
+                      {conversation.last_message_preview}
+                    </p>
+                  )}
                   <p className="mt-1 text-xs text-fg-muted">
                     Status: {conversation.status || 'active'}
                   </p>
@@ -437,7 +440,7 @@ export const ConversationsPage: React.FC = () => {
 
                 <div className="flex items-center justify-end gap-3">
                   {conversation.unread_count > 0 && (
-                    <span className="flex min-w-[28px] items-center justify-center rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
+                    <span className="flex min-w-[28px] items-center justify-center rounded-full bg-brand px-2 py-1 text-xs font-semibold text-white">
                       {conversation.unread_count}
                     </span>
                   )}
@@ -464,7 +467,7 @@ export const ConversationsPage: React.FC = () => {
             <section className="rounded-2xl border border-border-primary bg-bg-subtle p-4">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-success-token text-white">
                     <PhoneIcon className="h-6 w-6" />
                   </div>
                   <div>
@@ -603,12 +606,15 @@ export const ConversationsPage: React.FC = () => {
                     <h3 className="text-sm font-semibold text-fg-primary">Resumo rapido</h3>
                   </div>
                   <div className="space-y-3 text-sm">
-                    <div>
-                      <p className="text-fg-muted">Ultima mensagem</p>
-                      <p className="text-fg-primary">
-                        {whatsAppConversation.last_message_preview || 'Sem preview'}
-                      </p>
-                    </div>
+                    {/* Sem preview da API → omitimos o bloco em vez de mostrar placeholder */}
+                    {whatsAppConversation.last_message_preview && (
+                      <div>
+                        <p className="text-fg-muted">Ultima mensagem</p>
+                        <p className="text-fg-primary">
+                          {whatsAppConversation.last_message_preview}
+                        </p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-fg-muted">Etiquetas</p>
                       <div className="mt-2 flex flex-wrap gap-2">

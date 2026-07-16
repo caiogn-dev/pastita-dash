@@ -8,10 +8,9 @@ import {
   TrashIcon,
   MagnifyingGlassIcon,
   TagIcon,
-  CheckCircleIcon,
-  XCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
+import { StatCard } from '../../components/ui';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
 import { useStore } from '../../hooks';
 
@@ -225,50 +224,10 @@ export const CouponsPage: React.FC = () => {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-4 max-lg:grid-cols-2 gap-3 md:gap-4">
-          <Card className="p-3 md:p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg shrink-0">
-                <TagIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 truncate">Total</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-3 md:p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg shrink-0">
-                <CheckCircleIcon className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
-              </div>
-              <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 truncate">Ativos</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-3 md:p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg shrink-0">
-                <XCircleIcon className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-zinc-400" />
-              </div>
-              <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 truncate">Inativos</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.inactive}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-3 md:p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg shrink-0">
-                <TagIcon className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div className="ml-3 md:ml-4 min-w-0">
-                <p className="text-xs md:text-sm text-gray-500 dark:text-zinc-400 truncate">Usos Totais</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{stats.total_usage}</p>
-              </div>
-            </div>
-          </Card>
+          <StatCard label="Total" value={stats.total} />
+          <StatCard label="Ativos" value={stats.active} tone="success" />
+          <StatCard label="Inativos" value={stats.inactive} />
+          <StatCard label="Usos Totais" value={stats.total_usage} tone="brand" />
         </div>
       )}
 

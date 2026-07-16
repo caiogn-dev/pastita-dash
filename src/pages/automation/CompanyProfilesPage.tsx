@@ -74,14 +74,14 @@ const CompanyProfilesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Automação & Perfis</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+          <h1 className="text-2xl font-display font-bold text-fg-token">Automação & Perfis</h1>
+          <p className="mt-1 text-sm text-fg-muted-token">
             Configure automações, mensagens e agentes para cada número WhatsApp
           </p>
         </div>
         <Link
           to="/automation/companies/new"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium shadow-sm transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-medium shadow-sm transition-colors"
         >
           <PlusIcon className="h-5 w-5" />
           Novo Perfil
@@ -91,20 +91,20 @@ const CompanyProfilesPage: React.FC = () => {
       {/* Quick Nav Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { to: '/automation/intents/stats', icon: ChartBarIcon, label: 'Estatísticas', color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-400' },
-          { to: '/automation/intents/logs', icon: ChatBubbleLeftRightIcon, label: 'Logs de Intenções', color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' },
-          { to: '/automation/logs', icon: ChartBarIcon, label: 'Logs de Automação', color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-400' },
-          { to: '/automation/scheduled', icon: CpuChipIcon, label: 'Agendamentos', color: 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400' },
+          { to: '/automation/intents/stats', icon: ChartBarIcon, label: 'Estatísticas', color: 'text-brand bg-brand-soft' },
+          { to: '/automation/intents/logs', icon: ChatBubbleLeftRightIcon, label: 'Logs de Intenções', color: 'text-brand bg-brand-soft' },
+          { to: '/automation/logs', icon: ChartBarIcon, label: 'Logs de Automação', color: 'text-brand bg-brand-soft' },
+          { to: '/automation/scheduled', icon: CpuChipIcon, label: 'Agendamentos', color: 'text-brand bg-brand-soft' },
         ].map((item) => (
           <Link
             key={item.to}
             to={item.to}
-            className="flex items-center gap-3 p-3 bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] hover:border-gray-300 dark:hover:border-[var(--dark-border,#2a2a2a)] transition-colors group"
+            className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border-token hover:border-[var(--border-strong)] transition-colors group"
           >
             <div className={`p-2 rounded-lg ${item.color} transition-colors`}>
               <item.icon className="w-4 h-4" />
             </div>
-            <span className="text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] group-hover:text-gray-900 dark:group-hover:text-[var(--dark-text-primary,#FAF9F7)] truncate">
+            <span className="text-sm font-medium text-fg-muted-token group-hover:text-fg-token truncate">
               {item.label}
             </span>
           </Link>
@@ -113,15 +113,15 @@ const CompanyProfilesPage: React.FC = () => {
 
       {/* Profiles Grid */}
       {profiles.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-2xl border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)]">
-          <BuildingOfficeIcon className="mx-auto h-14 w-14 text-gray-300 dark:text-zinc-600 mb-4" />
-          <h3 className="text-base font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">Nenhum perfil configurado</h3>
-          <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-6">
+        <div className="text-center py-16 bg-surface rounded-2xl border border-border-token">
+          <BuildingOfficeIcon className="mx-auto h-14 w-14 text-fg-muted-token opacity-40 mb-4" />
+          <h3 className="text-base font-semibold text-fg-token mb-1">Nenhum perfil configurado</h3>
+          <p className="text-sm text-fg-muted-token mb-6">
             Crie um perfil de empresa para começar a usar automações.
           </p>
           <Link
             to="/automation/companies/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-medium transition-colors"
           >
             <PlusIcon className="h-5 w-5" />
             Criar Perfil
@@ -132,31 +132,31 @@ const CompanyProfilesPage: React.FC = () => {
           {profiles.map((profile) => (
             <div
               key={profile.id}
-              className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-2xl border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] hover:border-gray-300 dark:hover:border-[var(--dark-border,#2a2a2a)] shadow-sm hover:shadow-md transition-all"
+              className="bg-surface rounded-2xl border border-border-token hover:border-[var(--border-strong)] shadow-sm hover:shadow-md transition-all"
             >
               {/* Card Header */}
               <div className="p-5 pb-4 flex items-start justify-between">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                    <BuildingOfficeIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-brand-soft flex items-center justify-center">
+                    <BuildingOfficeIcon className="h-6 w-6 text-brand" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] truncate">
+                    <h3 className="text-base font-semibold text-fg-token truncate">
                       {profile.company_name}
                     </h3>
-                    <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate mt-0.5">
+                    <p className="text-xs text-fg-muted-token truncate mt-0.5">
                       {profile.account_phone || 'Sem número'}
                     </p>
                   </div>
                 </div>
                 <div className="flex-shrink-0 ml-2">
                   {profile.auto_reply_enabled ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--success-soft)] text-[var(--success)]">
                       <CheckCircleIcon className="w-3 h-3" />
                       Ativo
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-zinc-700 dark:text-zinc-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-surface-2 text-fg-muted-token">
                       <XCircleIcon className="w-3 h-3" />
                       Inativo
                     </span>
@@ -166,7 +166,7 @@ const CompanyProfilesPage: React.FC = () => {
 
               {/* Info Row */}
               <div className="px-5 pb-3">
-                <div className="text-xs text-gray-500 dark:text-zinc-400">
+                <div className="text-xs text-fg-muted-token">
                   {businessTypeLabels[profile.business_type || ''] || profile.business_type || 'Tipo não definido'}
                 </div>
               </div>
@@ -174,43 +174,43 @@ const CompanyProfilesPage: React.FC = () => {
               {/* Feature Tags */}
               <div className="px-5 pb-4 flex flex-wrap gap-1.5">
                 {profile.welcome_message_enabled && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                    👋 Boas-vindas
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-surface-2 text-fg-muted-token">
+                    Boas-vindas
                   </span>
                 )}
                 {profile.abandoned_cart_notification && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300">
-                    🛒 Carrinho
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-surface-2 text-fg-muted-token">
+                    Carrinho
                   </span>
                 )}
                 {profile.pix_notification_enabled && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                    💠 PIX
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-surface-2 text-fg-muted-token">
+                    PIX
                   </span>
                 )}
                 {profile.payment_confirmation_enabled && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                    ✅ Pagamento
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-surface-2 text-fg-muted-token">
+                    Pagamento
                   </span>
                 )}
                 {profile.order_status_notification_enabled && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
-                    📦 Status pedido
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-surface-2 text-fg-muted-token">
+                    Status pedido
                   </span>
                 )}
                 {profile.use_ai_agent && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
-                    🤖 Agente IA
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-brand-soft text-brand font-medium">
+                    Agente IA
                   </span>
                 )}
               </div>
 
               {/* ─── ACTION BUTTONS ─── */}
-              <div className="px-5 py-4 border-t border-gray-100 dark:border-zinc-800 grid grid-cols-3 gap-2">
+              <div className="px-5 py-4 border-t border-border-token grid grid-cols-3 gap-2">
                 {/* Mensagens — PRIMARY ACTION */}
                 <Link
                   to={`/automation/companies/${profile.id}/messages`}
-                  className="col-span-3 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors"
+                  className="col-span-3 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-medium transition-colors"
                 >
                   <ChatBubbleLeftRightIcon className="h-4 w-4" />
                   Mensagens Automáticas
@@ -219,7 +219,7 @@ const CompanyProfilesPage: React.FC = () => {
                 {/* Configurar */}
                 <Link
                   to={`/automation/companies/${profile.id}`}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-medium hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-border-token text-fg-token text-xs font-medium hover:bg-surface-2 transition-colors"
                 >
                   <Cog6ToothIcon className="h-3.5 w-3.5" />
                   Configurar
@@ -228,7 +228,7 @@ const CompanyProfilesPage: React.FC = () => {
                 {/* Stats */}
                 <Link
                   to={`/automation/intents/stats`}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-medium hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-border-token text-fg-token text-xs font-medium hover:bg-surface-2 transition-colors"
                 >
                   <ChartBarIcon className="h-3.5 w-3.5" />
                   Stats
@@ -237,7 +237,7 @@ const CompanyProfilesPage: React.FC = () => {
                 {/* API Key */}
                 <button
                   onClick={() => handleRegenerateApiKey(profile.id)}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 text-xs font-medium hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-border-token text-fg-muted-token text-xs font-medium hover:bg-surface-2 transition-colors"
                   title="Gerar nova API key"
                 >
                   <KeyIcon className="h-3.5 w-3.5" />
@@ -252,21 +252,21 @@ const CompanyProfilesPage: React.FC = () => {
       {/* Pagination */}
       {totalCount > 20 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-zinc-400">
+          <p className="text-sm text-fg-muted-token">
             {(page - 1) * 20 + 1}–{Math.min(page * 20, totalCount)} de {totalCount}
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-40 transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-border-token bg-surface text-sm text-fg-token hover:bg-surface-2 disabled:opacity-40 transition-colors"
             >
               Anterior
             </button>
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page * 20 >= totalCount}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-40 transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-border-token bg-surface text-sm text-fg-token hover:bg-surface-2 disabled:opacity-40 transition-colors"
             >
               Próximo
             </button>

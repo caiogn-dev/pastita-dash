@@ -23,6 +23,7 @@ import { useStore } from '../../hooks/useStore';
 import { MessageBubble, MessageBubbleProps } from '../../components/chat/MessageBubble';
 import { MediaViewer } from '../../components/chat/MediaViewer';
 import toast from 'react-hot-toast';
+import { formatPhone } from '../../utils/formatters';
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
 
@@ -49,7 +50,7 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
 });
 
 function messagePreviewText(msg: Message | string | undefined): string {
-  if (!msg) return 'Sem mensagens';
+  if (!msg) return '';
   if (typeof msg === 'string') return msg;
   if (msg.text_body) return msg.text_body;
   switch (msg.message_type) {
@@ -73,6 +74,19 @@ const getStoreUrl = (metadata?: Record<string, unknown>) => {
 
 interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
   last_message?: Message | string;
+}
+
+/**
+ * Preview da última mensagem da conversa.
+ * A API (`ConversationSerializer.get_last_message_preview` no server2) envia
+ * `last_message_preview` (string, pode vir vazia p/ mídia sem texto) e o
+ * WebSocket (`WhatsAppWsContext`) mantém o mesmo campo atualizado.
+ * `last_message` como objeto Message não vem da API hoje — mantido como
+ * fallback defensivo. Sem dado, retorna '' (linha vazia > ruído repetido).
+ */
+function conversationPreview(conv: ConversationWithMessages): string {
+  if (conv.last_message_preview) return conv.last_message_preview;
+  return messagePreviewText(conv.last_message);
 }
 
 const WhatsAppInboxPage: React.FC = () => {
@@ -285,8 +299,9 @@ const WhatsAppInboxPage: React.FC = () => {
             </div>
           ) : (
             filteredConversations.map((conv) => (
-              <div
+              <button
                 key={conv.id}
+                type="button"
                 className={`conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
                 onClick={() => handleSelectConversation(conv)}
               >
@@ -294,9 +309,9 @@ const WhatsAppInboxPage: React.FC = () => {
                   {(conv.contact_name || conv.phone_number).charAt(0).toUpperCase()}
                 </div>
                 <div className="conversation-info">
-                  <h3>{conv.contact_name || conv.phone_number}</h3>
+                  <h3>{conv.contact_name || formatPhone(conv.phone_number)}</h3>
                   <p className="conversation-preview">
-                    {messagePreviewText(conv.last_message)}
+                    {conversationPreview(conv)}
                   </p>
                 </div>
                 <div className="conversation-meta">
@@ -307,7 +322,7 @@ const WhatsAppInboxPage: React.FC = () => {
                     <span className="unread-badge">{conv.unread_count}</span>
                   )}
                 </div>
-              </div>
+              </button>
             ))
           )}
         </div>
@@ -320,8 +335,8 @@ const WhatsAppInboxPage: React.FC = () => {
             {/* Chat Header */}
             <div className="chat-header">
               <div className="chat-info">
-                <h2>{selectedConversation.contact_name || selectedConversation.phone_number}</h2>
-                <p className="phone-number">{selectedConversation.phone_number}</p>
+                <h2>{selectedConversation.contact_name || formatPhone(selectedConversation.phone_number)}</h2>
+                <p className="phone-number">{formatPhone(selectedConversation.phone_number)}</p>
               </div>
               <div className="chat-actions">
                 <div className="mode-selector">

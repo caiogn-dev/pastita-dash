@@ -6,7 +6,7 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 import { Card } from './Card';
 
-export type StatCardTone = 'default' | 'brand' | 'warning';
+export type StatCardTone = 'default' | 'brand' | 'warning' | 'success' | 'danger';
 
 export interface StatCardProps {
   label: string;
@@ -21,6 +21,8 @@ const VALUE_TONE: Record<StatCardTone, string> = {
   default: 'text-fg-token',
   brand: 'text-brand',
   warning: 'text-[var(--warning)]',
+  success: 'text-[var(--success)]',
+  danger: 'text-[var(--danger)]',
 };
 
 export const StatCard: React.FC<StatCardProps> = ({

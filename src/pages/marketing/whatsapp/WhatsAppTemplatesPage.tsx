@@ -52,33 +52,33 @@ const WhatsAppTemplatesPage: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-gray-900 mb-2">Templates WhatsApp</h1>
-        <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Gerencie templates de mensagens para disparos automatizados</p>
+        <h1 className="font-display text-3xl font-bold text-fg-token mb-2">Templates WhatsApp</h1>
+        <p className="text-fg-muted-token">Gerencie templates de mensagens para disparos automatizados</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-gray-900">{whatsappTemplates.length}</div>
-          <div className="text-sm text-gray-500">Total Templates</div>
+        <div className="bg-surface border border-border-token rounded-lg shadow p-4">
+          <div className="text-2xl font-bold text-fg-token">{whatsappTemplates.length}</div>
+          <div className="text-sm text-fg-muted-token">Total Templates</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-surface border border-border-token rounded-lg shadow p-4">
           <div className="text-2xl font-bold text-blue-600">
             {getTemplatesByCategory('transactional').length}
           </div>
-          <div className="text-sm text-gray-500">Transacionais</div>
+          <div className="text-sm text-fg-muted-token">Transacionais</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-surface border border-border-token rounded-lg shadow p-4">
           <div className="text-2xl font-bold text-purple-600">
             {getTemplatesByCategory('marketing').length}
           </div>
-          <div className="text-sm text-gray-500">Marketing</div>
+          <div className="text-sm text-fg-muted-token">Marketing</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-surface border border-border-token rounded-lg shadow p-4">
           <div className="text-2xl font-bold text-green-600">
             {getTemplatesByCategory('support').length}
           </div>
-          <div className="text-sm text-gray-500">Suporte</div>
+          <div className="text-sm text-fg-muted-token">Suporte</div>
         </div>
       </div>
 
@@ -94,7 +94,7 @@ const WhatsAppTemplatesPage: React.FC = () => {
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   selectedCategory === cat
                     ? 'bg-violet-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-surface-2 text-fg-token hover:bg-brand-soft'
                 }`}
               >
                 {cat === 'all' ? 'Todos' : getCategoryLabel(cat)}
@@ -110,22 +110,22 @@ const WhatsAppTemplatesPage: React.FC = () => {
                 onClick={() => handleTemplateSelect(template)}
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
                   selectedTemplate?.id === template.id
-                    ? 'border-violet-500 bg-violet-50'
-                    : 'border-gray-200 bg-white'
+                    ? 'border-brand bg-brand-soft'
+                    : 'border-border-token bg-surface'
                 }`}
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                  <h3 className="font-semibold text-fg-token">{template.name}</h3>
                   <Badge variant={getCategoryVariant(template.category)}>
                     {getCategoryLabel(template.category)}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">{template.description}</p>
+                <p className="text-sm text-fg-muted-token mb-3">{template.description}</p>
                 <div className="flex flex-wrap gap-1">
                   {template.variables.map((variable) => (
                     <span
                       key={variable}
-                      className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded"
+                      className="text-xs px-2 py-1 bg-surface-2 text-fg-muted-token rounded"
                     >
                       {`{{${variable}}}`}
                     </span>
@@ -139,19 +139,19 @@ const WhatsAppTemplatesPage: React.FC = () => {
         {/* Preview Panel */}
         <div>
           {selectedTemplate ? (
-            <div className="bg-white rounded-lg shadow-lg border border-gray-200 sticky top-6">
-              <div className="p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                <h2 className="font-semibold text-gray-900">Preview</h2>
-                <p className="text-sm text-gray-500">{selectedTemplate.name}</p>
+            <div className="bg-surface rounded-lg shadow-lg border border-border-token sticky top-6">
+              <div className="p-4 border-b border-border-token bg-surface-2 rounded-t-lg">
+                <h2 className="font-semibold text-fg-token">Preview</h2>
+                <p className="text-sm text-fg-muted-token">{selectedTemplate.name}</p>
               </div>
 
               {/* Variables Input */}
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Variáveis</h3>
+              <div className="p-4 border-b border-border-token">
+                <h3 className="text-sm font-medium text-fg-token mb-3">Variáveis</h3>
                 <div className="space-y-3">
                   {selectedTemplate.variables.map((variable) => (
                     <div key={variable}>
-                      <label className="block text-xs text-gray-500 mb-1 capitalize">
+                      <label className="block text-xs text-fg-muted-token mb-1 capitalize">
                         {variable}
                       </label>
                       <input
@@ -161,7 +161,7 @@ const WhatsAppTemplatesPage: React.FC = () => {
                           ...prev,
                           [variable]: e.target.value
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                        className="w-full px-3 py-2 bg-surface-2 text-fg-token border border-border-token rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
                         placeholder={`Valor para {{${variable}}}`}
                       />
                     </div>
@@ -183,20 +183,20 @@ const WhatsAppTemplatesPage: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="p-4 border-t border-gray-200 flex gap-3">
+              <div className="p-4 border-t border-border-token flex gap-3">
                 <button className="flex-1 bg-violet-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-violet-700 transition-colors">
                   Usar Template
                 </button>
-                <button className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                <button className="px-4 py-2 border border-border-token rounded-lg font-medium text-fg-token hover:bg-surface-2 transition-colors">
                   Editar
                 </button>
               </div>
             </div>
           ) : (
-            <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+            <div className="bg-surface-2 rounded-lg border-2 border-dashed border-border-token p-12 text-center">
               <div className="text-4xl mb-4">📱</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Selecione um template</h3>
-              <p className="text-gray-500">Clique em um template à esquerda para visualizar</p>
+              <h3 className="text-lg font-medium text-fg-token mb-2">Selecione um template</h3>
+              <p className="text-fg-muted-token">Clique em um template à esquerda para visualizar</p>
             </div>
           )}
         </div>
