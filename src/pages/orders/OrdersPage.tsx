@@ -511,7 +511,7 @@ export const OrdersPage: React.FC = () => {
 
   // Detalhe do pedido abre em MODAL (sem sair do board). O estado vive na URL
   // (?pedido=<id>) → deep-link + botão voltar do navegador fecham naturalmente.
-  const { openOrder } = useOrderDetailModal();
+  const { openOrder, orderId: openOrderId } = useOrderDetailModal();
 
   // Handlers estáveis para os cards: sem isto, o object/closure recriado a cada
   // render quebra o React.memo do OrderCard e re-renderiza o board inteiro.
@@ -555,6 +555,14 @@ export const OrdersPage: React.FC = () => {
         .sort((a: StoreOrder, b: StoreOrder) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     })),
   [effectiveOrders, focusColumn]);
+
+  // Fila do modal: os pedidos da MESMA coluna do pedido aberto, na ordem do
+  // board — habilita a navegação anterior/próximo dentro do OrderDetailModal.
+  const modalSiblings = useMemo(() => {
+    if (!openOrderId) return undefined;
+    const col = columnData.find(c => c.orders.some((o: StoreOrder) => o.id === openOrderId));
+    return col ? col.orders.map((o: StoreOrder) => o.id) : undefined;
+  }, [openOrderId, columnData]);
 
   const findColumn = useCallback((orderId: string): ColumnId | null => {
     for (const col of columnData) {
@@ -839,7 +847,7 @@ export const OrdersPage: React.FC = () => {
       )}
 
       {/* Detalhe do pedido em modal (aberto via ?pedido=<id>) */}
-      <OrderDetailModal onOrderChanged={handleModalOrderChanged} />
+      <OrderDetailModal onOrderChanged={handleModalOrderChanged} siblings={modalSiblings} />
     </DndContext>
   );
 };

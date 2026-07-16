@@ -141,3 +141,52 @@ describe('OrderDetailModal — abertura via ?pedido=', () => {
     expect(document.body.style.overflow).toBe('hidden');
   });
 });
+
+describe('OrderDetailModal — navegação entre pedidos da mesma coluna', () => {
+  const renderWithSiblings = (path: string, siblings: string[]) =>
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <OrderDetailModal siblings={siblings} />
+      </MemoryRouter>,
+    );
+
+  it('sem siblings não renderiza a navegação', async () => {
+    renderAt('/stores/loja-1/orders?pedido=o1');
+    await screen.findByText('Maria Souza');
+    expect(screen.queryByRole('button', { name: /próximo pedido/i })).not.toBeInTheDocument();
+  });
+
+  it('mostra o contador "N de M" e navega pro próximo pedido sem fechar o modal', async () => {
+    const o2: Order = { ...baseOrder, id: 'o2', order_number: '1002', customer_name: 'Pedro Lima' };
+    mockGetOrder.mockImplementation((id: unknown) =>
+      Promise.resolve(id === 'o2' ? o2 : baseOrder),
+    );
+
+    renderWithSiblings('/stores/loja-1/orders?pedido=o1', ['o1', 'o2', 'o3']);
+    await screen.findByText('Maria Souza');
+    expect(screen.getByText('1 de 3')).toBeInTheDocument();
+    // primeiro da lista: "anterior" desabilitado
+    expect(screen.getByRole('button', { name: /pedido anterior/i })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: /próximo pedido/i }));
+
+    expect(await screen.findByText('Pedro Lima')).toBeInTheDocument();
+    expect(mockGetOrder).toHaveBeenCalledWith('o2');
+    expect(screen.getByText('2 de 3')).toBeInTheDocument();
+  });
+
+  it('no último pedido o botão próximo fica desabilitado', async () => {
+    renderWithSiblings('/stores/loja-1/orders?pedido=o1', ['o0', 'o1']);
+    await screen.findByText('Maria Souza');
+    expect(screen.getByText('2 de 2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /próximo pedido/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /pedido anterior/i })).toBeEnabled();
+  });
+
+  it('pedido fora da lista de siblings esconde a navegação', async () => {
+    renderWithSiblings('/stores/loja-1/orders?pedido=o1', ['x1', 'x2']);
+    await screen.findByText('Maria Souza');
+    expect(screen.queryByText(/de 2/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /próximo pedido/i })).not.toBeInTheDocument();
+  });
+});
