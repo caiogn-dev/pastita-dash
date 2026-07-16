@@ -3,14 +3,29 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-16)
 
 - `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **434 testes / 107 suítes verdes**.
+- `npm run lint`: gate em 400 warnings; **272 warnings** restantes (limpeza incremental em curso).
 
 ## Histórico
+
+### 2026-07-16 — Acessibilidade: nome acessível nos botões de fechar dos drawers de Clientes
+- **Medido:** varredura de botões "icon-only" (só ícone `XMarkIcon`, sem texto)
+  sem `aria-label`/`title`. Dois botões de fechar na página de Clientes ficavam
+  mudos para leitor de tela (anunciados apenas como "button"):
+  - `CustomerFormDrawer` (drawer de criar/editar cliente), header, botão X;
+  - `CustomerDrawer` (drawer de visualização do cliente), header, botão X.
+- **Mudado:** `aria-label="Fechar"` nos dois botões. `CustomerDrawer` passou a ser
+  exportado para permitir teste unitário direto (antes era interno ao módulo).
+- **Teste (TDD):** novo `CustomersDrawers.a11y.test.tsx` — escrito vermelho antes
+  (2/2 falhando por ausência de nome acessível), verde depois. Garante nome
+  acessível e o disparo de `onClose` em ambos os botões de fechar.
+- **Antes/depois:** 106→107 suítes, 432→434 testes; tsc limpo nos dois lados.
+- **Nota:** os drawers ainda não têm `role="dialog"`/focus-trap/fechar-no-Esc —
+  registrado como próximo passo de a11y (ver lista abaixo).
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,14 +65,20 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
-3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
+1. **A11y — semântica de diálogo nos drawers:** `CustomerDrawer`/`CustomerFormDrawer`
+   (e demais drawers/modais) ainda não têm `role="dialog"` + `aria-modal`,
+   focus-trap e fechar-no-`Esc`. É a próxima fatia de a11y de maior valor.
+2. **A11y — continuar varredura de icon-only:** ainda faltam nomes acessíveis em
+   `DashboardPage` (refresh do banner de pendentes, linha ~340),
+   `WhatsAppInboxPage` (botões "Chamada"/"Mais opções") e páginas de marketing/
+   instagram. Adicionar teste de regressão por componente conforme tocar.
+3. **Segurança/deps:** triar as 5 vulnerabilidades do `npm audit` (1 low, 2
+   moderate, 2 high). `form-data` (high), `js-yaml` e `@babel/core` têm correção
+   sem breaking via `npm audit fix`; `esbuild`/`vite` só via major (`vite@8`) —
+   avaliar separadamente. São todas deps de dev/build (não afetam o bundle).
+4. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.
-4. **Lint:** reduzir warnings restantes (~266) rumo a baixar o teto de `--max-warnings`.
-5. **Bundles pesados:** investigar `storesApi.ts` (1833 linhas) e
+5. **Lint:** reduzir warnings restantes (272) rumo a baixar o teto de `--max-warnings`.
+6. **Bundles pesados:** investigar `storesApi.ts` (1833 linhas) e
    `NewWhatsAppCampaignPage.tsx` (1704 linhas) para code-splitting/extração.

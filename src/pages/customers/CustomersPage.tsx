@@ -129,7 +129,7 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
       <div className="fixed inset-y-0 right-0 z-[60] w-full max-w-md bg-surface border-l border-border-token shadow-2xl flex flex-col animate-slide-in-right">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
           <p className="font-bold text-fg-token">{isEdit ? 'Editar cliente' : 'Novo cliente'}</p>
-          <button onClick={onClose} className="p-2 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2">
+          <button onClick={onClose} aria-label="Fechar" className="p-2 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2">
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
@@ -190,7 +190,7 @@ interface CustomerDrawerProps {
   onEdit?: (customer: StoreCustomer) => void;
 }
 
-const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEdit }) => {
+export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEdit }) => {
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
   const navigate = useNavigate();
@@ -243,6 +243,7 @@ const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEd
           </div>
           <button
             onClick={onClose}
+            aria-label="Fechar"
             className="p-2 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors"
           >
             <XMarkIcon className="h-5 w-5" />
