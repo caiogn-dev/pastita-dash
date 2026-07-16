@@ -31,6 +31,7 @@ const PaymentLinkPage = lazy(() => import('./pages/payments/PaymentLinkPage').th
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const PlanoPage = lazy(() => import('./pages/plano/PlanoPage').then(m => ({ default: m.PlanoPage })));
 const SubscriptionManagementPage = lazy(() => import('./pages/plano/SubscriptionManagementPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 // Agents Pages (Langchain AI)
 const AgentsPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentsPage })));
@@ -253,8 +254,12 @@ const AppContent: React.FC = () => {
         <Route path="whatsapp/handover" element={<PageBoundary><HandoverRequestsPage /></PageBoundary>} />
       </Route>
 
-      {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Catch all — 404 real (não redireciona mais silenciosamente para "/") */}
+      <Route path="*" element={
+        <Suspense fallback={<FullPageLoading />}>
+          <NotFoundPage />
+        </Suspense>
+      } />
     </Routes>
   );
 };

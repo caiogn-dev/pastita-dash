@@ -302,6 +302,8 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-5">
+      {/* Heading acessível da página (a11y) — visualmente o layout já contextualiza */}
+      <h1 className="sr-only">Dashboard</h1>
 
       {storeId && (
         <OnboardingWizard open={wizardOpen} steps={buildWizardSteps(storeId)} onClose={() => setWizardOpen(false)} />
