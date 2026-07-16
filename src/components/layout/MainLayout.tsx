@@ -9,7 +9,10 @@ import { useAuthStore } from '../../stores/authStore';
 export const MainLayout: React.FC = () => {
   const location = useLocation();
 
-  const isDedicatedOrderRoute = /^\/stores\/[^/]+\/orders(?:\/.*)?$/.test(location.pathname);
+  // Só o BOARD de pedidos é full-bleed (tem chrome próprio). Sub-rotas como
+  // /orders/new e /orders/:id ganham o shell normal (navbar + banner) — antes a
+  // regex engolia tudo e a OrderNewPage renderizava órfã, sem navegação.
+  const isDedicatedOrderRoute = /^\/stores\/[^/]+\/orders\/?$/.test(location.pathname);
   const isFullscreenRoute = /^\/(whatsapp\/(inbox|chat)|conversations|inbox)/.test(location.pathname);
 
   const isMobile = useIsMobileViewport();
@@ -23,7 +26,7 @@ export const MainLayout: React.FC = () => {
 
   if (isDedicatedOrderRoute) {
     return (
-      <div className="min-h-screen bg-[#f5f1e8] text-fg-primary dark:bg-[#050505]">
+      <div className="min-h-screen bg-canvas text-fg-token">
         <Outlet />
       </div>
     );
@@ -45,7 +48,7 @@ export const MainLayout: React.FC = () => {
     <div className="min-h-screen bg-bg-secondary text-fg-primary flex flex-col relative">
       <div
         className="fixed inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 55%)' }}
+        style={{ background: 'radial-gradient(circle at top right, rgba(201, 162, 75, 0.08), transparent 55%)' }}
       />
       <Navbar />
       <TrialBanner />

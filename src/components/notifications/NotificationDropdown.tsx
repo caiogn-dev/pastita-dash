@@ -5,6 +5,45 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { notificationsService, Notification } from '../../services/notifications';
 import { useWS } from '../../context/WebSocketContext';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
+
+/**
+ * Linha de opt-in de push DENTRO do dropdown de notificações — antes era um
+ * segundo BellIcon idêntico ao lado deste na navbar (dois sinos iguais lado a
+ * lado confundiam; agora existe um único centro de notificações).
+ */
+const PushToggleRow: React.FC = () => {
+  const { permission, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
+  if (permission === 'unsupported') return null;
+  const denied = permission === 'denied';
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border-token">
+      <div className="min-w-0">
+        <p className="text-sm text-fg-token">Push neste dispositivo</p>
+        {denied && (
+          <p className="text-xs text-fg-muted-token">Bloqueado nas permissões do navegador</p>
+        )}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isSubscribed}
+        aria-label={isSubscribed ? 'Desativar notificações push' : 'Ativar notificações push'}
+        disabled={isLoading || denied}
+        onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
+        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          isSubscribed ? 'bg-brand' : 'bg-surface-2 border border-border-token'
+        }`}
+      >
+        <span
+          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+            isSubscribed ? 'translate-x-[18px]' : 'translate-x-[3px]'
+          }`}
+        />
+      </button>
+    </div>
+  );
+};
 
 export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -115,9 +154,10 @@ export const NotificationDropdown: React.FC = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-full transition-colors"
+        aria-label="Notificações"
+        className="relative p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
       >
-        <BellIcon className="w-6 h-6" />
+        <BellIcon className="w-5 h-5" />
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -126,13 +166,13 @@ export const NotificationDropdown: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-800 z-50">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-zinc-800">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Notificações</h3>
+        <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] bg-surface text-fg-token rounded-lg shadow-lg border border-border-token z-50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-token">
+            <h3 className="font-semibold text-fg-token">Notificações</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
-                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1"
+                className="text-sm text-brand hover:opacity-80 flex items-center gap-1"
               >
                 <CheckIcon className="w-4 h-4" />
                 Marcar todas como lidas
@@ -142,18 +182,18 @@ export const NotificationDropdown: React.FC = () => {
 
           <div className="max-h-96 overflow-y-auto">
             {isLoading ? (
-              <div className="p-4 text-center text-gray-500 dark:text-zinc-400">Carregando...</div>
+              <div className="p-4 text-center text-fg-muted-token">Carregando...</div>
             ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 dark:text-zinc-400">
-                <BellIcon className="w-12 h-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+              <div className="p-8 text-center text-fg-muted-token">
+                <BellIcon className="w-12 h-12 mx-auto mb-2 opacity-40" />
                 <p>Nenhuma notificação</p>
               </div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`px-4 py-3 border-b border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 cursor-pointer transition-colors ${
-                    !notification.is_read ? 'bg-primary-50 dark:bg-primary-900/30' : ''
+                  className={`px-4 py-3 border-b border-border-token hover:bg-surface-2 cursor-pointer transition-colors ${
+                    !notification.is_read ? 'bg-brand-soft' : ''
                   }`}
                   onClick={() => !notification.is_read && handleMarkAsRead(notification.id)}
                 >
@@ -162,20 +202,20 @@ export const NotificationDropdown: React.FC = () => {
                       {getNotificationIcon(notification.notification_type)}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      <p className="text-sm font-medium text-fg-token truncate">
                         {notification.title}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-zinc-400 line-clamp-2">
+                      <p className="text-sm text-fg-muted-token line-clamp-2">
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      <p className="text-xs text-fg-muted-token mt-1">
                         {format(new Date(notification.created_at), "dd/MM 'às' HH:mm", {
                           locale: ptBR,
                         })}
                       </p>
                     </div>
                     {!notification.is_read && (
-                      <span className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-2" />
+                      <span className="w-2 h-2 bg-brand rounded-full flex-shrink-0 mt-2" />
                     )}
                   </div>
                 </div>
@@ -183,17 +223,7 @@ export const NotificationDropdown: React.FC = () => {
             )}
           </div>
 
-          <div className="px-4 py-3 border-t border-gray-200 dark:border-zinc-800">
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                // Navigate to notifications page
-              }}
-              className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 w-full text-center"
-            >
-              Ver todas as notificações
-            </button>
-          </div>
+          <PushToggleRow />
         </div>
       )}
     </div>

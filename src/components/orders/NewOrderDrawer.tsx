@@ -11,7 +11,7 @@
  * Os campos manual_discount_* e surcharge_* dependem das migrações da Fase 1.
  * Enquanto não estiverem prontos, o pedido é criado sem esses campos extras.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   XMarkIcon,
   ChevronRightIcon,
@@ -58,6 +58,12 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
 
   const doClose = () => { wiz.reset(); onClose(); };
 
+  // Ref estável pro Escape handler (doClose é recriado a cada render).
+  const doCloseRef = useRef(doClose);
+  doCloseRef.current = doClose;
+
+  const panelRef = useRef<HTMLDivElement>(null);
+
   // Sync on open: reset + apply initialCustomer
   useEffect(() => {
     if (isOpen) {
@@ -65,6 +71,44 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
       wiz.setCustomer((initialCustomer ?? null) as never);
     }
   }, [isOpen, initialCustomer]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A11y: Escape fecha o drawer (mesmo comportamento do Modal canônico).
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') doCloseRef.current();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
+
+  // A11y: scroll-lock do body enquanto o drawer está aberto (equivalente ao
+  // mecanismo do ui/modal.tsx, que mantém o lock module-private).
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
+  // A11y: foco inicial dentro do drawer ao abrir; ao fechar, devolve o foco
+  // pro elemento que estava focado antes.
+  useEffect(() => {
+    if (!isOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    if (panel) {
+      const firstFocusable = panel.querySelector<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      (firstFocusable ?? panel).focus();
+    }
+    return () => {
+      previouslyFocused?.focus?.();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -77,7 +121,14 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
       />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 bottom-0 z-[60] w-full max-w-md flex flex-col bg-white dark:bg-zinc-950 shadow-2xl overflow-hidden">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Novo Pedido (PDV)"
+        tabIndex={-1}
+        className="fixed right-0 top-0 bottom-0 z-[60] w-full max-w-md flex flex-col bg-surface shadow-2xl overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
           <div>
@@ -89,6 +140,7 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
           <button
             type="button"
             onClick={doClose}
+            aria-label="Fechar"
             className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
           >
             <XMarkIcon className="h-5 w-5" />

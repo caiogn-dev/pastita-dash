@@ -10,10 +10,9 @@ import {
   TrashIcon,
   PowerIcon,
   ChartBarIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Badge } from '../../components/common';
+import { Card, Button, Badge, Modal } from '../../components/common';
 import { whatsappService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { WhatsAppAccount } from '../../types';
@@ -235,27 +234,21 @@ export const AccountsPage: React.FC = () => {
       </div>
 
       {/* Delete Modal */}
-      {isDeleteOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsDeleteOpen(false)} />
-          <div className="relative bg-bg-card border border-border-primary rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-fg-primary">Excluir Conta</h2>
-              <button className="p-1 rounded hover:bg-bg-hover" onClick={() => setIsDeleteOpen(false)}>
-                <XMarkIcon className="w-5 h-5 text-fg-muted" />
-              </button>
-            </div>
-            <p className="text-fg-secondary mb-6">
-              Tem certeza que deseja excluir a conta "{selectedAccount?.name}"?{' '}
-              Esta ação não pode ser desfeita.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancelar</Button>
-              <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>Excluir</Button>
-            </div>
-          </div>
+      <Modal
+        open={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        size="sm"
+        title="Excluir Conta"
+      >
+        <p className="text-fg-muted-token mb-6">
+          Tem certeza que deseja excluir a conta "{selectedAccount?.name}"?{' '}
+          Esta ação não pode ser desfeita.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancelar</Button>
+          <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>Excluir</Button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

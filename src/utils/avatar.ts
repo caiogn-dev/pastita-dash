@@ -1,6 +1,15 @@
+// Paleta de avatar 100% dentro da identidade Dark Luxe (carvão + ouro):
+// variações de ouro/bronze/oliva/cobre — diferenciáveis entre si, mas nenhuma
+// foge da marca (nada de azul/roxo/verde/rosa).
 const PALETTE = [
-  '#C9A24B', '#2563eb', '#16a34a', '#d97706',
-  '#7c3aed', '#db2777', '#0891b2', '#65a30d',
+  '#C9A24B', // ouro (marca)
+  '#A67C2E', // ouro escuro
+  '#8C6D3F', // bronze
+  '#B0895A', // camelo
+  '#7A6A4F', // oliva acinzentado
+  '#9C7C38', // ocre
+  '#6E5A2E', // oliva escuro
+  '#5C5248', // carvão quente
 ];
 
 export function getAvatarColor(name: string): string {

@@ -99,7 +99,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Ouro→bronze da marca (era o gradiente roxo legado) */
+  background: linear-gradient(135deg, #C9A24B 0%, #8C6D3F 100%);
   color: white;
   display: flex;
   align-items: center;

@@ -16,6 +16,7 @@ import {
 } from '../../services/automation';
 import { AutoMessage, CompanyProfile, AutoMessageEventType, CreateAutoMessage } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '../../components/ui/modal';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../hooks';
 
@@ -170,6 +171,14 @@ const AutoMessagesPage: React.FC = () => {
       priority: 100,
       buttons: [],
     });
+  };
+
+  // Fecha o modal de criar/editar limpando o estado do formulário (usado pelo
+  // botão Cancelar e pelo Escape/overlay-click do Modal canônico).
+  const closeFormModal = () => {
+    setShowModal(false);
+    setEditingMessage(null);
+    resetForm();
   };
 
   const insertVariable = (variable: string) => {
@@ -358,181 +367,171 @@ const AutoMessagesPage: React.FC = () => {
       })}
 
       {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-50 dark:bg-black/75 bg-opacity-75" onClick={() => setShowModal(false)} />
-            <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <form onSubmit={handleSubmit}>
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                    {editingMessage ? 'Editar Mensagem' : 'Nova Mensagem'}
-                  </h3>
+      <Modal
+        open={showModal}
+        onClose={closeFormModal}
+        size="lg"
+        showCloseButton={false}
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <ModalHeader title={editingMessage ? 'Editar Mensagem' : 'Nova Mensagem'} />
+          <ModalBody className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-fg-token">
+                  Tipo de Evento
+                </label>
+                <select
+                  value={formData.event_type}
+                  onChange={(e) => setFormData({ ...formData, event_type: e.target.value as AutoMessageEventType })}
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                >
+                  {Object.entries(eventTypeLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-fg-token">
+                  Nome Interno
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-fg-token">
+                Texto da Mensagem
+              </label>
+              <textarea
+                rows={5}
+                value={formData.message_text}
+                onChange={(e) => setFormData({ ...formData, message_text: e.target.value })}
+                required
+                className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+              />
+              <div className="mt-2">
+                <p className="text-xs text-fg-muted-token mb-1">Variáveis disponíveis:</p>
+                <div className="flex flex-wrap gap-1">
+                  {messageVariables.map((v) => (
+                    <button
+                      key={v.key}
+                      type="button"
+                      onClick={() => insertVariable(v.key)}
+                      className="inline-flex items-center px-2 py-1 rounded bg-surface-2 border border-border-token text-fg-muted-token text-xs hover:text-fg-token transition-colors"
+                      title={v.description}
+                    >
+                      {`{${v.key}}`}
+                    </button>
+                  ))}
                 </div>
-                <div className="px-6 py-4 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
-                        Tipo de Evento
-                      </label>
-                      <select
-                        value={formData.event_type}
-                        onChange={(e) => setFormData({ ...formData, event_type: e.target.value as AutoMessageEventType })}
-                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      >
-                        {Object.entries(eventTypeLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
-                        Nome Interno
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        required
-                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      />
-                    </div>
-                  </div>
+              </div>
+            </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
-                      Texto da Mensagem
-                    </label>
-                    <textarea
-                      rows={5}
-                      value={formData.message_text}
-                      onChange={(e) => setFormData({ ...formData, message_text: e.target.value })}
-                      required
-                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
-                    />
-                    <div className="mt-2">
-                      <p className="text-xs text-gray-500 dark:text-zinc-400 mb-1">Variáveis disponíveis:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {messageVariables.map((v) => (
-                          <button
-                            key={v.key}
-                            type="button"
-                            onClick={() => insertVariable(v.key)}
-                            className="inline-flex items-center px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-zinc-300 text-xs hover:bg-gray-200"
-                            title={v.description}
-                          >
-                            {`{${v.key}}`}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-fg-token">
+                  Delay (segundos)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.delay_seconds}
+                  onChange={(e) => setFormData({ ...formData, delay_seconds: parseInt(e.target.value) })}
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-fg-token">
+                  Prioridade
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                />
+              </div>
+              <div className="flex items-end">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-border-token rounded"
+                  />
+                  <span className="ml-2 text-sm text-fg-token">Ativo</span>
+                </label>
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
-                        Delay (segundos)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.delay_seconds}
-                        onChange={(e) => setFormData({ ...formData, delay_seconds: parseInt(e.target.value) })}
-                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
-                        Prioridade
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={formData.priority}
-                        onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
-                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.is_active}
-                          onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                          className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-gray-300 dark:border-zinc-700 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700 dark:text-zinc-300">Ativo</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Buttons */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
-                        Botões Interativos (máx. 3)
-                      </label>
-                      {(formData.buttons?.length || 0) < 3 && (
-                        <button
-                          type="button"
-                          onClick={addButton}
-                          className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:text-green-300"
-                        >
-                          + Adicionar botão
-                        </button>
-                      )}
-                    </div>
-                    {formData.buttons?.map((btn, index) => (
-                      <div key={index} className="flex items-center space-x-2 mb-2">
-                        <input
-                          type="text"
-                          placeholder="ID"
-                          value={btn.id}
-                          onChange={(e) => updateButton(index, 'id', e.target.value)}
-                          className="w-32 rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Título do botão"
-                          value={btn.title}
-                          onChange={(e) => updateButton(index, 'title', e.target.value)}
-                          className="flex-1 rounded-md border-gray-300 dark:border-zinc-700 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeButton(index)}
-                          className="p-1 text-red-500 hover:text-red-700 dark:text-red-300"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end space-x-3">
+            {/* Buttons */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-fg-token">
+                  Botões Interativos (máx. 3)
+                </label>
+                {(formData.buttons?.length || 0) < 3 && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditingMessage(null);
-                      resetForm();
-                    }}
-                    className="px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
+                    onClick={addButton}
+                    className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                   >
-                    Cancelar
+                    + Adicionar botão
                   </button>
+                )}
+              </div>
+              {formData.buttons?.map((btn, index) => (
+                <div key={index} className="flex items-center space-x-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="ID"
+                    value={btn.id}
+                    onChange={(e) => updateButton(index, 'id', e.target.value)}
+                    className="w-32 rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Título do botão"
+                    value={btn.title}
+                    onChange={(e) => updateButton(index, 'title', e.target.value)}
+                    className="flex-1 rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
+                  />
                   <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                    type="button"
+                    onClick={() => removeButton(index)}
+                    className="p-1 text-red-500 hover:text-red-700 dark:hover:text-red-300"
                   >
-                    {editingMessage ? 'Atualizar' : 'Criar'}
+                    <TrashIcon className="h-4 w-4" />
                   </button>
                 </div>
-              </form>
+              ))}
             </div>
-          </div>
-        </div>
-      )}
+          </ModalBody>
+          <ModalFooter>
+            <button
+              type="button"
+              onClick={closeFormModal}
+              className="px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface hover:bg-surface-2 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+            >
+              {editingMessage ? 'Atualizar' : 'Criar'}
+            </button>
+          </ModalFooter>
+        </form>
+      </Modal>
 
       {ConfirmDialog}
 

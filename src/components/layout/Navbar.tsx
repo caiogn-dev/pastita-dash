@@ -5,6 +5,7 @@ import {
   ChevronDownIcon,
   XMarkIcon, Bars3Icon,
   ArrowRightOnRectangleIcon,
+  EllipsisHorizontalIcon,
 } from '@heroicons/react/24/outline';
 import { AccountMenu, ACCOUNT_LINKS } from './AccountMenu';
 import { useStore } from '../../hooks/useStore';
@@ -13,7 +14,7 @@ import { useTotalUnreadCount, useWsConnected } from '../../stores/chatStore';
 import { useAccountStore } from '../../stores/accountStore';
 import { StoreSelector } from './StoreSelector';
 import { ThemeToggle } from '../theme';
-import { NotificationDropdown, PushNotificationToggle } from '../notifications';
+import { NotificationDropdown } from '../notifications';
 import { buildNavSections, type NavSection } from './navSections';
 import { useAutomationEnabled } from '../../hooks/useAutomationEnabled';
 
@@ -134,14 +135,14 @@ function NavBtn({ section }: { section: NavSection }) {
         to={section.href}
         end={section.href === '/'}
         className={({ isActive: a }) =>
-          `flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+          `flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
             a
               ? 'bg-brand text-[var(--brand-strong)] font-medium'
               : 'text-white/70 hover:bg-white/10 hover:text-white'
           }`
         }
       >
-        <section.icon className="w-3.5 h-3.5 flex-shrink-0" />
+        <section.icon className="w-4 h-4 flex-shrink-0" />
         {section.label}
       </NavLink>
     );
@@ -154,13 +155,13 @@ function NavBtn({ section }: { section: NavSection }) {
         onClick={() => (open ? close() : openNow())}
         onMouseEnter={openNow}
         onMouseLeave={scheduleClose}
-        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
           isActive || open
             ? 'bg-brand text-[var(--brand-strong)] font-medium'
             : 'text-white/70 hover:bg-white/10 hover:text-white'
         }`}
       >
-        <section.icon className="w-3.5 h-3.5 flex-shrink-0" />
+        <section.icon className="w-4 h-4 flex-shrink-0" />
         {section.label}
         {section.badge && (
           <span className="text-[10px] bg-red-500 text-white px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center">
@@ -180,6 +181,53 @@ function NavBtn({ section }: { section: NavSection }) {
       )}
     </>
   );
+}
+
+/**
+ * Overflow "priority+" da nav desktop: mede a largura real de cada seção numa
+ * cópia invisível e calcula quantas cabem no container; o resto vai pro
+ * dropdown "Mais". Antes o container era overflow-x com scrollbar escondida —
+ * o último item era CORTADO em silêncio (ex.: "Configuraç" em ~1568px).
+ */
+function useOverflowNav(sectionCount: number) {
+  const containerRef = useRef<HTMLElement | null>(null);
+  const measureRef = useRef<HTMLDivElement | null>(null);
+  const [visibleCount, setVisibleCount] = useState(sectionCount);
+
+  useEffect(() => {
+    const MORE_BTN_W = 96; // botão "Mais" + folga
+    const GAP_W = 2; // gap-0.5
+    const compute = () => {
+      const container = containerRef.current;
+      const measure = measureRef.current;
+      if (!container || !measure) return;
+      const available = container.clientWidth;
+      const widths = Array.from(measure.children).map(
+        (c) => (c as HTMLElement).offsetWidth + GAP_W,
+      );
+      if (!widths.length || available <= 0) return;
+      const total = widths.reduce((a, b) => a + b, 0);
+      if (total <= available) {
+        setVisibleCount(widths.length);
+        return;
+      }
+      let used = 0;
+      let count = 0;
+      for (const w of widths) {
+        if (used + w + MORE_BTN_W > available) break;
+        used += w;
+        count += 1;
+      }
+      setVisibleCount(count);
+    };
+    compute();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(compute);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [sectionCount]);
+
+  return { containerRef, measureRef, visibleCount };
 }
 
 export const Navbar: React.FC = () => {
@@ -227,6 +275,23 @@ export const Navbar: React.FC = () => {
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
+  const { containerRef, measureRef, visibleCount } = useOverflowNav(sections.length);
+  const visibleSections = sections.slice(0, visibleCount);
+  const hiddenSections = sections.slice(visibleCount);
+  // Seções que não couberam viram itens do dropdown "Mais" (seções com
+  // sub-itens são achatadas com cabeçalho; links diretos viram item simples).
+  const overflowSection: NavSection | null = hiddenSections.length
+    ? {
+        label: 'Mais',
+        icon: EllipsisHorizontalIcon,
+        items: hiddenSections.flatMap((s) =>
+          s.items.length
+            ? s.items.map((it, i) => (i === 0 ? { ...it, sectionHeader: s.label } : it))
+            : [{ name: s.label, href: s.href!, icon: s.icon, badge: s.badge }],
+        ),
+      }
+    : null;
+
   return (
     <>
       <header
@@ -245,7 +310,7 @@ export const Navbar: React.FC = () => {
               'linear-gradient(90deg, transparent 0%, rgba(222,190,121,0.45) 50%, transparent 100%)',
           }}
         />
-        <div className="flex items-center gap-3 px-4 h-24">
+        <div className="flex items-center gap-3 px-4 h-16">
 
           {/* Logo */}
           <button onClick={() => navigate('/')} className="flex items-center gap-2 flex-shrink-0">
@@ -279,10 +344,22 @@ export const Navbar: React.FC = () => {
 
           <div className="w-px h-5 bg-white/20 flex-shrink-0" />
 
-          {/* Desktop nav — scroll-x quando as seções não cabem (dropdowns são portais, não sofrem clip) */}
-          <nav className="flex max-lg:hidden items-center gap-0.5 flex-1 min-w-0 overflow-x-auto scrollbar-none">
-            {sections.map((s) => <NavBtn key={s.label} section={s} />)}
+          {/* Desktop nav — itens que não cabem caem no dropdown "Mais" (nunca corta) */}
+          <nav
+            ref={containerRef}
+            className="flex max-lg:hidden items-center gap-0.5 flex-1 min-w-0 overflow-hidden"
+          >
+            {visibleSections.map((s) => <NavBtn key={s.label} section={s} />)}
+            {overflowSection && <NavBtn section={overflowSection} />}
           </nav>
+          {/* Cópia invisível só pra medição de largura (nunca interativa) */}
+          <div
+            ref={measureRef}
+            aria-hidden
+            className="max-lg:hidden pointer-events-none invisible fixed top-0 left-0 flex items-center gap-0.5 whitespace-nowrap"
+          >
+            {sections.map((s) => <NavBtn key={s.label} section={s} />)}
+          </div>
 
           {/* Right side */}
           <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
@@ -302,7 +379,6 @@ export const Navbar: React.FC = () => {
             )}
 
             <ThemeToggle />
-            <PushNotificationToggle />
             <NotificationDropdown />
 
             <AccountMenu />

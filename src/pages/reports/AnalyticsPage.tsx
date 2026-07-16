@@ -13,6 +13,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toCsv, downloadCsv } from '../../utils/csv';
+import { formatAxisCurrency } from '../../utils/formatters';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankBarList, type RankBarItem } from '../../components/reports/RankBarList';
@@ -273,7 +274,7 @@ const AnalyticsPage: React.FC = () => {
             color="#166534"
             height={350}
             valueFormat={formatCurrency}
-            yTickFormat={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
+            yTickFormat={formatAxisCurrency}
             xTickFormat={(v) => axisTickLabel(v, groupBy)}
             tooltipLabelFormat={(v) => tooltipDateLabel(v, groupBy)}
           />
@@ -503,7 +504,7 @@ const AnalyticsPage: React.FC = () => {
             color="#166534"
             height={350}
             valueFormat={formatCurrency}
-            yTickFormat={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
+            yTickFormat={formatAxisCurrency}
             xTickFormat={(v) => axisTickLabel(v, groupBy)}
             tooltipLabelFormat={(v) => tooltipDateLabel(v, groupBy)}
           />

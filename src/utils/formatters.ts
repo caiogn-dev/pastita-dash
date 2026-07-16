@@ -36,6 +36,19 @@ export function formatCompactCurrency(value: number): string {
   }).format(value);
 }
 
+/**
+ * Rótulo monetário de EIXO de gráfico. Abrevia só quando não perde resolução:
+ * `(v/1000).toFixed(0)` gerava eixos "R$ 1k, R$ 1k, R$ 0k, R$ 0k" para escalas
+ * pequenas (ticks 0–2000 colapsavam todos em 0k/1k).
+ */
+export function formatAxisCurrency(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) return `R$ ${formatNumber(value / 1_000_000, { maximumFractionDigits: 1 })}M`;
+  if (abs >= 10_000) return `R$ ${formatNumber(value / 1000, { maximumFractionDigits: 0 })}k`;
+  if (abs >= 1_000) return `R$ ${formatNumber(value / 1000, { maximumFractionDigits: 1 })}k`;
+  return `R$ ${formatNumber(value, { maximumFractionDigits: 0 })}`;
+}
+
 // ==================== Number Formatting ====================
 
 /**

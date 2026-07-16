@@ -27,8 +27,8 @@ export const OrderDetailPage: React.FC = () => {
   if (!id) return <PageLoading />;
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] text-[#171717] dark:bg-[#050505] dark:text-[#f4efe6]">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col px-4 pb-28 pt-4 sm:px-6 lg:px-8">
+    <div className="bg-canvas text-fg-token">
+      <div className="mx-auto flex w-full max-w-5xl flex-col pb-16">
         <OrderDetailContent
           orderId={id}
           variant="page"
