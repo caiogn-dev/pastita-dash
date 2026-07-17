@@ -347,6 +347,7 @@ export default function MessengerInbox() {
                   type="button"
                   onClick={() => void handleSend()}
                   disabled={!messageText.trim() || sending}
+                  aria-label="Enviar mensagem"
                   className="rounded-xl bg-blue-500 p-3 text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <PaperAirplaneIcon className="h-5 w-5" />

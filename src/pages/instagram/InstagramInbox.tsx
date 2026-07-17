@@ -651,6 +651,7 @@ export default function InstagramInbox() {
                   type="button"
                   onClick={() => void handleSendMessage()}
                   disabled={!messageText.trim() || sending}
+                  aria-label="Enviar mensagem"
                   className="rounded-xl bg-pink-500 p-3 text-white transition-colors hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <PaperAirplaneIcon className="h-5 w-5" />

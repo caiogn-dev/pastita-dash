@@ -3,14 +3,41 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-17)
 
 - `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **458 testes / 110 suítes verdes**.
+- `npm run lint`: gate em 400 warnings; **272 warnings** restantes (0 erros).
 
 ## Histórico
+
+### 2026-07-17 — A11y: nome acessível nos botões "Enviar mensagem" dos inboxes + conserto do mapper de CSS no Jest
+- **Medido:** os botões de enviar mensagem (icon-only, apenas `PaperAirplaneIcon`)
+  dos três inboxes de canal não expunham nenhum nome acessível — leitores de tela
+  não anunciavam nada na ação primária de "enviar". Afeta o fluxo principal do
+  painel (WhatsApp é o workflow central).
+  - `src/pages/whatsapp/WhatsAppInboxPage.tsx` (linha 428);
+  - `src/pages/instagram/InstagramInbox.tsx` (linha 650);
+  - `src/pages/messenger/MessengerInbox.tsx` (linha 346).
+- **Bug de infra de teste descoberto:** o `jest.config.cjs` mapeava CSS para
+  `identity-obj-proxy`, **dependência que não está instalada nem declarada** no
+  `package.json`. Nunca falhou porque nenhum teste renderizava um componente que
+  importa `.css`. Substituído por um stub local (`jestCssStub.cjs`) que imita o
+  `identity-obj-proxy` (Proxy que devolve o nome da classe), sem adicionar
+  dependência — habilitando testes de componentes que importam CSS.
+- **Mudado:**
+  - `aria-label="Enviar mensagem"` nos três botões de envio (mudança puramente
+    aditiva de acessibilidade, sem alteração de comportamento);
+  - `jest.config.cjs` aponta o mapper de CSS para `jestCssStub.cjs`;
+  - novo `jestCssStub.cjs`.
+- **Teste (TDD):** novo `src/pages/instagram/__tests__/InstagramInbox.a11y.test.tsx`
+  — escrito **vermelho** antes (o botão não tinha nome acessível), **verde** depois.
+  Monta o inbox com serviços mockados (conta/conversa auto-selecionadas) e assegura
+  `getByRole('button', { name: /enviar mensagem/i })`. Inclui polyfill de
+  `scrollIntoView` (jsdom não implementa).
+- **Antes/depois:** `npm test` 457/109 → **458 testes / 110 suítes**, todos verdes;
+  `npx tsc --noEmit` limpo nos dois lados; lint 0 erros / 272 warnings (sob o gate de 400).
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,9 +77,11 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
+1. **A11y — continuar varredura:** com o mapper de CSS do Jest consertado, os
+   componentes de inbox (`WhatsAppInboxPage`, `MessengerInbox`) agora são testáveis;
+   cobrir os demais botões icon-only sem nome acessível (ex.: `input` do compositor
+   sem label explícito, botões de ferramentas/templates que só têm `title`) e
+   adicionar teste de regressão por componente conforme tocar.
 2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
    moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
