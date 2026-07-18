@@ -49,6 +49,7 @@ import {
 } from '../../services/storesApi';
 import { useNotificationSound, useStore, useConfirm, useOrderDetailModal } from '../../hooks';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
+import { getErrorMessage } from '../../services';
 import { useRootStore } from '../../stores/rootStore';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import type { Order } from '../../types';
@@ -432,11 +433,19 @@ export const OrdersPage: React.FC = () => {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   // WebSocket real-time sync
-  const { isConnected: wsConnected } = useRealTimeOrders({
+  const { isConnected: wsConnected, connectionError: wsConnectionError } = useRealTimeOrders({
     enabled: Boolean(storeQuery),
     apiUrl: import.meta.env.VITE_API_URL,
     wsUrl: import.meta.env.VITE_WS_URL,
   });
+
+  // Aviso único quando o tempo real não conecta — o board continua funcionando
+  // via refresh manual/polling, mas o operador precisa saber que não é ao vivo.
+  useEffect(() => {
+    if (wsConnectionError) {
+      toast.error('Conexão em tempo real indisponível — atualizações automáticas de pedidos desativadas');
+    }
+  }, [wsConnectionError]);
 
   // Clean up local state when external data catches up
   useEffect(() => {
@@ -481,8 +490,9 @@ export const OrdersPage: React.FC = () => {
       await updateOrderStatus(order.id, action.status);
       patchOrder(order.id, { status: action.status });
       toast.success(`#${order.order_number} → ${action.label}`);
-    } catch {
-      toast.error('Erro ao atualizar status');
+    } catch (err) {
+      console.error('[OrdersPage] handleAdvance:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao atualizar status');
     } finally {
       setAdvancingId(null);
     }
@@ -494,8 +504,9 @@ export const OrdersPage: React.FC = () => {
       await markOrderPaid(order.id);
       patchOrder(order.id, { payment_status: 'paid' });
       toast.success(`Pagamento lançado #${order.order_number}`);
-    } catch {
-      toast.error('Erro ao lançar pagamento');
+    } catch (err) {
+      console.error('[OrdersPage] handlePay:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao lançar pagamento');
     } finally {
       setPayingId(null);
     }
@@ -513,8 +524,9 @@ export const OrdersPage: React.FC = () => {
       await cancelOrder(order.id);
       patchOrder(order.id, { status: 'cancelled' });
       toast.success(`Pedido #${order.order_number} cancelado`);
-    } catch {
-      toast.error('Erro ao cancelar pedido');
+    } catch (err) {
+      console.error('[OrdersPage] handleCancel:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao cancelar pedido');
     } finally {
       setCancellingId(null);
     }
@@ -627,9 +639,10 @@ export const OrdersPage: React.FC = () => {
       setSuccessIds(prev => new Set(prev).add(orderId));
       setTimeout(() => setSuccessIds(prev => { const n = new Set(prev); n.delete(orderId); return n; }), 2000);
       toast.success(`#${order.order_number} movido`);
-    } catch {
+    } catch (err) {
+      console.error('[OrdersPage] handleDragEnd:', err);
       setLocalStates(prev => { const n = new Map(prev); n.delete(orderId); return n; });
-      toast.error('Erro ao mover pedido');
+      toast.error(getErrorMessage(err) || 'Erro ao mover pedido');
     }
   };
 
@@ -646,7 +659,8 @@ export const OrdersPage: React.FC = () => {
       setOrders(storeQuery, response.results);
       setLastSync(new Date());
     } catch (error) {
-      console.error('Erro ao carregar pedidos:', error);
+      console.error('[OrdersPage] loadOrders:', error);
+      toast.error(getErrorMessage(error) || 'Erro ao carregar pedidos');
     } finally {
       setRefreshing(false);
       setLoading(false);

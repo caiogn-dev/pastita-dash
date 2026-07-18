@@ -8,7 +8,7 @@
  * - Handles reconnection
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRootStore } from '../stores/rootStore';
 import { useAuthStore } from '../stores/authStore';
 import { createWebSocket, clearWebSocketInstance } from '../services/websocket';
@@ -36,6 +36,8 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   });
   const wsRef = useRef<ReturnType<typeof createWebSocket> | null>(null);
   const refreshAbortRef = useRef<AbortController | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
     if (!enabled || !authToken || !selectedStoreId || !selectedStoreSlug) {
@@ -51,42 +53,28 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
 
       wsRef.current = ws;
 
-      // Connect
       try {
         await ws.connect();
-      } catch (error) {
-        console.error('WebSocket connection failed:', error);
+        setIsConnected(true);
+        setConnectionError(false);
+      } catch {
+        setIsConnected(false);
+        setConnectionError(true);
         return;
       }
 
-      // Subscribe to order events
-      ws.subscribe('order.created', (event) => {
-        console.log('Order created:', event.order_id);
+      // Subscribe to order events (sem console.log — payload contém dados de pedido)
+      ws.subscribe('order.created', () => {
         // Pedido novo: o payload do evento não traz items — precisa refetch
         refreshOrdersFromAPI();
       });
 
       ws.subscribe('order.updated', (event) => {
-        console.log('Order updated:', event.order_id, event.status);
         applyEventOrRefresh(event as OrderRealtimeEvent);
       });
 
       ws.subscribe('order.payment_received', (event) => {
-        console.log('Payment received:', event.order_id, event.amount);
         applyEventOrRefresh(event as OrderRealtimeEvent);
-      });
-
-      // Listen for connection events
-      ws.on('connected', () => {
-        console.log('WebSocket connected');
-      });
-
-      ws.on('disconnected', () => {
-        console.log('WebSocket disconnected - will reconnect automatically');
-      });
-
-      ws.on('error', (error: Error) => {
-        console.error('WebSocket error:', error);
       });
     };
 
@@ -99,6 +87,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       }
       refreshAbortRef.current?.abort();
       refreshAbortRef.current = null;
+      setIsConnected(false);
       clearWebSocketInstance();
     };
   }, [enabled, authToken, selectedStoreId, selectedStoreSlug, wsUrl]);
@@ -152,13 +141,17 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   };
 
   return {
-    isConnected: wsRef.current !== null,
+    isConnected,
+    connectionError,
     reconnect: async () => {
       if (wsRef.current && selectedStoreId && authToken) {
         try {
           await wsRef.current.connect();
-        } catch (error) {
-          console.error('Reconnection failed:', error);
+          setIsConnected(true);
+          setConnectionError(false);
+        } catch {
+          setIsConnected(false);
+          setConnectionError(true);
         }
       }
     },
