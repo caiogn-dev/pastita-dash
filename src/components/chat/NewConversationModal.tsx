@@ -113,7 +113,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
           <h2 className="font-display text-lg font-bold text-[var(--fg-primary,#111)] dark:text-[var(--dark-text-primary,#FAF9F7)]">
             Nova Conversa
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] transition-colors">
+          <button type="button" onClick={onClose} aria-label="Fechar" className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] transition-colors">
             <XMarkIcon className="w-5 h-5 text-[var(--fg-secondary)]" />
           </button>
         </div>
