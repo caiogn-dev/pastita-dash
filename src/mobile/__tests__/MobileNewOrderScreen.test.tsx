@@ -7,6 +7,7 @@ jest.mock('../../components/crm/CustomerSearchInput', () => ({ CustomerSearchInp
 jest.mock('../../services/orders', () => ({ ordersService: { calculateDeliveryFee: jest.fn(), createOrder: jest.fn() } }));
 jest.mock('../../services/products', () => ({ productsService: { getProducts: jest.fn().mockResolvedValue({ results: [] }) } }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
+jest.mock('../../services/api', () => ({ __esModule: true, getErrorMessage: (e: unknown) => (e instanceof Error ? e.message : 'Erro') }));
 
 import { useRootStore } from '../../stores/rootStore';
 import { MobileNewOrderScreen } from '../screens/MobileNewOrderScreen';
