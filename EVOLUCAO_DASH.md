@@ -3,14 +3,36 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-18)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high — todas em devDeps: vite/esbuild, form-data, js-yaml).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **461 testes / 110 suítes verdes**.
+- `npm run lint`: gate em 400 warnings; limpeza incremental em curso.
 
 ## Histórico
+
+### 2026-07-18 — Acessibilidade: toasts anunciáveis por leitores de tela
+- **Medido:** varredura de botões só-ícone sem nome acessível (26 candidatos). O
+  toast **ativo** do app é `src/components/molecules/Toast.tsx` (montado em toda a
+  aplicação via `ToastContext` → `ToastContainer`); o `src/components/ui/toast.tsx`
+  é código morto (não importado em lugar nenhum). Dois problemas no toast ativo:
+  1. o botão de fechar era só o `XMarkIcon`, **sem `aria-label`** → leitores de tela
+     não anunciavam nada nesse controle;
+  2. o container do toast **não tinha semântica de live region** (`role`/`aria-live`)
+     → notificações efêmeras (sucesso/erro de operações) **não eram anunciadas** a
+     usuários de leitor de tela.
+- **Mudado (`molecules/Toast.tsx`):**
+  - botão de fechar ganhou `aria-label="Fechar notificação"`, `type="button"` e o
+    ícone virou decorativo (`aria-hidden`);
+  - toast passou a expor live region: `error`/`warning` → `role="alert"` +
+    `aria-live="assertive"` (urgente); `success`/`info` → `role="status"` +
+    `aria-live="polite"`; ambos com `aria-atomic="true"`.
+- **Teste (TDD):** novo `molecules/__tests__/Toast.a11y.test.tsx` — escrito vermelho
+  antes, verde depois. Cobre nome acessível do botão de fechar, `onClose(id)` ao
+  clicar e as roles `alert`/`status` conforme a urgência.
+- **`ui/toast.tsx` deliberadamente não alterado** (código morto, como o `Sidebar.tsx`).
+- **Antes/depois:** 109→110 suítes, 457→461 testes; tsc limpo nos dois lados.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,9 +72,10 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
+1. **A11y — continuar varredura de botões só-ícone sem nome acessível.** Reais
+   confirmados ainda abertos (com teste de regressão por componente ao tocar):
+   `WhatsAppInboxPage.tsx:428` (enviar mensagem), `DashboardPage.tsx:340` (atualizar
+   dados), `CustomersPage.tsx:133/245` (fechar drawer) e `:543` (atualizar clientes).
 2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
    moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
