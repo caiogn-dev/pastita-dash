@@ -48,6 +48,34 @@ it('conecta o WebSocket usando o token do authStore (não do rootStore.auth)', a
   expect(mockWs.connect).toHaveBeenCalled();
 });
 
+it('deriva a base do WS do apiUrl quando wsUrl vem vazia (VITE_WS_URL ausente no build)', async () => {
+  renderHook(() =>
+    useRealTimeOrders({
+      enabled: true,
+      apiUrl: 'https://backend.pastita.com.br/api/v1',
+      wsUrl: undefined as unknown as string,
+    }),
+  );
+  await waitFor(() => expect(mockCreateWebSocket).toHaveBeenCalledTimes(1));
+  expect(mockCreateWebSocket).toHaveBeenCalledWith(
+    expect.objectContaining({ url: 'wss://backend.pastita.com.br' }),
+  );
+});
+
+it('descarta wsUrl contaminada por "undefined" (template string com env ausente)', async () => {
+  renderHook(() =>
+    useRealTimeOrders({
+      enabled: true,
+      apiUrl: 'https://backend.pastita.com.br/api/v1',
+      wsUrl: 'undefined/stores/s1/orders/',
+    }),
+  );
+  await waitFor(() => expect(mockCreateWebSocket).toHaveBeenCalledTimes(1));
+  expect(mockCreateWebSocket).toHaveBeenCalledWith(
+    expect.objectContaining({ url: 'wss://backend.pastita.com.br' }),
+  );
+});
+
 it('não conecta quando não há token em lugar nenhum', async () => {
   useAuthStore.setState({ token: null, isAuthenticated: false });
   renderHook(() => useRealTimeOrders(config));

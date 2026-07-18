@@ -23,6 +23,21 @@ export interface UseRealTimeOrdersConfig {
   wsUrl: string;
 }
 
+// VITE_WS_URL nunca existiu nos builds de produção (.env.production só define
+// VITE_WS_HOST) — as páginas passavam `undefined` (ou "undefined/..." via
+// template string) e o construtor WebSocket lançava na hora: o badge ficava
+// Offline pra sempre. O apiUrl chega válido (o board carrega por ele), então a
+// base do WS é derivada dele quando wsUrl não presta.
+export function resolveWsBaseUrl(wsUrl: string | undefined, apiUrl: string): string | null {
+  if (wsUrl && !wsUrl.startsWith('undefined')) return wsUrl;
+  try {
+    const api = new URL(apiUrl);
+    return `${api.protocol === 'http:' ? 'ws:' : 'wss:'}//${api.host}`;
+  } catch {
+    return null;
+  }
+}
+
 export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   const { enabled = true, apiUrl, wsUrl } = config;
   // Selectors estreitos: não re-renderizar a cada mudança em qualquer pedido.
@@ -44,9 +59,15 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       return;
     }
 
+    const wsBase = resolveWsBaseUrl(wsUrl, apiUrl);
+    if (!wsBase) {
+      setConnectionError(true);
+      return;
+    }
+
     const initWebSocket = async () => {
       const ws = createWebSocket({
-        url: wsUrl,
+        url: wsBase,
         token: authToken!,
         storeSlug: selectedStoreSlug,
       });
@@ -104,7 +125,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       setIsConnected(false);
       clearWebSocketInstance();
     };
-  }, [enabled, authToken, selectedStoreId, selectedStoreSlug, wsUrl]);
+  }, [enabled, authToken, selectedStoreId, selectedStoreSlug, wsUrl, apiUrl]);
 
   // Patch incremental: aplica o evento direto na store sem refetch da lista
   // inteira. Só refetch quando o pedido não está na lista (página filtrada,

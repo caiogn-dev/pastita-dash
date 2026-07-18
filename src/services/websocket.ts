@@ -33,6 +33,11 @@ export class WebSocketClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private listeners: Map<string, Set<(...args: any[]) => void>> = new Map();
   private reconnectAttempts = 0;
+  // disconnect() intencional dispara o evento 'close' do socket de forma
+  // assíncrona; sem esta flag o handler agendava reconexão e o client virava
+  // zumbi eterno da loja antiga (troca de loja/unmount criava um novo client
+  // enquanto o velho seguia reconectando pra sempre).
+  private intentionallyClosed = false;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private heartbeatTimeout: NodeJS.Timeout | null = null;
   private subscriptionIds: Map<string, { type: string; id: string }> = new Map();
@@ -49,6 +54,8 @@ export class WebSocketClient {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       return;
     }
+
+    this.intentionallyClosed = false;
 
     return new Promise((resolve, reject) => {
       try {
@@ -86,6 +93,7 @@ export class WebSocketClient {
   }
 
   disconnect(): void {
+    this.intentionallyClosed = true;
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -179,6 +187,11 @@ export class WebSocketClient {
   }
 
   private attemptReconnect(): void {
+    // Fechamento pedido pelo app (troca de loja, unmount): não reconectar.
+    if (this.intentionallyClosed) {
+      return;
+    }
+
     // Nunca desiste: um deploy do backend derruba o WS por ~1min e o teto de
     // 5 tentativas deixava o painel morto até um F5. Backoff exponencial com
     // teto de 30s; reconnectAttempts zera no próximo 'open'.

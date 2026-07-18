@@ -58,7 +58,9 @@ const KdsPage: React.FC = () => {
   useRealTimeOrders({
     enabled: Boolean(storeId),
     apiUrl: import.meta.env.VITE_API_URL,
-    wsUrl: `${import.meta.env.VITE_WS_URL}/stores/${storeId}/orders/`,
+    // Base only: o client já monta /ws/stores/<slug>/orders/ — passar o path
+    // aqui duplicava o caminho (e "undefined/..." quando a env não existia).
+    wsUrl: import.meta.env.VITE_WS_URL,
   });
 
   // Carga inicial (o WebSocket só entrega eventos novos)
