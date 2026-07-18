@@ -2,6 +2,7 @@ import { copyToClipboard } from '../../../utils/clipboard';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { ordersService } from '../../../services/orders';
+import { getErrorMessage } from '../../../services/api';
 import type { Product } from '../../../services/products';
 import type { CustomerSearchResult, UserAddress, DiscountType, RouteQuote } from '../../../types/crm';
 import type { CartItem, PaymentMethod, Customer } from './types';
@@ -74,8 +75,9 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     try {
       const data = await ordersService.calculateDeliveryFee(storeSlug, address);
       setRouteQuote({ fee: data.fee, distance_km: data.distance_km, duration_minutes: data.duration_minutes });
-    } catch {
-      toast.error('Erro ao calcular rota');
+    } catch (err) {
+      console.error('[NewOrderWizard] handleCalculateRoute:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao calcular rota');
       setRouteQuote(null);
     } finally {
       setCalculatingRoute(false);
@@ -156,8 +158,8 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
       }
       onCreated?.();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao criar pedido';
-      toast.error(msg, { duration: 6000 });
+      console.error('[NewOrderWizard] handleSubmit:', err);
+      toast.error(getErrorMessage(err) || 'Erro ao criar pedido', { duration: 6000 });
     } finally {
       setSubmitting(false);
     }

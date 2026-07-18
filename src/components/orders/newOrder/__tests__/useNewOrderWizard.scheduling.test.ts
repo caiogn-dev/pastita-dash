@@ -5,6 +5,7 @@ const calculateDeliveryFee = jest.fn();
 const createOrder = jest.fn();
 jest.mock('../../../../services/orders', () => ({ ordersService: { calculateDeliveryFee: (...a: unknown[]) => calculateDeliveryFee(...a), createOrder: (...a: unknown[]) => createOrder(...a) } }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
+jest.mock('../../../../services/api', () => ({ __esModule: true, getErrorMessage: (e: unknown) => (e instanceof Error ? e.message : 'Erro') }));
 
 import { useNewOrderWizard } from '../useNewOrderWizard';
 
