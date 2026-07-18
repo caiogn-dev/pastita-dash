@@ -179,13 +179,18 @@ export class WebSocketClient {
   }
 
   private attemptReconnect(): void {
+    // Nunca desiste: um deploy do backend derruba o WS por ~1min e o teto de
+    // 5 tentativas deixava o painel morto até um F5. Backoff exponencial com
+    // teto de 30s; reconnectAttempts zera no próximo 'open'.
     if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
       this.emit('error', new Error('Max reconnection attempts reached'));
-      return;
     }
 
     this.reconnectAttempts++;
-    const delay = this.config.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    const delay = Math.min(
+      this.config.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+      30_000,
+    );
 
     this.reconnectTimeout = setTimeout(async () => {
       try {

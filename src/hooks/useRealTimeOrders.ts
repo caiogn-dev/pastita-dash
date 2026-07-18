@@ -53,6 +53,20 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
 
       wsRef.current = ws;
 
+      // Reconexões em background (deploy do backend, rede) devem refletir no
+      // estado — antes o hook só sabia do connect() inicial e o painel ficava
+      // marcado como offline até um F5 mesmo com o WS de volta.
+      ws.on('connected', () => {
+        setIsConnected(true);
+        setConnectionError(false);
+      });
+      ws.on('disconnected', () => {
+        setIsConnected(false);
+      });
+      ws.on('error', () => {
+        setConnectionError(true);
+      });
+
       try {
         await ws.connect();
         setIsConnected(true);
