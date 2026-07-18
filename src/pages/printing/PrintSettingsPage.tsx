@@ -1,3 +1,4 @@
+import { copyToClipboard } from '../../utils/clipboard';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -151,10 +152,11 @@ const PrintSettingsPage: React.FC = () => {
     }
   };
 
-  const copyKey = () => {
+  const copyKey = async () => {
     if (!revealedKey) return;
-    navigator.clipboard.writeText(revealedKey.key);
-    toast.success('Chave copiada');
+    const ok = await copyToClipboard(revealedKey.key);
+    if (ok) toast.success('Chave copiada');
+    else toast.error('Não foi possível copiar. Copie manualmente.');
   };
 
   return (

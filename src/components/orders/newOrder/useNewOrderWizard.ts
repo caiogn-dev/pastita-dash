@@ -1,3 +1,4 @@
+import { copyToClipboard } from '../../../utils/clipboard';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { ordersService } from '../../../services/orders';
@@ -142,10 +143,10 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
       const pixCode = (created as { pix_code?: string })?.pix_code || '';
       const paymentError = (created as { payment_error?: string })?.payment_error;
       if (paymentMethod === 'pix' && (pixLink || pixCode)) {
-        try {
-          await navigator.clipboard.writeText(pixLink || pixCode);
+        const copied = await copyToClipboard(pixLink || pixCode);
+        if (copied) {
           toast.success('Pedido criado! Link PIX copiado — cole no WhatsApp do cliente.', { duration: 6000 });
-        } catch {
+        } else {
           toast.success('Pedido criado! Abra o pedido para ver o PIX.', { duration: 6000 });
         }
       } else if (paymentMethod === 'pix' && paymentError) {

@@ -9,6 +9,7 @@
  * TODO (Fase 3b): listar as cobranças avulsas já geradas. O backend ainda escopa
  * a listagem por order__store, então a lista de avulsas depende de evolução do backend.
  */
+import { copyToClipboard } from '../../utils/clipboard';
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { paymentsService, getErrorMessage } from '../../services';
@@ -71,9 +72,10 @@ export const PaymentLinkPage: React.FC = () => {
     }
   };
 
-  const handleCopy = (code: string) => {
-    navigator.clipboard?.writeText(code);
-    toast.success('Link copiado!');
+  const handleCopy = async (code: string) => {
+    const ok = await copyToClipboard(code);
+    if (ok) toast.success('Link copiado!');
+    else toast.error('Não foi possível copiar. Copie manualmente.');
   };
 
   return (

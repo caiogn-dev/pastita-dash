@@ -1,3 +1,4 @@
+import { copyToClipboard } from '../../utils/clipboard';
 import React, { useState, useEffect } from 'react';
 import {
   XMarkIcon,
@@ -63,9 +64,10 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
       .catch(() => {/* silent fail */});
   }, [storeId, conversation.phone_number, activeTab]);
 
-  const handleCopyPhone = () => {
-    navigator.clipboard.writeText(conversation.phone_number);
-    toast.success('Telefone copiado');
+  const handleCopyPhone = async () => {
+    const ok = await copyToClipboard(conversation.phone_number);
+    if (ok) toast.success('Telefone copiado');
+    else toast.error('Não foi possível copiar. Copie manualmente.');
   };
 
   const handleNoteBlur = () => {

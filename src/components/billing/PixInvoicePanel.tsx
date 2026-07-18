@@ -4,6 +4,7 @@
  * Extraído do markup inline de `OrderDetailContent.tsx` (Fase 3, Task 3) para poder ser
  * reaproveitado em outros fluxos de cobrança (ex: página de link de pagamento avulso).
  */
+import { copyToClipboard } from '../../utils/clipboard';
 import React from 'react';
 import toast from 'react-hot-toast';
 
@@ -59,13 +60,14 @@ export const PixInvoicePanel: React.FC<PixInvoicePanelProps> = ({
   const tone = resolveTone(status);
   const badge = badgeConfig[tone];
 
-  const handleCopy = (code: string) => {
+  const handleCopy = async (code: string) => {
     if (onCopy) {
       onCopy(code);
       return;
     }
-    navigator.clipboard?.writeText(code);
-    toast.success('Código PIX copiado!');
+    const ok = await copyToClipboard(code);
+    if (ok) toast.success('Código PIX copiado!');
+    else toast.error('Não foi possível copiar. Copie manualmente.');
   };
 
   const expiresAtLabel = expiresAt

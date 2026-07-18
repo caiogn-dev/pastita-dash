@@ -9,6 +9,7 @@
  * the original page. The outer chrome (full-screen background vs modal panel)
  * is provided by the caller so the same content renders in both surfaces.
  */
+import { copyToClipboard } from '../../utils/clipboard';
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   ArrowLeftIcon,
@@ -389,9 +390,10 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     }
   };
 
-  const handleCopyPix = (code: string) => {
-    navigator.clipboard?.writeText(code);
-    toast.success('Código PIX copiado!');
+  const handleCopyPix = async (code: string) => {
+    const ok = await copyToClipboard(code);
+    if (ok) toast.success('Código PIX copiado!');
+    else toast.error('Não foi possível copiar. Copie manualmente.');
   };
 
   // Silenciar mensagens automáticas de WhatsApp deste pedido (balcão):
