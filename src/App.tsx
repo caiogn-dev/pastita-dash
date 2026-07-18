@@ -2,7 +2,7 @@ import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import logger from './services/logger';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { MainLayout } from './components/layout';
 import { FullPageLoading } from './components/common';
 import { PageBoundary } from './components/ErrorBoundary';
@@ -92,11 +92,13 @@ const HandoverRequestsPage = lazy(() => import('./pages/whatsapp').then(m => ({ 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
-  
+  const location = useLocation();
+
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Guarda a rota de origem para o login devolver o usuário ao lugar certo
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
-  
+
   return <>{children}</>;
 };
 

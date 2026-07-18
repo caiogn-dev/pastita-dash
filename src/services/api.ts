@@ -69,11 +69,16 @@ api.interceptors.response.use(
       hadAuthHeader &&
       !isAuthEndpoint
     ) {
-      useAuthStore.getState().logout(); // also clears chatStore + rootStore
-      try {
-        delete api.defaults.headers.common.Authorization;
-      } catch {
-        /* ignore */
+      // Guarda contra duplo-logout: várias respostas 401 em voo disparavam
+      // logout repetido (e limpeza de stores) mesmo já deslogado.
+      const auth = useAuthStore.getState();
+      if (auth.isAuthenticated) {
+        auth.logout(); // also clears chatStore + rootStore
+        try {
+          delete api.defaults.headers.common.Authorization;
+        } catch {
+          /* ignore */
+        }
       }
     }
     return Promise.reject(error);
