@@ -322,6 +322,8 @@ export const CouponsPage: React.FC = () => {
                 <button
                   onClick={() => handleOpenModal(coupon)}
                   className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
+                  aria-label={`Editar cupom ${coupon.code}`}
+                  title={`Editar cupom ${coupon.code}`}
                 >
                   <PencilIcon className="w-5 h-5" />
                 </button>
@@ -331,6 +333,8 @@ export const CouponsPage: React.FC = () => {
                     setIsDeleteModalOpen(true);
                   }}
                   className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
+                  aria-label={`Excluir cupom ${coupon.code}`}
+                  title={`Excluir cupom ${coupon.code}`}
                 >
                   <TrashIcon className="w-5 h-5" />
                 </button>
@@ -412,7 +416,8 @@ export const CouponsPage: React.FC = () => {
                       <button
                         onClick={() => handleOpenModal(coupon)}
                         className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                        title="Editar"
+                        aria-label={`Editar cupom ${coupon.code}`}
+                        title={`Editar cupom ${coupon.code}`}
                       >
                         <PencilIcon className="w-5 h-5" />
                       </button>
@@ -422,7 +427,8 @@ export const CouponsPage: React.FC = () => {
                           setIsDeleteModalOpen(true);
                         }}
                         className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Excluir"
+                        aria-label={`Excluir cupom ${coupon.code}`}
+                        title={`Excluir cupom ${coupon.code}`}
                       >
                         <TrashIcon className="w-5 h-5" />
                       </button>
