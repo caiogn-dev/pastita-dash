@@ -7,9 +7,17 @@ import {
   TruckIcon,
   CurrencyDollarIcon,
   ClockIcon,
+  ChartBarIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
-import { getStore, updateStore, type Store } from '../../services/storesApi';
+import {
+  getStore,
+  updateStore,
+  getStoreMetaTracking,
+  updateStoreMetaTracking,
+  type Store,
+  type StoreMetaTracking,
+} from '../../services/storesApi';
 import { useStore } from '../../hooks';
 import logger from '../../services/logger';
 import { Card, Button, StatCard } from '../../components/ui';
@@ -45,6 +53,15 @@ const defaultDeliveryConfig: DeliveryConfig = {
   delivery_max_distance: 20.0,
 };
 
+const defaultMetaTracking: StoreMetaTracking = {
+  meta_pixel_id: '',
+  meta_pixel_enabled: false,
+  meta_capi_enabled: false,
+  meta_capi_access_token: '',
+  meta_capi_token_configured: false,
+  meta_capi_test_event_code: '',
+};
+
 export const StoreSettingsPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, stores } = useStore();
@@ -60,6 +77,7 @@ export const StoreSettingsPage: React.FC = () => {
   const [store, setStore] = useState<Store | null>(null);
   const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig>(defaultDeliveryConfig);
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
+  const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
   const [storeForm, setStoreForm] = useState({
     name: '',
     email: '',
@@ -81,8 +99,12 @@ export const StoreSettingsPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const data = await getStore(effectiveStoreId);
+      const [data, tracking] = await Promise.all([
+        getStore(effectiveStoreId),
+        getStoreMetaTracking(effectiveStoreId),
+      ]);
       setStore(data);
+      setMetaTracking({ ...tracking, meta_capi_access_token: '' });
 
       setStoreForm({
         name: data.name || '',
@@ -234,6 +256,30 @@ export const StoreSettingsPage: React.FC = () => {
     } catch (error) {
       logger.error('Error saving operating hours:', error);
       toast.error('Erro ao salvar horários de funcionamento');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveMetaTracking = async () => {
+    if (!effectiveStoreId) return;
+    setSaving(true);
+    try {
+      const payload: Partial<StoreMetaTracking> = {
+        meta_pixel_id: metaTracking.meta_pixel_id.trim(),
+        meta_pixel_enabled: metaTracking.meta_pixel_enabled,
+        meta_capi_enabled: metaTracking.meta_capi_enabled,
+        meta_capi_test_event_code: metaTracking.meta_capi_test_event_code.trim(),
+      };
+      if (metaTracking.meta_capi_access_token?.trim()) {
+        payload.meta_capi_access_token = metaTracking.meta_capi_access_token.trim();
+      }
+      const saved = await updateStoreMetaTracking(effectiveStoreId, payload);
+      setMetaTracking({ ...saved, meta_capi_access_token: '' });
+      toast.success('Rastreamento da Meta atualizado!');
+    } catch (error) {
+      logger.error('Error saving Meta tracking:', error);
+      toast.error('Erro ao salvar rastreamento da Meta');
     } finally {
       setSaving(false);
     }
@@ -546,6 +592,70 @@ export const StoreSettingsPage: React.FC = () => {
             className="mt-6 w-full justify-center"
           >
             {saving ? 'Salvando...' : 'Salvar Horários'}
+          </Button>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <ChartBarIcon className="w-5 h-5 text-fg-muted-token" />
+            <h3 className="text-base font-semibold text-fg-token">Meta Pixel e Conversions API</h3>
+          </div>
+          <p className="text-sm text-fg-muted-token mb-5">
+            Configuração exclusiva desta loja. Cole somente o ID numérico do Pixel; nenhum script é necessário.
+          </p>
+          <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-fg-muted-token">ID do Meta Pixel</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={metaTracking.meta_pixel_id}
+                  onChange={e => setMetaTracking(prev => ({
+                    ...prev,
+                    meta_pixel_id: e.target.value.replace(/\D/g, ''),
+                  }))}
+                  placeholder="Ex.: 123456789012345"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
+                />
+              </div>
+              <label className="flex items-center gap-3 text-sm text-fg-token cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={metaTracking.meta_pixel_enabled}
+                  onChange={e => setMetaTracking(prev => ({ ...prev, meta_pixel_enabled: e.target.checked }))}
+                  className="h-4 w-4 accent-[var(--color-brand)]"
+                />
+                Ativar Meta Pixel na vitrine
+              </label>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-fg-muted-token">
+                  Token da Conversions API {metaTracking.meta_capi_token_configured && '• configurado'}
+                </label>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={metaTracking.meta_capi_access_token || ''}
+                  onChange={e => setMetaTracking(prev => ({ ...prev, meta_capi_access_token: e.target.value }))}
+                  placeholder={metaTracking.meta_capi_token_configured ? 'Deixe vazio para manter o token atual' : 'Token gerado no Gerenciador de Eventos'}
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
+                />
+              </div>
+              <label className="flex items-center gap-3 text-sm text-fg-token cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={metaTracking.meta_capi_enabled}
+                  onChange={e => setMetaTracking(prev => ({ ...prev, meta_capi_enabled: e.target.checked }))}
+                  className="h-4 w-4 accent-[var(--color-brand)]"
+                />
+                Enviar compras pela Conversions API
+              </label>
+            </div>
+          </div>
+          <Button onClick={handleSaveMetaTracking} disabled={saving} className="mt-6 w-full justify-center">
+            {saving ? 'Salvando...' : 'Salvar Meta Pixel'}
           </Button>
         </Card>
 

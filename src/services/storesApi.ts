@@ -113,6 +113,15 @@ export interface StoreInput {
   custom_domain?: string | null;
 }
 
+export interface StoreMetaTracking {
+  meta_pixel_id: string;
+  meta_pixel_enabled: boolean;
+  meta_capi_enabled: boolean;
+  meta_capi_access_token?: string;
+  meta_capi_token_configured: boolean;
+  meta_capi_test_event_code: string;
+}
+
 export interface StoreIntegration {
   id: string;
   store: string;
@@ -557,6 +566,19 @@ export const updateStore = async (id: string, data: Partial<StoreInput>): Promis
     logger.error('Failed to update store', error);
     throw error;
   }
+};
+
+export const getStoreMetaTracking = async (id: string): Promise<StoreMetaTracking> => {
+  const response = await api.get(`${STORES_ADMIN_URL}/${id}/meta-tracking/`, { skipAutoLogout: true });
+  return response.data;
+};
+
+export const updateStoreMetaTracking = async (
+  id: string,
+  data: Partial<StoreMetaTracking>,
+): Promise<StoreMetaTracking> => {
+  const response = await api.patch(`${STORES_ADMIN_URL}/${id}/meta-tracking/`, data, { skipAutoLogout: true });
+  return response.data;
 };
 
 export const updateStoreWithFiles = async (
@@ -1768,6 +1790,8 @@ export default {
   getStore,
   createStore,
   updateStore,
+  getStoreMetaTracking,
+  updateStoreMetaTracking,
   updateStoreWithFiles,
   deleteStore,
   getStoreStats,
