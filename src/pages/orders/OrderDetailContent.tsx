@@ -31,7 +31,30 @@ import toast from 'react-hot-toast';
 import { Button, Modal, PageLoading } from '../../components/common';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
-import { Order, Payment } from '../../types';
+import { Order, Payment, OrderComboItem, ComboSelectedItem } from '../../types';
+
+// Linhas de seleção de combo (ex.: "Escolha sua salada: 1x Tilápia Suprema")
+// a partir do snapshot salvo no pedido (display_data.groups ou selected_variants_data).
+const comboSelectionLines = (combo: OrderComboItem | undefined): string[] => {
+  if (!combo) return [];
+  const fromGroups = (combo.display_data?.groups || []).flatMap((g) =>
+    (g.items || []).map((it: ComboSelectedItem) => {
+      const name = it.variant_name || it.product_name || '';
+      if (!name) return '';
+      const qty = it.quantity && it.quantity > 1 ? `${it.quantity}x ` : '';
+      return g.group_name ? `${g.group_name} ${qty}${name}` : `${qty}${name}`;
+    }).filter(Boolean)
+  );
+  if (fromGroups.length) return fromGroups;
+  return (combo.selected_variants_data || [])
+    .map((it) => {
+      const name = it.variant_name || it.product_name || '';
+      if (!name) return '';
+      const qty = it.quantity && it.quantity > 1 ? `${it.quantity}x ` : '';
+      return it.group_name ? `${it.group_name} ${qty}${name}` : `${qty}${name}`;
+    })
+    .filter(Boolean);
+};
 
 // Helper para parsear endereço (string JSON ou objeto)
 const parseAddress = (addr: string | Record<string, unknown> | undefined): Record<string, string> => {
@@ -722,6 +745,8 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               <div className="mt-4 space-y-2">
                 {order.items?.map((item, index) => {
                   const isSalad = !!(item.options?.is_salad_builder);
+                  const combo = order.combo_items?.find((c) => c.order_item === item.id);
+                  const selectionLines = comboSelectionLines(combo);
                   return (
                     <div
                       key={item.id || index}
@@ -741,6 +766,15 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                         <p className="mt-1 text-xs text-fg-muted-token">
                           {formatMoney(item.unit_price)} cada
                         </p>
+                        {selectionLines.length > 0 && (
+                          <ul className="mt-1 space-y-0.5" data-testid="combo-selections">
+                            {selectionLines.map((line, i) => (
+                              <li key={i} className="text-xs font-medium text-fg-token">
+                                • {line}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                         {item.notes && (
                           <p className="mt-1 text-xs text-fg-muted-token">
                             {item.notes}

@@ -190,3 +190,70 @@ describe('OrderDetailModal — navegação entre pedidos da mesma coluna', () =>
     expect(screen.queryByRole('button', { name: /próximo pedido/i })).not.toBeInTheDocument();
   });
 });
+
+describe('OrderDetailModal — seleções de combo por item', () => {
+  it('mostra os produtos escolhidos no combo (salada e suco) sob o item', async () => {
+    mockGetOrder.mockResolvedValue({
+      ...baseOrder,
+      items: [
+        {
+          id: 'it-combo',
+          product_name: 'Combo: COMBO SALADA + SUCO',
+          quantity: 1,
+          unit_price: 53.99,
+          subtotal: 53.99,
+        },
+      ],
+      combo_items: [
+        {
+          id: 'ci-1',
+          combo_name: 'COMBO SALADA + SUCO',
+          order_item: 'it-combo',
+          quantity: 1,
+          unit_price: 53.99,
+          subtotal: 53.99,
+          display_data: {
+            groups: [
+              {
+                group_name: 'Escolha sua salada:',
+                items: [{ product_name: 'Tilápia Suprema', quantity: 1 }],
+              },
+              {
+                group_name: 'Escolha seu suco:',
+                items: [{ product_name: 'Suco de Acerola 400ml', quantity: 1 }],
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as Order);
+    renderAt('/stores/loja-1/orders?pedido=o1');
+    expect(await screen.findByText(/Tilápia Suprema/)).toBeInTheDocument();
+    expect(screen.getByText(/Suco de Acerola 400ml/)).toBeInTheDocument();
+    expect(screen.getByText(/Escolha sua salada:/)).toBeInTheDocument();
+  });
+
+  it('cai no fallback selected_variants_data quando display_data não tem groups', async () => {
+    mockGetOrder.mockResolvedValue({
+      ...baseOrder,
+      items: [
+        { id: 'it-c2', product_name: 'Combo: X', quantity: 1, unit_price: 10, subtotal: 10 },
+      ],
+      combo_items: [
+        {
+          id: 'ci-2',
+          combo_name: 'X',
+          order_item: 'it-c2',
+          quantity: 1,
+          unit_price: 10,
+          subtotal: 10,
+          selected_variants_data: [
+            { group_name: 'Sabor', variant_name: 'Quatro Queijos', quantity: 2 },
+          ],
+        },
+      ],
+    } as unknown as Order);
+    renderAt('/stores/loja-1/orders?pedido=o1');
+    expect(await screen.findByText(/Sabor 2x Quatro Queijos/)).toBeInTheDocument();
+  });
+});
