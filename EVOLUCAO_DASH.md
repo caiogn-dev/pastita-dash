@@ -3,14 +3,36 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-22)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok. `npm audit` antes: 7 vulnerabilidades (1 low, 1 moderate, 5 high).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **484 testes / 117 suítes verdes**.
+- `npm run build` (vite): **ok** (~14s).
+- `npm run lint`: gate em 400 warnings; **267 warnings** restantes (0 errors).
 
 ## Histórico
+
+### 2026-07-22 — Segurança: `npm audit fix` (5 de 7 vulnerabilidades, incl. axios runtime)
+- **Medido:** `npm audit` reportava **7 vulnerabilidades** (1 low, 1 moderate, 5 high).
+  Destaque de risco real em runtime: **axios 1.16.1** com múltiplos CVEs high
+  (prototype pollution em subcampos de auth, DoS por recursão em `formDataToJSON`,
+  bypass de `maxBodyLength`) — axios é a base de toda a camada de API
+  (`src/services/api.ts`, `src/services/onboarding.ts`).
+- **Mudado:** `npm audit fix` **sem `--force`** (apenas bumps semver-compatíveis,
+  zero breaking). Somente `package-lock.json` alterado (as faixas em `package.json`
+  já cobriam as novas versões). Principais bumps:
+  - `axios` 1.16.1 → **1.18.1** (corrige todos os CVEs high de axios);
+  - `form-data`, `brace-expansion`, `js-yaml`, `@babel/core` → versões corrigidas.
+- **Fora de escopo (breaking):** restam 2 vulnerabilidades transitivas
+  **dev-only** — `esbuild`/`vite`, que só corrigem via `npm audit fix --force`
+  (instala `vite@8`, major breaking). Afetam apenas o dev-server local, não o
+  bundle de produção (Vercel builda estático). Adiado até validar upgrade do vite.
+- **Zero-regressão:** tsc limpo, **484/484 testes verdes** e `vite build` ok
+  antes e depois. Nenhum teste de unidade novo (bump de dependência não tem
+  superfície de teste própria; a verificação é a suíte completa + build verdes).
+
+#### Histórico anterior
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -53,8 +75,9 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
    (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
    regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
+2. **Segurança/deps (restante):** planejar upgrade de `vite@5 → vite@8` (breaking)
+   para eliminar as 2 vulnerabilidades dev-only de `esbuild`/`vite`. Validar
+   `vite.config.ts`, plugins e o transform de teste antes de aplicar.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.
