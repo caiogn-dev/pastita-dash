@@ -3,14 +3,34 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-19)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high —
+  `form-data` high tem `npm audit fix` não-breaking; `vite`/`esbuild` só via `--force`).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **486 testes / 118 suítes verdes** (era 482/117 antes desta fatia).
+- `npm run lint`: gate em 400 warnings; **267 warnings** restantes (limpeza incremental em curso).
 
 ## Histórico
+
+### 2026-07-19 — A11y: nomes acessíveis e labels associados em MessengerAccounts
+- **Medido:** varredura de controles icon-only sem nome acessível nas páginas ativas.
+  `src/pages/messenger/MessengerAccounts.tsx` tinha os piores casos — botões de
+  **editar** e **excluir** conta (ícones lápis/lixeira) e o **fechar** do modal
+  **sem `aria-label` nem `title`**: leitores de tela não anunciavam nada. Além disso,
+  o campo de **busca** só tinha `placeholder` (não é nome acessível) e os `label`
+  do formulário do modal **não estavam associados** aos inputs (sem `htmlFor`/`id`).
+- **Mudado (componente ativo):**
+  - editar conta → `aria-label="Editar conta <página>"` + `title`;
+  - excluir conta → `aria-label="Excluir conta <página>"` + `title`;
+  - fechar modal → `aria-label`/`title` "Fechar";
+  - busca → `aria-label="Buscar contas"`;
+  - cada `label` do modal ganhou `htmlFor` casado com o `id` do input correspondente.
+- **Teste (TDD):** novo `MessengerAccounts.a11y.test.tsx` — escrito vermelho (4/4
+  falhando) antes, verde depois. Cobre nomes acessíveis dos botões, do campo de busca
+  e a associação label↔input via `getByLabelText`. Mocka só `useConfirm` do barrel de
+  hooks (o barrel arrasta `import.meta` via useWebSocket→useStore→storeConfig).
+- **Antes/depois:** 117→118 suítes, 482→486 testes; `tsc --noEmit` limpo nos dois lados.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,11 +70,17 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
+1. **Segurança/deps (fatia rápida e segura):** aplicar `npm audit fix` (não-`--force`)
+   para o `form-data` (high, CRLF injection) e `js-yaml` (moderate) — sem breaking
+   change. Deixar `vite`/`esbuild` (só via `--force`, sobe pra vite@8) para uma fatia
+   dedicada com validação de build.
+2. **A11y — continuar varredura:** próximos alvos `NewWhatsAppCampaignPage`,
+   `InstagramInbox` e `ConnectionsPage` (os botões de ação lá têm `title`, que já dá
+   nome acessível de fallback, mas o `Modal` de QR/fechar merece revisão). Adicionar
+   teste de regressão por componente conforme tocar.
+   - **Nota de segurança (OK):** `ConnectionsPage` renderiza SVG de QR como `<img>`
+     (`data:image/svg+xml`), **não** via `dangerouslySetInnerHTML` — sem XSS. `tokenStorage`
+     centraliza a leitura do token (sem parse solto de localStorage).
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.

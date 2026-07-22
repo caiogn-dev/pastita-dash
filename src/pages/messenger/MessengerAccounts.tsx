@@ -96,6 +96,7 @@ export default function MessengerAccounts() {
           <div className="relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
             <input
+              aria-label="Buscar contas"
               className="pl-9 pr-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500 w-56"
               placeholder="Buscar contas..."
               value={searchQuery}
@@ -137,10 +138,20 @@ export default function MessengerAccounts() {
                   <p className="text-xs text-fg-muted">ID: {account.page_id}</p>
                 </div>
                 <div className="flex gap-1">
-                  <button onClick={() => openDialog(account)} className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors">
+                  <button
+                    onClick={() => openDialog(account)}
+                    aria-label={`Editar conta ${account.page_name}`}
+                    title="Editar conta"
+                    className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors"
+                  >
                     <PencilIcon className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDelete(account.id)} className="p-1.5 rounded hover:bg-bg-hover text-red-500 transition-colors">
+                  <button
+                    onClick={() => handleDelete(account.id)}
+                    aria-label={`Excluir conta ${account.page_name}`}
+                    title="Excluir conta"
+                    className="p-1.5 rounded hover:bg-bg-hover text-red-500 transition-colors"
+                  >
                     <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
@@ -182,7 +193,7 @@ export default function MessengerAccounts() {
           <div className="relative bg-bg-card border border-border-primary rounded-xl shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-5 border-b border-border-primary">
               <h2 className="text-lg font-semibold text-fg-primary">{editingAccount ? 'Editar Conta' : 'Adicionar Conta do Messenger'}</h2>
-              <button onClick={closeDialog} className="p-1 rounded hover:bg-bg-hover"><XMarkIcon className="w-5 h-5 text-fg-muted" /></button>
+              <button onClick={closeDialog} aria-label="Fechar" title="Fechar" className="p-1 rounded hover:bg-bg-hover"><XMarkIcon className="w-5 h-5 text-fg-muted" /></button>
             </div>
             <div className="p-5 flex flex-col gap-4">
               {[
@@ -192,8 +203,9 @@ export default function MessengerAccounts() {
                 { key: 'page_access_token', label: 'Page Access Token', type: 'password', placeholder: 'Token de acesso da página' },
               ].map(({ key, label, type, placeholder, disabled }) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium text-fg-secondary mb-1">{label}</label>
+                  <label htmlFor={`messenger-account-${key}`} className="block text-sm font-medium text-fg-secondary mb-1">{label}</label>
                   <input
+                    id={`messenger-account-${key}`}
                     type={type}
                     value={(formData as any)[key]}
                     onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
