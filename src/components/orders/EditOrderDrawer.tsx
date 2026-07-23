@@ -131,6 +131,7 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
           <p className="font-bold text-fg-token">Editar pedido</p>
           <button
             onClick={onClose}
+            aria-label="Fechar"
             className="p-2 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2"
           >
             <XMarkIcon className="h-5 w-5" />
