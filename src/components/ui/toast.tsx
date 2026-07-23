@@ -141,6 +141,7 @@ export const Toast: React.FC<ToastProps> = ({
         {/* Close button */}
         <button
           onClick={handleClose}
+          aria-label="Fechar notificação"
           className={cn(
             'shrink-0 p-1 rounded-lg',
             'hover:bg-black/5 dark:hover:bg-white/5',
