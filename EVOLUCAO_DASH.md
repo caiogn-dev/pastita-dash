@@ -3,14 +3,42 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-24)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok (9 vulnerabilidades reportadas pelo npm: 1 low, 3 moderate, 5 high).
+  `npm audit` não consegue consultar o registry pelo proxy nesta execução (504),
+  então a triagem de deps fica pendente para um ambiente com rede ao registry.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **489 testes / 118 suítes verdes** (após adicionar estado de erro na PaymentsPage).
+- `npm run build` (tsc && vite build, igual à CI/Vercel): **ok**.
+- `npm run lint`: gate em 400 warnings; **267 warnings** restantes (0 errors).
 
 ## Histórico
+
+### 2026-07-24 — UX/Resiliência: estado de erro na página de Pagamentos
+- **Medido:** `PaymentsPage.tsx` não tinha tratamento de erro. Quando
+  `usePaymentsOrders`/`useOrderStats` falhavam (rede/500), `isLoading` virava
+  false e a página renderizava **zeros enganosos** — "R$ 0,00 recebido",
+  "Nenhum pagamento encontrado" e KPIs zerados. Para uma página de faturamento,
+  isso faz o lojista achar que perdeu os dados quando na verdade a API caiu.
+- **Mudado (TDD, teste vermelho→verde):**
+  - Falha total (nenhum dado em cache) → estado de erro acionável via `EmptyState`
+    com ícone de alerta e botão **"Tentar novamente"** (refetch das duas queries),
+    em vez dos zeros.
+  - Falha parcial (há dados em cache, mas uma query falhou ao atualizar) → **aviso
+    não-bloqueante** no topo com retry; a tabela/KPIs em cache continuam visíveis.
+  - **Erro por SEÇÃO (refino pós-review do Codex):** cada query alimenta uma
+    seção independente (stats → KPIs; orders → tabela). Uma query que falha SEM
+    cache não cai mais no default zero/vazio da outra seção — a seção afetada
+    mostra o próprio erro com retro; falha total (as duas sem cache) mantém o
+    estado de erro de página inteira. O subtítulo "R$ X recebido" só aparece
+    quando o stats tem dado.
+  - Novo `src/pages/payments/__tests__/PaymentsPage.test.tsx` (5 casos): falha
+    total + retry chama refetch; render normal em sucesso; só stats falha (erro
+    nos KPIs, sem zeros, tabela intacta); só orders falha (erro na tabela, KPIs
+    intactos); falha de atualização com cache nas duas → aviso não-bloqueante.
+- **Antes/depois:** 484→489 testes, 117→118 suítes; tsc/build limpos nos dois
+  lados; lint sem novos warnings nos arquivos tocados.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,14 +78,20 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
+1. **Estados de erro — continuar varredura:** aplicar o mesmo padrão (erro total
+   acionável + aviso de falha parcial) em outras páginas orientadas a query que
+   ainda só tratam `isLoading`. Candidatas: páginas em `src/pages/reports` e
+   `src/pages/automation` que derivam KPIs de queries e podem exibir zeros na
+   falha. Auditar cada uma antes.
+2. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
    (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
    regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
-3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
+3. **Segurança/deps:** triar as vulnerabilidades do `npm audit` (1 low, 3 moderate,
+   5 high) e aplicar `npm audit fix` sem breaking changes — **requer ambiente com
+   rede ao registry npm** (o proxy desta execução retorna 504 no audit).
+4. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.
-4. **Lint:** reduzir warnings restantes (~266) rumo a baixar o teto de `--max-warnings`.
-5. **Bundles pesados:** investigar `storesApi.ts` (1833 linhas) e
-   `NewWhatsAppCampaignPage.tsx` (1704 linhas) para code-splitting/extração.
+5. **Lint:** reduzir warnings restantes (267) rumo a baixar o teto de `--max-warnings`.
+6. **Bundles pesados:** investigar `storesApi.ts` e `NewWhatsAppCampaignPage.tsx`
+   para code-splitting/extração.
