@@ -108,33 +108,66 @@ describe('PaymentsPage — estados de erro', () => {
     expect(screen.queryByText(/erro ao carregar pagamentos/i)).not.toBeInTheDocument();
   });
 
-  it('mostra aviso não-bloqueante quando há dados em cache mas uma query falha', () => {
-    ordersQueryMock.mockReturnValue({
-      ...idle,
-      data: {
-        results: [
-          {
-            id: 'o1',
-            order_number: '1001',
-            customer_name: 'Cliente',
-            total: 50,
-            payment_method: 'pix',
-            payment_status: 'paid',
-            created_at: '2026-07-24T12:00:00Z',
-          },
-        ],
-        count: 1,
-      },
-    });
-    // stats falhou, mas orders tem dados → não bloqueia, apenas avisa.
+  const orderRow = {
+    id: 'o1',
+    order_number: '1001',
+    customer_name: 'Cliente',
+    total: 50,
+    payment_method: 'pix',
+    payment_status: 'paid',
+    created_at: '2026-07-24T12:00:00Z',
+  };
+
+  it('só a query de stats falha (sem cache): erro na seção de indicadores, sem zeros — tabela intacta', () => {
+    ordersQueryMock.mockReturnValue({ ...idle, data: { results: [orderRow], count: 1 } });
+    // stats 500 sem dado em cache — NÃO pode renderizar KPIs zerados.
     statsQueryMock.mockReturnValue({ ...idle, isError: true });
 
     renderPage();
 
     // A tabela com o pedido continua visível.
     expect(screen.getByText('#1001')).toBeInTheDocument();
-    // E há um aviso de que alguns dados podem estar desatualizados.
-    expect(screen.getByText(/alguns dados podem estar desatualizados/i)).toBeInTheDocument();
+    // Os indicadores mostram erro em vez de "R$ 0,00 recebido".
+    expect(screen.getByText(/não foi possível carregar os indicadores/i)).toBeInTheDocument();
+    // Nenhum texto "recebido" (nem subtítulo, nem card "Total Recebido") deve aparecer.
+    expect(screen.queryByText(/recebido/i)).not.toBeInTheDocument();
+    // Não é falha total.
     expect(screen.queryByText(/erro ao carregar pagamentos/i)).not.toBeInTheDocument();
+  });
+
+  it('só a query de orders falha (sem cache): erro na seção da tabela, sem "nenhum pagamento" — KPIs intactos', () => {
+    ordersQueryMock.mockReturnValue({ ...idle, isError: true });
+    statsQueryMock.mockReturnValue({
+      ...idle,
+      data: { total: 5, today: 0, revenue: { total: 1234 }, by_payment_status: { paid: 5 } },
+    });
+
+    renderPage();
+
+    // KPIs reais renderizam (receita 1.234,00).
+    expect(screen.getAllByText(/1\.234,00/).length).toBeGreaterThan(0);
+    // A tabela mostra erro, não o enganoso "nenhum pagamento encontrado".
+    expect(screen.getByText(/não foi possível carregar os pedidos/i)).toBeInTheDocument();
+    expect(screen.queryByText(/nenhum pagamento encontrado/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/erro ao carregar pagamentos/i)).not.toBeInTheDocument();
+  });
+
+  it('falha de atualização com dados em cache nas duas queries: aviso não-bloqueante', () => {
+    ordersQueryMock.mockReturnValue({ ...idle, isError: true, data: { results: [orderRow], count: 1 } });
+    statsQueryMock.mockReturnValue({
+      ...idle,
+      isError: true,
+      data: { total: 5, today: 0, revenue: { total: 1234 }, by_payment_status: { paid: 5 } },
+    });
+
+    renderPage();
+
+    // Dados em cache continuam visíveis...
+    expect(screen.getByText('#1001')).toBeInTheDocument();
+    expect(screen.getAllByText(/1\.234,00/).length).toBeGreaterThan(0);
+    // ...com aviso de que podem estar desatualizados.
+    expect(screen.getByText(/alguns dados podem estar desatualizados/i)).toBeInTheDocument();
+    // Sem erros de seção (as duas têm cache).
+    expect(screen.queryByText(/não foi possível carregar/i)).not.toBeInTheDocument();
   });
 });

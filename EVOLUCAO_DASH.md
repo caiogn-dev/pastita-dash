@@ -9,7 +9,8 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   `npm audit` não consegue consultar o registry pelo proxy nesta execução (504),
   então a triagem de deps fica pendente para um ambiente com rede ao registry.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **487 testes / 118 suítes verdes** (após adicionar estado de erro na PaymentsPage).
+- `npm test`: **489 testes / 118 suítes verdes** (após adicionar estado de erro na PaymentsPage).
+- `npm run build` (tsc && vite build, igual à CI/Vercel): **ok**.
 - `npm run lint`: gate em 400 warnings; **267 warnings** restantes (0 errors).
 
 ## Histórico
@@ -26,10 +27,18 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
     em vez dos zeros.
   - Falha parcial (há dados em cache, mas uma query falhou ao atualizar) → **aviso
     não-bloqueante** no topo com retry; a tabela/KPIs em cache continuam visíveis.
-  - Novo `src/pages/payments/__tests__/PaymentsPage.test.tsx` (3 casos): erro total
-    + retry chama refetch; render normal em sucesso; aviso na falha parcial.
-- **Antes/depois:** 484→487 testes, 117→118 suítes; tsc limpo nos dois lados;
-  lint sem novos warnings nos arquivos tocados.
+  - **Erro por SEÇÃO (refino pós-review do Codex):** cada query alimenta uma
+    seção independente (stats → KPIs; orders → tabela). Uma query que falha SEM
+    cache não cai mais no default zero/vazio da outra seção — a seção afetada
+    mostra o próprio erro com retro; falha total (as duas sem cache) mantém o
+    estado de erro de página inteira. O subtítulo "R$ X recebido" só aparece
+    quando o stats tem dado.
+  - Novo `src/pages/payments/__tests__/PaymentsPage.test.tsx` (5 casos): falha
+    total + retry chama refetch; render normal em sucesso; só stats falha (erro
+    nos KPIs, sem zeros, tabela intacta); só orders falha (erro na tabela, KPIs
+    intactos); falha de atualização com cache nas duas → aviso não-bloqueante.
+- **Antes/depois:** 484→489 testes, 117→118 suítes; tsc/build limpos nos dois
+  lados; lint sem novos warnings nos arquivos tocados.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3

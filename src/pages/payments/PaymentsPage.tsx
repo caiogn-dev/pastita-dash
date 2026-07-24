@@ -117,12 +117,20 @@ export const PaymentsPage: React.FC = () => {
 
   const isLoading = ordersQuery.isLoading || statsQuery.isLoading;
 
-  // Erro de qualquer uma das queries. Sem isto, uma falha de API deixava
+  // Tratamento de erro por SEÇÃO. Sem isto, uma falha de API deixava
   // `isLoading` false e a página renderizava zeros ("R$ 0,00 recebido",
   // "Nenhum pagamento encontrado") — enganando o lojista a achar que perdeu
   // o faturamento.
+  //
+  // Cada query alimenta uma seção independente (stats → KPIs; orders → tabela),
+  // então avaliamos a falha de cada uma isoladamente: uma query que falhou SEM
+  // dado em cache não pode cair no default zero/vazio da outra seção.
+  const statsFailed = statsQuery.isError && statsQuery.data === undefined;
+  const ordersFailed = ordersQuery.isError && ordersQuery.data === undefined;
   const hasError = ordersQuery.isError || statsQuery.isError;
-  const hasData = ordersQuery.data !== undefined || statsQuery.data !== undefined;
+  // Falha de atualização mas com dados em cache nas duas seções (keepPreviousData):
+  // mostramos o cache com um aviso não-bloqueante, sem bloquear a página.
+  const staleWarning = hasError && !statsFailed && !ordersFailed;
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['orders', 'payments'] });
@@ -316,9 +324,9 @@ export const PaymentsPage: React.FC = () => {
     return <PageLoading />;
   }
 
-  // Falha total (sem nenhum dado em cache): não renderiza zeros enganosos —
-  // mostra um estado de erro acionável com "Tentar novamente".
-  if (hasError && !hasData) {
+  // Falha total (as duas seções sem nenhum dado em cache): não renderiza zeros
+  // enganosos — mostra um estado de erro acionável com "Tentar novamente".
+  if (statsFailed && ordersFailed) {
     return (
       <div className="p-6 space-y-6">
         <PageTitle title="Pagamentos" />
@@ -338,13 +346,14 @@ export const PaymentsPage: React.FC = () => {
     <div className="p-6 space-y-6">
       <PageTitle
         title="Pagamentos"
-        subtitle={`${stats.total} pedido(s) | ${formatMoney(stats.totalRevenue)} recebido`}
+        // Subtítulo depende do stats agregado; se ele falhou sem cache, não
+        // exibimos o "R$ 0,00 recebido" enganoso.
+        subtitle={statsFailed ? undefined : `${stats.total} pedido(s) | ${formatMoney(stats.totalRevenue)} recebido`}
       />
 
-      {/* Falha parcial: temos dados em cache mas uma query falhou ao atualizar.
-          Aviso não-bloqueante para o lojista saber que os números podem não
-          refletir o estado mais recente. */}
-      {hasError && (
+      {/* Falha de atualização com dados em cache: aviso não-bloqueante para o
+          lojista saber que os números podem não refletir o estado mais recente. */}
+      {staleWarning && (
         <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
           <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
           <span className="text-sm text-red-700 dark:text-red-300 flex-1">
@@ -357,7 +366,17 @@ export const PaymentsPage: React.FC = () => {
         </div>
       )}
 
-        {/* Stats Cards */}
+        {/* Stats Cards — erro isolado da seção quando o stats falhou sem cache. */}
+        {statsFailed ? (
+          <Card>
+            <EmptyState
+              icon={<ExclamationTriangleIcon className="w-8 h-8 text-red-500" />}
+              title="Não foi possível carregar os indicadores"
+              description="Os valores de faturamento não puderam ser carregados. Tente novamente."
+              action={{ label: 'Tentar novamente', onClick: retry }}
+            />
+          </Card>
+        ) : (
         <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           <Card className="p-4">
             <div className="flex items-center gap-3">
@@ -411,6 +430,7 @@ export const PaymentsPage: React.FC = () => {
             </div>
           </Card>
         </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -430,7 +450,18 @@ export const PaymentsPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Payments Table */}
+        {/* Payments Table — erro isolado quando a lista de pedidos falhou sem
+            cache: mostra erro em vez do enganoso "Nenhum pagamento encontrado". */}
+        {ordersFailed ? (
+          <Card>
+            <EmptyState
+              icon={<ExclamationTriangleIcon className="w-8 h-8 text-red-500" />}
+              title="Não foi possível carregar os pedidos"
+              description="A lista de pagamentos não pôde ser carregada. Tente novamente."
+              action={{ label: 'Tentar novamente', onClick: retry }}
+            />
+          </Card>
+        ) : (
         <Card noPadding>
           <Table
             columns={columns}
@@ -448,6 +479,7 @@ export const PaymentsPage: React.FC = () => {
             />
           )}
         </Card>
+        )}
     </div>
   );
 };
