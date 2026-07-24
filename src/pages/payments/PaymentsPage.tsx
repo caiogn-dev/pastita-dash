@@ -20,6 +20,7 @@ import {
   QrCodeIcon,
   LinkIcon,
   ClipboardIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import {
   Card,
@@ -29,6 +30,7 @@ import {
   PageLoading,
   StatusFilter,
   PageTitle,
+  EmptyState,
 } from '../../components/common';
 import { ordersService } from '../../services';
 import { Order } from '../../types';
@@ -115,9 +117,21 @@ export const PaymentsPage: React.FC = () => {
 
   const isLoading = ordersQuery.isLoading || statsQuery.isLoading;
 
+  // Erro de qualquer uma das queries. Sem isto, uma falha de API deixava
+  // `isLoading` false e a página renderizava zeros ("R$ 0,00 recebido",
+  // "Nenhum pagamento encontrado") — enganando o lojista a achar que perdeu
+  // o faturamento.
+  const hasError = ordersQuery.isError || statsQuery.isError;
+  const hasData = ordersQuery.data !== undefined || statsQuery.data !== undefined;
+
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['orders', 'payments'] });
     queryClient.invalidateQueries({ queryKey: ['order-stats'] });
+  };
+
+  const retry = () => {
+    ordersQuery.refetch();
+    statsQuery.refetch();
   };
 
   // Handle confirm payment (mark as paid)
@@ -302,12 +316,46 @@ export const PaymentsPage: React.FC = () => {
     return <PageLoading />;
   }
 
+  // Falha total (sem nenhum dado em cache): não renderiza zeros enganosos —
+  // mostra um estado de erro acionável com "Tentar novamente".
+  if (hasError && !hasData) {
+    return (
+      <div className="p-6 space-y-6">
+        <PageTitle title="Pagamentos" />
+        <Card>
+          <EmptyState
+            icon={<ExclamationTriangleIcon className="w-8 h-8 text-red-500" />}
+            title="Erro ao carregar pagamentos"
+            description="Não foi possível carregar os dados de pagamento. Verifique sua conexão e tente novamente."
+            action={{ label: 'Tentar novamente', onClick: retry }}
+          />
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <PageTitle
         title="Pagamentos"
         subtitle={`${stats.total} pedido(s) | ${formatMoney(stats.totalRevenue)} recebido`}
       />
+
+      {/* Falha parcial: temos dados em cache mas uma query falhou ao atualizar.
+          Aviso não-bloqueante para o lojista saber que os números podem não
+          refletir o estado mais recente. */}
+      {hasError && (
+        <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+          <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+          <span className="text-sm text-red-700 dark:text-red-300 flex-1">
+            Alguns dados podem estar desatualizados — houve uma falha ao atualizar.
+          </span>
+          <Button variant="secondary" size="sm" onClick={retry}>
+            <ArrowPathIcon className="w-4 h-4 mr-1" />
+            Tentar novamente
+          </Button>
+        </div>
+      )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
