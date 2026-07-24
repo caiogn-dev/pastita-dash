@@ -5,6 +5,7 @@ import {
   BoltIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
   MegaphoneIcon, DocumentTextIcon, DocumentChartBarIcon, EnvelopeIcon,
   ClockIcon, PresentationChartLineIcon, SparklesIcon, RectangleGroupIcon,
+  QrCodeIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -78,6 +79,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       label: 'PDV',
       icon: CreditCardIcon,
       items: [
+        { name: 'Balcão (Scanner)',   href: storeHref('pdv'),      icon: QrCodeIcon },
         { name: 'Caixa',              href: storeHref('cash'),     icon: CreditCardIcon },
         { name: 'Link de pagamento',  href: '/payments/link',      icon: CreditCardIcon },
         { name: 'Modo Cozinha (KDS)', href: storeHref('kds'),      icon: ClockIcon },
