@@ -127,6 +127,11 @@ export function StepItens({
                       ? onQtyChange(item.product.id, item.quantity - 1)
                       : onRemove(item.product.id)
                   }
+                  aria-label={
+                    item.quantity > 1
+                      ? `Diminuir quantidade de ${item.product.name}`
+                      : `Remover ${item.product.name} do carrinho`
+                  }
                   className="flex items-center justify-center h-6 w-6 rounded-full border border-gray-200 dark:border-zinc-700 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   <MinusIcon className="h-3 w-3" />
@@ -137,6 +142,7 @@ export function StepItens({
                 <button
                   type="button"
                   onClick={() => onQtyChange(item.product.id, item.quantity + 1)}
+                  aria-label={`Aumentar quantidade de ${item.product.name}`}
                   className="flex items-center justify-center h-6 w-6 rounded-full border border-gray-200 dark:border-zinc-700 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   <PlusIcon className="h-3 w-3" />
@@ -144,6 +150,7 @@ export function StepItens({
                 <button
                   type="button"
                   onClick={() => onRemove(item.product.id)}
+                  aria-label={`Remover ${item.product.name} do carrinho`}
                   className="ml-1 text-red-400 hover:text-red-600 transition-colors"
                 >
                   <TrashIcon className="h-4 w-4" />
