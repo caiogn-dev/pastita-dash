@@ -8,12 +8,17 @@ import {
   CheckCircleIcon,
   ClipboardDocumentIcon,
   BuildingStorefrontIcon,
+  UserIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, ModalHeader, ModalBody, SearchInput } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
-import { getStores, getProducts, updateProduct, StoreProduct } from '../../services/storesApi';
+import {
+  getStores, getProducts, updateProduct, getCustomers,
+  StoreProduct, StoreCustomer,
+} from '../../services/storesApi';
 import { ordersService } from '../../services/orders';
 import type { Order } from '../../types';
 
@@ -37,6 +42,13 @@ interface CatalogEntry {
 
 interface ComandaItem extends CatalogEntry {
   quantity: number;
+}
+
+/** Cliente vinculado à venda (opcional — sem ele a venda sai como "Cliente Balcão"). */
+interface PdvCustomer {
+  name: string;
+  phone: string;
+  email?: string;
 }
 
 /** Cobrança PIX pendente exibida no modal pós-venda (uma por loja). */
@@ -84,6 +96,15 @@ const PdvBalcaoPage: React.FC = () => {
 
   // Cobranças PIX geradas na finalização (modal com QR + acompanhamento)
   const [pixCharges, setPixCharges] = useState<PixCharge[] | null>(null);
+
+  // Cliente vinculado (opcional) + modal de busca/cadastro
+  const [customer, setCustomer] = useState<PdvCustomer | null>(null);
+  const [customerModal, setCustomerModal] = useState(false);
+  const [custSearch, setCustSearch] = useState('');
+  const [custResults, setCustResults] = useState<StoreCustomer[]>([]);
+  const [custSearching, setCustSearching] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
 
   const lastScanRef = useRef<{ code: string; at: number }>({ code: '', at: 0 });
 
@@ -175,8 +196,51 @@ const PdvBalcaoPage: React.FC = () => {
   }, [byCode, addEntry]);
 
   useBarcodeScanner(handleScan, {
-    disabled: unknownCode !== null || submitting || pixCharges !== null,
+    disabled: unknownCode !== null || submitting || pixCharges !== null || customerModal,
   });
+
+  // Busca de clientes (todas as lojas do usuário) com debounce
+  useEffect(() => {
+    if (!customerModal) return undefined;
+    const term = custSearch.trim();
+    if (term.length < 2) {
+      setCustResults([]);
+      return undefined;
+    }
+    const t = setTimeout(async () => {
+      setCustSearching(true);
+      try {
+        const res = await getCustomers({ search: term, page_size: 8 });
+        setCustResults(res.results);
+      } catch {
+        setCustResults([]);
+      } finally {
+        setCustSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [custSearch, customerModal]);
+
+  const pickCustomer = (c: StoreCustomer) => {
+    const email = c.user_email && !c.user_email.endsWith('local.invalid') ? c.user_email : undefined;
+    setCustomer({ name: c.user_name || 'Cliente', phone: c.phone || c.whatsapp || '00000000000', email });
+    setCustomerModal(false);
+    setCustSearch('');
+  };
+
+  const saveNewCustomer = () => {
+    const name = newName.trim();
+    const digits = newPhone.replace(/\D/g, '');
+    if (!name || digits.length < 10) {
+      toast.error('Preencha nome e um WhatsApp válido (com DDD)');
+      return;
+    }
+    setCustomer({ name, phone: digits });
+    setCustomerModal(false);
+    setNewName('');
+    setNewPhone('');
+    setCustSearch('');
+  };
 
   const changeQty = (productId: string, delta: number) => {
     setItems((prev) => prev
@@ -236,8 +300,11 @@ const PdvBalcaoPage: React.FC = () => {
         try {
           const order = await ordersService.createOrder({
             store: g.storeSlug,
-            customer_name: 'Cliente Balcão',
-            customer_phone: '00000000000',
+            // Cliente vinculado: o backend cria/atualiza o cadastro dele em cada
+            // loja (histórico e CRM). Sem vínculo, sai como venda anônima.
+            customer_name: customer?.name ?? 'Cliente Balcão',
+            customer_phone: customer?.phone ?? '00000000000',
+            ...(customer?.email ? { customer_email: customer.email } : {}),
             delivery_method: 'pickup',
             payment_method: payment,
             items: g.items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
@@ -272,6 +339,7 @@ const PdvBalcaoPage: React.FC = () => {
         }
         // estoque mudou no servidor → recarrega catálogo em background
         loadCatalog();
+        setCustomer(null);
       }
     } finally {
       setSubmitting(false);
@@ -397,6 +465,33 @@ const PdvBalcaoPage: React.FC = () => {
       </Card>
 
       <Card className="p-4 sm:p-5">
+        <div className="flex flex-wrap items-center gap-2 mb-4" data-testid="pdv-cliente">
+          {customer ? (
+            <>
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium bg-black/5 dark:bg-white/10 rounded-full pl-2.5 pr-1 py-1">
+                <UserIcon className="w-4 h-4" />
+                {customer.name}
+                <span className="opacity-60 font-normal">· {customer.phone}</span>
+                <button
+                  type="button"
+                  aria-label="Remover cliente"
+                  className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+                  onClick={() => setCustomer(null)}
+                >
+                  <XMarkIcon className="w-4 h-4" />
+                </button>
+              </span>
+              <span className="text-xs opacity-60">a venda entra no histórico dele</span>
+            </>
+          ) : (
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setCustomerModal(true)}>
+                <UserIcon className="w-4 h-4 mr-1.5" /> Vincular cliente
+              </Button>
+              <span className="text-xs opacity-60">opcional — sem vínculo sai como venda anônima</span>
+            </>
+          )}
+        </div>
         <div className="flex flex-wrap items-center gap-2 mb-4">
           {(Object.keys(PAYMENT_LABELS) as PaymentChoice[]).map((key) => (
             <Button
@@ -464,6 +559,64 @@ const PdvBalcaoPage: React.FC = () => {
               <li className="py-4 text-center text-sm opacity-60">Nenhum produto encontrado</li>
             )}
           </ul>
+        </ModalBody>
+      </Modal>
+
+      {/* Modal de vínculo de cliente: busca no cadastro ou cria na hora */}
+      <Modal isOpen={customerModal} onClose={() => setCustomerModal(false)}>
+        <ModalHeader title="Vincular cliente" />
+        <ModalBody>
+          <p className="text-sm mb-3 opacity-80">
+            Busque quem já comprou em qualquer uma das suas lojas, ou cadastre na hora.
+            A venda entra no histórico e no CRM da loja de cada produto.
+          </p>
+          <SearchInput
+            autoFocus
+            placeholder="Buscar por nome ou telefone…"
+            value={custSearch}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustSearch(e.target.value)}
+          />
+          <ul className="mt-3 divide-y divide-black/10 dark:divide-white/10 max-h-56 overflow-y-auto">
+            {custResults.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  onClick={() => pickCustomer(c)}
+                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{c.user_name || 'Sem nome'}</span>
+                    <span className="block text-xs opacity-60">{c.phone || c.whatsapp || 'sem telefone'}</span>
+                  </span>
+                  <span className="text-xs opacity-60 shrink-0">
+                    {c.total_orders > 0 ? `${c.total_orders} pedidos` : 'novo'}
+                  </span>
+                </button>
+              </li>
+            ))}
+            {custSearch.trim().length >= 2 && !custSearching && custResults.length === 0 && (
+              <li className="py-3 text-center text-sm opacity-60">Ninguém encontrado — cadastre abaixo</li>
+            )}
+          </ul>
+          <div className="mt-4 pt-4 border-t border-black/10 dark:border-white/10 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide opacity-60">Cadastrar novo</p>
+            <input
+              className="w-full rounded border border-black/15 dark:border-white/15 bg-transparent px-3 py-2 text-sm"
+              placeholder="Nome"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              aria-label="Nome do cliente"
+            />
+            <input
+              className="w-full rounded border border-black/15 dark:border-white/15 bg-transparent px-3 py-2 text-sm"
+              placeholder="WhatsApp com DDD (ex.: 63992001122)"
+              value={newPhone}
+              onChange={(e) => setNewPhone(e.target.value)}
+              inputMode="tel"
+              aria-label="WhatsApp do cliente"
+            />
+            <Button className="w-full" onClick={saveNewCustomer}>Usar este cliente</Button>
+          </div>
         </ModalBody>
       </Modal>
 

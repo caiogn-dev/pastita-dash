@@ -3,13 +3,14 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PdvBalcaoPage from '../PdvBalcaoPage';
-import { getStores, getProducts, updateProduct } from '../../../services/storesApi';
+import { getStores, getProducts, updateProduct, getCustomers } from '../../../services/storesApi';
 import { ordersService } from '../../../services/orders';
 
 jest.mock('../../../services/storesApi', () => ({
   getStores: jest.fn(),
   getProducts: jest.fn(),
   updateProduct: jest.fn(),
+  getCustomers: jest.fn(),
 }));
 jest.mock('../../../services/orders', () => ({
   ordersService: {
@@ -20,6 +21,7 @@ jest.mock('../../../services/orders', () => ({
 }));
 
 const mockedGetStores = getStores as jest.Mock;
+const mockedGetCustomers = getCustomers as jest.Mock;
 const mockedGetProducts = getProducts as jest.Mock;
 const mockedUpdateProduct = updateProduct as jest.Mock;
 const mockedCreate = ordersService.createOrder as jest.Mock;
@@ -155,6 +157,36 @@ describe('PdvBalcaoPage', () => {
       store: 'loja-2', items: [{ product_id: 'p9', quantity: 1 }],
     }));
     await waitFor(() => expect(mockedMarkPaid).toHaveBeenCalledTimes(2));
+  });
+
+  it('vincular cliente manda nome e telefone reais no pedido', async () => {
+    mockedGetCustomers.mockResolvedValue(page([{
+      id: 'c1', user_name: 'João da Silva', user_email: 'joao@x.com',
+      phone: '63992001122', whatsapp: '', total_orders: 3,
+    }]));
+    mockedCreate.mockResolvedValue({ id: 'o1', total: 20 });
+    mockedMarkPaid.mockResolvedValue({});
+    renderPage();
+    await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
+
+    scan('2000042003501');
+    await screen.findByText('Marmita P');
+
+    await userEvent.click(screen.getByText('Vincular cliente'));
+    await userEvent.type(screen.getByPlaceholderText('Buscar por nome ou telefone…'), 'joão');
+    await userEvent.click(await screen.findByText('João da Silva'));
+
+    // chip do cliente visível no fechamento
+    expect(screen.getByTestId('pdv-cliente')).toHaveTextContent('João da Silva');
+
+    await userEvent.click(screen.getByTestId('pdv-finalizar'));
+    await waitFor(() => {
+      expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({
+        customer_name: 'João da Silva',
+        customer_phone: '63992001122',
+        customer_email: 'joao@x.com',
+      }));
+    });
   });
 
   it('venda PIX abre modal de cobrança com QR e não marca pago', async () => {
