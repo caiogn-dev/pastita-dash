@@ -47,27 +47,31 @@ export interface PrintJob {
   created_at: string;
 }
 
-// Rota é /stores/{slug}/print-agents/ (stores_router aninhado). O 'stores/stores'
-// duplicado fazia TODA operação de impressão dar 404.
-const base = (slug: string) => `/stores/${slug}`;
+// Rotas GLOBAIS do router (/stores/print-agents/ e /stores/print-jobs/),
+// filtradas por loja via ?store={slug}. As variantes por caminho
+// (/stores/{slug}/print-agents/ e /stores/stores/{pk}/...) não existem ou
+// exigem wrapper no backend — era a causa dos 404 na tela de Impressão.
 
 export const listPrintAgents = (storeSlug: string) =>
-  api.get(`${base(storeSlug)}/print-agents/`);
+  api.get('/stores/print-agents/', { params: { store: storeSlug } });
 
-export const createPrintAgent = (storeSlug: string, data: Partial<PrintAgent> & { name: string }) =>
-  api.post(`${base(storeSlug)}/print-agents/`, data);
+/** `data.store` deve ser o UUID da loja (FK do serializer). */
+export const createPrintAgent = (
+  _storeSlug: string,
+  data: Partial<PrintAgent> & { name: string; store: string },
+) => api.post('/stores/print-agents/', data);
 
-export const updatePrintAgent = (storeSlug: string, agentId: string, data: Partial<PrintAgent>) =>
-  api.patch(`${base(storeSlug)}/print-agents/${agentId}/`, data);
+export const updatePrintAgent = (_storeSlug: string, agentId: string, data: Partial<PrintAgent>) =>
+  api.patch(`/stores/print-agents/${agentId}/`, data);
 
-export const rotatePrintAgentKey = (storeSlug: string, agentId: string) =>
-  api.post(`${base(storeSlug)}/print-agents/${agentId}/rotate-key/`, {});
+export const rotatePrintAgentKey = (_storeSlug: string, agentId: string) =>
+  api.post(`/stores/print-agents/${agentId}/rotate-key/`, {});
 
-export const deletePrintAgent = (storeSlug: string, agentId: string) =>
-  api.delete(`${base(storeSlug)}/print-agents/${agentId}/`);
+export const deletePrintAgent = (_storeSlug: string, agentId: string) =>
+  api.delete(`/stores/print-agents/${agentId}/`);
 
 export const listPrintJobs = (storeSlug: string, params?: { page?: number }) =>
-  api.get(`${base(storeSlug)}/print-jobs/`, { params });
+  api.get('/stores/print-jobs/', { params: { store: storeSlug, ...params } });
 
-export const requeuePrintJob = (storeSlug: string, jobId: string) =>
-  api.post(`${base(storeSlug)}/print-jobs/${jobId}/requeue/`, {});
+export const requeuePrintJob = (_storeSlug: string, jobId: string) =>
+  api.post(`/stores/print-jobs/${jobId}/requeue/`, {});

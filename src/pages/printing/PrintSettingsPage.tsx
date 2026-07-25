@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 import { Card, Button, Badge } from '../../components/ui';
 import { Modal, Loading } from '../../components/common';
 import { useConfirm } from '../../hooks/useConfirm';
+import { useStore } from '../../hooks/useStore';
 import {
   PrintAgent,
   PrintJob,
@@ -40,8 +41,15 @@ const JOB_STATUS_TONE: Record<string, 'success' | 'warning' | 'danger' | 'neutra
 const fmtDate = (iso: string | null) =>
   iso ? format(new Date(iso), "dd/MM HH:mm", { locale: ptBR }) : '—';
 
+const STATION_LABELS: Record<string, string> = {
+  kitchen: 'Cozinha (comanda)',
+  balcao: 'Balcão (cupom)',
+};
+
 const PrintSettingsPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
+  // UUID da loja selecionada — o create do agente exige a FK, não o slug
+  const { store } = useStore();
   const [agents, setAgents] = useState<PrintAgent[]>([]);
   const [ConfirmDialog, confirmAction] = useConfirm();
   const [jobs, setJobs] = useState<PrintJob[]>([]);
@@ -49,6 +57,7 @@ const PrintSettingsPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newAgentName, setNewAgentName] = useState('');
   const [newPrinterName, setNewPrinterName] = useState('');
+  const [newStation, setNewStation] = useState('kitchen');
   const [creating, setCreating] = useState(false);
   // Chave exibida uma única vez após criar/rotacionar
   const [revealedKey, setRevealedKey] = useState<{ agentName: string; key: string } | null>(null);
@@ -80,15 +89,22 @@ const PrintSettingsPage: React.FC = () => {
 
   const handleCreate = async () => {
     if (!storeId || !newAgentName.trim()) return;
+    if (!store?.id) {
+      toast.error('Selecione a loja no menu superior antes de criar o agente');
+      return;
+    }
     setCreating(true);
     try {
       const res = await createPrintAgent(storeId, {
+        store: store.id,
         name: newAgentName.trim(),
         printer_name: newPrinterName.trim(),
+        station: newStation,
       });
       setIsCreateOpen(false);
       setNewAgentName('');
       setNewPrinterName('');
+      setNewStation('kitchen');
       if (res.data.api_key) {
         setRevealedKey({ agentName: res.data.name, key: res.data.api_key });
       }
@@ -201,6 +217,7 @@ const PrintSettingsPage: React.FC = () => {
               <thead>
                 <tr className="border-b border-border-token text-left">
                   <th className="pb-2 px-2 text-fg-muted-token font-medium">Agente</th>
+                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Estação</th>
                   <th className="pb-2 px-2 text-fg-muted-token font-medium">Impressora</th>
                   <th className="pb-2 px-2 text-fg-muted-token font-medium">Status</th>
                   <th className="pb-2 px-2 text-fg-muted-token font-medium">Último contato</th>
@@ -213,6 +230,11 @@ const PrintSettingsPage: React.FC = () => {
                     <td className="py-2.5 px-2">
                       <p className="font-medium text-fg-token">{agent.name}</p>
                       <p className="text-xs text-fg-muted-token">{agent.host_name || agent.platform}</p>
+                    </td>
+                    <td className="py-2.5 px-2">
+                      <Badge tone={agent.station === 'balcao' ? 'warning' : 'neutral'}>
+                        {STATION_LABELS[agent.station] || agent.station}
+                      </Badge>
                     </td>
                     <td className="py-2.5 px-2">
                       {(agent.available_printers?.length ?? 0) > 0 ? (
@@ -342,6 +364,21 @@ const PrintSettingsPage: React.FC = () => {
               placeholder="Ex.: Caixa principal"
               className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-fg-token mb-1">Estação</label>
+            <select
+              value={newStation}
+              onChange={(e) => setNewStation(e.target.value)}
+              className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
+              data-testid="print-agent-station"
+            >
+              <option value="kitchen">Cozinha — comanda de pedido</option>
+              <option value="balcao">Balcão — cupom do cliente (PDV)</option>
+            </select>
+            <p className="text-xs text-fg-muted-token mt-1">
+              Cada estação recebe seus próprios jobs: comanda vai pra cozinha, cupom do PDV vai pro balcão.
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-fg-token mb-1">
