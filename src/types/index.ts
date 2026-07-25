@@ -410,6 +410,8 @@ export interface CreateOrder {
   customer_notes?: string;
   /** Pedido de balcão: não enviar as mensagens automáticas de status ao cliente */
   suppress_notifications?: boolean;
+  /** Balcão: imprimir cupom do cliente (customer_receipt) na estação 'balcao' */
+  print_receipt?: boolean;
 }
 
 export interface OrderItemOp {

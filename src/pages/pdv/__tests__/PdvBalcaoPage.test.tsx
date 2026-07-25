@@ -132,6 +132,24 @@ describe('PdvBalcaoPage', () => {
     await waitFor(() => expect(mockedMarkPaid).toHaveBeenCalledWith('o1', 'loja-1'));
   });
 
+  it('toggle "Imprimir cupom" manda print_receipt no pedido', async () => {
+    mockedCreate.mockResolvedValue({ id: 'o1', total: 20 });
+    mockedMarkPaid.mockResolvedValue({});
+    renderPage();
+    await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
+
+    scan('2000042003501');
+    await screen.findByText('Marmita P');
+
+    await userEvent.click(screen.getByTestId('pdv-cupom'));
+    await userEvent.click(screen.getByTestId('pdv-finalizar'));
+    await waitFor(() => {
+      expect(mockedCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ print_receipt: true }),
+      );
+    });
+  });
+
   it('comanda com lojas misturadas gera um pedido por loja', async () => {
     mockedCreate.mockImplementation(async ({ store }: { store: string }) => ({ id: `o-${store}`, total: 1 }));
     mockedMarkPaid.mockResolvedValue({});

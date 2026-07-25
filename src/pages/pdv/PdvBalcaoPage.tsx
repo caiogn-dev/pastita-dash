@@ -87,6 +87,7 @@ const PdvBalcaoPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ComandaItem[]>([]);
   const [payment, setPayment] = useState<PaymentChoice>('cash');
+  const [printReceipt, setPrintReceipt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Código bipado que não bateu com nenhum produto → modal de vínculo
@@ -309,6 +310,7 @@ const PdvBalcaoPage: React.FC = () => {
             payment_method: payment,
             items: g.items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
             suppress_notifications: true,
+            ...(printReceipt ? { print_receipt: true } : {}),
           });
 
           // Balcão: dinheiro/cartão são recebidos na hora — marca pago direto.
@@ -502,8 +504,17 @@ const PdvBalcaoPage: React.FC = () => {
               {PAYMENT_LABELS[key]}
             </Button>
           ))}
+          <label className="flex items-center gap-1.5 text-sm ml-auto">
+            <input
+              type="checkbox"
+              checked={printReceipt}
+              onChange={(e) => setPrintReceipt(e.target.checked)}
+              data-testid="pdv-cupom"
+            />
+            Imprimir cupom
+          </label>
           {groups.length > 1 && (
-            <span className="text-xs opacity-60 ml-auto">
+            <span className="text-xs opacity-60 w-full text-right">
               {groups.length} lojas na comanda → {groups.length} pedidos (um por loja)
             </span>
           )}
