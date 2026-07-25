@@ -112,7 +112,7 @@ export const AccountFormPage: React.FC = () => {
         </Link>
       </div>
 
-      <Card>
+      <Card className="p-4">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 max-md:grid-cols-1 gap-6">
             <Input

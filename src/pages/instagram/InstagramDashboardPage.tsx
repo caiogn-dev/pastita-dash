@@ -98,7 +98,7 @@ export const InstagramDashboardPage: React.FC = () => {
   if (!account) {
     return (
       <div className="p-6">
-        <Card>
+        <Card className="p-4">
           <div className="text-center py-8">
             <p className="text-fg-muted-token">Conta não encontrada</p>
             <Button 

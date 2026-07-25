@@ -246,7 +246,7 @@ const AnalyticsPage: React.FC = () => {
       </div>
 
       {/* Revenue chart */}
-      <Card>
+      <Card className="p-4">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
           <h2 className="text-lg font-semibold text-fg-token">Faturamento</h2>
           <div className="flex gap-2">
@@ -284,7 +284,7 @@ const AnalyticsPage: React.FC = () => {
       {/* Bottom two columns */}
       <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
         {/* Top Products */}
-        <Card>
+        <Card className="p-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-fg-token">Produtos Mais Vendidos</h2>
             <Badge tone="neutral">Top {productsReport?.top_products.length || 0}</Badge>
@@ -319,7 +319,7 @@ const AnalyticsPage: React.FC = () => {
         </Card>
 
         {/* Customer Stats */}
-        <Card>
+        <Card className="p-4">
           <h2 className="text-lg font-semibold text-fg-token mb-4">Clientes</h2>
           {customersLoading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
             <div className="flex flex-col gap-4">
@@ -379,7 +379,7 @@ const AnalyticsPage: React.FC = () => {
           <KpiCard title="Cancelados" value={cancelled} subtitle={`${cancelPct.toFixed(1)}% do total`} tone="warning" loading={ordersLoading} />
         </div>
 
-        <Card>
+        <Card className="p-4">
           <h2 className="text-lg font-semibold text-fg-token mb-4">Pedidos por dia</h2>
           {ordersLoading ? (
             <div className="flex justify-center py-16">
@@ -399,7 +399,7 @@ const AnalyticsPage: React.FC = () => {
           )}
         </Card>
 
-        <Card>
+        <Card className="p-4">
           <h2 className="text-lg font-semibold text-fg-token mb-4">Distribuição por status</h2>
           {ordersLoading ? (
             <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
@@ -420,7 +420,7 @@ const AnalyticsPage: React.FC = () => {
         <KpiCard title="Estoque Baixo" value={stockReport?.summary.low_stock_count || 0} subtitle={`Limite: ${stockReport?.summary.low_stock_threshold || 10} unidades`} tone="warning" loading={stockLoading} />
         <KpiCard title="Sem Estoque" value={stockReport?.summary.out_of_stock_count || 0} subtitle="Reposição urgente" tone="warning" loading={stockLoading} />
       </div>
-      <Card>
+      <Card className="p-4">
         <h2 className="text-lg font-semibold text-fg-token mb-4">Produtos com Estoque Baixo</h2>
         {stockLoading ? (
           <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
@@ -476,7 +476,7 @@ const AnalyticsPage: React.FC = () => {
         <KpiCard title="Ticket Médio" value={formatCurrency(revenueReport?.summary.avg_order_value || 0)} loading={revenueLoading} />
         <KpiCard title="Taxas de Entrega" value={formatCurrency(revenueReport?.summary.total_delivery_fees || 0)} loading={revenueLoading} />
       </div>
-      <Card>
+      <Card className="p-4">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
           <h2 className="text-lg font-semibold text-fg-token">Faturamento por Período</h2>
           <div className="flex gap-2">
@@ -515,7 +515,7 @@ const AnalyticsPage: React.FC = () => {
 
   const renderProducts = () => (
     <div className="flex flex-col gap-6">
-      <Card>
+      <Card className="p-4">
         <h2 className="text-lg font-semibold text-fg-token mb-4">Top produtos por receita</h2>
         {productsLoading ? (
           <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
@@ -527,7 +527,7 @@ const AnalyticsPage: React.FC = () => {
           />
         )}
       </Card>
-      <Card>
+      <Card className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-fg-token">Performance de Produtos</h2>
         <Badge tone="neutral">{productsReport?.top_products.length || 0} produtos</Badge>
@@ -572,7 +572,7 @@ const AnalyticsPage: React.FC = () => {
         <KpiCard title="Recorrentes" value={customersReport?.summary.returning_customers || 0} loading={customersLoading} />
         <KpiCard title="Retenção" value={`${customersReport?.summary.retention_rate || 0}%`} loading={customersLoading} />
       </div>
-      <Card>
+      <Card className="p-4">
         <h2 className="text-lg font-semibold text-fg-token mb-4">Top clientes por total gasto</h2>
         {customersLoading ? (
           <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
@@ -584,7 +584,7 @@ const AnalyticsPage: React.FC = () => {
           />
         )}
       </Card>
-      <Card>
+      <Card className="p-4">
         <h2 className="text-lg font-semibold text-fg-token mb-4">Melhores Clientes</h2>
         {customersLoading ? (
           <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />

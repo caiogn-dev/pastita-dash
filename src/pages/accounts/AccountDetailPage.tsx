@@ -150,7 +150,7 @@ export const AccountDetailPage: React.FC = () => {
       />
 
         {/* Status and Actions */}
-        <Card>
+        <Card className="p-4">
           <div className="flex flex-row max-md:flex-col md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
               <StatusBadge status={account.status} />

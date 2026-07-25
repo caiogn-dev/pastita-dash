@@ -198,7 +198,7 @@ export const InstagramAccountsPage: React.FC = () => {
   if (error) {
     return (
       <div className="p-6">
-        <Card>
+        <Card className="p-4">
           <div className="py-8 text-center">
             <p className="mb-4 text-red-500">Erro ao carregar contas</p>
             <p className="mb-6 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{error}</p>

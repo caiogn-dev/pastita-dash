@@ -3,10 +3,11 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PdvBalcaoPage from '../PdvBalcaoPage';
-import { getProducts, updateProduct } from '../../../services/storesApi';
+import { getStores, getProducts, updateProduct } from '../../../services/storesApi';
 import { ordersService } from '../../../services/orders';
 
 jest.mock('../../../services/storesApi', () => ({
+  getStores: jest.fn(),
   getProducts: jest.fn(),
   updateProduct: jest.fn(),
 }));
@@ -14,9 +15,11 @@ jest.mock('../../../services/orders', () => ({
   ordersService: {
     createOrder: jest.fn(),
     markPaid: jest.fn(),
+    getOrder: jest.fn(),
   },
 }));
 
+const mockedGetStores = getStores as jest.Mock;
 const mockedGetProducts = getProducts as jest.Mock;
 const mockedUpdateProduct = updateProduct as jest.Mock;
 const mockedCreate = ordersService.createOrder as jest.Mock;
@@ -35,6 +38,8 @@ const product = (over: Record<string, unknown> = {}) => ({
   status: 'active',
   ...over,
 });
+
+const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
 
 const scan = (code: string) => {
   act(() => {
@@ -56,12 +61,19 @@ const renderPage = () =>
 describe('PdvBalcaoPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedGetProducts.mockResolvedValue({
-      count: 2,
-      next: null,
-      previous: null,
-      results: [product(), product({ id: 'p2', name: 'Suco', slug: 'suco', sku: 'SU1', barcode: '789100000001', price: 8 })],
-    });
+    mockedGetStores.mockResolvedValue(page([
+      { id: 's1', slug: 'loja-1', name: 'Loja Um', status: 'active' },
+      { id: 's2', slug: 'loja-2', name: 'Loja Dois', status: 'active' },
+    ]));
+    // catálogo por loja: loja-1 tem Marmita+Suco, loja-2 tem Salgadinho
+    mockedGetProducts.mockImplementation(async ({ store }: { store: string }) => (
+      store === 'loja-2'
+        ? page([product({ id: 'p9', store: 's2', name: 'Salgadinho', slug: 'salgadinho', sku: 'SG1', barcode: '789200000002', price: 5 })])
+        : page([
+          product(),
+          product({ id: 'p2', name: 'Suco', slug: 'suco', sku: 'SU1', barcode: '789100000001', price: 8 }),
+        ])
+    ));
   });
 
   it('bipe adiciona o produto na comanda e soma o total', async () => {
@@ -95,7 +107,7 @@ describe('PdvBalcaoPage', () => {
   });
 
   it('finalizar venda cria pedido pickup silencioso e marca pago (dinheiro)', async () => {
-    mockedCreate.mockResolvedValue({ id: 'o1' });
+    mockedCreate.mockResolvedValue({ id: 'o1', total: 20 });
     mockedMarkPaid.mockResolvedValue({});
     renderPage();
     await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
@@ -116,5 +128,54 @@ describe('PdvBalcaoPage', () => {
       );
     });
     await waitFor(() => expect(mockedMarkPaid).toHaveBeenCalledWith('o1', 'loja-1'));
+  });
+
+  it('comanda com lojas misturadas gera um pedido por loja', async () => {
+    mockedCreate.mockImplementation(async ({ store }: { store: string }) => ({ id: `o-${store}`, total: 1 }));
+    mockedMarkPaid.mockResolvedValue({});
+    renderPage();
+    await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
+
+    scan('2000042003501'); // loja-1
+    await screen.findByText('Marmita P');
+    await act(() => new Promise((r) => setTimeout(r, 320)));
+    scan('789200000002'); // loja-2
+    await screen.findByText('Salgadinho');
+
+    // agrupamento visível por loja
+    expect(screen.getByText('Loja Um')).toBeInTheDocument();
+    expect(screen.getByText('Loja Dois')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByTestId('pdv-finalizar'));
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(2));
+    expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({
+      store: 'loja-1', items: [{ product_id: 'p1', quantity: 1 }],
+    }));
+    expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({
+      store: 'loja-2', items: [{ product_id: 'p9', quantity: 1 }],
+    }));
+    await waitFor(() => expect(mockedMarkPaid).toHaveBeenCalledTimes(2));
+  });
+
+  it('venda PIX abre modal de cobrança com QR e não marca pago', async () => {
+    mockedCreate.mockResolvedValue({
+      id: 'o1', total: 20, order_number: 'PED1',
+      pix_code: 'PIXCOPIAECOLA', pix_qr_code: 'QRBASE64', payment_status: 'pending',
+    });
+    renderPage();
+    await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
+
+    scan('2000042003501');
+    await screen.findByText('Marmita P');
+
+    await userEvent.click(screen.getByText('PIX'));
+    await userEvent.click(screen.getByTestId('pdv-finalizar'));
+
+    expect(await screen.findByText('Cobrança PIX')).toBeInTheDocument();
+    expect(screen.getByAltText('QR Code PIX de Loja Um')).toHaveAttribute(
+      'src', 'data:image/png;base64,QRBASE64',
+    );
+    expect(screen.getByText('Copiar código PIX')).toBeInTheDocument();
+    expect(mockedMarkPaid).not.toHaveBeenCalled();
   });
 });
