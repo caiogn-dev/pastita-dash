@@ -41,6 +41,16 @@ const JOB_STATUS_TONE: Record<string, 'success' | 'warning' | 'danger' | 'neutra
 const fmtDate = (iso: string | null) =>
   iso ? format(new Date(iso), "dd/MM HH:mm", { locale: ptBR }) : '—';
 
+/** Slug exigido pelo backend (SlugField sem default) — derivado do nome. */
+const slugify = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 120) || 'agente';
+
 const STATION_LABELS: Record<string, string> = {
   kitchen: 'Cozinha (comanda)',
   balcao: 'Balcão (cupom)',
@@ -98,6 +108,7 @@ const PrintSettingsPage: React.FC = () => {
       const res = await createPrintAgent(storeId, {
         store: store.id,
         name: newAgentName.trim(),
+        slug: slugify(newAgentName),
         printer_name: newPrinterName.trim(),
         station: newStation,
       });
@@ -109,8 +120,10 @@ const PrintSettingsPage: React.FC = () => {
         setRevealedKey({ agentName: res.data.name, key: res.data.api_key });
       }
       loadData();
-    } catch {
-      toast.error('Erro ao criar agente de impressão');
+    } catch (err) {
+      // Mostra o motivo real da validação (ex.: campo faltando) em vez de erro genérico
+      const detail = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+      toast.error(detail ? `Erro ao criar agente: ${JSON.stringify(detail)}` : 'Erro ao criar agente de impressão');
     } finally {
       setCreating(false);
     }
