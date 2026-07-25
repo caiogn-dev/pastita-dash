@@ -98,6 +98,9 @@ const PdvBalcaoPage: React.FC = () => {
   // Cobranças PIX geradas na finalização (modal com QR + acompanhamento)
   const [pixCharges, setPixCharges] = useState<PixCharge[] | null>(null);
 
+  // Busca manual — pra quando o produto não tem etiqueta ou o leitor não está à mão
+  const [manualSearch, setManualSearch] = useState('');
+
   // Cliente vinculado (opcional) + modal de busca/cadastro
   const [customer, setCustomer] = useState<PdvCustomer | null>(null);
   const [customerModal, setCustomerModal] = useState(false);
@@ -387,6 +390,20 @@ const PdvBalcaoPage: React.FC = () => {
     }
   };
 
+  const manualMatches = useMemo(() => {
+    const term = manualSearch.trim().toLowerCase();
+    if (term.length < 2) return [];
+    return catalog
+      .filter((c) => c.product.name.toLowerCase().includes(term))
+      .slice(0, 6);
+  }, [catalog, manualSearch]);
+
+  const addManual = (entry: CatalogEntry) => {
+    beep(true);
+    addEntry(entry);
+    setManualSearch('');
+  };
+
   const linkCandidates = useMemo(() => {
     const term = linkSearch.trim().toLowerCase();
     const base = term
@@ -416,6 +433,33 @@ const PdvBalcaoPage: React.FC = () => {
       </div>
 
       <Card className="p-4 sm:p-5">
+        <div className="relative mb-3">
+          <SearchInput
+            placeholder="Adicionar sem bipar — busque o produto por nome…"
+            value={manualSearch}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setManualSearch(e.target.value)}
+            data-testid="pdv-busca-manual"
+          />
+          {manualMatches.length > 0 && (
+            <ul className="absolute z-10 left-0 right-0 mt-1 rounded border border-black/15 dark:border-white/15 bg-white dark:bg-neutral-900 shadow-lg divide-y divide-black/10 dark:divide-white/10 max-h-64 overflow-y-auto">
+              {manualMatches.map((c) => (
+                <li key={c.product.id}>
+                  <button
+                    type="button"
+                    onClick={() => addManual(c)}
+                    className="w-full flex items-center justify-between gap-2 py-2.5 px-3 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">{c.product.name}</span>
+                      {storeCount > 1 && <span className="block text-xs opacity-60">{c.storeName}</span>}
+                    </span>
+                    <span className="text-sm opacity-70 shrink-0">{fmtMoney(Number(c.product.price))}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         {items.length === 0 ? (
           <div className="py-14 text-center opacity-60">
             <QrCodeIcon className="w-12 h-12 mx-auto mb-3" />

@@ -132,6 +132,17 @@ describe('PdvBalcaoPage', () => {
     await waitFor(() => expect(mockedMarkPaid).toHaveBeenCalledWith('o1', 'loja-1'));
   });
 
+  it('busca manual adiciona produto sem leitor', async () => {
+    renderPage();
+    await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
+
+    await userEvent.type(screen.getByTestId('pdv-busca-manual'), 'suco');
+    await userEvent.click(await screen.findByText('Suco'));
+    await waitFor(() => {
+      expect(screen.getByTestId('pdv-total')).toHaveTextContent('8,00');
+    });
+  });
+
   it('toggle "Imprimir cupom" manda print_receipt no pedido', async () => {
     mockedCreate.mockResolvedValue({ id: 'o1', total: 20 });
     mockedMarkPaid.mockResolvedValue({});
