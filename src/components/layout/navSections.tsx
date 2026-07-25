@@ -80,6 +80,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       icon: CreditCardIcon,
       items: [
         { name: 'Balcão (Scanner)',   href: storeHref('pdv'),      icon: QrCodeIcon },
+        { name: 'Etiquetas',          href: storeHref('etiquetas'), icon: TagIcon },
         { name: 'Caixa',              href: storeHref('cash'),     icon: CreditCardIcon },
         { name: 'Link de pagamento',  href: '/payments/link',      icon: CreditCardIcon },
         { name: 'Modo Cozinha (KDS)', href: storeHref('kds'),      icon: ClockIcon },
