@@ -25,9 +25,16 @@ describe('MediaViewer — acessibilidade dos botões icon-only', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('a imagem tem texto alternativo mesmo sem fileName', () => {
+  it('a imagem tem texto alternativo de fallback ("Mídia") quando falta fileName', () => {
     render(<MediaViewer url="u" type="image" onClose={() => {}} />);
-    // getByRole('img') exige nome acessível não-vazio (falha se alt="" ou ausente).
-    expect(screen.getByRole('img')).toBeInTheDocument();
+    // Consulta pelo nome acessível: um <img> sem alt ainda tem role="img",
+    // então só exigir o role não garantiria o fallback. Verificamos o alt real.
+    const img = screen.getByRole('img', { name: 'Mídia' });
+    expect(img).toHaveAttribute('alt', 'Mídia');
+  });
+
+  it('a imagem usa o fileName como texto alternativo quando presente', () => {
+    render(<MediaViewer url="u" type="image" fileName="foto.jpg" onClose={() => {}} />);
+    expect(screen.getByRole('img', { name: 'foto.jpg' })).toHaveAttribute('alt', 'foto.jpg');
   });
 });
