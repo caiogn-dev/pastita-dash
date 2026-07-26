@@ -3,14 +3,34 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-26)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **505 testes / 122 suítes verdes** (após esta fatia; antes 502/121).
+- `npm run lint`: gate em 400 warnings; **267 warnings** restantes (0 erros).
 
 ## Histórico
+
+### 2026-07-26 — Acessibilidade: nomes acessíveis nos botões de ação do inbox + destravar teste de CSS
+- **Medido:** auditoria de botões icon-only (só ícone/emoji, sem texto) em componentes
+  efetivamente renderizados. Encontrados ~28 casos sem nome acessível. Priorizados os
+  do fluxo principal do produto (inbox de mensagens — WhatsApp/Messenger/Instagram).
+  Além disso, o `moduleNameMapper` de CSS do Jest apontava para `identity-obj-proxy`,
+  pacote **não instalado**, o que quebrava qualquer teste de componente que importasse
+  folha de estilo (nenhum teste conseguia cobrir esses componentes).
+- **Infra (destrava testes):** `jest.config.cjs` passou a mapear CSS/SCSS para
+  `src/__mocks__/styleMock.js` (stub local `{}`), removendo a dependência do pacote
+  ausente. Zero regressão — nenhum teste dependia do comportamento de proxy de classes.
+- **Mudado (componentes ativos):**
+  - `MediaViewer.tsx` (visualizador de mídia do inbox WhatsApp): botões `⬇️` e `✕`
+    ganharam `aria-label`/`title` ("Baixar mídia" / "Fechar visualização de mídia") e
+    `type="button"`; `<img>` agora tem `alt` não-vazio mesmo sem `fileName` ("Mídia").
+  - `WhatsAppInboxPage.tsx`, `MessengerInbox.tsx`, `InstagramInbox.tsx`: botão de
+    enviar (`PaperAirplaneIcon`) recebeu `aria-label`/`title` "Enviar mensagem".
+- **Teste (TDD):** novo `MediaViewer.a11y.test.tsx` — escrito vermelho antes, verde
+  depois. Cobre nome acessível dos botões, disparo de `onClose` e `alt` da imagem.
+- **Antes/depois:** 121→122 suítes, 502→505 testes; tsc limpo nos dois lados; lint 0 erros.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,9 +70,14 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
+1. **A11y — continuar varredura (backlog auditado):** ~22 botões icon-only restantes
+   sem nome acessível, agora destrancados para teste (mapper de CSS corrigido).
+   Priorizar os botões **fechar/dismiss** de diálogos: `EditOrderDrawer` (`XMarkIcon`),
+   `ConnectionsPage`, `MessengerAccounts` (fechar + editar/excluir linha), `AgentForm`,
+   `IntentLogsPage`, `WhatsAppCampaignsPage`, `NewCampaignPage` (email, `✕`). Depois:
+   botão de enviar do `AgentChatTest`, voltar (`ArrowLeftIcon`) nas telas de agentes/
+   marketing, copiar/regenerar API key em `CompanyProfileDetailPage`, refresh do
+   `DashboardPage`. Adicionar teste de regressão por componente conforme tocar.
 2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
    moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
