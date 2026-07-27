@@ -260,6 +260,37 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   botão de fechar, `role="alert"`/assertive em erro e `role="status"`/polite em sucesso.
 - **Antes/depois:** `npm test` 457/109 → **460/110** verdes; tsc limpo nos dois lados;
   lint estável em 272 warnings (0 errors). Sem alteração de comportamento visual.
+## Baseline atual (2026-07-21)
+
+- `npm ci`: ok (7 vulnerabilidades reportadas pelo npm: 1 low, 1 moderate, 5 high).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **482 testes / 117 suítes verdes**.
+- `npm run build`: **ok** (build de produção conclui sem erros).
+- `npm run lint`: gate em 400 warnings; **260 warnings** restantes (0 erros).
+
+## Histórico
+
+### 2026-07-21 — Código morto: remoção das páginas Instagram retiradas da superfície
+- **Medido:** o Instagram foi retirado da superfície do produto (ver
+  `src/pages/inbox/inboxTabs.ts`: "Instagram e Messenger foram retirados da
+  superfície"; `resolveInboxTab('instagram')` cai em `'whatsapp'`). Restaram 4
+  componentes de página órfãos em `src/pages/instagram/` (~1800 linhas):
+  `InstagramInbox.tsx`, `InstagramDashboardPage.tsx`, `InstagramAccountsPage.tsx`,
+  `InstagramCallbackPage.tsx` (+ o `index.ts` que os reexporta). Varredura
+  exaustiva (`grep` por cada nome de componente, por `pages/instagram`, por
+  `lazy`/`import(` dinâmicos e por rotas em `App.tsx`) confirmou **zero**
+  referências ativas fora do próprio diretório e **nenhum** teste os cobrindo.
+  O `InstagramInbox` morto ainda carregava uma dívida de a11y (botão de enviar
+  icon-only sem nome acessível) — some junto.
+- **Mudado:** removido o diretório `src/pages/instagram/` inteiro.
+- **Preservado (código vivo, NÃO tocado):** `src/services/instagram.ts` continua
+  em uso por `ConnectionsPage.tsx` (conexão de contas Instagram via OAuth),
+  `features/channels/api.ts` e `hooks/useInstagram.ts`. A remoção é só de UI morta.
+- **Garantia de zero-regressão:** como o código era inalcançável, a prova é a
+  suíte + tsc + build **verdes depois** da remoção — nada dependia dele.
+- **Antes/depois:** `npm test` 482/482 verdes nos dois lados; tsc limpo nos dois
+  lados; `npm run build` ok; lint 260 warnings (0 erros). ~1800 linhas de código
+  morto a menos.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -357,6 +388,16 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 2. **Segurança/deps:** triar as 5 vulnerabilidades do `npm audit` (1 low, 2 moderate,
    2 high). A `high` de `form-data` tem `npm audit fix` sem breaking change — candidata
    segura. A de `esbuild`/`vite` exige major (vite@8) — avaliar à parte.
+1. **Segurança/deps (ALTO):** `npm audit` reporta 5 vulnerabilidades **high**,
+   sendo a mais crítica **axios** (prototype pollution + DoS) — axios é o cliente
+   HTTP de toda a API do painel. `npm audit fix` (sem `--force`) resolve axios,
+   `form-data`, `js-yaml`, `brace-expansion` e `@babel/core` de forma
+   semver-compatível; validar com `npm run build` + suíte + tsc antes de mergear.
+   O `esbuild`/`vite` só sai com `--force` (vite 8, breaking) — deixar fora.
+2. **A11y — continuar varredura:** botões icon-only em `NewWhatsAppCampaignPage`
+   e diálogos. Adicionar teste de regressão de acessibilidade por componente
+   conforme tocar. (Alvo `InstagramInbox` saiu do backlog — era código morto,
+   removido em 2026-07-21.)
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
 1. **Estados de erro — continuar varredura:** aplicar o mesmo padrão (erro total
    acionável + aviso de falha parcial) em outras páginas orientadas a query que
@@ -375,3 +416,6 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 5. **Lint:** reduzir warnings restantes (267) rumo a baixar o teto de `--max-warnings`.
 6. **Bundles pesados:** investigar `storesApi.ts` e `NewWhatsAppCampaignPage.tsx`
    para code-splitting/extração.
+4. **Lint:** reduzir warnings restantes (260) rumo a baixar o teto de `--max-warnings`.
+5. **Bundles pesados:** investigar `storesApi.ts` (1873 linhas) e
+   `NewWhatsAppCampaignPage.tsx` (1706 linhas) para code-splitting/extração.
