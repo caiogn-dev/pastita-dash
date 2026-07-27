@@ -130,6 +130,32 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
     intactos); falha de atualização com cache nas duas → aviso não-bloqueante.
 - **Antes/depois:** 484→489 testes, 117→118 suítes; tsc/build limpos nos dois
   lados; lint sem novos warnings nos arquivos tocados.
+## Baseline atual (2026-07-25)
+
+- `npm ci`: ok (10 vulnerabilidades reportadas pelo npm: 1 low, 3 moderate, 6 high).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **493 testes / 120 suítes verdes** (após adicionar `StepItens.a11y.test.tsx`).
+- `npm run lint`: gate em 400 warnings (limpeza incremental em curso).
+
+## Histórico
+
+### 2026-07-25 — Acessibilidade: nomes acessíveis nos controles do carrinho (novo pedido)
+- **Medido:** varredura de botões *icon-only* (só ícone, sem texto nem `aria-label`/
+  `title`) em componentes ativos. No wizard de **novo pedido** (`StepItens.tsx`, etapa
+  "Itens"), os três controles de cada linha do carrinho — diminuir (`MinusIcon`),
+  aumentar (`PlusIcon`) e remover (`TrashIcon`) — não tinham nome acessível algum.
+  Um leitor de tela anunciava apenas "botão, botão, botão", sem indicar a ação nem
+  o produto. É um fluxo operacional central (criação de pedido no balcão/atendimento).
+- **Mudado (`StepItens.tsx`):** `aria-label` descritivo e dependente do produto:
+  - diminuir → "Diminuir quantidade de {produto}" (ou "Remover {produto} do carrinho"
+    quando `quantity === 1`, refletindo o comportamento real do `onClick`);
+  - aumentar → "Aumentar quantidade de {produto}";
+  - lixeira → "Remover {produto} do carrinho".
+- **Teste (TDD):** novo `StepItens.a11y.test.tsx` — escrito vermelho antes, verde
+  depois. Cobre os dois estados de quantidade (>1 e ==1) e o compartilhamento de nome
+  entre o botão de diminuir (que vira "remover") e a lixeira.
+- **Antes/depois:** `npm test` 491/119 → **493 testes / 120 suítes**; tsc limpo e
+  lint sem novos warnings nos dois arquivos tocados.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -193,6 +219,13 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
    `AgentChatTest` (enviar). Rotular conforme tocar, com teste de regressão por componente.
 2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
    moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
+1. **A11y — continuar varredura:** ~78 botões icon-only sem nome acessível ainda
+   pendentes (varredura por código, robusta a `=>` em atributos). Próximos alvos de
+   maior tráfego: `DashboardPage.tsx` (botão de refresh no banner de pendentes, linha
+   ~340), `OrderDetailContent.tsx`, `AgentsPage.tsx`, `AccountsPage.tsx`. Adicionar
+   teste de regressão de acessibilidade por componente conforme tocar.
+2. **Segurança/deps:** triar as 10 vulnerabilidades do `npm audit` (1 low, 3
+   moderate, 6 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
 1. **Estados de erro — continuar varredura:** aplicar o mesmo padrão (erro total
    acionável + aviso de falha parcial) em outras páginas orientadas a query que
