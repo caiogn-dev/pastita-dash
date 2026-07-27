@@ -1,0 +1,173 @@
+/**
+ * Geração e impressão de etiquetas em documento HTML isolado.
+ *
+ * Em vez de imprimir o SPA inteiro com truques de `visibility`, montamos um
+ * documento standalone com geometria exata em mm e imprimimos via iframe
+ * dedicado — nenhum CSS do painel vaza pra etiqueta e o layout enviado ao
+ * driver é exatamente o pré-visualizado.
+ */
+import JsBarcode from 'jsbarcode';
+import { isValidEan13 } from './ean13';
+
+export interface ProdutoLabelData {
+  name: string;
+  description?: string;
+  price?: string;
+  barcode?: string;
+}
+
+export interface ValidadeLabelData {
+  name: string;
+  manip: string;
+  val: string;
+}
+
+export interface ProdutoConfig {
+  /** Dimensões da etiqueta em mm (como o operador enxerga a etiqueta). */
+  width: number;
+  height: number;
+  /** Gira o conteúdo 90° quando o driver define a bobina em retrato. */
+  rotate: boolean;
+  /** Calibração fina em mm pra compensar offset mecânico da impressora. */
+  offsetX: number;
+  offsetY: number;
+  showPrice: boolean;
+  showDesc: boolean;
+}
+
+export interface ValidadeConfig {
+  labelW: number;
+  labelH: number;
+  cols: number;
+  gap: number;
+  /** Largura do papel como definida no driver (bobina inteira). */
+  paperW: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+export const PRODUTO_DEFAULTS: ProdutoConfig = {
+  width: 100, height: 80, rotate: false, offsetX: 0, offsetY: 0,
+  showPrice: true, showDesc: false,
+};
+
+// Elgin L42 Pro com bobina de 3 colunas de 30×22 mm
+export const VALIDADE_DEFAULTS: ValidadeConfig = {
+  labelW: 30, labelH: 22, cols: 3, gap: 2, paperW: 94, offsetX: 0, offsetY: 0,
+};
+
+const esc = (s: string) => s.replace(/[&<>"']/g, (ch) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string
+));
+
+/** SVG do código de barras serializado, escalável (viewBox) pra caber na etiqueta. */
+const barcodeSvg = (value: string): string => {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  try {
+    JsBarcode(svg, value, {
+      format: isValidEan13(value) ? 'EAN13' : 'CODE128',
+      displayValue: true,
+      fontSize: 16,
+      margin: 0,
+      height: 56,
+    });
+  } catch {
+    return '';
+  }
+  const w = svg.getAttribute('width');
+  const h = svg.getAttribute('height');
+  if (w && h && !svg.getAttribute('viewBox')) svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.removeAttribute('width');
+  svg.removeAttribute('height');
+  svg.setAttribute('style', 'width:100%;height:100%;');
+  return new XMLSerializer().serializeToString(svg);
+};
+
+const wrapDoc = (title: string, css: string, body: string): string => `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(title)}</title>
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.page { overflow: hidden; position: relative; page-break-after: always; break-after: page; }
+.page:last-child { page-break-after: auto; break-after: auto; }
+${css}
+</style></head><body>${body}</body></html>`;
+
+/** Documento pra etiqueta de produto (Zebra ZD220 e afins), uma etiqueta por página. */
+export const buildProdutoDoc = (labels: ProdutoLabelData[], cfg: ProdutoConfig): string => {
+  const pageW = cfg.rotate ? cfg.height : cfg.width;
+  const pageH = cfg.rotate ? cfg.width : cfg.height;
+  const transform = cfg.rotate
+    ? `translate(${cfg.offsetX}mm, ${cfg.offsetY}mm) rotate(90deg) translateY(-100%)`
+    : `translate(${cfg.offsetX}mm, ${cfg.offsetY}mm)`;
+  const css = `
+@page { size: ${pageW}mm ${pageH}mm; margin: 0; }
+.page { width: ${pageW}mm; height: ${pageH}mm; }
+.label {
+  position: absolute; left: 0; top: 0;
+  width: ${cfg.width}mm; height: ${cfg.height}mm; padding: 2.5mm;
+  transform: ${transform}; transform-origin: top left;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: space-between; text-align: center; overflow: hidden;
+}
+.nm { font-size: 13pt; font-weight: 800; line-height: 1.15; max-height: 38%; overflow: hidden; }
+.ds { font-size: 8pt; line-height: 1.25; max-height: 28%; overflow: hidden; }
+.pr { font-size: 20pt; font-weight: 800; }
+.bc { width: 94%; height: ${Math.max(10, cfg.height * 0.22)}mm; }`;
+  const body = labels.map((l) => `<div class="page"><div class="label">
+<div class="nm">${esc(l.name)}</div>
+${cfg.showDesc && l.description ? `<div class="ds">${esc(l.description)}</div>` : ''}
+${cfg.showPrice && l.price ? `<div class="pr">${esc(l.price)}</div>` : ''}
+${l.barcode ? `<div class="bc">${barcodeSvg(l.barcode)}</div>` : ''}
+</div></div>`).join('\n');
+  return wrapDoc('Etiquetas de produto', css, body);
+};
+
+/** Documento pra bobina multi-coluna de validade (Elgin L42), uma linha por página. */
+export const buildValidadeDoc = (labels: ValidadeLabelData[], cfg: ValidadeConfig): string => {
+  const rows: ValidadeLabelData[][] = [];
+  for (let i = 0; i < labels.length; i += cfg.cols) rows.push(labels.slice(i, i + cfg.cols));
+  const css = `
+@page { size: ${cfg.paperW}mm ${cfg.labelH}mm; margin: 0; }
+.page { width: ${cfg.paperW}mm; height: ${cfg.labelH}mm; }
+.cell {
+  position: absolute; top: ${cfg.offsetY}mm;
+  width: ${cfg.labelW}mm; height: ${cfg.labelH}mm; padding: 1.4mm 1.6mm;
+  display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
+}
+.nm {
+  font-size: 7pt; font-weight: 700; line-height: 1.15;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.dt { font-size: 6.5pt; line-height: 1.3; }
+.dt b { font-size: 7pt; }`;
+  const body = rows.map((row) => `<div class="page">${row.map((l, i) => `
+<div class="cell" style="left:${cfg.offsetX + i * (cfg.labelW + cfg.gap)}mm">
+<div class="nm">${esc(l.name)}</div>
+<div class="dt">Manip.: ${esc(l.manip)}<br><b>Val.: ${esc(l.val)}</b></div>
+</div>`).join('')}</div>`).join('\n');
+  return wrapDoc('Etiquetas de validade', css, body);
+};
+
+/** Imprime um documento HTML completo num iframe isolado e descartável. */
+export const printHtmlDocument = (html: string): Promise<void> => new Promise((resolve) => {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+  const cleanup = () => { iframe.remove(); resolve(); };
+  iframe.onload = () => {
+    const win = iframe.contentWindow;
+    if (win && typeof win.print === 'function') {
+      win.focus();
+      win.print();
+    }
+    // dá tempo do diálogo capturar o documento antes de remover o iframe
+    setTimeout(cleanup, 2000);
+  };
+  iframe.srcdoc = html;
+  document.body.appendChild(iframe);
+});

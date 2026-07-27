@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import EtiquetasPage from '../EtiquetasPage';
 import { getStores, getProducts, updateProduct } from '../../../services/storesApi';
+import { printHtmlDocument } from '../../../utils/labelPrint';
 
 jest.mock('../../../services/storesApi', () => ({
   getStores: jest.fn(),
@@ -11,9 +12,15 @@ jest.mock('../../../services/storesApi', () => ({
   updateProduct: jest.fn(),
 }));
 
+jest.mock('../../../utils/labelPrint', () => ({
+  ...jest.requireActual('../../../utils/labelPrint'),
+  printHtmlDocument: jest.fn().mockResolvedValue(undefined),
+}));
+
 const mockedGetStores = getStores as jest.Mock;
 const mockedGetProducts = getProducts as jest.Mock;
 const mockedUpdateProduct = updateProduct as jest.Mock;
+const mockedPrint = printHtmlDocument as jest.Mock;
 
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
 
@@ -29,7 +36,7 @@ const renderPage = () =>
 describe('EtiquetasPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    window.print = jest.fn();
+    localStorage.clear();
     mockedGetStores.mockResolvedValue(page([
       { id: 's1', slug: 'loja-1', name: 'Loja Um', status: 'active' },
     ]));
@@ -59,7 +66,16 @@ describe('EtiquetasPage', () => {
         barcode: expect.stringMatching(/^2\d{12}$/),
       });
     });
-    await waitFor(() => expect(window.print).toHaveBeenCalled());
+    await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
+    const doc = mockedPrint.mock.calls[0][0] as string;
+    expect(doc).toContain('Marmita P');
+    // duas cópias = duas páginas, cada uma com o código novo
+    expect(doc.match(/class="page"/g)).toHaveLength(2);
+    const code = mockedUpdateProduct.mock.calls[0][1].barcode as string;
+    expect(doc).toContain('@page { size: 100mm 80mm; margin: 0; }');
+    // barcode entra como SVG gerado a partir do código salvo
+    expect(mockedPrint).toHaveBeenCalledTimes(1);
+    expect(code).toMatch(/^2\d{12}$/);
   });
 
   it('produto que já tem código não é alterado ao imprimir', async () => {
@@ -70,11 +86,11 @@ describe('EtiquetasPage', () => {
     await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Suco'), '1');
     await userEvent.click(screen.getByTestId('etq-imprimir'));
 
-    await waitFor(() => expect(window.print).toHaveBeenCalled());
+    await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
     expect(mockedUpdateProduct).not.toHaveBeenCalled();
   });
 
-  it('modo validade mostra config de shelf-life e não mexe em código', async () => {
+  it('modo validade imprime linhas de 3 colunas com página do tamanho do papel', async () => {
     renderPage();
     await screen.findByText('Marmita P');
 
@@ -82,10 +98,37 @@ describe('EtiquetasPage', () => {
     expect(screen.getByTestId('etq-shelf-days')).toBeInTheDocument();
 
     await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
-    await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '3');
+    await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '4');
     await userEvent.click(screen.getByTestId('etq-imprimir'));
 
-    await waitFor(() => expect(window.print).toHaveBeenCalled());
+    await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
     expect(mockedUpdateProduct).not.toHaveBeenCalled();
+
+    const doc = mockedPrint.mock.calls[0][0] as string;
+    // papel de 94mm (3×30 + 2×2) e altura 22mm, 4 etiquetas → 2 páginas (3+1)
+    expect(doc).toContain('@page { size: 94mm 22mm; margin: 0; }');
+    expect(doc.match(/class="page"/g)).toHaveLength(2);
+    expect(doc.match(/class="cell"/g)).toHaveLength(4);
+    // colunas posicionadas em 0/32/64 mm
+    expect(doc).toContain('left:0mm');
+    expect(doc).toContain('left:32mm');
+    expect(doc).toContain('left:64mm');
+    expect(doc).toContain('Manip.:');
+    expect(doc).toContain('Val.:');
+  });
+
+  it('girar 90° troca a orientação da página da etiqueta de produto', async () => {
+    renderPage();
+    await screen.findByText('Suco');
+
+    await userEvent.click(screen.getByTestId('etq-rotate'));
+    await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Suco'));
+    await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Suco'), '1');
+    await userEvent.click(screen.getByTestId('etq-imprimir'));
+
+    await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
+    const doc = mockedPrint.mock.calls[0][0] as string;
+    expect(doc).toContain('@page { size: 80mm 100mm; margin: 0; }');
+    expect(doc).toContain('rotate(90deg)');
   });
 });
