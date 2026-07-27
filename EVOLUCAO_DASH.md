@@ -61,6 +61,39 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   superfície de teste própria; a verificação é a suíte completa + build verdes).
 
 #### Histórico anterior
+## Baseline atual (2026-07-23)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **488 testes / 121 suítes verdes** (era 484/117; +4/+4 desta fatia).
+- `npm run lint`: gate em 400 warnings; limpeza incremental em curso.
+
+## Histórico
+
+### 2026-07-23 — Acessibilidade: nomes acessíveis em botões icon-only de alto tráfego + conserto do mapper de CSS no Jest
+- **Medido:** varredura de `<button>` icon-only (só ícone SVG, sem texto,
+  `aria-label` ou `title`) nos fluxos mais usados. 14 candidatos reais; os de
+  maior impacto ficavam nos **compositores dos inboxes** (enviar mensagem) e em
+  controles frequentes. Leitores de tela não anunciavam esses controles.
+- **Descoberta de infra:** `jest.config.cjs` mapeava CSS para `identity-obj-proxy`,
+  mas o pacote **não estava instalado** — qualquer teste que renderizasse um
+  componente com `import './x.css'` quebrava. Mapper dormente/quebrado.
+- **Mudado (componentes ativos apenas):**
+  - `WhatsAppInboxPage.tsx` (fluxo principal de WhatsApp): botão de enviar
+    (`PaperAirplaneIcon`) → `aria-label="Enviar mensagem"` + `title`.
+  - `InstagramInbox.tsx`: botão de enviar (`PaperAirplaneIcon`) → idem.
+  - `EditOrderDrawer.tsx` (pedidos): botão de fechar (`XMarkIcon`) → `aria-label="Fechar"`
+    (o irmão `NewOrderDrawer` já era rotulado).
+  - `ui/toast.tsx` (app-wide): botão de dispensar (`XMarkIcon`) → `aria-label="Fechar notificação"`.
+  - `identity-obj-proxy` adicionado como **devDependency** (conserta o mapper de CSS
+    do Jest; desbloqueia testes de componentes que importam CSS).
+- **Teste (TDD):** 4 novas suítes de acessibilidade, escritas **vermelhas antes,
+  verdes depois** (verificado via `git stash` das correções → 4 falham → restaurar → 4 passam):
+  `toast.a11y`, `EditOrderDrawer.a11y`, `WhatsAppInboxPage.a11y`, `InstagramInbox.a11y`.
+  Os testes de inbox montam a página real e auto-selecionam a conversa (via
+  `?conversation=` no WhatsApp e auto-seleção da 1ª no Instagram) para renderizar o compositor.
+- **Antes/depois:** `npm test` 484/117 → **488/121**; tsc limpo nos dois lados.
+  Só produção alterada: 4 atributos de acessibilidade (baixo risco, sem mudança de comportamento).
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -117,6 +150,13 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 2. **Segurança/deps (restante):** planejar upgrade de `vite@5 → vite@8` (breaking)
    para eliminar as 2 vulnerabilidades dev-only de `esbuild`/`vite`. Validar
    `vite.config.ts`, plugins e o transform de teste antes de aplicar.
+1. **A11y — continuar varredura:** ainda restam botões icon-only sem nome acessível
+   (levantados na varredura de 2026-07-23): `DashboardPage`/`CustomersPage`/`AgentsPage`/
+   `AutomationLogsPage` (refresh `ArrowPathIcon`), `ConnectionsPage`/`MessengerAccounts`/
+   `AgentForm` (fechar `XMarkIcon`), `CompanyProfileDetailPage` (copiar/regenerar API key),
+   `AgentChatTest` (enviar). Rotular conforme tocar, com teste de regressão por componente.
+2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
+   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.
