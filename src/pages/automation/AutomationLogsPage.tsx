@@ -140,6 +140,8 @@ const AutomationLogsPage: React.FC = () => {
             Filtros
           </button>
           <button
+            type="button"
+            aria-label="Atualizar logs"
             onClick={loadLogs}
             className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
           >

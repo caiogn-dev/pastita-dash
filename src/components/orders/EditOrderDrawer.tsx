@@ -130,6 +130,8 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
           <p className="font-bold text-fg-token">Editar pedido</p>
           <button
+            type="button"
+            aria-label="Fechar edição de pedido"
             onClick={onClose}
             aria-label="Fechar"
             className="p-2 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2"

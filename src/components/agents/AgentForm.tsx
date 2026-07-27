@@ -154,6 +154,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
         </h2>
         <button
           type="button"
+          aria-label="Fechar formulário"
           onClick={onCancel}
           className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
         >
