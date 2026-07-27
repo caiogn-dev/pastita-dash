@@ -105,16 +105,31 @@ describe('EtiquetasPage', () => {
     expect(mockedUpdateProduct).not.toHaveBeenCalled();
 
     const doc = mockedPrint.mock.calls[0][0] as string;
-    // papel de 94mm (3×30 + 2×2) e altura 22mm, 4 etiquetas → 2 páginas (3+1)
-    expect(doc).toContain('@page { size: 94mm 22mm; margin: 0; }');
+    // bobina padrão 107mm (3×33 + 2×3 = 105 centralizado), 4 etiquetas → 2 páginas (3+1)
+    expect(doc).toContain('@page { size: 107mm 22mm; margin: 0; }');
     expect(doc.match(/class="page"/g)).toHaveLength(2);
     expect(doc.match(/class="cell"/g)).toHaveLength(4);
-    // colunas posicionadas em 0/32/64 mm
-    expect(doc).toContain('left:0mm');
-    expect(doc).toContain('left:32mm');
-    expect(doc).toContain('left:64mm');
+    // margem automática de 1mm por lado → colunas em 1/37/73 mm
+    expect(doc).toContain('left:1mm');
+    expect(doc).toContain('left:37mm');
+    expect(doc).toContain('left:73mm');
     expect(doc).toContain('Manip.:');
     expect(doc).toContain('Val.:');
+  });
+
+  it('borda retângulo entra no CSS da etiqueta quando selecionada', async () => {
+    renderPage();
+    await screen.findByText('Suco');
+
+    await userEvent.click(screen.getByText('Validade (Elgin)'));
+    await userEvent.selectOptions(screen.getByTestId('etq-border'), 'solid');
+    await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Suco'));
+    await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Suco'), '1');
+    await userEvent.click(screen.getByTestId('etq-imprimir'));
+
+    await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
+    const doc = mockedPrint.mock.calls[0][0] as string;
+    expect(doc).toContain('border: 0.4mm solid #000');
   });
 
   it('girar 90° troca a orientação da página da etiqueta de produto', async () => {

@@ -5,9 +5,17 @@
  * documento standalone com geometria exata em mm e imprimimos via iframe
  * dedicado — nenhum CSS do painel vaza pra etiqueta e o layout enviado ao
  * driver é exatamente o pré-visualizado.
+ *
+ * Modelo de geometria (igual pro rolo da Zebra e da Elgin):
+ *   largura do papel (bobina/liner, o que o driver conhece)
+ *   → margens laterais automáticas = (papel − bloco de etiquetas) / 2
+ *   → etiquetas e divisórias (gap) posicionadas em mm absoluto.
+ * Os offsets X/Y são só calibração fina por cima disso.
  */
 import JsBarcode from 'jsbarcode';
 import { isValidEan13 } from './ean13';
+
+export type LabelBorder = 'none' | 'solid' | 'dashed';
 
 export interface ProdutoLabelData {
   name: string;
@@ -26,11 +34,14 @@ export interface ProdutoConfig {
   /** Dimensões da etiqueta em mm (como o operador enxerga a etiqueta). */
   width: number;
   height: number;
+  /** Largura do papel/bobina definida no driver; etiqueta é centralizada nela. */
+  paperW: number;
   /** Gira o conteúdo 90° quando o driver define a bobina em retrato. */
   rotate: boolean;
   /** Calibração fina em mm pra compensar offset mecânico da impressora. */
   offsetX: number;
   offsetY: number;
+  border: LabelBorder;
   showPrice: boolean;
   showDesc: boolean;
 }
@@ -40,21 +51,35 @@ export interface ValidadeConfig {
   labelH: number;
   cols: number;
   gap: number;
-  /** Largura do papel como definida no driver (bobina inteira). */
+  /** Largura do papel como definida no driver (bobina inteira, com margens). */
   paperW: number;
   offsetX: number;
   offsetY: number;
+  border: LabelBorder;
 }
 
 export const PRODUTO_DEFAULTS: ProdutoConfig = {
-  width: 100, height: 80, rotate: false, offsetX: 0, offsetY: 0,
+  width: 100, height: 80, paperW: 100, rotate: false,
+  offsetX: 0, offsetY: 0, border: 'none',
   showPrice: true, showDesc: false,
 };
 
-// Elgin L42 Pro com bobina de 3 colunas de 30×22 mm
+// Bobina 3 colunas padrão de mercado: etiquetas 33×22, gap 3, rolo ~107 mm
 export const VALIDADE_DEFAULTS: ValidadeConfig = {
-  labelW: 30, labelH: 22, cols: 3, gap: 2, paperW: 94, offsetX: 0, offsetY: 0,
+  labelW: 33, labelH: 22, cols: 3, gap: 3, paperW: 107,
+  offsetX: 0, offsetY: 0, border: 'none',
 };
+
+/** Margem lateral automática que centraliza o bloco de colunas no papel. */
+export const validadeMargin = (cfg: ValidadeConfig): number => {
+  const block = cfg.cols * cfg.labelW + (cfg.cols - 1) * cfg.gap;
+  return Math.max(0, (cfg.paperW - block) / 2);
+};
+
+const round = (v: number) => Math.round(v * 100) / 100;
+
+const borderCss = (b: LabelBorder, radius: number): string =>
+  (b === 'none' ? '' : `border: 0.4mm ${b} #000; border-radius: ${radius}mm;`);
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (ch) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string
@@ -99,11 +124,15 @@ ${css}
 
 /** Documento pra etiqueta de produto (Zebra ZD220 e afins), uma etiqueta por página. */
 export const buildProdutoDoc = (labels: ProdutoLabelData[], cfg: ProdutoConfig): string => {
-  const pageW = cfg.rotate ? cfg.height : cfg.width;
-  const pageH = cfg.rotate ? cfg.width : cfg.height;
+  const paperW = Math.max(cfg.paperW, cfg.width);
+  // centraliza a etiqueta na largura da bobina; sobra vira margem dos 2 lados
+  const centerShift = round((paperW - cfg.width) / 2);
+  const pageW = cfg.rotate ? cfg.height : paperW;
+  const pageH = cfg.rotate ? paperW : cfg.height;
+  // rotacionado, o eixo da largura da bobina passa a ser o Y da página
   const transform = cfg.rotate
-    ? `translate(${cfg.offsetX}mm, ${cfg.offsetY}mm) rotate(90deg) translateY(-100%)`
-    : `translate(${cfg.offsetX}mm, ${cfg.offsetY}mm)`;
+    ? `translate(${cfg.offsetX}mm, ${round(centerShift + cfg.offsetY)}mm) rotate(90deg) translateY(-100%)`
+    : `translate(${round(centerShift + cfg.offsetX)}mm, ${cfg.offsetY}mm)`;
   const css = `
 @page { size: ${pageW}mm ${pageH}mm; margin: 0; }
 .page { width: ${pageW}mm; height: ${pageH}mm; }
@@ -111,6 +140,7 @@ export const buildProdutoDoc = (labels: ProdutoLabelData[], cfg: ProdutoConfig):
   position: absolute; left: 0; top: 0;
   width: ${cfg.width}mm; height: ${cfg.height}mm; padding: 2.5mm;
   transform: ${transform}; transform-origin: top left;
+  ${borderCss(cfg.border, 1.5)}
   display: flex; flex-direction: column; align-items: center;
   justify-content: space-between; text-align: center; overflow: hidden;
 }
@@ -131,12 +161,14 @@ ${l.barcode ? `<div class="bc">${barcodeSvg(l.barcode)}</div>` : ''}
 export const buildValidadeDoc = (labels: ValidadeLabelData[], cfg: ValidadeConfig): string => {
   const rows: ValidadeLabelData[][] = [];
   for (let i = 0; i < labels.length; i += cfg.cols) rows.push(labels.slice(i, i + cfg.cols));
+  const margin = validadeMargin(cfg);
   const css = `
 @page { size: ${cfg.paperW}mm ${cfg.labelH}mm; margin: 0; }
 .page { width: ${cfg.paperW}mm; height: ${cfg.labelH}mm; }
 .cell {
   position: absolute; top: ${cfg.offsetY}mm;
   width: ${cfg.labelW}mm; height: ${cfg.labelH}mm; padding: 1.4mm 1.6mm;
+  ${borderCss(cfg.border, 1)}
   display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
 }
 .nm {
@@ -146,7 +178,7 @@ export const buildValidadeDoc = (labels: ValidadeLabelData[], cfg: ValidadeConfi
 .dt { font-size: 6.5pt; line-height: 1.3; }
 .dt b { font-size: 7pt; }`;
   const body = rows.map((row) => `<div class="page">${row.map((l, i) => `
-<div class="cell" style="left:${cfg.offsetX + i * (cfg.labelW + cfg.gap)}mm">
+<div class="cell" style="left:${round(margin + cfg.offsetX + i * (cfg.labelW + cfg.gap))}mm">
 <div class="nm">${esc(l.name)}</div>
 <div class="dt">Manip.: ${esc(l.manip)}<br><b>Val.: ${esc(l.val)}</b></div>
 </div>`).join('')}</div>`).join('\n');

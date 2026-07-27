@@ -7,8 +7,8 @@ import { Loading } from '../../components/common';
 import { getStores, getProducts, updateProduct, StoreProduct } from '../../services/storesApi';
 import { generateInternalEan13 } from '../../utils/ean13';
 import {
-  buildProdutoDoc, buildValidadeDoc, printHtmlDocument,
-  PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, ProdutoConfig, ValidadeConfig,
+  buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
+  PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
 } from '../../utils/labelPrint';
 
 const fmtMoney = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -28,7 +28,23 @@ const PRODUTO_PRESETS = [
   { label: '100 × 100 mm', width: 100, height: 100 },
 ];
 
-const CFG_KEY = 'cdx-etiquetas-cfg-v1';
+const CFG_KEY = 'cdx-etiquetas-cfg-v2';
+
+const BorderSelect: React.FC<{ value: LabelBorder; onChange: (v: LabelBorder) => void }> = ({ value, onChange }) => (
+  <label className="flex items-center justify-between gap-2 text-sm">
+    <span className="opacity-80">Borda</span>
+    <select
+      className="rounded border border-black/15 dark:border-white/15 bg-transparent px-2 py-1 text-sm"
+      value={value}
+      onChange={(e) => onChange(e.target.value as LabelBorder)}
+      data-testid="etq-border"
+    >
+      <option value="none">Sem borda</option>
+      <option value="solid">Retângulo</option>
+      <option value="dashed">Tracejada</option>
+    </select>
+  </label>
+);
 
 interface SavedConfig { produto: ProdutoConfig; validade: ValidadeConfig; shelfDays: number; }
 
@@ -209,10 +225,11 @@ const EtiquetasPage: React.FC = () => {
         ? produtoLabel(selected[0])
         : { name: 'Produto de exemplo', description: 'Descrição', price: fmtMoney(19.9), barcode: '2000000000008' };
       const p = cfg.produto;
+      const paper = Math.max(p.paperW, p.width);
       return {
         doc: buildProdutoDoc([sample], p),
-        w: (p.rotate ? p.height : p.width) * MM_PX,
-        h: (p.rotate ? p.width : p.height) * MM_PX,
+        w: (p.rotate ? p.height : paper) * MM_PX,
+        h: (p.rotate ? paper : p.height) * MM_PX,
       };
     }
     const v = cfg.validade;
@@ -316,14 +333,21 @@ const EtiquetasPage: React.FC = () => {
                     key={p.label}
                     size="sm"
                     variant={cfg.produto.width === p.width && cfg.produto.height === p.height ? 'primary' : 'secondary'}
-                    onClick={() => setProduto({ width: p.width, height: p.height })}
+                    onClick={() => setProduto({ width: p.width, height: p.height, paperW: p.width })}
                   >
                     {p.label}
                   </Button>
                 ))}
               </div>
-              <NumField label="Largura" value={cfg.produto.width} min={20} max={200} onChange={(v) => setProduto({ width: v })} />
-              <NumField label="Altura" value={cfg.produto.height} min={15} max={200} onChange={(v) => setProduto({ height: v })} />
+              <NumField label="Etiqueta (largura)" value={cfg.produto.width} min={20} max={200} onChange={(v) => setProduto({ width: v })} />
+              <NumField label="Etiqueta (altura)" value={cfg.produto.height} min={15} max={200} onChange={(v) => setProduto({ height: v })} />
+              <NumField label="Largura do papel" value={cfg.produto.paperW} min={20} max={220} onChange={(v) => setProduto({ paperW: v })} />
+              {cfg.produto.paperW > cfg.produto.width && (
+                <p className="text-xs opacity-60">
+                  Etiqueta centralizada: {((cfg.produto.paperW - cfg.produto.width) / 2).toFixed(1)} mm de margem por lado.
+                </p>
+              )}
+              <BorderSelect value={cfg.produto.border} onChange={(v) => setProduto({ border: v })} />
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -361,6 +385,12 @@ const EtiquetasPage: React.FC = () => {
               <NumField label="Etiqueta (altura)" value={cfg.validade.labelH} min={10} max={60} onChange={(v) => setValidade({ labelH: v })} />
               <NumField label="Vão entre colunas" value={cfg.validade.gap} min={0} max={10} onChange={(v) => setValidade({ gap: v })} />
               <NumField label="Largura do papel" value={cfg.validade.paperW} min={30} max={120} onChange={(v) => setValidade({ paperW: v })} />
+              <p className="text-xs opacity-60">
+                Colunas centralizadas no papel: {validadeMargin(cfg.validade).toFixed(1)} mm de margem por lado
+                ({cfg.validade.cols}×{cfg.validade.labelW} + {cfg.validade.cols - 1}×{cfg.validade.gap} mm
+                em {cfg.validade.paperW} mm).
+              </p>
+              <BorderSelect value={cfg.validade.border} onChange={(v) => setValidade({ border: v })} />
               <details className="text-sm">
                 <summary className="cursor-pointer opacity-70">Calibração (ajuste fino)</summary>
                 <div className="space-y-2 mt-2">
