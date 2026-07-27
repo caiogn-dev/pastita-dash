@@ -182,7 +182,7 @@ export default function MessengerAccounts() {
           <div className="relative bg-bg-card border border-border-primary rounded-xl shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-5 border-b border-border-primary">
               <h2 className="text-lg font-semibold text-fg-primary">{editingAccount ? 'Editar Conta' : 'Adicionar Conta do Messenger'}</h2>
-              <button onClick={closeDialog} className="p-1 rounded hover:bg-bg-hover"><XMarkIcon className="w-5 h-5 text-fg-muted" /></button>
+              <button type="button" aria-label="Fechar" onClick={closeDialog} className="p-1 rounded hover:bg-bg-hover"><XMarkIcon className="w-5 h-5 text-fg-muted" /></button>
             </div>
             <div className="p-5 flex flex-col gap-4">
               {[

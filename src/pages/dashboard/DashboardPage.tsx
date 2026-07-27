@@ -337,7 +337,7 @@ export const DashboardPage: React.FC = () => {
           >
             Ver agora →
           </button>
-          <button onClick={loadData} className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+          <button type="button" aria-label="Atualizar painel" onClick={loadData} className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
             <ArrowPathIcon className="h-4 w-4 text-gray-400" />
           </button>
         </div>

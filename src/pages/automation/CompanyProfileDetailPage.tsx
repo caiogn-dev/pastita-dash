@@ -687,6 +687,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                   </button>
                   <button
                     type="button"
+                    aria-label="Copiar chave de API"
                     onClick={handleCopyApiKey}
                     className="inline-flex items-center px-3 border border-l-0 border-border-token bg-surface-2 text-fg-muted-token hover:text-fg-token transition-colors"
                   >
@@ -694,6 +695,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                   </button>
                   <button
                     type="button"
+                    aria-label="Regenerar chave de API"
                     onClick={handleRegenerateApiKey}
                     className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-border-token bg-surface-2 text-fg-muted-token hover:text-fg-token transition-colors"
                   >

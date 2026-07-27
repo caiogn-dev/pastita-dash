@@ -179,6 +179,8 @@ export const AgentsPage: React.FC = () => {
 
         {/* Refresh */}
         <button
+          type="button"
+          aria-label="Atualizar agentes"
           onClick={loadAgents}
           disabled={isLoading}
           className={cn(

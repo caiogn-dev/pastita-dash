@@ -269,6 +269,8 @@ export const UnifiedOrchestratorTest: React.FC = () => {
               Contexto
             </button>
             <button
+              type="button"
+              aria-label="Limpar conversa"
               onClick={handleClear}
               className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition-colors"
             >

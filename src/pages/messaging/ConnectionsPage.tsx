@@ -99,7 +99,7 @@ const Modal: React.FC<{ open: boolean; onClose: () => void; title: string; child
         <div className={`relative bg-bg-card border border-border-primary rounded-xl shadow-2xl w-full ${maxW} max-h-[90vh] overflow-y-auto`}>
           <div className="flex items-center justify-between p-5 border-b border-border-primary">
             <h2 className="text-lg font-semibold text-fg-primary">{title}</h2>
-            <button onClick={onClose} className="p-1 rounded hover:bg-bg-hover"><XMarkIcon className="w-5 h-5 text-fg-muted" /></button>
+            <button type="button" aria-label="Fechar" onClick={onClose} className="p-1 rounded hover:bg-bg-hover"><XMarkIcon className="w-5 h-5 text-fg-muted" /></button>
           </div>
           <div className="p-5">{children}</div>
           {footer && <div className="flex justify-end gap-3 p-5 border-t border-border-primary">{footer}</div>}

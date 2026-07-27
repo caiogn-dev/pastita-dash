@@ -402,6 +402,7 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
           />
           <button
             type="submit"
+            aria-label="Enviar mensagem"
             disabled={isLoading || !inputValue.trim()}
             className={cn(
               "px-4 py-3 rounded-xl transition-colors",

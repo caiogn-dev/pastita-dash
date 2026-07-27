@@ -542,6 +542,8 @@ export const CustomersPage: React.FC = () => {
             />
           </div>
           <button
+            type="button"
+            aria-label="Atualizar clientes"
             onClick={refresh}
             disabled={refreshing}
             className="p-1.5 rounded bg-surface border border-border-token text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors disabled:opacity-50"

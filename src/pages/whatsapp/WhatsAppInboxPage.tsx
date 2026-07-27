@@ -429,6 +429,7 @@ const WhatsAppInboxPage: React.FC = () => {
                 type="submit"
                 disabled={!messageText.trim() || sending}
                 className="send-btn"
+                aria-label="Enviar mensagem"
               >
                 {sending ? '⏳' : <PaperAirplaneIcon className="w-5 h-5" />}
               </button>
