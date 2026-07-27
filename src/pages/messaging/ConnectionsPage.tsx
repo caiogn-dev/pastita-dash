@@ -15,6 +15,7 @@ import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsApp
 import { messengerService } from '../../services/messenger';
 import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
+import { Toggle } from './Toggle';
 
 // ─── Platform config ──────────────────────────────────────────────────────────
 
@@ -107,17 +108,6 @@ const Modal: React.FC<{ open: boolean; onClose: () => void; title: string; child
       </div>
     );
   };
-
-// ─── Toggle ───────────────────────────────────────────────────────────────────
-
-const Toggle: React.FC<{ checked: boolean; onChange: () => void }> = ({ checked, onChange }) => (
-  <button
-    onClick={onChange}
-    className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none ${checked ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-  >
-    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
-  </button>
-);
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -466,7 +456,11 @@ export default function ConnectionsPage() {
                     <p className="text-xs text-fg-muted">{PLATFORMS[conn.platform].icon} {PLATFORMS[conn.platform].name}</p>
                   </div>
                 </div>
-                <Toggle checked={conn.is_active} onChange={() => handleToggleActive(conn)} />
+                <Toggle
+                  checked={conn.is_active}
+                  onChange={() => handleToggleActive(conn)}
+                  label={`${conn.is_active ? 'Desativar' : 'Ativar'} conexão ${conn.name}`}
+                />
               </div>
 
               {/* Badges */}

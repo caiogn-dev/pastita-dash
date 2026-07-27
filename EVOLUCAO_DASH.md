@@ -38,7 +38,17 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - **Teste (TDD):** novo `ui/__tests__/toast.a11y.test.tsx` — escrito vermelho antes,
   verde depois. Cobre o nome acessível e o `onClose` do botão de fechar do Toast
   (primitivo compartilhado, maior alcance).
-- **Antes/depois:** 121→122 suítes, 502→504 testes; tsc limpo nos dois lados.
+- **Correção pós-review (Codex):** a heurística do scanner só pegava botões com
+  filho de **ícone** (`<XxxIcon>`); o `Toggle` de `ConnectionsPage.tsx` é um
+  `<button>` cujo único filho é um `<span>` visual (o "pino" do switch), então
+  passou batido — era um controle **sem nome nem estado** numa rota central.
+  Extraído para `messaging/Toggle.tsx` com `role="switch"` + `aria-checked` +
+  `aria-label` (nome com ação/loja, ex.: "Desativar conexão Loja Principal") e
+  coberto por `messaging/__tests__/ConnectionsToggle.a11y.test.tsx` (TDD).
+  Portanto a varredura **não** está 100% limpa: falta ainda dar nome acessível
+  ao primitivo compartilhado `components/common/Switch.tsx` (tem `role`/`aria-checked`
+  mas nenhum `aria-label`) — anotado nos próximos passos.
+- **Antes/depois:** 121→123 suítes, 502→506 testes; tsc limpo nos dois lados.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -78,12 +88,16 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — próximas camadas:** nomes acessíveis em botões icon-only já cobertos
-   (varredura de `<button>` limpa — só restam falsos positivos). Próximo foco de a11y:
-   (a) `role="status"`/`aria-live` no `Toast` para que notificações sejam anunciadas
-   por leitores de tela; (b) foco/`aria-modal`/trap de foco nos diálogos
-   (`ConnectionsPage`, `MessengerAccounts`, `EditOrderDrawer`); (c) `aria-label` em
-   `<select>`/inputs sem label associado.
+1. **A11y — próximas camadas:** nomes acessíveis em botões icon-only cobertos
+   (só restam falsos positivos no scanner de ícones). Pendências conhecidas:
+   (a) `components/common/Switch.tsx` — switch compartilhado com `role`/`aria-checked`
+   mas sem `aria-label`; dar nome via prop e propagar aos consumidores;
+   (b) `role="status"`/`aria-live` no `Toast` para que notificações sejam anunciadas
+   por leitores de tela; (c) foco/`aria-modal`/trap de foco nos diálogos
+   (`ConnectionsPage`, `MessengerAccounts`, `EditOrderDrawer`); (d) `aria-label` em
+   `<select>`/inputs sem label associado. Obs.: a heurística do scanner só detecta
+   botões com filho de ícone — controles cujo filho é só um `<span>` visual
+   (toggles/switches) precisam de auditoria à parte.
 2. **Segurança/deps:** triar as 10 vulnerabilidades do `npm audit` (1 low, 3
    moderate, 6 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
