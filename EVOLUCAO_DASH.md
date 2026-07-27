@@ -3,14 +3,42 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-06-30)
+## Baseline atual (2026-07-27)
 
-- `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
+- `npm ci`: ok (10 vulnerabilidades reportadas pelo npm: 1 low, 3 moderate, 6 high).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **331 testes / 77 suítes verdes** (após corrigir suíte de PaymentLinkPage).
-- `npm run lint`: gate em 400 warnings; ~266 warnings restantes (limpeza incremental em curso).
+- `npm test`: **504 testes / 122 suítes verdes** (era 502/121 antes desta fatia; +2 testes de a11y do Toast).
+- `npm run lint`: gate em 400 warnings; limpeza incremental em curso.
+- **Nota de infra:** o clone veio com `HEAD` destacado em `10edb05` (6 commits à
+  frente dos refs `main`/`origin/main` locais, defasados em `5f9b849`). Um
+  `git fetch origin main` atualizou `origin/main` para `10edb05`; esta fatia foi
+  rebaseada sobre o `origin/main` correto para não descartar os 6 commits reais
+  (PDV balcão, etiquetas, impressão).
 
 ## Histórico
+
+### 2026-07-27 — A11y: nomes acessíveis em botões icon-only (varredura ampliada)
+- **Medido:** varredura por script (`grep` de `<button>` + heurística de ícone/texto)
+  encontrou **14 botões icon-only ativos sem nome acessível** (sem `aria-label`,
+  `title` nem texto visível). Leitores de tela não anunciavam nada nesses controles.
+  5 ocorrências restantes eram falsos positivos (componentes base `Button`/`dropdown`
+  que repassam `children`, ou botões que já têm texto — `MarketingPage.QuickAction`,
+  `NewConversationModal`, `AgentDetailPage`).
+- **Mudado (componentes ativos apenas):**
+  - `ui/toast.tsx`: botão fechar → "Fechar notificação" (primitivo usado em todo o painel).
+  - `whatsapp/WhatsAppInboxPage.tsx` e `instagram/InstagramInbox.tsx`: botão enviar →
+    "Enviar mensagem" (workflows principais de mensageria).
+  - `orders/EditOrderDrawer.tsx`, `agents/AgentForm.tsx`: fechar → rótulo descritivo.
+  - `messaging/ConnectionsPage.tsx`, `messenger/MessengerAccounts.tsx`: fechar diálogo → "Fechar".
+  - `customers/CustomersPage.tsx`, `dashboard/DashboardPage.tsx`, `agents/AgentsPage.tsx`,
+    `automation/AutomationLogsPage.tsx`: atualizar → rótulo descritivo.
+  - `automation/CompanyProfileDetailPage.tsx`: copiar/regenerar chave de API → rótulos.
+  - `agents/AgentChatTest.tsx`, `agents/UnifiedOrchestratorTest.tsx`: enviar/limpar → rótulos.
+  - `Sidebar.tsx` deliberadamente **não** alterado (legado morto, não renderizado).
+- **Teste (TDD):** novo `ui/__tests__/toast.a11y.test.tsx` — escrito vermelho antes,
+  verde depois. Cobre o nome acessível e o `onClose` do botão de fechar do Toast
+  (primitivo compartilhado, maior alcance).
+- **Antes/depois:** 121→122 suítes, 502→504 testes; tsc limpo nos dois lados.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -50,11 +78,14 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Próximos passos priorizados
 
-1. **A11y — continuar varredura:** botões icon-only em páginas de marketing/instagram
-   (`NewWhatsAppCampaignPage`, `InstagramInbox`) e diálogos. Adicionar teste de
-   regressão de acessibilidade por componente conforme tocar.
-2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
-   moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
+1. **A11y — próximas camadas:** nomes acessíveis em botões icon-only já cobertos
+   (varredura de `<button>` limpa — só restam falsos positivos). Próximo foco de a11y:
+   (a) `role="status"`/`aria-live` no `Toast` para que notificações sejam anunciadas
+   por leitores de tela; (b) foco/`aria-modal`/trap de foco nos diálogos
+   (`ConnectionsPage`, `MessengerAccounts`, `EditOrderDrawer`); (c) `aria-label` em
+   `<select>`/inputs sem label associado.
+2. **Segurança/deps:** triar as 10 vulnerabilidades do `npm audit` (1 low, 3
+   moderate, 6 high) e aplicar `npm audit fix` sem breaking changes.
 3. **React Router v7 readiness:** avaliar `future` flags (`v7_startTransition`,
    `v7_relativeSplatPath`) no `BrowserRouter` — silencia warnings nos testes, mas
    `v7_relativeSplatPath` altera resolução de rotas splat; precisa validação.
