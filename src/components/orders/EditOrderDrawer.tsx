@@ -133,7 +133,6 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
             type="button"
             aria-label="Fechar edição de pedido"
             onClick={onClose}
-            aria-label="Fechar"
             className="p-2 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2"
           >
             <XMarkIcon className="h-5 w-5" />
