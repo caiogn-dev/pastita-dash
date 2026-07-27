@@ -156,6 +156,34 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   entre o botão de diminuir (que vira "remover") e a lixeira.
 - **Antes/depois:** `npm test` 491/119 → **493 testes / 120 suítes**; tsc limpo e
   lint sem novos warnings nos dois arquivos tocados.
+## Baseline atual (2026-07-26)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **505 testes / 122 suítes verdes** (após esta fatia; antes 502/121).
+- `npm run lint`: gate em 400 warnings; **267 warnings** restantes (0 erros).
+
+## Histórico
+
+### 2026-07-26 — Acessibilidade: nomes acessíveis nos botões de ação do inbox + destravar teste de CSS
+- **Medido:** auditoria de botões icon-only (só ícone/emoji, sem texto) em componentes
+  efetivamente renderizados. Encontrados ~28 casos sem nome acessível. Priorizados os
+  do fluxo principal do produto (inbox de mensagens — WhatsApp/Messenger/Instagram).
+  Além disso, o `moduleNameMapper` de CSS do Jest apontava para `identity-obj-proxy`,
+  pacote **não instalado**, o que quebrava qualquer teste de componente que importasse
+  folha de estilo (nenhum teste conseguia cobrir esses componentes).
+- **Infra (destrava testes):** `jest.config.cjs` passou a mapear CSS/SCSS para
+  `src/__mocks__/styleMock.js` (stub local `{}`), removendo a dependência do pacote
+  ausente. Zero regressão — nenhum teste dependia do comportamento de proxy de classes.
+- **Mudado (componentes ativos):**
+  - `MediaViewer.tsx` (visualizador de mídia do inbox WhatsApp): botões `⬇️` e `✕`
+    ganharam `aria-label`/`title` ("Baixar mídia" / "Fechar visualização de mídia") e
+    `type="button"`; `<img>` agora tem `alt` não-vazio mesmo sem `fileName` ("Mídia").
+  - `WhatsAppInboxPage.tsx`, `MessengerInbox.tsx`, `InstagramInbox.tsx`: botão de
+    enviar (`PaperAirplaneIcon`) recebeu `aria-label`/`title` "Enviar mensagem".
+- **Teste (TDD):** novo `MediaViewer.a11y.test.tsx` — escrito vermelho antes, verde
+  depois. Cobre nome acessível dos botões, disparo de `onClose` e `alt` da imagem.
+- **Antes/depois:** 121→122 suítes, 502→505 testes; tsc limpo nos dois lados; lint 0 erros.
 
 ### 2026-06-30 — Correção: suíte de PaymentLinkPage estava vermelha (regressão de baseline)
 - **Medido:** a baseline estava **vermelha** — `PaymentLinkPage.test.tsx` com 3 de 3
@@ -217,6 +245,14 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
    `AutomationLogsPage` (refresh `ArrowPathIcon`), `ConnectionsPage`/`MessengerAccounts`/
    `AgentForm` (fechar `XMarkIcon`), `CompanyProfileDetailPage` (copiar/regenerar API key),
    `AgentChatTest` (enviar). Rotular conforme tocar, com teste de regressão por componente.
+1. **A11y — continuar varredura (backlog auditado):** ~22 botões icon-only restantes
+   sem nome acessível, agora destrancados para teste (mapper de CSS corrigido).
+   Priorizar os botões **fechar/dismiss** de diálogos: `EditOrderDrawer` (`XMarkIcon`),
+   `ConnectionsPage`, `MessengerAccounts` (fechar + editar/excluir linha), `AgentForm`,
+   `IntentLogsPage`, `WhatsAppCampaignsPage`, `NewCampaignPage` (email, `✕`). Depois:
+   botão de enviar do `AgentChatTest`, voltar (`ArrowLeftIcon`) nas telas de agentes/
+   marketing, copiar/regenerar API key em `CompanyProfileDetailPage`, refresh do
+   `DashboardPage`. Adicionar teste de regressão por componente conforme tocar.
 2. **Segurança/deps:** triar as 22 vulnerabilidades do `npm audit` (1 low, 19
    moderate, 2 high) e aplicar `npm audit fix` sem breaking changes.
 1. **A11y — continuar varredura:** ~78 botões icon-only sem nome acessível ainda

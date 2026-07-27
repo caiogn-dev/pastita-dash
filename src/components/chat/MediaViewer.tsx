@@ -31,12 +31,28 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
     <div className="media-viewer-overlay" onClick={onClose}>
       <div className="media-viewer-content" onClick={(e) => e.stopPropagation()}>
         <div className="media-viewer-header">
-          <button onClick={handleDownload} className="viewer-btn">⬇️</button>
-          <button onClick={onClose} className="viewer-btn">✕</button>
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="viewer-btn"
+            aria-label="Baixar mídia"
+            title="Baixar mídia"
+          >
+            ⬇️
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="viewer-btn"
+            aria-label="Fechar visualização de mídia"
+            title="Fechar"
+          >
+            ✕
+          </button>
         </div>
 
         <div className="media-viewer-body">
-          {isImage && <img src={url} alt={fileName} className="viewer-image" crossOrigin="anonymous" />}
+          {isImage && <img src={url} alt={fileName || 'Mídia'} className="viewer-image" crossOrigin="anonymous" />}
           {isVideo && <video src={url} controls className="viewer-video" crossOrigin="anonymous" />}
           {isAudio && (
             <div className="viewer-audio">

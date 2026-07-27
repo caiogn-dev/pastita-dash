@@ -146,8 +146,9 @@ export const ordersService = {
     return normalizeOrder(response.data);
   },
 
-  cancelOrder: async (id: string, storeSlug?: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { status: 'cancelled' });
+  cancelOrder: async (id: string, storeSlug?: string, reason?: string): Promise<Order> => {
+    // POST /cancel/ (não PATCH status): só o endpoint dedicado estorna estoque.
+    const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/${id}/cancel/`, { reason: reason ?? '' });
     return normalizeOrder(response.data);
   },
 
