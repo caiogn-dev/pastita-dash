@@ -60,6 +60,8 @@ const defaultMetaTracking: StoreMetaTracking = {
   meta_capi_access_token: '',
   meta_capi_token_configured: false,
   meta_capi_test_event_code: '',
+  clarity_id: '',
+  clarity_enabled: false,
 };
 
 export const StoreSettingsPage: React.FC = () => {
@@ -270,6 +272,8 @@ export const StoreSettingsPage: React.FC = () => {
         meta_pixel_enabled: metaTracking.meta_pixel_enabled,
         meta_capi_enabled: metaTracking.meta_capi_enabled,
         meta_capi_test_event_code: metaTracking.meta_capi_test_event_code.trim(),
+        clarity_id: metaTracking.clarity_id.trim(),
+        clarity_enabled: metaTracking.clarity_enabled,
       };
       if (metaTracking.meta_capi_access_token?.trim()) {
         payload.meta_capi_access_token = metaTracking.meta_capi_access_token.trim();
@@ -654,8 +658,41 @@ export const StoreSettingsPage: React.FC = () => {
               </label>
             </div>
           </div>
+          <div className="mt-6 pt-5 border-t border-border-token">
+            <div className="flex items-center gap-2 mb-2">
+              <ChartBarIcon className="w-5 h-5 text-fg-muted-token" />
+              <h3 className="text-base font-semibold text-fg-token">Microsoft Clarity</h3>
+            </div>
+            <p className="text-sm text-fg-muted-token mb-5">
+              Heatmaps e gravações de sessão do seu cardápio. Crie um projeto gratuito em clarity.microsoft.com e cole o código do projeto aqui.
+            </p>
+            <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
+              <div>
+                <label className="text-sm font-medium text-fg-muted-token">ID do projeto Clarity</label>
+                <input
+                  type="text"
+                  value={metaTracking.clarity_id}
+                  onChange={e => setMetaTracking(prev => ({
+                    ...prev,
+                    clarity_id: e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
+                  }))}
+                  placeholder="Ex.: abc1de23fg"
+                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
+                />
+              </div>
+              <label className="flex items-center gap-3 text-sm text-fg-token cursor-pointer self-end pb-2">
+                <input
+                  type="checkbox"
+                  checked={metaTracking.clarity_enabled}
+                  onChange={e => setMetaTracking(prev => ({ ...prev, clarity_enabled: e.target.checked }))}
+                  className="h-4 w-4 accent-[var(--color-brand)]"
+                />
+                Ativar Clarity na vitrine
+              </label>
+            </div>
+          </div>
           <Button onClick={handleSaveMetaTracking} disabled={saving} className="mt-6 w-full justify-center">
-            {saving ? 'Salvando...' : 'Salvar Meta Pixel'}
+            {saving ? 'Salvando...' : 'Salvar Rastreamento'}
           </Button>
         </Card>
 

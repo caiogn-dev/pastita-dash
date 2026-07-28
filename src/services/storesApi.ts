@@ -120,6 +120,8 @@ export interface StoreMetaTracking {
   meta_capi_access_token?: string;
   meta_capi_token_configured: boolean;
   meta_capi_test_event_code: string;
+  clarity_id: string;
+  clarity_enabled: boolean;
 }
 
 export interface StoreIntegration {
