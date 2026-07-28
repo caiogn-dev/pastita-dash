@@ -4,6 +4,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { CouponsPage } from '../CouponsPage';
 import { couponsService } from '../../../services/coupons';
 
+jest.mock('../../../services/storesApi', () => ({
+  getCategories: jest.fn().mockResolvedValue({ results: [] }),
+}));
+
 jest.mock('../../../services/logger', () => ({
   __esModule: true,
   default: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },

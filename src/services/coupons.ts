@@ -12,9 +12,13 @@ export interface Coupon {
   min_purchase: number;
   max_discount: number | null;
   usage_limit: number | null;
+  usage_limit_per_user: number | null;
   used_count: number;
   is_active: boolean;
   is_valid_now: boolean;
+  first_order_only: boolean;
+  applicable_categories: string[];
+  applicable_products: string[];
   valid_from: string;
   valid_until: string;
   created_at: string;
@@ -30,6 +34,9 @@ export interface CreateCoupon {
   min_purchase?: number;
   max_discount?: number | null;
   usage_limit?: number | null;
+  usage_limit_per_user?: number | null;
+  first_order_only?: boolean;
+  applicable_categories?: string[];
   is_active?: boolean;
   valid_from: string;
   valid_until: string;
@@ -44,6 +51,9 @@ export interface UpdateCoupon {
   min_purchase?: number;
   max_discount?: number | null;
   usage_limit?: number | null;
+  usage_limit_per_user?: number | null;
+  first_order_only?: boolean;
+  applicable_categories?: string[];
   is_active?: boolean;
   valid_from?: string;
   valid_until?: string;

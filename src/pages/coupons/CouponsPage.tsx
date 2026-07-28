@@ -12,6 +12,7 @@ import {
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
 import { StatCard } from '../../components/ui';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
+import { getCategories, StoreCategory } from '../../services/storesApi';
 import { useStore } from '../../hooks';
 
 export const CouponsPage: React.FC = () => {
@@ -48,12 +49,36 @@ export const CouponsPage: React.FC = () => {
     min_purchase: 0,
     max_discount: null,
     usage_limit: null,
+    usage_limit_per_user: null,
+    first_order_only: false,
+    applicable_categories: [],
     is_active: true,
     valid_from: new Date().toISOString().split('T')[0],
     valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   }), [storeId]);
 
   const [formData, setFormData] = useState<CreateCoupon>(getInitialFormData());
+  const [categories, setCategories] = useState<StoreCategory[]>([]);
+
+  // Categorias da loja alimentam o escopo opcional do cupom
+  useEffect(() => {
+    if (!storeId) return;
+    getCategories(storeId)
+      .then((res) => setCategories(res.results))
+      .catch(() => setCategories([]));
+  }, [storeId]);
+
+  const toggleCategory = (id: string) => {
+    setFormData((prev) => {
+      const current = prev.applicable_categories ?? [];
+      return {
+        ...prev,
+        applicable_categories: current.includes(id)
+          ? current.filter((c) => c !== id)
+          : [...current, id],
+      };
+    });
+  };
 
   const loadCoupons = useCallback(async () => {
     if (!storeId) {
@@ -103,24 +128,16 @@ export const CouponsPage: React.FC = () => {
         min_purchase: coupon.min_purchase,
         max_discount: coupon.max_discount,
         usage_limit: coupon.usage_limit,
+        usage_limit_per_user: coupon.usage_limit_per_user ?? null,
+        first_order_only: coupon.first_order_only ?? false,
+        applicable_categories: coupon.applicable_categories ?? [],
         is_active: coupon.is_active,
         valid_from: coupon.valid_from.split('T')[0],
         valid_until: coupon.valid_until.split('T')[0],
       });
     } else {
       setEditingCoupon(null);
-      setFormData({
-        code: '',
-        description: '',
-        discount_type: 'percentage',
-        discount_value: 0,
-        min_purchase: 0,
-        max_discount: null,
-        usage_limit: null,
-        is_active: true,
-        valid_from: new Date().toISOString().split('T')[0],
-        valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      });
+      setFormData(getInitialFormData());
     }
     setIsModalOpen(true);
   };
@@ -545,17 +562,72 @@ export const CouponsPage: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
-              Limite de Uso
-            </label>
-            <Input
-              type="number"
-              value={formData.usage_limit || ''}
-              onChange={(e) => setFormData({ ...formData, usage_limit: e.target.value ? parseInt(e.target.value) : null })}
-              min="0"
-              placeholder="Sem limite"
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                Limite de Uso (total)
+              </label>
+              <Input
+                type="number"
+                value={formData.usage_limit || ''}
+                onChange={(e) => setFormData({ ...formData, usage_limit: e.target.value ? parseInt(e.target.value) : null })}
+                min="0"
+                placeholder="Sem limite"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                Limite por cliente
+              </label>
+              <Input
+                type="number"
+                value={formData.usage_limit_per_user || ''}
+                onChange={(e) => setFormData({ ...formData, usage_limit_per_user: e.target.value ? parseInt(e.target.value) : null })}
+                min="0"
+                placeholder="Sem limite"
+              />
+            </div>
+          </div>
+
+          {categories.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                Vale só nestas categorias <span className="opacity-60 font-normal">(vazio = pedido inteiro)</span>
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {categories.map((cat) => {
+                  const active = (formData.applicable_categories ?? []).includes(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => toggleCategory(cat.id)}
+                      aria-pressed={active}
+                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                        active
+                          ? 'bg-primary-600 text-white border-primary-600'
+                          : 'border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:border-primary-400'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="first_order_only"
+              checked={formData.first_order_only ?? false}
+              onChange={(e) => setFormData({ ...formData, first_order_only: e.target.checked })}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-zinc-700 rounded"
             />
+            <label htmlFor="first_order_only" className="ml-2 block text-sm text-gray-900 dark:text-white">
+              Só primeira compra do cliente
+            </label>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
