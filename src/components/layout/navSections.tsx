@@ -5,7 +5,7 @@ import {
   BoltIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
   MegaphoneIcon, DocumentTextIcon, DocumentChartBarIcon, EnvelopeIcon,
   ClockIcon, PresentationChartLineIcon, SparklesIcon, RectangleGroupIcon,
-  QrCodeIcon, GiftIcon,
+  QrCodeIcon, GiftIcon, LinkIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -96,6 +96,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
         { name: 'Combos',   href: storeHref('combos'),   icon: RectangleGroupIcon },
         { name: 'Cupons',   href: storeHref('coupons'),  icon: TagIcon },
         { name: 'Fidelidade', href: storeHref('fidelidade'), icon: GiftIcon },
+        { name: 'Link na Bio', href: storeHref('link-bio'), icon: LinkIcon },
       ],
     },
     { label: 'Relatórios', icon: PresentationChartLineIcon, href: '/analytics', items: [] },
