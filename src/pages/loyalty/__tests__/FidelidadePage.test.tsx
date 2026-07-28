@@ -63,6 +63,15 @@ describe('FidelidadePage', () => {
     }));
   });
 
+  it('assume programa ativo quando loyalty_enabled está ausente do metadata', async () => {
+    (getStores as jest.Mock).mockResolvedValue(
+      page([{ id: 'uuid-1', slug: 'ce-saladas', name: 'Cê Saladas', metadata: { loyalty_salads_required: 10 } }])
+    );
+    renderPage();
+    await screen.findByText('Ana');
+    expect(screen.getByRole('checkbox', { name: /programa ativo/i })).toBeChecked();
+  });
+
   it('cria cupom de boas-vindas em 1 clique', async () => {
     (couponsService.createCoupon as jest.Mock).mockResolvedValue({ id: 'c1', code: 'BEMVINDO10' });
     renderPage();

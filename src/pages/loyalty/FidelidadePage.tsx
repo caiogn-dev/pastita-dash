@@ -43,7 +43,7 @@ const FidelidadePage: React.FC = () => {
         }
         setStore(match);
         const metadata = (match.metadata as Record<string, unknown>) || {};
-        setEnabled(Boolean(metadata.loyalty_enabled));
+        setEnabled(metadata.loyalty_enabled !== false);
         setThreshold(String(metadata.loyalty_salads_required ?? 10));
         const qualifyingCategories = metadata.loyalty_qualifying_categories;
         setCategories(Array.isArray(qualifyingCategories) ? qualifyingCategories.join(', ') : '');
