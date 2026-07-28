@@ -63,6 +63,7 @@ const LinkBioPage: React.FC = () => {
 
   const [bioSettings, setBioSettings] = useState<BioSettings>(DEFAULT_BIO_SETTINGS);
   const [savingContent, setSavingContent] = useState(false);
+  const [contentError, setContentError] = useState<string | null>(null);
 
   const [links, setLinks] = useState<BioLink[]>([]);
   const [loadingLinks, setLoadingLinks] = useState(true);
@@ -141,6 +142,7 @@ const LinkBioPage: React.FC = () => {
         const { status, detail } = extractDetail(err);
         if (status === 403 && detail) {
           setStatsError(detail);
+          setPaywall(detail);
         } else {
           setStatsError('Não foi possível carregar as estatísticas.');
         }
@@ -166,6 +168,7 @@ const LinkBioPage: React.FC = () => {
     e.preventDefault();
     if (!store) return;
     setSavingContent(true);
+    setContentError(null);
     try {
       const currentMetadata = (store.metadata as Record<string, unknown>) || {};
       const updated = await updateStore(store.id, {
@@ -175,6 +178,13 @@ const LinkBioPage: React.FC = () => {
         },
       });
       setStore(updated);
+    } catch (err) {
+      const { status, detail } = extractDetail(err);
+      if (status === 403 && detail) {
+        setPaywall(detail);
+      } else {
+        setContentError('Não foi possível salvar o conteúdo.');
+      }
     } finally {
       setSavingContent(false);
     }
@@ -312,6 +322,8 @@ const LinkBioPage: React.FC = () => {
               </label>
             ))}
           </div>
+
+          {contentError && <p className="text-sm text-fg-muted-token">{contentError}</p>}
 
           <Button type="submit" isLoading={savingContent}>
             Salvar
