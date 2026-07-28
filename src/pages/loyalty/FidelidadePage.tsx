@@ -4,7 +4,7 @@ import { Badge, Button, Card, Input } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { couponsService } from '../../services/coupons';
 import { loyaltyService, LoyaltyAccountRow } from '../../services/loyalty';
-import { getStores, updateStore, Store } from '../../services/storesApi';
+import { getStores, updateStore, getCategories, Store, StoreCategory } from '../../services/storesApi';
 
 const FidelidadePage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
@@ -15,7 +15,8 @@ const FidelidadePage: React.FC = () => {
 
   const [enabled, setEnabled] = useState(false);
   const [threshold, setThreshold] = useState('10');
-  const [categories, setCategories] = useState('');
+  const [qualifyingCategoryIds, setQualifyingCategoryIds] = useState<string[]>([]);
+  const [storeCategories, setStoreCategories] = useState<StoreCategory[]>([]);
   const [saving, setSaving] = useState(false);
 
   const [pct, setPct] = useState('');
@@ -46,7 +47,7 @@ const FidelidadePage: React.FC = () => {
         setEnabled(metadata.loyalty_enabled !== false);
         setThreshold(String(metadata.loyalty_salads_required ?? 10));
         const qualifyingCategories = metadata.loyalty_qualifying_categories;
-        setCategories(Array.isArray(qualifyingCategories) ? qualifyingCategories.join(', ') : '');
+        setQualifyingCategoryIds(Array.isArray(qualifyingCategories) ? qualifyingCategories : []);
       })
       .catch(() => {
         if (active) setStoreError('Não foi possível carregar a loja.');
@@ -60,6 +61,20 @@ const FidelidadePage: React.FC = () => {
   }, [routeStoreId]);
 
   const storeIdentifier = useMemo(() => store?.slug || store?.id, [store]);
+
+  // Categorias da loja alimentam a seleção de categorias que pontuam no fidelidade
+  useEffect(() => {
+    if (!store?.id) return;
+    getCategories(store.id)
+      .then((res) => setStoreCategories(res.results))
+      .catch(() => setStoreCategories([]));
+  }, [store?.id]);
+
+  const toggleQualifyingCategory = (id: string) => {
+    setQualifyingCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
 
   useEffect(() => {
     if (!storeIdentifier) return;
@@ -90,16 +105,12 @@ const FidelidadePage: React.FC = () => {
     setSaving(true);
     try {
       const currentMetadata = (store.metadata as Record<string, unknown>) || {};
-      const qualifyingCategories = categories
-        .split(',')
-        .map((c) => c.trim())
-        .filter(Boolean);
       const updated = await updateStore(store.id, {
         metadata: {
           ...currentMetadata,
           loyalty_enabled: enabled,
           loyalty_salads_required: Number(threshold),
-          loyalty_qualifying_categories: qualifyingCategories,
+          loyalty_qualifying_categories: qualifyingCategoryIds,
         },
       });
       setStore(updated);
@@ -170,12 +181,31 @@ const FidelidadePage: React.FC = () => {
             onChange={(e) => setThreshold(e.target.value)}
           />
 
-          <Input
-            id="loyalty-categories"
-            label="Categorias que pontuam (IDs, separados por vírgula — vazio = todas as saladas)"
-            value={categories}
-            onChange={(e) => setCategories(e.target.value)}
-          />
+          <div>
+            <p className="block text-sm font-medium text-fg-token mb-1">Categorias que pontuam</p>
+            {storeCategories.length > 0 ? (
+              <div className="space-y-1.5 rounded-md border border-border-token bg-surface p-3">
+                {storeCategories.map((cat) => (
+                  <label
+                    key={cat.id}
+                    className="flex items-center gap-2 text-sm text-fg-token"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={qualifyingCategoryIds.includes(cat.id)}
+                      onChange={() => toggleQualifyingCategory(cat.id)}
+                    />
+                    {cat.name}
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-fg-muted-token">Nenhuma categoria cadastrada nesta loja.</p>
+            )}
+            <p className="text-xs text-fg-muted-token mt-1">
+              Nenhuma marcada = todos os itens do cardápio contam
+            </p>
+          </div>
 
           <Button type="submit" isLoading={saving}>
             Salvar

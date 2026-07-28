@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 jest.mock('../../../services/storesApi', () => ({
   getStores: jest.fn(),
   updateStore: jest.fn(),
+  getCategories: jest.fn(),
 }));
 jest.mock('../../../services/loyalty', () => ({
   loyaltyService: { getAccounts: jest.fn() },
@@ -15,7 +16,7 @@ jest.mock('../../../services/coupons', () => ({
 
 import { couponsService } from '../../../services/coupons';
 import { loyaltyService } from '../../../services/loyalty';
-import { getStores, updateStore } from '../../../services/storesApi';
+import { getStores, updateStore, getCategories } from '../../../services/storesApi';
 import FidelidadePage from '../FidelidadePage';
 
 const store = {
@@ -23,6 +24,11 @@ const store = {
   metadata: { loyalty_enabled: true, loyalty_salads_required: 10 },
 };
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
+
+const categoriesFixture = [
+  { id: 'cat-1', store: 'uuid-1', name: 'Saladas Clássicas', slug: 'classicas', description: '', children: [], sort_order: 0, is_active: true, products_count: 3 },
+  { id: 'cat-2', store: 'uuid-1', name: 'Saladas Especiais', slug: 'especiais', description: '', children: [], sort_order: 1, is_active: true, products_count: 2 },
+];
 
 const renderPage = () =>
   render(
@@ -37,6 +43,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   localStorage.clear();
   (getStores as jest.Mock).mockResolvedValue(page([store]));
+  (getCategories as jest.Mock).mockResolvedValue(page(categoriesFixture));
   (loyaltyService.getAccounts as jest.Mock).mockResolvedValue({
     count: 1,
     results: [{ user_id: 'u1', display_name: 'Ana', email: 'a@x.com', qualified_count: 7, redeemed_count: 0, progress: 7, available_rewards: 0, updated_at: '2026-07-28T00:00:00Z' }],
@@ -70,6 +77,27 @@ describe('FidelidadePage', () => {
     renderPage();
     await screen.findByText('Ana');
     expect(screen.getByRole('checkbox', { name: /programa ativo/i })).toBeChecked();
+  });
+
+  it('marca uma categoria e salva com o ID no metadata', async () => {
+    (updateStore as jest.Mock).mockResolvedValue(store);
+    renderPage();
+    const checkbox = await screen.findByRole('checkbox', { name: 'Saladas Especiais' });
+    await userEvent.click(checkbox);
+    await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
+    await waitFor(() => expect(updateStore).toHaveBeenCalledWith('uuid-1', {
+      metadata: expect.objectContaining({ loyalty_qualifying_categories: ['cat-2'] }),
+    }));
+  });
+
+  it('salva array vazio quando nenhuma categoria está marcada', async () => {
+    (updateStore as jest.Mock).mockResolvedValue(store);
+    renderPage();
+    await screen.findByRole('checkbox', { name: 'Saladas Especiais' });
+    await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
+    await waitFor(() => expect(updateStore).toHaveBeenCalledWith('uuid-1', {
+      metadata: expect.objectContaining({ loyalty_qualifying_categories: [] }),
+    }));
   });
 
   it('cria cupom de boas-vindas em 1 clique', async () => {
