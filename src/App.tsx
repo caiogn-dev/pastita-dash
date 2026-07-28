@@ -40,6 +40,7 @@ const AgentTestPage = lazy(() => import('./pages/agents').then(m => ({ default: 
 
 // E-commerce Pages
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
+const FidelidadePage = lazy(() => import('./pages/loyalty/FidelidadePage'));
 const ProductsPage = lazy(() => import('./pages/products').then(m => ({ default: m.ProductsPage })));
 const ComboListPage = lazy(() => import('./pages/stores/combos').then(m => ({ default: m.ComboListPage })));
 const ComboFormPage = lazy(() => import('./pages/stores/combos').then(m => ({ default: m.ComboFormPage })));
@@ -226,6 +227,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/customers" element={<PageBoundary><CustomersPage /></PageBoundary>} />
         <Route path="stores/:storeId/orders/:id" element={<PageBoundary><OrderDetailPage /></PageBoundary>} />
         <Route path="stores/:storeId/coupons" element={<PageBoundary><CouponsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/fidelidade" element={<PageBoundary><FidelidadePage /></PageBoundary>} />
         <Route path="stores/:storeId/payments" element={<PageBoundary><PaymentsPage /></PageBoundary>} />
         <Route path="stores/:storeId/settings" element={<PageBoundary><StoreSettingsPage /></PageBoundary>} />
         <Route path="stores/:storeId/storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
