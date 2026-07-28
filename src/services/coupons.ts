@@ -23,6 +23,7 @@ export interface Coupon {
   valid_until: string;
   created_at: string;
   updated_at: string;
+  is_featured?: boolean;
 }
 
 export interface CreateCoupon {
@@ -40,6 +41,7 @@ export interface CreateCoupon {
   is_active?: boolean;
   valid_from: string;
   valid_until: string;
+  is_featured?: boolean;
 }
 
 export interface UpdateCoupon {
@@ -57,6 +59,7 @@ export interface UpdateCoupon {
   is_active?: boolean;
   valid_from?: string;
   valid_until?: string;
+  is_featured?: boolean;
 }
 
 export interface CouponStats {

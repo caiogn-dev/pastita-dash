@@ -26,6 +26,8 @@ export { auditService } from './audit';
 export { authService } from './auth';
 export { companyProfileService } from './automation';
 export { scheduledMessagesService } from './scheduling';
+export { loyaltyService } from './loyalty';
+export type { LoyaltyAccountRow, LoyaltyAccountsResponse } from './loyalty';
 
 // Labels e constantes
 export { intentService } from './intents';
