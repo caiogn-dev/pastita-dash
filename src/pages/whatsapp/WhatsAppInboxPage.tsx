@@ -24,6 +24,8 @@ import { MessageBubble, MessageBubbleProps } from '../../components/chat/Message
 import { MediaViewer } from '../../components/chat/MediaViewer';
 import toast from 'react-hot-toast';
 import { formatPhone } from '../../utils/formatters';
+import { messagePreviewText } from '../../utils/messagePreview';
+import { formatConversationTime, formatDayLabel, isSameDay } from '../../utils/chatTime';
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
 
@@ -48,24 +50,6 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   readAt: msg.read_at ?? undefined,
   errorMessage: msg.error_message,
 });
-
-function messagePreviewText(msg: Message | string | undefined): string {
-  if (!msg) return '';
-  if (typeof msg === 'string') return msg;
-  if (msg.text_body) return msg.text_body;
-  switch (msg.message_type) {
-    case 'audio': return '🎵 Áudio';
-    case 'image': return '📷 Imagem';
-    case 'video': return '🎬 Vídeo';
-    case 'document': return `📄 ${msg.media_filename || 'Documento'}`;
-    case 'sticker': return '🏷️ Sticker';
-    case 'location': return '📍 Localização';
-    case 'contacts': return '👤 Contato';
-    case 'order': return '🛒 Pedido';
-    case 'reaction': return '👍 Reação';
-    default: return msg.message_type || 'Mensagem';
-  }
-}
 
 const getStoreUrl = (metadata?: Record<string, unknown>) => {
   const value = metadata?.website_url || metadata?.store_url || metadata?.public_url;
@@ -92,7 +76,6 @@ function conversationPreview(conv: ConversationWithMessages): string {
 const WhatsAppInboxPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { storeId, storeSlug, storeName, store } = useStore();
-  const [selectedConversation, setSelectedConversation] = useState<ConversationWithMessages | null>(null);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
@@ -108,15 +91,34 @@ const WhatsAppInboxPage: React.FC = () => {
 
   // chatStore sincronizado pelo WebSocket
   const storeConversations = useChatStore((s) => s.conversations);
+  const selectedConversationId = useChatStore((s) => s.selectedConversationId);
   const getConversationMessages = useChatStore((s) => s.getConversationMessages);
 
   // Deriva lista de conversas do store (já atualizada via WebSocket)
   const conversations = ensureArray<ConversationWithMessages>(storeConversations as ConversationWithMessages[]);
 
+  // Conversa selecionada derivada do store — assim updates via WS (modo,
+  // não-lidas, preview) refletem imediatamente na conversa aberta.
+  const selectedConversation =
+    conversations.find((c) => c.id === selectedConversationId) ?? null;
+
   // Mensagens da conversa selecionada — lidas do store (WebSocket as atualiza)
   const messages = selectedConversation
     ? ensureArray<Message>(getConversationMessages(selectedConversation.id))
     : [];
+
+  /**
+   * Marca a conversa como lida: zera o badge local imediatamente e persiste
+   * no backend (senão o refresh de 60s ressuscita o contador).
+   */
+  const markConversationRead = useCallback((conversation: { id: string; unread_count?: number }) => {
+    useChatStore.getState().markConversationAsRead(conversation.id);
+    if (conversation.unread_count && conversation.unread_count > 0) {
+      conversationsService.markAsRead(conversation.id).catch((error) => {
+        console.error('Erro ao marcar conversa como lida:', error);
+      });
+    }
+  }, []);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -129,7 +131,8 @@ const WhatsAppInboxPage: React.FC = () => {
       if (requestedConversationId) {
         const found = convs.find((conv) => conv.id === requestedConversationId);
         if (found) {
-          setSelectedConversation(found);
+          useChatStore.getState().setSelectedConversation(found.id);
+          markConversationRead(found);
           await loadMessages(found.id);
         }
       }
@@ -137,7 +140,7 @@ const WhatsAppInboxPage: React.FC = () => {
       console.error('Erro ao carregar conversas:', error);
       toast.error('Erro ao carregar conversas');
     }
-  }, [searchParams]);
+  }, [searchParams, markConversationRead]);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     try {
@@ -151,7 +154,8 @@ const WhatsAppInboxPage: React.FC = () => {
   }, []);
 
   const handleSelectConversation = async (conversation: ConversationWithMessages) => {
-    setSelectedConversation(conversation);
+    useChatStore.getState().setSelectedConversation(conversation.id);
+    markConversationRead(conversation);
     setMessageText('');
     setLoadingMessages(true);
     try {
@@ -200,7 +204,6 @@ const WhatsAppInboxPage: React.FC = () => {
     try {
       const res = await handoverService.transferToHuman(selectedConversation.id);
       const newMode = res.handover_status === 'human' ? 'human' : 'auto';
-      setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
       useChatStore.getState().updateConversation({ id: selectedConversation.id, mode: newMode as Conversation['mode'] });
       toast.success('Conversa transferida para atendimento humano');
     } catch (error) {
@@ -214,7 +217,6 @@ const WhatsAppInboxPage: React.FC = () => {
     try {
       const res = await handoverService.transferToBot(selectedConversation.id);
       const newMode = res.handover_status === 'human' ? 'human' : 'auto';
-      setSelectedConversation(prev => prev ? { ...prev, mode: newMode } : prev);
       useChatStore.getState().updateConversation({ id: selectedConversation.id, mode: newMode as Conversation['mode'] });
       toast.success('Conversa retornada para o bot');
     } catch (error) {
@@ -241,10 +243,6 @@ const WhatsAppInboxPage: React.FC = () => {
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   // Carga inicial — apenas UMA vez por mudança de searchParams
   useEffect(() => {
     setLoading(true);
@@ -259,14 +257,38 @@ const WhatsAppInboxPage: React.FC = () => {
 
   // Subscreve/dessubscreve do canal WS ao selecionar conversa
   useEffect(() => {
-    if (!selectedConversation) return;
-    ws.subscribeToConversation(selectedConversation.id);
-    return () => ws.unsubscribeFromConversation(selectedConversation.id);
-  }, [selectedConversation, ws]);
+    if (!selectedConversationId) return;
+    ws.subscribeToConversation(selectedConversationId);
+    return () => ws.unsubscribeFromConversation(selectedConversationId);
+  }, [selectedConversationId, ws]);
 
+  // Ao sair da página, limpa a seleção — assim o WS volta a contar não-lidas
+  // e notificar mensagens desta conversa enquanto o usuário está em outra tela.
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    return () => useChatStore.getState().setSelectedConversation(null);
+  }, []);
+
+  // Mensagem inbound chegou com o chat aberto → já está sendo lida agora;
+  // persiste a leitura para o backend não acumular unread_count.
+  const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+  useEffect(() => {
+    if (!selectedConversationId || !lastMessage) return;
+    if (lastMessage.direction === 'inbound' && !document.hidden) {
+      useChatStore.getState().markConversationAsRead(selectedConversationId);
+      conversationsService.markAsRead(selectedConversationId).catch(() => {
+        /* refresh periódico corrige */
+      });
+    }
+  }, [selectedConversationId, lastMessage?.id]);
+
+  // Scroll: instantâneo ao abrir a conversa, suave quando chega mensagem nova
+  const prevConversationIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const conversationChanged = prevConversationIdRef.current !== selectedConversationId;
+    prevConversationIdRef.current = selectedConversationId;
+    messagesEndRef.current?.scrollIntoView({ behavior: conversationChanged ? 'auto' : 'smooth' });
+  }, [messages, selectedConversationId]);
 
   const filteredConversations = ensureArray<ConversationWithMessages>(conversations).filter(conv =>
     conv.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -298,32 +320,46 @@ const WhatsAppInboxPage: React.FC = () => {
               {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa'}
             </div>
           ) : (
-            filteredConversations.map((conv) => (
-              <button
-                key={conv.id}
-                type="button"
-                className={`conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
-                onClick={() => handleSelectConversation(conv)}
-              >
-                <div className="conversation-avatar">
-                  {(conv.contact_name || conv.phone_number).charAt(0).toUpperCase()}
-                </div>
-                <div className="conversation-info">
-                  <h3>{conv.contact_name || formatPhone(conv.phone_number)}</h3>
-                  <p className="conversation-preview">
-                    {conversationPreview(conv)}
-                  </p>
-                </div>
-                <div className="conversation-meta">
-                  <span className={`mode-badge ${conv.mode}`}>
-                    {conv.mode === 'auto' ? '🤖' : '👤'}
-                  </span>
-                  {conv.unread_count && conv.unread_count > 0 && (
-                    <span className="unread-badge">{conv.unread_count}</span>
-                  )}
-                </div>
-              </button>
-            ))
+            filteredConversations.map((conv) => {
+              const hasUnread = (conv.unread_count || 0) > 0;
+              return (
+                <button
+                  key={conv.id}
+                  type="button"
+                  className={[
+                    'conversation-item',
+                    selectedConversation?.id === conv.id ? 'active' : '',
+                    hasUnread ? 'unread' : '',
+                  ].join(' ')}
+                  onClick={() => handleSelectConversation(conv)}
+                >
+                  <div className="conversation-avatar">
+                    {(conv.contact_name || conv.phone_number).charAt(0).toUpperCase()}
+                  </div>
+                  <div className="conversation-info">
+                    <div className="conversation-title-row">
+                      <h3>{conv.contact_name || formatPhone(conv.phone_number)}</h3>
+                      <span className="conversation-time">
+                        {formatConversationTime(conv.last_message_at)}
+                      </span>
+                    </div>
+                    <div className="conversation-preview-row">
+                      <p className="conversation-preview">
+                        {conversationPreview(conv)}
+                      </p>
+                      <span className="conversation-badges">
+                        <span className={`mode-badge ${conv.mode}`} title={conv.mode === 'auto' ? 'Bot' : 'Humano'}>
+                          {conv.mode === 'auto' ? '🤖' : '👤'}
+                        </span>
+                        {hasUnread && (
+                          <span className="unread-badge">{conv.unread_count}</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
       </div>
@@ -393,15 +429,25 @@ const WhatsAppInboxPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="messages-list">
-                  {messages.map((msg) => (
-                    <MessageBubble
-                      key={msg.id}
-                      {...messageToBubbleProps(msg)}
-                      onMediaClick={(url, type, fileName) =>
-                        setMediaViewer({ url, type, fileName })
-                      }
-                    />
-                  ))}
+                  {messages.map((msg, index) => {
+                    const prev = index > 0 ? messages[index - 1] : null;
+                    const showDaySeparator = !prev || !isSameDay(prev.created_at, msg.created_at);
+                    return (
+                      <React.Fragment key={msg.id}>
+                        {showDaySeparator && (
+                          <div className="day-separator" role="separator">
+                            <span>{formatDayLabel(msg.created_at)}</span>
+                          </div>
+                        )}
+                        <MessageBubble
+                          {...messageToBubbleProps(msg)}
+                          onMediaClick={(url, type, fileName) =>
+                            setMediaViewer({ url, type, fileName })
+                          }
+                        />
+                      </React.Fragment>
+                    );
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
               )}

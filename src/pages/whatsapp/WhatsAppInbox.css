@@ -141,6 +141,34 @@
   text-overflow: ellipsis;
 }
 
+.conversation-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.conversation-time {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.conversation-preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.conversation-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
 .conversation-preview {
   margin: 0;
   font-size: 0.8rem;
@@ -149,6 +177,21 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   min-height: 1.15em; /* mantém a altura da linha mesmo sem preview */
+}
+
+/* Conversa com mensagens não lidas: nome, preview e hora ganham peso */
+.conversation-item.unread .conversation-info h3 {
+  font-weight: 700;
+}
+
+.conversation-item.unread .conversation-preview {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.conversation-item.unread .conversation-time {
+  color: var(--brand);
+  font-weight: 700;
 }
 
 .conversation-meta {
@@ -331,6 +374,24 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+/* Separador de dia (Hoje / Ontem / data) entre grupos de mensagens */
+.day-separator {
+  display: flex;
+  justify-content: center;
+  margin: 0.875rem 0 0.5rem;
+}
+
+.day-separator span {
+  background: var(--surface);
+  color: var(--fg-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  text-transform: capitalize;
 }
 
 .message {
@@ -1149,6 +1210,9 @@ select.item-name {
   }
 
   .conversation-preview { display: none; }
+  .conversation-time { display: none; }
+  .conversation-title-row { justify-content: center; }
+  .conversation-preview-row { justify-content: center; }
 
   .chat-tools-panel {
     width: 100%;
@@ -1186,6 +1250,9 @@ select.item-name {
   }
 
   .conversation-preview { display: block; }
+  .conversation-time { display: inline; }
+  .conversation-title-row { justify-content: space-between; }
+  .conversation-preview-row { justify-content: space-between; }
 
   .mode-selector { display: none; }
 

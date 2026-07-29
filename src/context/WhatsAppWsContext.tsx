@@ -16,6 +16,8 @@ import { useAccountStore } from '../stores/accountStore';
 import { useChatStore } from '../stores/chatStore';
 import { Message, Conversation } from '../types';
 import { getWebSocketUrl } from '../services/realtime';
+import { conversationsService } from '../services/conversations';
+import { messagePreviewText } from '../utils/messagePreview';
 import toast from 'react-hot-toast';
 
 // WebSocket event types
@@ -162,39 +164,53 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
       switch (data.type) {
         case 'message_received': {
           const { message, conversation_id, contact } = data;
-          
+
           if (conversation_id) {
-            // Add message to cache
-            chatStore.addMessage(conversation_id, message);
-            
-            // Update conversation with new message
-            chatStore.updateConversation({
-              id: conversation_id,
-              last_message_at: message.created_at,
-              last_message_preview: message.text_body?.substring(0, 50) || 'Mídia',
-            });
-            
-            // Increment unread if not the selected conversation
-            if (chatStore.selectedConversationId !== conversation_id) {
-              chatStore.incrementUnreadCount(conversation_id);
-              
-              // Show toast notification
+            // IMPORTANTE: ler estado FRESCO via getState() — o handler é
+            // registrado uma vez no connect e o closure `chatStore` congela
+            // o estado daquele momento (bug antigo: selectedConversationId
+            // sempre null → incrementava não-lida até da conversa aberta).
+            const store = useChatStore.getState();
+
+            store.addMessage(conversation_id, message);
+
+            const known = store.conversations.some((c) => c.id === conversation_id);
+            if (known) {
+              store.updateConversation({
+                id: conversation_id,
+                last_message_at: message.created_at,
+                last_message_preview: messagePreviewText(message).substring(0, 80),
+              });
+            } else {
+              // Conversa fora da página carregada (paginação) ou nova —
+              // busca na API e insere ordenada; sem isso a mensagem some.
+              void conversationsService
+                .getConversation(conversation_id)
+                .then((conv) => useChatStore.getState().upsertConversation(conv))
+                .catch((err) => console.error('[WhatsAppWS] Erro ao buscar conversa nova:', err));
+            }
+
+            // Incrementa não-lida apenas se NÃO é a conversa aberta
+            if (store.selectedConversationId !== conversation_id) {
+              if (known) store.incrementUnreadCount(conversation_id);
+
               const contactName = contact?.name || message.from_number;
               toast(`Nova mensagem de ${contactName}`, { icon: '💬' });
             }
           }
           break;
         }
-        
+
         case 'message_sent': {
           const { message, conversation_id } = data;
           if (conversation_id) {
-            chatStore.addMessage(conversation_id, message);
-            
-            chatStore.updateConversation({
+            const store = useChatStore.getState();
+            store.addMessage(conversation_id, message);
+
+            store.updateConversation({
               id: conversation_id,
               last_message_at: message.created_at,
-              last_message_preview: message.text_body?.substring(0, 50) || 'Mídia',
+              last_message_preview: messagePreviewText(message).substring(0, 80),
             });
           }
           break;
@@ -206,7 +222,9 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
         }
         
         case 'conversation_updated': {
-          chatStore.updateConversation(data.conversation);
+          // Evento traz a Conversation completa — upsert cobre o caso de
+          // ela ainda não estar na página carregada.
+          useChatStore.getState().upsertConversation(data.conversation);
           break;
         }
 

@@ -35,6 +35,7 @@ interface ChatState {
   setConversations: (conversations: Conversation[]) => void;
   addConversation: (conversation: Conversation) => void;
   updateConversation: (conversation: Partial<Conversation> & { id: string }) => void;
+  upsertConversation: (conversation: Conversation) => void;
   removeConversation: (id: string) => void;
   
   setSelectedConversation: (id: string | null) => void;
@@ -60,6 +61,15 @@ interface ChatState {
   reset: () => void;
 }
 
+// Ordena por última mensagem (mais recente primeiro) — mesma regra do backend
+// (`ordering = ['-last_message_at', '-created_at']`).
+const sortByLastMessage = (conversations: Conversation[]): Conversation[] =>
+  [...conversations].sort((a, b) => {
+    const dateA = new Date(a.last_message_at || a.created_at || 0).getTime() || 0;
+    const dateB = new Date(b.last_message_at || b.created_at || 0).getTime() || 0;
+    return dateB - dateA;
+  });
+
 const initialState = {
   conversations: [],
   conversationsLoading: false,
@@ -79,24 +89,34 @@ export const useChatStore = create<ChatState>()(
       // Set all conversations
       setConversations: (conversations) => {
         const totalUnread = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
-        set({ 
-          conversations,
+        set({
+          conversations: sortByLastMessage(conversations),
           totalUnreadCount: totalUnread,
-          conversationsError: null 
+          conversationsError: null
         });
       },
-      
+
       // Add a new conversation
       addConversation: (conversation) => {
         set((state) => {
           const exists = state.conversations.some(c => c.id === conversation.id);
           if (exists) return state;
-          
+
           return {
-            conversations: [conversation, ...state.conversations],
+            conversations: sortByLastMessage([conversation, ...state.conversations]),
             totalUnreadCount: state.totalUnreadCount + (conversation.unread_count || 0)
           };
         });
+      },
+
+      // Update-or-insert (usado pelo WS quando a conversa pode não estar na página carregada)
+      upsertConversation: (conversation) => {
+        const state = get();
+        if (state.conversations.some(c => c.id === conversation.id)) {
+          state.updateConversation(conversation);
+        } else {
+          state.addConversation(conversation);
+        }
       },
       
       // Update a conversation
@@ -108,15 +128,8 @@ export const useChatStore = create<ChatState>()(
           
           // Recalculate total unread
           const totalUnread = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
-          
-          // Sort by last message
-          conversations.sort((a, b) => {
-            const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-            const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-            return dateB - dateA;
-          });
-          
-          return { conversations, totalUnreadCount: totalUnread };
+
+          return { conversations: sortByLastMessage(conversations), totalUnreadCount: totalUnread };
         });
       },
       
