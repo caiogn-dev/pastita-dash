@@ -3,6 +3,48 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-07-29)
+
+- `npm ci`: ok (36 vulnerabilidades reportadas pelo npm: 3 moderate, 33 high;
+  triagem de deps segue pendente para ambiente com rede ao registry).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **540 testes / 133 suítes verdes** (era 535/132; +5/+1 desta fatia).
+- `npm run build` (tsc && vite, igual à CI/Vercel): **ok** (~22s).
+- `npm run lint`: gate em 400 warnings; 0 novos warnings nos arquivos tocados.
+
+## Histórico
+
+### 2026-07-29 — Segurança/multi-tenant: cache de Relatórios vazava dados entre lojas
+- **Medido (vazamento entre tenants):** em `src/hooks/queries/useReports.ts`, todos
+  os relatórios são buscados **escopados à loja selecionada** — `reportsService.*`
+  injeta `store: getStoreSlugWithFallback()` em cada request. Mas as `queryKey`s do
+  React Query **não carregavam a loja**: `['reports','dashboard-stats']`,
+  `['reports','revenue',range,groupBy]`, `['reports','products',range]`,
+  `['reports','stock']`, `['reports','customers',range]`. Só `useOrdersCharts` já
+  incluía `store`. Resultado: ao **trocar de loja**, o React Query servia o cache do
+  tenant ANTERIOR — faturamento, KPIs e, pior, **nomes/e-mails/telefones de clientes
+  de OUTRA loja** (`top_customers`) apareciam na tela da loja atual até o refetch.
+  Com `staleTime > 0` o dado errado persistia sem nunca refazer o fetch.
+- **Mudado (`useReports.ts`):** a loja (`getStoreSlugWithFallback()`) agora faz parte
+  da `queryKey` dos cinco hooks, exatamente como o `useOrdersCharts` já fazia. Cada
+  loja passa a ter uma entrada de cache própria — sem colisão entre tenants e com a
+  troca de loja mostrando o dado certo (ou o próprio loading), nunca o da loja anterior.
+- **Teste (TDD, vermelho→verde):** novo `src/hooks/queries/__tests__/useReports.test.tsx`
+  — 5 casos (`it.each`), um por hook. Cada um monta a query da loja A (marker
+  `loja-A`), troca a loja para B e exige `marker: loja-B` + 2 chamadas ao serviço.
+  Com `staleTime: Infinity` o vazamento é determinístico: **5/5 falhavam** antes
+  (a loja B recebia `loja-A` do cache) e **5/5 passam** depois. Verificado com o
+  código antigo (git stash) → 5 falham → restaurar → 5 passam.
+- **Antes/depois:** `npm test` 535/132 → **540/133**; `tsc --noEmit` limpo e
+  `npm run build` ok nos dois lados; lint sem novos warnings. Só a camada de cache
+  mudou (queryKey) — zero mudança de comportamento de UI ou de contrato de API.
+
+#### Próximo passo priorizado
+- **Auditar outros caches por loja:** varrer os demais `useQuery` do painel atrás
+  do mesmo padrão (request escopado por loja, mas `queryKey` sem a loja) — candidatos
+  a checar: `useCustomerStats`, `useOrderStats`, `usePaymentsOrders`, `useProducts`
+  e hooks de automação/marketing. É o mesmo risco de vazamento entre tenants.
+
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
 

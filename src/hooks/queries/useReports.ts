@@ -46,41 +46,52 @@ const rangeToDays = (range: DateRange): number => {
   return PERIOD_TO_DAYS[range.period ?? '30d'];
 };
 
+// Todos os relatórios são buscados escopados à loja SELECIONADA
+// (reportsService.* injeta `store: getStoreSlugWithFallback()`). Por isso a loja
+// PRECISA fazer parte da queryKey — senão, ao trocar de loja, o React Query serve
+// o cache do tenant anterior (faturamento, nomes/e-mails/telefones de clientes de
+// OUTRA loja). Mesmo padrão já usado em `useOrdersCharts`.
+
 export function useDashboardStats(enabled: boolean) {
+  const store = getStoreSlugWithFallback() || undefined;
   return useQuery<DashboardStats>({
-    queryKey: ['reports', 'dashboard-stats'],
+    queryKey: ['reports', 'dashboard-stats', store],
     queryFn: () => reportsService.getDashboardStats(),
     enabled,
   });
 }
 
 export function useRevenueReport(range: DateRange, groupBy: GroupBy, enabled: boolean) {
+  const store = getStoreSlugWithFallback() || undefined;
   return useQuery<RevenueReport>({
-    queryKey: ['reports', 'revenue', range, groupBy],
+    queryKey: ['reports', 'revenue', range, groupBy, store],
     queryFn: () => reportsService.getRevenueReport({ ...range, group_by: groupBy }),
     enabled,
   });
 }
 
 export function useProductsReport(range: DateRange, enabled: boolean) {
+  const store = getStoreSlugWithFallback() || undefined;
   return useQuery<ProductsReport>({
-    queryKey: ['reports', 'products', range],
+    queryKey: ['reports', 'products', range, store],
     queryFn: () => reportsService.getProductsReport(range),
     enabled,
   });
 }
 
 export function useStockReport(enabled: boolean) {
+  const store = getStoreSlugWithFallback() || undefined;
   return useQuery<StockReport>({
-    queryKey: ['reports', 'stock'],
+    queryKey: ['reports', 'stock', store],
     queryFn: () => reportsService.getStockReport(),
     enabled,
   });
 }
 
 export function useCustomersReport(range: DateRange, enabled: boolean) {
+  const store = getStoreSlugWithFallback() || undefined;
   return useQuery<CustomersReport>({
-    queryKey: ['reports', 'customers', range],
+    queryKey: ['reports', 'customers', range, store],
     queryFn: () => reportsService.getCustomersReport(range),
     enabled,
   });
