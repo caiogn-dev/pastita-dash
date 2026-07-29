@@ -71,6 +71,7 @@ const LinkBioPage: React.FC = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [newIcon, setNewIcon] = useState('🔗');
+  const [newIconUrl, setNewIconUrl] = useState('');
   const [creatingLink, setCreatingLink] = useState(false);
 
   const [stats, setStats] = useState<BioStats | null>(null);
@@ -200,12 +201,14 @@ const LinkBioPage: React.FC = () => {
         title: newTitle.trim(),
         url: newUrl.trim(),
         icon: newIcon || '🔗',
+        icon_url: newIconUrl.trim(),
         sort_order: links.length,
         is_active: true,
       });
       setNewTitle('');
       setNewUrl('');
       setNewIcon('🔗');
+      setNewIconUrl('');
       loadLinks();
     } catch (err) {
       const { status, detail } = extractDetail(err);
@@ -346,7 +349,16 @@ const LinkBioPage: React.FC = () => {
                   key={link.id}
                   className="flex items-center gap-3 rounded border border-border-token px-3 py-2"
                 >
-                  <span className="text-lg">{link.icon}</span>
+                  {link.icon_url ? (
+                    <img
+                      src={link.icon_url}
+                      alt=""
+                      className="h-7 w-7 rounded-md object-cover"
+                      crossOrigin="anonymous"
+                    />
+                  ) : (
+                    <span className="text-lg">{link.icon}</span>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-fg-token">{link.title}</p>
                     <p className="truncate text-xs text-fg-muted-token">{link.url}</p>
@@ -397,6 +409,13 @@ const LinkBioPage: React.FC = () => {
               label="URL"
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
+            />
+            <Input
+              id="bio-link-icon-url"
+              label="Logo (URL da imagem, opcional)"
+              placeholder="https://…/logo.png"
+              value={newIconUrl}
+              onChange={(e) => setNewIconUrl(e.target.value)}
             />
             <Button type="submit" isLoading={creatingLink}>
               Adicionar link
