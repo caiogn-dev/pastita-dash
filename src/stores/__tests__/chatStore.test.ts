@@ -67,6 +67,26 @@ describe('chatStore', () => {
     });
   });
 
+  describe('prependMessages (scroll infinito)', () => {
+    const msg = (id: string) => ({ id, direction: 'inbound', created_at: '2026-07-29T10:00:00Z' } as never);
+
+    it('insere mensagens antigas no início preservando as atuais', () => {
+      useChatStore.getState().setMessages('conv-1', [msg('c'), msg('d')]);
+      useChatStore.getState().prependMessages('conv-1', [msg('a'), msg('b')]);
+      expect(useChatStore.getState().getConversationMessages('conv-1').map((m) => m.id)).toEqual([
+        'a', 'b', 'c', 'd',
+      ]);
+    });
+
+    it('deduplica por id', () => {
+      useChatStore.getState().setMessages('conv-1', [msg('b'), msg('c')]);
+      useChatStore.getState().prependMessages('conv-1', [msg('a'), msg('b')]);
+      expect(useChatStore.getState().getConversationMessages('conv-1').map((m) => m.id)).toEqual([
+        'a', 'b', 'c',
+      ]);
+    });
+  });
+
   describe('leitura', () => {
     it('markConversationAsRead zera unread e ajusta total', () => {
       useChatStore.getState().setConversations([

@@ -601,10 +601,10 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
 
   return (
     <div
-      className={`flex ${isInbound ? 'justify-start' : 'justify-end'} mb-4`}
+      className={`chat-msg chat-msg-${direction} flex ${isInbound ? 'justify-start' : 'justify-end'} mb-4`}
     >
       <div
-        className={`max-w-[70%] overflow-hidden ${
+        className={`chat-bubble chat-bubble-${direction} max-w-[70%] overflow-hidden ${
           isInbound
             ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white'
             : 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-900 dark:text-white'

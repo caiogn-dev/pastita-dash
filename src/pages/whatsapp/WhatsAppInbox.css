@@ -26,11 +26,60 @@
   flex-shrink: 0;
 }
 
+.conversations-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
 .conversations-header h1 {
-  margin: 0 0 0.75rem 0;
+  margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--fg);
+}
+
+/* Indicador de tempo real (WebSocket) */
+.ws-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 12px;
+  letter-spacing: 0.02em;
+}
+
+.ws-status.live {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.ws-status.offline {
+  color: var(--fg-muted);
+  background: var(--surface-2);
+}
+
+.ws-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ws-status.live .ws-dot {
+  animation: ws-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ws-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-status.live .ws-dot { animation: none; }
 }
 
 .search-box {
@@ -121,6 +170,24 @@
   justify-content: center;
   font-weight: 600;
   font-size: 1rem;
+  overflow: hidden;
+}
+
+.conversation-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.conversation-avatar.avatar-sm {
+  width: 36px;
+  height: 36px;
+  font-size: 0.85rem;
+}
+
+/* Anel dourado sinaliza conversa com não-lidas */
+.conversation-item.unread .conversation-avatar {
+  box-shadow: 0 0 0 2px var(--brand);
 }
 
 .conversation-info {
@@ -270,6 +337,13 @@
   min-height: 60px;
 }
 
+.chat-info {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
 .chat-info h2 {
   margin: 0;
   font-size: 1rem;
@@ -374,6 +448,44 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+/* Balões da marca: outbound champanhe/ouro (Dark Luxe), inbound superfície.
+   Sobrescreve o verde-WhatsApp hardcoded do MessageBubble (Tailwind) via
+   especificidade de descendente — vale só dentro do inbox. */
+.whatsapp-inbox .chat-bubble {
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.whatsapp-inbox .chat-bubble-inbound {
+  background: var(--surface);
+  color: var(--fg);
+  border-bottom-left-radius: 4px;
+}
+
+.whatsapp-inbox .chat-bubble-outbound {
+  background: #F0E3C3;
+  color: #3A2F1B;
+  border-bottom-right-radius: 4px;
+}
+
+.dark .whatsapp-inbox .chat-bubble-outbound {
+  background: #3B321F;
+  color: #F0E4C9;
+}
+
+.whatsapp-inbox .chat-msg {
+  margin-bottom: 0.375rem;
+}
+
+/* Indicador de carga do histórico (scroll infinito) */
+.loading-older {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--fg-muted);
+  padding: 0.375rem 0;
+  flex-shrink: 0;
 }
 
 /* Separador de dia (Hoje / Ontem / data) entre grupos de mensagens */

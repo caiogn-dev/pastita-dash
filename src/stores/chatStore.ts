@@ -42,6 +42,7 @@ interface ChatState {
   
   setMessages: (conversationId: string, messages: Message[]) => void;
   addMessage: (conversationId: string, message: Message) => void;
+  prependMessages: (conversationId: string, messages: Message[]) => void;
   updateMessage: (conversationId: string, messageId: string, updates: Partial<Message>) => void;
   updateMessageStatus: (messageId: string, status: string, timestamp?: string) => void;
   
@@ -162,6 +163,23 @@ export const useChatStore = create<ChatState>()(
         }));
       },
       
+      // Prepend older messages (scroll infinito) — dedupe por id
+      prependMessages: (conversationId, messages) => {
+        set((state) => {
+          const existing = state.messagesCache[conversationId] || [];
+          const existingIds = new Set(existing.map(m => m.id));
+          const older = messages.filter(m => !existingIds.has(m.id));
+          if (older.length === 0) return state;
+
+          return {
+            messagesCache: {
+              ...state.messagesCache,
+              [conversationId]: [...older, ...existing]
+            }
+          };
+        });
+      },
+
       // Add a message to a conversation
       addMessage: (conversationId, message) => {
         set((state) => {

@@ -60,6 +60,25 @@ interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
   last_message?: Message | string;
 }
 
+const conversationPhoto = (conv: ConversationWithMessages): string | undefined =>
+  conv.profile_picture_url || conv.profile_picture || conv.profile_picture_file || undefined;
+
+/** Avatar com foto do contato e fallback para a inicial. */
+const ConversationAvatar: React.FC<{ conv: ConversationWithMessages; size?: 'sm' | 'md' }> = ({ conv, size = 'md' }) => {
+  const [broken, setBroken] = useState(false);
+  const photo = conversationPhoto(conv);
+  const initial = (conv.contact_name || conv.phone_number).charAt(0).toUpperCase();
+  return (
+    <div className={`conversation-avatar ${size === 'sm' ? 'avatar-sm' : ''}`}>
+      {photo && !broken ? (
+        <img src={photo} alt="" loading="lazy" crossOrigin="anonymous" onError={() => setBroken(true)} />
+      ) : (
+        initial
+      )}
+    </div>
+  );
+};
+
 /**
  * Preview da última mensagem da conversa.
  * A API (`ConversationSerializer.get_last_message_preview` no server2) envia
@@ -83,8 +102,12 @@ const WhatsAppInboxPage: React.FC = () => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
   const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const sendLockRef = useRef(false);
+  // Paginação do histórico (scroll infinito) por conversa
+  const historyCursorRef = useRef<Record<string, { hasMore: boolean; nextBeforeId: string | null }>>({});
 
   // WebSocket context para atualizações em tempo real
   const ws = useWhatsAppWsContext();
@@ -93,6 +116,7 @@ const WhatsAppInboxPage: React.FC = () => {
   const storeConversations = useChatStore((s) => s.conversations);
   const selectedConversationId = useChatStore((s) => s.selectedConversationId);
   const getConversationMessages = useChatStore((s) => s.getConversationMessages);
+  const wsConnected = useChatStore((s) => s.wsConnected);
 
   // Deriva lista de conversas do store (já atualizada via WebSocket)
   const conversations = ensureArray<ConversationWithMessages>(storeConversations as ConversationWithMessages[]);
@@ -144,14 +168,46 @@ const WhatsAppInboxPage: React.FC = () => {
 
   const loadMessages = useCallback(async (conversationId: string) => {
     try {
-      const { results } = await conversationsService.getMessages(conversationId);
+      const { results, has_more, next_before_id } = await conversationsService.getMessages(conversationId);
       // Carrega mensagens históricas no store; WS adiciona novas em tempo real
       useChatStore.getState().setMessages(conversationId, ensureArray<Message>(results));
+      historyCursorRef.current[conversationId] = { hasMore: has_more, nextBeforeId: next_before_id };
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
       toast.error('Erro ao carregar mensagens');
     }
   }, []);
+
+  /** Scroll infinito: carrega página anterior do histórico preservando a posição. */
+  const loadOlderMessages = useCallback(async (conversationId: string) => {
+    const cursor = historyCursorRef.current[conversationId];
+    if (!cursor?.hasMore || !cursor.nextBeforeId || loadingOlder) return;
+
+    const container = messagesContainerRef.current;
+    const prevScrollHeight = container?.scrollHeight ?? 0;
+
+    setLoadingOlder(true);
+    try {
+      const { results, has_more, next_before_id } = await conversationsService.getMessages(
+        conversationId,
+        100,
+        cursor.nextBeforeId
+      );
+      useChatStore.getState().prependMessages(conversationId, ensureArray<Message>(results));
+      historyCursorRef.current[conversationId] = { hasMore: has_more, nextBeforeId: next_before_id };
+
+      // Mantém o usuário olhando para a mesma mensagem após o prepend
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop += container.scrollHeight - prevScrollHeight;
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [loadingOlder]);
 
   const handleSelectConversation = async (conversation: ConversationWithMessages) => {
     useChatStore.getState().setSelectedConversation(conversation.id);
@@ -281,14 +337,30 @@ const WhatsAppInboxPage: React.FC = () => {
     }
   }, [selectedConversationId, lastMessage?.id]);
 
-  // Scroll: instantâneo ao abrir a conversa, suave quando chega mensagem nova
+  // Scroll: instantâneo ao abrir a conversa, suave quando chega mensagem nova.
+  // Guardado pelo id da ÚLTIMA mensagem — prepend de histórico (scroll
+  // infinito) não muda a última, logo não arrasta o usuário pro fim.
   const prevConversationIdRef = useRef<string | null>(null);
+  const prevLastMessageIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (!lastMessage) return;
     const conversationChanged = prevConversationIdRef.current !== selectedConversationId;
+    const lastChanged = prevLastMessageIdRef.current !== lastMessage.id;
     prevConversationIdRef.current = selectedConversationId;
-    messagesEndRef.current?.scrollIntoView({ behavior: conversationChanged ? 'auto' : 'smooth' });
-  }, [messages, selectedConversationId]);
+    prevLastMessageIdRef.current = lastMessage.id;
+    if (conversationChanged || lastChanged) {
+      messagesEndRef.current?.scrollIntoView({ behavior: conversationChanged ? 'auto' : 'smooth' });
+    }
+  }, [lastMessage?.id, selectedConversationId]);
+
+  // Dispara carga de histórico ao encostar no topo da área de mensagens
+  const handleMessagesScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container || !selectedConversationId) return;
+    if (container.scrollTop < 80) {
+      void loadOlderMessages(selectedConversationId);
+    }
+  }, [selectedConversationId, loadOlderMessages]);
 
   const filteredConversations = ensureArray<ConversationWithMessages>(conversations).filter(conv =>
     conv.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -300,7 +372,13 @@ const WhatsAppInboxPage: React.FC = () => {
       {/* Conversations List */}
       <div className="conversations-panel">
         <div className="conversations-header">
-          <h1>Caixas de Entrada</h1>
+          <div className="conversations-title-row">
+            <h1>Conversas</h1>
+            <span className={`ws-status ${wsConnected ? 'live' : 'offline'}`} title={wsConnected ? 'Atualizações em tempo real ativas' : 'Reconectando ao tempo real'}>
+              <span className="ws-dot" />
+              {wsConnected ? 'Ao vivo' : 'Reconectando'}
+            </span>
+          </div>
           <div className="search-box">
             <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
             <input
@@ -333,9 +411,7 @@ const WhatsAppInboxPage: React.FC = () => {
                   ].join(' ')}
                   onClick={() => handleSelectConversation(conv)}
                 >
-                  <div className="conversation-avatar">
-                    {(conv.contact_name || conv.phone_number).charAt(0).toUpperCase()}
-                  </div>
+                  <ConversationAvatar conv={conv} />
                   <div className="conversation-info">
                     <div className="conversation-title-row">
                       <h3>{conv.contact_name || formatPhone(conv.phone_number)}</h3>
@@ -371,8 +447,11 @@ const WhatsAppInboxPage: React.FC = () => {
             {/* Chat Header */}
             <div className="chat-header">
               <div className="chat-info">
-                <h2>{selectedConversation.contact_name || formatPhone(selectedConversation.phone_number)}</h2>
-                <p className="phone-number">{formatPhone(selectedConversation.phone_number)}</p>
+                <ConversationAvatar conv={selectedConversation} size="sm" />
+                <div>
+                  <h2>{selectedConversation.contact_name || formatPhone(selectedConversation.phone_number)}</h2>
+                  <p className="phone-number">{formatPhone(selectedConversation.phone_number)}</p>
+                </div>
               </div>
               <div className="chat-actions">
                 <div className="mode-selector">
@@ -417,7 +496,10 @@ const WhatsAppInboxPage: React.FC = () => {
             </div>
 
             {/* Messages Container */}
-            <div className="messages-container">
+            <div className="messages-container" ref={messagesContainerRef} onScroll={handleMessagesScroll}>
+              {loadingOlder && (
+                <div className="loading-older">Carregando histórico…</div>
+              )}
               {loadingMessages ? (
                 <div className="messages-empty">
                   <p>Carregando mensagens...</p>
