@@ -25,16 +25,23 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   tenant ANTERIOR — faturamento, KPIs e, pior, **nomes/e-mails/telefones de clientes
   de OUTRA loja** (`top_customers`) apareciam na tela da loja atual até o refetch.
   Com `staleTime > 0` o dado errado persistia sem nunca refazer o fetch.
-- **Mudado (`useReports.ts`):** a loja (`getStoreSlugWithFallback()`) agora faz parte
-  da `queryKey` dos cinco hooks, exatamente como o `useOrdersCharts` já fazia. Cada
-  loja passa a ter uma entrada de cache própria — sem colisão entre tenants e com a
-  troca de loja mostrando o dado certo (ou o próprio loading), nunca o da loja anterior.
+- **Mudado (`useReports.ts` + `useStore.ts`):** a loja agora faz parte da `queryKey`
+  dos seis hooks (os cinco relatórios + `useOrdersCharts`), derivada de forma
+  **REATIVA** por um novo `useStoreSlugWithFallback()` que assina o rootStore (Zustand)
+  via seletor. Isso é essencial: `AnalyticsPage` não chama `useStore()`, então a versão
+  imperativa (`getStoreSlugWithFallback()` via `.getState()`) NÃO re-renderizaria a
+  página ao trocar de loja com ela montada — a query ficaria presa na key/dado do
+  tenant anterior (P1 apontado na review do Codex). Com o hook reativo, trocar de loja
+  no seletor re-chaveia e busca o dado da loja nova na hora. A lógica pura de resolução
+  do slug foi extraída (`computeStoreSlugWithFallback`) e é compartilhada entre a versão
+  imperativa (serviços) e a reativa (hooks), garantindo o MESMO slug nos dois lados.
 - **Teste (TDD, vermelho→verde):** novo `src/hooks/queries/__tests__/useReports.test.tsx`
-  — 5 casos (`it.each`), um por hook. Cada um monta a query da loja A (marker
-  `loja-A`), troca a loja para B e exige `marker: loja-B` + 2 chamadas ao serviço.
-  Com `staleTime: Infinity` o vazamento é determinístico: **5/5 falhavam** antes
-  (a loja B recebia `loja-A` do cache) e **5/5 passam** depois. Verificado com o
-  código antigo (git stash) → 5 falham → restaurar → 5 passam.
+  — 5 casos (`it.each`), um por hook. Cada um monta a query com a loja A selecionada
+  no **rootStore real** (marker `loja-A`), depois **troca a loja para B sob o MESMO
+  render** (`useRootStore.setState`) e exige `marker: loja-B` + 2 chamadas ao serviço.
+  Com `staleTime: Infinity` o vazamento é determinístico. Verificado: com a resolução
+  imperativa (`.getState()`, sem re-render) **5/5 falham** (a loja B nunca carrega);
+  com a reativa **5/5 passam**.
 - **Antes/depois:** `npm test` 535/132 → **540/133**; `tsc --noEmit` limpo e
   `npm run build` ok nos dois lados; lint sem novos warnings. Só a camada de cache
   mudou (queryKey) — zero mudança de comportamento de UI ou de contrato de API.

@@ -107,12 +107,37 @@ export function getStoreSlug(): string | null {
  */
 export function getStoreSlugWithFallback(): string | null {
   const { selectedStoreId, stores } = useRootStore.getState();
+  return computeStoreSlugWithFallback(selectedStoreId, stores);
+}
+
+// Lógica pura compartilhada entre a versão imperativa (serviços) e a reativa
+// (hooks), para que ambas resolvam SEMPRE o mesmo slug da loja selecionada.
+function computeStoreSlugWithFallback(
+  selectedStoreId: string | null,
+  stores: ApiStore[],
+): string | null {
   if (selectedStoreId) {
     const match = stores.find((s) => s.id === selectedStoreId || s.slug === selectedStoreId);
     if (match?.slug) return match.slug;
     return selectedStoreId; // já pode ser um slug; backend resolve id ou slug
   }
   return resolveStoreSlug(null, DEFAULT_STORE_SLUG);
+}
+
+/**
+ * Versão REATIVA de `getStoreSlugWithFallback` para uso dentro de componentes/
+ * hooks. Assina o rootStore (Zustand), então trocar de loja no seletor re-renderiza
+ * o consumidor imediatamente — essencial para queryKeys de relatórios não ficarem
+ * presas ao tenant anterior enquanto a página segue montada (a versão imperativa,
+ * via `.getState()`, não dispara re-render).
+ */
+export function useStoreSlugWithFallback(): string | null {
+  const selectedStoreId = useRootStore((s) => s.selectedStoreId);
+  const stores = useRootStore((s) => s.stores);
+  return useMemo(
+    () => computeStoreSlugWithFallback(selectedStoreId, stores),
+    [selectedStoreId, stores],
+  );
 }
 
 /**
