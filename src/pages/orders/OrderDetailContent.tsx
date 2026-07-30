@@ -756,6 +756,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold">
                             {item.quantity}x {item.product_name}
+                            {item.variant_name ? ` — ${item.variant_name}` : ''}
                           </span>
                           {isSalad && (
                             <span className="rounded-full bg-[var(--success-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--success)]">

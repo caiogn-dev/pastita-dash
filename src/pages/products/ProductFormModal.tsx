@@ -89,6 +89,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     category: null,
     product_type: null,
     type_attributes: {},
+    attributes: {},
     track_stock: true,
     stock_quantity: 0,
     low_stock_threshold: 5,
@@ -119,6 +120,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         category: p.category ?? null,
         product_type: p.product_type ?? null,
         type_attributes: p.type_attributes || {},
+        attributes: (p as unknown as { attributes?: Record<string, unknown> }).attributes || {},
         track_stock: p.track_stock ?? true,
         stock_quantity: p.stock_quantity || 0,
         low_stock_threshold: p.low_stock_threshold || 5,
@@ -149,6 +151,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         category: initialCategory,
         product_type: null,
         type_attributes: {},
+        attributes: {},
         track_stock: true,
         stock_quantity: 0,
         low_stock_threshold: 5,
@@ -552,6 +555,38 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   />
                   <span className="text-sm">Produto em destaque</span>
                 </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-fg-token mb-1">
+                  Selos de fidelidade por unidade
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={(formData.attributes?.loyalty_units as number | undefined) ?? ''}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setFormData((prev) => {
+                      const attrs = { ...(prev.attributes || {}) };
+                      const parsed = parseInt(raw, 10);
+                      if (!raw || Number.isNaN(parsed) || parsed <= 0) {
+                        delete attrs.loyalty_units;
+                      } else {
+                        attrs.loyalty_units = parsed;
+                      }
+                      return { ...prev, attributes: attrs };
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
+                  placeholder="Vazio = segue a regra da categoria"
+                />
+                <p className="mt-1 text-xs text-fg-muted-token">
+                  Use em combos que valem mais de 1 selo no cartão fidelidade (ex.: Combo
+                  Tilápia com 4 saladas = 4). Produtos com este campo contam mesmo fora das
+                  categorias qualificantes.
+                </p>
               </div>
             </div>
           )}
