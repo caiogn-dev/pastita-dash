@@ -3,6 +3,45 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-07-30)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **556 testes / 135 suítes verdes** (era 553/134; +3/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~17s).
+
+## Histórico
+
+### 2026-07-30 — Acessibilidade: nome acessível em TODOS os modais (aria-labelledby / aria-label no Modal canônico)
+- **Medido:** o `Modal` canônico (`src/components/ui/modal.tsx`) — fonte única de
+  todos os modais do painel — expunha `role="dialog"` + `aria-modal="true"` **sem
+  nome acessível**. Um leitor de tela anunciava apenas "diálogo", sem dizer do que
+  se tratava. O header embutido renderizava `<h2>{title}</h2>`, mas **não estava
+  ligado** ao elemento com `role="dialog"` via `aria-labelledby`. É uma falha
+  WAI-ARIA (todo dialog precisa de nome). Afetava todos os consumidores:
+  `OrderDetailModal`, `PaywallModal`, `ComboModal`, `ProductFormModal`, e os
+  diálogos de confirmação app-wide via `useConfirm` → `ConfirmModal`.
+- **Mudado (componente canônico — conserta o app inteiro de uma vez):**
+  - `title` presente → `<h2 id={titleId}>` ligado ao dialog via `aria-labelledby`
+    (id estável por `useId`);
+  - nova prop opcional `ariaLabel` para o **caminho composto** (sem `title`
+    embutido, ex.: layouts customizados) — vira `aria-label` no dialog;
+  - `ConfirmModal` (layout centrado com ícone, não usa o header embutido) passa
+    `ariaLabel={title}` ao `Modal` interno → agora todo confirm/`useConfirm` tem nome.
+- **Teste (TDD, vermelho→verde):** novo `Modal.a11y.test.tsx` (3 casos) — escrito
+  **vermelho antes** (3/3 falhando), verde depois. Usa `getByRole('dialog', { name })`
+  (computa o nome acessível): título embutido via `aria-labelledby`, `ariaLabel` no
+  caminho composto, e `ConfirmModal` nomeado pelo próprio título. `Modal.focus.test.tsx`
+  segue verde (sem regressão na gestão de foco).
+- **Antes/depois:** `npm test` 553/134 → **556/135**; tsc limpo e `vite build` ok
+  nos dois lados. Só a11y adicionada (2 atributos ARIA + 1 prop opcional), sem
+  mudança de comportamento visual.
+- **Próximo passo:** os consumidores do wrapper `ui/dialog.tsx` que montam o
+  próprio `DialogTitle` (`WhatsAppAuthDialog`, `ConnectionsPage`,
+  `MessengerAccounts`, `PrintSettingsPage`) ainda não passam nome — plumbar
+  `ariaLabel` (ou `aria-labelledby` ao `DialogTitle`) pelo `Dialog` e adotar em
+  cada um, com teste por componente.
+
 ## Baseline atual (2026-06-30)
 
 - `npm ci`: ok (5 vulnerabilidades reportadas pelo npm: 1 low, 2 moderate, 2 high).
