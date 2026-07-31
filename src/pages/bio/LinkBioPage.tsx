@@ -365,7 +365,7 @@ const LinkBioPage: React.FC = () => {
                     <p className="truncate text-xs text-fg-muted-token">{link.url}</p>
                   </div>
                   <Switch
-                    label={`${link.is_active ? 'Desativar' : 'Ativar'} link ${link.title}`}
+                    label={`Link ${link.title} ativo`}
                     checked={link.is_active}
                     onChange={() => handleToggleActive(link)}
                   />
