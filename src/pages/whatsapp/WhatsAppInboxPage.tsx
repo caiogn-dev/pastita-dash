@@ -7,8 +7,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
-  PhoneIcon,
-  EllipsisVerticalIcon,
   DocumentTextIcon,
   BoltIcon,
 } from '@heroicons/react/24/outline';
@@ -98,6 +96,7 @@ const WhatsAppInboxPage: React.FC = () => {
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
+  const [listFilter, setListFilter] = useState<'all' | 'unread' | 'human' | 'auto'>('all');
   const [sending, setSending] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
@@ -362,10 +361,20 @@ const WhatsAppInboxPage: React.FC = () => {
     }
   }, [selectedConversationId, loadOlderMessages]);
 
-  const filteredConversations = ensureArray<ConversationWithMessages>(conversations).filter(conv =>
+  const searchedConversations = ensureArray<ConversationWithMessages>(conversations).filter(conv =>
     conv.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conv.phone_number.includes(searchTerm)
   );
+
+  const unreadTotal = searchedConversations.filter((c) => (c.unread_count || 0) > 0).length;
+  const humanTotal = searchedConversations.filter((c) => c.mode === 'human').length;
+
+  const filteredConversations = searchedConversations.filter((conv) => {
+    if (listFilter === 'unread') return (conv.unread_count || 0) > 0;
+    if (listFilter === 'human') return conv.mode === 'human';
+    if (listFilter === 'auto') return conv.mode !== 'human';
+    return true;
+  });
 
   return (
     <div className="whatsapp-inbox">
@@ -387,6 +396,26 @@ const WhatsAppInboxPage: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+          <div className="filter-chips" role="tablist" aria-label="Filtrar conversas">
+            {([
+              ['all', 'Todas', searchedConversations.length],
+              ['unread', 'Não lidas', unreadTotal],
+              ['human', 'Humano', humanTotal],
+              ['auto', 'Bot', searchedConversations.length - humanTotal],
+            ] as const).map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={listFilter === key}
+                className={`filter-chip ${listFilter === key ? 'active' : ''}`}
+                onClick={() => setListFilter(key)}
+              >
+                {label}
+                {count > 0 && <span className="filter-chip-count">{count}</span>}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -454,20 +483,20 @@ const WhatsAppInboxPage: React.FC = () => {
                 </div>
               </div>
               <div className="chat-actions">
-                <div className="mode-selector">
+                <div className="mode-selector" role="group" aria-label="Modo de atendimento">
                   <button
                     className={`mode-btn ${selectedConversation.mode === 'auto' ? 'active' : ''}`}
                     onClick={handleSwitchToAuto}
-                    title="Modo Automático"
+                    title="Bot responde automaticamente"
                   >
-                    🤖
+                    🤖 Bot
                   </button>
                   <button
                     className={`mode-btn ${selectedConversation.mode === 'human' ? 'active' : ''}`}
                     onClick={handleSwitchToHuman}
-                    title="Modo Humano"
+                    title="Você responde manualmente (bot pausado)"
                   >
-                    👤
+                    👤 Humano
                   </button>
                 </div>
                 <button
@@ -485,12 +514,6 @@ const WhatsAppInboxPage: React.FC = () => {
                 >
                   <BoltIcon className="w-4 h-4" />
                   <span>Ferramentas</span>
-                </button>
-                <button title="Chamada" disabled className="icon-btn">
-                  <PhoneIcon className="w-5 h-5" />
-                </button>
-                <button className="icon-btn" title="Mais opções">
-                  <EllipsisVerticalIcon className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -560,7 +583,7 @@ const WhatsAppInboxPage: React.FC = () => {
                 aria-label="Enviar mensagem"
                 title="Enviar mensagem"
               >
-                {sending ? '⏳' : <PaperAirplaneIcon className="w-5 h-5" />}
+                {sending ? <span className="send-spinner" aria-hidden="true" /> : <PaperAirplaneIcon className="w-5 h-5" />}
               </button>
             </form>
           </>
