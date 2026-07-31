@@ -131,8 +131,14 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
   // Build WebSocket URL
   const getWsUrl = useCallback(() => {
     if (!token) return null;
-    // WebSocket endpoint: /ws/whatsapp/{account_id}/
     // Token is sent via an 'auth' message immediately after onopen — não expor na URL.
+    // dashboardMode agrega todas as contas do usuário no backend e NÃO pode
+    // depender de selectedAccount: o provider monta no App antes de qualquer
+    // conta ser escolhida, e connect() só roda uma vez — URL nula aqui era o
+    // "Reconectando" infinito do inbox (nenhuma tentativa de rede).
+    if (dashboardMode) {
+      return getWebSocketUrl('/ws/whatsapp/dashboard/');
+    }
     if (!selectedAccount) return null;
     return getWebSocketUrl(`/ws/whatsapp/${selectedAccount.id}/`);
   }, [token, dashboardMode, selectedAccount]);
