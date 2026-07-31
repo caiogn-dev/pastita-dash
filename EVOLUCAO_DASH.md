@@ -3,6 +3,43 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-07-31)
+
+- `npm ci`: ok (36 vulnerabilidades reportadas pelo npm: 3 moderate, 33 high).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **558 testes / 135 suítes verdes** (era 553/134 antes desta fatia; +5/+1).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~15s).
+- `npm run lint`: gate em 400 warnings; sem novos warnings nos arquivos tocados.
+
+## Histórico
+
+### 2026-07-31 — A11y: nome acessível no primitivo `Switch` (backlog conhecido) + 3 consumidores
+- **Medido:** o primitivo compartilhado `src/components/common/Switch.tsx` é um
+  `<button role="switch">` com `aria-checked`, **mas sem nome acessível** — item
+  explicitamente pendente no backlog. Detalhe crítico de a11y: um `<button>` com
+  `role="switch"` **não herda** o texto de um `<label>` que o envolva (só controles
+  nativos — input/select/textarea — herdam), então mesmo o switch de `LinkBioPage`
+  que fica *dentro* de um `<label>` com texto visível ("Cardápio", "WhatsApp", …)
+  era anunciado por leitores de tela apenas como "switch, marcado", sem indicar o
+  que controla. Os 3 consumidores vivos (`LinkBioPage` ×2, `CompanyProfileDetailPage`)
+  estavam todos sem nome.
+- **Mudado:**
+  - `Switch.tsx`: nova API de nome acessível — prop `label` (→ `aria-label`) e
+    `aria-labelledby` (para reaproveitar rótulo externo já existente na página).
+    Quando `aria-labelledby` é passado, o `aria-label` é omitido para não competir.
+  - `LinkBioPage.tsx`: toggles de visibilidade de seção → `label="Exibir {seção} na página"`;
+    toggle de ativar/desativar link personalizado → `label` dinâmico
+    ("Ativar/Desativar link {título}") refletindo a ação real.
+  - `CompanyProfileDetailPage.tsx`: switch "Aceitar pedidos pelo bot" →
+    `aria-labelledby="bot-order-enabled-label"` (reusa o `<label id>` já presente).
+- **Teste (TDD):** novo `src/components/common/__tests__/Switch.a11y.test.tsx` —
+  escrito **vermelho antes** (5/5 falhando por ausência de nome acessível), **verde
+  depois**. Cobre: nome via `label`, nome via `aria-labelledby`, reflexo de
+  `aria-checked`, `onChange(!checked)` no clique e no-op quando `disabled`.
+- **Antes/depois:** `npm test` 553/134 → **558/135**; tsc limpo e `vite build` ok nos
+  dois lados; lint sem novos warnings. Só produção alterada: atributos de a11y de
+  baixo risco (sem mudança de comportamento visual).
+
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
 
