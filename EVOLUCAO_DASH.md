@@ -31,6 +31,15 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   **vermelho antes** (3/3 falhando, sem nome acessível), **verde depois**. Cobre nome
   via `aria-label`, via `aria-labelledby` e a não-regressão do toggle (`onChange`).
 - **Antes/depois:** `npm test` 555/135 → **558/136**; `tsc --noEmit` limpo nos dois lados.
+- **Correção pós-review (Codex, P2):** o rótulo do toggle de link era dinâmico
+  ("Ativar/Desativar link X"), mudando o **nome acessível** a cada toggle — nome de
+  switch deve identificar a configuração e ser estável (o estado vai no `aria-checked`).
+  Ajustado para nome estável (`Link <título>`) + novo caso de teste garantindo que o
+  nome não muda ao alternar (559 testes verdes).
+- **Nota de CI:** o check `build` (GitHub Actions `ci.yml`) está vermelho por falha
+  **de infra** (falha em ~2-3s antes do `npm ci`, logs 404) que **reproduz em todo push
+  na `main`** (15/15 runs recentes) — não vem deste diff. Gate real (Vercel) deployou Ready.
+  Registrado na thread da PR; precisa destravar o Actions à parte (runner/billing).
 
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
