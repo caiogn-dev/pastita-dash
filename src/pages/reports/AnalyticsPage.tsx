@@ -27,9 +27,15 @@ import {
   useCustomersReport,
   useOrdersCharts,
 } from '../../hooks/queries/useReports';
+import { HeatmapSection, ChannelsSection, AbcBasketSection } from './sections/SalesSections';
+import { GeographySection } from './sections/GeographySection';
+import { OperationsSection } from './sections/OperationsSections';
+import { CrmSection, FinanceSection, BotReviewsSection } from './sections/CrmFinanceBotSections';
 
 type GroupBy = 'day' | 'week' | 'month';
-type TabValue = 'overview' | 'orders' | 'revenue' | 'products' | 'stock' | 'customers';
+type TabValue =
+  | 'overview' | 'orders' | 'revenue' | 'products' | 'stock' | 'customers'
+  | 'peaks' | 'geo' | 'operations' | 'crm' | 'finance' | 'bot';
 
 // Rótulos pt-BR dos status de pedido (para a distribuição na aba Pedidos).
 const ORDER_STATUS_LABELS: Record<string, string> = {
@@ -102,9 +108,15 @@ const TABS: { value: TabValue; label: string }[] = [
   { value: 'overview', label: 'Visão Geral' },
   { value: 'orders', label: 'Pedidos' },
   { value: 'revenue', label: 'Faturamento' },
+  { value: 'finance', label: 'Taxas & Cupons' },
+  { value: 'peaks', label: 'Picos & Canais' },
+  { value: 'geo', label: 'Geografia' },
   { value: 'products', label: 'Produtos' },
   { value: 'stock', label: 'Estoque' },
   { value: 'customers', label: 'Clientes' },
+  { value: 'crm', label: 'Segmentos' },
+  { value: 'operations', label: 'Operação' },
+  { value: 'bot', label: 'Bot & Avaliações' },
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -659,7 +671,7 @@ const AnalyticsPage: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-border-token">
+      <div className="flex flex-wrap gap-1 mb-6 border-b border-border-token">
         {TABS.map((t) => (
           <button
             key={t.value}
@@ -679,9 +691,25 @@ const AnalyticsPage: React.FC = () => {
       {activeTab === 'orders' && renderOrders()}
       {activeTab === 'stock' && renderStock()}
       {activeTab === 'revenue' && renderRevenue()}
-      {activeTab === 'products' && renderProducts()}
+      {activeTab === 'products' && (
+        <div className="flex flex-col gap-6">
+          {renderProducts()}
+          <AbcBasketSection range={range} enabled />
+        </div>
+      )}
       {activeTab === 'customers' && renderCustomers()}
       {activeTab === 'overview' && renderOverview()}
+      {activeTab === 'peaks' && (
+        <div className="flex flex-col gap-6">
+          <HeatmapSection range={range} enabled />
+          <ChannelsSection range={range} enabled />
+        </div>
+      )}
+      {activeTab === 'geo' && <GeographySection range={range} enabled />}
+      {activeTab === 'operations' && <OperationsSection range={range} enabled />}
+      {activeTab === 'crm' && <CrmSection range={range} enabled />}
+      {activeTab === 'finance' && <FinanceSection range={range} enabled />}
+      {activeTab === 'bot' && <BotReviewsSection range={range} enabled />}
     </div>
   );
 };

@@ -247,6 +247,113 @@ export const downloadBlob = (blob: Blob, filename: string): void => {
   window.URL.revokeObjectURL(url);
 };
 
+// =============================================================================
+// ANALYTICS/BI FASE 1 — 15 endpoints novos (server2 analytics_views.py)
+// =============================================================================
+
+export interface HeatmapCell { weekday: number; hour: number; orders: number; revenue: number }
+export interface HeatmapReport { cells: HeatmapCell[]; peak: HeatmapCell | null }
+
+export interface AbcProduct {
+  product_name: string; quantity: number; revenue: number; order_count: number;
+  revenue_pct: number; cumulative_pct: number; abc_class: 'A' | 'B' | 'C';
+}
+export interface AbcReport {
+  products: AbcProduct[];
+  summary: { total_revenue: number; a_count: number; b_count: number; c_count: number };
+}
+
+export interface ChannelRow { channel: string; orders: number; revenue: number; avg_ticket: number }
+export interface DimensionRow { [key: string]: string | number }
+export interface ChannelsReport {
+  by_source: ChannelRow[]; by_payment_method: DimensionRow[]; by_delivery_method: DimensionRow[];
+}
+
+export interface GeographyReport {
+  neighborhoods: Array<{ name: string; city: string; orders: number; revenue: number }>;
+  distance_bands: Array<{ band: string; orders: number; revenue: number }>;
+  points: Array<{ lat: number; lng: number; total: number }>;
+  zones: Array<{ name: string; orders: number; revenue: number }>;
+}
+
+export interface SlaStage { stage: string; count: number; avg_minutes: number | null; p90_minutes: number | null }
+export interface SlaReport { stages: SlaStage[] }
+
+export interface FinanceReport {
+  summary: { gross: number; fees: number; net: number; refunded: number };
+  by_gateway: DimensionRow[]; by_method: DimensionRow[];
+  timeline: Array<{ date: string; gross: number; net: number }>;
+}
+
+export interface RfmSegment { segment: string; label: string; count: number; revenue: number }
+export interface InactiveCustomer {
+  name: string; phone: string; days_since: number; total_orders: number; total_spent: number;
+}
+export interface RfmReport { segments: RfmSegment[]; inactive: InactiveCustomer[] }
+
+export interface BotFunnelReport {
+  funnel: Array<{ status: string; count: number }>;
+  conversion: { sessions: number; with_order: number; rate: number };
+  response_time: { avg_minutes: number | null; conversations: number };
+}
+
+export interface ReviewsReport {
+  summary: { avg_rating: number | null; count: number };
+  distribution: Array<{ rating: number; count: number }>;
+  recent: Array<{ rating: number; comment: string; customer_name: string; created_at: string }>;
+}
+
+export interface CouponsReport {
+  coupons: Array<{ code: string; orders: number; discount_total: number; revenue: number; avg_ticket: number }>;
+  summary: { orders_with_coupon: number; total_orders: number; coupon_usage_pct: number; total_discount: number };
+}
+
+export interface BasketReport {
+  pairs: Array<{ product_a: string; product_b: string; orders_together: number }>;
+  orders_analyzed: number;
+}
+
+export interface CancellationsReport {
+  summary: { cancelled: number; total_orders: number; rate: number; lost_value: number };
+  by_status: Array<{ status: string; count: number; lost_value: number }>;
+  timeline: Array<{ date: string; cancelled: number; lost_value: number }>;
+}
+
+export interface SchedulingReport {
+  by_date: Array<{ date: string; orders: number; revenue: number }>;
+  by_slot: Array<{ slot: string; orders: number }>;
+  total: number;
+}
+
+export interface CashHistoryReport {
+  sessions: Array<{
+    id: string; opened_at: string; closed_at: string | null; opened_by: string | null;
+    closed_by: string | null; opening_amount: number; expected_amount: number | null;
+    counted_amount: number | null; difference: number | null; reinforcement: number; withdrawal: number;
+  }>;
+  summary: { count: number; total_difference: number; with_shortage: number };
+}
+
+export interface StaffReport {
+  staff: Array<{
+    username: string; name: string; orders: number; revenue: number;
+    avg_ticket: number; manual_discounts: number;
+  }>;
+}
+
+/** Fetcher genérico dos relatórios de analytics (todos GET store+período). */
+export const getAnalyticsReport = async <T>(path: string, params: DateRange = {}): Promise<T> => {
+  try {
+    const response = await api.get(`${BASE_URL}/${path}/`, {
+      params: { store: getStoreParam(), ...params },
+    });
+    return response.data as T;
+  } catch (error) {
+    logger.error(`Failed to fetch analytics report ${path}`, error);
+    throw error;
+  }
+};
+
 // Export all functions
 export const reportsService = {
   getRevenueReport,
@@ -255,7 +362,8 @@ export const reportsService = {
   getCustomersReport,
   getDashboardStats,
   exportOrdersCSV,
-  downloadBlob
+  downloadBlob,
+  getAnalyticsReport,
 };
 
 export default reportsService;

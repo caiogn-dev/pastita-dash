@@ -86,6 +86,16 @@ export function useCustomersReport(range: DateRange, enabled: boolean) {
   });
 }
 
+// Hook genérico dos relatórios de analytics (BI Fase 1). A queryKey inclui o
+// path e o range; `enabled` segue o padrão das abas (só busca quando visível).
+export function useAnalyticsReport<T>(path: string, range: DateRange, enabled: boolean) {
+  return useQuery<T>({
+    queryKey: ['reports', 'analytics', path, range],
+    queryFn: () => reportsService.getAnalyticsReport<T>(path, range),
+    enabled,
+  });
+}
+
 // Aba Pedidos: séries por dia (contagem) + distribuição por status, do endpoint
 // /core/dashboard/charts/. Escopo de loja via getStoreSlugWithFallback (mesmo
 // padrão dos demais relatórios).
