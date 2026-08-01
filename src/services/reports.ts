@@ -274,7 +274,8 @@ export interface GeographyReport {
   distance_bands: Array<{ band: string; orders: number; revenue: number }>;
   points: Array<{
     lat: number; lng: number; total: number;
-    order_number?: string; customer_name?: string; neighborhood?: string; created_at?: string;
+    order_id?: string; order_number?: string; customer_name?: string;
+    neighborhood?: string; created_at?: string;
   }>;
   zones: Array<{ name: string; orders: number; revenue: number }>;
 }
@@ -291,8 +292,13 @@ export interface FinanceReport {
 export interface RfmSegment { segment: string; label: string; count: number; revenue: number }
 export interface InactiveCustomer {
   name: string; phone: string; days_since: number; total_orders: number; total_spent: number;
+  typical_gap_days: number | null; overdue_factor: number | null;
 }
-export interface RfmReport { segments: RfmSegment[]; inactive: InactiveCustomer[] }
+export interface RfmReport {
+  segments: RfmSegment[];
+  inactive: InactiveCustomer[];
+  cadence: { avg_days_between_orders: number | null; customers_with_repeat: number };
+}
 
 export interface BotFunnelReport {
   funnel: Array<{ status: string; count: number }>;

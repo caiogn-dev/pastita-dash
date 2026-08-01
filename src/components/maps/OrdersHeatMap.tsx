@@ -10,6 +10,7 @@ export interface HeatPoint {
   lat: number;
   lng: number;
   total: number;
+  order_id?: string;
   order_number?: string;
   customer_name?: string;
   neighborhood?: string;
@@ -19,10 +20,13 @@ export interface HeatPoint {
 const escapeHtml = (v: string) =>
   v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const pointInfoHtml = (p: HeatPoint) => {
+const pointInfoHtml = (p: HeatPoint, orderUrlBase?: string) => {
   const total = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.total);
   const date = p.created_at
     ? new Date(p.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    : '';
+  const detailLink = orderUrlBase && p.order_id
+    ? `<br/><a href="${orderUrlBase}?pedido=${encodeURIComponent(p.order_id)}" style="font-size:12px;font-weight:700;color:#a16207;text-decoration:none">Ver pedido →</a>`
     : '';
   return `
     <div style="font-family:inherit;color:#1f2937;min-width:180px;line-height:1.5">
@@ -31,16 +35,18 @@ const pointInfoHtml = (p: HeatPoint) => {
         Pedido ${escapeHtml(p.order_number || '—')}${date ? ` · ${date}` : ''}<br/>
         ${escapeHtml(p.neighborhood || '')}
       </span><br/>
-      <span style="font-size:14px;font-weight:700;color:#a16207">${total}</span>
+      <span style="font-size:14px;font-weight:700;color:#a16207">${total}</span>${detailLink}
     </div>`;
 };
 
 const DEFAULT_CENTER = { lat: -10.1853248, lng: -48.3037058 };
 
-export const OrdersHeatMap: React.FC<{ points: HeatPoint[]; height?: string }> = ({
-  points,
-  height = '380px',
-}) => {
+export const OrdersHeatMap: React.FC<{
+  points: HeatPoint[];
+  height?: string;
+  /** base da página de pedidos (ex.: /stores/{id}/orders) — liga o "Ver pedido". */
+  orderUrlBase?: string;
+}> = ({ points, height = '380px', orderUrlBase }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
@@ -103,7 +109,7 @@ export const OrdersHeatMap: React.FC<{ points: HeatPoint[]; height?: string }> =
       });
       // Clique no círculo → cartão com cliente, nº do pedido, bairro e valor
       circle.addListener('click', () => {
-        info.setContent(pointInfoHtml(p));
+        info.setContent(pointInfoHtml(p, orderUrlBase));
         info.setPosition({ lat: p.lat, lng: p.lng });
         info.open({ map });
       });

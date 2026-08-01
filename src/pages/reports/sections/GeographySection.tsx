@@ -7,10 +7,12 @@ import React from 'react';
 import { OrdersHeatMap } from '../../../components/maps/OrdersHeatMap';
 import type { GeographyReport, DateRange } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
+import { useStore } from '../../../hooks/useStore';
 import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL } from './shared';
 
 export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
   const q = useAnalyticsReport<GeographyReport>('geography', range, enabled);
+  const { storeId } = useStore();
   const d = q.data;
 
   return (
@@ -27,7 +29,10 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
         {(d?.points?.length ?? 0) === 0 ? (
           <EmptyNote text="Nenhum pedido com coordenada exata no período (pedidos do bot e pins de WhatsApp alimentam o mapa)." />
         ) : (
-          <OrdersHeatMap points={d?.points ?? []} />
+          <OrdersHeatMap
+            points={d?.points ?? []}
+            orderUrlBase={storeId ? `/stores/${storeId}/orders` : undefined}
+          />
         )}
       </SectionCard>
 

@@ -40,6 +40,16 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
               tone={s.segment === 'campeoes' ? 'brand' : s.segment === 'em_risco' ? 'warning' : 'default'}
             />
           ))}
+          <StatCard
+            label="Cadência de compra"
+            value={
+              q.data?.cadence?.avg_days_between_orders != null
+                ? `a cada ${q.data.cadence.avg_days_between_orders}d`
+                : '—'
+            }
+            sub={`gap médio entre pedidos · ${q.data?.cadence?.customers_with_repeat ?? 0} clientes recorrentes`}
+            tone="brand"
+          />
         </div>
       </SectionCard>
 
@@ -65,7 +75,12 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
           <RankedList
             items={inactive.slice(0, 25).map((c) => ({
               label: c.name || c.phone,
-              sub: `${c.days_since} dias sem pedir · ${c.total_orders} pedido${c.total_orders > 1 ? 's' : ''}`,
+              sub: [
+                `${c.days_since} dias sem pedir`,
+                `${c.total_orders} pedido${c.total_orders > 1 ? 's' : ''}`,
+                c.typical_gap_days ? `pedia a cada ~${c.typical_gap_days}d` : null,
+                c.overdue_factor && c.overdue_factor >= 2 ? `${c.overdue_factor.toFixed(0)}× atrasado` : null,
+              ].filter(Boolean).join(' · '),
               value: c.total_spent,
               valueLabel: formatBRL(c.total_spent),
               danger: c.days_since >= 120,
