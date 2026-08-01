@@ -7,6 +7,10 @@ interface SwitchProps {
   disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  /** Nome acessível do controle (leitores de tela). Prefira este ou `aria-labelledby`. */
+  'aria-label'?: string;
+  /** Id de um elemento visível que rotula o switch (leitores de tela). */
+  'aria-labelledby'?: string;
 }
 
 export const Switch: React.FC<SwitchProps> = ({
@@ -15,6 +19,8 @@ export const Switch: React.FC<SwitchProps> = ({
   disabled = false,
   size = 'md',
   className = '',
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledby,
 }) => {
   const sizeClasses = {
     sm: 'w-8 h-4',
@@ -39,6 +45,8 @@ export const Switch: React.FC<SwitchProps> = ({
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledby}
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
