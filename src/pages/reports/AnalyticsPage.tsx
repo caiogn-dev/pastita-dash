@@ -31,6 +31,7 @@ import { HeatmapSection, ChannelsSection, AbcBasketSection } from './sections/Sa
 import { GeographySection } from './sections/GeographySection';
 import { OperationsSection } from './sections/OperationsSections';
 import { CrmSection, FinanceSection, BotReviewsSection } from './sections/CrmFinanceBotSections';
+import { OverviewSummarySection } from './sections/OverviewSummarySection';
 
 type GroupBy = 'day' | 'week' | 'month';
 type TabValue =
@@ -698,7 +699,12 @@ const AnalyticsPage: React.FC = () => {
         </div>
       )}
       {activeTab === 'customers' && renderCustomers()}
-      {activeTab === 'overview' && renderOverview()}
+      {activeTab === 'overview' && (
+        <div className="flex flex-col gap-6">
+          <OverviewSummarySection range={range} enabled />
+          {renderOverview()}
+        </div>
+      )}
       {activeTab === 'peaks' && (
         <div className="flex flex-col gap-6">
           <HeatmapSection range={range} enabled />

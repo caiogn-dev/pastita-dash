@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { DeliveryZone, StoreLocation } from '../../services/delivery';
+import { GOOGLE_MAPS_KEY, loadGoogleMaps } from './loadGoogleMaps';
 
-const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || '';
 const DEFAULT_CENTER = { lat: -10.1853248, lng: -48.3037058 };
 const COLORS = [
   { fill: 'rgba(249, 115, 22, 0.12)', stroke: '#F97316' },
@@ -10,28 +10,6 @@ const COLORS = [
   { fill: 'rgba(33, 150, 243, 0.10)', stroke: '#2196F3' },
   { fill: 'rgba(255, 87, 34, 0.10)',  stroke: '#FF5722' },
 ];
-
-let _gmLoadPromise: Promise<void> | null = null;
-
-const loadGoogleMaps = (): Promise<void> => {
-  if ((window as any).google?.maps?.Map) return Promise.resolve();
-  if (_gmLoadPromise) return _gmLoadPromise;
-
-  _gmLoadPromise = new Promise((resolve, reject) => {
-    const callbackName = '__gmReadyDeliveryZones__';
-    (window as any)[callbackName] = () => resolve();
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&callback=${callbackName}&loading=async`;
-    script.async = true;
-    script.onerror = () => {
-      _gmLoadPromise = null;
-      reject(new Error('Failed to load Google Maps JS API'));
-    };
-    document.head.appendChild(script);
-  });
-
-  return _gmLoadPromise;
-};
 
 export type DeliveryZonesMapProps = {
   storeLocation?: StoreLocation | null;

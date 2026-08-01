@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { RankBarList } from '../../../components/reports/RankBarList';
+import { OrdersHeatMap } from '../../../components/maps/OrdersHeatMap';
 import type { GeographyReport, DateRange } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { SectionCard, EmptyNote, MiniTable, ExportCsvButton, formatBRL } from './shared';
@@ -15,6 +16,22 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
 
   return (
     <div className="flex flex-col gap-6">
+      <SectionCard
+        title="Mapa de calor de pedidos"
+        subtitle={
+          (d?.points?.length ?? 0) > 0
+            ? `${d?.points.length} pedidos com localização exata no período — círculo maior/mais forte = mais valor`
+            : undefined
+        }
+        loading={q.isLoading}
+      >
+        {(d?.points?.length ?? 0) === 0 ? (
+          <EmptyNote text="Nenhum pedido com coordenada exata no período (pedidos do bot e pins de WhatsApp alimentam o mapa)." />
+        ) : (
+          <OrdersHeatMap points={d?.points ?? []} />
+        )}
+      </SectionCard>
+
       <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
         <SectionCard
           title="Bairros que mais pedem"
@@ -64,11 +81,6 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
           </SectionCard>
         </div>
       </div>
-      {(d?.points?.length ?? 0) > 0 && (
-        <p className="text-xs text-fg-muted-token">
-          {d?.points.length} pedidos com coordenada exata no período (base do futuro mapa de calor).
-        </p>
-      )}
     </div>
   );
 };
