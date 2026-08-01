@@ -6,7 +6,34 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { GOOGLE_MAPS_KEY, loadGoogleMaps } from './loadGoogleMaps';
 
-export interface HeatPoint { lat: number; lng: number; total: number }
+export interface HeatPoint {
+  lat: number;
+  lng: number;
+  total: number;
+  order_number?: string;
+  customer_name?: string;
+  neighborhood?: string;
+  created_at?: string;
+}
+
+const escapeHtml = (v: string) =>
+  v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const pointInfoHtml = (p: HeatPoint) => {
+  const total = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.total);
+  const date = p.created_at
+    ? new Date(p.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    : '';
+  return `
+    <div style="font-family:inherit;color:#1f2937;min-width:180px;line-height:1.5">
+      <strong style="font-size:13px">${escapeHtml(p.customer_name || 'Cliente')}</strong><br/>
+      <span style="font-size:12px;color:#6b7280">
+        Pedido ${escapeHtml(p.order_number || '—')}${date ? ` · ${date}` : ''}<br/>
+        ${escapeHtml(p.neighborhood || '')}
+      </span><br/>
+      <span style="font-size:14px;font-weight:700;color:#a16207">${total}</span>
+    </div>`;
+};
 
 const DEFAULT_CENTER = { lat: -10.1853248, lng: -48.3037058 };
 
@@ -59,6 +86,7 @@ export const OrdersHeatMap: React.FC<{ points: HeatPoint[]; height?: string }> =
 
     const maxTotal = Math.max(...points.map((p) => p.total), 1);
     const bounds = new maps.LatLngBounds();
+    const info = new maps.InfoWindow();
 
     points.forEach((p) => {
       const weight = p.total / maxTotal; // 0..1
@@ -71,6 +99,13 @@ export const OrdersHeatMap: React.FC<{ points: HeatPoint[]; height?: string }> =
         strokeColor: '#D4AF37',
         strokeOpacity: 0.5,
         strokeWeight: 1,
+        clickable: true,
+      });
+      // Clique no círculo → cartão com cliente, nº do pedido, bairro e valor
+      circle.addListener('click', () => {
+        info.setContent(pointInfoHtml(p));
+        info.setPosition({ lat: p.lat, lng: p.lng });
+        info.open({ map });
       });
       circlesRef.current.push(circle);
       bounds.extend({ lat: p.lat, lng: p.lng });

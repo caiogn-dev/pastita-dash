@@ -8,7 +8,7 @@ import { RankBarList } from '../../../components/reports/RankBarList';
 import { OrdersHeatMap } from '../../../components/maps/OrdersHeatMap';
 import type { GeographyReport, DateRange } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
-import { SectionCard, EmptyNote, MiniTable, ExportCsvButton, formatBRL } from './shared';
+import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL } from './shared';
 
 export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
   const q = useAnalyticsReport<GeographyReport>('geography', range, enabled);
@@ -20,7 +20,7 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
         title="Mapa de calor de pedidos"
         subtitle={
           (d?.points?.length ?? 0) > 0
-            ? `${d?.points.length} pedidos com localização exata no período — círculo maior/mais forte = mais valor`
+            ? `${d?.points.length} pedidos com localização exata — toque num círculo para ver cliente, pedido e valor`
             : undefined
         }
         loading={q.isLoading}
@@ -51,14 +51,13 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
           {(d?.neighborhoods?.length ?? 0) === 0 ? (
             <EmptyNote text="Nenhum pedido de entrega com bairro no período." />
           ) : (
-            <MiniTable
-              headers={[
-                { label: 'Bairro' }, { label: 'Cidade' },
-                { label: 'Pedidos', align: 'right' }, { label: 'Receita', align: 'right' },
-              ]}
-              rows={(d?.neighborhoods ?? []).slice(0, 15).map((n) => [
-                n.name, n.city || '—', n.orders, formatBRL(n.revenue),
-              ])}
+            <RankedList
+              items={(d?.neighborhoods ?? []).slice(0, 15).map((n) => ({
+                label: n.name,
+                sub: [n.city, `${n.orders} pedido${n.orders > 1 ? 's' : ''}`].filter(Boolean).join(' · '),
+                value: n.revenue,
+                valueLabel: formatBRL(n.revenue),
+              }))}
             />
           )}
         </SectionCard>

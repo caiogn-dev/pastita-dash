@@ -11,7 +11,7 @@ import type {
   SlaReport, CancellationsReport, SchedulingReport, CashHistoryReport, StaffReport, DateRange,
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
-import { SectionCard, EmptyNote, MiniTable, ExportCsvButton, formatBRL } from './shared';
+import { SectionCard, EmptyNote, MiniTable, RankedList, ExportCsvButton, formatBRL } from './shared';
 
 const STAGE_LABELS: Record<string, string> = {
   confirmacao: 'Até confirmar',
@@ -87,14 +87,13 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
           {(staff.data?.staff?.length ?? 0) === 0 ? (
             <EmptyNote text="Nenhum pedido lançado pelo PDV no período." />
           ) : (
-            <MiniTable
-              headers={[
-                { label: 'Operador' }, { label: 'Pedidos', align: 'right' },
-                { label: 'Receita', align: 'right' }, { label: 'Descontos manuais', align: 'right' },
-              ]}
-              rows={(staff.data?.staff ?? []).map((s) => [
-                s.name, s.orders, formatBRL(s.revenue), formatBRL(s.manual_discounts),
-              ])}
+            <RankedList
+              items={(staff.data?.staff ?? []).map((s) => ({
+                label: s.name,
+                sub: `${s.orders} pedido${s.orders > 1 ? 's' : ''} · ${formatBRL(s.manual_discounts)} em descontos manuais`,
+                value: s.revenue,
+                valueLabel: formatBRL(s.revenue),
+              }))}
             />
           )}
         </SectionCard>

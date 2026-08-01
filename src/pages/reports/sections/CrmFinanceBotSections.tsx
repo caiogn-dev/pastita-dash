@@ -10,7 +10,7 @@ import type {
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { Link } from 'react-router-dom';
-import { SectionCard, EmptyNote, MiniTable, ExportCsvButton, formatBRL, paymentLabel } from './shared';
+import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel } from './shared';
 
 // ─── Clientes (RFM + inativos) ───────────────────────────────────────────────
 
@@ -63,18 +63,15 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
         {inactive.length === 0 ? (
           <EmptyNote text="Ninguém sumido há 60+ dias. 🎉" />
         ) : (
-          <MiniTable
-            headers={[
-              { label: 'Cliente' }, { label: 'Dias sem pedir', align: 'right' },
-              { label: 'Pedidos', align: 'right' }, { label: 'Total gasto', align: 'right' }, { label: '' },
-            ]}
-            rows={inactive.slice(0, 25).map((c) => [
-              c.name || c.phone,
-              c.days_since,
-              c.total_orders,
-              formatBRL(c.total_spent),
-              c.phone ? (
-                <span key="acts" className="flex items-center gap-3 justify-end">
+          <RankedList
+            items={inactive.slice(0, 25).map((c) => ({
+              label: c.name || c.phone,
+              sub: `${c.days_since} dias sem pedir · ${c.total_orders} pedido${c.total_orders > 1 ? 's' : ''}`,
+              value: c.total_spent,
+              valueLabel: formatBRL(c.total_spent),
+              danger: c.days_since >= 120,
+              actions: c.phone ? (
+                <span className="flex items-center gap-2 justify-end mt-0.5 text-xs">
                   <Link
                     to={`/inbox/whatsapp?search=${encodeURIComponent(c.phone.replace(/\D/g, ''))}`}
                     className="text-brand font-semibold hover:underline"
@@ -92,8 +89,8 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
                     Chamar
                   </a>
                 </span>
-              ) : '—',
-            ])}
+              ) : undefined,
+            }))}
           />
         )}
       </SectionCard>
@@ -210,14 +207,13 @@ export const FinanceSection: React.FC<{ range: DateRange; enabled: boolean }> = 
         {(coupons.data?.coupons?.length ?? 0) === 0 ? (
           <EmptyNote text="Nenhum cupom usado no período." />
         ) : (
-          <MiniTable
-            headers={[
-              { label: 'Código' }, { label: 'Usos', align: 'right' },
-              { label: 'Desconto dado', align: 'right' }, { label: 'Receita gerada', align: 'right' }, { label: 'Ticket', align: 'right' },
-            ]}
-            rows={(coupons.data?.coupons ?? []).map((c) => [
-              c.code, c.orders, formatBRL(c.discount_total), formatBRL(c.revenue), formatBRL(c.avg_ticket),
-            ])}
+          <RankedList
+            items={(coupons.data?.coupons ?? []).map((c) => ({
+              label: c.code,
+              sub: `${c.orders} uso${c.orders > 1 ? 's' : ''} · ${formatBRL(c.discount_total)} em desconto · ticket ${formatBRL(c.avg_ticket)}`,
+              value: c.revenue,
+              valueLabel: formatBRL(c.revenue),
+            }))}
           />
         )}
       </SectionCard>
@@ -305,19 +301,16 @@ export const BotReviewsSection: React.FC<{ range: DateRange; enabled: boolean }>
                   <h3 className="text-sm font-semibold text-fg-muted-token mb-2">
                     Nota por produto (piores primeiro)
                   </h3>
-                  <MiniTable
-                    headers={[
-                      { label: 'Produto' },
-                      { label: 'Nota', align: 'right' },
-                      { label: 'Avaliações', align: 'right' },
-                    ]}
-                    rows={(reviews.data?.by_product ?? []).slice(0, 10).map((p) => [
-                      p.product_name,
-                      <span key="n" className={p.avg_rating < 3.5 ? 'text-red-500 font-semibold' : ''}>
-                        {p.avg_rating.toFixed(1)} ★
-                      </span>,
-                      p.count,
-                    ])}
+                  <RankedList
+                    medals={false}
+                    max={5}
+                    items={(reviews.data?.by_product ?? []).slice(0, 10).map((p) => ({
+                      label: p.product_name,
+                      sub: `${p.count} avaliaç${p.count > 1 ? 'ões' : 'ão'}`,
+                      value: p.avg_rating,
+                      valueLabel: `${p.avg_rating.toFixed(1)} ★`,
+                      danger: p.avg_rating < 3.5,
+                    }))}
                   />
                 </div>
               )}

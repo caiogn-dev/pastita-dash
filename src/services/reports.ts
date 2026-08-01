@@ -272,7 +272,10 @@ export interface ChannelsReport {
 export interface GeographyReport {
   neighborhoods: Array<{ name: string; city: string; orders: number; revenue: number }>;
   distance_bands: Array<{ band: string; orders: number; revenue: number }>;
-  points: Array<{ lat: number; lng: number; total: number }>;
+  points: Array<{
+    lat: number; lng: number; total: number;
+    order_number?: string; customer_name?: string; neighborhood?: string; created_at?: string;
+  }>;
   zones: Array<{ name: string; orders: number; revenue: number }>;
 }
 

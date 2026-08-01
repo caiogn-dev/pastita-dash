@@ -9,7 +9,7 @@ import type {
   HeatmapReport, ChannelsReport, AbcReport, BasketReport, MenuMatrixReport, DateRange,
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
-import { SectionCard, EmptyNote, MiniTable, ExportCsvButton, formatBRL, paymentLabel, deliveryLabel } from './shared';
+import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel, deliveryLabel } from './shared';
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const CHANNEL_LABELS: Record<string, string> = { web: 'Cardápio Web', bot: 'Bot WhatsApp', pdv: 'PDV/Balcão' };
@@ -217,18 +217,14 @@ export const AbcBasketSection: React.FC<{ range: DateRange; enabled: boolean }> 
         {(abc.data?.products?.length ?? 0) === 0 ? (
           <EmptyNote />
         ) : (
-          <MiniTable
-            headers={[
-              { label: 'Produto' }, { label: 'Classe' },
-              { label: 'Qtd', align: 'right' }, { label: 'Receita', align: 'right' }, { label: '% acum.', align: 'right' },
-            ]}
-            rows={(abc.data?.products ?? []).slice(0, 20).map((p) => [
-              p.product_name,
-              <Badge key="b" tone={ABC_TONE[p.abc_class]}>{p.abc_class}</Badge>,
-              p.quantity,
-              formatBRL(p.revenue),
-              `${p.cumulative_pct.toFixed(0)}%`,
-            ])}
+          <RankedList
+            items={(abc.data?.products ?? []).slice(0, 20).map((p) => ({
+              label: p.product_name,
+              badge: <Badge tone={ABC_TONE[p.abc_class]}>{p.abc_class}</Badge>,
+              sub: `${p.quantity} vendidos · ${p.cumulative_pct.toFixed(0)}% acumulado`,
+              value: p.revenue,
+              valueLabel: formatBRL(p.revenue),
+            }))}
           />
         )}
       </SectionCard>
