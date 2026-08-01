@@ -301,6 +301,7 @@ export interface ReviewsReport {
   summary: { avg_rating: number | null; count: number };
   distribution: Array<{ rating: number; count: number }>;
   recent: Array<{ rating: number; comment: string; customer_name: string; created_at: string }>;
+  by_product: Array<{ product_name: string; avg_rating: number; count: number }>;
 }
 
 export interface CouponsReport {

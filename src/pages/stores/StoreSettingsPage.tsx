@@ -80,6 +80,7 @@ export const StoreSettingsPage: React.FC = () => {
   const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig>(defaultDeliveryConfig);
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
+  const [googleReviewUrl, setGoogleReviewUrl] = useState('');
   const [storeForm, setStoreForm] = useState({
     name: '',
     email: '',
@@ -122,6 +123,7 @@ export const StoreSettingsPage: React.FC = () => {
       });
 
       const metadata = data.metadata || {};
+      setGoogleReviewUrl(String(metadata.google_review_url || ''));
       setDeliveryConfig({
         delivery_base_fee: Number(metadata.delivery_base_fee) || defaultDeliveryConfig.delivery_base_fee,
         delivery_fee_per_km: Number(metadata.delivery_fee_per_km) || defaultDeliveryConfig.delivery_fee_per_km,
@@ -169,6 +171,23 @@ export const StoreSettingsPage: React.FC = () => {
     } catch (error) {
       logger.error('Error saving store:', error);
       toast.error('Erro ao salvar informações da loja');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveGoogleReview = async () => {
+    if (!effectiveStoreId) return;
+    setSaving(true);
+    try {
+      await updateStore(effectiveStoreId, {
+        metadata: { ...(store?.metadata || {}), google_review_url: googleReviewUrl.trim() },
+      });
+      toast.success('Link de avaliação do Google salvo!');
+      loadStore();
+    } catch (error) {
+      logger.error('Error saving google review url:', error);
+      toast.error('Erro ao salvar link de avaliação');
     } finally {
       setSaving(false);
     }
@@ -693,6 +712,31 @@ export const StoreSettingsPage: React.FC = () => {
           </div>
           <Button onClick={handleSaveMetaTracking} disabled={saving} className="mt-6 w-full justify-center">
             {saving ? 'Salvando...' : 'Salvar Rastreamento'}
+          </Button>
+        </Card>
+
+        <Card className="p-6">
+          <h3 className="text-base font-semibold text-fg-token">Avaliações no Google</h3>
+          <p className="text-sm text-fg-muted-token mt-1">
+            Com o link preenchido, quem dá 5 estrelas no WhatsApp recebe o convite para avaliar
+            no Google e ganha um cupom de 5% ao confirmar. Sem link, o fluxo de avaliação
+            continua normal, só sem essa etapa.
+          </p>
+          <div className="mt-4">
+            <label className="text-sm text-fg-muted-token">Link de avaliação do Google</label>
+            <input
+              type="url"
+              value={googleReviewUrl}
+              onChange={(e) => setGoogleReviewUrl(e.target.value)}
+              placeholder="https://g.page/r/SEU_CODIGO/review"
+              className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+            <p className="text-xs text-fg-muted-token mt-1">
+              No Perfil da Empresa no Google: {'"Pedir avaliações"'} → copiar link.
+            </p>
+          </div>
+          <Button onClick={handleSaveGoogleReview} disabled={saving} className="mt-4 w-full justify-center">
+            {saving ? 'Salvando...' : 'Salvar Link de Avaliação'}
           </Button>
         </Card>
 

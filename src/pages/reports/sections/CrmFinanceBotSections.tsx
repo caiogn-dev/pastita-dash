@@ -275,6 +275,17 @@ export const BotReviewsSection: React.FC<{ range: DateRange; enabled: boolean }>
         title="Avaliações"
         subtitle={rsum?.count ? `Nota média ${rsum.avg_rating?.toFixed(1)} ★ em ${rsum.count} avaliações` : undefined}
         loading={reviews.isLoading}
+        action={
+          <ExportCsvButton
+            rows={reviews.data?.by_product ?? []}
+            columns={[
+              { key: 'product_name', label: 'Produto' },
+              { key: 'avg_rating', label: 'Nota média' },
+              { key: 'count', label: 'Avaliações' },
+            ]}
+            filename="notas_por_produto.csv"
+          />
+        }
       >
         {(rsum?.count ?? 0) === 0 ? (
           <EmptyNote text="Nenhuma avaliação no período." />
@@ -288,7 +299,28 @@ export const BotReviewsSection: React.FC<{ range: DateRange; enabled: boolean }>
               }))}
               hideZero={false}
             />
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
+              {(reviews.data?.by_product?.length ?? 0) > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-fg-muted-token mb-2">
+                    Nota por produto (piores primeiro)
+                  </h3>
+                  <MiniTable
+                    headers={[
+                      { label: 'Produto' },
+                      { label: 'Nota', align: 'right' },
+                      { label: 'Avaliações', align: 'right' },
+                    ]}
+                    rows={(reviews.data?.by_product ?? []).slice(0, 10).map((p) => [
+                      p.product_name,
+                      <span key="n" className={p.avg_rating < 3.5 ? 'text-red-500 font-semibold' : ''}>
+                        {p.avg_rating.toFixed(1)} ★
+                      </span>,
+                      p.count,
+                    ])}
+                  />
+                </div>
+              )}
               {(reviews.data?.recent ?? []).filter((r) => r.comment).slice(0, 5).map((r, i) => (
                 <div key={i} className="border border-border-token rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
