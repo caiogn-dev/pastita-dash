@@ -7,7 +7,7 @@ import React from 'react';
 import { RankBarList } from '../../../components/reports/RankBarList';
 import type { GeographyReport, DateRange } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
-import { SectionCard, EmptyNote, MiniTable, formatBRL } from './shared';
+import { SectionCard, EmptyNote, MiniTable, ExportCsvButton, formatBRL } from './shared';
 
 export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
   const q = useAnalyticsReport<GeographyReport>('geography', range, enabled);
@@ -20,6 +20,16 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
           title="Bairros que mais pedem"
           subtitle="Receita por bairro de entrega no período"
           loading={q.isLoading}
+          action={
+            <ExportCsvButton
+              rows={d?.neighborhoods ?? []}
+              columns={[
+                { key: 'name', label: 'Bairro' }, { key: 'city', label: 'Cidade' },
+                { key: 'orders', label: 'Pedidos' }, { key: 'revenue', label: 'Receita' },
+              ]}
+              filename="bairros.csv"
+            />
+          }
         >
           {(d?.neighborhoods?.length ?? 0) === 0 ? (
             <EmptyNote text="Nenhum pedido de entrega com bairro no período." />

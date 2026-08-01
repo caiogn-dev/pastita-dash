@@ -9,7 +9,8 @@ import type {
   RfmReport, FinanceReport, CouponsReport, BotFunnelReport, ReviewsReport, DateRange,
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
-import { SectionCard, EmptyNote, MiniTable, formatBRL } from './shared';
+import { Link } from 'react-router-dom';
+import { SectionCard, EmptyNote, MiniTable, ExportCsvButton, formatBRL, paymentLabel } from './shared';
 
 // ─── Clientes (RFM + inativos) ───────────────────────────────────────────────
 
@@ -47,6 +48,17 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
         title="Clientes para reengajar"
         subtitle="Sem pedir há 60+ dias, ordenados por valor histórico — um toque no WhatsApp resolve"
         loading={q.isLoading}
+        action={
+          <ExportCsvButton
+            rows={inactive}
+            columns={[
+              { key: 'name', label: 'Cliente' }, { key: 'phone', label: 'Telefone' },
+              { key: 'days_since', label: 'Dias sem pedir' }, { key: 'total_orders', label: 'Pedidos' },
+              { key: 'total_spent', label: 'Total gasto' },
+            ]}
+            filename="clientes_inativos.csv"
+          />
+        }
       >
         {inactive.length === 0 ? (
           <EmptyNote text="Ninguém sumido há 60+ dias. 🎉" />
@@ -62,15 +74,24 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
               c.total_orders,
               formatBRL(c.total_spent),
               c.phone ? (
-                <a
-                  key="wa"
-                  href={`https://wa.me/${c.phone.replace(/\D/g, '')}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-brand font-semibold hover:underline"
-                >
-                  Chamar
-                </a>
+                <span key="acts" className="flex items-center gap-3 justify-end">
+                  <Link
+                    to={`/inbox/whatsapp?search=${encodeURIComponent(c.phone.replace(/\D/g, ''))}`}
+                    className="text-brand font-semibold hover:underline"
+                    title="Abrir conversa no inbox"
+                  >
+                    Conversa
+                  </Link>
+                  <a
+                    href={`https://wa.me/${c.phone.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand font-semibold hover:underline"
+                    title="Chamar no WhatsApp"
+                  >
+                    Chamar
+                  </a>
+                </span>
               ) : '—',
             ])}
           />
@@ -100,14 +121,14 @@ export const FinanceSection: React.FC<{ range: DateRange; enabled: boolean }> = 
           <div>
             <h3 className="text-sm font-semibold text-fg-muted-token mb-3">Por método</h3>
             <RankBarList
-              items={(fin.data?.by_method ?? []).map((r) => ({ label: String(r.payment_method), value: Number(r.net) }))}
+              items={(fin.data?.by_method ?? []).map((r) => ({ label: paymentLabel(r.payment_method), value: Number(r.net) }))}
               valueFormat={formatBRL}
             />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-fg-muted-token mb-3">Por gateway</h3>
             <RankBarList
-              items={(fin.data?.by_gateway ?? []).map((r) => ({ label: String(r.gateway), value: Number(r.net) }))}
+              items={(fin.data?.by_gateway ?? []).map((r) => ({ label: paymentLabel(r.gateway), value: Number(r.net) }))}
               valueFormat={formatBRL}
             />
           </div>
@@ -118,6 +139,17 @@ export const FinanceSection: React.FC<{ range: DateRange; enabled: boolean }> = 
         title="Cupons"
         subtitle={coupons.data ? `${coupons.data.summary.coupon_usage_pct}% dos pedidos usaram cupom · ${formatBRL(coupons.data.summary.total_discount)} em descontos` : undefined}
         loading={coupons.isLoading}
+        action={
+          <ExportCsvButton
+            rows={coupons.data?.coupons ?? []}
+            columns={[
+              { key: 'code', label: 'Código' }, { key: 'orders', label: 'Usos' },
+              { key: 'discount_total', label: 'Desconto dado' }, { key: 'revenue', label: 'Receita gerada' },
+              { key: 'avg_ticket', label: 'Ticket médio' },
+            ]}
+            filename="cupons.csv"
+          />
+        }
       >
         {(coupons.data?.coupons?.length ?? 0) === 0 ? (
           <EmptyNote text="Nenhum cupom usado no período." />

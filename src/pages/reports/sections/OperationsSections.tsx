@@ -11,7 +11,7 @@ import type {
   SlaReport, CancellationsReport, SchedulingReport, CashHistoryReport, StaffReport, DateRange,
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
-import { SectionCard, EmptyNote, MiniTable, formatBRL } from './shared';
+import { SectionCard, EmptyNote, MiniTable, ExportCsvButton, formatBRL } from './shared';
 
 const STAGE_LABELS: Record<string, string> = {
   confirmacao: 'Até confirmar',
@@ -78,7 +78,7 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
           {(sched.data?.by_slot?.length ?? 0) === 0 ? (
             <EmptyNote text="Nenhum agendamento no período." />
           ) : (
-            <RankBarList items={(sched.data?.by_slot ?? []).map((s) => ({ label: s.slot, value: s.orders }))} />
+            <RankBarList items={(sched.data?.by_slot ?? []).map((s) => ({ label: s.slot === 'sem_horario' ? 'Sem horário' : s.slot, value: s.orders }))} />
           )}
         </SectionCard>
 
@@ -105,6 +105,17 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
         title="Histórico de caixa"
         subtitle={cash.data ? `${cash.data.summary.count} fechamentos · quebra acumulada ${formatBRL(cash.data.summary.total_difference)}` : undefined}
         loading={cash.isLoading}
+        action={
+          <ExportCsvButton
+            rows={cash.data?.sessions ?? []}
+            columns={[
+              { key: 'opened_at', label: 'Abertura' }, { key: 'closed_at', label: 'Fechamento' },
+              { key: 'closed_by', label: 'Operador' }, { key: 'expected_amount', label: 'Esperado' },
+              { key: 'counted_amount', label: 'Contado' }, { key: 'difference', label: 'Quebra' },
+            ]}
+            filename="caixas.csv"
+          />
+        }
       >
         {(cash.data?.sessions?.length ?? 0) === 0 ? (
           <EmptyNote text="Nenhum caixa fechado no período." />
