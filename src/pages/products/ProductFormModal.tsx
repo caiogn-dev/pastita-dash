@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { Card, Button } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
+import DescriptionEditor from './DescriptionEditor';
 import storesApi, {
   StoreProduct as Product,
   StoreProductInput as ProductInput,
@@ -508,18 +509,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 <label className="block text-sm font-medium text-fg-token mb-1">
                   Descrição Completa
                 </label>
-                <textarea
+                <DescriptionEditor
                   value={formData.description || ''}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                  onChange={(description) => setFormData((prev) => ({ ...prev, description }))}
                   rows={5}
-                  className="w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
                   placeholder={'Massa artesanal de *500g*, serve _2 pessoas_.\n\nAcompanha:\n- Molho da casa\n- Queijo ralado\n\nModo de preparo: aqueça por 10 min'}
                 />
-                <p className="mt-1 text-xs text-fg-muted-token">
-                  Formatação no cardápio: <strong>*negrito*</strong>, <em>_itálico_</em>, <s>~riscado~</s>,
-                  linhas com <code>-</code> viram lista e {'"Rótulo:"'} no início da linha sai em destaque
-                  (ex.: {'"Serve: 2 pessoas"'}).
-                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
