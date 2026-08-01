@@ -341,6 +341,21 @@ export interface StaffReport {
   }>;
 }
 
+export interface MenuMatrixReport {
+  products: Array<{
+    product_name: string; quantity: number; revenue: number;
+    unit_margin: number; margin_pct: number;
+    quadrant: 'estrela' | 'burro_de_carga' | 'enigma' | 'abacaxi';
+  }>;
+  missing_cost: Array<{ product_name: string; quantity: number; revenue: number }>;
+  summary: { analyzed: number; missing_cost: number };
+}
+
+export interface CohortReport {
+  cohorts: Array<{ cohort: string; size: number; retention: Array<number | null> }>;
+  horizon: number;
+}
+
 /** Fetcher genérico dos relatórios de analytics (todos GET store+período). */
 export const getAnalyticsReport = async <T>(path: string, params: DateRange = {}): Promise<T> => {
   try {

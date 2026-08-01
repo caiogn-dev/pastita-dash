@@ -6,7 +6,7 @@ import React from 'react';
 import { Badge } from '../../../components/ui';
 import { RankBarList } from '../../../components/reports/RankBarList';
 import type {
-  HeatmapReport, ChannelsReport, AbcReport, BasketReport, DateRange,
+  HeatmapReport, ChannelsReport, AbcReport, BasketReport, MenuMatrixReport, DateRange,
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { SectionCard, EmptyNote, MiniTable, ExportCsvButton, formatBRL, paymentLabel, deliveryLabel } from './shared';
@@ -116,6 +116,82 @@ export const ChannelsSection: React.FC<{ range: DateRange; enabled: boolean }> =
 };
 
 const ABC_TONE: Record<string, 'success' | 'warning' | 'neutral'> = { A: 'success', B: 'warning', C: 'neutral' };
+
+const QUADRANTS: Array<{
+  key: MenuMatrixReport['products'][number]['quadrant'];
+  label: string;
+  hint: string;
+  tone: 'success' | 'warning' | 'neutral' | 'danger';
+}> = [
+  { key: 'estrela', label: '⭐ Estrelas', hint: 'Vendem muito e lucram muito — destaque no cardápio', tone: 'success' },
+  { key: 'burro_de_carga', label: '🐴 Burros de carga', hint: 'Vendem muito, lucram pouco — suba o preço ou corte custo', tone: 'warning' },
+  { key: 'enigma', label: '❓ Enigmas', hint: 'Lucram muito, vendem pouco — promova mais', tone: 'neutral' },
+  { key: 'abacaxi', label: '🍍 Abacaxis', hint: 'Vendem pouco e lucram pouco — repense ou remova', tone: 'danger' },
+];
+
+export const MenuMatrixSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
+  const q = useAnalyticsReport<MenuMatrixReport>('menu-matrix', range, enabled);
+  const products = q.data?.products ?? [];
+  const missing = q.data?.missing_cost ?? [];
+
+  return (
+    <SectionCard
+      title="Engenharia de cardápio"
+      subtitle="Popularidade × margem de contribuição — precisa do custo preenchido no produto"
+      loading={q.isLoading}
+      action={
+        <ExportCsvButton
+          rows={products}
+          columns={[
+            { key: 'product_name', label: 'Produto' }, { key: 'quadrant', label: 'Quadrante' },
+            { key: 'quantity', label: 'Qtd' }, { key: 'revenue', label: 'Receita' },
+            { key: 'unit_margin', label: 'Margem unit.' }, { key: 'margin_pct', label: '% Margem' },
+          ]}
+          filename="engenharia_cardapio.csv"
+        />
+      }
+    >
+      {products.length === 0 ? (
+        <EmptyNote text="Nenhum produto vendido no período tem custo cadastrado — preencha o campo Custo no editor de produto para liberar a matriz." />
+      ) : (
+        <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-4">
+          {QUADRANTS.map((quad) => {
+            const items = products.filter((p) => p.quadrant === quad.key);
+            return (
+              <div key={quad.key} className="border border-border-token rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-semibold text-fg-token">{quad.label}</span>
+                  <Badge tone={quad.tone}>{items.length}</Badge>
+                </div>
+                <p className="text-xs text-fg-muted-token mb-3">{quad.hint}</p>
+                {items.length === 0 ? (
+                  <p className="text-xs text-fg-muted-token">Nenhum produto aqui.</p>
+                ) : (
+                  <ul className="flex flex-col gap-1.5">
+                    {items.map((p) => (
+                      <li key={p.product_name} className="flex justify-between gap-2 text-sm">
+                        <span className="truncate text-fg-token" title={p.product_name}>{p.product_name}</span>
+                        <span className="shrink-0 text-fg-muted-token tabular-nums">
+                          {p.quantity}× · {formatBRL(p.unit_margin)}/un
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {missing.length > 0 && products.length > 0 && (
+        <p className="text-xs text-fg-muted-token mt-4">
+          {missing.length} produto{missing.length > 1 ? 's' : ''} fora da matriz por falta de custo cadastrado:{' '}
+          {missing.slice(0, 5).map((m) => m.product_name).join(', ')}{missing.length > 5 ? '…' : ''}
+        </p>
+      )}
+    </SectionCard>
+  );
+};
 
 export const AbcBasketSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
   const abc = useAnalyticsReport<AbcReport>('abc', range, enabled);

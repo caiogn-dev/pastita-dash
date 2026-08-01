@@ -27,10 +27,10 @@ import {
   useCustomersReport,
   useOrdersCharts,
 } from '../../hooks/queries/useReports';
-import { HeatmapSection, ChannelsSection, AbcBasketSection } from './sections/SalesSections';
+import { HeatmapSection, ChannelsSection, AbcBasketSection, MenuMatrixSection } from './sections/SalesSections';
 import { GeographySection } from './sections/GeographySection';
 import { OperationsSection } from './sections/OperationsSections';
-import { CrmSection, FinanceSection, BotReviewsSection } from './sections/CrmFinanceBotSections';
+import { CrmSection, CohortSection, FinanceSection, BotReviewsSection } from './sections/CrmFinanceBotSections';
 import { OverviewSummarySection } from './sections/OverviewSummarySection';
 
 type GroupBy = 'day' | 'week' | 'month';
@@ -696,6 +696,7 @@ const AnalyticsPage: React.FC = () => {
         <div className="flex flex-col gap-6">
           {renderProducts()}
           <AbcBasketSection range={range} enabled />
+          <MenuMatrixSection range={range} enabled />
         </div>
       )}
       {activeTab === 'customers' && renderCustomers()}
@@ -713,7 +714,12 @@ const AnalyticsPage: React.FC = () => {
       )}
       {activeTab === 'geo' && <GeographySection range={range} enabled />}
       {activeTab === 'operations' && <OperationsSection range={range} enabled />}
-      {activeTab === 'crm' && <CrmSection range={range} enabled />}
+      {activeTab === 'crm' && (
+        <div className="flex flex-col gap-6">
+          <CrmSection range={range} enabled />
+          <CohortSection range={range} enabled />
+        </div>
+      )}
       {activeTab === 'finance' && <FinanceSection range={range} enabled />}
       {activeTab === 'bot' && <BotReviewsSection range={range} enabled />}
     </div>

@@ -6,7 +6,7 @@ import React from 'react';
 import { StatCard, Badge } from '../../../components/ui';
 import { RankBarList } from '../../../components/reports/RankBarList';
 import type {
-  RfmReport, FinanceReport, CouponsReport, BotFunnelReport, ReviewsReport, DateRange,
+  RfmReport, FinanceReport, CouponsReport, BotFunnelReport, ReviewsReport, CohortReport, DateRange,
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { Link } from 'react-router-dom';
@@ -98,6 +98,62 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
         )}
       </SectionCard>
     </div>
+  );
+};
+
+export const CohortSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
+  const q = useAnalyticsReport<CohortReport>('cohort', range, enabled);
+  const cohorts = q.data?.cohorts ?? [];
+  const horizon = q.data?.horizon ?? 5;
+
+  return (
+    <SectionCard
+      title="Retenção por safra"
+      subtitle="% dos clientes do 1º pedido em cada mês que voltaram nos meses seguintes"
+      loading={q.isLoading}
+    >
+      {cohorts.length === 0 ? (
+        <EmptyNote text="Ainda não há clientes suficientes para montar safras." />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border-token">
+                <th className="pb-2 px-2 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted-token">Safra</th>
+                <th className="pb-2 px-2 text-right text-xs font-semibold uppercase tracking-wide text-fg-muted-token">Clientes</th>
+                {Array.from({ length: horizon }, (_, i) => (
+                  <th key={i} className="pb-2 px-2 text-center text-xs font-semibold uppercase tracking-wide text-fg-muted-token">
+                    M+{i + 1}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {cohorts.map((c) => (
+                <tr key={c.cohort} className="border-b border-border-token/40 last:border-0">
+                  <td className="py-2 px-2 font-medium text-fg-token">{c.cohort}</td>
+                  <td className="py-2 px-2 text-right text-fg-token tabular-nums">{c.size}</td>
+                  {c.retention.map((pct, i) => (
+                    <td key={i} className="py-2 px-2 text-center">
+                      {pct == null ? (
+                        <span className="text-fg-muted-token">—</span>
+                      ) : (
+                        <span
+                          className="inline-block min-w-[3.2rem] rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums text-fg-token"
+                          style={{ backgroundColor: `color-mix(in srgb, var(--brand) ${Math.max(8, Math.min(pct, 100))}%, transparent)` }}
+                        >
+                          {pct.toFixed(0)}%
+                        </span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </SectionCard>
   );
 };
 
