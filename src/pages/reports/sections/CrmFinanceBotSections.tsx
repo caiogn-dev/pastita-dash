@@ -4,7 +4,6 @@
  */
 import React from 'react';
 import { StatCard, Badge } from '../../../components/ui';
-import { RankBarList } from '../../../components/reports/RankBarList';
 import type {
   RfmReport, FinanceReport, CouponsReport, BotFunnelReport, ReviewsReport, CohortReport, DateRange,
 } from '../../../services/reports';
@@ -173,16 +172,26 @@ export const FinanceSection: React.FC<{ range: DateRange; enabled: boolean }> = 
         <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6 mt-6">
           <div>
             <h3 className="text-sm font-semibold text-fg-muted-token mb-3">Por método</h3>
-            <RankBarList
-              items={(fin.data?.by_method ?? []).map((r) => ({ label: paymentLabel(r.payment_method), value: Number(r.net) }))}
-              valueFormat={formatBRL}
+            <RankedList
+              medals={false}
+              items={(fin.data?.by_method ?? []).map((r) => ({
+                label: paymentLabel(r.payment_method),
+                sub: `${r.count} pagamentos`,
+                value: Number(r.net),
+                valueLabel: formatBRL(Number(r.net)),
+              }))}
             />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-fg-muted-token mb-3">Por gateway</h3>
-            <RankBarList
-              items={(fin.data?.by_gateway ?? []).map((r) => ({ label: paymentLabel(r.gateway), value: Number(r.net) }))}
-              valueFormat={formatBRL}
+            <RankedList
+              medals={false}
+              items={(fin.data?.by_gateway ?? []).map((r) => ({
+                label: paymentLabel(r.gateway),
+                sub: `${r.count} pagamentos`,
+                value: Number(r.net),
+                valueLabel: formatBRL(Number(r.net)),
+              }))}
             />
           </div>
         </div>
@@ -257,11 +266,13 @@ export const BotReviewsSection: React.FC<{ range: DateRange; enabled: boolean }>
         {(bot.data?.funnel?.length ?? 0) === 0 ? (
           <EmptyNote text="Nenhuma sessão de bot no período." />
         ) : (
-          <RankBarList
+          <RankedList
+            medals={false}
             items={(bot.data?.funnel ?? []).map((f) => ({
               label: FUNNEL_LABELS[f.status] || f.status,
               value: f.count,
-              tone: f.status === 'cart_abandoned' || f.status === 'expired' ? 'danger' : 'brand',
+              valueLabel: `${f.count} ${f.count > 1 ? 'sessões' : 'sessão'}`,
+              danger: f.status === 'cart_abandoned' || f.status === 'expired',
             }))}
           />
         )}
@@ -287,13 +298,14 @@ export const BotReviewsSection: React.FC<{ range: DateRange; enabled: boolean }>
           <EmptyNote text="Nenhuma avaliação no período." />
         ) : (
           <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
-            <RankBarList
+            <RankedList
+              medals={false}
               items={(reviews.data?.distribution ?? []).map((d) => ({
                 label: `${d.rating} ★`,
                 value: d.count,
-                tone: d.rating <= 2 ? 'danger' : 'brand',
+                valueLabel: `${d.count}`,
+                danger: d.rating <= 2,
               }))}
-              hideZero={false}
             />
             <div className="flex flex-col gap-4">
               {(reviews.data?.by_product?.length ?? 0) > 0 && (

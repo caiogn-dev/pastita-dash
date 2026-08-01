@@ -16,7 +16,7 @@ import { toCsv, downloadCsv } from '../../utils/csv';
 import { formatAxisCurrency } from '../../utils/formatters';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
-import { RankBarList, type RankBarItem } from '../../components/reports/RankBarList';
+import { RankedList } from './sections/shared';
 import { ReportsFilterBar } from '../../components/reports/ReportsFilterBar';
 import { reportsService, type DateRange } from '../../services/reports';
 import {
@@ -300,34 +300,17 @@ const AnalyticsPage: React.FC = () => {
         <Card className="p-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-fg-token">Produtos Mais Vendidos</h2>
-            <Badge tone="neutral">Top {productsReport?.top_products.length || 0}</Badge>
+            <Badge tone="neutral">Top 5</Badge>
           </div>
           {productsLoading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border-token">
-                    <th className="pb-2 text-left text-fg-muted-token font-medium">Produto</th>
-                    <th className="pb-2 text-right text-fg-muted-token font-medium">Qtd</th>
-                    <th className="pb-2 text-right text-fg-muted-token font-medium">Receita</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productsReport?.top_products.slice(0, 5).map((p, i) => (
-                    <tr key={p.product_id || i} className="border-b border-border-token last:border-0">
-                      <td className="py-2">
-                        <div className="flex items-center gap-2">
-                          {i < 3 && <StarIcon className={`w-4 h-4 flex-shrink-0 ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-400' : 'text-orange-400'}`} style={{ fill: 'currentColor' }} />}
-                          <span className="truncate max-w-[150px] text-fg-token">{p.product_name}</span>
-                        </div>
-                      </td>
-                      <td className="py-2 text-right font-medium text-fg-token">{p.total_quantity}</td>
-                      <td className="py-2 text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(p.total_revenue)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <RankedList
+              items={(productsReport?.top_products || []).slice(0, 5).map((p) => ({
+                label: p.product_name,
+                sub: `${p.total_quantity} vendidos`,
+                value: p.total_revenue,
+                valueLabel: formatCurrency(p.total_revenue),
+              }))}
+            />
           )}
         </Card>
 
@@ -377,11 +360,14 @@ const AnalyticsPage: React.FC = () => {
       .reduce((acc, [, v]) => acc + (Number(v) || 0), 0);
     const cancelPct = totalOrders > 0 ? (cancelled / totalOrders) * 100 : 0;
 
-    const statusItems: RankBarItem[] = Object.entries(statuses).map(([k, v]) => ({
-      label: ORDER_STATUS_LABELS[k] || k,
-      value: Number(v) || 0,
-      tone: NEGATIVE_STATUSES.has(k) ? 'danger' : 'brand',
-    }));
+    const statusItems = Object.entries(statuses)
+      .map(([k, v]) => ({
+        label: ORDER_STATUS_LABELS[k] || k,
+        value: Number(v) || 0,
+        danger: NEGATIVE_STATUSES.has(k),
+      }))
+      .filter((s) => s.value > 0)
+      .sort((a, b) => b.value - a.value);
 
     return (
       <div className="flex flex-col gap-6">
@@ -417,7 +403,7 @@ const AnalyticsPage: React.FC = () => {
           {ordersLoading ? (
             <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
           ) : (
-            <RankBarList items={statusItems} />
+            <RankedList items={statusItems} medals={false} />
           )}
         </Card>
       </div>
@@ -446,36 +432,22 @@ const AnalyticsPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-token">
-                  <th className="pb-2 text-left text-fg-muted-token font-medium px-2">Produto</th>
-                  <th className="pb-2 text-left text-fg-muted-token font-medium px-2">SKU</th>
-                  <th className="pb-2 text-left text-fg-muted-token font-medium px-2">Categoria</th>
-                  <th className="pb-2 text-right text-fg-muted-token font-medium px-2">Estoque</th>
-                  <th className="pb-2 text-right text-fg-muted-token font-medium px-2">Preço</th>
-                  <th className="pb-2 text-left text-fg-muted-token font-medium px-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stockReport?.low_stock_products.map((p) => (
-                  <tr key={p.id} className="border-b border-border-token last:border-0">
-                    <td className="py-2 px-2 font-medium text-fg-token">{p.name}</td>
-                    <td className="py-2 px-2 text-fg-muted-token">{p.sku || '-'}</td>
-                    <td className="py-2 px-2"><Badge tone="neutral">{p.category || 'Sem categoria'}</Badge></td>
-                    <td className="py-2 px-2 text-right">
-                      <Badge tone={p.stock_quantity === 0 ? 'danger' : 'warning'}>{p.stock_quantity || 0}</Badge>
-                    </td>
-                    <td className="py-2 px-2 text-right text-fg-token">{formatCurrency(p.price)}</td>
-                    <td className="py-2 px-2">
-                      <Badge tone={p.status === 'active' ? 'success' : 'neutral'}>{p.status === 'active' ? 'Ativo' : 'Inativo'}</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <RankedList
+            medals={false}
+            max={stockReport?.summary.low_stock_threshold || 10}
+            items={(stockReport?.low_stock_products || []).map((p) => ({
+              label: p.name,
+              badge: (
+                <Badge tone={(p.stock_quantity || 0) === 0 ? 'danger' : 'warning'}>
+                  {(p.stock_quantity || 0) === 0 ? 'Esgotado' : `${p.stock_quantity} restantes`}
+                </Badge>
+              ),
+              sub: [p.sku, p.category || 'Sem categoria', formatCurrency(p.price)].filter(Boolean).join(' · '),
+              value: p.stock_quantity || 0,
+              valueLabel: `${p.stock_quantity || 0} un`,
+              danger: (p.stock_quantity || 0) === 0,
+            }))}
+          />
         )}
       </Card>
     </div>
@@ -529,50 +501,22 @@ const AnalyticsPage: React.FC = () => {
   const renderProducts = () => (
     <div className="flex flex-col gap-6">
       <Card className="p-4">
-        <h2 className="text-lg font-semibold text-fg-token mb-4">Top produtos por receita</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-fg-token">Performance de Produtos</h2>
+          <Badge tone="neutral">{productsReport?.top_products.length || 0} produtos</Badge>
+        </div>
         {productsLoading ? (
           <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
         ) : (
-          <RankBarList
-            items={(productsReport?.top_products || []).map((p) => ({ label: p.product_name, value: p.total_revenue }))}
-            valueFormat={formatCurrency}
-            max={8}
+          <RankedList
+            items={(productsReport?.top_products || []).map((p) => ({
+              label: p.product_name,
+              sub: `${p.total_quantity} vendidos · ${p.order_count} pedidos${p.current_stock != null ? ` · ${p.current_stock} em estoque` : ''}`,
+              value: p.total_revenue,
+              valueLabel: formatCurrency(p.total_revenue),
+            }))}
           />
         )}
-      </Card>
-      <Card className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-fg-token">Performance de Produtos</h2>
-        <Badge tone="neutral">{productsReport?.top_products.length || 0} produtos</Badge>
-      </div>
-      {productsLoading ? (
-        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-token">
-                <th className="pb-2 text-left text-fg-muted-token font-medium px-2">Produto</th>
-                <th className="pb-2 text-right text-fg-muted-token font-medium px-2">Qtd</th>
-                <th className="pb-2 text-right text-fg-muted-token font-medium px-2">Pedidos</th>
-                <th className="pb-2 text-right text-fg-muted-token font-medium px-2">Receita</th>
-                <th className="pb-2 text-right text-fg-muted-token font-medium px-2">Estoque</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(productsReport?.top_products || []).map((p, i) => (
-                <tr key={p.product_id || `${p.product_name}-${i}`} className="border-b border-border-token last:border-0">
-                  <td className="py-2 px-2 font-medium text-fg-token">{p.product_name}</td>
-                  <td className="py-2 px-2 text-right text-fg-token">{p.total_quantity}</td>
-                  <td className="py-2 px-2 text-right text-fg-token">{p.order_count}</td>
-                  <td className="py-2 px-2 text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(p.total_revenue)}</td>
-                  <td className="py-2 px-2 text-right text-fg-muted-token">{p.current_stock ?? '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
       </Card>
     </div>
   );
@@ -586,46 +530,20 @@ const AnalyticsPage: React.FC = () => {
         <KpiCard title="Retenção" value={`${customersReport?.summary.retention_rate || 0}%`} loading={customersLoading} />
       </div>
       <Card className="p-4">
-        <h2 className="text-lg font-semibold text-fg-token mb-4">Top clientes por total gasto</h2>
-        {customersLoading ? (
-          <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <RankBarList
-            items={(customersReport?.top_customers || []).map((c) => ({ label: c.name || 'Cliente', value: c.total_spent }))}
-            valueFormat={formatCurrency}
-            max={8}
-          />
-        )}
-      </Card>
-      <Card className="p-4">
         <h2 className="text-lg font-semibold text-fg-token mb-4">Melhores Clientes</h2>
         {customersLoading ? (
           <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-token">
-                  <th className="pb-2 text-left text-fg-muted-token font-medium px-2">Cliente</th>
-                  <th className="pb-2 text-left text-fg-muted-token font-medium px-2">Contato</th>
-                  <th className="pb-2 text-right text-fg-muted-token font-medium px-2">Pedidos</th>
-                  <th className="pb-2 text-right text-fg-muted-token font-medium px-2">Total</th>
-                  <th className="pb-2 text-right text-fg-muted-token font-medium px-2">Ticket Médio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(customersReport?.top_customers || []).map((c, i) => (
-                  <tr key={c.email || c.phone || `${c.name}-${i}`} className="border-b border-border-token last:border-0">
-                    <td className="py-2 px-2 font-medium text-fg-token">{c.name || 'Cliente'}</td>
-                    <td className="py-2 px-2 text-fg-muted-token">{c.phone || c.email || '-'}</td>
-                    <td className="py-2 px-2 text-right text-fg-token">{c.order_count}</td>
-                    <td className="py-2 px-2 text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(c.total_spent)}</td>
-                    <td className="py-2 px-2 text-right text-fg-token">{formatCurrency(c.avg_order_value)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <RankedList
+            items={(customersReport?.top_customers || []).map((c) => ({
+              label: c.name || 'Cliente',
+              sub: [c.phone || c.email, `${c.order_count} pedidos`, `ticket ${formatCurrency(c.avg_order_value)}`]
+                .filter(Boolean)
+                .join(' · '),
+              value: c.total_spent,
+              valueLabel: formatCurrency(c.total_spent),
+            }))}
+          />
         )}
       </Card>
     </div>

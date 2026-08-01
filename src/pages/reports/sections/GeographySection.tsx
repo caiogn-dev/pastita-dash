@@ -4,7 +4,6 @@
  * vêm no endpoint em `points`.)
  */
 import React from 'react';
-import { RankBarList } from '../../../components/reports/RankBarList';
 import { OrdersHeatMap } from '../../../components/maps/OrdersHeatMap';
 import type { GeographyReport, DateRange } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
@@ -63,18 +62,27 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
         </SectionCard>
         <div className="flex flex-col gap-6">
           <SectionCard title="Distância de entrega" subtitle="Pedidos por anel de distância" loading={q.isLoading}>
-            <RankBarList
-              items={(d?.distance_bands ?? []).map((b) => ({ label: b.band, value: b.orders }))}
-              hideZero={false}
+            <RankedList
+              medals={false}
+              items={(d?.distance_bands ?? []).map((b) => ({
+                label: b.band,
+                sub: formatBRL(b.revenue),
+                value: b.orders,
+                valueLabel: `${b.orders} pedido${b.orders > 1 ? 's' : ''}`,
+              }))}
             />
           </SectionCard>
           <SectionCard title="Zonas de entrega" loading={q.isLoading}>
             {(d?.zones?.length ?? 0) === 0 ? (
               <EmptyNote text="Sem zona registrada nos pedidos do período." />
             ) : (
-              <RankBarList
-                items={(d?.zones ?? []).map((z) => ({ label: z.name, value: z.revenue }))}
-                valueFormat={formatBRL}
+              <RankedList
+                items={(d?.zones ?? []).map((z) => ({
+                  label: z.name,
+                  sub: `${z.orders} pedido${z.orders > 1 ? 's' : ''}`,
+                  value: z.revenue,
+                  valueLabel: formatBRL(z.revenue),
+                }))}
               />
             )}
           </SectionCard>

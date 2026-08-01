@@ -4,7 +4,6 @@
  */
 import React from 'react';
 import { Badge } from '../../../components/ui';
-import { RankBarList } from '../../../components/reports/RankBarList';
 import type {
   HeatmapReport, ChannelsReport, AbcReport, BasketReport, MenuMatrixReport, DateRange,
 } from '../../../services/reports';
@@ -94,21 +93,36 @@ export const ChannelsSection: React.FC<{ range: DateRange; enabled: boolean }> =
   return (
     <div className="grid grid-cols-3 max-lg:grid-cols-1 gap-6">
       <SectionCard title="Por canal" subtitle="Bot × Cardápio × PDV" loading={q.isLoading}>
-        <RankBarList
-          items={(d?.by_source ?? []).map((r) => ({ label: CHANNEL_LABELS[r.channel] || r.channel, value: r.revenue }))}
-          valueFormat={formatBRL}
+        <RankedList
+          medals={false}
+          items={(d?.by_source ?? []).map((r) => ({
+            label: CHANNEL_LABELS[r.channel] || r.channel,
+            sub: `${r.orders} pedidos · ticket ${formatBRL(r.avg_ticket)}`,
+            value: r.revenue,
+            valueLabel: formatBRL(r.revenue),
+          }))}
         />
       </SectionCard>
       <SectionCard title="Por pagamento" loading={q.isLoading}>
-        <RankBarList
-          items={(d?.by_payment_method ?? []).map((r) => ({ label: paymentLabel(r.payment_method), value: Number(r.revenue) }))}
-          valueFormat={formatBRL}
+        <RankedList
+          medals={false}
+          items={(d?.by_payment_method ?? []).map((r) => ({
+            label: paymentLabel(r.payment_method),
+            sub: `${r.orders} pedidos`,
+            value: Number(r.revenue),
+            valueLabel: formatBRL(Number(r.revenue)),
+          }))}
         />
       </SectionCard>
       <SectionCard title="Entrega × retirada" loading={q.isLoading}>
-        <RankBarList
-          items={(d?.by_delivery_method ?? []).map((r) => ({ label: deliveryLabel(r.delivery_method), value: Number(r.revenue) }))}
-          valueFormat={formatBRL}
+        <RankedList
+          medals={false}
+          items={(d?.by_delivery_method ?? []).map((r) => ({
+            label: deliveryLabel(r.delivery_method),
+            sub: `${r.orders} pedidos`,
+            value: Number(r.revenue),
+            valueLabel: formatBRL(Number(r.revenue)),
+          }))}
         />
       </SectionCard>
     </div>
@@ -236,12 +250,13 @@ export const AbcBasketSection: React.FC<{ range: DateRange; enabled: boolean }> 
         {(basket.data?.pairs?.length ?? 0) === 0 ? (
           <EmptyNote />
         ) : (
-          <RankBarList
-            items={(basket.data?.pairs ?? []).map((p) => ({
+          <RankedList
+            items={(basket.data?.pairs ?? []).slice(0, 12).map((p) => ({
               label: `${p.product_a} + ${p.product_b}`,
+              sub: 'pedidos juntos no período',
               value: p.orders_together,
+              valueLabel: `${p.orders_together}×`,
             }))}
-            max={12}
           />
         )}
       </SectionCard>

@@ -6,7 +6,6 @@ import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { StatCard } from '../../../components/ui';
 import { TimeSeriesChart } from '../../../components/reports/TimeSeriesChart';
-import { RankBarList } from '../../../components/reports/RankBarList';
 import type {
   SlaReport, CancellationsReport, SchedulingReport, CashHistoryReport, StaffReport, DateRange,
 } from '../../../services/reports';
@@ -78,7 +77,14 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
           {(sched.data?.by_slot?.length ?? 0) === 0 ? (
             <EmptyNote text="Nenhum agendamento no período." />
           ) : (
-            <RankBarList items={(sched.data?.by_slot ?? []).map((s) => ({ label: s.slot === 'sem_horario' ? 'Sem horário' : s.slot, value: s.orders }))} />
+            <RankedList
+              medals={false}
+              items={(sched.data?.by_slot ?? []).map((s) => ({
+                label: s.slot === 'sem_horario' ? 'Sem horário' : s.slot,
+                value: s.orders,
+                valueLabel: `${s.orders} pedido${s.orders > 1 ? 's' : ''}`,
+              }))}
+            />
           )}
         </SectionCard>
 
