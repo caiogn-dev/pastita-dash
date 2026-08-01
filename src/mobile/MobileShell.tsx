@@ -35,7 +35,21 @@ export const MobileShell: React.FC = () => {
         <MobileTopBar />
         <main className="flex-1 overflow-auto pb-[calc(5rem+env(safe-area-inset-bottom))]">
           <InstallBanner />
-          {isHome ? renderTab(tab) : (<><MobilePageHeader /><Outlet /></>)}
+          {isHome ? (
+            renderTab(tab)
+          ) : (
+            <>
+              <MobilePageHeader />
+              {/* Contenção das páginas desktop no shell mobile: sem isso elas
+                  renderizam cruas (sem padding, estourando a largura — o
+                  "vaza páginas desktop" da auditoria). min-w-0 + overflow-x
+                  clipado no contêiner: tabelas/grades largas rolam DENTRO dos
+                  próprios wrappers overflow-x-auto, nunca a página inteira. */}
+              <div className="mobile-desktop-page min-w-0 max-w-full overflow-x-hidden px-3 py-3">
+                <Outlet />
+              </div>
+            </>
+          )}
         </main>
         <BottomNav />
       </div>

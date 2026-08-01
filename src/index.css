@@ -439,3 +439,26 @@ textarea::placeholder {
 .font-brand {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
+
+/* ── Shell mobile: páginas desktop contidas ─────────────────────────────────
+   Rotas sem versão mobile renderizam a página desktop dentro do shell.
+   Estas regras impedem o estouro horizontal: grades colapsam pra 1 coluna,
+   tabelas e blocos largos rolam dentro do próprio contêiner. */
+.mobile-desktop-page {
+  overscroll-behavior-x: none;
+}
+
+.mobile-desktop-page table {
+  min-width: 480px; /* legível; o wrapper overflow-x-auto cuida do resto */
+}
+
+.mobile-desktop-page .grid {
+  grid-template-columns: 1fr !important;
+}
+
+.mobile-desktop-page img,
+.mobile-desktop-page video,
+.mobile-desktop-page canvas {
+  max-width: 100%;
+  height: auto;
+}
