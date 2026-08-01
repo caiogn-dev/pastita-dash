@@ -23,7 +23,7 @@ import {
   DateRange,
 } from '../../services/reports';
 import { dashboardService } from '../../services/dashboard';
-import { getStoreSlugWithFallback } from '../useStore';
+import { useStoreSlugWithFallback } from '../useStore';
 import type { DashboardCharts } from '../../types/dashboard';
 
 type Period = '7d' | '30d' | '90d' | '1y';
@@ -46,41 +46,52 @@ const rangeToDays = (range: DateRange): number => {
   return PERIOD_TO_DAYS[range.period ?? '30d'];
 };
 
+// Todos os relatórios são buscados escopados à loja SELECIONADA
+// (reportsService.* injeta `store: getStoreSlugWithFallback()`). Por isso a loja
+// PRECISA fazer parte da queryKey — senão, ao trocar de loja, o React Query serve
+// o cache do tenant anterior (faturamento, nomes/e-mails/telefones de clientes de
+// OUTRA loja). Mesmo padrão já usado em `useOrdersCharts`.
+
 export function useDashboardStats(enabled: boolean) {
+  const store = useStoreSlugWithFallback() || undefined;
   return useQuery<DashboardStats>({
-    queryKey: ['reports', 'dashboard-stats'],
+    queryKey: ['reports', 'dashboard-stats', store],
     queryFn: () => reportsService.getDashboardStats(),
     enabled,
   });
 }
 
 export function useRevenueReport(range: DateRange, groupBy: GroupBy, enabled: boolean) {
+  const store = useStoreSlugWithFallback() || undefined;
   return useQuery<RevenueReport>({
-    queryKey: ['reports', 'revenue', range, groupBy],
+    queryKey: ['reports', 'revenue', range, groupBy, store],
     queryFn: () => reportsService.getRevenueReport({ ...range, group_by: groupBy }),
     enabled,
   });
 }
 
 export function useProductsReport(range: DateRange, enabled: boolean) {
+  const store = useStoreSlugWithFallback() || undefined;
   return useQuery<ProductsReport>({
-    queryKey: ['reports', 'products', range],
+    queryKey: ['reports', 'products', range, store],
     queryFn: () => reportsService.getProductsReport(range),
     enabled,
   });
 }
 
 export function useStockReport(enabled: boolean) {
+  const store = useStoreSlugWithFallback() || undefined;
   return useQuery<StockReport>({
-    queryKey: ['reports', 'stock'],
+    queryKey: ['reports', 'stock', store],
     queryFn: () => reportsService.getStockReport(),
     enabled,
   });
 }
 
 export function useCustomersReport(range: DateRange, enabled: boolean) {
+  const store = useStoreSlugWithFallback() || undefined;
   return useQuery<CustomersReport>({
-    queryKey: ['reports', 'customers', range],
+    queryKey: ['reports', 'customers', range, store],
     queryFn: () => reportsService.getCustomersReport(range),
     enabled,
   });
@@ -97,10 +108,10 @@ export function useAnalyticsReport<T>(path: string, range: DateRange, enabled: b
 }
 
 // Aba Pedidos: séries por dia (contagem) + distribuição por status, do endpoint
-// /core/dashboard/charts/. Escopo de loja via getStoreSlugWithFallback (mesmo
-// padrão dos demais relatórios).
+// /core/dashboard/charts/. Escopo de loja reativo (useStoreSlugWithFallback),
+// tanto na queryKey quanto no parâmetro do request — mesmo padrão dos demais.
 export function useOrdersCharts(range: DateRange, enabled: boolean) {
-  const store = getStoreSlugWithFallback() || undefined;
+  const store = useStoreSlugWithFallback() || undefined;
   return useQuery<DashboardCharts>({
     queryKey: ['reports', 'orders-charts', range, store],
     queryFn: () => dashboardService.getCharts({ days: rangeToDays(range), store }),
