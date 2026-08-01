@@ -511,10 +511,15 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 <textarea
                   value={formData.description || ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                  rows={4}
+                  rows={5}
                   className="w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
-                  placeholder="Descrição detalhada do produto..."
+                  placeholder={'Massa artesanal de *500g*, serve _2 pessoas_.\n\nAcompanha:\n- Molho da casa\n- Queijo ralado\n\nModo de preparo: aqueça por 10 min'}
                 />
+                <p className="mt-1 text-xs text-fg-muted-token">
+                  Formatação no cardápio: <strong>*negrito*</strong>, <em>_itálico_</em>, <s>~riscado~</s>,
+                  linhas com <code>-</code> viram lista e {'"Rótulo:"'} no início da linha sai em destaque
+                  (ex.: {'"Serve: 2 pessoas"'}).
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
