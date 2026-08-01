@@ -46,9 +46,13 @@ const rangeToDays = (range: DateRange): number => {
   return PERIOD_TO_DAYS[range.period ?? '30d'];
 };
 
+// TODAS as queryKeys carregam a loja selecionada — sem isso, trocar de loja
+// no seletor mostrava o cache da loja anterior (dados "zerados"/errados).
+const storeKey = () => getStoreSlugWithFallback() || 'no-store';
+
 export function useDashboardStats(enabled: boolean) {
   return useQuery<DashboardStats>({
-    queryKey: ['reports', 'dashboard-stats'],
+    queryKey: ['reports', 'dashboard-stats', storeKey()],
     queryFn: () => reportsService.getDashboardStats(),
     enabled,
   });
@@ -56,7 +60,7 @@ export function useDashboardStats(enabled: boolean) {
 
 export function useRevenueReport(range: DateRange, groupBy: GroupBy, enabled: boolean) {
   return useQuery<RevenueReport>({
-    queryKey: ['reports', 'revenue', range, groupBy],
+    queryKey: ['reports', 'revenue', storeKey(), range, groupBy],
     queryFn: () => reportsService.getRevenueReport({ ...range, group_by: groupBy }),
     enabled,
   });
@@ -64,7 +68,7 @@ export function useRevenueReport(range: DateRange, groupBy: GroupBy, enabled: bo
 
 export function useProductsReport(range: DateRange, enabled: boolean) {
   return useQuery<ProductsReport>({
-    queryKey: ['reports', 'products', range],
+    queryKey: ['reports', 'products', storeKey(), range],
     queryFn: () => reportsService.getProductsReport(range),
     enabled,
   });
@@ -72,7 +76,7 @@ export function useProductsReport(range: DateRange, enabled: boolean) {
 
 export function useStockReport(enabled: boolean) {
   return useQuery<StockReport>({
-    queryKey: ['reports', 'stock'],
+    queryKey: ['reports', 'stock', storeKey()],
     queryFn: () => reportsService.getStockReport(),
     enabled,
   });
@@ -80,7 +84,7 @@ export function useStockReport(enabled: boolean) {
 
 export function useCustomersReport(range: DateRange, enabled: boolean) {
   return useQuery<CustomersReport>({
-    queryKey: ['reports', 'customers', range],
+    queryKey: ['reports', 'customers', storeKey(), range],
     queryFn: () => reportsService.getCustomersReport(range),
     enabled,
   });
@@ -90,7 +94,7 @@ export function useCustomersReport(range: DateRange, enabled: boolean) {
 // path e o range; `enabled` segue o padrão das abas (só busca quando visível).
 export function useAnalyticsReport<T>(path: string, range: DateRange, enabled: boolean) {
   return useQuery<T>({
-    queryKey: ['reports', 'analytics', path, range],
+    queryKey: ['reports', 'analytics', path, storeKey(), range],
     queryFn: () => reportsService.getAnalyticsReport<T>(path, range),
     enabled,
   });
