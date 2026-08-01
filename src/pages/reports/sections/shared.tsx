@@ -58,6 +58,23 @@ export const EmptyNote: React.FC<{ text?: string }> = ({ text = 'Sem dados no pe
   <p className="text-sm text-fg-muted-token py-4">{text}</p>
 );
 
+/** Pill de variação ▲/▼ — verde quando bom, vermelho quando ruim. */
+export const DeltaPill: React.FC<{ pct: number | null | undefined; invert?: boolean }> = ({ pct, invert }) => {
+  if (pct == null) return null;
+  const good = invert ? pct <= 0 : pct >= 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${
+        good
+          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+          : 'bg-red-500/15 text-red-600 dark:text-red-400'
+      }`}
+    >
+      {pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%
+    </span>
+  );
+};
+
 export interface RankedItem {
   label: string;
   /** linha secundária sob o rótulo (ex.: cidade, qtd vendida). */

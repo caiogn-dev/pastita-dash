@@ -294,8 +294,14 @@ export interface InactiveCustomer {
   name: string; phone: string; days_since: number; total_orders: number; total_spent: number;
   typical_gap_days: number | null; overdue_factor: number | null;
 }
+export interface RfmCustomer {
+  name: string; phone: string; segment: string;
+  total_orders: number; total_spent: number; avg_ticket: number;
+  typical_gap_days: number | null; days_since: number | null;
+}
 export interface RfmReport {
   segments: RfmSegment[];
+  customers: RfmCustomer[];
   inactive: InactiveCustomer[];
   cadence: { avg_days_between_orders: number | null; customers_with_repeat: number };
 }

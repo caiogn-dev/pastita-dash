@@ -22,6 +22,15 @@ const SEGMENT_HINTS: Record<string, string> = {
   sem_pedido: 'Cadastro sem compra',
 };
 
+const SEGMENT_BADGE: Record<string, { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' }> = {
+  campeoes: { label: 'Campeão', tone: 'success' },
+  leais: { label: 'Leal', tone: 'success' },
+  novos: { label: 'Novo', tone: 'neutral' },
+  em_risco: { label: 'Em risco', tone: 'warning' },
+  perdidos: { label: 'Perdido', tone: 'danger' },
+  sem_pedido: { label: 'Sem pedido', tone: 'neutral' },
+};
+
 export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
   const q = useAnalyticsReport<RfmReport>('rfm', range, enabled);
   const segments = q.data?.segments ?? [];
@@ -51,6 +60,47 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
             tone="brand"
           />
         </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Cada cliente em números"
+        subtitle="Pedidos, gasto, ticket e ritmo de compra individuais — a média da base está no card Cadência acima"
+        loading={q.isLoading}
+        action={
+          <ExportCsvButton
+            rows={q.data?.customers ?? []}
+            columns={[
+              { key: 'name', label: 'Cliente' }, { key: 'phone', label: 'Telefone' },
+              { key: 'segment', label: 'Segmento' }, { key: 'total_orders', label: 'Pedidos' },
+              { key: 'total_spent', label: 'Total gasto' }, { key: 'avg_ticket', label: 'Ticket médio' },
+              { key: 'typical_gap_days', label: 'Pede a cada (dias)' }, { key: 'days_since', label: 'Dias desde o último' },
+            ]}
+            filename="clientes_metricas.csv"
+          />
+        }
+      >
+        {(q.data?.customers?.length ?? 0) === 0 ? (
+          <EmptyNote text="Nenhum cliente com pedido ainda." />
+        ) : (
+          <RankedList
+            items={(q.data?.customers ?? []).slice(0, 20).map((c) => {
+              const badge = SEGMENT_BADGE[c.segment];
+              return {
+                label: c.name || c.phone || 'Cliente',
+                badge: badge ? <Badge tone={badge.tone}>{badge.label}</Badge> : undefined,
+                sub: [
+                  `${c.total_orders} pedido${c.total_orders > 1 ? 's' : ''}`,
+                  `ticket ${formatBRL(c.avg_ticket)}`,
+                  c.typical_gap_days ? `pede a cada ~${c.typical_gap_days}d` : null,
+                  c.days_since != null ? `último há ${c.days_since}d` : null,
+                ].filter(Boolean).join(' · '),
+                value: c.total_spent,
+                valueLabel: formatBRL(c.total_spent),
+                danger: c.segment === 'perdidos',
+              };
+            })}
+          />
+        )}
       </SectionCard>
 
       <SectionCard

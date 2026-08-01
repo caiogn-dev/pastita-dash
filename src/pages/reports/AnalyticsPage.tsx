@@ -35,7 +35,7 @@ import { OverviewSummarySection } from './sections/OverviewSummarySection';
 
 type GroupBy = 'day' | 'week' | 'month';
 type TabValue =
-  | 'overview' | 'orders' | 'revenue' | 'products' | 'stock' | 'customers'
+  | 'overview' | 'orders' | 'products' | 'stock'
   | 'peaks' | 'geo' | 'operations' | 'crm' | 'finance' | 'bot';
 
 // Rótulos pt-BR dos status de pedido (para a distribuição na aba Pedidos).
@@ -111,8 +111,7 @@ const TAB_GROUPS: Array<{ group: string; tabs: { value: TabValue; label: string 
   {
     group: 'Vendas',
     tabs: [
-      { value: 'orders', label: 'Pedidos' },
-      { value: 'revenue', label: 'Faturamento' },
+      { value: 'orders', label: 'Pedidos & Faturamento' },
       { value: 'peaks', label: 'Picos & Canais' },
       { value: 'products', label: 'Produtos' },
       { value: 'stock', label: 'Estoque' },
@@ -121,8 +120,7 @@ const TAB_GROUPS: Array<{ group: string; tabs: { value: TabValue; label: string 
   {
     group: 'Clientes',
     tabs: [
-      { value: 'customers', label: 'Melhores' },
-      { value: 'crm', label: 'Segmentos' },
+      { value: 'crm', label: 'Clientes' },
       { value: 'bot', label: 'Bot & Avaliações' },
     ],
   },
@@ -148,9 +146,9 @@ const AnalyticsPage: React.FC = () => {
   // Cada relatório só é buscado quando a aba ativa precisa dele. A queryKey
   // (em useReports) garante que trocar groupBy só refaz o faturamento e que
   // navegar entre abas reaproveita o cache.
-  const needsRevenue = activeTab === 'overview' || activeTab === 'revenue';
+  const needsRevenue = activeTab === 'overview' || activeTab === 'orders';
   const needsProducts = activeTab === 'overview' || activeTab === 'products';
-  const needsCustomers = activeTab === 'overview' || activeTab === 'customers';
+  const needsCustomers = activeTab === 'overview' || activeTab === 'crm';
 
   const statsQuery = useDashboardStats(activeTab === 'overview');
   const revenueQuery = useRevenueReport(range, groupBy, needsRevenue);
@@ -183,11 +181,10 @@ const AnalyticsPage: React.FC = () => {
     : null;
 
   const activeTabLoading =
-    activeTab === 'orders' ? ordersLoading
-    : activeTab === 'revenue' ? revenueLoading
+    activeTab === 'orders' ? ordersLoading || revenueLoading
     : activeTab === 'products' ? productsLoading
     : activeTab === 'stock' ? stockLoading
-    : activeTab === 'customers' ? customersLoading
+    : activeTab === 'crm' ? customersLoading
     : statsLoading;
   const anyFetching = [
     statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery, ordersQuery,
@@ -256,24 +253,17 @@ const AnalyticsPage: React.FC = () => {
   };
 
   const exportForTab: Partial<Record<TabValue, () => void>> = {
-    revenue: handleExportRevenue,
+    orders: handleExportRevenue,
     products: handleExportProducts,
     stock: handleExportStock,
-    customers: handleExportCustomers,
+    crm: handleExportCustomers,
   };
 
   // ─── Overview Tab ──────────────────────────────────────────────────────────
 
   const renderOverview = () => (
     <div className="flex flex-col gap-6">
-      {/* KPI cards */}
-      <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-        <KpiCard title="Faturamento Hoje" value={formatCurrency(dashboardStats?.today.revenue || 0)} change={dashboardStats?.today.revenue_change_percent} tone="brand" loading={statsLoading} />
-        <KpiCard title="Pedidos Hoje" value={dashboardStats?.today.orders || 0} subtitle={`${dashboardStats?.week.orders || 0} esta semana`} loading={statsLoading} />
-        <KpiCard title="Pedidos Pendentes" value={dashboardStats?.alerts.pending_orders || 0} subtitle="Aguardando ação" tone="warning" loading={statsLoading} />
-        <KpiCard title="Estoque Baixo" value={dashboardStats?.alerts.low_stock_products || 0} subtitle="Produtos para repor" tone="warning" loading={statsLoading} />
-      </div>
-
+      {/* "Hoje" e alertas moram no herói do Resumo do período — sem parede de cards duplicada */}
       {/* Revenue chart */}
       <Card className="p-4">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
@@ -388,11 +378,46 @@ const AnalyticsPage: React.FC = () => {
     return (
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-          <KpiCard title="Pedidos no período" value={totalOrders} tone="brand" loading={ordersLoading} />
-          <KpiCard title="Média por dia" value={avgPerDay.toFixed(1).replace('.', ',')} loading={ordersLoading} />
-          <KpiCard title="Ticket médio" value={formatCurrency(avgTicket)} loading={ordersLoading} />
+          <KpiCard title="Faturamento pago" value={formatCurrency(revenueReport?.summary.total_revenue || 0)} tone="brand" loading={revenueLoading} />
+          <KpiCard title="Pedidos no período" value={totalOrders} subtitle={`${avgPerDay.toFixed(1).replace('.', ',')} por dia`} loading={ordersLoading} />
+          <KpiCard title="Ticket médio" value={formatCurrency(revenueReport?.summary.avg_order_value || avgTicket)} subtitle={`Taxas de entrega: ${formatCurrency(revenueReport?.summary.total_delivery_fees || 0)}`} loading={revenueLoading} />
           <KpiCard title="Cancelados" value={cancelled} subtitle={`${cancelPct.toFixed(1)}% do total`} tone="warning" loading={ordersLoading} />
         </div>
+
+        {/* Faturamento por período (fundido da antiga aba Faturamento) */}
+        <Card className="p-4">
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+            <h2 className="text-lg font-semibold text-fg-token">Faturamento por período</h2>
+            <div className="flex gap-2">
+              {(['day', 'week', 'month'] as GroupBy[]).map((g) => (
+                <button
+                  key={g}
+                  onClick={() => setGroupBy(g)}
+                  className={`px-3 py-1 text-sm rounded border transition-colors ${groupBy === g ? 'bg-brand text-white border-brand' : 'border-border-token text-fg-muted-token hover:bg-surface-2'}`}
+                >
+                  {g === 'day' ? 'Dia' : g === 'week' ? 'Semana' : 'Mês'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {revenueLoading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <TimeSeriesChart
+              data={revenueReport?.data || []}
+              xKey="period"
+              yKey="total_revenue"
+              label="Faturamento"
+              height={300}
+              valueFormat={formatCurrency}
+              yTickFormat={formatAxisCurrency}
+              xTickFormat={(v) => axisTickLabel(v, groupBy)}
+              tooltipLabelFormat={(v) => tooltipDateLabel(v, groupBy)}
+            />
+          )}
+        </Card>
 
         <Card className="p-4">
           <h2 className="text-lg font-semibold text-fg-token mb-4">Pedidos por dia</h2>
@@ -469,51 +494,6 @@ const AnalyticsPage: React.FC = () => {
     </div>
   );
 
-  const renderRevenue = () => (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-        <KpiCard title="Faturamento" value={formatCurrency(revenueReport?.summary.total_revenue || 0)} tone="brand" loading={revenueLoading} />
-        <KpiCard title="Pedidos" value={revenueReport?.summary.total_orders || 0} loading={revenueLoading} />
-        <KpiCard title="Ticket Médio" value={formatCurrency(revenueReport?.summary.avg_order_value || 0)} loading={revenueLoading} />
-        <KpiCard title="Taxas de Entrega" value={formatCurrency(revenueReport?.summary.total_delivery_fees || 0)} loading={revenueLoading} />
-      </div>
-      <Card className="p-4">
-        <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
-          <h2 className="text-lg font-semibold text-fg-token">Faturamento por Período</h2>
-          <div className="flex gap-2">
-            {(['day', 'week', 'month'] as GroupBy[]).map((g) => (
-              <button
-                key={g}
-                onClick={() => setGroupBy(g)}
-                className={`px-3 py-1 text-sm rounded border transition-colors ${groupBy === g ? 'bg-brand text-white border-brand' : 'border-border-token text-fg-muted-token hover:bg-surface-2'}`}
-              >
-                {g === 'day' ? 'Dia' : g === 'week' ? 'Semana' : 'Mês'}
-              </button>
-            ))}
-          </div>
-        </div>
-        {revenueLoading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <TimeSeriesChart
-            data={revenueReport?.data || []}
-            xKey="period"
-            yKey="total_revenue"
-            label="Faturamento"
-            color="#166534"
-            height={350}
-            valueFormat={formatCurrency}
-            yTickFormat={formatAxisCurrency}
-            xTickFormat={(v) => axisTickLabel(v, groupBy)}
-            tooltipLabelFormat={(v) => tooltipDateLabel(v, groupBy)}
-          />
-        )}
-      </Card>
-    </div>
-  );
-
   const renderProducts = () => (
     <div className="flex flex-col gap-6">
       <Card className="p-4">
@@ -537,31 +517,13 @@ const AnalyticsPage: React.FC = () => {
     </div>
   );
 
-  const renderCustomers = () => (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-        <KpiCard title="Clientes" value={customersReport?.summary.total_customers || 0} tone="brand" loading={customersLoading} />
-        <KpiCard title="Novos" value={customersReport?.summary.new_customers || 0} loading={customersLoading} />
-        <KpiCard title="Recorrentes" value={customersReport?.summary.returning_customers || 0} loading={customersLoading} />
-        <KpiCard title="Retenção" value={`${customersReport?.summary.retention_rate || 0}%`} loading={customersLoading} />
-      </div>
-      <Card className="p-4">
-        <h2 className="text-lg font-semibold text-fg-token mb-4">Melhores Clientes</h2>
-        {customersLoading ? (
-          <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <RankedList
-            items={(customersReport?.top_customers || []).map((c) => ({
-              label: c.name || 'Cliente',
-              sub: [c.phone || c.email, `${c.order_count} pedidos`, `ticket ${formatCurrency(c.avg_order_value)}`]
-                .filter(Boolean)
-                .join(' · '),
-              value: c.total_spent,
-              valueLabel: formatCurrency(c.total_spent),
-            }))}
-          />
-        )}
-      </Card>
+  // KPIs de base de clientes — abrem a aba Clientes, acima do perfil por cliente
+  const renderCustomersKpis = () => (
+    <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
+      <KpiCard title="Clientes" value={customersReport?.summary.total_customers || 0} tone="brand" loading={customersLoading} />
+      <KpiCard title="Novos" value={customersReport?.summary.new_customers || 0} loading={customersLoading} />
+      <KpiCard title="Recorrentes" value={customersReport?.summary.returning_customers || 0} loading={customersLoading} />
+      <KpiCard title="Retenção" value={`${customersReport?.summary.retention_rate || 0}%`} loading={customersLoading} />
     </div>
   );
 
@@ -634,7 +596,6 @@ const AnalyticsPage: React.FC = () => {
       {/* Tab Content */}
       {activeTab === 'orders' && renderOrders()}
       {activeTab === 'stock' && renderStock()}
-      {activeTab === 'revenue' && renderRevenue()}
       {activeTab === 'products' && (
         <div className="flex flex-col gap-6">
           {renderProducts()}
@@ -642,7 +603,6 @@ const AnalyticsPage: React.FC = () => {
           <MenuMatrixSection range={range} enabled />
         </div>
       )}
-      {activeTab === 'customers' && renderCustomers()}
       {activeTab === 'overview' && (
         <div className="flex flex-col gap-6">
           <OverviewSummarySection range={range} enabled />
@@ -659,6 +619,7 @@ const AnalyticsPage: React.FC = () => {
       {activeTab === 'operations' && <OperationsSection range={range} enabled />}
       {activeTab === 'crm' && (
         <div className="flex flex-col gap-6">
+          {renderCustomersKpis()}
           <CrmSection range={range} enabled />
           <CohortSection range={range} enabled />
         </div>
