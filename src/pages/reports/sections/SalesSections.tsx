@@ -8,6 +8,7 @@ import type {
   HeatmapReport, ChannelsReport, AbcReport, BasketReport, MenuMatrixReport, DateRange,
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
+import { DonutChart } from '../../../components/reports/DonutChart';
 import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel, deliveryLabel } from './shared';
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -90,41 +91,64 @@ export const HeatmapSection: React.FC<{ range: DateRange; enabled: boolean }> = 
 export const ChannelsSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
   const q = useAnalyticsReport<ChannelsReport>('channels', range, enabled);
   const d = q.data;
+
+  const mixCard = (
+    title: string,
+    subtitle: string | undefined,
+    rows: Array<{ label: string; sub: string; value: number }>,
+  ) => {
+    const total = rows.reduce((acc, r) => acc + r.value, 0);
+    return (
+      <SectionCard title={title} subtitle={subtitle} loading={q.isLoading}>
+        <DonutChart
+          data={rows.map((r) => ({ name: r.label, value: r.value }))}
+          centerLabel={formatBRL(total)}
+          centerSub="no período"
+          valueFormat={formatBRL}
+        />
+        <div className="mt-3">
+          <RankedList
+            medals={false}
+            items={rows.map((r) => ({
+              ...r,
+              sub: `${r.sub}${total ? ` · ${Math.round((r.value / total) * 100)}%` : ''}`,
+              valueLabel: formatBRL(r.value),
+            }))}
+          />
+        </div>
+      </SectionCard>
+    );
+  };
+
   return (
     <div className="grid grid-cols-3 max-lg:grid-cols-1 gap-6">
-      <SectionCard title="Por canal" subtitle="Bot × Cardápio × PDV" loading={q.isLoading}>
-        <RankedList
-          medals={false}
-          items={(d?.by_source ?? []).map((r) => ({
-            label: CHANNEL_LABELS[r.channel] || r.channel,
-            sub: `${r.orders} pedidos · ticket ${formatBRL(r.avg_ticket)}`,
-            value: r.revenue,
-            valueLabel: formatBRL(r.revenue),
-          }))}
-        />
-      </SectionCard>
-      <SectionCard title="Por pagamento" loading={q.isLoading}>
-        <RankedList
-          medals={false}
-          items={(d?.by_payment_method ?? []).map((r) => ({
-            label: paymentLabel(r.payment_method),
-            sub: `${r.orders} pedidos`,
-            value: Number(r.revenue),
-            valueLabel: formatBRL(Number(r.revenue)),
-          }))}
-        />
-      </SectionCard>
-      <SectionCard title="Entrega × retirada" loading={q.isLoading}>
-        <RankedList
-          medals={false}
-          items={(d?.by_delivery_method ?? []).map((r) => ({
-            label: deliveryLabel(r.delivery_method),
-            sub: `${r.orders} pedidos`,
-            value: Number(r.revenue),
-            valueLabel: formatBRL(Number(r.revenue)),
-          }))}
-        />
-      </SectionCard>
+      {mixCard(
+        'Por canal',
+        'Bot × Cardápio × PDV',
+        (d?.by_source ?? []).map((r) => ({
+          label: CHANNEL_LABELS[r.channel] || r.channel,
+          sub: `${r.orders} pedidos · ticket ${formatBRL(r.avg_ticket)}`,
+          value: r.revenue,
+        })),
+      )}
+      {mixCard(
+        'Por pagamento',
+        undefined,
+        (d?.by_payment_method ?? []).map((r) => ({
+          label: paymentLabel(r.payment_method),
+          sub: `${r.orders} pedidos`,
+          value: Number(r.revenue),
+        })),
+      )}
+      {mixCard(
+        'Entrega × retirada',
+        undefined,
+        (d?.by_delivery_method ?? []).map((r) => ({
+          label: deliveryLabel(r.delivery_method),
+          sub: `${r.orders} pedidos`,
+          value: Number(r.revenue),
+        })),
+      )}
     </div>
   );
 };

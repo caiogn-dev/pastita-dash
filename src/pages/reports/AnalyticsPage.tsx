@@ -105,19 +105,35 @@ const tooltipDateLabel = (l: unknown, gb: GroupBy) => {
   } catch { return String(l); }
 };
 
-const TABS: { value: TabValue; label: string }[] = [
-  { value: 'overview', label: 'Visão Geral' },
-  { value: 'orders', label: 'Pedidos' },
-  { value: 'revenue', label: 'Faturamento' },
-  { value: 'finance', label: 'Taxas & Cupons' },
-  { value: 'peaks', label: 'Picos & Canais' },
-  { value: 'geo', label: 'Geografia' },
-  { value: 'products', label: 'Produtos' },
-  { value: 'stock', label: 'Estoque' },
-  { value: 'customers', label: 'Clientes' },
-  { value: 'crm', label: 'Segmentos' },
-  { value: 'operations', label: 'Operação' },
-  { value: 'bot', label: 'Bot & Avaliações' },
+// Abas agrupadas por tema — a barra plana com 12 itens virava sopa de letras.
+const TAB_GROUPS: Array<{ group: string; tabs: { value: TabValue; label: string }[] }> = [
+  { group: 'Resumo', tabs: [{ value: 'overview', label: 'Visão Geral' }] },
+  {
+    group: 'Vendas',
+    tabs: [
+      { value: 'orders', label: 'Pedidos' },
+      { value: 'revenue', label: 'Faturamento' },
+      { value: 'peaks', label: 'Picos & Canais' },
+      { value: 'products', label: 'Produtos' },
+      { value: 'stock', label: 'Estoque' },
+    ],
+  },
+  {
+    group: 'Clientes',
+    tabs: [
+      { value: 'customers', label: 'Melhores' },
+      { value: 'crm', label: 'Segmentos' },
+      { value: 'bot', label: 'Bot & Avaliações' },
+    ],
+  },
+  {
+    group: 'Operação & Financeiro',
+    tabs: [
+      { value: 'operations', label: 'Operação' },
+      { value: 'geo', label: 'Geografia' },
+      { value: 'finance', label: 'Taxas & Cupons' },
+    ],
+  },
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -589,20 +605,29 @@ const AnalyticsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-1 mb-6 border-b border-border-token">
-        {TABS.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setActiveTab(t.value)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === t.value
-                ? 'border-brand text-brand'
-                : 'border-transparent text-fg-muted-token hover:text-fg-token'
-            }`}
-          >
-            {t.label}
-          </button>
+      {/* Tabs agrupadas por tema */}
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-2 mb-6 border-b border-border-token">
+        {TAB_GROUPS.map((g) => (
+          <div key={g.group} className="flex flex-col">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-fg-muted-token/70 px-1 mb-0.5">
+              {g.group}
+            </span>
+            <div className="flex">
+              {g.tabs.map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => setActiveTab(t.value)}
+                  className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                    activeTab === t.value
+                      ? 'border-brand text-brand'
+                      : 'border-transparent text-fg-muted-token hover:text-fg-token'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
