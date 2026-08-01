@@ -32,6 +32,34 @@ import { GeographySection } from './sections/GeographySection';
 import { OperationsSection } from './sections/OperationsSections';
 import { CrmSection, CohortSection, FinanceSection, BotReviewsSection } from './sections/CrmFinanceBotSections';
 import { OverviewSummarySection } from './sections/OverviewSummarySection';
+import { Link } from 'react-router-dom';
+import { LockClosedIcon } from '@heroicons/react/24/outline';
+import { useAnalyticsReport } from '../../hooks/queries/useReports';
+import type { HeatmapReport } from '../../services/reports';
+
+// 403 plan_upgrade_required nos endpoints de analytics → aba mostra o convite
+// de upgrade em vez de seções vazias.
+const isPlanLocked = (error: unknown): boolean => {
+  const e = error as { response?: { status?: number; data?: { code?: string } } } | null;
+  return e?.response?.status === 403 && e.response.data?.code === 'plan_upgrade_required';
+};
+
+const UpgradeCard: React.FC = () => (
+  <Card className="p-10 text-center">
+    <LockClosedIcon className="w-10 h-10 mx-auto text-brand" />
+    <h2 className="mt-3 text-lg font-semibold text-fg-token">Relatórios avançados são do plano Pro</h2>
+    <p className="mt-1 text-sm text-fg-muted-token max-w-md mx-auto">
+      Horários de pico, mapa de calor, segmentos de clientes, engenharia de cardápio e mais —
+      liberados no Pro e no Premium. A Visão Geral continua disponível no seu plano.
+    </p>
+    <Link
+      to="/assinatura"
+      className="inline-block mt-5 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+    >
+      Ver planos
+    </Link>
+  </Card>
+);
 
 type GroupBy = 'day' | 'week' | 'month';
 type TabValue =
@@ -149,6 +177,12 @@ const AnalyticsPage: React.FC = () => {
   const needsRevenue = activeTab === 'overview' || activeTab === 'orders';
   const needsProducts = activeTab === 'overview' || activeTab === 'products';
   const needsCustomers = activeTab === 'overview' || activeTab === 'crm';
+
+  // Sonda do gate de plano: qualquer endpoint avançado serve; heatmap é leve.
+  // Só dispara quando uma aba avançada está ativa (cacheada por loja+range).
+  const advancedTabs: TabValue[] = ['peaks', 'geo', 'operations', 'crm', 'finance', 'bot', 'products'];
+  const planProbe = useAnalyticsReport<HeatmapReport>('heatmap', range, advancedTabs.includes(activeTab));
+  const planLocked = isPlanLocked(planProbe.error);
 
   const statsQuery = useDashboardStats(activeTab === 'overview');
   const revenueQuery = useRevenueReport(range, groupBy, needsRevenue);
@@ -599,8 +633,14 @@ const AnalyticsPage: React.FC = () => {
       {activeTab === 'products' && (
         <div className="flex flex-col gap-6">
           {renderProducts()}
-          <AbcBasketSection range={range} enabled />
-          <MenuMatrixSection range={range} enabled />
+          {planLocked ? (
+            <UpgradeCard />
+          ) : (
+            <>
+              <AbcBasketSection range={range} enabled />
+              <MenuMatrixSection range={range} enabled />
+            </>
+          )}
         </div>
       )}
       {activeTab === 'overview' && (
@@ -609,23 +649,23 @@ const AnalyticsPage: React.FC = () => {
           {renderOverview()}
         </div>
       )}
-      {activeTab === 'peaks' && (
+      {activeTab === 'peaks' && (planLocked ? <UpgradeCard /> : (
         <div className="flex flex-col gap-6">
           <HeatmapSection range={range} enabled />
           <ChannelsSection range={range} enabled />
         </div>
-      )}
-      {activeTab === 'geo' && <GeographySection range={range} enabled />}
-      {activeTab === 'operations' && <OperationsSection range={range} enabled />}
-      {activeTab === 'crm' && (
+      ))}
+      {activeTab === 'geo' && (planLocked ? <UpgradeCard /> : <GeographySection range={range} enabled />)}
+      {activeTab === 'operations' && (planLocked ? <UpgradeCard /> : <OperationsSection range={range} enabled />)}
+      {activeTab === 'crm' && (planLocked ? <UpgradeCard /> : (
         <div className="flex flex-col gap-6">
           {renderCustomersKpis()}
           <CrmSection range={range} enabled />
           <CohortSection range={range} enabled />
         </div>
-      )}
-      {activeTab === 'finance' && <FinanceSection range={range} enabled />}
-      {activeTab === 'bot' && <BotReviewsSection range={range} enabled />}
+      ))}
+      {activeTab === 'finance' && (planLocked ? <UpgradeCard /> : <FinanceSection range={range} enabled />)}
+      {activeTab === 'bot' && (planLocked ? <UpgradeCard /> : <BotReviewsSection range={range} enabled />)}
     </div>
   );
 };
