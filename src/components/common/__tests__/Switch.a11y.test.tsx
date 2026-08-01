@@ -30,6 +30,26 @@ describe('Switch — acessibilidade (nome acessível)', () => {
     expect(toggle).toHaveAttribute('aria-checked', 'true');
   });
 
+  it('mantém o nome acessível estável ao alternar o estado (só aria-checked muda)', () => {
+    // O nome do switch deve identificar a configuração e permanecer estável; o
+    // estado é comunicado por aria-checked. Nome instável quebra anúncios de
+    // leitor de tela e a mira de controle por voz a cada toggle.
+    const { rerender } = render(
+      <Switch checked={false} onChange={() => {}} aria-label="Link Cardápio" />
+    );
+    expect(screen.getByRole('switch', { name: /link cardápio/i })).toHaveAttribute(
+      'aria-checked',
+      'false'
+    );
+
+    rerender(<Switch checked onChange={() => {}} aria-label="Link Cardápio" />);
+    // Mesmo nome acessível, apenas o estado mudou.
+    expect(screen.getByRole('switch', { name: /link cardápio/i })).toHaveAttribute(
+      'aria-checked',
+      'true'
+    );
+  });
+
   it('mantém o toggle funcional (onChange com valor invertido)', async () => {
     const onChange = jest.fn();
     const user = userEvent.setup();

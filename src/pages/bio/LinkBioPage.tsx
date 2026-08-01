@@ -366,7 +366,7 @@ const LinkBioPage: React.FC = () => {
                   </div>
                   <Switch
                     checked={link.is_active}
-                    aria-label={`${link.is_active ? 'Desativar' : 'Ativar'} link ${link.title}`}
+                    aria-label={`Link ${link.title}`}
                     onChange={() => handleToggleActive(link)}
                   />
                   <Button
