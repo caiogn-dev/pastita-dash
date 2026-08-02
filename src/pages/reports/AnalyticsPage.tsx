@@ -32,6 +32,7 @@ import { GeographySection } from './sections/GeographySection';
 import { OperationsSection } from './sections/OperationsSections';
 import { CrmSection, CohortSection, FinanceSection, BotReviewsSection } from './sections/CrmFinanceBotSections';
 import { OverviewSummarySection } from './sections/OverviewSummarySection';
+import { StoreScoreSection } from './sections/StoreScoreSection';
 import { Link } from 'react-router-dom';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 import { useAnalyticsReport } from '../../hooks/queries/useReports';
@@ -646,6 +647,7 @@ const AnalyticsPage: React.FC = () => {
       {activeTab === 'overview' && (
         <div className="flex flex-col gap-6">
           <OverviewSummarySection range={range} enabled />
+          <StoreScoreSection range={range} enabled />
           {renderOverview()}
         </div>
       )}
