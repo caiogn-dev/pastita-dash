@@ -328,6 +328,43 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   verde depois. Assegura nome acessível nos botões editar/excluir.
 - **Antes/depois:** 72→73 suítes, 307→309 testes; tsc limpo nos dois lados.
 
+## Baseline atual (2026-08-02)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **566 testes / 137 suítes verdes** (era 561/136 antes desta fatia; +5/+1).
+- `npm run build` (tsc && vite build, igual à CI/Vercel): **ok** (~23s).
+- `npm run lint`: 0 erros nos arquivos tocados (warnings pré-existentes intactos).
+
+## Histórico
+
+### 2026-08-02 — Acessibilidade: nome acessível no `Switch` compartilhado (item (a) do backlog)
+- **Medido:** o componente compartilhado `src/components/common/Switch.tsx` é um
+  `<button role="switch" aria-checked>` **sem nome acessível** — não aceitava
+  `aria-label` nem `aria-labelledby`. Em **todos os 3 pontos de uso** um leitor de
+  tela anunciava apenas "alternância, ligado/desligado", sem dizer o que o toggle
+  controla. O `<label>` que envolve o Switch em `LinkBioPage` **não** resolve: um
+  `<button>` não é um elemento rotulável, então a associação implícita do `<label>`
+  não vale — o controle continuava anônimo.
+- **Mudado (componente ativo):**
+  - `Switch.tsx` ganhou props opcionais `id`, `aria-label` e `aria-labelledby`,
+    repassadas ao `<button>` (mudança aditiva, sem alterar comportamento existente).
+  - `CompanyProfileDetailPage.tsx` (toggle "Aceitar pedidos pelo bot") →
+    `aria-labelledby="bot-order-enabled-label"`, reaproveitando o rótulo visível
+    que já existia (nome acessível = texto visível, melhor prática).
+  - `LinkBioPage.tsx`:
+    - toggles de seções do perfil (Cardápio/WhatsApp/Como chegar/Instagram) →
+      `aria-label="Exibir {seção} no perfil"`;
+    - toggle de cada link personalizado → `aria-label="Alternar visibilidade do
+      link {título}"` (nome estável, independente do estado; o estado vai em
+      `aria-checked`).
+- **Teste (TDD):** novo `src/components/common/__tests__/Switch.a11y.test.tsx` —
+  escrito **vermelho antes** (5/5 falhando: props não existiam), **verde depois**.
+  Cobre `role="switch"`, reflexo de `aria-checked`, nome via `aria-label` e via
+  `aria-labelledby`, disparo de `onChange` com valor negado e propagação de `id`.
+- **Antes/depois:** `npm test` 561/136 → **566 testes / 137 suítes**; tsc e build
+  limpos nos dois lados; lint sem novos warnings/erros nos arquivos tocados.
+
 ## Próximos passos priorizados
 
 1. **Segurança/deps (fatia rápida e segura):** aplicar `npm audit fix` (não-`--force`)
