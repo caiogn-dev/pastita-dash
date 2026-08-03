@@ -15,11 +15,12 @@ import {
   ChatBubbleLeftRightIcon,
   CalendarDaysIcon,
   TagIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { PageLoading } from '../../components/common';
+import { PageLoading, EmptyState } from '../../components/common';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
 import { getErrorMessage } from '../../services';
 import { StoreCustomer, StoreCustomerAddress, createCustomer, updateCustomer } from '../../services/storesApi';
@@ -499,6 +500,12 @@ export const CustomersPage: React.FC = () => {
     totalRevenue: Number(statsQuery.data?.total_revenue ?? 0),
   };
 
+  // Erro isolado da seção de KPIs: sem isto, uma falha do endpoint de stats
+  // deixava os cards com zeros ("Total 0", "Receita total R$ 0,00"), enganando
+  // o lojista a achar que perdeu todos os clientes/faturamento. Só tratamos como
+  // falha quando NÃO há dado em cache — com cache, mantemos os números anteriores.
+  const statsFailed = statsQuery.isError && statsQuery.data === undefined;
+
   useEffect(() => {
     if (customersQuery.error) toast.error(getErrorMessage(customersQuery.error));
   }, [customersQuery.error]);
@@ -520,12 +527,23 @@ export const CustomersPage: React.FC = () => {
     <div className="p-6 space-y-5">
 
       {/* ── KPIs ── */}
-      <div className="grid grid-cols-4 max-xl:grid-cols-2 gap-4">
-        <StatCard label="Total" value={kpis.total} />
-        <StatCard label="Ativos" value={kpis.active} tone="brand" />
-        <StatCard label="Com pedidos" value={kpis.withOrders} />
-        <StatCard label="Receita total" value={`R$ ${formatMoney(kpis.totalRevenue)}`} tone="brand" />
-      </div>
+      {statsFailed ? (
+        <Card>
+          <EmptyState
+            icon={<ExclamationTriangleIcon className="h-8 w-8 text-[var(--danger)]" />}
+            title="Não foi possível carregar os indicadores"
+            description="Os totais de clientes e receita não puderam ser carregados. Tente novamente."
+            action={{ label: 'Tentar novamente', onClick: refresh }}
+          />
+        </Card>
+      ) : (
+        <div className="grid grid-cols-4 max-xl:grid-cols-2 gap-4">
+          <StatCard label="Total" value={kpis.total} />
+          <StatCard label="Ativos" value={kpis.active} tone="brand" />
+          <StatCard label="Com pedidos" value={kpis.withOrders} />
+          <StatCard label="Receita total" value={`R$ ${formatMoney(kpis.totalRevenue)}`} tone="brand" />
+        </div>
+      )}
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
