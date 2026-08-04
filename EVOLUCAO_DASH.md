@@ -3,6 +3,50 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-04)
+
+- `npm ci`: ok. `npm audit`: **6 vulnerabilidades** (3 moderate, 3 high) — `postcss`
+  (high) é dev-only (build tooling); `react-router` (moderate, open redirect/backslash)
+  só sai com major para v7 (breaking, `^6.21.1` não cobre) — ambas ficam para fatia
+  dedicada com validação de build/rotas.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **563 testes / 137 suítes verdes** (era 561/136 antes desta fatia; +2
+  testes de a11y do `Switch`).
+- `npm run lint`: gate em 400 warnings; **264 warnings** (0 errors).
+
+## Histórico
+
+### 2026-08-04 — A11y: nome acessível no `Switch` compartilhado (última pendência da varredura icon-only)
+- **Medido:** `src/components/common/Switch.tsx` é um `<button role="switch">` com
+  `aria-checked`, mas **sem nome acessível**. Envolver o Switch num `<label>` (como
+  em `LinkBioPage`) **não** o nomeia — um `role="switch"` não herda nome de `<label>`
+  que apenas o envolve (buttons só pegam nome de conteúdo/`aria-label`/`aria-labelledby`).
+  Resultado: leitores de tela anunciavam "alternar, ligado/desligado" sem dizer **o quê**.
+  Era a pendência anotada nos próximos passos ("falta dar nome acessível ao primitivo
+  compartilhado `Switch.tsx`"). 3 usos ativos em rotas reais: `LinkBioPage` (2x —
+  toggles de blocos do link-in-bio e ativar/desativar links personalizados) e
+  `CompanyProfileDetailPage` (bot de pedidos).
+- **Mudado:**
+  - `components/common/Switch.tsx`: aceita `aria-label` e `aria-labelledby` e os
+    propaga ao `<button role="switch">`.
+  - `pages/bio/LinkBioPage.tsx`: `aria-label={\`Exibir ${label}\`}` nos toggles de
+    blocos e `aria-label={\`Ativar link ${link.title}\`}` no toggle de cada link.
+  - `pages/automation/CompanyProfileDetailPage.tsx`: `aria-labelledby` apontando para
+    o `<label id="bot-order-enabled-label">` já existente ("Aceitar pedidos pelo bot").
+- **Teste (TDD):** novo `components/common/__tests__/Switch.a11y.test.tsx` — escrito
+  **vermelho antes** (2/2 falhando: `getByRole('switch', { name })` não encontrava),
+  **verde depois**. Cobre nome via `aria-label` e via `aria-labelledby`, mais o
+  `aria-checked`.
+- **Antes/depois:** 561/136 → **563/137**; tsc limpo e lint 264 warnings (0 errors)
+  nos dois lados. Apenas atributos de acessibilidade — sem mudança de comportamento.
+- **Próximo passo priorizado:** varredura de a11y de icon-only está limpa nos
+  primitivos compartilhados. Próximas camadas: (a) foco/`aria-modal`/trap de foco nos
+  diálogos (`ConnectionsPage`, `MessengerAccounts`, `EditOrderDrawer`); (b) estados de
+  erro nas páginas de `reports`/`automation` orientadas a query que hoje só tratam
+  `isLoading` (podem exibir zeros na falha); (c) **segurança** — `react-router` v7
+  (open redirect) exige major breaking: fatia dedicada validando rotas splat e as
+  `future` flags.
+
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
 
