@@ -27,6 +27,8 @@ import { getOrders, getOrderStats, updateOrderStatus, StoreOrder } from '../../s
 import { dashboardService } from '../../services';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { AiDailySummaryCard } from '../../components/dashboard/AiDailySummaryCard';
+import ForecastPanel from '../../components/dashboard/ForecastPanel';
+import { useAiDailySummary } from '../../hooks/queries/useAiDailySummary';
 import type { Order } from '../../types';
 import type { ProjectHealth } from '../../types/dashboard';
 
@@ -192,6 +194,11 @@ export const DashboardPage: React.FC = () => {
   const [healthLoading, setHealthLoading]       = useState(true);
   const [advancing, setAdvancing]               = useState<string | null>(null);
   const [refreshedAt, setRefreshedAt]           = useState(new Date());
+
+  // Mesmo hook (e mesma queryKey) do AiDailySummaryCard: o react-query dedupa,
+  // então não há requisição extra. O forecast já vinha no payload e estava sendo
+  // descartado — o card só renderizava o `summary` em texto.
+  const { data: aiSummary, isLoading: aiSummaryLoading } = useAiDailySummary(storeSlug || storeId);
 
   const loadData = useCallback(async () => {
     if (!storeId) return;
@@ -399,6 +406,10 @@ export const DashboardPage: React.FC = () => {
 
       {/* ── Resumo IA (ontem) ── */}
       <AiDailySummaryCard store={storeSlug || storeId} />
+
+      {/* Mesma chamada do resumo (react-query dedupa pela queryKey): o forecast
+          ja vinha no payload e estava sendo descartado como texto. */}
+      <ForecastPanel forecast={aiSummary?.forecast} loading={aiSummaryLoading} />
 
       {/* ── Orders + Pipeline ── */}
       <div className="grid grid-cols-3 max-xl:grid-cols-1 gap-4">

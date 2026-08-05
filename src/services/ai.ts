@@ -29,8 +29,33 @@ export interface AiDailySummaryStats {
   cancelled: number;
 }
 
+/** Série + agregados de `compute_forecast` (server2/apps/stores/services/ai_insights.py). */
+export interface AiForecastDaily {
+  date: string;
+  orders: number;
+  revenue: number;
+  weekday: number;
+}
+
+export interface AiForecast {
+  daily: AiForecastDaily[];
+  window_days: number;
+  daily_avg_revenue: number;
+  recent_avg_revenue: number;
+  trend_pct: number;
+  month_realized: number;
+  month_projection: number;
+  days_left_in_month: number;
+  best_weekday: string | null;
+  worst_weekday: string | null;
+  weekday_avg: Record<string, number>;
+  days_without_sale: number;
+}
+
 export interface AiDailySummary {
   stats: AiDailySummaryStats;
+  /** Ausente se o cálculo do forecast falhar — o painel degrada, não quebra. */
+  forecast?: AiForecast;
   summary: string;
   source: 'llm' | 'template';
   cached: boolean;
