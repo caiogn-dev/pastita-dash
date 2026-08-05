@@ -50,7 +50,7 @@ import {
 import { useNotificationSound, useStore, useConfirm, useOrderDetailModal } from '../../hooks';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { getErrorMessage } from '../../services';
-import { useRootStore } from '../../stores/rootStore';
+import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import type { Order } from '../../types';
 
@@ -419,8 +419,9 @@ export const OrdersPage: React.FC = () => {
   // Real-time orders from Zustand store + WebSocket
   // Selector estreito: re-render apenas quando os pedidos DESTA loja mudam,
   // não em qualquer mudança da store global.
+  // Lê pela MESMA chave normalizada que o WebSocket usa para escrever.
   const storeOrders = useRootStore(
-    (s) => (storeQuery ? s.orders[storeQuery] : undefined)
+    (s) => (storeQuery ? s.orders[resolveStoreKey(s.stores, storeQuery)] : undefined)
   ) ?? EMPTY_ORDERS;
   const { playNotificationSound: _playNotificationSound } = useNotificationSound();
 
@@ -478,7 +479,7 @@ export const OrdersPage: React.FC = () => {
     // Ler do getState() (não do closure) para não sobrescrever updates que
     // chegaram via WebSocket entre o render e o clique (stale closure).
     const { orders, setOrders } = useRootStore.getState();
-    const current = orders[storeQuery] || [];
+    const current = orders[resolveStoreKey(useRootStore.getState().stores, storeQuery)] || [];
     setOrders(storeQuery, current.map((o: StoreOrder) => o.id === id ? { ...o, ...patch } : o));
   }, [storeQuery]);
 

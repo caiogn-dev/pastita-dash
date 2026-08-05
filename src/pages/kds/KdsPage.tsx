@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
-import { useRootStore } from '../../stores/rootStore';
+import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { updateOrderStatus, getOrders } from '../../services/storesApi';
 import type { StoreOrder } from '../../services/storesApi';
@@ -52,7 +52,7 @@ const KdsPage: React.FC = () => {
   const [reloadKey, setReloadKey] = useState(0);
 
   const storeOrders = useRootStore(
-    (s) => (storeId ? s.orders[storeId] : undefined),
+    (s) => (storeId ? s.orders[resolveStoreKey(s.stores, storeId)] : undefined),
   ) ?? EMPTY_ORDERS;
 
   useRealTimeOrders({

@@ -10,6 +10,23 @@ import type { Store, StoreOrder } from '../services/storesApi';
  * - Prop drilling 3+ levels
  */
 
+/**
+ * Chave canônica do cache de pedidos: sempre o uuid da loja.
+ *
+ * Aceita uuid ou slug porque as duas coisas circulam pelo app — o slug vem do
+ * parâmetro da rota (`/stores/:storeId/...`) e o uuid vem do rootStore. Se a
+ * lista de lojas ainda não carregou, devolve o valor recebido: pior caso o
+ * bucket se corrige sozinho quando `setStores` chega.
+ *
+ * Exportada porque os LEITORES precisam da mesma normalização — normalizar só
+ * na escrita deixaria quem lê por slug olhando um bucket vazio.
+ */
+export const resolveStoreKey = (stores: Store[], value?: string | null): string => {
+  if (!value) return '';
+  const found = stores.find((s) => s.id === value || s.slug === value);
+  return found?.id ?? value;
+};
+
 interface User {
   id: string;
   email: string;
@@ -85,17 +102,25 @@ export const useRootStore = create<RootStore>((set) => ({
   },
 
   // Orders
+  //
+  // A chave do cache é SEMPRE o uuid da loja, normalizado por resolveStoreKey.
+  // Antes cada consumidor usava o que tinha na mão: OrdersPage e KdsPage gravavam
+  // por slug (vem da URL) e o useRealTimeOrders gravava por selectedStoreId (uuid).
+  // Resultado: o WebSocket escrevia num bucket que o board nunca lia, e o pedido
+  // novo só aparecia com refresh manual — no desktop, todo dia. O mobile parecia
+  // funcionar só porque useStoreOrdersFeed já gravava por uuid.
   orders: {},
   setOrders: (storeId, orders) =>
     set((state) => ({
       orders: {
         ...state.orders,
-        [storeId]: orders,
+        [resolveStoreKey(state.stores, storeId)]: orders,
       },
     })),
   clearOrders: (storeId) =>
     set((state) => {
-      const { [storeId]: _, ...rest } = state.orders;
+      const key = resolveStoreKey(state.stores, storeId);
+      const { [key]: _, ...rest } = state.orders;
       return { orders: rest };
     }),
 }));
