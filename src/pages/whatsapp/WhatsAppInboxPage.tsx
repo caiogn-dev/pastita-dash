@@ -145,7 +145,12 @@ const WhatsAppInboxPage: React.FC = () => {
 
   const loadConversations = useCallback(async () => {
     try {
-      const response = await conversationsService.getConversations({});
+      // Sem `store` o backend devolve as conversas de TODAS as lojas do dono
+      // misturadas — o dono de três lojas via as três numa lista só. O filtro
+      // por usuário continua valendo por baixo; este é o recorte de contexto.
+      const response = await conversationsService.getConversations(
+        storeSlug ? { store: storeSlug } : {},
+      );
       const convs = ensureArray<ConversationWithMessages>(response?.results || response);
       // Hidrata o chatStore com a lista inicial (o WS mantém atualizado depois)
       useChatStore.getState().setConversations(convs as unknown as Conversation[]);
@@ -163,7 +168,9 @@ const WhatsAppInboxPage: React.FC = () => {
       console.error('Erro ao carregar conversas:', error);
       toast.error('Erro ao carregar conversas');
     }
-  }, [searchParams, markConversationRead]);
+    // storeSlug entra nas deps: trocar de loja no seletor tem que recarregar a
+    // lista, senão o inbox continua mostrando a loja anterior.
+  }, [searchParams, markConversationRead, storeSlug]);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     try {
@@ -322,6 +329,17 @@ const WhatsAppInboxPage: React.FC = () => {
   useEffect(() => {
     return () => useChatStore.getState().setSelectedConversation(null);
   }, []);
+
+  // Trocar de loja fecha o chat aberto. Sem isto o operador muda o seletor e
+  // continua com a conversa do cliente da loja ANTERIOR na tela — a lista à
+  // esquerda troca, o painel à direita não, e ele responde pela loja errada.
+  const storeSlugAnterior = useRef(storeSlug);
+  useEffect(() => {
+    if (storeSlugAnterior.current !== storeSlug) {
+      storeSlugAnterior.current = storeSlug;
+      useChatStore.getState().setSelectedConversation(null);
+    }
+  }, [storeSlug]);
 
   // Mensagem inbound chegou com o chat aberto → já está sendo lida agora;
   // persiste a leitura para o backend não acumular unread_count.
