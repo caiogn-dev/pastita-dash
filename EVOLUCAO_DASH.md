@@ -3,6 +3,43 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-05)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **584 testes / 139 suítes verdes** (era 580/138; +4/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à CI/Vercel): **ok** (~20s).
+
+### 2026-08-05 — A11y: nome acessível no `Switch` compartilhado (backlog item "a")
+- **Medido:** `src/components/common/Switch.tsx` é um `<button role="switch">` com
+  `aria-checked` mas **sem mecanismo de nome acessível** (nenhum `aria-label`/
+  `aria-labelledby` na prop). O filho é só um `<span>` visual, então leitores de
+  tela anunciavam apenas **"switch, marcado"** — sem dizer o que é alternado.
+  Pior caso concreto: `CompanyProfileDetailPage.tsx` já tinha um
+  `<label id="bot-order-enabled-label">` claramente destinado à associação, mas o
+  `aria-labelledby` **nunca foi ligado** — o toggle "Aceitar pedidos pelo bot"
+  (config crítica do bot) ficava anônimo. Também sem nome: os 4 toggles de links
+  da bio e o toggle de ativar/desativar link personalizado em `LinkBioPage.tsx`.
+- **Mudado (TDD, teste vermelho→verde):**
+  - `Switch.tsx` ganhou props opcionais `aria-label`, `aria-labelledby` e `id`,
+    encaminhadas ao `<button>` (sem mudança de comportamento/estilo).
+  - `CompanyProfileDetailPage.tsx`: `aria-labelledby="bot-order-enabled-label"`
+    (liga o rótulo visível que já existia).
+  - `LinkBioPage.tsx`: `aria-label={`Exibir ${label} na bio`}` nos toggles de
+    seções (satisfaz WCAG 2.5.3, o texto visível está contido no nome) e
+    `aria-label={`Alternar link ${title}`}` no toggle de cada link personalizado.
+- **Teste (TDD):** nova suíte `Switch.a11y.test.tsx` — **vermelha antes (4/4),
+  verde depois**. Cobre nome via `aria-label`, nome via `aria-labelledby`,
+  reflexo do estado em `aria-checked` e o `onChange` com valor alternado
+  (`getByRole('switch', { name })` só encontra com nome acessível presente).
+- **Antes/depois:** `npm test` 580/138 → **584/139**; tsc limpo e build ok nos
+  dois lados. Só produção alterada: props de acessibilidade (baixo risco).
+- **Nota:** a heurística dos scanners de icon-only NÃO pega este caso (o filho é
+  um `<span>`, não um ícone), por isso ficou pendente nas varreduras anteriores.
+- **Próximo passo priorizado:** backlog item (b)/(c) de a11y — `role="status"`/
+  `aria-live` no Toast para anúncio de notificações, e foco/`aria-modal`/trap de
+  foco nos diálogos (`ConnectionsPage`, `MessengerAccounts`, `EditOrderDrawer`).
+
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
 
