@@ -18,9 +18,9 @@
  */
 import React, { useMemo } from 'react';
 import {
-  ArrowTrendingUpIcon, ArrowTrendingDownIcon, ExclamationTriangleIcon,
+  ArrowTrendingUpIcon, ArrowTrendingDownIcon, ExclamationTriangleIcon, ChartBarIcon,
 } from '@heroicons/react/24/outline';
-import Card from '../common/Card';
+import { Card } from '../ui';
 import TimeSeriesChart from '../reports/TimeSeriesChart';
 import RankBarList from '../reports/RankBarList';
 
@@ -137,9 +137,11 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
 
   if (loading) {
     return (
-      <Card className="animate-pulse">
-        <div className="h-4 w-40 rounded bg-black/10 dark:bg-white/10" />
-        <div className="mt-4 h-40 rounded bg-black/5 dark:bg-white/5" />
+      <Card>
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 w-40 rounded bg-black/10 dark:bg-white/10" />
+          <div className="h-40 rounded bg-black/5 dark:bg-white/5" />
+        </div>
       </Card>
     );
   }
@@ -160,13 +162,19 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
   const janela = forecast.window_days ?? serie.length;
 
   return (
-    <Card>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <h2 className="text-sm font-semibold text-fg-token">Previsão do mês</h2>
+    <Card noPadding>
+      <div className="flex items-center justify-between gap-2 px-5 py-4 border-b border-border-token">
+        <h2 className="text-sm font-semibold text-fg-token flex items-center gap-2">
+          <ChartBarIcon className="h-4 w-4 text-brand" aria-hidden="true" />
+          Previsão do mês
+        </h2>
         <span className="text-xs text-fg-muted-token">últimos {janela} dias</span>
       </div>
 
-      <div className="mt-4 grid gap-6 sm:grid-cols-2">
+      <div className="p-5 space-y-5">
+      {/* max-w evita que tendência e progresso fiquem em pontas opostas numa tela
+          de 1500px, com um vão morto no meio. */}
+      <div className="grid gap-6 sm:grid-cols-2 max-w-3xl">
         <TrendHero pct={forecast.trend_pct ?? 0} recentAvg={forecast.recent_avg_revenue} />
         <MonthProgress
           realized={forecast.month_realized ?? 0}
@@ -177,7 +185,7 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
 
       {semVenda > 0 && (
         // Ícone + rótulo: o alerta nunca é só cor.
-        <div className="mt-4 flex items-start gap-2 rounded-lg px-3 py-2"
+        <div className="flex items-start gap-2 rounded-lg px-3 py-2"
              style={{ background: 'rgba(220,38,38,.08)' }}>
           <ExclamationTriangleIcon className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#dc2626' }} aria-hidden="true" />
           <span className="text-xs text-fg-token">
@@ -187,7 +195,7 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
         </div>
       )}
 
-      <div className="mt-5">
+      <div>
         <h3 className="text-xs uppercase tracking-wide text-fg-muted-token mb-2">
           Receita por dia
         </h3>
@@ -204,13 +212,14 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
       </div>
 
       {ranking.length > 0 && (
-        <div className="mt-5">
+        <div className="max-w-3xl">
           <h3 className="text-xs uppercase tracking-wide text-fg-muted-token mb-2">
             Média por dia da semana
           </h3>
           <RankBarList items={ranking} valueFormat={money} />
         </div>
       )}
+      </div>
     </Card>
   );
 };
