@@ -6,7 +6,9 @@ import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
-import { setAuthToken } from './services'
+// Direto de ./services/api, não do barrel: o barrel re-exporta ./automation e
+// arrasta a árvore inteira (incl. recharts) para o chunk de entrada.
+import { setAuthToken } from './services/api'
 import { getAuthToken } from './services/tokenStorage'
 
 // Pre-hydrate axios Authorization header from persisted zustand storage

@@ -8,7 +8,11 @@ import { FullPageLoading } from './components/common';
 import { PageBoundary } from './components/ErrorBoundary';
 import { useAuthStore } from './stores/authStore';
 import { useAccountStore } from './stores/accountStore';
-import { setAuthToken } from './services';
+// Import DIRETO, não pelo barrel './services'. O barrel re-exporta ./automation,
+// e basta UMA aresta estática do entry para qualquer módulo de um manualChunk
+// para o Rollup transformar o chunk INTEIRO em dependência estática do entry —
+// o Vite então emite modulepreload e todo o React.lazy() abaixo vira decoração.
+import { setAuthToken } from './services/api';
 import api from './services/api';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { WhatsAppWsProvider } from './context/WhatsAppWsContext';

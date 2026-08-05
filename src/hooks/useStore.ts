@@ -39,10 +39,15 @@ export interface UseStoreReturn {
  * Uses rootStore as single source of truth.
  */
 export function useStore(): UseStoreReturn {
-  const {
-    selectedStoreId,
-    stores,
-  } = useRootStore();
+  // Seletores ESTREITOS, um por campo. `useRootStore()` sem seletor assina o
+  // objeto de estado inteiro e re-renderiza a qualquer set() — e o rootStore
+  // guarda o cache de pedidos, cujo setOrders cria um objeto novo a cada evento
+  // do WebSocket. Ou seja: todo order.created/updated/payment_received
+  // re-renderizava os 35 arquivos que usam useStore(), incluindo os que ficam
+  // montados o tempo todo (Navbar com dropdowns em portal, AccountMenu,
+  // TrialBanner, OnboardingChecklist e o WebSocketContext global).
+  const selectedStoreId = useRootStore((s) => s.selectedStoreId);
+  const stores = useRootStore((s) => s.stores);
 
   const selectedStore = useMemo(() => {
     return stores.find((s) => s.id === selectedStoreId) || null;
