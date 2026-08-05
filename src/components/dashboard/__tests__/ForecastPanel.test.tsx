@@ -36,6 +36,8 @@ const base: ForecastData = {
   worst_weekday: 'quarta',
   weekday_avg: { segunda: 83.43, quarta: 0, quinta: 101.84 },
   days_without_sale: 18,
+  trend_reliable: true,
+  days_with_sale: 10,
 };
 
 describe('ForecastPanel', () => {
@@ -74,6 +76,13 @@ describe('ForecastPanel', () => {
     render(<ForecastPanel forecast={{ ...base, trend_pct: -32 }} />);
     expect(screen.getByText('-32%')).toBeInTheDocument();
     expect(screen.getByText(/em queda/)).toBeInTheDocument();
+  });
+
+  it('amostra pequena mostra "amostra pequena" em vez de percentual enganoso', () => {
+    render(<ForecastPanel forecast={{ ...base, trend_reliable: false, days_with_sale: 2, trend_pct: 404 }} />);
+    expect(screen.getByText(/amostra pequena/)).toBeInTheDocument();
+    expect(screen.queryByText('+404%')).not.toBeInTheDocument();
+    expect(screen.getByText(/só 2 dias com venda/)).toBeInTheDocument();
   });
 
   it('loja sem venda mostra estado vazio, não quebra', () => {

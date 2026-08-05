@@ -43,6 +43,9 @@ export interface AiForecast {
   daily_avg_revenue: number;
   recent_avg_revenue: number;
   trend_pct: number;
+  /** false quando ha poucos dias com venda: o percentual vira ruido. */
+  trend_reliable: boolean;
+  days_with_sale: number;
   month_realized: number;
   month_projection: number;
   days_left_in_month: number;

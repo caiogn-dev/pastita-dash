@@ -37,6 +37,8 @@ export interface ForecastData {
   daily_avg_revenue?: number;
   recent_avg_revenue?: number;
   trend_pct?: number;
+  trend_reliable?: boolean;
+  days_with_sale?: number;
   month_realized?: number;
   month_projection?: number;
   days_left_in_month?: number;
@@ -58,7 +60,24 @@ const diaCurto = (iso: string) => {
 };
 
 /** Número que decide: grande, com direção e contexto — não enterrado em texto. */
-const TrendHero: React.FC<{ pct: number; recentAvg?: number }> = ({ pct, recentAvg }) => {
+const TrendHero: React.FC<{ pct: number; recentAvg?: number; reliable?: boolean; diasComVenda?: number }> = ({
+  pct, recentAvg, reliable = true, diasComVenda,
+}) => {
+  // Com pouquíssimo dia de venda o percentual é ruído (2 dias em 28 davam "+404%").
+  // Mostrar "amostra pequena" é mais honesto que um número que engana.
+  if (!reliable) {
+    return (
+      <div className="flex flex-col gap-1">
+        <span className="text-xs uppercase tracking-wide text-fg-muted-token">Tendência</span>
+        <span className="text-xl font-semibold text-fg-muted-token leading-tight">amostra pequena</span>
+        <span className="text-xs text-fg-muted-token">
+          {diasComVenda !== undefined
+            ? `só ${diasComVenda} ${diasComVenda === 1 ? 'dia' : 'dias'} com venda no período`
+            : 'poucos dias com venda no período'}
+        </span>
+      </div>
+    );
+  }
   const subindo = pct > 0;
   const estavel = pct === 0;
   // Paleta de estado (reservada), nunca a cor de série.
@@ -175,7 +194,12 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
       {/* max-w evita que tendência e progresso fiquem em pontas opostas numa tela
           de 1500px, com um vão morto no meio. */}
       <div className="grid gap-6 sm:grid-cols-2 max-w-3xl">
-        <TrendHero pct={forecast.trend_pct ?? 0} recentAvg={forecast.recent_avg_revenue} />
+        <TrendHero
+          pct={forecast.trend_pct ?? 0}
+          recentAvg={forecast.recent_avg_revenue}
+          reliable={forecast.trend_reliable ?? true}
+          diasComVenda={forecast.days_with_sale}
+        />
         <MonthProgress
           realized={forecast.month_realized ?? 0}
           projection={forecast.month_projection ?? 0}
@@ -195,30 +219,35 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
         </div>
       )}
 
-      <div>
-        <h3 className="text-xs uppercase tracking-wide text-fg-muted-token mb-2">
-          Receita por dia
-        </h3>
-        <TimeSeriesChart
-          data={serie}
-          xKey="dia"
-          yKey="revenue"
-          label="Receita"
-          type="area"
-          height={180}
-          valueFormat={money}
-          yTickFormat={moneyShort}
-        />
-      </div>
-
-      {ranking.length > 0 && (
-        <div className="max-w-3xl">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="min-w-0">
           <h3 className="text-xs uppercase tracking-wide text-fg-muted-token mb-2">
-            Média por dia da semana
+            Receita por dia
           </h3>
-          <RankBarList items={ranking} valueFormat={money} />
+          {/* Barra, não área: com 18 de 28 dias em zero, a área vira um fio colado
+              no eixo e sugere continuidade que não existe. Barra mostra dia sem
+              venda como ausência, que é o que ele é. */}
+          <TimeSeriesChart
+            data={serie}
+            xKey="dia"
+            yKey="revenue"
+            label="Receita"
+            type="bar"
+            height={200}
+            valueFormat={money}
+            yTickFormat={moneyShort}
+          />
         </div>
-      )}
+
+        {ranking.length > 0 && (
+          <div className="min-w-0">
+            <h3 className="text-xs uppercase tracking-wide text-fg-muted-token mb-2">
+              Média por dia da semana
+            </h3>
+            <RankBarList items={ranking} valueFormat={money} />
+          </div>
+        )}
+      </div>
       </div>
     </Card>
   );
