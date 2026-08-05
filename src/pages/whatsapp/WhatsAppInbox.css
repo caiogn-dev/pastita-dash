@@ -264,6 +264,30 @@
   gap: 0.5rem;
 }
 
+/* Tag da loja dona da conversa.
+   Só é renderizada quando o usuário tem mais de uma loja. A cor vem por
+   --tag-cor (derivada do slug no componente), então cada loja tem um tom
+   estável; o fundo é a mesma cor com alfa baixo, para a tag não competir com
+   o nome do contato. */
+.conversation-store-tag {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: var(--tag-cor, var(--fg-muted));
+  background: color-mix(in srgb, var(--tag-cor, gray) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tag-cor, gray) 35%, transparent);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .conversation-time {
   flex-shrink: 0;
   font-size: 0.7rem;

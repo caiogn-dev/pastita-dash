@@ -18,6 +18,7 @@ import { handoverService } from '../../services/handover';
 import { useWhatsAppWsContext } from '../../context/WhatsAppWsContext';
 import { useChatStore } from '../../stores/chatStore';
 import { useStore } from '../../hooks/useStore';
+import { useRootStore } from '../../stores/rootStore';
 import { MessageBubble, MessageBubbleProps } from '../../components/chat/MessageBubble';
 import { MediaViewer } from '../../components/chat/MediaViewer';
 import toast from 'react-hot-toast';
@@ -90,9 +91,27 @@ function conversationPreview(conv: ConversationWithMessages): string {
   return messagePreviewText(conv.last_message);
 }
 
+/**
+ * Cor estável por loja, derivada do slug.
+ *
+ * Hash simples → matiz no círculo cromático. Não é aleatório: a mesma loja
+ * recebe sempre o mesmo tom, entre sessões e entre operadores, que é o que
+ * torna a cor útil como identificação. Saturação e luminosidade fixas mantêm
+ * todas as tags legíveis nos dois temas.
+ */
+const corDaLoja = (slug?: string | null): string => {
+  if (!slug) return 'hsl(0 0% 55%)';
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) hash = (hash * 31 + slug.charCodeAt(i)) | 0;
+  return `hsl(${Math.abs(hash) % 360} 62% 45%)`;
+};
+
 const WhatsAppInboxPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { storeId, storeSlug, storeName, store } = useStore();
+  const lojasDoUsuario = useRootStore((s) => s.stores);
+  // Com uma loja só, a tag em toda linha vira ruído.
+  const mostrarLojaNaConversa = lojasDoUsuario.length > 1;
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
@@ -317,6 +336,12 @@ const WhatsAppInboxPage: React.FC = () => {
 
   // Carga inicial — apenas UMA vez por mudança de searchParams
   useEffect(() => {
+    // ESPERA a loja ser conhecida. Depois de um F5, `stores` chega por uma
+    // requisição: no primeiro render `storeSlug` é null e a busca saía SEM
+    // filtro, trazendo as conversas de todas as lojas; quando a loja aparecia,
+    // buscava de novo com filtro e a lista trocava debaixo do operador. Era a
+    // "piscada" em que o inbox parecia perder conversas ao atualizar.
+    if (lojasDoUsuario.length > 0 && !storeSlug) return;
     setLoading(true);
     void loadConversations().finally(() => setLoading(false));
 
@@ -325,7 +350,7 @@ const WhatsAppInboxPage: React.FC = () => {
       if (!document.hidden) void loadConversations();
     }, 60_000);
     return () => clearInterval(timer);
-  }, [loadConversations]);
+  }, [loadConversations, lojasDoUsuario.length, storeSlug]);
 
   // Subscreve/dessubscreve do canal WS ao selecionar conversa
   useEffect(() => {
@@ -476,6 +501,19 @@ const WhatsAppInboxPage: React.FC = () => {
                         {formatConversationTime(conv.last_message_at)}
                       </span>
                     </div>
+                    {/* De qual loja é esta conversa. Só aparece quando o usuário
+                        tem mais de uma loja — com uma só, seria ruído em toda
+                        linha. A cor é derivada do slug, então cada loja fica
+                        com um tom estável (não muda entre sessões). */}
+                    {mostrarLojaNaConversa && conv.store_name && (
+                      <span
+                        className="conversation-store-tag"
+                        style={{ ['--tag-cor' as string]: corDaLoja(conv.store_slug) }}
+                        title={`Loja: ${conv.store_name}`}
+                      >
+                        {conv.store_name}
+                      </span>
+                    )}
                     <div className="conversation-preview-row">
                       <p className="conversation-preview">
                         {conversationPreview(conv)}

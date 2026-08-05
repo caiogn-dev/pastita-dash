@@ -178,6 +178,11 @@ export interface Conversation {
   profile_picture?: string;
   profile_name_last_seen_at?: string | null;
   account: string;
+  account_name?: string;
+  /** Loja dona da conta. Usado para marcar a conversa e para o WebSocket
+   *  (que roda em modo multi-conta) descartar o que não é da loja aberta. */
+  store_slug?: string | null;
+  store_name?: string | null;
   status: 'open' | 'closed' | 'pending' | 'resolved';
   mode?: 'auto' | 'human' | 'hybrid';
   last_message_at?: string;

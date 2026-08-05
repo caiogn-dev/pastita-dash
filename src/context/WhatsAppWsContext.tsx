@@ -14,11 +14,31 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { useAuthStore } from '../stores/authStore';
 import { useAccountStore } from '../stores/accountStore';
 import { useChatStore } from '../stores/chatStore';
+import { useRootStore } from '../stores/rootStore';
 import { Message, Conversation } from '../types';
 import { getWebSocketUrl } from '../services/realtime';
 import { conversationsService } from '../services/conversations';
 import { messagePreviewText } from '../utils/messagePreview';
 import toast from 'react-hot-toast';
+
+/**
+ * A conversa é da loja aberta no painel?
+ *
+ * O socket do inbox roda em modo multi-conta e entrega eventos de TODAS as lojas
+ * do usuário, enquanto a lista vem filtrada pela loja selecionada. Sem este
+ * filtro, conversa de outra loja entrava ao vivo e desaparecia no refresh
+ * seguinte — parecia que o inbox estava perdendo mensagens.
+ *
+ * Conversa sem loja (conta de plataforma, ex.: o número global de OTP) não entra
+ * em loja nenhuma. Se o painel ainda não sabe qual loja está aberta, não
+ * bloqueia: melhor mostrar do que engolir.
+ */
+const perteceALojaAberta = (conv: Pick<Conversation, 'store_slug'>): boolean => {
+  const raiz = useRootStore.getState();
+  const aberta = raiz.stores.find((s) => s.id === raiz.selectedStoreId);
+  if (!aberta) return true;
+  return conv.store_slug === aberta.slug;
+};
 
 // WebSocket event types
 interface WsMessageReceived {
@@ -192,7 +212,15 @@ export function WhatsAppWsProvider({ children, dashboardMode = true }: WhatsAppW
               // busca na API e insere ordenada; sem isso a mensagem some.
               void conversationsService
                 .getConversation(conversation_id)
-                .then((conv) => useChatStore.getState().upsertConversation(conv))
+                .then((conv) => {
+                  // Este socket é MULTI-CONTA (dashboardMode): recebe eventos de
+                  // todas as lojas do usuário. A lista, porém, vem filtrada pela
+                  // loja selecionada. Sem esta checagem a conversa de outra loja
+                  // aparecia ao vivo e sumia no primeiro refresh — o operador via
+                  // o inbox "comer" conversas sozinho.
+                  if (!perteceALojaAberta(conv)) return;
+                  useChatStore.getState().upsertConversation(conv);
+                })
                 .catch((err) => console.error('[WhatsAppWS] Erro ao buscar conversa nova:', err));
             }
 
