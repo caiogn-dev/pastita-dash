@@ -258,14 +258,36 @@ export const nomeArquivo = (base: string, formato: 'csv' | 'xlsx') => {
 };
 
 /**
- * Cardápio abre em nova aba (o dono confere antes de enviar a um cliente).
- * `categorias` limita o que entra; sem elas, vai o catálogo inteiro.
+ * Cardápio em PDF, aberto em nova aba.
+ *
+ * Busca o arquivo pelo axios e abre um blob URL — `window.open` direto na URL
+ * da API NÃO funciona: o navegador faz uma navegação limpa, sem o header
+ * `Authorization: Token`, e a API responde 401 numa página de erro do DRF.
+ *
+ * A aba é aberta ANTES do await: navegador bloqueia popup que nasce depois de
+ * uma operação assíncrona, por não estar mais no gesto do usuário.
  */
-export const abrirCardapioPdf = (categorias?: string[]) => {
-  const base = (api.defaults.baseURL || '').replace(/\/$/, '');
-  const params = new URLSearchParams({ store: getStoreParam() || '' });
-  if (categorias?.length) params.set('categories', categorias.join(','));
-  window.open(`${base}/stores/catalog/pdf/?${params}`, '_blank', 'noopener');
+export const abrirCardapioPdf = async (categorias?: string[]): Promise<void> => {
+  const aba = window.open('', '_blank', 'noopener');
+  try {
+    const params: Record<string, string> = { store: getStoreParam() || '' };
+    if (categorias?.length) params.categories = categorias.join(',');
+    const response = await api.get('/stores/catalog/pdf/', { params, responseType: 'blob' });
+    const url = URL.createObjectURL(
+      new Blob([response.data], { type: 'application/pdf' }),
+    );
+    if (aba) {
+      aba.location.href = url;
+    } else {
+      // Popup bloqueado: cai para download, melhor que não entregar nada.
+      downloadBlob(response.data, 'cardapio.pdf');
+    }
+    // Revoga só depois de a aba carregar; revogar na hora deixa a aba em branco.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (erro) {
+    aba?.close();
+    throw erro;
+  }
 };
 
 export const exportOrdersCSV = async (params: DateRange = {}): Promise<Blob> => {

@@ -11,6 +11,7 @@
  * repete o trabalho todo mês.
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Modal, Button } from '../common';
 import * as storesApi from '../../services/storesApi';
 import type { StoreCategory } from '../../services/storesApi';
@@ -60,16 +61,26 @@ const ModalCardapioPdf: React.FC<Props> = ({ aberto, onFechar, storeId }) => {
 
   const todasMarcadas = categorias.length > 0 && marcadas.size === categorias.length;
 
-  const gerar = () => {
+  const [gerando, setGerando] = useState(false);
+
+  const gerar = async () => {
     if (storeId) {
       try {
         localStorage.setItem(chaveMemoria(storeId), JSON.stringify([...marcadas]));
       } catch { /* storage indisponível */ }
     }
-    // Nenhum filtro quando tudo está marcado: URL mais curta e o backend
-    // devolve o catálogo inteiro pelo caminho padrão.
-    reportsService.abrirCardapioPdf(todasMarcadas ? undefined : [...marcadas]);
-    onFechar();
+    setGerando(true);
+    try {
+      // Nenhum filtro quando tudo está marcado: URL mais curta e o backend
+      // devolve o catálogo inteiro pelo caminho padrão.
+      await reportsService.abrirCardapioPdf(todasMarcadas ? undefined : [...marcadas]);
+      onFechar();
+    } catch (e) {
+      console.error('[cardapio-pdf]', e);
+      toast.error('Não foi possível gerar o cardápio. Tente de novo.');
+    } finally {
+      setGerando(false);
+    }
   };
 
   const nenhuma = marcadas.size === 0;
@@ -119,8 +130,8 @@ const ModalCardapioPdf: React.FC<Props> = ({ aberto, onFechar, storeId }) => {
 
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="ghost" onClick={onFechar}>Cancelar</Button>
-          <Button onClick={gerar} disabled={nenhuma}>
-            {nenhuma ? 'Escolha ao menos uma' : 'Gerar PDF'}
+          <Button onClick={() => void gerar()} disabled={nenhuma || gerando}>
+            {gerando ? 'Gerando…' : nenhuma ? 'Escolha ao menos uma' : 'Gerar PDF'}
           </Button>
         </div>
       </div>
