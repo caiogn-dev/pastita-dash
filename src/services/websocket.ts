@@ -38,6 +38,12 @@ export class WebSocketClient {
   // zumbi eterno da loja antiga (troca de loja/unmount criava um novo client
   // enquanto o velho seguia reconectando pra sempre).
   private intentionallyClosed = false;
+  // Uma falha de conexão produz DOIS sinais — o evento 'close' e a rejeição da
+  // Promise de connect() — e ambos levavam a attemptReconnect(). Cada rodada de
+  // falha virava 1 cadeia em 2: t=3s 2, t=6s 4, t=12s 8… Num deploy de ~90s do
+  // backend o navegador chegava a >100 handshakes concorrentes contra o Daphne
+  // exatamente enquanto ele subia. Esta flag torna o reagendamento idempotente.
+  private reconnecting = false;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private heartbeatTimeout: NodeJS.Timeout | null = null;
   private subscriptionIds: Map<string, { type: string; id: string }> = new Map();
@@ -60,12 +66,22 @@ export class WebSocketClient {
     return new Promise((resolve, reject) => {
       try {
         const url = `${this.config.url}/ws/stores/${this.config.storeSlug}/orders/`;
-        this.ws = new WebSocket(url);
+        const socket = new WebSocket(url);
+        this.ws = socket;
+        // Sockets órfãos (de cadeias antigas ou de uma tentativa já superada)
+        // continuam emitindo eventos. Sem esta checagem, o 'close' de um socket
+        // que nem é mais o atual reagendava reconexão e mexia no estado do
+        // client vivo.
+        const ehOAtual = () => this.ws === socket;
 
-        this.ws.addEventListener('open', () => {
+        socket.addEventListener('open', () => {
+          if (!ehOAtual()) {
+            socket.close();
+            return;
+          }
           this.reconnectAttempts = 0;
           // Send authentication message on open
-          this.ws!.send(JSON.stringify({
+          socket.send(JSON.stringify({
             type: 'auth',
             token: this.config.token,
           }));
@@ -73,16 +89,19 @@ export class WebSocketClient {
           resolve();
         });
 
-        this.ws.addEventListener('message', (event) => {
+        socket.addEventListener('message', (event) => {
+          if (!ehOAtual()) return;
           this.handleMessage(event.data);
         });
 
-        this.ws.addEventListener('close', () => {
+        socket.addEventListener('close', () => {
+          if (!ehOAtual()) return;
           this.emit('disconnected');
           this.attemptReconnect();
         });
 
-        this.ws.addEventListener('error', (error) => {
+        socket.addEventListener('error', (error) => {
+          if (!ehOAtual()) return;
           this.emit('error', new Error('WebSocket connection error'));
           reject(error);
         });
@@ -94,6 +113,7 @@ export class WebSocketClient {
 
   disconnect(): void {
     this.intentionallyClosed = true;
+    this.reconnecting = false;
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -188,9 +208,12 @@ export class WebSocketClient {
 
   private attemptReconnect(): void {
     // Fechamento pedido pelo app (troca de loja, unmount): não reconectar.
-    if (this.intentionallyClosed) {
+    // `reconnecting` garante UMA cadeia só: 'close' e a rejeição da Promise
+    // chegam os dois, e antes cada um abria a sua.
+    if (this.intentionallyClosed || this.reconnecting) {
       return;
     }
+    this.reconnecting = true;
 
     // Nunca desiste: um deploy do backend derruba o WS por ~1min e o teto de
     // 5 tentativas deixava o painel morto até um F5. Backoff exponencial com
@@ -205,10 +228,22 @@ export class WebSocketClient {
       30_000,
     );
 
+    // Um slot só de timer, sempre limpo antes de reatribuir: antes N cadeias
+    // escreviam no mesmo campo e só a última era cancelável, então disconnect()
+    // deixava as outras vivas — e ao disparar elas chamavam connect(), que zera
+    // `intentionallyClosed` e ressuscitava um client que o app tentou matar.
+    // Nota: este clearTimeout e a flag `reconnecting` são REDUNDANTES entre si —
+    // verificado por mutação, cada um sozinho já impede a duplicação, e só
+    // removendo os dois o teste quebra. É defesa em profundidade de propósito;
+    // não remova um "porque o teste continua passando".
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     this.reconnectTimeout = setTimeout(async () => {
+      this.reconnectTimeout = null;
+      this.reconnecting = false;
+      if (this.intentionallyClosed) return;
       try {
         await this.connect();
-      } catch (error) {
+      } catch {
         this.attemptReconnect();
       }
     }, delay);

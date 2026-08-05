@@ -10,7 +10,7 @@
  * is provided by the caller so the same content renders in both surfaces.
  */
 import { copyToClipboard } from '../../utils/clipboard';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   ArrowLeftIcon,
   PhoneIcon,
@@ -442,24 +442,37 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     }
   };
 
+  // Qual id está sendo carregado agora — respostas de ids antigos são descartadas.
+  const idEmVooRef = useRef<string | null>(null);
+
   const loadOrder = async () => {
     if (!id) return;
+    // Vale a última PEDIDA, não a última a responder. O modal tem navegação
+    // "anterior/próximo" que troca o `id` na querystring; dois cliques rápidos
+    // deixavam duas requisições em voo e a mais lenta sobrescrevia a mais nova.
+    // O contador ("5 de 12") e a URL vêm do searchParams, então a tela mostrava
+    // o pedido 5 no cabeçalho e os dados do 4 no corpo — e "Marcar entregue"
+    // agia sobre `order.id`, ou seja, o pedido ERRADO.
+    const idDestaCarga = id;
+    idEmVooRef.current = idDestaCarga;
     setIsLoading(true);
     setLoadError(null);
     try {
       const [orderData, paymentsData] = await Promise.all([
-        ordersService.getOrder(id),
-        paymentsService.getByOrder(id).catch(() => []),
+        ordersService.getOrder(idDestaCarga),
+        paymentsService.getByOrder(idDestaCarga).catch(() => []),
       ]);
+      if (idEmVooRef.current !== idDestaCarga) return; // chegou tarde: descarta
       setOrder(orderData);
       setPayments(paymentsData);
       onOrderChanged?.(orderData);
     } catch (error) {
+      if (idEmVooRef.current !== idDestaCarga) return;
       // Antes fazia onClose() → em erro transitório o usuário era ejetado da
       // tela (e na variante page, navegava pra lista). Agora mostra retry.
       setLoadError(getErrorMessage(error));
     } finally {
-      setIsLoading(false);
+      if (idEmVooRef.current === idDestaCarga) setIsLoading(false);
     }
   };
 

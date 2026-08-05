@@ -143,6 +143,10 @@ const WhatsAppInboxPage: React.FC = () => {
     }
   }, []);
 
+  // Guarda qual valor de ?conversation= já foi honrado, para o refresh periódico
+  // não reabrir a mesma conversa. Um deep-link NOVO (outro id) continua valendo.
+  const deepLinkAplicadoRef = useRef<string | null>(null);
+
   const loadConversations = useCallback(async () => {
     try {
       // Sem `store` o backend devolve as conversas de TODAS as lojas do dono
@@ -155,10 +159,16 @@ const WhatsAppInboxPage: React.FC = () => {
       // Hidrata o chatStore com a lista inicial (o WS mantém atualizado depois)
       useChatStore.getState().setConversations(convs as unknown as Conversation[]);
 
+      // Deep-link ?conversation= vale UMA vez por valor. Esta função também roda
+      // no refresh de 60s; sem a trava, a cada minuto o inbox pulava de volta
+      // para a conversa da URL — trocando a conversa aberta debaixo do operador,
+      // no meio de uma resposta, e marcando como lida uma conversa que ele nem
+      // estava olhando.
       const requestedConversationId = searchParams.get('conversation');
-      if (requestedConversationId) {
+      if (requestedConversationId && deepLinkAplicadoRef.current !== requestedConversationId) {
         const found = convs.find((conv) => conv.id === requestedConversationId);
         if (found) {
+          deepLinkAplicadoRef.current = requestedConversationId;
           useChatStore.getState().setSelectedConversation(found.id);
           markConversationRead(found);
           await loadMessages(found.id);

@@ -458,9 +458,22 @@ export const OrdersPage: React.FC = () => {
       let changed = false;
       const now = Date.now();
       for (const [id, state] of prev.entries()) {
-        if (!state.isConfirmed) continue;
+        if (!state.isConfirmed) {
+          // Requisição que nunca respondeu (aba suspensa, rede caiu no meio):
+          // aqui o TTL ainda faz sentido, senão o card fica "atualizando" para
+          // sempre. Só vale para pendente — para confirmado, expirar era o bug.
+          if (now - state.timestamp > LOCAL_TTL) {
+            next.delete(id);
+            changed = true;
+          }
+          continue;
+        }
         const ext = storeOrders.find((o: StoreOrder) => o.id === id);
-        if (!ext || ext.status === state.status || now - state.timestamp > LOCAL_TTL) {
+        // RECONCILIAÇÃO, não expiração cega. Antes o TTL descartava o overlay
+        // mesmo com a lista externa ainda no status antigo — e o card voltava
+        // sozinho para a coluna anterior. Só descarta quando o servidor já
+        // alcançou o estado otimista (ou o pedido sumiu da lista).
+        if (!ext || ext.status === state.status) {
           next.delete(id);
           changed = true;
         }
@@ -634,10 +647,17 @@ export const OrdersPage: React.FC = () => {
 
     try {
       await updateOrderStatus(orderId, newStatus);
+      // Torna a mudança DURÁVEL, igual aos botões (handleAdvance/handlePay/
+      // handleCancel já faziam patchOrder). O arrasto gravava só em
+      // `localStates`, um overlay com TTL de 60s: passado o minuto a entrada era
+      // descartada sem nunca ter reconciliado, e o card pulava de volta para a
+      // coluna antiga na frente do operador — que arrastava de novo (2º PATCH)
+      // ou concluía que o pedido não saiu.
+      patchOrder(orderId, { status: newStatus });
+      // Com o store atualizado o overlay não é mais necessário.
       setLocalStates(prev => {
         const next = new Map(prev);
-        const cur = next.get(orderId);
-        if (cur) next.set(orderId, { ...cur, isPending: false, isConfirmed: true, timestamp: Date.now() });
+        next.delete(orderId);
         return next;
       });
       setSuccessIds(prev => new Set(prev).add(orderId));

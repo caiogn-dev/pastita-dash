@@ -95,4 +95,78 @@ describe('WebSocketClient — reconexão', () => {
     jest.advanceTimersByTime(5_000);
     expect(FakeWebSocket.instances.length).toBe(3);
   });
+  // ── Explosão exponencial de cadeias (PD-RACE-002) ────────────────────────
+  //
+  // Uma falha produz DOIS sinais: o evento 'close' do socket e a rejeição da
+  // Promise de connect(). Ambos chamavam attemptReconnect(), então cada rodada
+  // de falha dobrava o número de cadeias: 1 → 2 → 4 → 8 → 16…
+  // Num deploy de ~90s do backend (coisa rotineira) o navegador chegava a mais
+  // de 100 handshakes concorrentes contra o Daphne no exato momento em que ele
+  // estava subindo — auto-DDoS, com o rate limit passando a devolver 429 para
+  // todo mundo.
+
+  it('os dois sinais de uma reconexão falha não abrem duas cadeias', async () => {
+    // A duplicação nasce a partir da SEGUNDA tentativa: o handler de 'error' só
+    // rejeita a Promise, e quem reagenda é o catch DENTRO do setTimeout de
+    // attemptReconnect. Quando o connect() da reconexão falha, chegam os dois
+    // caminhos — o catch e o 'close' — e ambos chamavam attemptReconnect.
+    // Cada rodada dobrava as cadeias: num deploy de ~90s eram >100 handshakes
+    // concorrentes contra o Daphne no momento em que ele subia.
+    const client = makeClient();
+    const p = client.connect();
+    FakeWebSocket.instances[0].fire('open');
+    await p;
+
+    FakeWebSocket.instances[0].fire('close');
+    await jest.advanceTimersByTimeAsync(3_000);
+    expect(FakeWebSocket.instances.length).toBe(2);
+
+    // Falha da 2ª tentativa emitindo os DOIS sinais, com as microtasks drenadas
+    // (é onde o catch do `await this.connect()` roda).
+    const segundo = FakeWebSocket.instances[1];
+    segundo.fire('error');
+    segundo.fire('close');
+    await jest.advanceTimersByTimeAsync(0);
+
+    // Avança MUITO: se houvesse duas cadeias vivas, cada uma criaria o seu
+    // socket e o total passaria de 3.
+    await jest.advanceTimersByTimeAsync(120_000);
+    expect(FakeWebSocket.instances.length).toBe(3);
+  });
+
+  it('disconnect() no meio de uma reconexão pendente não deixa timer órfão', async () => {
+    const client = makeClient();
+    const p = client.connect();
+    FakeWebSocket.instances[0].fire('open');
+    await p;
+
+    FakeWebSocket.instances[0].fire('error');
+    FakeWebSocket.instances[0].fire('close');
+    // reconexão agendada mas ainda não disparada
+    client.disconnect();
+    jest.advanceTimersByTime(120_000);
+
+    // Nenhum socket novo: antes, N cadeias escreviam no mesmo slot de timer e só
+    // a última era cancelável — as outras disparavam, chamavam connect(), que
+    // zera `intentionallyClosed`, e ressuscitavam um client já morto.
+    expect(FakeWebSocket.instances.length).toBe(1);
+  });
+
+  it('socket órfão que fecha depois não agenda reconexão', async () => {
+    const client = makeClient();
+    const p = client.connect();
+    const primeiro = FakeWebSocket.instances[0];
+    primeiro.fire('open');
+    await p;
+
+    primeiro.fire('close');
+    jest.advanceTimersByTime(60_000);
+    expect(FakeWebSocket.instances.length).toBe(2);
+
+    // O socket antigo emite 'close' atrasado. Ele não é mais o atual — deve ser
+    // ignorado, não gerar uma terceira conexão.
+    primeiro.fire('close');
+    jest.advanceTimersByTime(60_000);
+    expect(FakeWebSocket.instances.length).toBe(2);
+  });
 });
