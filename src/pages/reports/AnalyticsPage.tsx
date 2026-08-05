@@ -17,6 +17,7 @@ import { formatAxisCurrency } from '../../utils/formatters';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankedList } from './sections/shared';
+import MenuDownloads from '../../components/reports/MenuDownloads';
 import { ReportsFilterBar } from '../../components/reports/ReportsFilterBar';
 import { reportsService, type DateRange } from '../../services/reports';
 import {
@@ -574,19 +575,14 @@ const AnalyticsPage: React.FC = () => {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <ReportsFilterBar value={range} onChange={setRange} />
-          <Button variant="outline" onClick={handleExportOrders} leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}>
-            Exportar pedidos
-          </Button>
-          {exportForTab[activeTab] && (
-            <Button
-              variant="outline"
-              onClick={exportForTab[activeTab]}
-              disabled={activeTabLoading}
-              leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}
-            >
-              Exportar aba (CSV)
-            </Button>
-          )}
+          {/* Um menu só: cada relatório aparece uma vez, com CSV e Excel lado
+              a lado. Antes eram dois botões soltos e só CSV cru. */}
+          <MenuDownloads
+            range={range}
+            onExportarAba={exportForTab[activeTab]}
+            abaLabel={`Aba ${activeTab}`}
+            abaDesabilitada={activeTabLoading}
+          />
           <Button variant="ghost" onClick={loadData} disabled={anyFetching} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
             Atualizar
           </Button>

@@ -220,6 +220,50 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 /**
  * Export orders as CSV (returns blob)
  */
+/**
+ * Downloads dos relatórios.
+ *
+ * `format` decide CSV ou Excel no backend — o CSV segue existindo para quem já
+ * tem rotina montada nele; o Excel sai formatado (moeda R$, cabeçalho fixo,
+ * filtro, totais).
+ */
+export interface ParamsDownload extends DateRange {
+  /** `fmt` e NÃO `format`: este último é reservado pelo DRF para content
+   *  negotiation e faz a requisição virar 404 antes de chegar na view. */
+  fmt?: 'csv' | 'xlsx';
+  include_test?: boolean;
+}
+
+const baixar = async (caminho: string, params: ParamsDownload): Promise<Blob> => {
+  const response = await api.get(caminho, {
+    params: { store: getStoreParam(), ...params },
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+export const exportarPedidos = (params: ParamsDownload = {}) =>
+  baixar(`${BASE_URL}/orders/export/`, params);
+
+export const exportarVendasPorItem = (params: ParamsDownload = {}) =>
+  baixar(`${BASE_URL}/items/export/`, params);
+
+export const exportarFaturamento = (params: ParamsDownload = {}) =>
+  baixar(`${BASE_URL}/revenue/export/`, params);
+
+/** Nome com data, para não acumular "download (3).csv" na pasta do usuário. */
+export const nomeArquivo = (base: string, formato: 'csv' | 'xlsx') => {
+  const hoje = new Date().toISOString().slice(0, 10);
+  return `${base}_${hoje}.${formato}`;
+};
+
+/** Cardápio abre em nova aba (o dono confere antes de enviar a um cliente). */
+export const abrirCardapioPdf = () => {
+  const base = (api.defaults.baseURL || '').replace(/\/$/, '');
+  const loja = encodeURIComponent(getStoreParam() || '');
+  window.open(`${base}/stores/catalog/pdf/?store=${loja}`, '_blank', 'noopener');
+};
+
 export const exportOrdersCSV = async (params: DateRange = {}): Promise<Blob> => {
   try {
     const response = await api.get(`${BASE_URL}/orders/export/`, {
@@ -393,6 +437,11 @@ export const reportsService = {
   getCustomersReport,
   getDashboardStats,
   exportOrdersCSV,
+  exportarPedidos,
+  exportarVendasPorItem,
+  exportarFaturamento,
+  nomeArquivo,
+  abrirCardapioPdf,
   downloadBlob,
   getAnalyticsReport,
 };
