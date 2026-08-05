@@ -28,6 +28,8 @@ export interface FaixaDeDatas {
 
 interface Props {
   range: FaixaDeDatas;
+  /** Abre a escolha de categorias do cardápio. */
+  onEscolherCardapio: () => void;
   /** Export da aba aberta (client-side, já existente). Opcional. */
   onExportarAba?: () => void;
   abaLabel?: string;
@@ -37,7 +39,7 @@ interface Props {
 type Formato = 'csv' | 'xlsx';
 
 const MenuDownloads: React.FC<Props> = ({
-  range, onExportarAba, abaLabel, abaDesabilitada,
+  range, onExportarAba, abaLabel, abaDesabilitada, onEscolherCardapio,
 }) => {
   const [baixando, setBaixando] = useState<string | null>(null);
 
@@ -136,11 +138,21 @@ const MenuDownloads: React.FC<Props> = ({
           {item('fat-csv', 'Faturamento — CSV', DocumentTextIcon, faturamento('csv'))}
 
           {grupo('Cardápio')}
-          {item('cardapio-pdf', 'Cardápio em PDF', DocumentArrowDownIcon, async () => {
-            // Abre em nova aba em vez de baixar: o dono confere antes de mandar
-            // o arquivo para um cliente.
-            reportsService.abrirCardapioPdf();
-          })}
+          <Menu.Item>
+            {({ active }) => (
+              <button
+                type="button"
+                onClick={onEscolherCardapio}
+                className={[
+                  'flex w-full items-center gap-2 px-3 py-2 text-sm text-left',
+                  active ? 'bg-bg-secondary' : '',
+                ].join(' ')}
+              >
+                <DocumentArrowDownIcon className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
+                <span className="flex-1 text-fg-primary">Cardápio em PDF…</span>
+              </button>
+            )}
+          </Menu.Item>
 
           {onExportarAba && (
             <>

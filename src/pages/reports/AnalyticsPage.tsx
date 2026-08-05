@@ -17,7 +17,9 @@ import { formatAxisCurrency } from '../../utils/formatters';
 import { Card, Button, Badge, StatCard } from '../../components/ui';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankedList } from './sections/shared';
+import { useStore } from '../../hooks/useStore';
 import MenuDownloads from '../../components/reports/MenuDownloads';
+import ModalCardapioPdf from '../../components/reports/ModalCardapioPdf';
 import { ReportsFilterBar } from '../../components/reports/ReportsFilterBar';
 import { reportsService, type DateRange } from '../../services/reports';
 import {
@@ -169,6 +171,8 @@ const TAB_GROUPS: Array<{ group: string; tabs: { value: TabValue; label: string 
 const AnalyticsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
   const [range, setRange] = useState<DateRange>({ period: '30d' });
+  const [cardapioAberto, setCardapioAberto] = useState(false);
+  const { storeId } = useStore();
   const [groupBy, setGroupBy] = useState<GroupBy>('day');
   const [errorDismissed, setErrorDismissed] = useState(false);
   const queryClient = useQueryClient();
@@ -579,6 +583,7 @@ const AnalyticsPage: React.FC = () => {
               a lado. Antes eram dois botões soltos e só CSV cru. */}
           <MenuDownloads
             range={range}
+            onEscolherCardapio={() => setCardapioAberto(true)}
             onExportarAba={exportForTab[activeTab]}
             abaLabel={`Aba ${activeTab}`}
             abaDesabilitada={activeTabLoading}
@@ -664,6 +669,12 @@ const AnalyticsPage: React.FC = () => {
       ))}
       {activeTab === 'finance' && (planLocked ? <UpgradeCard /> : <FinanceSection range={range} enabled />)}
       {activeTab === 'bot' && (planLocked ? <UpgradeCard /> : <BotReviewsSection range={range} enabled />)}
+
+      <ModalCardapioPdf
+        aberto={cardapioAberto}
+        onFechar={() => setCardapioAberto(false)}
+        storeId={storeId ?? undefined}
+      />
     </div>
   );
 };

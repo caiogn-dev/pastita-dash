@@ -257,11 +257,15 @@ export const nomeArquivo = (base: string, formato: 'csv' | 'xlsx') => {
   return `${base}_${hoje}.${formato}`;
 };
 
-/** Cardápio abre em nova aba (o dono confere antes de enviar a um cliente). */
-export const abrirCardapioPdf = () => {
+/**
+ * Cardápio abre em nova aba (o dono confere antes de enviar a um cliente).
+ * `categorias` limita o que entra; sem elas, vai o catálogo inteiro.
+ */
+export const abrirCardapioPdf = (categorias?: string[]) => {
   const base = (api.defaults.baseURL || '').replace(/\/$/, '');
-  const loja = encodeURIComponent(getStoreParam() || '');
-  window.open(`${base}/stores/catalog/pdf/?store=${loja}`, '_blank', 'noopener');
+  const params = new URLSearchParams({ store: getStoreParam() || '' });
+  if (categorias?.length) params.set('categories', categorias.join(','));
+  window.open(`${base}/stores/catalog/pdf/?${params}`, '_blank', 'noopener');
 };
 
 export const exportOrdersCSV = async (params: DateRange = {}): Promise<Blob> => {
