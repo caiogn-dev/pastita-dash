@@ -5,7 +5,11 @@ import * as storesApi from '../../services/storesApi';
 import type { StoreCategory, StoreProductType } from '../../services/storesApi';
 import type { Product } from '../../services/products';
 import { useStore } from '../../hooks/useStore';
-import { useToast } from '../../hooks/useToast';
+// react-hot-toast e NÃO useToast: aquele hook guarda os toasts num useState
+// local e devolve o array para o componente renderizar — mas o ToastProvider
+// nunca é montado em lugar nenhum, então os 8 caminhos de erro desta página
+// ficavam 100% mudos. O <Toaster/> do react-hot-toast está em main.tsx.
+import toast from 'react-hot-toast';
 import { groupProducts } from './hooks/useProductsGrouped';
 import { useInlineProductMutations } from './hooks/useInlineProductMutations';
 import { useProductReorder } from './hooks/useProductReorder';
@@ -17,7 +21,6 @@ import { ProductFormModal } from './ProductFormModal';
 
 export const ProductsPage: React.FC = () => {
   const { storeId } = useStore();
-  const { error: showError } = useToast();
 
   // Produtos: fetch/cache/dedup via react-query; estado local é semeado a partir
   // da query e continua sendo a fonte para edição inline + reorder (otimista).
@@ -40,7 +43,10 @@ export const ProductsPage: React.FC = () => {
 
   const onError = (e: unknown) => {
     console.error(e);
-    showError('Erro ao salvar');
+    const detalhe =
+      (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+      (e as Error)?.message;
+    toast.error(detalhe ? `Erro ao salvar: ${detalhe}` : 'Erro ao salvar');
   };
 
   // Categorias + tipos seguem em fetch manual (fora do escopo do react-query aqui).

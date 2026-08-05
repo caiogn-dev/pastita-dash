@@ -23,9 +23,23 @@ jest.mock('../../services/websocket', () => ({
   clearWebSocketInstance: jest.fn(),
 }));
 
+// AudioContext não existe em jsdom; aqui interessa SE o alerta é disparado.
+const mockPlayNotificationSound = jest.fn();
+jest.mock('../useNotificationSound', () => ({
+  useNotificationSound: () => ({
+    playNotificationSound: mockPlayNotificationSound,
+    playOrderSound: mockPlayNotificationSound,
+    playSuccessSound: jest.fn(),
+    stopAlert: jest.fn(),
+    isAlertActive: false,
+  }),
+}));
+
 beforeEach(() => {
   mockCreateWebSocket.mockClear();
   mockWs.connect.mockClear();
+  mockWs.subscribe.mockClear();
+  mockPlayNotificationSound.mockClear();
   // Estado realista pós-login: token vivo no authStore; rootStore.auth vazio
   // (como acontece em produção — ninguém chama useRootStore.setAuth no login).
   useAuthStore.setState({ token: 'tok-123', isAuthenticated: true });
@@ -82,4 +96,39 @@ it('não conecta quando não há token em lugar nenhum', async () => {
   // pequena espera para garantir que o efeito rodou e NÃO conectou
   await new Promise((r) => setTimeout(r, 20));
   expect(mockCreateWebSocket).not.toHaveBeenCalled();
+});
+
+// ── Alerta sonoro (PD-PERF-010) ──────────────────────────────────────────────
+//
+// O alerta inteiro — 2 ondas de 4 tons, repetição a cada 4s, auto-stop em 30s,
+// Notification do browser — existia e NUNCA tocava: o board montava o hook com
+// o retorno prefixado `_playNotificationSound`, o que também calava o lint, e
+// nada chamava a função. Pedido novo entrava mudo e ficava parado na coluna
+// "Novo" até alguém olhar para o monitor.
+//
+// Disparo religado na origem do evento (`order.created`), não no board — assim
+// toca mesmo com o operador em outra tela do painel.
+
+it('toca o alerta quando chega um pedido novo pelo WebSocket', async () => {
+  renderHook(() => useRealTimeOrders(config));
+  await waitFor(() => expect(mockWs.subscribe).toHaveBeenCalled());
+
+  const inscricao = mockWs.subscribe.mock.calls.find(([evento]) => evento === 'order.created');
+  expect(inscricao).toBeDefined();
+
+  mockPlayNotificationSound.mockClear();
+  inscricao![1]({ type: 'order.created' });
+
+  expect(mockPlayNotificationSound).toHaveBeenCalledTimes(1);
+});
+
+it('não toca em atualização de pedido — só na criação', async () => {
+  renderHook(() => useRealTimeOrders(config));
+  await waitFor(() => expect(mockWs.subscribe).toHaveBeenCalled());
+
+  mockPlayNotificationSound.mockClear();
+  const atualizado = mockWs.subscribe.mock.calls.find(([e]) => e === 'order.updated');
+  atualizado?.[1]({ type: 'order.updated', order: { id: 'o1' } });
+
+  expect(mockPlayNotificationSound).not.toHaveBeenCalled();
 });

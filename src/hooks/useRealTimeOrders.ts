@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRootStore } from '../stores/rootStore';
 import { useAuthStore } from '../stores/authStore';
 import { createWebSocket, clearWebSocketInstance } from '../services/websocket';
+import { useNotificationSound } from './useNotificationSound';
 import { applyOrderEventToOrders, type OrderRealtimeEvent } from './orderRealtimeEvents';
 
 export { applyOrderEventToOrders };
@@ -53,6 +54,14 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
   const refreshAbortRef = useRef<AbortController | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
+
+  // Via ref para o handler de `order.created` não entrar nas deps do efeito de
+  // conexão — senão qualquer recriação da função derrubaria e reabriria o socket.
+  const { playNotificationSound } = useNotificationSound();
+  const playNewOrderSoundRef = useRef(playNotificationSound);
+  useEffect(() => {
+    playNewOrderSoundRef.current = playNotificationSound;
+  }, [playNotificationSound]);
 
   useEffect(() => {
     if (!enabled || !authToken || !selectedStoreId || !selectedStoreSlug) {
@@ -102,6 +111,14 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       ws.subscribe('order.created', () => {
         // Pedido novo: o payload do evento não traz items — precisa refetch
         refreshOrdersFromAPI();
+        // Bipe do balcão. O alerta inteiro (2 ondas de 4 tons, repetição a cada
+        // 4s, auto-stop em 30s) existia e nunca era disparado: o board montava o
+        // hook com o retorno prefixado `_` — o que também calava o lint — e
+        // ninguém chamava. Resultado: pedido novo entrava mudo e ficava parado
+        // na coluna "Novo" até alguém olhar para o monitor.
+        // Disparar AQUI, na origem do evento, e não no board: o som toca mesmo
+        // com o operador em outra tela do painel.
+        playNewOrderSoundRef.current?.();
       });
 
       ws.subscribe('order.updated', (event) => {

@@ -34,3 +34,28 @@ describe('escala de z-index — drawers/modais nunca acima dos toasts', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+/**
+ * O <main> do MainLayout não pode ter z-index.
+ *
+ * `main` é flex item (pai `flex flex-col`), e pela spec do Flexbox um z-index
+ * em flex item cria stacking context mesmo com position static. Com `z-10`, a
+ * navbar irmã (sticky z-40, opaca, com backdrop-blur) pintava acima de TODA a
+ * subárvore da página: nenhum drawer adiantava declarar z-50 ou z-[60]. Os 64px
+ * do topo — título e botão X — ficavam invisíveis e não clicáveis em 11
+ * superfícies (CustomersPage, AddCategoryModal, NewConversationModal, campanhas,
+ * automação, EditOrderDrawer...).
+ *
+ * A escala acima só significa alguma coisa se todos os overlays estiverem no
+ * mesmo contexto de empilhamento que a navbar.
+ */
+describe('MainLayout — main sem stacking context próprio', () => {
+  it('o <main> não declara z-index', () => {
+    const arquivo = path.join(SRC, 'components/layout/MainLayout.tsx');
+    const conteudo = fs.readFileSync(arquivo, 'utf8');
+    const tagsMain = conteudo.match(/<main[^>]*>/g) ?? [];
+    expect(tagsMain.length).toBeGreaterThan(0);
+    const comZ = tagsMain.filter((tag) => /\bz-\[?-?\d/.test(tag));
+    expect(comZ).toEqual([]);
+  });
+});

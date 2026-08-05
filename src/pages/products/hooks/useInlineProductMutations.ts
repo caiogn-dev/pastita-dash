@@ -34,12 +34,20 @@ export function useInlineProductMutations({ products, setProducts, onError }: Ar
       () => storesApi.updateProduct(id, { featured } as any)), [run]);
 
   const setStock = useCallback((id: string, qty: number) => {
+    // Reverte igual ao run() acima. Sem isto o patch otimista ficava na tela
+    // mesmo com o PATCH falhando: a lista mostrava estoque 0, o backend seguia
+    // com 12, e o produto continuava vendável no cardápio público — o operador
+    // só descobria quando o pedido caía.
+    const before = products.find((p) => p.id === id);
     patchLocal(id, { stock_quantity: qty } as Partial<Product>);
     clearTimeout(debouncers.current[id]);
     debouncers.current[id] = setTimeout(() => {
-      storesApi.updateProductStock(id, qty, 'set').catch((err) => onError(err));
+      storesApi.updateProductStock(id, qty, 'set').catch((err) => {
+        if (before) patchLocal(id, before);
+        onError(err);
+      });
     }, 600);
-  }, [patchLocal, onError]);
+  }, [products, patchLocal, onError]);
 
   return { setPrice, setStatus, setFeatured, setStock };
 }

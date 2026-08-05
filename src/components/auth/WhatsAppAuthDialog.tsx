@@ -29,7 +29,7 @@ import {
   Lock,
 } from 'lucide-react';
 import api from '@/services/api';
-import { useToast } from '@/hooks/useToast';
+import toast from 'react-hot-toast';
 
 interface WhatsAppAuthDialogProps {
   isOpen: boolean;
@@ -46,7 +46,6 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
   onSuccess,
   whatsappAccountId,
 }) => {
-  const toast = useToast();
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -107,7 +106,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
       if (response.data.success) {
         setStep('code');
         setCountdown(60); // 1 minuto para reenviar
-        toast.success('Código enviado!', 'Verifique seu WhatsApp');
+        toast.success('Código enviado! Verifique seu WhatsApp');
       } else {
         setError(response.data.message || 'Erro ao enviar código');
         if (response.data.retry_after) {
@@ -137,7 +136,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
       if (response.data.success) {
         setCountdown(60);
         setCode(['', '', '', '', '', '']);
-        toast.success('Código reenviado!', 'Verifique seu WhatsApp');
+        toast.success('Código reenviado! Verifique seu WhatsApp');
       } else {
         setError(response.data.message || 'Erro ao reenviar código');
       }
@@ -170,7 +169,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
       
       if (response.data.valid) {
         setStep('success');
-        toast.success('Autenticação realizada!', 'Bem-vindo!');
+        toast.success('Autenticação realizada! Bem-vindo!');
         
         setTimeout(() => {
           onSuccess(response.data.user);

@@ -47,7 +47,7 @@ import {
   cancelOrder,
   StoreOrder,
 } from '../../services/storesApi';
-import { useNotificationSound, useStore, useConfirm, useOrderDetailModal } from '../../hooks';
+import { useStore, useConfirm, useOrderDetailModal } from '../../hooks';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { getErrorMessage } from '../../services';
 import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
@@ -423,7 +423,10 @@ export const OrdersPage: React.FC = () => {
   const storeOrders = useRootStore(
     (s) => (storeQuery ? s.orders[resolveStoreKey(s.stores, storeQuery)] : undefined)
   ) ?? EMPTY_ORDERS;
-  const { playNotificationSound: _playNotificationSound } = useNotificationSound();
+  // O alerta sonoro agora é disparado em useRealTimeOrders, na chegada do
+  // evento `order.created` — assim toca mesmo com o operador em outra tela.
+  // Montar o hook aqui só custava dois listeners de document e um AudioContext
+  // (o Chrome limita a 6 por página) sem nunca tocar nada.
 
   // DnD state
   const [activeId, setActiveId] = useState<string | null>(null);

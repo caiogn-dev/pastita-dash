@@ -86,7 +86,12 @@
      ============================================ */
   --fg-primary: #111827;
   --fg-secondary: #6b7280;
-  --fg-muted: #9ca3af;
+  /* --fg-muted NÃO é redeclarado aqui: tokens.css (importado na linha 1) é o
+     SSOT. O #9ca3af desta paleta legada vencia a cascata por vir depois com a
+     mesma especificidade e dava 2,54:1 sobre branco — abaixo do mínimo AA de
+     4,5:1. Como o tailwind.config mapeia `text-fg-muted` E `text-fg-muted-token`
+     para a mesma variável, as duas convenções caíam juntas: 1.139 ocorrências
+     em 86 arquivos. */
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-card: #ffffff;
@@ -112,7 +117,9 @@
   /* Texto com temperatura quente, não zinc puro */
   --text-primary: #FAF9F7;
   --text-secondary: #A8998F;
-  --text-muted: #6E6058;
+  /* usado no input::placeholder; #6E6058 dava 3,12:1 sobre a superfície escura.
+     Alinhado ao mesmo tom do Dark Luxe → ~5,3:1. */
+  --text-muted: #A89880;
 
   --border-default: #2C2218;
   --border-subtle: #1E1812;
@@ -126,7 +133,9 @@
   /* Semantic tokens — dark quente */
   --fg-primary: #FAF9F7;
   --fg-secondary: #A8998F;
-  --fg-muted: #6E6058;
+  /* idem: o #6E6058 daqui dava 2,99:1 sobre --bg-card e matava o #A89880 do
+     Dark Luxe, que passa com 6,39:1. Vale para a navegação do PWA e o KDS da
+     cozinha, onde o texto secundário some na tela da parede. */
   --bg-primary: #0D0907;
   --bg-secondary: #141009;
   --bg-card: #1C1510;

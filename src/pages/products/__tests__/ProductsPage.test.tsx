@@ -34,17 +34,12 @@ jest.mock('../ProductFormModal', () => ({
   ProductFormModal: () => null,
 }));
 
-jest.mock('../../../hooks/useToast', () => ({
+// A página usava useToast, cujos toasts iam para um useState local que ninguém
+// renderizava (o ToastProvider nunca era montado) — os 8 caminhos de erro eram
+// mudos. Agora usa react-hot-toast, que tem <Toaster/> montado em main.tsx.
+jest.mock('react-hot-toast', () => ({
   __esModule: true,
-  useToast: () => ({
-    toasts: [],
-    addToast: jest.fn(),
-    removeToast: jest.fn(),
-    success: jest.fn(),
-    error: jest.fn(),
-    warning: jest.fn(),
-    info: jest.fn(),
-  }),
+  default: { error: jest.fn(), success: jest.fn() },
 }));
 
 beforeEach(() => {

@@ -2,10 +2,20 @@
 /* Cores 100% via tokens do design system (src/styles/tokens.css).
    As variáveis trocam sozinhas na classe .dark — não duplicar overrides aqui. */
 
-/* Container: ocupa todo espaço disponível abaixo do navbar */
+/* Container: ocupa todo espaço disponível abaixo do navbar.
+   ANTES: height: calc(100vh - 48px), com o comentário "48px = h-12 navbar".
+   A navbar virou h-16 (64px), o inbox unificado passou a inserir a barra de abas
+   (~39px) acima e o TrialBanner (~37px) pode entrar entre os dois. O pai é
+   `flex-1 overflow-hidden`, então os 55px (ou 92px com banner) de excedente eram
+   CLIPADOS sem scrollbar — e o composer de mensagem, que tem ~59px e fica no fim
+   do bloco, sumia quase por inteiro. Não dava para digitar nem clicar em Enviar.
+   Medir a viewport aqui é errado por natureza: qualquer coisa nova acima quebra
+   de novo. A cadeia flex do pai (InboxPage: h-full → min-h-0 flex-1) já sabe a
+   altura real; basta ocupá-la. */
 .whatsapp-inbox {
   display: flex;
-  height: calc(100vh - 48px); /* 48px = h-12 navbar */
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   background: var(--canvas);
 }
@@ -1401,7 +1411,8 @@ select.item-name {
 /* Mobile (< 768px): lista em tela cheia, chat em tela cheia */
 @media (max-width: 767px) {
   .whatsapp-inbox {
-    height: calc(100vh - 48px);
+    /* mesmo motivo do bloco principal: quem sabe a altura é o pai flex */
+    height: 100%;
   }
 
   .conversations-panel {

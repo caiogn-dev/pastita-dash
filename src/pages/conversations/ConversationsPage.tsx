@@ -299,8 +299,8 @@ export const ConversationsPage: React.FC = () => {
   return (
     <div className="space-y-6 p-6">
       <PageTitle
-        title="Conversations"
-        subtitle="Atividade geral centralizada por conversa, ordenada pela ultima mensagem."
+        title="Conversas"
+        subtitle="Atividade geral centralizada por conversa, ordenada pela última mensagem."
         actions={
           <Button variant="secondary" onClick={() => void loadConversations(false)}>
             <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />

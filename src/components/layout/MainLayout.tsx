@@ -52,7 +52,14 @@ export const MainLayout: React.FC = () => {
       />
       <Navbar />
       <TrialBanner />
-      <main className="flex-1 overflow-auto bg-transparent px-7 py-5 max-xl:px-5 max-md:px-3 max-md:py-3 z-10">
+      {/* SEM z-index aqui. `main` é flex item, e pela spec do Flexbox um z-index
+          num flex item cria stacking context mesmo com position static. Com
+          z-10, a navbar irmã (sticky z-40, opaca) pintava acima de TODA a
+          subárvore da página — nenhum drawer adiantava declarar z-50 ou z-[60],
+          e os 64px do topo (título e botão X) ficavam inalcançáveis em 11
+          superfícies. O gradiente decorativo acima já pinta antes por ordem de
+          documento e é pointer-events-none, então a camada era desnecessária. */}
+      <main className="flex-1 overflow-auto bg-transparent px-7 py-5 max-xl:px-5 max-md:px-3 max-md:py-3">
         <Outlet />
       </main>
     </div>

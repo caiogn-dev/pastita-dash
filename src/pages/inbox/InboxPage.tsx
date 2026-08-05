@@ -39,7 +39,14 @@ const InboxPage: React.FC = () => {
           </button>
         ))}
       </div>
-      <div className="min-h-0 flex-1">
+      {/* overflow-y-auto: a rota /inbox cai no ramo fullscreen do MainLayout,
+          cujo container é `flex-1 overflow-hidden`. Nenhum ancestral rolava, e
+          `overflow: hidden` não é rolável pelo usuário — a aba "Todas" (página
+          de altura natural) era simplesmente cortada: do 6º card em diante nada
+          aparecia e a roda do mouse não fazia nada.
+          A aba WhatsApp não gera rolagem dupla porque seu container é
+          `height: 100%` com overflow próprio. */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <Suspense fallback={<Loading />}>
           <Content />
         </Suspense>
