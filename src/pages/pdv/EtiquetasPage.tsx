@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { PrinterIcon, TagIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, PrinterIcon, TagIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, SearchInput } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { getStores, getProducts, updateProduct, StoreProduct } from '../../services/storesApi';
 import { generateInternalEan13 } from '../../utils/ean13';
 import {
-  buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
+  buildBarcodeCatalogDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
   PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
 } from '../../utils/labelPrint';
 
@@ -218,6 +218,29 @@ const EtiquetasPage: React.FC = () => {
     }
   };
 
+  const handleExportPdf = async () => {
+    const grouped = new Map<string, { name: string; products: CatalogEntry[] }>();
+    catalog.forEach((entry) => {
+      const group = grouped.get(entry.storeSlug) ?? { name: entry.storeName, products: [] };
+      group.products.push(entry);
+      grouped.set(entry.storeSlug, group);
+    });
+    const storesForPdf = [...grouped.values()]
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+      .map((group) => ({
+        name: group.name,
+        products: [...group.products]
+          .sort((a, b) => a.product.name.localeCompare(b.product.name, 'pt-BR'))
+          .map(({ product }) => ({
+            name: product.name,
+            category: product.category_name || undefined,
+            sku: product.sku || undefined,
+            barcode: product.barcode || undefined,
+          })),
+      }));
+    await printHtmlDocument(buildBarcodeCatalogDoc(storesForPdf));
+  };
+
   /** Primeira página, renderizada com o mesmo gerador da impressão. */
   const preview = useMemo(() => {
     if (template === 'produto') {
@@ -246,14 +269,20 @@ const EtiquetasPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-4 md:space-y-5">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold flex items-center gap-2">
-          <TagIcon className="w-6 h-6" /> Etiquetas
-        </h1>
-        <p className="text-sm opacity-70">
-          Imprima etiquetas de produto (com código de barras) ou de validade direto do cadastro —
-          produto sem código ganha um EAN-13 interno na hora.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold flex items-center gap-2">
+            <TagIcon className="w-6 h-6" /> Etiquetas
+          </h1>
+          <p className="text-sm opacity-70">
+            Imprima etiquetas de produto (com código de barras) ou de validade direto do cadastro —
+            produto sem código ganha um EAN-13 interno na hora.
+          </p>
+        </div>
+        <Button variant="secondary" disabled={catalog.length === 0} onClick={handleExportPdf}>
+          <ArrowDownTrayIcon className="w-5 h-5" />
+          Exportar PDF A4
+        </Button>
       </div>
 
       <div className="grid lg:grid-cols-[1fr,360px] gap-4 md:gap-5 items-start">

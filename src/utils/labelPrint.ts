@@ -30,6 +30,18 @@ export interface ValidadeLabelData {
   val: string;
 }
 
+export interface BarcodeCatalogProduct {
+  name: string;
+  category?: string;
+  sku?: string;
+  barcode?: string;
+}
+
+export interface BarcodeCatalogStore {
+  name: string;
+  products: BarcodeCatalogProduct[];
+}
+
 export interface ProdutoConfig {
   /** Dimensões da etiqueta em mm (como o operador enxerga a etiqueta). */
   width: number;
@@ -183,6 +195,51 @@ export const buildValidadeDoc = (labels: ValidadeLabelData[], cfg: ValidadeConfi
 <div class="dt">Manip.: ${esc(l.manip)}<br><b>Val.: ${esc(l.val)}</b></div>
 </div>`).join('')}</div>`).join('\n');
   return wrapDoc('Etiquetas de validade', css, body);
+};
+
+/** Folha A4 de consulta, agrupada por loja, para imprimir ou salvar como PDF. */
+export const buildBarcodeCatalogDoc = (stores: BarcodeCatalogStore[]): string => {
+  const css = `
+@page { size: A4 portrait; margin: 12mm; }
+body { font-size: 9pt; }
+.sheet-title { margin: 0 0 7mm; font-size: 18pt; line-height: 1.1; }
+.store { break-before: page; }
+.store:first-of-type { break-before: auto; }
+.store-title {
+  margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 0.5mm solid #000;
+  font-size: 14pt; line-height: 1.1;
+}
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4mm; }
+.item {
+  min-height: 31mm; padding: 3mm; border: 0.25mm solid #aaa;
+  break-inside: avoid; display: flex; flex-direction: column;
+}
+.name { font-size: 10pt; font-weight: 700; line-height: 1.2; }
+.meta { margin-top: 1mm; color: #444; font-size: 7.5pt; line-height: 1.25; }
+.barcode { height: 16mm; margin-top: auto; padding-top: 2mm; }
+.barcode svg { width: 100%; height: 100%; }
+.digits { margin-top: 0.5mm; font-size: 8pt; text-align: center; letter-spacing: .08em; }
+.missing {
+  margin-top: auto; padding-top: 4mm; color: #666; font-size: 9pt;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+}`;
+  const body = `<h1 class="sheet-title">Catálogo de códigos de barras</h1>${stores.map((store) => `
+<section class="store">
+  <h2 class="store-title">${esc(store.name)}</h2>
+  <div class="grid">${store.products.map((product) => `
+    <article class="item">
+      <div class="name">${esc(product.name)}</div>
+      <div class="meta">${[
+        product.category ? esc(product.category) : '',
+        product.sku ? `SKU: ${esc(product.sku)}` : '',
+      ].filter(Boolean).join(' · ')}</div>
+      ${product.barcode
+        ? `<div class="barcode">${barcodeSvg(product.barcode)}</div><div class="digits">${esc(product.barcode)}</div>`
+        : '<div class="missing">Sem código</div>'}
+    </article>`).join('')}
+  </div>
+</section>`).join('')}`;
+  return wrapDoc('Catálogo de códigos de barras', css, body);
 };
 
 /** Imprime um documento HTML completo num iframe isolado e descartável. */

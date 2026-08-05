@@ -90,6 +90,23 @@ describe('EtiquetasPage', () => {
     expect(mockedUpdateProduct).not.toHaveBeenCalled();
   });
 
+  it('exporta folha A4 organizada sem gerar código para produto vazio', async () => {
+    renderPage();
+    await screen.findByText('Marmita P');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar PDF A4' }));
+
+    await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
+    const doc = mockedPrint.mock.calls[0][0] as string;
+    expect(doc).toContain('@page { size: A4 portrait;');
+    expect(doc).toContain('Loja Um');
+    expect(doc).toContain('Marmita P');
+    expect(doc).toContain('Sem código');
+    expect(doc).toContain('Suco');
+    expect(doc).toContain('7891000000014');
+    expect(mockedUpdateProduct).not.toHaveBeenCalled();
+  });
+
   it('modo validade imprime linhas de 3 colunas com página do tamanho do papel', async () => {
     renderPage();
     await screen.findByText('Marmita P');
