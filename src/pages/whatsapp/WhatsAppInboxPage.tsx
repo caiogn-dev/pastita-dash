@@ -106,6 +106,10 @@ const corDaLoja = (slug?: string | null): string => {
   return `hsl(${Math.abs(hash) % 360} 62% 45%)`;
 };
 
+/** Conversas por página. O backend pagina (default 20, teto 200); esta tela
+ *  agora anexa páginas conforme o operador desce a lista. */
+const PAGE_SIZE = 30;
+
 const WhatsAppInboxPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { storeId, storeSlug, storeName, store } = useStore();
@@ -121,6 +125,14 @@ const WhatsAppInboxPage: React.FC = () => {
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
   const [activePanel, setActivePanel] = useState<'templates' | 'tools' | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  // Paginação da LISTA de conversas (não confundir com o histórico de
+  // mensagens de uma conversa, que tem o seu próprio cursor abaixo).
+  const [buscaAtiva, setBuscaAtiva] = useState('');   // termo já debounced
+  const [temMais, setTemMais] = useState(false);
+  const [carregandoMais, setCarregandoMais] = useState(false);
+  const paginaRef = useRef(1);
+  const carregandoMaisRef = useRef(false);            // trava contra disparo duplo no scroll
+  const listaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const sendLockRef = useRef(false);
@@ -171,15 +183,19 @@ const WhatsAppInboxPage: React.FC = () => {
       // Sem `store` o backend devolve as conversas de TODAS as lojas do dono
       // misturadas — o dono de três lojas via as três numa lista só. O filtro
       // por usuário continua valendo por baixo; este é o recorte de contexto.
-      // page_size explícito: o backend pagina de 20 em 20 e esta tela NÃO
-      // pagina — ela joga `results` direto no chatStore. Sem isto o operador
-      // via só as 20 primeiras de 123 conversas e o resto simplesmente não
-      // existia na tela (06/ago: um disparo de 20 números novos empurrou todas
-      // as conversas reais para fora da lista). 200 é o teto do backend.
-      const response = await conversationsService.getConversations(
-        storeSlug ? { store: storeSlug, page_size: 200 } : { page_size: 200 },
-      );
+      // Página 1. `busca` vai para o SERVIDOR: a busca antiga filtrava só o
+      // que já estava carregado, então procurar um cliente da posição 40 não
+      // achava nada. No servidor ela varre a lista inteira e ainda casa o
+      // conteúdo das mensagens, não só nome e telefone.
+      const response = await conversationsService.getConversations({
+        ...(storeSlug ? { store: storeSlug } : {}),
+        page: 1,
+        page_size: PAGE_SIZE,
+        ...(buscaAtiva ? { search: buscaAtiva } : {}),
+      });
       const convs = ensureArray<ConversationWithMessages>(response?.results || response);
+      paginaRef.current = 1;
+      setTemMais(Boolean(response?.next));
       // Hidrata o chatStore com a lista inicial (o WS mantém atualizado depois)
       useChatStore.getState().setConversations(convs as unknown as Conversation[]);
 
@@ -204,7 +220,51 @@ const WhatsAppInboxPage: React.FC = () => {
     }
     // storeSlug entra nas deps: trocar de loja no seletor tem que recarregar a
     // lista, senão o inbox continua mostrando a loja anterior.
-  }, [searchParams, markConversationRead, storeSlug]);
+    // buscaAtiva: cada termo novo refaz a consulta da página 1 no servidor.
+  }, [searchParams, markConversationRead, storeSlug, buscaAtiva]);
+
+  /** Próxima página da lista, anexada ao fim (scroll infinito). */
+  const carregarMaisConversas = useCallback(async () => {
+    // Ref e não estado: dois eventos de scroll no mesmo frame leriam o estado
+    // antigo e disparariam a mesma página duas vezes, duplicando linhas.
+    if (carregandoMaisRef.current || !temMais) return;
+    carregandoMaisRef.current = true;
+    setCarregandoMais(true);
+    const proxima = paginaRef.current + 1;
+    try {
+      const response = await conversationsService.getConversations({
+        ...(storeSlug ? { store: storeSlug } : {}),
+        page: proxima,
+        page_size: PAGE_SIZE,
+        ...(buscaAtiva ? { search: buscaAtiva } : {}),
+      });
+      const novas = ensureArray<ConversationWithMessages>(response?.results || response);
+      paginaRef.current = proxima;
+      setTemMais(Boolean(response?.next));
+      if (novas.length) {
+        const store = useChatStore.getState();
+        const atuais = ensureArray<ConversationWithMessages>(store.conversations);
+        // Dedup por id: o WebSocket pode ter promovido para o topo uma conversa
+        // que também vem nesta página, e ela apareceria duas vezes na lista.
+        const vistos = new Set(atuais.map((c) => c.id));
+        const merged = [...atuais, ...novas.filter((c) => !vistos.has(c.id))];
+        store.setConversations(merged as unknown as Conversation[]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar mais conversas:', error);
+    } finally {
+      carregandoMaisRef.current = false;
+      setCarregandoMais(false);
+    }
+  }, [storeSlug, buscaAtiva, temMais]);
+
+  /** Dispara a próxima página ao chegar perto do fim da lista. */
+  const aoRolarLista = useCallback(() => {
+    const el = listaRef.current;
+    if (!el) return;
+    const faltam = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (faltam < 300) void carregarMaisConversas();
+  }, [carregarMaisConversas]);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     try {
@@ -339,6 +399,15 @@ const WhatsAppInboxPage: React.FC = () => {
     }
   };
 
+  // Debounce da busca: sem isto cada tecla viraria uma requisição e as
+  // respostas podiam chegar fora de ordem, deixando a lista de um termo antigo.
+  useEffect(() => {
+    const termo = searchTerm.trim();
+    if (termo === buscaAtiva) return;
+    const t = setTimeout(() => setBuscaAtiva(termo), 350);
+    return () => clearTimeout(t);
+  }, [searchTerm, buscaAtiva]);
+
   // Carga inicial — apenas UMA vez por mudança de searchParams
   useEffect(() => {
     // ESPERA a loja ser conhecida. Depois de um F5, `stores` chega por uma
@@ -419,10 +488,22 @@ const WhatsAppInboxPage: React.FC = () => {
     }
   }, [selectedConversationId, loadOlderMessages]);
 
-  const searchedConversations = ensureArray<ConversationWithMessages>(conversations).filter(conv =>
-    conv.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.phone_number.includes(searchTerm)
-  );
+  // A busca agora é feita pelo SERVIDOR (parâmetro `search`), sobre a lista
+  // inteira e também sobre o texto das mensagens. O filtro client-side que
+  // existia aqui só enxergava as conversas já baixadas: procurar alguém da
+  // posição 40 não achava nada, mesmo a conversa existindo.
+  //
+  // Enquanto o debounce não alcança o que foi digitado, a lista ainda é a do
+  // termo anterior — filtrar localmente nesse intervalo evita mostrar
+  // resultados que claramente não casam com o que está no campo.
+  const termoPendente = searchTerm.trim() !== buscaAtiva ? searchTerm.trim().toLowerCase() : '';
+  const searchedConversations = ensureArray<ConversationWithMessages>(conversations).filter((conv) => {
+    if (!termoPendente) return true;
+    return (
+      conv.contact_name?.toLowerCase().includes(termoPendente) ||
+      conv.phone_number.includes(termoPendente)
+    );
+  });
 
   const unreadTotal = searchedConversations.filter((c) => (c.unread_count || 0) > 0).length;
   const humanTotal = searchedConversations.filter((c) => c.mode === 'human').length;
@@ -477,7 +558,7 @@ const WhatsAppInboxPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="conversations-list">
+        <div className="conversations-list" ref={listaRef} onScroll={aoRolarLista}>
           {loading ? (
             <div className="empty-state">Carregando conversas...</div>
           ) : filteredConversations.length === 0 ? (
@@ -536,6 +617,14 @@ const WhatsAppInboxPage: React.FC = () => {
                 </button>
               );
             })
+          )}
+          {!loading && carregandoMais && (
+            <div className="empty-state">Carregando mais...</div>
+          )}
+          {!loading && !temMais && filteredConversations.length > 0 && (
+            <div className="empty-state">
+              {buscaAtiva ? 'Fim dos resultados' : 'Fim das conversas'}
+            </div>
           )}
         </div>
       </div>
