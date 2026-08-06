@@ -3,6 +3,55 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-06)
+
+- `npm ci`: ok. `npm audit`: **6 vulnerabilidades (3 moderate, 3 high)**, todas
+  bloqueadas em major bump — `postcss`/`vite`/`esbuild` são dev/build-only e o
+  fix do `react-router` (open redirect via backslash, moderate) só existe no
+  **7.18.x** (afetados 6.0.0–7.17.0; não há patch dentro do `^6`). Bumps majores
+  ficam como fatia dedicada com validação de build.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **599 testes / 142 suítes verdes** (era 595/141; +4/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~16s).
+
+## Histórico
+
+### 2026-08-06 — A11y: nome acessível no `Modal` (fonte única de todos os diálogos)
+- **Medido:** varredura de segurança/UX a nível de código. O `Modal` canônico
+  (`src/components/ui/modal.tsx`) — que já tinha focus trap, Escape, restauração
+  de foco e lock de scroll ref-contado — renderizava `role="dialog"` +
+  `aria-modal="true"` **sem `aria-labelledby` nem `aria-label`**. Pela ARIA
+  Dialog Pattern, um diálogo modal precisa de nome acessível; sem ele, leitores
+  de tela anunciam só "diálogo", sem dizer do que se trata. Como o `Modal` é a
+  fonte única de **todos** os modais do painel (`ConfirmModal`, `ui/dialog`,
+  pedidos, combos, paywall, lojas, zonas de entrega, PDF de cardápio…), o defeito
+  se repetia em cada consumidor.
+- **Mudado (componente ativo, mudança puramente aditiva):**
+  - `Modal`: quando há `title` embutido, gera um `id` (via `useId`), coloca-o no
+    `<h2>` do header e aponta `aria-labelledby` do diálogo para ele.
+  - `Modal`: novas props `ariaLabel` e `ariaLabelledby` para o **caminho composto**
+    (sem `title`). Precedência: `ariaLabelledby` explícito → título embutido →
+    `ariaLabel`. Se houver labelledby, o `aria-label` é omitido (não empilha).
+  - `ConfirmModal`: passa a nomear o próprio diálogo pelo seu `<h3>` de título
+    (id via `useId` + `ariaLabelledby`).
+  - `ui/dialog.tsx`: repassa `ariaLabel`/`ariaLabelledby` ao `Modal` para os
+    consumidores compostos poderem se nomear.
+- **Teste (TDD):** nova suíte `modal.a11y.test.tsx` — escrita **vermelha (4/4
+  falhando) antes, verde depois**. Cobre: nome via `title` embutido, `ariaLabel`
+  explícito, `ariaLabelledby` explícito (caminho composto) e `ConfirmModal`
+  nomeado pelo próprio título — tudo via `getByRole('dialog', { name })`, que
+  resolve o nome acessível de verdade.
+- **Antes/depois:** `npm test` 595/141 → **599/142**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Zero mudança de comportamento visual — só
+  atributos de acessibilidade adicionados.
+- **Próximo passo priorizado:** (1) **A11y — dialog.tsx composto:** ligar
+  `DialogTitle`↔`Dialog` via contexto para nomear automaticamente os diálogos
+  que usam `DialogTitle` (hoje precisam passar `ariaLabelledby` à mão). (2)
+  **Segurança/deps:** planejar o major bump de `react-router` 6→7 (corrige o
+  open redirect) e `vite` 5→8 (corrige esbuild/postcss dev-only), cada um como
+  fatia dedicada com validação de build. (3) **Estados de erro:** seguem maduros
+  nas páginas de query (Analytics/Payments/IntentStats já cobertas).
+
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
 
