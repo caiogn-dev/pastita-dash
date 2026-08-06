@@ -171,8 +171,13 @@ const WhatsAppInboxPage: React.FC = () => {
       // Sem `store` o backend devolve as conversas de TODAS as lojas do dono
       // misturadas — o dono de três lojas via as três numa lista só. O filtro
       // por usuário continua valendo por baixo; este é o recorte de contexto.
+      // page_size explícito: o backend pagina de 20 em 20 e esta tela NÃO
+      // pagina — ela joga `results` direto no chatStore. Sem isto o operador
+      // via só as 20 primeiras de 123 conversas e o resto simplesmente não
+      // existia na tela (06/ago: um disparo de 20 números novos empurrou todas
+      // as conversas reais para fora da lista). 200 é o teto do backend.
       const response = await conversationsService.getConversations(
-        storeSlug ? { store: storeSlug } : {},
+        storeSlug ? { store: storeSlug, page_size: 200 } : { page_size: 200 },
       );
       const convs = ensureArray<ConversationWithMessages>(response?.results || response);
       // Hidrata o chatStore com a lista inicial (o WS mantém atualizado depois)
