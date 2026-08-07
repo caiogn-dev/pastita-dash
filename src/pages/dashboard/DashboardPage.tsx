@@ -184,6 +184,9 @@ export const DashboardPage: React.FC = () => {
 
   const [ordersToday, setOrdersToday]           = useState(0);
   const [revenueToday, setRevenueToday]         = useState(0);
+  // Comparativo com ontem. Número sozinho não informa: R$ 137 pode ser um dia
+  // bom ou metade do normal, e quem olha o card não tem como saber.
+  const [cmpHoje, setCmpHoje] = useState<{ variacao_pct: number | null; rotulo: string } | undefined>();
   const [pendingCount, setPendingCount]         = useState(0);
   const [conversationsOpen, setConversationsOpen] = useState(0);
   const [recentOrders, setRecentOrders]         = useState<StoreOrder[]>([]);
@@ -247,6 +250,7 @@ export const DashboardPage: React.FC = () => {
       if (statsResp.status === 'fulfilled' && statsResp.value) {
         setOrdersToday(Number(statsResp.value.total_orders || 0));
         setRevenueToday(Number(statsResp.value.today_revenue || 0));
+        setCmpHoje(statsResp.value.comparativo?.today);
         // Pipeline vem do agregado por status (correto p/ qualquer volume,
         // não limitado à 1ª página de pedidos como antes).
         const byStatus = statsResp.value.by_status || {};
@@ -389,6 +393,12 @@ export const DashboardPage: React.FC = () => {
           label="Receita hoje"
           value={loading ? '—' : fmt(revenueToday)}
           tone="brand"
+          ajuda="Pedidos pagos e não cancelados, pela data do pagamento. Exclui pedido de teste."
+          comparativo={
+            cmpHoje && !loading
+              ? { variacaoPct: cmpHoje.variacao_pct, rotulo: cmpHoje.rotulo }
+              : undefined
+          }
         />
         <StatCard
           label="Aguardando"

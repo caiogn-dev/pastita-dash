@@ -313,12 +313,25 @@ export const isDashboardCharts = (value: unknown): value is DashboardCharts => {
 // DASHBOARD STATS (per-store, /core/dashboard-stats/)
 // ============================================
 
+/** Comparativo com o período anterior, do mesmo tamanho.
+ *  `variacao_pct: null` = período anterior foi ZERO, não há percentual honesto. */
+export interface DashboardComparativo {
+  atual: number;
+  anterior: number;
+  delta: number;
+  variacao_pct: number | null;
+  pedidos_atual: number;
+  pedidos_anterior: number;
+  rotulo: string;
+}
+
 export interface DashboardStatsPeriod {
   orders: number;
   revenue: number;
   avg_daily_revenue?: number;
   revenue_change?: number;
   revenue_change_percent?: number;
+  comparativo?: DashboardComparativo;
 }
 
 export interface DashboardStatsAlerts {

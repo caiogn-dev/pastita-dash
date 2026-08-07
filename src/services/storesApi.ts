@@ -1097,6 +1097,10 @@ export const getOrderStats = async (storeId?: string): Promise<{
   // Mapa cru de contagem por status do pedido (pipeline do dashboard).
   // Vem do /orders/stats/ agregado — evita baixar a lista inteira só p/ contar.
   by_status: Record<string, number>;
+  comparativo?: {
+    today?: { variacao_pct: number | null; rotulo: string };
+    week?: { variacao_pct: number | null; rotulo: string };
+  };
 }> => {
   try {
     const params = storeId ? { store: storeId } : {};
@@ -1109,6 +1113,10 @@ export const getOrderStats = async (storeId?: string): Promise<{
         total?: number;
         today?: number;
         week?: number;
+      };
+      comparativo?: {
+        today?: { variacao_pct: number | null; rotulo: string };
+        week?: { variacao_pct: number | null; rotulo: string };
       };
     };
 
@@ -1124,6 +1132,7 @@ export const getOrderStats = async (storeId?: string): Promise<{
       today_revenue: Number(revenue.today ?? 0),
       week_revenue: Number(revenue.week ?? 0),
       by_status: byStatus,
+      comparativo: data?.comparativo,
     };
   } catch (error) {
     logger.error('Failed to fetch order stats', error);
