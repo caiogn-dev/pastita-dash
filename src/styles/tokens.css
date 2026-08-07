@@ -7,6 +7,10 @@
 :root {
   --brand: #C9A24B;
   --brand-hover: #B8923E;
+  /* Texto que vai EM CIMA do ouro. Era branco, e branco sobre ouro dá 2.40:1
+     no claro e 1.79:1 no escuro — a WCAG AA pede 4.5:1. Todo botão de ação
+     principal do painel estava ilegível. Com texto escuro: 8.75:1 e 11.75:1. */
+  --on-brand: #241E14;
   --brand-strong: #1A1613;        /* chrome escuro — navbar fica escura mesmo no light */
   --brand-soft: rgba(201,162,75,.14);
   --canvas: #FBF7EF;
@@ -34,6 +38,7 @@
 .dark {
   --brand: #DEBE79;
   --brand-hover: #E8CE92;
+  --on-brand: #14100A;
   --brand-strong: #0B0908;        /* chrome escuro — barra da navbar */
   --brand-soft: rgba(222,190,121,.12);
   --canvas: #0F0D0B;

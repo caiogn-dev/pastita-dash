@@ -39,6 +39,7 @@ export default {
           hover: 'var(--bg-hover)',
           active: 'var(--bg-active)',
         },
+        'on-brand': 'var(--on-brand)',
         brand: {
           DEFAULT: 'var(--brand)',
           hover: 'var(--brand-hover)',

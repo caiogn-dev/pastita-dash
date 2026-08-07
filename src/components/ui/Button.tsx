@@ -44,7 +44,9 @@ const BASE =
 
 // Variantes canônicas mantendo tokens de marca; aliases legados mapeiam para elas.
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-brand text-white hover:bg-brand-hover',
+  // text-on-brand e nao text-white: branco sobre ouro da 2.40:1 (claro)
+  // e 1.79:1 (escuro). A WCAG AA pede 4.5:1 para texto.
+  primary: 'bg-brand text-on-brand hover:bg-brand-hover',
   outline: 'border border-border-token text-fg-token hover:bg-surface-2',
   ghost: 'text-fg-muted-token hover:bg-surface-2',
   danger: 'border border-[var(--danger)] text-[var(--danger)] hover:bg-[var(--danger-soft)]',
