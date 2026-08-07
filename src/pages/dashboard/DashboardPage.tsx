@@ -15,7 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Badge, Button, Loading } from '../../components/common';
-import { Card, StatCard, PageShell } from '../../components/ui';
+import { Card, StatCard, PageShell, InsightList } from '../../components/ui';
 import OnboardingChecklist from '../../components/onboarding/OnboardingChecklist';
 import OnboardingWizard from '../../components/onboarding/wizard/OnboardingWizard';
 import { buildWizardSteps } from '../../components/onboarding/wizard/buildWizardSteps';
@@ -325,6 +325,9 @@ export const DashboardPage: React.FC = () => {
   }
 
   const maxPipeline = Math.max(...PIPELINE.map((s) => pipelineCounts[s.key] || 0), 1);
+  // Preparando + a caminho: o que já saiu da fila de confirmação mas ainda não
+  // chegou. É a carga da cozinha e da entrega agora.
+  const emPreparo = (pipelineCounts.preparing || 0) + (pipelineCounts.out_for_delivery || 0);
 
   return (
     <PageShell
@@ -342,34 +345,48 @@ export const DashboardPage: React.FC = () => {
       {/* Detalhe do pedido em modal (aberto via ?pedido=<id> ao clicar numa linha) */}
       <OrderDetailModal onOrderChanged={handleOrderChanged} />
 
-      {/* ── Alert bar ── */}
-      {pendingCount > 0 && !loading && (
-        <div className={[
-          'flex flex-wrap items-center gap-3 px-4 py-3.5 rounded-xl border',
-          pendingCount > 3
-            ? 'bg-red-50 dark:bg-red-950/25 border-red-200 dark:border-red-900/50'
-            : 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/40',
-        ].join(' ')}>
-          <BellAlertIcon className={`h-5 w-5 shrink-0 ${pendingCount > 3 ? 'text-red-500 dark:text-red-400 animate-bounce' : 'text-orange-500 dark:text-orange-400'}`} />
-          <div className="flex-1">
-            <span className={`text-sm font-semibold ${pendingCount > 3 ? 'text-red-800 dark:text-red-300' : 'text-orange-800 dark:text-orange-300'}`}>
-              {pendingCount} pedido{pendingCount > 1 ? 's' : ''} aguardando confirmação
-            </span>
-          </div>
-          <button
-            onClick={() => navigate(`/stores/${storeRoute}/orders?status=pending`)}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-              pendingCount > 3
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-orange-500 hover:bg-orange-600 text-white'
-            }`}
-          >
-            Ver agora →
-          </button>
-          <button type="button" aria-label="Atualizar painel" onClick={loadData} className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-            <ArrowPathIcon className="h-4 w-4 text-gray-400" />
-          </button>
-        </div>
+      {/* ── Precisa de você ──
+          Era uma barra só, para uma coisa só: pedidos pendentes. Tudo o mais
+          que trava o dia — conversa sem resposta, pedido parado na cozinha —
+          o dono só descobria abrindo a tela certa por conta própria.
+
+          Fila de trabalho: cada linha diz o QUE está parado, QUANTO, e leva
+          direto ao recorte. Sem linha nenhuma, a seção some — é o sinal de que
+          não há nada esperando, e vale mais que um "tudo certo" decorativo. */}
+      {!loading && (
+        <InsightList
+          titulo="Precisa de você"
+          tom="alerta"
+          itens={[
+            pendingCount > 0 && {
+              direcao: 'alta' as const,
+              titulo: `${pendingCount} pedido${pendingCount > 1 ? 's' : ''} aguardando confirmação`,
+              valor: String(pendingCount),
+              recomendacao: 'o cliente já pagou e está esperando',
+              acao: {
+                rotulo: 'Ver pendentes',
+                onClick: () => navigate(`/stores/${storeRoute}/orders?status=pending`),
+              },
+            },
+            emPreparo > 0 && {
+              direcao: 'estavel' as const,
+              titulo: `${emPreparo} pedido${emPreparo > 1 ? 's' : ''} em preparo`,
+              valor: String(emPreparo),
+              recomendacao: 'acompanhe na cozinha',
+              acao: {
+                rotulo: 'Abrir cozinha',
+                onClick: () => navigate(`/stores/${storeRoute}/kds`),
+              },
+            },
+            conversationsOpen > 0 && {
+              direcao: 'alta' as const,
+              titulo: `${conversationsOpen} conversa${conversationsOpen > 1 ? 's' : ''} em aberto`,
+              valor: String(conversationsOpen),
+              recomendacao: 'cliente esperando resposta no WhatsApp',
+              acao: { rotulo: 'Abrir inbox', onClick: () => navigate('/inbox/whatsapp') },
+            },
+          ].filter(Boolean) as React.ComponentProps<typeof InsightList>['itens']}
+        />
       )}
 
       {/* ── Error banner (falha total no carregamento) ── */}

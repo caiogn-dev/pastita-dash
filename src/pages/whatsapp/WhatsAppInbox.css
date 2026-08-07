@@ -26,6 +26,7 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0;   /* ver nota em .chat-panel */
   border-right: 1px solid var(--border);
   background: var(--surface);
 }
@@ -359,10 +360,21 @@
 }
 
 /* ─── Painel de Chat (direita, flex: 1) ──────────────────────────────────── */
+/* min-height: 0 é obrigatório, não cosmético.
+   Todo flex item nasce com `min-height: auto`, ou seja: NÃO encolhe abaixo do
+   tamanho do próprio conteúdo. Sem isto, uma conversa com muitas mensagens fazia
+   o .messages-container crescer até a altura do histórico inteiro, empurrando o
+   .chat-panel para além dos 100% do .whatsapp-inbox. O feed virava um bloco
+   gigante, o composer era jogado para fora da tela e a coluna de conversas ficava
+   com uma faixa em branco enorme embaixo — o bug só aparecia em conversas longas,
+   porque só nelas o conteúdo excede a altura da janela.
+   Com min-height: 0 a cadeia volta a respeitar a altura do pai e o overflow-y do
+   .messages-container faz o que sempre deveria: rolar dentro da própria caixa. */
 .chat-panel {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   background: var(--surface-2);
   min-width: 0;
   position: relative;
@@ -512,6 +524,7 @@
 /* ─── Área de Mensagens ──────────────────────────────────────────────────── */
 .messages-container {
   flex: 1;
+  min-height: 0;   /* ver nota em .chat-panel — sem isto o histórico estoura a tela */
   overflow-y: auto;
   padding: 1rem;
   display: flex;
