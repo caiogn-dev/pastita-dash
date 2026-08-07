@@ -27,6 +27,8 @@ export interface KpiItem {
   definicao: string;
   comparativo?: StatCardComparativo;
   tone?: StatCardTone;
+  /** Ícone do indicador — dá ao card uma âncora visual reconhecível. */
+  icone?: React.ReactNode;
   onClick?: () => void;
 }
 
@@ -51,6 +53,7 @@ export const KpiGrid: React.FC<KpiGridProps> = ({ itens, titulo, className }) =>
             value={kpi.value}
             sub={kpi.definicao}
             tone={kpi.tone}
+            icone={kpi.icone}
             comparativo={kpi.comparativo}
             onClick={kpi.onClick}
           />

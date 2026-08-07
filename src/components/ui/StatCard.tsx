@@ -28,6 +28,15 @@ export interface StatCardProps {
   comparativo?: StatCardComparativo;
   /** Explicação do indicador — vira `title` acessível no rótulo. */
   ajuda?: string;
+  /**
+   * Ícone do indicador, exibido num chip tonalizado.
+   *
+   * Não é enfeite: numa faixa de quatro números iguais em tipo e peso, o olho
+   * não tem âncora e lê os quatro para achar o que queria. O chip colorido dá
+   * a cada card uma identidade reconhecível de relance — você acha "receita"
+   * pela cor antes de ler a palavra.
+   */
+  icone?: React.ReactNode;
   onClick?: () => void;
   className?: string;
 }
@@ -40,6 +49,15 @@ const VALUE_TONE: Record<StatCardTone, string> = {
   danger: 'text-[var(--danger)]',
 };
 
+/** Fundo do chip do ícone. Tom suave — o valor é que tem de gritar, não o chip. */
+const CHIP_TONE: Record<StatCardTone, string> = {
+  default: 'bg-surface-2 text-fg-muted-token',
+  brand: 'bg-[var(--brand-soft)] text-brand-ink',
+  warning: 'bg-[var(--warning-soft)] text-[var(--warning)]',
+  success: 'bg-[var(--success-soft)] text-[var(--success)]',
+  danger: 'bg-[var(--danger-soft)] text-[var(--danger)]',
+};
+
 export const StatCard: React.FC<StatCardProps> = ({
   label,
   value,
@@ -47,6 +65,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   tone = 'default',
   comparativo,
   ajuda,
+  icone,
   onClick,
   className,
 }) => {
@@ -64,21 +83,36 @@ export const StatCard: React.FC<StatCardProps> = ({
         className
       )}
     >
-      <p
-        className="text-xs font-semibold uppercase tracking-wide text-fg-muted-token"
-        title={ajuda}
-      >
-        {label}
-        {ajuda && <span className="ml-1 cursor-help opacity-60" aria-hidden>?</span>}
-      </p>
-      <p
-        className={cn(
-          'mt-1 text-2xl font-extrabold tracking-tight',
-          VALUE_TONE[tone]
+      <div className="flex items-start gap-3">
+        {icone && (
+          <span
+            aria-hidden
+            className={cn(
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded [&>svg]:h-5 [&>svg]:w-5',
+              CHIP_TONE[tone]
+            )}
+          >
+            {icone}
+          </span>
         )}
-      >
-        {value}
-      </p>
+        <div className="min-w-0 flex-1">
+          <p className="overline" title={ajuda}>
+            {label}
+            {ajuda && <span className="ml-1 cursor-help opacity-60" aria-hidden>?</span>}
+          </p>
+          <p
+            className={cn(
+              // tabular-nums: sem isso os dígitos mudam de largura e o número
+              // "pula" a cada atualização em tempo real — o painel parece
+              // instável mesmo quando o dado está certo.
+              'mt-0.5 text-2xl font-extrabold tracking-tight tabular-nums',
+              VALUE_TONE[tone]
+            )}
+          >
+            {value}
+          </p>
+        </div>
+      </div>
       {comparativo && (
         <p className="mt-1 flex items-center gap-1 text-xs">
           {pct === null ? (

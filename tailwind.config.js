@@ -16,6 +16,17 @@ export default {
         lead: ['var(--text-lead)', { lineHeight: '1.5' }],
       },
       colors: {
+        // Cromo do app (navbar + coluna lateral). Segue o tema: marfim no
+        // claro, carvão no escuro. Antes a navbar era carvão nos dois, o que
+        // deixava faixa preta colada em coluna branca no tema claro.
+        chrome: {
+          DEFAULT: 'var(--chrome-bg)',
+          to: 'var(--chrome-bg-to)',
+          fg: 'var(--chrome-fg)',
+          muted: 'var(--chrome-fg-muted)',
+          border: 'var(--chrome-border)',
+          hover: 'var(--chrome-hover)',
+        },
         // ============================================
         // BRAND COLORS - Dinâmico via CSS Variables (muda por loja)
         // ============================================
@@ -225,6 +236,10 @@ export default {
       // SHADOWS
       // ============================================
       boxShadow: {
+        // Elevação por PAPEL, não por aparência. Ver tokens.css.
+        'repouso': 'var(--elev-repouso)',
+        'hover': 'var(--elev-hover)',
+        'flutuante': 'var(--elev-flutuante)',
         'soft': '0 10px 30px rgba(0, 0, 0, 0.25)',
         'soft-lg': '0 20px 40px rgba(0, 0, 0, 0.30)',
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',

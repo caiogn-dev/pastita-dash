@@ -12,6 +12,9 @@ import {
   BoltIcon,
   BellAlertIcon,
   PlusIcon,
+  ShoppingBagIcon,
+  BanknotesIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Badge, Button, Loading } from '../../components/common';
@@ -278,7 +281,11 @@ export const DashboardPage: React.FC = () => {
         const overview = overviewResp.value;
         const cv = overview?.conversations;
         const ov = overview?.orders;
-        if (cv) setConversationsOpen(Number(cv.by_status?.open ?? cv.active ?? 0));
+        // waiting_reply e não by_status.open: o status de conversa nasce 'open'
+        // e nada nunca fecha, então `open` é o total histórico da loja. O card
+        // mostrava "208 conversas em aberto — cliente esperando resposta"
+        // quando havia 5. Fallback mantido só para backend antigo.
+        if (cv) setConversationsOpen(Number(cv.waiting_reply ?? cv.by_status?.open ?? cv.active ?? 0));
         if (ov) {
           resolvedPendingCount = Number(ov.by_status?.pending ?? 0);
           setPendingCount(resolvedPendingCount);
@@ -380,9 +387,9 @@ export const DashboardPage: React.FC = () => {
             },
             conversationsOpen > 0 && {
               direcao: 'alta' as const,
-              titulo: `${conversationsOpen} conversa${conversationsOpen > 1 ? 's' : ''} em aberto`,
+              titulo: `${conversationsOpen} cliente${conversationsOpen > 1 ? 's' : ''} esperando resposta`,
               valor: String(conversationsOpen),
-              recomendacao: 'cliente esperando resposta no WhatsApp',
+              recomendacao: 'falaram por último e ninguém respondeu',
               acao: { rotulo: 'Abrir inbox', onClick: () => navigate('/inbox/whatsapp') },
             },
           ].filter(Boolean) as React.ComponentProps<typeof InsightList>['itens']}
@@ -452,6 +459,7 @@ export const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-4 max-xl:grid-cols-2 gap-3">
         <StatCard
           label="Pedidos hoje"
+          icone={<ShoppingBagIcon />}
           value={loading ? '—' : ordersToday}
           sub={
             !loading && ordersToday === 0
@@ -462,6 +470,7 @@ export const DashboardPage: React.FC = () => {
         />
         <StatCard
           label="Receita hoje"
+          icone={<BanknotesIcon />}
           value={loading ? '—' : fmt(revenueToday)}
           tone="brand"
           sub="Pagos e não cancelados, pela data do pagamento. Sem pedido de teste."
@@ -473,6 +482,7 @@ export const DashboardPage: React.FC = () => {
         />
         <StatCard
           label="Aguardando"
+          icone={<BellAlertIcon />}
           value={loading ? '—' : pendingCount}
           tone={pendingCount > 0 ? 'warning' : 'default'}
           sub={
@@ -483,10 +493,15 @@ export const DashboardPage: React.FC = () => {
           onClick={() => navigate(`/stores/${storeRoute}/orders?status=pending`)}
         />
         <StatCard
-          label="Conversas abertas"
+          label="Esperando resposta"
+          icone={<ChatBubbleLeftRightIcon />}
           value={loading ? '—' : conversationsOpen}
-          sub="Conversas de WhatsApp ainda sem resposta ou não encerradas."
-          onClick={() => navigate('/conversations')}
+          sub={
+            conversationsOpen > 0
+              ? 'Clientes que falaram por último e ainda não foram respondidos (48h).'
+              : 'Ninguém esperando resposta ✓'
+          }
+          onClick={() => navigate('/inbox/whatsapp')}
         />
       </div>
 

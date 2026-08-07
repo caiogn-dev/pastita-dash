@@ -34,8 +34,12 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hoverable?: boolean;
 }
 
+// `shadow-repouso` no default: sem elevação nenhuma o painel fica achatado —
+// tudo no mesmo plano, nada guiando o olho. `outline` e `filled` seguem sem
+// sombra de propósito: um é contorno, o outro é preenchimento; ambos existem
+// justamente para NÃO se destacar.
 const variantClasses: Record<CardVariant, string> = {
-  default: 'bg-surface border border-border-token',
+  default: 'bg-surface border border-border-token shadow-repouso',
   outline: 'bg-transparent border border-border-token',
   filled: 'bg-surface-2 border-0',
 };
@@ -85,7 +89,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       return (
         <div
           ref={ref}
-          className={cn('bg-surface border border-border-token rounded', className)}
+          className={cn('bg-surface border border-border-token rounded shadow-repouso', className)}
           {...props}
         >
           {children}
@@ -104,7 +108,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
         className={cn(
           'rounded',
           variantClasses[resolvedVariant],
-          hoverable && 'transition-colors hover:bg-surface-2',
+          // Sobe um degrau de elevação no hover, além da cor: movimento diz
+          // "isto responde" mais rápido que mudança de tom.
+          hoverable && 'transition-all hover:bg-surface-2 hover:shadow-hover',
           className
         )}
         {...props}

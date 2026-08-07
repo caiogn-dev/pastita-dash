@@ -45,6 +45,13 @@ const CLARO = {
   canvas: '#FBF7EF',
   surface: '#ffffff',
   'surface-2': '#F4EEE2',
+  // Cromo (navbar + coluna lateral). Duas pontas do gradiente: o texto tem de
+  // passar nas DUAS, senão fica legível no topo da barra e some na base.
+  'chrome-bg': '#FFFFFF',
+  'chrome-bg-to': '#FBF7EF',
+  'chrome-fg': '#2B2620',
+  'chrome-fg-muted': '#756B5C',
+  'chrome-border': '#E6DAC4',
 };
 
 const ESCURO = {
@@ -61,6 +68,11 @@ const ESCURO = {
   canvas: '#0F0D0B',
   surface: '#1A1613',
   'surface-2': '#131009',
+  'chrome-bg': '#1F1A15',
+  'chrome-bg-to': '#0B0908',
+  'chrome-fg': '#F5ECDE',
+  'chrome-fg-muted': '#A89880',
+  'chrome-border': '#3A322A',
 };
 
 const FUNDOS = ['canvas', 'surface', 'surface-2'] as const;
@@ -89,6 +101,33 @@ describe.each([
     // O botão primário e os chips ativos pintam texto sobre --brand.
     const v = contraste(T['on-brand'], T.brand);
     expect({ contraste: v.toFixed(2), passa: v >= AA_TEXTO }).toEqual({
+      contraste: v.toFixed(2),
+      passa: true,
+    });
+  });
+
+  it('o texto do cromo é legível nas duas pontas do gradiente', () => {
+    // A navbar era carvão nos DOIS temas — decisão que fazia sentido enquanto
+    // ela era o único cromo da tela. Com a coluna lateral ao lado, no tema
+    // claro virava faixa preta grudada em coluna branca. Agora o cromo segue
+    // o tema, e o preço disso é que o contraste precisa ser garantido em dois
+    // fundos diferentes por tema, não em um.
+    for (const fundo of ['chrome-bg', 'chrome-bg-to'] as const) {
+      for (const texto of ['chrome-fg', 'chrome-fg-muted'] as const) {
+        const v = contraste(T[texto], T[fundo]);
+        expect({ par: `${texto}/${fundo}`, passa: v >= AA_TEXTO }).toEqual({
+          par: `${texto}/${fundo}`,
+          passa: true,
+        });
+      }
+    }
+  });
+
+  it('a borda do cromo separa a barra do conteúdo', () => {
+    // Sem borda percebível, no tema claro a navbar marfim encosta no canvas
+    // marfim e a casca do app deixa de existir visualmente.
+    const v = contraste(T['chrome-border'], T['chrome-bg']);
+    expect({ contraste: v.toFixed(2), passa: v >= 1.2 }).toEqual({
       contraste: v.toFixed(2),
       passa: true,
     });

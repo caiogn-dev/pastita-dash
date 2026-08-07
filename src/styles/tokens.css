@@ -21,7 +21,24 @@
      a suavidade é da identidade. Mas input, select e textarea têm limite que
      PRECISA ser percebido (WCAG 1.4.11 pede 3:1), senão o campo some no fundo. */
   --border-input: #998769;
-  --brand-strong: #1A1613;        /* chrome escuro — navbar fica escura mesmo no light */
+  --brand-strong: #1A1613;        /* carvão da marca — usado como TINTA sobre o ouro */
+
+  /* ── CROMO (navbar + coluna lateral) ──────────────────────────────────────
+     A navbar era carvão nos DOIS temas. Aquilo funcionava quando ela era o
+     único cromo da tela: uma faixa escura no topo lia como moldura.
+     Com a coluna lateral ao lado, no tema claro virava faixa preta grudada em
+     coluna branca — dois materiais diferentes para a mesma casca.
+     Agora o cromo acompanha o tema. No claro é marfim (a barra pertence à
+     página); no escuro continua carvão com o fio de ouro. */
+  --chrome-bg: #FFFFFF;
+  --chrome-bg-to: #FBF7EF;        /* leve gradiente vertical, dá profundidade */
+  --chrome-fg: #2B2620;
+  --chrome-fg-muted: #756B5C;     /* 4,53:1 sobre o cromo claro */
+  --chrome-border: #E6DAC4;
+  --chrome-hover: rgba(43,38,32,.06);
+  /* Sem fio de ouro no claro: a --chrome-border já separa a barra, e um
+     traço dourado sobre marfim vira sujeira. */
+  --chrome-hairline: transparent;
   --brand-soft: rgba(201,162,75,.14);
   --canvas: #FBF7EF;
   --surface: #ffffff;
@@ -46,6 +63,17 @@
   --info-soft: #dbeafe;
   --radius: 4px;
   --radius-pill: 999px;
+
+  /* ELEVAÇÃO POR PAPEL. Antes cada card decidia a própria sombra no call site
+     (`shadow-card`, `shadow-soft`, `shadow-xl`, nenhuma), e o resultado era um
+     painel achatado: tudo no mesmo plano, nada guiando o olho.
+     Três níveis, e só três — mais que isso ninguém distingue.
+       repouso   superfície que apenas existe (card de conteúdo)
+       hover     o card responde ao ponteiro, sinalizando que é clicável
+       flutuante o que paira sobre a página (menu, modal, dropdown) */
+  --elev-repouso: 0 1px 2px rgba(43,38,32,.05), 0 1px 3px rgba(43,38,32,.04);
+  --elev-hover: 0 4px 10px -2px rgba(43,38,32,.10), 0 2px 6px -2px rgba(43,38,32,.06);
+  --elev-flutuante: 0 12px 28px -8px rgba(43,38,32,.22), 0 4px 10px -4px rgba(43,38,32,.12);
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Cinzel', Georgia, serif;
 
@@ -71,7 +99,22 @@
   /* No escuro o ouro já dá 10,06–10,85:1 — é o próprio --brand. */
   --brand-ink: #DEBE79;
   --border-input: #776047;
-  --brand-strong: #0B0908;        /* chrome escuro — barra da navbar */
+  --brand-strong: #0B0908;        /* carvão da marca — tinta sobre o ouro */
+
+  /* No escuro o cromo continua o que sempre foi: carvão com fio de ouro. */
+  --chrome-bg: #1F1A15;
+  --chrome-bg-to: #0B0908;
+  --chrome-fg: #F5ECDE;
+  --chrome-fg-muted: #A89880;
+  --chrome-border: rgba(222,190,121,.18);
+  --chrome-hover: rgba(245,236,222,.08);
+  --chrome-hairline: rgba(222,190,121,.45);
+
+  /* No escuro a sombra some contra o fundo; o que dá relevo é a luz na borda
+     de cima. Mesmos nomes, técnica diferente — quem consome não precisa saber. */
+  --elev-repouso: 0 1px 0 rgba(245,236,222,.05) inset, 0 2px 6px rgba(0,0,0,.35);
+  --elev-hover: 0 1px 0 rgba(245,236,222,.08) inset, 0 8px 18px rgba(0,0,0,.45);
+  --elev-flutuante: 0 1px 0 rgba(245,236,222,.10) inset, 0 18px 40px rgba(0,0,0,.6);
   --brand-soft: rgba(222,190,121,.12);
   --canvas: #0F0D0B;
   --surface: #1A1613;

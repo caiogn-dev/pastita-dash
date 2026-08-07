@@ -136,6 +136,10 @@ export interface MessagesMetrics {
  */
 export interface ConversationsMetrics {
   active: number;
+  /** Cliente falou por último e ninguém respondeu (últimas 48h). É o número
+   *  que a home mostra — `by_status.open` conta a base histórica inteira,
+   *  porque nada no sistema fecha conversa. Opcional: backend antigo não envia. */
+  waiting_reply?: number;
   by_status: ConversationsByStatus;
   by_mode: ConversationsByMode;
   resolved_today: number;

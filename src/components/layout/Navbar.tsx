@@ -139,7 +139,7 @@ function NavBtn({ section }: { section: NavSection }) {
           `flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
             a
               ? 'bg-brand text-[var(--brand-strong)] font-medium'
-              : 'text-white/70 hover:bg-white/10 hover:text-white'
+              : 'text-chrome-muted hover:bg-chrome-hover hover:text-chrome-fg'
           }`
         }
       >
@@ -159,7 +159,7 @@ function NavBtn({ section }: { section: NavSection }) {
         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
           isActive || open
             ? 'bg-brand text-[var(--brand-strong)] font-medium'
-            : 'text-white/70 hover:bg-white/10 hover:text-white'
+            : 'text-chrome-muted hover:bg-chrome-hover hover:text-chrome-fg'
         }`}
       >
         <section.icon className="w-4 h-4 flex-shrink-0" />
@@ -316,19 +316,23 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
   return (
     <>
       <header
-        className="sticky top-0 z-40 text-white backdrop-blur-xl"
+        className="sticky top-0 z-40 border-b border-chrome-border text-chrome-fg backdrop-blur-xl"
         style={{
-          background: 'linear-gradient(180deg, #1F1A15 0%, var(--brand-strong) 100%)',
-          boxShadow: '0 10px 30px -16px rgba(0,0,0,0.7)',
+          // Gradiente vertical sutil em vez de cor chapada: dá espessura à
+          // barra sem sombra pesada, e funciona nos dois temas porque as duas
+          // pontas são token.
+          background: 'linear-gradient(180deg, var(--chrome-bg) 0%, var(--chrome-bg-to) 100%)',
         }}
       >
-        {/* hairline dourado na base */}
+        {/* Fio de ouro na base. No tema escuro é o que separa a barra do
+            conteúdo; no claro a --chrome-border já faz esse trabalho e o fio
+            some (o token cai para transparente). */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
           style={{
             background:
-              'linear-gradient(90deg, transparent 0%, rgba(222,190,121,0.45) 50%, transparent 100%)',
+              'linear-gradient(90deg, transparent 0%, var(--chrome-hairline, transparent) 50%, transparent 100%)',
           }}
         />
         <div className="flex items-center gap-3 px-4 h-16">
@@ -351,7 +355,7 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
               </div>
             )}
             {brandInfo.isPlatform && (
-              <span className="hidden sm:block text-lg tracking-[0.18em] uppercase text-[var(--brand)] font-brand">
+              <span className="hidden sm:block text-lg tracking-[0.18em] uppercase text-brand-ink font-brand">
                 Cardapidex
               </span>
             )}
@@ -363,7 +367,7 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
             title={wsConnected ? 'Online' : 'Offline'}
           />
 
-          <div className="w-px h-5 bg-white/20 flex-shrink-0" />
+          <div className="w-px h-5 bg-chrome-border flex-shrink-0" />
 
           {/* Desktop nav — itens que não cabem caem no dropdown "Mais" (nunca corta).
               Com a coluna lateral na tela, some: duas navegações para os mesmos
@@ -398,7 +402,7 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
               <select
                 value={selectedAccount?.id || ''}
                 onChange={(e) => setSelectedAccount(accounts.find((a) => a.id === e.target.value) || null)}
-                className="block max-xl:hidden rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs text-white outline-none focus:border-white/40 max-w-[130px]"
+                className="block max-xl:hidden rounded-lg border border-chrome-border bg-chrome-hover px-2 py-1 text-xs text-chrome-fg outline-none focus:border-brand max-w-[130px]"
               >
                 <option value="">Todas as contas</option>
                 {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -410,11 +414,11 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
                 type="button"
                 onClick={onAbrirBusca}
                 aria-label="Buscar tela (Ctrl+K)"
-                className="flex max-sm:hidden items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs text-white/70 transition-colors hover:border-white/40 hover:text-white"
+                className="flex max-sm:hidden items-center gap-2 rounded-lg border border-chrome-border bg-chrome-hover px-2.5 py-1.5 text-xs text-chrome-muted transition-colors hover:border-brand hover:text-chrome-fg"
               >
                 <MagnifyingGlassIcon className="h-4 w-4" />
                 <span className="max-lg:hidden">Ir para…</span>
-                <kbd className="rounded border border-white/25 px-1 text-[0.6875rem] leading-4">
+                <kbd className="rounded border border-chrome-border px-1 text-badge leading-4">
                   Ctrl K
                 </kbd>
               </button>
@@ -427,7 +431,7 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
 
             <button
               onClick={() => setMobileOpen(true)}
-              className="hidden max-lg:block p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="hidden max-lg:block p-1.5 text-chrome-muted hover:text-chrome-fg hover:bg-chrome-hover rounded-lg transition-colors"
               aria-label="Abrir menu de navegação"
             >
               <Bars3Icon className="w-5 h-5" />
@@ -441,9 +445,9 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
         <>
           <div className="fixed inset-0 bg-black/60 z-40 hidden max-lg:block" onClick={() => setMobileOpen(false)} />
           <div className="fixed top-0 left-0 bottom-0 w-72 bg-surface z-50 hidden max-lg:flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-4 h-12 bg-[var(--brand-strong)] text-white border-b border-[var(--border)] flex-shrink-0">
-              <span className="font-bold text-sm text-white">{brandInfo.name}</span>
-              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white" aria-label="Fechar menu de navegação">
+            <div className="flex items-center justify-between px-4 h-12 bg-chrome text-chrome-fg border-b border-chrome-border flex-shrink-0">
+              <span className="font-bold text-sm text-chrome-fg">{brandInfo.name}</span>
+              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-chrome-hover text-chrome-muted hover:text-chrome-fg" aria-label="Fechar menu de navegação">
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
