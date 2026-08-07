@@ -15,3 +15,14 @@ export { Dropdown, DropdownButton } from './dropdown';
 export { Toast, ToastContainer } from './toast';
 export { PeriodChips, PERIODOS_PADRAO } from './PeriodChips';
 export type { PeriodChipsProps, PeriodOption } from './PeriodChips';
+
+// Chassi de página — o cabeçalho, os indicadores, os insights e o vazio de
+// TODA tela do painel vivem aqui. Não monte esses blocos à mão numa página.
+export { PageShell } from './PageShell';
+export type { PageShellProps, TrilhaItem } from './PageShell';
+export { KpiGrid } from './KpiGrid';
+export type { KpiGridProps, KpiItem } from './KpiGrid';
+export { InsightList } from './InsightList';
+export type { InsightListProps, InsightItem, InsightDirecao } from './InsightList';
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps, EmptyStateBeneficio } from './EmptyState';
