@@ -58,7 +58,9 @@ export const PageShell: React.FC<PageShellProps> = ({
   const temTrilha = Boolean(trilha && trilha.length > 0);
 
   return (
-    <div className={cn('flex flex-col gap-5 p-4 sm:p-6', className)}>
+    // Sem padding externo: quem espaça é o <main> da casca. Duplicar aqui
+    // dobraria a margem nas páginas que já usam o shell.
+    <div className={cn('flex flex-col gap-5', className)}>
       <header className="flex flex-col gap-3">
         {temTrilha && (
           <nav aria-label="Trilha de navegação">

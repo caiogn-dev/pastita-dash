@@ -230,7 +230,19 @@ function useOverflowNav(sectionCount: number) {
   return { containerRef, measureRef, visibleCount };
 }
 
-export const Navbar: React.FC = () => {
+export interface NavbarProps {
+  /**
+   * Some com a navegação horizontal do desktop.
+   *
+   * Quando a coluna lateral está na tela, repetir as mesmas seções em cima é
+   * pior que redundante: são dois alvos para a mesma ação, e o usuário passa a
+   * duvidar se levam ao mesmo lugar. A barra vira só identidade + controles de
+   * conta. No celular a lateral não existe, então o drawer continua.
+   */
+  semNavegacaoDesktop?: boolean;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false }) => {
   const { store } = useStore();
   const { logout } = useAuthStore();
   const navigate = useNavigate();
@@ -344,22 +356,28 @@ export const Navbar: React.FC = () => {
 
           <div className="w-px h-5 bg-white/20 flex-shrink-0" />
 
-          {/* Desktop nav — itens que não cabem caem no dropdown "Mais" (nunca corta) */}
-          <nav
-            ref={containerRef}
-            className="flex max-lg:hidden items-center gap-0.5 flex-1 min-w-0 overflow-hidden"
-          >
-            {visibleSections.map((s) => <NavBtn key={s.label} section={s} />)}
-            {overflowSection && <NavBtn section={overflowSection} />}
-          </nav>
-          {/* Cópia invisível só pra medição de largura (nunca interativa) */}
-          <div
-            ref={measureRef}
-            aria-hidden
-            className="max-lg:hidden pointer-events-none invisible fixed top-0 left-0 flex items-center gap-0.5 whitespace-nowrap"
-          >
-            {sections.map((s) => <NavBtn key={s.label} section={s} />)}
-          </div>
+          {/* Desktop nav — itens que não cabem caem no dropdown "Mais" (nunca corta).
+              Com a coluna lateral na tela, some: duas navegações para os mesmos
+              destinos ensinam o operador duas vezes. */}
+          {!semNavegacaoDesktop && (
+            <>
+              <nav
+                ref={containerRef}
+                className="flex max-lg:hidden items-center gap-0.5 flex-1 min-w-0 overflow-hidden"
+              >
+                {visibleSections.map((s) => <NavBtn key={s.label} section={s} />)}
+                {overflowSection && <NavBtn section={overflowSection} />}
+              </nav>
+              {/* Cópia invisível só pra medição de largura (nunca interativa) */}
+              <div
+                ref={measureRef}
+                aria-hidden
+                className="max-lg:hidden pointer-events-none invisible fixed top-0 left-0 flex items-center gap-0.5 whitespace-nowrap"
+              >
+                {sections.map((s) => <NavBtn key={s.label} section={s} />)}
+              </div>
+            </>
+          )}
 
           {/* Right side */}
           <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">

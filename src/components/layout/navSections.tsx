@@ -25,6 +25,48 @@ export interface NavSection {
   badge?: string;
 }
 
+/** Elo da trilha de navegação. Sem `href` = página atual. */
+export interface TrilhaElo {
+  rotulo: string;
+  href?: string;
+}
+
+/**
+ * Deriva a trilha de navegação do caminho atual usando a MESMA árvore que
+ * desenha o menu.
+ *
+ * Breadcrumb escrito à mão em cada página mente no primeiro rename de seção, e
+ * mentira de breadcrumb não quebra build — ninguém descobre. Aqui, renomear
+ * "Cardápio" muda o menu e a trilha juntos.
+ *
+ * Casa por prefixo de rota (`/orders/123` → item "Pedidos"), preferindo sempre
+ * o casamento MAIS LONGO: senão `/settings` roubaria `/settings/payments`.
+ */
+export function trilhaDoCaminho(sections: NavSection[], pathname: string): TrilhaElo[] {
+  if (pathname === '/') return [];
+
+  const casa = (href: string) =>
+    pathname === href || pathname.startsWith(href.endsWith('/') ? href : `${href}/`);
+
+  // Junta todos os destinos e escolhe o casamento mais longo depois. Fazer a
+  // escolha dentro de uma closure faz o TS perder o tipo da variável mutada.
+  const candidatos: { trilha: TrilhaElo[]; href: string }[] = [];
+  for (const secao of sections) {
+    if (secao.href) candidatos.push({ trilha: [{ rotulo: secao.label }], href: secao.href });
+    for (const item of secao.items) {
+      candidatos.push({
+        trilha: [{ rotulo: secao.label }, { rotulo: item.name }],
+        href: item.href,
+      });
+    }
+  }
+
+  const casados = candidatos.filter((c) => c.href !== '/' && casa(c.href));
+  if (!casados.length) return [];
+
+  return casados.reduce((a, b) => (b.href.length > a.href.length ? b : a)).trilha;
+}
+
 export interface BuildNavSectionsOpts {
   storeHref: (path: string) => string;
   unreadBadge?: string;
