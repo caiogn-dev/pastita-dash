@@ -3,6 +3,42 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-07-28)
+
+- `npm ci`: ok (36 vulnerabilidades reportadas pelo `npm audit`: 3 moderate, 33 high —
+  a maioria transitiva dev-only; `react-router`/`postcss` têm fix não-`--force`
+  porém alteram resolução de rotas / source maps, deixados para fatia dedicada).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **527 testes / 130 suítes verdes** (era 524/129; +3/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à CI/Vercel): **ok** (~15s).
+
+## Histórico
+
+### 2026-07-28 — Acessibilidade: nome acessível no diálogo do Modal canônico (WCAG 4.1.2)
+- **Medido:** o `Modal` canônico (`src/components/ui/modal.tsx`, reexportado por
+  `common/Modal.tsx` e base de dezenas de diálogos do painel) já tinha focus trap,
+  Escape, lock de scroll e restauração de foco — mas o container com
+  `role="dialog"`/`aria-modal="true"` **não tinha nome acessível**. Mesmo quando havia
+  um `<h2>` de título visível, ele **não estava ligado** ao diálogo por `aria-labelledby`.
+  Leitores de tela anunciavam apenas "diálogo", sem contexto — defeito que se
+  propaga a todos os modais do app (editar conta, detalhes de pedido, confirmações etc.).
+- **Mudado (`src/components/ui/modal.tsx`):**
+  - `title` presente → `<h2>` recebe `id` estável (`useId`) e o diálogo aponta
+    para ele via `aria-labelledby` (nome acessível = título visível, sem duplicar texto);
+  - nova prop `ariaLabel?: string` para o modo **composto** (sem `title` visível,
+    ex.: modais montados via `ModalHeader`/`ModalBody`) informar um nome acessível;
+  - `aria-modal`, `role="dialog"`, focus trap e demais comportamentos **inalterados**.
+- **Teste (TDD):** novo `Modal.a11y.test.tsx` — escrito vermelho antes, verde depois.
+  Cobre: nome via `title` (`getByRole('dialog', { name })`), nome via `ariaLabel` no
+  modo composto e regressão de `aria-modal`. `Modal.focus.test.tsx` segue verde.
+- **Antes/depois:** 524/129 → **527 testes / 130 suítes**; tsc e `vite build` limpos
+  nos dois lados; lint sem warnings nos arquivos tocados. Mudança puramente aditiva
+  (atributos ARIA + prop opcional), sem alteração de comportamento ou layout.
+- **Próximo passo priorizado:** varrer os modais em **modo composto** (via
+  `ui/dialog.tsx` + `ModalHeader`) e passar `ariaLabel` (ou propagar o título do
+  header para `aria-labelledby`) onde ainda ficam sem nome acessível. Depois:
+  triar deps (`react-router`/`postcss` fix não-`--force`, validando rotas e build).
+
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
 

@@ -10,7 +10,7 @@
  * Accessibility: closes on Escape and overlay click, locks body scroll while open.
  * `isOpen` is an alias for `open` (legacy headlessui API) — both work.
  */
-import React, { forwardRef, useEffect, useRef } from 'react';
+import React, { forwardRef, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn';
 
@@ -24,6 +24,13 @@ export interface ModalProps {
   className?: string;
   /** When provided, renders a built-in title header + padded body wrapper. */
   title?: string;
+  /**
+   * Nome acessível do diálogo quando NÃO há `title` visível (modo composto).
+   * Ignorado quando `title` está presente — nesse caso o nome vem do `<h2>`
+   * via `aria-labelledby`. Sem `title` nem `ariaLabel`, o diálogo fica sem
+   * nome acessível (leitores de tela anunciam só "diálogo").
+   */
+  ariaLabel?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
@@ -73,6 +80,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
       children,
       className,
       title,
+      ariaLabel,
       size = 'md',
       closeOnOverlayClick = true,
       closeOnEscape = true,
@@ -83,6 +91,8 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
     const overlayRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement | null>(null);
     const isVisible = open ?? isOpen ?? false;
+    // Id estável pra ligar o diálogo ao <h2> do título via aria-labelledby.
+    const titleId = useId();
 
     // Encaminha o ref externo sem perder o interno (necessário pro focus trap).
     const setPanelRef = (node: HTMLDivElement | null) => {
@@ -189,6 +199,8 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
         )}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={!title ? ariaLabel : undefined}
       >
         <div
           ref={setPanelRef}
@@ -209,7 +221,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
               {(title || showCloseButton) && (
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
                   {title ? (
-                    <h2 className="text-lg font-semibold text-fg-token pr-8">{title}</h2>
+                    <h2 id={titleId} className="text-lg font-semibold text-fg-token pr-8">{title}</h2>
                   ) : (
                     <span />
                   )}
