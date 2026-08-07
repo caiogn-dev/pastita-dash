@@ -16,7 +16,9 @@ const getStoreParam = () => getStoreSlugWithFallback() || undefined;
 export interface DateRange {
   start_date?: string;
   end_date?: string;
-  period?: '7d' | '30d' | '90d' | '1y';
+  /** `hoje`/`ontem`/`mes` entraram em 07/ago: o menor preset era 7 dias e
+   *  "quanto vendi hoje" é a pergunta mais frequente do dono da loja. */
+  period?: 'hoje' | 'ontem' | '7d' | '30d' | 'mes' | '90d' | '1y';
 }
 
 export interface RevenueSummary {

@@ -7,13 +7,20 @@
  * personalizado → `{ start_date, end_date }`. O backend já entende os dois.
  */
 import React from 'react';
+import { PeriodChips, type PeriodOption } from '../ui/PeriodChips';
 import type { DateRange } from '../../services/reports';
 
 type Period = NonNullable<DateRange['period']>;
 
-const PRESETS: { label: string; value: Period }[] = [
+/** Da janela mais estreita à mais larga — a ordem é a linha do tempo.
+ *  `hoje`/`ontem` entraram porque o menor preset era 7 dias, e "quanto vendi
+ *  hoje" é a pergunta mais frequente do dono. */
+const PRESETS: PeriodOption<Period>[] = [
+  { label: 'Hoje', value: 'hoje' },
+  { label: 'Ontem', value: 'ontem' },
   { label: '7 dias', value: '7d' },
   { label: '30 dias', value: '30d' },
+  { label: 'Este mês', value: 'mes' },
   { label: '90 dias', value: '90d' },
   { label: '1 ano', value: '1y' },
 ];
@@ -33,25 +40,14 @@ export const ReportsFilterBar: React.FC<ReportsFilterBarProps> = ({ value, onCha
     });
   };
 
-  const btnClass = (active: boolean) =>
-    `px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-      active
-        ? 'bg-brand text-white border-brand'
-        : 'border-border-token text-fg-muted-token hover:bg-surface-2'
-    }`;
-
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {PRESETS.map((p) => (
-        <button
-          key={p.value}
-          type="button"
-          onClick={() => onChange({ period: p.value })}
-          className={btnClass(!isCustom && value.period === p.value)}
-        >
-          {p.label}
-        </button>
-      ))}
+      <PeriodChips<Period>
+        options={PRESETS}
+        value={(isCustom ? '' : value.period ?? '30d') as Period}
+        onChange={(period) => onChange({ period })}
+        ariaLabel="Período do relatório"
+      />
 
       <div className="mx-1 h-5 w-px bg-border-token" aria-hidden />
 

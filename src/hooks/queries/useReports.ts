@@ -26,11 +26,23 @@ import { dashboardService } from '../../services/dashboard';
 import { getStoreSlugWithFallback } from '../useStore';
 import type { DashboardCharts } from '../../types/dashboard';
 
-type Period = '7d' | '30d' | '90d' | '1y';
+// Deriva de DateRange em vez de repetir a lista: duas definições da mesma
+// coisa divergem na primeira vez que alguém adiciona um período (foi o que
+// aconteceu ao entrar 'hoje'/'ontem'/'mes').
+type Period = NonNullable<DateRange['period']>;
 type GroupBy = 'day' | 'week' | 'month';
 
 // A rota de charts aceita no máximo 90 dias; 1y é limitado a 90.
-const PERIOD_TO_DAYS: Record<Period, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 90 };
+const PERIOD_TO_DAYS: Record<Period, number> = {
+  hoje: 1,
+  ontem: 1,
+  '7d': 7,
+  '30d': 30,
+  // Mês corrente varia de 1 a 31 dias; 31 é o teto seguro para a rota de charts.
+  mes: 31,
+  '90d': 90,
+  '1y': 90,
+};
 
 // Deriva a janela em dias de um DateRange (para a rota de charts, que só aceita
 // `days`). Intervalo personalizado → diferença em dias (clampada 1-90).
