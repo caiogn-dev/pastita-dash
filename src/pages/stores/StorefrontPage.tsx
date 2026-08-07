@@ -4,8 +4,8 @@ import { toast } from 'react-hot-toast';
 import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../services/storesApi';
 import { getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
-import { buildStorefrontUrl } from '../../utils/storefrontUrl';
-import { Card, Button } from '../../components/ui';
+import { buildStorefrontUrl, buildStorefrontPreviewUrl } from '../../utils/storefrontUrl';
+import { Card, Button, PageShell, PhonePreview } from '../../components/ui';
 import { PhotoIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
@@ -164,12 +164,31 @@ export const StorefrontPage: React.FC = () => {
 
   if (!store) return <div className="p-6 text-fg-muted-token">Carregando...</div>;
 
+  const urlPublica = store ? buildStorefrontUrl(store) : null;
+  // O iframe aponta para /preview/{slug}, não para a loja: a loja leva ao
+  // checkout e por isso continua bloqueada para enquadramento.
+  const urlPreview = store ? buildStorefrontPreviewUrl(store) : null;
+
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-fg-token">Storefront</h1>
-        <p className="text-fg-muted-token mt-1">Configure a aparência do site da loja.</p>
-      </div>
+    <PageShell
+      trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Storefront' }]}
+      titulo="Storefront"
+      descricao="A cara da sua loja: capa, logo, cores e template. É o que o cliente vê ao abrir o link."
+      acoes={
+        urlPublica ? (
+          <a href={urlPublica} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline">Abrir cardápio</Button>
+          </a>
+        ) : undefined
+      }
+    >
+      {/* Editor à esquerda, cardápio real à direita.
+          "Ver prévia" abria outra aba: você editava, salvava, trocava de aba,
+          voltava, corrigia. Três trocas de contexto por ajuste — ninguém faz
+          isso, então a loja fica do jeito que o formulário deixou. Com o
+          celular ao lado, cada mudança tem consequência visível na hora. */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="flex min-w-0 flex-col gap-6">
 
       {/* Identidade do cardápio — capa + logo compostos como aparecem no cardápio real (WYSIWYG) */}
       <Card noPadding className="overflow-hidden">
@@ -357,26 +376,31 @@ export const StorefrontPage: React.FC = () => {
         </p>
       </Card>
 
-      <div className="flex gap-3">
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex-1 justify-center py-3"
-        >
-          {saving ? 'Salvando...' : 'Salvar storefront'}
-        </Button>
-        {store && buildStorefrontUrl(store) && (
-          <a
-            href={buildStorefrontUrl(store)!}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center px-5 py-3 rounded border border-border-token text-fg-token font-semibold hover:bg-surface-2 transition-colors whitespace-nowrap"
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="justify-center py-3"
           >
-            Ver prévia
-          </a>
-        )}
+            {saving ? 'Salvando...' : 'Salvar storefront'}
+          </Button>
+        </div>
+
+        <aside className="xl:sticky xl:top-4 xl:self-start">
+          <PhonePreview
+            url={urlPreview || ''}
+            titulo="Como o cliente vê"
+            rodape={
+              urlPublica ? (
+                <>
+                  <p className="overline">Endereço público</p>
+                  <code className="text-caption text-fg-token">{urlPublica}</code>
+                </>
+              ) : null
+            }
+          />
+        </aside>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

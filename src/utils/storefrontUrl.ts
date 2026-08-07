@@ -51,3 +51,35 @@ export const buildStorefrontUrl = (
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return path ? `${normalizedBase}${normalizedPath}` : normalizedBase;
 };
+
+/**
+ * URL da rota de PRÉ-VISUALIZAÇÃO do cardápio (`/preview/{slug}`).
+ *
+ * O painel embute o cardápio num iframe para você ver o efeito de cada ajuste
+ * sem trocar de aba. A loja de verdade (`/{slug}`) não pode ser embutida — dela
+ * se chega ao checkout, e enquadrar tela com ação é o que abre clickjacking.
+ * `/preview/{slug}` renderiza exatamente o mesmo storefront e existe para ser
+ * olhado, então é ela que o iframe carrega.
+ *
+ * Domínio próprio não tem `/preview`: quem configurou domínio customizado
+ * publicou a loja na raiz dele. Nesse caso não há preview embutível, e devolver
+ * `null` faz o componente dizer isso em vez de mostrar um erro do navegador.
+ */
+export const buildStorefrontPreviewUrl = (
+  store: StorefrontStore | null | undefined,
+): string | null => {
+  const slug = store?.slug?.trim();
+  if (!slug) return null;
+  if (store?.custom_domain?.trim()) return null;
+
+  const metadataUrl = metadataString(store?.metadata, [
+    'storefront_url',
+    'storefront_origin',
+    'site_url',
+    'website',
+    'public_url',
+  ]);
+  if (metadataUrl) return null;
+
+  return `${stripTrailingSlash(DEFAULT_STOREFRONT_BASE_URL)}/preview/${slug}`;
+};

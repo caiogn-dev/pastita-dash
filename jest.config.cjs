@@ -9,6 +9,10 @@ module.exports = {
   transform: {
     '/src/mobile/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '/src/components/whatsapp/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
+    // src/utils lê `import.meta.env` (base do storefront). Sem o transform, o
+    // arquivo inteiro fica intestável — foi o que manteve storefrontUrl.ts sem
+    // teste até agora.
+    '/src/utils/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
 };
