@@ -91,6 +91,25 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
         )}
       </div>
 
+      {url && (
+        // Escape hatch obrigatório. Um iframe pode falhar por motivos que o JS
+        // não consegue detectar de fora — cabeçalho de enquadramento, extensão
+        // do navegador, rede da loja bloqueando. Sem esta saída, o dono vê um
+        // erro do Chrome dentro do nosso painel e conclui que a página dele
+        // está fora do ar, quando ela está no ar e funcionando.
+        <p className="text-caption text-fg-muted-token">
+          Não está vendo a página?{' '}
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-brand-ink underline-offset-2 hover:underline"
+          >
+            Abrir em nova aba
+          </a>
+        </p>
+      )}
+
       {rodape && <div className="w-full max-w-[390px] text-center">{rodape}</div>}
     </div>
   );
