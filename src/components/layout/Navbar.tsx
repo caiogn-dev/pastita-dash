@@ -6,6 +6,7 @@ import {
   XMarkIcon, Bars3Icon,
   ArrowRightOnRectangleIcon,
   EllipsisHorizontalIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { AccountMenu, ACCOUNT_LINKS } from './AccountMenu';
 import { useStore } from '../../hooks/useStore';
@@ -240,9 +241,17 @@ export interface NavbarProps {
    * conta. No celular a lateral não existe, então o drawer continua.
    */
   semNavegacaoDesktop?: boolean;
+  /**
+   * Abre a paleta de comandos.
+   *
+   * O atalho Ctrl+K é invisível para quem nunca leu sobre ele — o botão
+   * existe para ENSINAR o atalho, mostrando a tecla ao lado da lupa. Sem ele,
+   * a paleta serve só a quem já sabia que ela existe.
+   */
+  onAbrirBusca?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false }) => {
+export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onAbrirBusca }) => {
   const { store } = useStore();
   const { logout } = useAuthStore();
   const navigate = useNavigate();
@@ -394,6 +403,21 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false }) =
                 <option value="">Todas as contas</option>
                 {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
+            )}
+
+            {onAbrirBusca && (
+              <button
+                type="button"
+                onClick={onAbrirBusca}
+                aria-label="Buscar tela (Ctrl+K)"
+                className="flex max-sm:hidden items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs text-white/70 transition-colors hover:border-white/40 hover:text-white"
+              >
+                <MagnifyingGlassIcon className="h-4 w-4" />
+                <span className="max-lg:hidden">Ir para…</span>
+                <kbd className="rounded border border-white/25 px-1 text-[0.6875rem] leading-4">
+                  Ctrl K
+                </kbd>
+              </button>
             )}
 
             <ThemeToggle />

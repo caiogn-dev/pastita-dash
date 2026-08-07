@@ -399,6 +399,33 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
+      {/* ── Acesso rápido ──
+          As sete telas que o dono abre todo dia. Chegar em qualquer uma delas
+          pelo menu custa achar a seção, abrir e clicar — e a home é justamente
+          onde ele ainda não decidiu para onde vai. Aqui é um clique.
+          Não é duplicata do menu: o menu é COMPLETO e organizado por taxonomia
+          nossa; isto é CURADO por frequência de uso real. */}
+      <nav aria-label="Acesso rápido" className="flex flex-wrap gap-2">
+        {[
+          { rotulo: 'Pedidos', href: `/stores/${storeRoute}/orders` },
+          { rotulo: 'Cardápio', href: `/stores/${storeRoute}/products` },
+          { rotulo: 'WhatsApp', href: '/inbox/whatsapp' },
+          { rotulo: 'Clientes', href: `/stores/${storeRoute}/customers` },
+          { rotulo: 'Cupons', href: `/stores/${storeRoute}/coupons` },
+          { rotulo: 'Relatórios', href: '/analytics' },
+          { rotulo: 'Link na Bio', href: `/stores/${storeRoute}/link-bio` },
+        ].map((a) => (
+          <button
+            key={a.href}
+            type="button"
+            onClick={() => navigate(a.href)}
+            className="min-h-9 rounded-full border border-border-token bg-surface px-3.5 text-body font-medium text-fg-muted-token transition-colors hover:border-brand hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            {a.rotulo}
+          </button>
+        ))}
+      </nav>
+
       {/* ── KPI row ──
           Cada número diz o que ELE conta. "Receita hoje R$ 1.557" já foi
           contestado três vezes porque ninguém sabia se incluía frete, se

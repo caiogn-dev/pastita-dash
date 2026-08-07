@@ -26,3 +26,5 @@ export { InsightList } from './InsightList';
 export type { InsightListProps, InsightItem, InsightDirecao } from './InsightList';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps, EmptyStateBeneficio } from './EmptyState';
+export { PhonePreview } from './PhonePreview';
+export type { PhonePreviewProps } from './PhonePreview';

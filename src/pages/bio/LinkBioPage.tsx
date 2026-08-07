@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, Button, Input, Switch, Loading } from '../../components/common';
+import { PageShell, PhonePreview } from '../../components/ui';
 import { PaywallModal } from '../../components/billing/PaywallModal';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankBarList } from '../../components/reports/RankBarList';
@@ -268,26 +269,29 @@ const LinkBioPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-fg-token">Link na Bio</h1>
-        <p className="text-sm text-fg-muted-token">
-          Página pública com o essencial da sua loja para colocar na bio do Instagram.
-        </p>
-      </div>
-
-      <Card title="Sua página">
-        <div className="flex flex-wrap items-center gap-3">
-          <code className="rounded bg-surface-2 px-3 py-2 text-sm text-fg-token">{bioUrl}</code>
-          <Button variant="outline" onClick={handleCopy}>
-            {copied ? 'Copiado!' : 'Copiar'}
+    <PageShell
+      trilha={[{ rotulo: 'Cardápio' }, { rotulo: 'Link na Bio' }]}
+      titulo="Link na Bio"
+      descricao="Um mini-site com o essencial da sua loja, para colocar na bio do Instagram."
+      acoes={
+        <>
+          <Button variant="outline" onClick={handleCopy} disabled={!bioUrl}>
+            {copied ? 'Copiado!' : 'Copiar link'}
           </Button>
-          <a href={bioUrl} target="_blank" rel="noreferrer">
-            <Button variant="outline">Abrir</Button>
+          <a href={bioUrl || undefined} target="_blank" rel="noreferrer">
+            <Button variant="outline" disabled={!bioUrl}>Abrir mini-site</Button>
           </a>
-        </div>
-      </Card>
-
+        </>
+      }
+    >
+      {/* Editor à esquerda, página real à direita.
+          Empilhado, o preview ficava abaixo de quatro cards de formulário — ou
+          seja, fora da tela justamente enquanto você edita, que é quando ele
+          serve. Lado a lado, cada switch tem consequência visível na hora.
+          A coluna do preview é `sticky`: o formulário é longo e o celular
+          precisa acompanhar a rolagem. */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="flex min-w-0 flex-col gap-6">
       <Card title="Conteúdo">
         <form className="space-y-4" onSubmit={handleSaveContent}>
           <Input
@@ -452,8 +456,27 @@ const LinkBioPage: React.FC = () => {
         ) : null}
       </Card>
 
+        </div>
+
+        <aside className="xl:sticky xl:top-4 xl:self-start">
+          <PhonePreview
+            url={bioUrl}
+            titulo="Pré-visualização"
+            aoVivo
+            rodape={
+              bioUrl ? (
+                <>
+                  <p className="overline">Seu link público</p>
+                  <code className="text-caption text-fg-token">{bioUrl}</code>
+                </>
+              ) : null
+            }
+          />
+        </aside>
+      </div>
+
       <PaywallModal open={!!paywall} message={paywall ?? ''} onClose={() => setPaywall(null)} />
-    </div>
+    </PageShell>
   );
 };
 

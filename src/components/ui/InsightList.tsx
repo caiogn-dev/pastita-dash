@@ -31,6 +31,14 @@ export interface InsightItem {
   valor?: string;
   /** O que fazer. Ex.: "duplicar campanha com novo período". */
   recomendacao?: string;
+  /**
+   * Para onde ir.
+   *
+   * Diagnóstico que termina em texto morre ali: "4 cupons expirando" obriga o
+   * operador a lembrar onde ficam os cupons, sair da tela e achar os quatro.
+   * Com o botão, o insight É a navegação.
+   */
+  acao?: { rotulo: string; onClick: () => void };
 }
 
 export interface InsightListProps {
@@ -110,6 +118,15 @@ export const InsightList: React.FC<InsightListProps> = ({
             )}
             {item.recomendacao && (
               <span className="text-caption text-fg-muted-token">{item.recomendacao}</span>
+            )}
+            {item.acao && (
+              <button
+                type="button"
+                onClick={item.acao.onClick}
+                className="rounded px-2 py-1 text-caption font-semibold text-brand-ink underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {item.acao.rotulo} →
+              </button>
             )}
           </li>
         ))}

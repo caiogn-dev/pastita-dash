@@ -1,7 +1,8 @@
-import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
+import { CommandPalette } from './CommandPalette';
 import { useNavSections } from './useNavSections';
 import { TrialBanner } from './TrialBanner';
 import { useIsMobileViewport } from '../../mobile/useIsMobileViewport';
@@ -21,6 +22,23 @@ const Casca: React.FC<{ children: React.ReactNode; comBanner?: boolean }> = ({
   comBanner = true,
 }) => {
   const sections = useNavSections();
+  const navigate = useNavigate();
+  const [paletaAberta, setPaletaAberta] = useState(false);
+
+  // Ctrl+K / Cmd+K de qualquer lugar. O atalho vive na CASCA, não numa página:
+  // ele precisa funcionar inclusive de dentro do quadro de pedidos, que é onde
+  // o operador passa o dia e de onde sair custa mais.
+  useEffect(() => {
+    const aoTeclar = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletaAberta((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, []);
+
   return (
     <div className="relative flex min-h-screen bg-bg-secondary text-fg-primary">
       <div
@@ -35,10 +53,16 @@ const Casca: React.FC<{ children: React.ReactNode; comBanner?: boolean }> = ({
         <Sidebar sections={sections} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Navbar semNavegacaoDesktop />
+        <Navbar semNavegacaoDesktop onAbrirBusca={() => setPaletaAberta(true)} />
         {comBanner && <TrialBanner />}
         {children}
       </div>
+      <CommandPalette
+        aberto={paletaAberta}
+        onFechar={() => setPaletaAberta(false)}
+        sections={sections}
+        onNavegar={navigate}
+      />
     </div>
   );
 };
