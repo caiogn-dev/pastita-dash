@@ -10,7 +10,7 @@ import {
   TagIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import { StatCard } from '../../components/ui';
+import { StatCard, RowActions, linhaClicavel } from '../../components/ui';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
 import { getCategories, StoreCategory } from '../../services/storesApi';
 import { useStore } from '../../hooks';
@@ -390,7 +390,13 @@ export const CouponsPage: React.FC = () => {
             </thead>
             <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200">
               {coupons.map((coupon) => (
-                <tr key={coupon.id} className="hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black">
+                <tr
+                  key={coupon.id}
+                  {...linhaClicavel(
+                    () => handleOpenModal(coupon),
+                    `Abrir cupom ${coupon.code}`
+                  )}
+                >
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <TagIcon className="w-5 h-5 text-gray-400 mr-2" />
@@ -420,7 +426,12 @@ export const CouponsPage: React.FC = () => {
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <button
-                      onClick={() => handleToggleActive(coupon)}
+                      onClick={(e) => {
+                        // A linha abre a edição; alternar o status aqui não
+                        // pode arrastar o usuário para o modal junto.
+                        e.stopPropagation();
+                        handleToggleActive(coupon);
+                      }}
                       className="focus:outline-none"
                     >
                       <Badge variant={coupon.is_active && coupon.is_valid_now ? 'success' : 'danger'}>
@@ -429,27 +440,33 @@ export const CouponsPage: React.FC = () => {
                     </button>
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => handleOpenModal(coupon)}
-                        className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                        aria-label={`Editar cupom ${coupon.code}`}
-                        title={`Editar cupom ${coupon.code}`}
-                      >
-                        <PencilIcon className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeletingCoupon(coupon);
-                          setIsDeleteModalOpen(true);
-                        }}
-                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg transition-colors"
-                        aria-label={`Excluir cupom ${coupon.code}`}
-                        title={`Excluir cupom ${coupon.code}`}
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
-                    </div>
+                    {/* Um kebab no lugar de dois ícones nus: "Excluir" em texto
+                        deixa de ser adivinhação de pictograma, e o destrutivo
+                        sai de perto do dedo — antes ele ficava colado no lápis,
+                        exatamente onde a mão cai ao rolar a lista no celular. */}
+                    <RowActions
+                      rotulo={`Ações do cupom ${coupon.code}`}
+                      acoes={[
+                        {
+                          rotulo: 'Editar',
+                          icone: <PencilIcon className="h-4 w-4" />,
+                          onClick: () => handleOpenModal(coupon),
+                        },
+                        {
+                          rotulo: coupon.is_active ? 'Desativar' : 'Ativar',
+                          onClick: () => handleToggleActive(coupon),
+                        },
+                        {
+                          rotulo: 'Excluir',
+                          icone: <TrashIcon className="h-4 w-4" />,
+                          destrutiva: true,
+                          onClick: () => {
+                            setDeletingCoupon(coupon);
+                            setIsDeleteModalOpen(true);
+                          },
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

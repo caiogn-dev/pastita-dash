@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { CouponsPage } from '../CouponsPage';
 import { couponsService } from '../../../services/coupons';
@@ -79,12 +79,31 @@ describe('CouponsPage — acessibilidade dos botões de ação', () => {
   it('nomeia os botões de editar e excluir com o código do cupom (mobile e desktop)', async () => {
     renderPage();
 
-    // Card mobile + linha desktop renderizam ambos no jsdom.
+    // Card mobile + linha desktop renderizam ambos no jsdom, mas com formas
+    // diferentes: no card as ações são botões diretos; na linha elas moram num
+    // kebab, para não gastar largura de tabela nem deixar o "excluir" colado no
+    // "editar". O que NÃO muda é a garantia: toda porta de entrada de ação diz
+    // de qual cupom se trata.
     const editar = await screen.findAllByRole('button', { name: /Editar cupom TESTE10/i });
     const excluir = await screen.findAllByRole('button', { name: /Excluir cupom TESTE10/i });
+    const kebab = await screen.findAllByRole('button', { name: /Ações do cupom TESTE10/i });
 
-    expect(editar).toHaveLength(2);
-    expect(excluir).toHaveLength(2);
+    expect(editar).toHaveLength(1);
+    expect(excluir).toHaveLength(1);
+    expect(kebab).toHaveLength(1);
+  });
+
+  it('o menu de ações da linha nomeia o cupom, e não só a ação', async () => {
+    // Dentro do menu os itens são "Editar"/"Excluir". Isso só é aceitável
+    // porque o MENU carrega o código — senão o leitor de tela anuncia
+    // "Editar" sem dizer de quê, que é o mesmo defeito dos ícones nus.
+    renderPage();
+    const kebab = await screen.findByRole('button', { name: /Ações do cupom TESTE10/i });
+    fireEvent.click(kebab);
+
+    const menu = screen.getByRole('menu', { name: /Ações do cupom TESTE10/i });
+    expect(within(menu).getByRole('menuitem', { name: 'Editar' })).toBeInTheDocument();
+    expect(within(menu).getByRole('menuitem', { name: 'Excluir' })).toBeInTheDocument();
   });
 
   it('não deixa botões de ação com nome genérico "Editar"/"Excluir" sem contexto', async () => {

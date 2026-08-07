@@ -20,7 +20,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
-import { Card, Button, Badge, StatCard } from '../../components/ui';
+import { Card, Button, Badge, StatCard, RowActions, linhaClicavel } from '../../components/ui';
 import { getErrorMessage } from '../../services';
 import { StoreCustomer, StoreCustomerAddress, createCustomer, updateCustomer } from '../../services/storesApi';
 import { useStore, useDebounce } from '../../hooks';
@@ -509,6 +509,7 @@ export const CustomersPage: React.FC = () => {
     statsQuery.refetch();
   };
 
+  const navigate = useNavigate();
   const [selectedCustomer, setSelectedCustomer] = useState<StoreCustomer | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<StoreCustomer | null>(null);
@@ -577,6 +578,7 @@ export const CustomersPage: React.FC = () => {
                   <th className="px-4 py-3 text-right text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden lg:table-cell">Gasto total</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden xl:table-cell">Último pedido</th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-fg-muted-token uppercase tracking-widest">Status</th>
+                  <th className="px-2 py-3"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-token">
@@ -585,7 +587,13 @@ export const CustomersPage: React.FC = () => {
                   const avatarInitials = getInitials(customer.user_name, customer.whatsapp || customer.phone);
                   const ltv = Number(customer.total_spent ?? 0);
                   return (
-                  <tr key={customer.id} onClick={() => setSelectedCustomer(customer)} className="cursor-pointer hover:bg-surface-2 transition-colors">
+                  <tr
+                    key={customer.id}
+                    {...linhaClicavel(
+                      () => setSelectedCustomer(customer),
+                      `Abrir ${customer.user_name || 'cliente'}`
+                    )}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: avatarBg }}>
@@ -643,6 +651,33 @@ export const CustomersPage: React.FC = () => {
                           Inativo
                         </Badge>
                       )}
+                    </td>
+                    <td className="px-2 py-3 text-right">
+                      {/* As três coisas que se faz com um cliente sem precisar
+                          abrir o detalhe. Falar no WhatsApp era o caso mais
+                          frequente e exigia abrir a gaveta, copiar o número e
+                          ir para o inbox — três telas para uma mensagem. */}
+                      <RowActions
+                        rotulo={`Ações de ${customer.user_name || 'cliente'}`}
+                        acoes={[
+                          {
+                            rotulo: 'Ver detalhes',
+                            onClick: () => setSelectedCustomer(customer),
+                          },
+                          {
+                            rotulo: 'Editar',
+                            onClick: () => { setEditingCustomer(customer); setFormOpen(true); },
+                          },
+                          {
+                            rotulo: 'Falar no WhatsApp',
+                            desabilitada: !(customer.whatsapp || customer.phone),
+                            onClick: () => {
+                              const tel = (customer.whatsapp || customer.phone || '').replace(/\D/g, '');
+                              navigate(`/inbox/whatsapp?search=${tel}`);
+                            },
+                          },
+                        ]}
+                      />
                     </td>
                   </tr>
                   );
