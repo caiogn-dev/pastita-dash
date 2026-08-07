@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading } from '../../../components/common';
+import { PageShell, EmptyState } from '../../../components/ui';
 import { useConfirm } from '../../../hooks';
 import { campaignsService, Campaign } from '../../../services/campaigns';
 import logger from '../../../services/logger';
@@ -233,36 +234,52 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">Campanhas WhatsApp</h1>
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-            Gerencie suas campanhas de mensagens em massa
-          </p>
-        </div>
+    <PageShell
+      trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'WhatsApp' }]}
+      titulo="Campanhas WhatsApp"
+      descricao="Mensagem em massa para quem já é seu cliente — reativação, novidade, promoção."
+      acoes={
         <Button onClick={() => navigate('/marketing/whatsapp/new')}>
           <PlusIcon className="w-5 h-5 mr-2" />
           Nova Campanha
         </Button>
-      </div>
+      }
+    >
 
       {/* Campaigns List */}
       {campaigns.length === 0 ? (
-        <Card className="p-12 text-center">
-          <DevicePhoneMobileIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Nenhuma campanha criada
-          </h2>
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-6">
-            Crie sua primeira campanha de WhatsApp para alcançar seus clientes
-          </p>
-          <Button onClick={() => navigate('/marketing/whatsapp/new')}>
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Criar Campanha
-          </Button>
-        </Card>
+        // Vazio que VENDE: dizia só "nenhuma campanha criada", que é o que a
+        // pessoa já estava vendo. O que falta é o motivo de criar a primeira.
+        <EmptyState
+          variante="ativacao"
+          estado="Nenhuma campanha ainda"
+          titulo="Fale com quem já comprou de você."
+          descricao="Sua base de clientes é a lista mais barata que existe: eles já conhecem a comida e já confiam no seu WhatsApp."
+          acao={
+            <Button onClick={() => navigate('/marketing/whatsapp/new')}>
+              <PlusIcon className="w-5 h-5 mr-2" />
+              Criar campanha
+            </Button>
+          }
+          beneficios={[
+            {
+              titulo: 'Trazer de volta quem sumiu',
+              descricao: 'Cliente parado há 30 dias costuma voltar com um empurrão.',
+            },
+            {
+              titulo: 'Avisar de novidade',
+              descricao: 'Prato novo ou promoção chega na hora em quem já compra.',
+            },
+            {
+              titulo: 'Encher o dia fraco',
+              descricao: 'Dispare na terça de manhã e veja o movimento reagir.',
+            },
+            {
+              titulo: 'Você escolhe quem recebe',
+              descricao: 'Toda a base ou só um grupo — não é disparo às cegas.',
+            },
+          ]}
+        />
       ) : (
         <div className="space-y-4">
           {campaigns.map((campaign) => (
@@ -496,7 +513,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
         </div>
       )}
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 };
 

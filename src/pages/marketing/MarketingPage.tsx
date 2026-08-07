@@ -23,6 +23,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../components/common';
+import { PageShell } from '../../components/ui';
 import { useStore } from '../../hooks';
 import {
   marketingService,
@@ -264,16 +265,16 @@ export const MarketingPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">Marketing</h1>
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-            {storeName ? `Campanhas e promoções de ${storeName}` : 'Gerencie suas campanhas de marketing'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageShell
+      trilha={[{ rotulo: 'Campanhas' }, { rotulo: 'Marketing' }]}
+      titulo="Marketing"
+      descricao={
+        storeName
+          ? `Campanhas, promoções e contatos de ${storeName}.`
+          : 'Alcance quem já comprou: e-mail, WhatsApp e promoções.'
+      }
+      acoes={
+        <>
           <Button variant="secondary" onClick={() => navigate('/marketing/subscribers')}>
             <UserGroupIcon className="w-5 h-5 mr-2" />
             Contatos
@@ -282,8 +283,9 @@ export const MarketingPage: React.FC = () => {
             <PlusIcon className="w-5 h-5 mr-2" />
             Nova Campanha
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* Stats */}
       {stats && (
@@ -461,7 +463,7 @@ export const MarketingPage: React.FC = () => {
           </div>
         )}
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 

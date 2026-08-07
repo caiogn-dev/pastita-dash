@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Badge, Button, Card, Input } from '../../components/ui';
+import {
+  Badge, Button, Card, Input, PageShell, KpiGrid, EmptyState,
+} from '../../components/ui';
+import {
+  UserGroupIcon, GiftIcon, Squares2X2Icon, TicketIcon,
+} from '@heroicons/react/24/outline';
 import { Loading } from '../../components/common';
 import { couponsService } from '../../services/coupons';
 import { loyaltyService, LoyaltyAccountRow } from '../../services/loyalty';
@@ -155,21 +160,110 @@ const FidelidadePage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-fg-token">Fidelidade & Cupons</h1>
-        <p className="text-sm text-fg-muted-token">Programa &quot;10 ganhe 1&quot; e cupom de boas-vindas.</p>
-      </div>
+    <PageShell
+      trilha={[{ rotulo: 'Cardápio' }, { rotulo: 'Fidelidade' }]}
+      titulo="Fidelidade & Cupons"
+      descricao="Cliente junta compras e ganha uma grátis. Quem volta pela recompensa volta mais vezes."
+      acoes={
+        <Badge tone={enabled ? 'success' : 'neutral'}>
+          {enabled ? 'Programa ativo' : 'Programa inativo'}
+        </Badge>
+      }
+    >
+      {/* Desligado, a tela era um checkbox desmarcado dentro de um card
+          cinza — não dizia o que o programa faz nem por que ligar, e ninguém
+          liga o que não entende. Aqui ela vende antes de configurar. */}
+      {!enabled && (
+        <EmptyState
+          variante="ativacao"
+          estado="Programa inativo"
+          titulo="Ative a fidelidade e transforme compra avulsa em hábito."
+          descricao={`A cada ${threshold || '10'} itens comprados, o cliente ganha 1 grátis. O cartão anda sozinho a cada pedido pago — você não precisa marcar nada.`}
+          acao={
+            <Button onClick={() => setEnabled(true)}>
+              Ativar programa
+            </Button>
+          }
+          beneficios={[
+            {
+              titulo: 'Motivo para voltar',
+              descricao: 'Quem está a 2 itens do grátis escolhe você e não o concorrente.',
+            },
+            {
+              titulo: 'Pedido maior',
+              descricao: 'Falta 1 para fechar o cartão? O cliente adiciona mais um item.',
+            },
+            {
+              titulo: 'Sem trabalho no balcão',
+              descricao: 'O progresso é contado no pedido pago, automaticamente.',
+            },
+            {
+              titulo: 'Você escolhe o que pontua',
+              descricao: 'Pode valer o cardápio inteiro ou só as categorias que te dão margem.',
+            },
+          ]}
+        />
+      )}
+
+      {enabled && (
+        <KpiGrid
+          titulo="Como está o programa"
+          itens={[
+            {
+              label: 'Participantes',
+              value: accountsCount,
+              definicao: 'Clientes com pelo menos um item já acumulado.',
+              icone: <UserGroupIcon />,
+              tone: 'brand',
+            },
+            {
+              label: 'Meta do cartão',
+              value: `${threshold} itens`,
+              definicao: 'Quantos itens o cliente junta para ganhar 1 grátis.',
+              icone: <GiftIcon />,
+            },
+            {
+              label: 'Categorias que pontuam',
+              value: qualifyingCategoryIds.length || 'Todas',
+              definicao:
+                qualifyingCategoryIds.length > 0
+                  ? 'Só os itens destas categorias contam para o cartão.'
+                  : 'Nenhuma categoria marcada: o cardápio inteiro pontua.',
+              icone: <Squares2X2Icon />,
+            },
+            {
+              label: 'Cupom de boas-vindas',
+              value: createdCoupon || '—',
+              definicao: createdCoupon
+                ? 'Código gerado nesta sessão. Divulgue para a primeira compra.'
+                : 'Ainda não criado. Serve para trazer o cliente na primeira vez.',
+              icone: <TicketIcon />,
+            },
+          ]}
+        />
+      )}
 
       <Card title="Programa de fidelidade">
         <form className="space-y-4" onSubmit={handleSaveConfig}>
-          <label className="flex items-center gap-2 text-sm text-fg-token">
+          {/* Era um checkbox nu escrito "Programa ativo". Um quadradinho não
+              diz o que acontece ao marcar, e o cliente é quem sente o efeito —
+              a linha explica antes de você clicar. */}
+          <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
+            <span className="min-w-0">
+              <span className="block text-body font-semibold text-fg-token">
+                Programa ativo
+              </span>
+              <span className="mt-0.5 block text-caption text-fg-muted-token">
+                Ligado, o cartão do cliente anda a cada pedido pago e o grátis
+                aparece sozinho no carrinho dele.
+              </span>
+            </span>
             <input
               type="checkbox"
+              className="mt-1 h-5 w-5 shrink-0 accent-[var(--brand)]"
               checked={enabled}
               onChange={(e) => setEnabled(e.target.checked)}
             />
-            Programa ativo
           </label>
 
           <Input
@@ -244,7 +338,14 @@ const FidelidadePage: React.FC = () => {
         ) : accountsError ? (
           <p className="text-sm text-fg-muted-token">{accountsError}</p>
         ) : accounts.length === 0 ? (
-          <p className="text-sm text-fg-muted-token">Nenhum cliente no programa ainda.</p>
+          <EmptyState
+            titulo="Ninguém no programa ainda"
+            descricao={
+              enabled
+                ? 'O cliente entra sozinho no primeiro pedido pago. Avise no WhatsApp que agora tem cartão fidelidade.'
+                : 'O programa está desligado — ligue acima para os clientes começarem a acumular.'
+            }
+          />
         ) : (
           <div className="space-y-3">
             <table className="w-full text-sm">
@@ -263,7 +364,29 @@ const FidelidadePage: React.FC = () => {
                     <td className="py-2">{account.display_name}</td>
                     <td className="py-2">{account.email}</td>
                     <td className="py-2">
-                      {account.progress}/{threshold}
+                      {/* "7/10" obriga a fazer a conta de cabeça, linha por
+                          linha. A barra responde "quem está quase lá?" de
+                          relance — que é a única pergunta que se faz aqui. */}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-1.5 w-20 overflow-hidden rounded-pill bg-surface-2"
+                          role="progressbar"
+                          aria-valuenow={account.progress}
+                          aria-valuemin={0}
+                          aria-valuemax={Number(threshold) || 10}
+                          aria-label={`${account.progress} de ${threshold} itens`}
+                        >
+                          <span
+                            className="block h-full rounded-pill bg-brand"
+                            style={{
+                              width: `${Math.min(100, (account.progress / (Number(threshold) || 10)) * 100)}%`,
+                            }}
+                          />
+                        </span>
+                        <span className="text-caption tabular-nums text-fg-muted-token">
+                          {account.progress}/{threshold}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-2">{account.redeemed_count}</td>
                     <td className="py-2">
@@ -289,7 +412,7 @@ const FidelidadePage: React.FC = () => {
           </div>
         )}
       </Card>
-    </div>
+    </PageShell>
   );
 };
 

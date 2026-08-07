@@ -58,6 +58,20 @@ describe('PageShell', () => {
     expect(screen.queryByRole('link', { name: 'Cupons' })).not.toBeInTheDocument();
   });
 
+  it('o último elo repete o título de propósito', () => {
+    // Não é redundância acidental. A trilha responde "onde estou" varrendo da
+    // esquerda para a direita; se o último elo sumisse, o caminho terminaria
+    // no PAI e pareceria que você está um nível acima. Quem consome com leitor
+    // de tela distingue pelo papel: um é elo com aria-current, o outro é h1.
+    renderizar(
+      <PageShell trilha={[{ rotulo: 'PDV' }, { rotulo: 'Pagamentos' }]} titulo="Pagamentos">
+        x
+      </PageShell>
+    );
+    expect(screen.getAllByText('Pagamentos')).toHaveLength(2);
+    expect(screen.getByRole('heading', { level: 1, name: 'Pagamentos' })).toBeInTheDocument();
+  });
+
   it('sem trilha não renderiza navegação vazia', () => {
     renderizar(<PageShell titulo="Início">x</PageShell>);
     expect(screen.queryByRole('navigation', { name: /trilha/i })).not.toBeInTheDocument();

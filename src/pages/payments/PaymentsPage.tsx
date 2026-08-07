@@ -32,6 +32,7 @@ import {
   PageTitle,
   EmptyState,
 } from '../../components/common';
+import { PageShell } from '../../components/ui';
 import { ordersService } from '../../services';
 import { Order } from '../../types';
 import logger from '../../services/logger';
@@ -328,8 +329,7 @@ export const PaymentsPage: React.FC = () => {
   // enganosos — mostra um estado de erro acionável com "Tentar novamente".
   if (statsFailed && ordersFailed) {
     return (
-      <div className="p-6 space-y-6">
-        <PageTitle title="Pagamentos" />
+      <PageShell trilha={[{ rotulo: 'PDV' }, { rotulo: 'Pagamentos' }]} titulo="Pagamentos">
         <Card>
           <EmptyState
             icon={<ExclamationTriangleIcon className="w-8 h-8 text-red-500" />}
@@ -338,18 +338,23 @@ export const PaymentsPage: React.FC = () => {
             action={{ label: 'Tentar novamente', onClick: retry }}
           />
         </Card>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <PageTitle
-        title="Pagamentos"
-        // Subtítulo depende do stats agregado; se ele falhou sem cache, não
-        // exibimos o "R$ 0,00 recebido" enganoso.
-        subtitle={statsFailed ? undefined : `${stats.total} pedido(s) | ${formatMoney(stats.totalRevenue)} recebido`}
-      />
+    <PageShell
+      trilha={[{ rotulo: 'PDV' }, { rotulo: 'Pagamentos' }]}
+      titulo="Pagamentos"
+      // A descrição depende do stats agregado; se ele falhou sem cache, não
+      // exibimos o "R$ 0,00 recebido" enganoso — ausência é melhor que zero
+      // falso quando o número é dinheiro.
+      descricao={
+        statsFailed
+          ? 'Acompanhe o que foi cobrado, o que entrou e o que ficou pendente.'
+          : `${stats.total} pedido(s) · ${formatMoney(stats.totalRevenue)} recebido`
+      }
+    >
 
       {/* Falha de atualização com dados em cache: aviso não-bloqueante para o
           lojista saber que os números podem não refletir o estado mais recente. */}
@@ -480,7 +485,7 @@ export const PaymentsPage: React.FC = () => {
           )}
         </Card>
         )}
-    </div>
+    </PageShell>
   );
 };
 

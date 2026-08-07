@@ -20,7 +20,7 @@ import {
 } from '../../services/storesApi';
 import { useStore } from '../../hooks';
 import logger from '../../services/logger';
-import { Card, Button, StatCard } from '../../components/ui';
+import { Card, Button, StatCard, PageShell } from '../../components/ui';
 
 interface DeliveryConfig {
   delivery_base_fee: number;
@@ -340,15 +340,19 @@ export const StoreSettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-canvas p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <BuildingStorefrontIcon className="w-6 h-6 text-brand-ink" />
-          <div>
-            <h1 className="text-2xl font-bold text-fg-token">Configurações da Loja</h1>
-            <p className="text-sm text-fg-muted-token">{store?.name || 'Loja'}</p>
-          </div>
-        </div>
+    // `min-h-screen` + `p-6` próprios criavam uma segunda casca dentro da
+    // casca do app: a página tinha o próprio fundo e o próprio respiro, e
+    // encostava diferente das outras. Quem espaça é o <main>.
+    <PageShell
+      trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Loja' }]}
+      titulo="Configurações da Loja"
+      descricao={
+        store?.name
+          ? `Dados, endereço e operação de ${store.name}. O que está aqui aparece para o cliente.`
+          : 'Dados, endereço e operação. O que está aqui aparece para o cliente.'
+      }
+      className="mx-auto max-w-6xl"
+    >
 
         <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
           <Card className="p-6">
@@ -749,8 +753,7 @@ export const StoreSettingsPage: React.FC = () => {
           <StatCard label="Pedidos" value={store?.orders_count ?? 0} />
           <StatCard label="Produtos" value={store?.products_count ?? 0} />
         </div>
-      </div>
-    </div>
+    </PageShell>
   );
 };
 

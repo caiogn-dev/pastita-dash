@@ -103,7 +103,9 @@ describe('PaymentsPage — estados de erro', () => {
 
     renderPage();
 
-    expect(screen.getByText('Pagamentos')).toBeInTheDocument();
+    // 'Pagamentos' aparece duas vezes de propósito: no último elo da trilha
+    // (onde você está) e no título. Mirar no heading em vez do texto solto.
+    expect(screen.getByRole('heading', { level: 1, name: 'Pagamentos' })).toBeInTheDocument();
     expect(screen.getByText(/nenhum pagamento encontrado/i)).toBeInTheDocument();
     expect(screen.queryByText(/erro ao carregar pagamentos/i)).not.toBeInTheDocument();
   });
