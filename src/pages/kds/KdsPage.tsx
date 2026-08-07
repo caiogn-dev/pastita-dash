@@ -29,13 +29,13 @@ const COLUMN_STYLES: Record<string, { header: string; button: string }> = {
     button: 'bg-brand text-white hover:bg-brand-hover',
   },
   preparing: {
-    header: 'bg-brand-soft text-brand',
+    header: 'bg-brand-soft text-brand-ink',
     button: 'bg-brand text-white hover:bg-brand-hover',
   },
   ready: {
     header: 'bg-[var(--success-soft)] text-success-token',
     button:
-      'bg-surface-2 text-fg-token border-2 border-border-strong hover:bg-brand-soft hover:text-brand',
+      'bg-surface-2 text-fg-token border-2 border-border-strong hover:bg-brand-soft hover:text-brand-ink',
   },
 };
 

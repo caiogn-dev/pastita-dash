@@ -44,7 +44,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 const BASE = 'inline-flex items-center rounded font-semibold';
 
 const TONES: Record<BadgeTone, string> = {
-  brand: 'bg-brand-soft text-brand',
+  brand: 'bg-brand-soft text-brand-ink',
   success: 'bg-[var(--success-soft)] text-[var(--success)]',
   warning: 'bg-[var(--warning-soft)] text-[var(--warning)]',
   danger: 'bg-[var(--danger-soft)] text-[var(--danger)]',

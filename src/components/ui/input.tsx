@@ -68,7 +68,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             htmlFor={inputId}
             className={cn(
               'block text-sm font-medium transition-colors duration-200',
-              focused ? 'text-brand' : 'text-fg-token',
+              focused ? 'text-brand-ink' : 'text-fg-token',
               error && 'text-danger-500'
             )}
           >
@@ -78,7 +78,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
         <div className="relative flex">
           {leftAddon && (
-            <span className="inline-flex items-center px-3 rounded-l border border-r-0 border-border-token bg-surface-2 text-fg-muted-token text-sm">
+            <span className="inline-flex items-center px-3 rounded-l border border-r-0 border-input bg-surface-2 text-fg-muted-token text-sm">
               {leftAddon}
             </span>
           )}
@@ -89,7 +89,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 <span
                   className={cn(
                     'text-fg-muted-token transition-colors',
-                    focused && 'text-brand',
+                    focused && 'text-brand-ink',
                     error && 'text-danger-500'
                   )}
                 >
@@ -113,7 +113,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               className={cn(
                 // Base
                 'w-full bg-surface',
-                'border border-border-token',
+                // border-input e nao border-token: o limite de um campo PRECISA ser
+                // percebido (WCAG 1.4.11, 3:1). A --border decorativa da 1,38:1.
+                'border border-input',
                 'text-fg-token placeholder-fg-muted-token',
                 'transition-all duration-200 ease-out',
 
@@ -147,7 +149,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 <span
                   className={cn(
                     'text-fg-muted-token transition-colors',
-                    focused && 'text-brand',
+                    focused && 'text-brand-ink',
                     error && 'text-danger-500'
                   )}
                 >

@@ -138,7 +138,7 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
                 <span className="flex items-center gap-2 justify-end mt-0.5 text-xs">
                   <Link
                     to={`/inbox/whatsapp?search=${encodeURIComponent(c.phone.replace(/\D/g, ''))}`}
-                    className="text-brand font-semibold hover:underline"
+                    className="text-brand-ink font-semibold hover:underline"
                     title="Abrir conversa no inbox"
                   >
                     Conversa
@@ -147,7 +147,7 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
                     href={`https://wa.me/${c.phone.replace(/\D/g, '')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-brand font-semibold hover:underline"
+                    className="text-brand-ink font-semibold hover:underline"
                     title="Chamar no WhatsApp"
                   >
                     Chamar

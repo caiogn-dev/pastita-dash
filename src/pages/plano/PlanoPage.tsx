@@ -56,7 +56,7 @@ function FeatureValue({ value }: { value: React.ReactNode }) {
   if (value === true) {
     return (
       <span className="inline-flex items-center gap-1 text-fg-token">
-        <CheckIcon className="w-4 h-4 text-brand" aria-hidden="true" />
+        <CheckIcon className="w-4 h-4 text-brand-ink" aria-hidden="true" />
         <span className="sr-only">Incluído</span>
       </span>
     );
@@ -95,7 +95,7 @@ function PlanCard({
       {(isCurrent || isRecommended) && (
         <div
           className={`flex items-center justify-center gap-1 py-1 text-[11px] font-semibold uppercase tracking-wide ${
-            isCurrent ? 'bg-brand text-white' : 'bg-brand-soft text-brand'
+            isCurrent ? 'bg-brand text-white' : 'bg-brand-soft text-brand-ink'
           }`}
         >
           {isCurrent ? (
@@ -237,7 +237,7 @@ export const PlanoPage: React.FC = () => {
           </span>
         </div>
         {daysLeft !== null && daysLeft > 0 && (
-          <div className="inline-flex items-center gap-2 rounded bg-brand-soft px-3 py-1.5 text-sm font-medium text-brand">
+          <div className="inline-flex items-center gap-2 rounded bg-brand-soft px-3 py-1.5 text-sm font-medium text-brand-ink">
             <ClockIcon className="w-4 h-4" aria-hidden="true" />
             {daysLeft === 1 ? 'Falta 1 dia' : `Faltam ${daysLeft} dias`} de trial
           </div>
@@ -285,7 +285,7 @@ export const PlanoPage: React.FC = () => {
 
       <p className="mt-6 text-center text-xs text-fg-muted-token">
         Pagamento online em breve. Precisa de ajuda para escolher?{' '}
-        <Link to="/stores" className="text-brand hover:underline">
+        <Link to="/stores" className="text-brand-ink hover:underline">
           Fale com a gente
         </Link>
         .

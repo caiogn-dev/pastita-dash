@@ -92,10 +92,10 @@ const CompanyProfilesPage: React.FC = () => {
       {/* Quick Nav Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { to: '/automation/intents/stats', icon: ChartBarIcon, label: 'Estatísticas', color: 'text-brand bg-brand-soft' },
-          { to: '/automation/intents/logs', icon: ChatBubbleLeftRightIcon, label: 'Logs de Intenções', color: 'text-brand bg-brand-soft' },
-          { to: '/automation/logs', icon: ChartBarIcon, label: 'Logs de Automação', color: 'text-brand bg-brand-soft' },
-          { to: '/automation/scheduled', icon: CpuChipIcon, label: 'Agendamentos', color: 'text-brand bg-brand-soft' },
+          { to: '/automation/intents/stats', icon: ChartBarIcon, label: 'Estatísticas', color: 'text-brand-ink bg-brand-soft' },
+          { to: '/automation/intents/logs', icon: ChatBubbleLeftRightIcon, label: 'Logs de Intenções', color: 'text-brand-ink bg-brand-soft' },
+          { to: '/automation/logs', icon: ChartBarIcon, label: 'Logs de Automação', color: 'text-brand-ink bg-brand-soft' },
+          { to: '/automation/scheduled', icon: CpuChipIcon, label: 'Agendamentos', color: 'text-brand-ink bg-brand-soft' },
         ].map((item) => (
           <Link
             key={item.to}
@@ -139,7 +139,7 @@ const CompanyProfilesPage: React.FC = () => {
               <div className="p-5 pb-4 flex items-start justify-between">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-brand-soft flex items-center justify-center">
-                    <BuildingOfficeIcon className="h-6 w-6 text-brand" />
+                    <BuildingOfficeIcon className="h-6 w-6 text-brand-ink" />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-base font-semibold text-fg-token truncate">
@@ -200,7 +200,7 @@ const CompanyProfilesPage: React.FC = () => {
                   </span>
                 )}
                 {profile.use_ai_agent && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-brand-soft text-brand font-medium">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-brand-soft text-brand-ink font-medium">
                     Agente IA
                   </span>
                 )}

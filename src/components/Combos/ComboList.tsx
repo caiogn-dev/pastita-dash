@@ -176,7 +176,7 @@ export const ComboList: React.FC<ComboListProps> = ({
                         onClick={() => onToggleActive(combo)}
                         title={combo.is_active ? 'Desativar' : 'Ativar'}
                         className={`p-1.5 rounded transition-colors hover:bg-surface-2 ${
-                          combo.is_active ? 'text-brand' : 'text-fg-muted-token'
+                          combo.is_active ? 'text-brand-ink' : 'text-fg-muted-token'
                         }`}
                       >
                         {combo.is_active ? (

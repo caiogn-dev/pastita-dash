@@ -73,7 +73,7 @@ export const StoreScoreSection: React.FC<{ range: DateRange; enabled: boolean }>
                 {item.done ? (
                   <CheckCircleIcon className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                 ) : (
-                  <span className="w-5 h-5 shrink-0 mt-0.5 grid place-items-center rounded-full bg-brand/15 text-brand text-[10px] font-bold">
+                  <span className="w-5 h-5 shrink-0 mt-0.5 grid place-items-center rounded-full bg-brand/15 text-brand-ink text-[10px] font-bold">
                     +{item.points}
                   </span>
                 )}
@@ -90,7 +90,7 @@ export const StoreScoreSection: React.FC<{ range: DateRange; enabled: boolean }>
             <button
               type="button"
               onClick={() => setShowAll((v) => !v)}
-              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-ink hover:underline"
             >
               {showAll ? 'Mostrar só as próximas' : `Ver as ${d?.checklist.length} conquistas`}
               <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${showAll ? 'rotate-180' : ''}`} />

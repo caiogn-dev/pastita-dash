@@ -34,7 +34,7 @@ export interface StatCardProps {
 
 const VALUE_TONE: Record<StatCardTone, string> = {
   default: 'text-fg-token',
-  brand: 'text-brand',
+  brand: 'text-brand-ink',
   warning: 'text-[var(--warning)]',
   success: 'text-[var(--success)]',
   danger: 'text-[var(--danger)]',

@@ -158,7 +158,7 @@ export const TrialBanner: FC = () => {
     <div
       role="status"
       aria-live="polite"
-      className="flex items-center gap-3 px-4 py-2 text-sm bg-brand-soft text-brand border-b border-border-token max-sm:px-3"
+      className="flex items-center gap-3 px-4 py-2 text-sm bg-brand-soft text-brand-ink border-b border-border-token max-sm:px-3"
     >
       <ClockIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
       <p className="flex-1 min-w-0 leading-tight">
@@ -177,7 +177,7 @@ export const TrialBanner: FC = () => {
         type="button"
         onClick={handleDismiss}
         aria-label="Dispensar aviso de trial"
-        className="flex-shrink-0 rounded p-1 text-brand/70 transition-colors hover:bg-brand/10 hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="flex-shrink-0 rounded p-1 text-brand-ink/70 transition-colors hover:bg-brand/10 hover:text-brand-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <XMarkIcon className="w-4 h-4" aria-hidden="true" />
       </button>

@@ -175,7 +175,7 @@ export function ExportCsvButton<T extends object>({
     <button
       type="button"
       onClick={() => downloadCsv(toCsv(rows, columns), filename)}
-      className="inline-flex items-center gap-1.5 text-xs font-semibold text-fg-muted-token hover:text-brand transition-colors shrink-0"
+      className="inline-flex items-center gap-1.5 text-xs font-semibold text-fg-muted-token hover:text-brand-ink transition-colors shrink-0"
       title="Exportar CSV"
     >
       <ArrowDownTrayIcon className="w-4 h-4" />

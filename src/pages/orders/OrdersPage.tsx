@@ -211,7 +211,7 @@ const OrderCardBase: React.FC<CardProps> = ({
           #{order.order_number}
         </span>
         <div className="flex items-center gap-1">
-          {isUpdating && <ArrowPathIcon className="h-3 w-3 text-brand animate-spin" />}
+          {isUpdating && <ArrowPathIcon className="h-3 w-3 text-brand-ink animate-spin" />}
           {isSuccess && <span className="text-[10px] font-bold text-emerald-600">✓ Movido</span>}
           {!isUpdating && !isSuccess && elapsed > 0 && (
             <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
@@ -236,7 +236,7 @@ const OrderCardBase: React.FC<CardProps> = ({
 
       {/* Agendamento — destaque quando o cliente agendou data/hora */}
       {formatScheduledShort(order) && (
-        <div className="mb-1.5 flex items-center gap-1 rounded-md bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand w-fit">
+        <div className="mb-1.5 flex items-center gap-1 rounded-md bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink w-fit">
           <CalendarDaysIcon className="h-2.5 w-2.5" />
           Agendado {formatScheduledShort(order)}
         </div>

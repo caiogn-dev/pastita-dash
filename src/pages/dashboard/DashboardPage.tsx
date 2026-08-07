@@ -441,7 +441,7 @@ export const DashboardPage: React.FC = () => {
               </button>
               <button
                 onClick={() => navigate(`/stores/${storeRoute}/orders`)}
-                className="flex items-center gap-1 text-xs text-brand hover:underline font-medium"
+                className="flex items-center gap-1 text-xs text-brand-ink hover:underline font-medium"
               >
                 Ver todos <ArrowRightIcon className="h-3 w-3" />
               </button>
@@ -525,7 +525,7 @@ export const DashboardPage: React.FC = () => {
           <div className="px-5 py-3 border-t border-border-token">
             <button
               onClick={() => navigate(`/stores/${storeRoute}/orders`)}
-              className="text-xs text-brand hover:underline flex items-center gap-1 font-medium"
+              className="text-xs text-brand-ink hover:underline flex items-center gap-1 font-medium"
             >
               Gerenciar todos <ArrowRightIcon className="h-3 w-3" />
             </button>
@@ -539,7 +539,7 @@ export const DashboardPage: React.FC = () => {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-border-token">
           <div className="flex items-center gap-2">
-            <ServerStackIcon className="h-4 w-4 text-brand" />
+            <ServerStackIcon className="h-4 w-4 text-brand-ink" />
             <h2 className="text-sm font-semibold text-fg-token">Saúde do sistema</h2>
             <Badge variant={healthVariant[projectHealth?.status || 'unknown'] || 'gray'}>
               {healthLabel[projectHealth?.status || 'unknown'] || 'Indefinido'}
@@ -553,7 +553,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/analytics')}
-            className="flex items-center gap-1 text-xs text-brand hover:underline font-medium"
+            className="flex items-center gap-1 text-xs text-brand-ink hover:underline font-medium"
           >
             Ver analytics <ArrowRightIcon className="h-3 w-3" />
           </button>
@@ -710,7 +710,7 @@ export const DashboardPage: React.FC = () => {
       <p className="text-right text-xs text-gray-400 dark:text-zinc-600">
         Atualizado às {refreshedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         {' · '}
-        <button onClick={loadData} className="hover:text-brand underline transition-colors">
+        <button onClick={loadData} className="hover:text-brand-ink underline transition-colors">
           atualizar agora
         </button>
       </p>

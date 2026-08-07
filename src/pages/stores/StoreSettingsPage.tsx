@@ -343,7 +343,7 @@ export const StoreSettingsPage: React.FC = () => {
     <div className="min-h-screen bg-canvas p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <BuildingStorefrontIcon className="w-6 h-6 text-brand" />
+          <BuildingStorefrontIcon className="w-6 h-6 text-brand-ink" />
           <div>
             <h1 className="text-2xl font-bold text-fg-token">Configurações da Loja</h1>
             <p className="text-sm text-fg-muted-token">{store?.name || 'Loja'}</p>
@@ -573,7 +573,7 @@ export const StoreSettingsPage: React.FC = () => {
                       }))}
                       className={`w-full text-xs font-semibold px-2 py-1.5 rounded transition-colors ${
                         h.is_open
-                          ? 'bg-brand-soft text-brand hover:bg-brand-soft/80'
+                          ? 'bg-brand-soft text-brand-ink hover:bg-brand-soft/80'
                           : 'bg-surface-2 text-fg-muted-token hover:bg-surface-2/80'
                       }`}
                     >

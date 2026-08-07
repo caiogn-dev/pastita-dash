@@ -40,6 +40,8 @@ export default {
           active: 'var(--bg-active)',
         },
         'on-brand': 'var(--on-brand)',
+        'brand-ink': 'var(--brand-ink)',
+        'border-input': 'var(--border-input)',
         brand: {
           DEFAULT: 'var(--brand)',
           hover: 'var(--brand-hover)',

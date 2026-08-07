@@ -303,7 +303,7 @@ export default function SubscriptionManagementPage() {
                 }`}
               >
                 {isCurrent && (
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-brand">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-ink">
                     Plano atual
                   </span>
                 )}

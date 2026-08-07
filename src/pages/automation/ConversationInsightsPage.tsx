@@ -127,7 +127,7 @@ export const ConversationInsightsPage: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-fg-token flex items-center gap-2">
-            <SparklesIcon className="h-6 w-6 text-brand" aria-hidden="true" />
+            <SparklesIcon className="h-6 w-6 text-brand-ink" aria-hidden="true" />
             Insights de Conversas (IA)
           </h1>
           <p className="text-sm text-fg-muted-token mt-1">
@@ -219,7 +219,7 @@ export const ConversationInsightsPage: React.FC = () => {
             />
             <InsightListCard
               title="💡 Oportunidades"
-              icon={<LightBulbIcon className="h-4 w-4 text-brand" aria-hidden="true" />}
+              icon={<LightBulbIcon className="h-4 w-4 text-brand-ink" aria-hidden="true" />}
               items={insights.opportunities || []}
               emptyLabel="Nenhuma oportunidade identificada."
             />
@@ -228,7 +228,7 @@ export const ConversationInsightsPage: React.FC = () => {
           {/* Sentimento + resumo */}
           <Card>
             <div className="flex items-center gap-2 px-5 py-4 border-b border-border-token">
-              <ChatBubbleLeftRightIcon className="h-4 w-4 text-brand" aria-hidden="true" />
+              <ChatBubbleLeftRightIcon className="h-4 w-4 text-brand-ink" aria-hidden="true" />
               <h2 className="text-sm font-semibold text-fg-token">Sentimento geral</h2>
               {sentiment && <Badge variant={sentiment.variant}>{sentiment.label}</Badge>}
               {data.cached && (

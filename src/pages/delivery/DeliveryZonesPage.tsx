@@ -290,7 +290,7 @@ export const DeliveryZonesPage: React.FC = () => {
           </div>
           <Link
             to={settingsPath}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand bg-brand-soft rounded hover:bg-brand-soft/80 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand-ink bg-brand-soft rounded hover:bg-brand-soft/80 transition-colors"
           >
             <Cog6ToothIcon className="w-4 h-4" />
             Editar Localização
@@ -337,7 +337,7 @@ export const DeliveryZonesPage: React.FC = () => {
                   href={mapInfo.externalUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-sm text-brand hover:text-brand-hover inline-flex items-center mt-2"
+                  className="text-sm text-brand-ink hover:text-brand-hover inline-flex items-center mt-2"
                 >
                   Ver no Google Maps →
                 </a>
@@ -435,13 +435,13 @@ export const DeliveryZonesPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-lg font-semibold text-brand">
+                <span className="text-lg font-semibold text-brand-ink">
                   R$ {formatMoney(zone.delivery_fee)}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenModal(zone)}
-                    className="p-2 text-fg-muted-token hover:text-brand hover:bg-surface-2 rounded"
+                    className="p-2 text-fg-muted-token hover:text-brand-ink hover:bg-surface-2 rounded"
                     aria-label={`Editar faixa ${zone.name}`}
                     title={`Editar faixa ${zone.name}`}
                   >
@@ -508,7 +508,7 @@ export const DeliveryZonesPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <span className="text-base font-semibold text-brand">
+                    <span className="text-base font-semibold text-brand-ink">
                       R$ {formatMoney(zone.delivery_fee)}
                     </span>
                   </td>
@@ -529,7 +529,7 @@ export const DeliveryZonesPage: React.FC = () => {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => handleOpenModal(zone)}
-                        className="p-2 text-fg-muted-token hover:text-brand hover:bg-surface-2 rounded transition-colors"
+                        className="p-2 text-fg-muted-token hover:text-brand-ink hover:bg-surface-2 rounded transition-colors"
                         aria-label={`Editar faixa ${zone.name}`}
                         title={`Editar faixa ${zone.name}`}
                       >
@@ -633,7 +633,7 @@ export const DeliveryZonesPage: React.FC = () => {
                 id="is_active"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="h-4 w-4 text-brand focus:ring-brand border-border-token rounded"
+                className="h-4 w-4 text-brand-ink focus:ring-brand border-border-token rounded"
               />
               <label htmlFor="is_active" className="ml-2 block text-sm text-fg-token">
                 Faixa ativa

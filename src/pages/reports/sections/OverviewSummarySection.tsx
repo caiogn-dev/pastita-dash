@@ -68,7 +68,7 @@ export const OverviewSummarySection: React.FC<{ range: DateRange; enabled: boole
         <Card className="p-5 bg-surface-2/50 border-brand/30">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-fg-muted-token">Faturamento</p>
           <div className="flex items-baseline gap-3 mt-1 flex-wrap">
-            <span className="text-4xl font-bold tabular-nums text-brand">{formatBRL(cur?.revenue ?? 0)}</span>
+            <span className="text-4xl font-bold tabular-nums text-brand-ink">{formatBRL(cur?.revenue ?? 0)}</span>
             <DeltaPill pct={d?.delta.revenue_pct} />
           </div>
           <p className="text-xs text-fg-muted-token mt-1">período anterior: {formatBRL(prev?.revenue ?? 0)}</p>

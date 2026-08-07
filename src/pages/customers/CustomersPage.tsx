@@ -255,7 +255,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
         <div className="grid grid-cols-3 divide-x divide-border-token border-b border-border-token">
           <div className="px-4 py-3 text-center">
             <p className="text-[10px] font-bold text-fg-muted-token uppercase tracking-widest mb-1">Gasto total</p>
-            <p className="text-lg font-bold text-brand">
+            <p className="text-lg font-bold text-brand-ink">
               R$ {formatMoney(customer.total_spent)}
             </p>
           </div>

@@ -172,7 +172,7 @@ export const NotificationDropdown: React.FC = () => {
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
-                className="text-sm text-brand hover:opacity-80 flex items-center gap-1"
+                className="text-sm text-brand-ink hover:opacity-80 flex items-center gap-1"
               >
                 <CheckIcon className="w-4 h-4" />
                 Marcar todas como lidas

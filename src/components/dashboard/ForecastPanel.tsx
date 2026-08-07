@@ -184,7 +184,7 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
     <Card noPadding>
       <div className="flex items-center justify-between gap-2 px-5 py-4 border-b border-border-token">
         <h2 className="text-sm font-semibold text-fg-token flex items-center gap-2">
-          <ChartBarIcon className="h-4 w-4 text-brand" aria-hidden="true" />
+          <ChartBarIcon className="h-4 w-4 text-brand-ink" aria-hidden="true" />
           Previsão do mês
         </h2>
         <span className="text-xs text-fg-muted-token">últimos {janela} dias</span>

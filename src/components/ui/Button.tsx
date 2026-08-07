@@ -56,7 +56,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
   // aliases legados
   solid: 'bg-brand text-white hover:bg-brand-hover',
   secondary: 'border border-border-token text-fg-token hover:bg-surface-2',
-  link: 'text-brand hover:underline px-0 py-0',
+  link: 'text-brand-ink hover:underline px-0 py-0',
 };
 
 const SIZES: Record<ButtonSize, string> = {

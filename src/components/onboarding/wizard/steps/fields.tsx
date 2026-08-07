@@ -127,7 +127,7 @@ export const LogoDropzone: FC<{ file: File | null; onFile: (f: File | null) => v
         drag ? 'border-brand bg-brand/5' : 'border-border-token bg-surface-muted-token hover:border-brand/60'
       }`}
     >
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-token text-brand">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-token text-brand-ink">
         {drag ? <UploadCloud className="h-6 w-6" /> : <ImageIcon className="h-6 w-6" />}
       </span>
       <span className="text-sm font-medium text-fg-token">Clique ou arraste sua logo</span>

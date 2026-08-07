@@ -50,7 +50,7 @@ const isPlanLocked = (error: unknown): boolean => {
 
 const UpgradeCard: React.FC = () => (
   <Card className="p-10 text-center">
-    <LockClosedIcon className="w-10 h-10 mx-auto text-brand" />
+    <LockClosedIcon className="w-10 h-10 mx-auto text-brand-ink" />
     <h2 className="mt-3 text-lg font-semibold text-fg-token">Relatórios avançados são do plano Pro</h2>
     <p className="mt-1 text-sm text-fg-muted-token max-w-md mx-auto">
       Horários de pico, mapa de calor, segmentos de clientes, engenharia de cardápio e mais —
@@ -617,7 +617,7 @@ const AnalyticsPage: React.FC = () => {
                   onClick={() => setActiveTab(t.value)}
                   className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === t.value
-                      ? 'border-brand text-brand'
+                      ? 'border-brand text-brand-ink'
                       : 'border-transparent text-fg-muted-token hover:text-fg-token'
                   }`}
                 >

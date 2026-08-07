@@ -33,7 +33,7 @@ describe('Badge (canônico)', () => {
     render(<Badge tone="brand">Marca</Badge>);
     const el = screen.getByText('Marca');
     expect(el.className).toContain('bg-brand-soft');
-    expect(el.className).toContain('text-brand');
+    expect(el.className).toContain('text-brand-ink');
   });
 
   it('tone neutral aplica surface-2', () => {

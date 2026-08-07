@@ -272,7 +272,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       updateField(selectedValues.filter((v: string) => v !== opt.value));
                     }
                   }}
-                  className="rounded border-border-token text-brand focus:ring-brand"
+                  className="rounded border-border-token text-brand-ink focus:ring-brand"
                 />
                 <span className="text-sm">{opt.label}</span>
               </label>
@@ -288,7 +288,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               type="checkbox"
               checked={Boolean(value)}
               onChange={(e) => updateField(e.target.checked)}
-              className="rounded border-border-token text-brand focus:ring-brand"
+              className="rounded border-border-token text-brand-ink focus:ring-brand"
             />
             <span className="text-sm">{field.label}</span>
           </label>
@@ -401,7 +401,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={`flex shrink-0 items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === tab.id
-                    ? 'border-brand text-brand'
+                    ? 'border-brand text-brand-ink'
                     : 'border-transparent text-fg-muted-token hover:text-fg-token'
                 }`}
               >
@@ -551,7 +551,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     type="checkbox"
                     checked={formData.featured}
                     onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
-                    className="rounded border-border-token text-brand focus:ring-brand"
+                    className="rounded border-border-token text-brand-ink focus:ring-brand"
                   />
                   <span className="text-sm">Produto em destaque</span>
                 </label>
@@ -696,7 +696,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   type="checkbox"
                   checked={formData.track_stock}
                   onChange={(e) => setFormData((prev) => ({ ...prev, track_stock: e.target.checked }))}
-                  className="rounded border-border-token text-brand focus:ring-brand"
+                  className="rounded border-border-token text-brand-ink focus:ring-brand"
                 />
                 <span className="text-sm font-medium">Controlar estoque</span>
               </label>
@@ -733,7 +733,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         type="checkbox"
                         checked={formData.allow_backorder}
                         onChange={(e) => setFormData((prev) => ({ ...prev, allow_backorder: e.target.checked }))}
-                        className="rounded border-border-token text-brand focus:ring-brand"
+                        className="rounded border-border-token text-brand-ink focus:ring-brand"
                       />
                       <span className="text-sm">Permitir venda sem estoque</span>
                     </label>

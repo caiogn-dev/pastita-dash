@@ -514,7 +514,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.auto_reply_enabled || false}
                 onChange={(e) => setFormData({ ...formData, auto_reply_enabled: e.target.checked })}
-                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -526,7 +526,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.welcome_message_enabled || false}
                 onChange={(e) => setFormData({ ...formData, welcome_message_enabled: e.target.checked })}
-                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -538,7 +538,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.menu_auto_send || false}
                 onChange={(e) => setFormData({ ...formData, menu_auto_send: e.target.checked })}
-                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
               />
             </div>
           </div>
@@ -556,7 +556,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.abandoned_cart_notification || false}
                 onChange={(e) => setFormData({ ...formData, abandoned_cart_notification: e.target.checked })}
-                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
               />
             </div>
             {formData.abandoned_cart_notification && (
@@ -582,7 +582,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.pix_notification_enabled || false}
                 onChange={(e) => setFormData({ ...formData, pix_notification_enabled: e.target.checked })}
-                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -594,7 +594,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.payment_confirmation_enabled || false}
                 onChange={(e) => setFormData({ ...formData, payment_confirmation_enabled: e.target.checked })}
-                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -606,7 +606,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.order_status_notification_enabled || false}
                 onChange={(e) => setFormData({ ...formData, order_status_notification_enabled: e.target.checked })}
-                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -618,7 +618,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.delivery_notification_enabled || false}
                 onChange={(e) => setFormData({ ...formData, delivery_notification_enabled: e.target.checked })}
-                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
               />
             </div>
           </div>
@@ -636,7 +636,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                   type="checkbox"
                   checked={businessHours[key as keyof BusinessHours]?.open || false}
                   onChange={(e) => handleBusinessHoursChange(key, 'open', e.target.checked)}
-                  className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                  className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
                 />
                 {businessHours[key as keyof BusinessHours]?.open && (
                   <>
@@ -736,7 +736,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.use_ai_agent || false}
                 onChange={(e) => setFormData({ ...formData, use_ai_agent: e.target.checked })}
-                className="h-4 w-4 rounded border-border-token text-brand focus:ring-brand"
+                className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
               />
             </div>
             {formData.use_ai_agent && (
@@ -752,7 +752,7 @@ const CompanyProfileDetailPage: React.FC = () => {
                   className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
                 />
                 <p className="mt-1 text-sm text-fg-muted-token">
-                  <Link to="/agents" className="text-brand hover:underline">Gerenciar Agentes IA →</Link>
+                  <Link to="/agents" className="text-brand-ink hover:underline">Gerenciar Agentes IA →</Link>
                 </p>
               </div>
             )}
@@ -761,7 +761,7 @@ const CompanyProfileDetailPage: React.FC = () => {
 
         <div className="bg-surface border border-border-token shadow rounded-lg p-6">
           <h2 className="flex items-center gap-2 text-lg font-medium text-fg-token mb-4">
-            <CpuChipIcon className="h-5 w-5 text-brand" aria-hidden="true" />
+            <CpuChipIcon className="h-5 w-5 text-brand-ink" aria-hidden="true" />
             Bot de Pedidos (WhatsApp)
           </h2>
           <div className="space-y-5">

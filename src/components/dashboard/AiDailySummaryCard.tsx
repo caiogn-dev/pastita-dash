@@ -64,7 +64,7 @@ export const AiDailySummaryCard: React.FC<AiDailySummaryCardProps> = ({ store, c
     <Card className={className}>
       <div className="flex items-center justify-between gap-2 px-5 py-4 border-b border-border-token">
         <h2 className="text-sm font-semibold text-fg-token flex items-center gap-2">
-          <SparklesIcon className="h-4 w-4 text-brand" aria-hidden="true" />
+          <SparklesIcon className="h-4 w-4 text-brand-ink" aria-hidden="true" />
           ✨ Resumo IA (ontem)
         </h2>
         <div className="flex items-center gap-2">

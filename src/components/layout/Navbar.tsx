@@ -92,7 +92,7 @@ function PortalDropdown({
             <item.icon className="w-4 h-4 flex-shrink-0" />
             <span>{item.name}</span>
             {item.badge && (
-              <span className="ml-auto text-[10px] bg-brand-soft text-brand px-1.5 py-0.5 rounded-full font-medium">
+              <span className="ml-auto text-[10px] bg-brand-soft text-brand-ink px-1.5 py-0.5 rounded-full font-medium">
                 {item.badge}
               </span>
             )}
@@ -449,7 +449,7 @@ export const Navbar: React.FC = () => {
                             <item.icon className="w-4 h-4 flex-shrink-0" />
                             {item.name}
                             {item.badge && (
-                              <span className="ml-auto text-[10px] bg-brand-soft text-brand px-1.5 py-0.5 rounded-full font-medium">
+                              <span className="ml-auto text-[10px] bg-brand-soft text-brand-ink px-1.5 py-0.5 rounded-full font-medium">
                                 {item.badge}
                               </span>
                             )}

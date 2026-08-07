@@ -69,7 +69,7 @@ const OnboardingChecklist: FC<{ onContinue?: () => void }> = ({ onContinue }) =>
           if (step.done) {
             return (
               <li key={step.key} className={rowBase}>
-                <CheckCircle2 className="h-5 w-5 text-brand" />
+                <CheckCircle2 className="h-5 w-5 text-brand-ink" />
                 <span className="text-fg-muted-token line-through">{step.label}</span>
               </li>
             );
@@ -80,9 +80,9 @@ const OnboardingChecklist: FC<{ onContinue?: () => void }> = ({ onContinue }) =>
                 to={routeByKey[step.key]}
                 className={`${rowBase} group transition-colors hover:bg-surface-muted-token`}
               >
-                <Icon className="h-5 w-5 text-fg-muted-token group-hover:text-brand" />
+                <Icon className="h-5 w-5 text-fg-muted-token group-hover:text-brand-ink" />
                 <span className="flex-1 text-fg-token">{step.label}</span>
-                <ArrowRight className="h-4 w-4 text-fg-muted-token group-hover:text-brand" />
+                <ArrowRight className="h-4 w-4 text-fg-muted-token group-hover:text-brand-ink" />
               </Link>
             </li>
           );

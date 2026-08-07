@@ -11,6 +11,16 @@
      no claro e 1.79:1 no escuro — a WCAG AA pede 4.5:1. Todo botão de ação
      principal do painel estava ilegível. Com texto escuro: 8.75:1 e 11.75:1. */
   --on-brand: #241E14;
+  /* Ouro como TEXTO no tema claro. O --brand (#C9A24B) dá 2,08–2,40:1 sobre os
+     três fundos claros — reprova até para elemento de UI (3:1), e é a cor do
+     número mais importante da tela (StatCard tone="brand", 94 usos). Este tom
+     mantém o matiz da marca e passa em 4,55–5,26. No escuro o ouro já dá 10:1,
+     então lá --brand-ink é o próprio --brand. */
+  --brand-ink: #846828;
+  /* Borda de controle de formulário. A --border (1,38:1) é decorativa e fica —
+     a suavidade é da identidade. Mas input, select e textarea têm limite que
+     PRECISA ser percebido (WCAG 1.4.11 pede 3:1), senão o campo some no fundo. */
+  --border-input: #998769;
   --brand-strong: #1A1613;        /* chrome escuro — navbar fica escura mesmo no light */
   --brand-soft: rgba(201,162,75,.14);
   --canvas: #FBF7EF;
@@ -19,15 +29,20 @@
   --border: #E6DAC4;
   --border-strong: #D8C8AC;
   --fg: #2B2620;
-  --fg-muted: #8A7E6C;
+  /* 4,53–5,23:1. Era #8A7E6C (3,44–3,98) — reprovava para texto normal, e é o
+     tom de 652 usos: legenda, sub-rótulo, "vs ontem", preview de conversa. */
+  --fg-muted: #756B5C;
   --success: #047857;
   --success-strong: #065f46;
   --success-soft: #d1fae5;
-  --warning: #b45309;
+  /* Ajuste de 1-2% de luminosidade: as três davam 4,18–4,47 sobre --surface-2,
+     logo abaixo dos 4,5 da WCAG AA. Diferença imperceptível a olho, mas é a
+     cor de texto de status — e status ilegível é status que ninguém lê. */
+  --warning: #AF5109;
   --warning-soft: #fef3c7;
-  --danger: #dc2626;
+  --danger: #D32222;
   --danger-soft: #fee2e2;
-  --info: #2563eb;
+  --info: #2361EB;
   --info-soft: #dbeafe;
   --radius: 4px;
   --radius-pill: 999px;
@@ -39,6 +54,9 @@
   --brand: #DEBE79;
   --brand-hover: #E8CE92;
   --on-brand: #14100A;
+  /* No escuro o ouro já dá 10,06–10,85:1 — é o próprio --brand. */
+  --brand-ink: #DEBE79;
+  --border-input: #776047;
   --brand-strong: #0B0908;        /* chrome escuro — barra da navbar */
   --brand-soft: rgba(222,190,121,.12);
   --canvas: #0F0D0B;

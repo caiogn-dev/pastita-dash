@@ -277,7 +277,7 @@ const AutoMessagesPage: React.FC = () => {
                     setFormData(prev => ({ ...prev, event_type: eventType as AutoMessageEventType }));
                     setShowModal(true);
                   }}
-                  className="mt-2 text-brand hover:underline text-sm font-medium"
+                  className="mt-2 text-brand-ink hover:underline text-sm font-medium"
                 >
                   + Adicionar mensagem
                 </button>
@@ -313,7 +313,7 @@ const AutoMessagesPage: React.FC = () => {
                             {message.buttons.map((btn, i) => (
                               <span
                                 key={i}
-                                className="inline-flex items-center px-2 py-1 rounded bg-brand-soft text-brand text-xs"
+                                className="inline-flex items-center px-2 py-1 rounded bg-brand-soft text-brand-ink text-xs"
                               >
                                 {btn.title}
                               </span>
@@ -331,7 +331,7 @@ const AutoMessagesPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleEdit(message)}
-                          className="p-2 text-fg-muted-token hover:text-brand transition-colors"
+                          className="p-2 text-fg-muted-token hover:text-brand-ink transition-colors"
                           title="Editar"
                         >
                           <PencilIcon className="h-5 w-5" />
@@ -581,7 +581,7 @@ const AutoMessagesPage: React.FC = () => {
                         {testModal.buttons.map((btn, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center px-3 py-1 rounded-full bg-surface border border-brand text-brand text-sm"
+                            className="inline-flex items-center px-3 py-1 rounded-full bg-surface border border-brand text-brand-ink text-sm"
                           >
                             {btn.title}
                           </span>
