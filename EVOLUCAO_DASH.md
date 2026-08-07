@@ -3,6 +3,44 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-01)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo** (gate de build da Vercel).
+- `npm test`: **558 testes / 136 suítes verdes** (era 555/135 antes desta fatia; +3/+1).
+- Base: `origin/main` em `58aa306` (o clone veio destacado em ref mais antigo; um
+  `git fetch origin main` trouxe `b2772bc..58aa306` — esta fatia parte do topo correto).
+
+### 2026-08-01 — A11y: nome acessível no primitivo compartilhado `Switch`
+- **Medido:** o `components/common/Switch.tsx` é um `<button role="switch">` com
+  `aria-checked` mas **sem `aria-label`/`aria-labelledby`** — item explicitamente
+  pendente no backlog desde 2026-07-27. Leitores de tela anunciavam apenas
+  "switch, ligado/desligado", sem dizer **o que** o controle representa. Consumidores
+  em rotas reais: `CompanyProfileDetailPage` (aceitar pedidos pelo bot) e `LinkBioPage`
+  (exibir cada seção na bio + ativar/desativar cada link personalizado). No LinkBio o
+  toggle estava dentro de um `<label>`, mas `<label>` **não** nomeia um `<button>`
+  (button não é labelable) — o nome não era computado.
+- **Mudado:**
+  - `components/common/Switch.tsx`: novas props `aria-label?` e `aria-labelledby?`,
+    encaminhadas ao `<button>`. Sem mudança de comportamento ou de estilo.
+  - `automation/CompanyProfileDetailPage.tsx`: `aria-labelledby="bot-order-enabled-label"`
+    (reaproveita o `<label id>` visível já existente).
+  - `bio/LinkBioPage.tsx`: `aria-label="Exibir <seção> na bio"` nos toggles de seção e
+    `aria-label` dinâmico ("Ativar/Desativar link <título>") no toggle de cada link.
+- **Teste (TDD):** novo `components/common/__tests__/Switch.a11y.test.tsx` — escrito
+  **vermelho antes** (3/3 falhando, sem nome acessível), **verde depois**. Cobre nome
+  via `aria-label`, via `aria-labelledby` e a não-regressão do toggle (`onChange`).
+- **Antes/depois:** `npm test` 555/135 → **558/136**; `tsc --noEmit` limpo nos dois lados.
+- **Correção pós-review (Codex, P2):** o rótulo do toggle de link era dinâmico
+  ("Ativar/Desativar link X"), mudando o **nome acessível** a cada toggle — nome de
+  switch deve identificar a configuração e ser estável (o estado vai no `aria-checked`).
+  Ajustado para nome estável (`Link <título>`) + novo caso de teste garantindo que o
+  nome não muda ao alternar (559 testes verdes).
+- **Nota de CI:** o check `build` (GitHub Actions `ci.yml`) está vermelho por falha
+  **de infra** (falha em ~2-3s antes do `npm ci`, logs 404) que **reproduz em todo push
+  na `main`** (15/15 runs recentes) — não vem deste diff. Gate real (Vercel) deployou Ready.
+  Registrado na thread da PR; precisa destravar o Actions à parte (runner/billing).
+
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
 
