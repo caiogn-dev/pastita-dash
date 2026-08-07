@@ -4,7 +4,7 @@ import {
   Badge, Button, Card, Input, PageShell, KpiGrid, EmptyState,
 } from '../../components/ui';
 import {
-  UserGroupIcon, GiftIcon, BoltIcon, CheckBadgeIcon,
+  UserGroupIcon, GiftIcon, FireIcon, CheckBadgeIcon,
 } from '@heroicons/react/24/outline';
 import { Loading } from '../../components/common';
 import { couponsService } from '../../services/coupons';
@@ -259,7 +259,7 @@ const FidelidadePage: React.FC = () => {
               label: 'A um item de ganhar',
               value: resumo?.quase_la ?? '—',
               definicao: `Clientes que precisam de mais 1 item para fechar o cartão de ${threshold}.`,
-              icone: <BoltIcon />,
+              icone: <FireIcon />,
               tone: (resumo?.quase_la ?? 0) > 0 ? 'brand' : 'default',
             },
             {

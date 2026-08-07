@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { whatsappTemplates, getTemplatesByCategory, WhatsAppTemplate } from '../../../data/whatsappTemplates';
 import { Badge } from '../../../components/common';
+import { PageShell, KpiGrid } from '../../../components/ui';
+import {
+  // Ícones escolhidos pelo QUE A CATEGORIA FAZ, não por serem bonitos:
+  // Squares2X2  → a coleção inteira de templates
+  // TruckIcon   → transacional é o pedido andando (confirmado → entregue)
+  // MegaphoneIcon → marketing é anúncio para muitos
+  // ChatBubbleLeftRight → suporte é conversa de ida e volta
+  Squares2X2Icon,
+  TruckIcon,
+  MegaphoneIcon,
+  ChatBubbleLeftRightIcon,
+} from '@heroicons/react/24/outline';
 import type { BadgeProps } from '../../../components/common/Badge';
 
 const WhatsAppTemplatesPage: React.FC = () => {
@@ -49,38 +61,46 @@ const WhatsAppTemplatesPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-fg-token mb-2">Templates WhatsApp</h1>
-        <p className="text-fg-muted-token">Gerencie templates de mensagens para disparos automatizados</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="bg-surface border border-border-token rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-fg-token">{whatsappTemplates.length}</div>
-          <div className="text-sm text-fg-muted-token">Total Templates</div>
-        </div>
-        <div className="bg-surface border border-border-token rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-blue-600">
-            {getTemplatesByCategory('transactional').length}
-          </div>
-          <div className="text-sm text-fg-muted-token">Transacionais</div>
-        </div>
-        <div className="bg-surface border border-border-token rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-purple-600">
-            {getTemplatesByCategory('marketing').length}
-          </div>
-          <div className="text-sm text-fg-muted-token">Marketing</div>
-        </div>
-        <div className="bg-surface border border-border-token rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-green-600">
-            {getTemplatesByCategory('support').length}
-          </div>
-          <div className="text-sm text-fg-muted-token">Suporte</div>
-        </div>
-      </div>
+    <PageShell
+      trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'Templates' }]}
+      titulo="Templates WhatsApp"
+      descricao="Mensagens pré-aprovadas pela Meta. Fora da janela de 24h, só template chega ao cliente."
+      className="mx-auto max-w-7xl"
+    >
+      {/* Os quatro cards eram <div> com sombra e cor crua (blue-600,
+          purple-600, green-600), fora dos tokens e sem dizer o que cada
+          categoria significa. Categoria de template não é enfeite: ela decide
+          se a Meta deixa você disparar. */}
+      <KpiGrid
+        itens={[
+          {
+            label: 'Total',
+            value: whatsappTemplates.length,
+            definicao: 'Todos os templates cadastrados nesta conta.',
+            icone: <Squares2X2Icon />,
+          },
+          {
+            label: 'Transacionais',
+            value: getTemplatesByCategory('transactional').length,
+            definicao: 'Confirmação, status do pedido, entrega. Podem ser enviados a qualquer momento.',
+            icone: <TruckIcon />,
+            tone: 'success',
+          },
+          {
+            label: 'Marketing',
+            value: getTemplatesByCategory('marketing').length,
+            definicao: 'Promoção e reativação. Exigem opt-in e contam no limite da Meta.',
+            icone: <MegaphoneIcon />,
+            tone: 'brand',
+          },
+          {
+            label: 'Suporte',
+            value: getTemplatesByCategory('support').length,
+            definicao: 'Atendimento e resposta a dúvida do cliente.',
+            icone: <ChatBubbleLeftRightIcon />,
+          },
+        ]}
+      />
 
       <div className="grid grid-cols-2 gap-8">
         {/* Templates List */}
@@ -201,7 +221,7 @@ const WhatsAppTemplatesPage: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

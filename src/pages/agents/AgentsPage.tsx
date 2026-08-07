@@ -5,10 +5,18 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   CpuChipIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  // Ícones pelo que o ESTADO significa, não por decoração:
+  // Bolt        → ativo é o agente disparando resposta sozinho
+  // PauseCircle → inativo é pausa deliberada, não erro
+  // PencilSquare→ rascunho é algo ainda sendo escrito
+  SignalIcon,
+  PauseCircleIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { cn } from '../../utils/cn';
+import { PageShell, KpiGrid } from '../../components/ui';
 import { AgentCard } from '../../components/agents';
 import agentsService, { Agent, PROVIDER_CONFIGS } from '../../services/agents';
 import type { AgentProvider } from '../../services/agents';
@@ -97,17 +105,12 @@ export const AgentsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
-            Agentes IA
-          </h1>
-          <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
-            Gerencie seus agentes de inteligência artificial
-          </p>
-        </div>
+    <PageShell
+      trilha={[{ rotulo: 'Automação' }, { rotulo: 'Agentes IA' }]}
+      titulo="Agentes IA"
+      descricao="Quem responde o cliente no WhatsApp quando você não está: tom de voz, regras e limites."
+      className="mx-auto max-w-7xl"
+      acoes={
         <button
           onClick={() => navigate('/agents/new')}
           className={cn(
@@ -119,27 +122,42 @@ export const AgentsPage: React.FC = () => {
           <PlusIcon className="w-5 h-5" />
           Novo Agente
         </button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]">
-          <div className="text-2xl font-bold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.total}</div>
-          <div className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total de Agentes</div>
-        </div>
-        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]">
-          <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-          <div className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Ativos</div>
-        </div>
-        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]">
-          <div className="text-2xl font-bold text-gray-500">{stats.inactive}</div>
-          <div className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Inativos</div>
-        </div>
-        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl p-4 border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]">
-          <div className="text-2xl font-bold text-yellow-500">{stats.draft}</div>
-          <div className="text-sm text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Rascunhos</div>
-        </div>
-      </div>
+      }
+    >
+      {/* Os quatro cards eram <div> com cor crua (green-600, gray-500,
+          yellow-500) e fundo hardcoded — furavam o tema e não diziam o que
+          cada estado significa. Aqui "ativo" tem consequência: é o agente que
+          está atendendo cliente de verdade agora. */}
+      <KpiGrid
+        itens={[
+          {
+            label: 'Total de agentes',
+            value: stats.total,
+            definicao: 'Todos os agentes criados nesta conta.',
+            icone: <CpuChipIcon />,
+          },
+          {
+            label: 'Ativos',
+            value: stats.active,
+            definicao: 'Respondendo clientes agora, sem você no meio.',
+            icone: <SignalIcon />,
+            tone: 'success',
+          },
+          {
+            label: 'Inativos',
+            value: stats.inactive,
+            definicao: 'Configurados mas desligados — não recebem mensagem.',
+            icone: <PauseCircleIcon />,
+          },
+          {
+            label: 'Rascunhos',
+            value: stats.draft,
+            definicao: 'Ainda sem configuração completa para entrar no ar.',
+            icone: <PencilSquareIcon />,
+            tone: stats.draft > 0 ? 'warning' : 'default',
+          },
+        ]}
+      />
 
       {/* Search & Filters */}
       <div className="flex flex-row max-sm:flex-col gap-4 mb-6">
@@ -313,7 +331,7 @@ export const AgentsPage: React.FC = () => {
         </div>
       )}
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 };
 

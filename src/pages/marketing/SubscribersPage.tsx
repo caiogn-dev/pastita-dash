@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Card, Modal, Loading } from '../../components/common';
+import { PageShell } from '../../components/ui';
 import { useStore } from '../../hooks';
 import { marketingService, Subscriber } from '../../services/marketingService';
 import { useRootStore } from '../../stores/rootStore';
@@ -251,26 +252,12 @@ export const SubscribersPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-3">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">Base de clientes</h1>
-            <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-              Clientes e contatos agregados da loja <strong>{effectiveStoreLabel}</strong>, prontos para operação e campanhas.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
-              Pedidos + contatos centralizados
-            </span>
-            <span className="inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 dark:bg-orange-950/30 dark:text-orange-300">
-              Operação por loja
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
+    <PageShell
+      trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'Base de clientes' }]}
+      titulo="Base de clientes"
+      descricao={`Quem já comprou em ${effectiveStoreLabel} — pedidos e contatos num lugar só, prontos para campanha.`}
+      acoes={
+        <>
           <Button variant="secondary" onClick={openOrders}>
             <ShoppingBagIcon className="mr-2 h-5 w-5" />
             Ver pedidos
@@ -287,8 +274,9 @@ export const SubscribersPage: React.FC = () => {
             <PlusIcon className="mr-2 h-5 w-5" />
             Novo cliente
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
         <Card className="p-4">
@@ -547,7 +535,7 @@ export const SubscribersPage: React.FC = () => {
           </div>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 

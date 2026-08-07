@@ -24,6 +24,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../components/common';
+import { PageShell } from '../../components/ui';
 import { useStore, useConfirm } from '../../hooks';
 import { 
   automationsApi, 
@@ -223,20 +224,17 @@ export default function AutomationsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">Automações de Email</h1>
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
-            Configure emails automáticos para eventos do sistema
-          </p>
-        </div>
+    <PageShell
+      trilha={[{ rotulo: 'Automação' }, { rotulo: 'E-mail' }]}
+      titulo="Automações de E-mail"
+      descricao="E-mail que sai sozinho quando algo acontece — pedido confirmado, carrinho abandonado, cliente sumido."
+      acoes={
         <Button onClick={() => setShowCreateModal(true)}>
           <PlusIcon className="w-5 h-5 mr-2" />
           Nova Automação
         </Button>
-      </div>
+      }
+    >
 
       {/* Stats */}
       <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4">
@@ -577,6 +575,6 @@ export default function AutomationsPage() {
         </div>
       </Modal>
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 }
