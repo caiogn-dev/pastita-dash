@@ -54,7 +54,7 @@ export const StoreScoreSection: React.FC<{ range: DateRange; enabled: boolean }>
           <div className="absolute inset-0 grid place-items-center rotate-0">
             <div className="text-center">
               <p className="text-3xl font-bold tabular-nums text-fg-token leading-none">{d?.score ?? 0}</p>
-              <p className="text-[11px] text-fg-muted-token">de 100</p>
+              <p className="text-badge text-fg-muted-token">de 100</p>
             </div>
           </div>
         </div>
@@ -73,7 +73,7 @@ export const StoreScoreSection: React.FC<{ range: DateRange; enabled: boolean }>
                 {item.done ? (
                   <CheckCircleIcon className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                 ) : (
-                  <span className="w-5 h-5 shrink-0 mt-0.5 grid place-items-center rounded-full bg-brand/15 text-brand-ink text-[10px] font-bold">
+                  <span className="w-5 h-5 shrink-0 mt-0.5 grid place-items-center rounded-full bg-brand/15 text-brand-ink text-badge font-bold">
                     +{item.points}
                   </span>
                 )}

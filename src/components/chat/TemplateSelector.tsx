@@ -255,7 +255,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 truncate">
                       {template.name}
                     </p>
-                    <p className="text-[10px] text-gray-400 dark:text-zinc-500">
+                    <p className="text-badge text-gray-400 dark:text-zinc-500">
                       {template.category} · {template.language}
                       {template.source === 'local' && (
                         <span className="ml-1 text-yellow-600 dark:text-yellow-400">(preview local)</span>
@@ -287,7 +287,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                       <div className="space-y-2">
                         {template.variables.map((v) => (
                           <div key={v.index}>
-                            <label className="block text-[10px] font-semibold uppercase text-gray-400 dark:text-zinc-500 mb-1">
+                            <label className="overline block mb-1">
                               Variável {`{{${v.index}}}`}
                             </label>
                             <input

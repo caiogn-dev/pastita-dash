@@ -254,17 +254,17 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
         {/* KPI strip */}
         <div className="grid grid-cols-3 divide-x divide-border-token border-b border-border-token">
           <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-bold text-fg-muted-token uppercase tracking-widest mb-1">Gasto total</p>
+            <p className="overline mb-1">Gasto total</p>
             <p className="text-lg font-bold text-brand-ink">
               R$ {formatMoney(customer.total_spent)}
             </p>
           </div>
           <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-bold text-fg-muted-token uppercase tracking-widest mb-1">Pedidos</p>
+            <p className="overline mb-1">Pedidos</p>
             <p className="text-lg font-bold text-fg-token">{customer.total_orders ?? 0}</p>
           </div>
           <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-bold text-fg-muted-token uppercase tracking-widest mb-1">Ticket médio</p>
+            <p className="overline mb-1">Ticket médio</p>
             <p className="text-lg font-bold text-fg-token">R$ {formatMoney(avgTicket)}</p>
           </div>
         </div>
@@ -333,10 +333,10 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-surface-2 border-b border-border-token">
-                      <th className="px-4 py-2.5 text-left text-[10px] font-bold text-fg-muted-token uppercase tracking-widest">Pedido</th>
-                      <th className="px-4 py-2.5 text-left text-[10px] font-bold text-fg-muted-token uppercase tracking-widest hidden sm:table-cell">Data</th>
-                      <th className="px-4 py-2.5 text-left text-[10px] font-bold text-fg-muted-token uppercase tracking-widest">Status</th>
-                      <th className="px-4 py-2.5 text-right text-[10px] font-bold text-fg-muted-token uppercase tracking-widest">Total</th>
+                      <th className="overline px-4 py-2.5 text-left">Pedido</th>
+                      <th className="overline px-4 py-2.5 text-left hidden sm:table-cell">Data</th>
+                      <th className="overline px-4 py-2.5 text-left">Status</th>
+                      <th className="overline px-4 py-2.5 text-right">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-token">
@@ -349,7 +349,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
                           {formatDate(order.created_at)}
                         </td>
                         <td className="px-4 py-2.5">
-                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${STATUS_COLOR[order.status] ?? 'bg-surface-2 text-fg-muted-token'}`}>
+                          <span className={`text-badge font-semibold px-2 py-0.5 rounded ${STATUS_COLOR[order.status] ?? 'bg-surface-2 text-fg-muted-token'}`}>
                             {STATUS_LABEL[order.status] ?? order.status}
                           </span>
                         </td>

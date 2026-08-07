@@ -213,7 +213,7 @@ export default function MessengerInbox() {
                         {conv.participant_name || conv.psid}
                       </p>
                       {conv.unread_count > 0 && (
-                        <span className="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-blue-500 px-1 text-[11px] font-semibold text-white">
+                        <span className="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-blue-500 px-1 text-badge font-semibold text-white">
                           {conv.unread_count}
                         </span>
                       )}

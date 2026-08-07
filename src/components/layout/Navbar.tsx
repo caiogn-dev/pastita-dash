@@ -73,7 +73,7 @@ function PortalDropdown({
       {section.items.map((item) => (
         <React.Fragment key={item.href}>
           {item.sectionHeader && (
-            <p className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted-token border-t border-border-token first:border-t-0 mt-1 first:mt-0">
+            <p className="overline px-3 pt-2.5 pb-1 border-t border-border-token first:border-t-0 mt-1 first:mt-0">
               {item.sectionHeader}
             </p>
           )}
@@ -92,7 +92,7 @@ function PortalDropdown({
             <item.icon className="w-4 h-4 flex-shrink-0" />
             <span>{item.name}</span>
             {item.badge && (
-              <span className="ml-auto text-[10px] bg-brand-soft text-brand-ink px-1.5 py-0.5 rounded-full font-medium">
+              <span className="ml-auto text-badge bg-brand-soft text-brand-ink px-1.5 py-0.5 rounded-full font-medium">
                 {item.badge}
               </span>
             )}
@@ -164,7 +164,7 @@ function NavBtn({ section }: { section: NavSection }) {
         <section.icon className="w-4 h-4 flex-shrink-0" />
         {section.label}
         {section.badge && (
-          <span className="text-[10px] bg-red-500 text-white px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center">
+          <span className="text-badge bg-red-500 text-white px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center">
             {section.badge}
           </span>
         )}
@@ -425,13 +425,13 @@ export const Navbar: React.FC = () => {
                     </NavLink>
                   ) : (
                     <>
-                      <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted-token">
+                      <p className="overline px-3 pt-3 pb-1">
                         {section.label}
                       </p>
                       {section.items.map((item) => (
                         <React.Fragment key={item.href}>
                           {item.sectionHeader && (
-                            <p className="px-3 pt-2 pb-0.5 text-[10px] font-medium uppercase tracking-wider text-fg-muted-token">
+                            <p className="overline px-3 pt-2 pb-0.5">
                               {item.sectionHeader}
                             </p>
                           )}
@@ -449,7 +449,7 @@ export const Navbar: React.FC = () => {
                             <item.icon className="w-4 h-4 flex-shrink-0" />
                             {item.name}
                             {item.badge && (
-                              <span className="ml-auto text-[10px] bg-brand-soft text-brand-ink px-1.5 py-0.5 rounded-full font-medium">
+                              <span className="ml-auto text-badge bg-brand-soft text-brand-ink px-1.5 py-0.5 rounded-full font-medium">
                                 {item.badge}
                               </span>
                             )}
@@ -462,7 +462,7 @@ export const Navbar: React.FC = () => {
               ))}
               {/* Conta — no mobile não há avatar-dropdown, então os itens de conta entram aqui */}
               <div className="mt-2 border-t border-[var(--border)] pt-2">
-                <p className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted-token">
+                <p className="overline px-3 pt-1 pb-1">
                   Conta
                 </p>
                 {ACCOUNT_LINKS.map((l) => (

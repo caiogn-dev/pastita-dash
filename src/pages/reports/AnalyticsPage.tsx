@@ -607,7 +607,7 @@ const AnalyticsPage: React.FC = () => {
       <div className="flex flex-wrap items-end gap-x-6 gap-y-2 mb-6 border-b border-border-token">
         {TAB_GROUPS.map((g) => (
           <div key={g.group} className="flex flex-col">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-fg-muted-token/70 px-1 mb-0.5">
+            <span className="overline tracking-[0.14em] /70 px-1 mb-0.5">
               {g.group}
             </span>
             <div className="flex">

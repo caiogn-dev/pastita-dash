@@ -35,12 +35,12 @@ const MiniStat: React.FC<{
   alert?: boolean;
 }> = ({ label, value, delta, invertDelta, sub, alert }) => (
   <div className="min-w-0">
-    <p className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted-token truncate">{label}</p>
+    <p className="overline truncate">{label}</p>
     <div className="flex items-baseline gap-2 mt-0.5">
       <span className={`text-xl font-bold tabular-nums ${alert ? 'text-red-500' : 'text-fg-token'}`}>{value}</span>
       {delta !== undefined && <DeltaPill pct={delta} invert={invertDelta} />}
     </div>
-    {sub && <p className="text-[11px] text-fg-muted-token truncate">{sub}</p>}
+    {sub && <p className="text-badge text-fg-muted-token truncate">{sub}</p>}
   </div>
 );
 
@@ -66,7 +66,7 @@ export const OverviewSummarySection: React.FC<{ range: DateRange; enabled: boole
       <div className="grid grid-cols-[minmax(240px,1fr)_2fr] max-lg:grid-cols-1 gap-6">
         {/* Herói: faturamento do período + pulso de hoje */}
         <Card className="p-5 bg-surface-2/50 border-brand/30">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-fg-muted-token">Faturamento</p>
+          <p className="overline tracking-[0.14em]">Faturamento</p>
           <div className="flex items-baseline gap-3 mt-1 flex-wrap">
             <span className="text-4xl font-bold tabular-nums text-brand-ink">{formatBRL(cur?.revenue ?? 0)}</span>
             <DeltaPill pct={d?.delta.revenue_pct} />

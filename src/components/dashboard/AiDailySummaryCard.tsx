@@ -27,7 +27,7 @@ interface MiniStatProps {
 
 const MiniStat: React.FC<MiniStatProps> = ({ label, value, danger }) => (
   <div className="min-w-0">
-    <p className="text-[10px] font-bold uppercase tracking-widest text-fg-muted-token">{label}</p>
+    <p className="overline">{label}</p>
     <p className={`mt-0.5 text-sm font-bold tabular-nums truncate ${danger ? 'text-red-500 dark:text-red-400' : 'text-fg-token'}`}>
       {value}
     </p>
@@ -69,7 +69,7 @@ export const AiDailySummaryCard: React.FC<AiDailySummaryCardProps> = ({ store, c
         </h2>
         <div className="flex items-center gap-2">
           {data?.source === 'template' && (
-            <span className="text-[10px] font-medium text-fg-muted-token bg-surface-2 border border-border-token rounded-full px-2 py-0.5">
+            <span className="text-badge font-medium text-fg-muted-token bg-surface-2 border border-border-token rounded-full px-2 py-0.5">
               gerado sem IA
             </span>
           )}

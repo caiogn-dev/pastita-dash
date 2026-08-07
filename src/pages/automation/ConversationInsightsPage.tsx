@@ -232,7 +232,7 @@ export const ConversationInsightsPage: React.FC = () => {
               <h2 className="text-sm font-semibold text-fg-token">Sentimento geral</h2>
               {sentiment && <Badge variant={sentiment.variant}>{sentiment.label}</Badge>}
               {data.cached && (
-                <span className="ml-auto text-[10px] text-fg-muted-token bg-surface-2 border border-border-token rounded-full px-2 py-0.5">
+                <span className="ml-auto text-badge text-fg-muted-token bg-surface-2 border border-border-token rounded-full px-2 py-0.5">
                   em cache
                 </span>
               )}

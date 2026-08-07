@@ -56,7 +56,7 @@ export const DonutChart: React.FC<{
         <div className="absolute inset-0 grid place-items-center pointer-events-none">
           <div className="text-center">
             <p className="text-base font-bold text-fg-token tabular-nums leading-tight">{centerLabel}</p>
-            {centerSub && <p className="text-[11px] text-fg-muted-token">{centerSub}</p>}
+            {centerSub && <p className="text-badge text-fg-muted-token">{centerSub}</p>}
           </div>
         </div>
       )}

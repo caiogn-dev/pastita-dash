@@ -133,7 +133,7 @@ export default function DescriptionEditor({ value, onChange, rows = 5, placehold
 
       {showPreview && (
         <div className="mt-2 rounded border border-border-token bg-surface-2 p-3">
-          <p className="text-[11px] uppercase tracking-wide text-fg-muted-token mb-1.5">
+          <p className="overline mb-1.5">
             Preview do cardápio
           </p>
           <DescriptionPreview text={value} />

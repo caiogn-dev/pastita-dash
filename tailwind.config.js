@@ -7,6 +7,14 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      fontSize: {
+        // Papel, não pixel. Ver a escala em src/styles/tokens.css.
+        overline: ['var(--text-overline)', { letterSpacing: 'var(--tracking-overline)' }],
+        badge: ['var(--text-badge)', { lineHeight: '1' }],
+        caption: ['var(--text-caption)', { lineHeight: '1.4' }],
+        body: ['var(--text-body)', { lineHeight: '1.5' }],
+        lead: ['var(--text-lead)', { lineHeight: '1.5' }],
+      },
       colors: {
         // ============================================
         // BRAND COLORS - Dinâmico via CSS Variables (muda por loja)

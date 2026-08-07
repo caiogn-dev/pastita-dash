@@ -68,7 +68,7 @@ export const AccountMenu: React.FC = () => {
         className="flex items-center gap-1.5 rounded-md p-0.5 hover:bg-white/10 transition-colors"
       >
         <div className="w-6 h-6 bg-white/15 rounded-full flex items-center justify-center flex-shrink-0">
-          <span className="text-[10px] font-semibold text-white">{initial}</span>
+          <span className="text-badge font-semibold text-white">{initial}</span>
         </div>
         <span className="block max-md:hidden text-xs font-medium text-white truncate max-w-[70px]">
           {user?.first_name || user?.username}
@@ -81,7 +81,7 @@ export const AccountMenu: React.FC = () => {
           style={{ position: 'fixed', top: pos.top, right: pos.right, zIndex: 9999 }}
           className="w-56 bg-surface border border-border-token rounded-xl shadow-2xl py-1"
         >
-          <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-fg-token truncate">
+          <p className="px-3 pt-2 pb-1 text-badge font-semibold text-fg-token truncate">
             {store?.name || 'Cardapidex'}
           </p>
           {ACCOUNT_LINKS.map((l) => {
@@ -89,7 +89,7 @@ export const AccountMenu: React.FC = () => {
             return (
               <Fragment key={l.href}>
                 {l.sectionHeader && (
-                  <p className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted-token border-t border-border-token mt-1">
+                  <p className="overline px-3 pt-2.5 pb-1 border-t border-border-token mt-1">
                     {l.sectionHeader}
                   </p>
                 )}

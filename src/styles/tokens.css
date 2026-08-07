@@ -48,6 +48,20 @@
   --radius-pill: 999px;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Cinzel', Georgia, serif;
+
+  /* ESCALA TIPOGRÁFICA POR PAPEL, não por pixel.
+     Antes havia 1.800 tamanhos escritos no call site (57x text-[10px],
+     38x text-[11px], 565x text-xs, 1.143x text-sm) e nenhuma escala. Mudar o
+     piso de legibilidade exigia editar 119 lugares.
+     Quem consome pede o PAPEL — `overline`, `caption` — e o tamanho mora aqui.
+     O piso subiu de 10px para 11px: abaixo disso não se lê um painel em pé,
+     na cozinha, com o celular na mão. */
+  --text-overline: 0.6875rem;   /* 11px — rótulo de seção, caixa alta */
+  --text-badge: 0.6875rem;      /* 11px — contador dentro de etiqueta */
+  --text-caption: 0.75rem;      /* 12px — legenda, metadado */
+  --text-body: 0.875rem;        /* 14px — corpo */
+  --text-lead: 1rem;            /* 16px — destaque de leitura */
+  --tracking-overline: 0.08em;
 }
 
 .dark {

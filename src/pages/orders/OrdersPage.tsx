@@ -139,7 +139,7 @@ const PaymentBadge: React.FC<{ status?: string; method?: string }> = ({ status, 
   const cfg = PAYMENT_CONFIGS[key] || PAYMENT_CONFIGS.pending;
   const label = isCash && key === 'pending' ? 'Dinheiro' : cfg.label;
   return (
-    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cfg.cls}`}>
+    <span className={`text-badge font-semibold px-1.5 py-0.5 rounded-full ${cfg.cls}`}>
       {label}
     </span>
   );
@@ -207,14 +207,14 @@ const OrderCardBase: React.FC<CardProps> = ({
     >
       {/* Row 1: order number + elapsed + delivery badge */}
       <div className="flex items-center justify-between gap-1 mb-1.5">
-        <span className="font-mono text-[10px] font-bold text-fg-muted-token">
+        <span className="font-mono text-badge font-bold text-fg-muted-token">
           #{order.order_number}
         </span>
         <div className="flex items-center gap-1">
           {isUpdating && <ArrowPathIcon className="h-3 w-3 text-brand-ink animate-spin" />}
-          {isSuccess && <span className="text-[10px] font-bold text-emerald-600">✓ Movido</span>}
+          {isSuccess && <span className="text-badge font-bold text-emerald-600">✓ Movido</span>}
           {!isUpdating && !isSuccess && elapsed > 0 && (
-            <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+            <span className={`flex items-center gap-0.5 text-badge font-semibold px-1.5 py-0.5 rounded-full ${
               urgency === 'critical' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
               urgency === 'warning'  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
               'bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
@@ -223,7 +223,7 @@ const OrderCardBase: React.FC<CardProps> = ({
               {formatElapsed(elapsed)}
             </span>
           )}
-          <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+          <span className={`flex items-center gap-0.5 text-badge font-semibold px-1.5 py-0.5 rounded-full ${
             isPickup
               ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
               : 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
@@ -236,7 +236,7 @@ const OrderCardBase: React.FC<CardProps> = ({
 
       {/* Agendamento — destaque quando o cliente agendou data/hora */}
       {formatScheduledShort(order) && (
-        <div className="mb-1.5 flex items-center gap-1 rounded-md bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink w-fit">
+        <div className="mb-1.5 flex items-center gap-1 rounded-md bg-brand-soft px-1.5 py-0.5 text-badge font-semibold text-brand-ink w-fit">
           <CalendarDaysIcon className="h-2.5 w-2.5" />
           Agendado {formatScheduledShort(order)}
         </div>
@@ -244,10 +244,10 @@ const OrderCardBase: React.FC<CardProps> = ({
 
       {/* Row 2: customer name + value */}
       <div className="flex items-start justify-between gap-2 mb-1.5">
-        <p className="truncate text-[12px] font-semibold leading-tight text-fg-token">
+        <p className="truncate text-caption font-semibold leading-tight text-fg-token">
           {order.customer_name || 'Cliente'}
         </p>
-        <p className="shrink-0 text-[14px] font-bold tracking-tight text-fg-token">
+        <p className="shrink-0 text-body font-bold tracking-tight text-fg-token">
           R$ {fmt(order.total)}
         </p>
       </div>
@@ -255,14 +255,14 @@ const OrderCardBase: React.FC<CardProps> = ({
       {/* Row 3: phone + payment + items */}
       <div className="flex items-center gap-1.5 mb-2 flex-wrap">
         {order.customer_phone && (
-          <span className="flex items-center gap-0.5 text-[10px] text-fg-muted-token">
+          <span className="flex items-center gap-0.5 text-badge text-fg-muted-token">
             <PhoneIcon className="h-2.5 w-2.5" />
             {order.customer_phone}
           </span>
         )}
         <PaymentBadge status={order.payment_status} method={order.payment_method} />
         {order.items?.length > 0 && (
-          <span className="text-[10px] text-fg-muted-token">
+          <span className="text-badge text-fg-muted-token">
             {order.items.length} item(ns)
           </span>
         )}
@@ -301,7 +301,7 @@ const OrderCardBase: React.FC<CardProps> = ({
           <button
             onClick={() => onAdvance(order)}
             disabled={advancing || isUpdating}
-            className={`flex h-7 flex-1 items-center justify-center gap-1 rounded px-1.5 text-[10px] font-semibold uppercase tracking-wide text-white transition-colors disabled:opacity-60 ${action.color}`}
+            className={`flex h-7 flex-1 items-center justify-center gap-1 rounded px-1.5 text-badge font-semibold uppercase tracking-wide text-white transition-colors disabled:opacity-60 ${action.color}`}
           >
             {advancing ? <ArrowPathIcon className="h-3 w-3 animate-spin" /> : <CheckIcon className="h-3 w-3" />}
             <span className="truncate">{action.label}</span>
@@ -804,7 +804,7 @@ export const OrdersPage: React.FC = () => {
                       {col.orders.length}
                     </span>
                   </div>
-                  <p className="text-[10px] text-white/70 mt-0.5">{col.description}</p>
+                  <p className="text-badge text-white/70 mt-0.5">{col.description}</p>
                 </div>
 
                 {/* Droppable area */}

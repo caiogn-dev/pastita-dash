@@ -133,7 +133,7 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
                 </div>
               </div>
               {/* Modo */}
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+              <span className={`px-2.5 py-0.5 rounded-full text-badge font-semibold ${
                 conversation.mode === 'human'
                   ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
                   : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
@@ -145,7 +145,7 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
             {/* Último pedido */}
             {storeId && (
               <div>
-                <p className="text-[10px] font-bold text-[var(--fg-muted)] uppercase tracking-widest mb-2">
+                <p className="overline mb-2">
                   Último Pedido
                 </p>
                 {lastOrder ? (
@@ -170,7 +170,7 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
 
             {/* Nota rápida */}
             <div>
-              <p className="text-[10px] font-bold text-[var(--fg-muted)] uppercase tracking-widest mb-2">
+              <p className="overline mb-2">
                 Nota Rápida
               </p>
               <textarea

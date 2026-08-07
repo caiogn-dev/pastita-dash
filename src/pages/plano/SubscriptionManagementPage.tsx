@@ -303,7 +303,7 @@ export default function SubscriptionManagementPage() {
                 }`}
               >
                 {isCurrent && (
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-ink">
+                  <span className="overline text-brand-ink">
                     Plano atual
                   </span>
                 )}
@@ -324,7 +324,7 @@ export default function SubscriptionManagementPage() {
                   )}
                 </p>
                 {cycle === 'annual' && p.monthly_price > 0 && (
-                  <span className="text-[11px] font-semibold text-success-token">
+                  <span className="text-badge font-semibold text-success-token">
                     2 meses grátis
                   </span>
                 )}

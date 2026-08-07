@@ -277,7 +277,7 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCa
               </div>
               <span
                 className={`
-                  mt-2 text-[11px] font-medium whitespace-nowrap
+                  mt-2 text-badge font-medium whitespace-nowrap
                   ${isCompleted ? 'text-fg-token' : 'text-fg-muted-token'}
                 `}
               >
@@ -651,7 +651,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded border border-border-token bg-canvas px-4 py-3">
-                <p className="font-display text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">Contato</p>
+                <p className="overline font-display tracking-[0.24em] text-[var(--brand)]">Contato</p>
                 <div className="mt-2 flex items-center gap-2 text-sm font-medium">
                   <PhoneIcon className="h-4 w-4 text-[var(--brand)]" />
                   {order.customer_phone ? (
@@ -691,7 +691,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               </div>
 
               <div className="rounded border border-border-token bg-canvas px-4 py-3">
-                <p className="font-display text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">Entrega</p>
+                <p className="overline font-display tracking-[0.24em] text-[var(--brand)]">Entrega</p>
                 <div className="mt-2 flex items-center gap-2 text-sm font-medium">
                   {order.delivery_method === 'pickup' ? (
                     <>
@@ -714,7 +714,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               </div>
 
               <div className="rounded border border-border-token bg-canvas px-4 py-3">
-                <p className="font-display text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">Pagamento</p>
+                <p className="overline font-display tracking-[0.24em] text-[var(--brand)]">Pagamento</p>
                 <div className="mt-2 flex items-center justify-between gap-2 text-sm">
                   <span className="font-medium">
                     {paymentMethodLabel[order.payment_method || ''] || order.payment_method || 'Não informado'}
@@ -729,7 +729,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             <div className="rounded border border-border-token bg-surface-2 px-4 py-4 sm:px-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="font-display text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--brand)]">
+                  <p className="overline font-display tracking-[0.28em] text-[var(--brand)]">
                     Progresso operacional
                   </p>
                   <p className="mt-1 text-sm text-fg-muted-token">
@@ -772,7 +772,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                             {item.variant_name ? ` — ${item.variant_name}` : ''}
                           </span>
                           {isSalad && (
-                            <span className="rounded-full bg-[var(--success-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--success)]">
+                            <span className="overline rounded-full bg-[var(--success-soft)] px-2 py-0.5 text-[var(--success)]">
                               Salada
                             </span>
                           )}
@@ -874,7 +874,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             {/* Notes — always visible, critical for kitchen ops */}
             {(order.customer_notes || order.notes) && (
               <div className="rounded border border-border-token bg-[var(--warning-soft)] px-4 py-4 text-fg-token sm:px-5">
-                <p className="font-display text-[11px] font-bold uppercase tracking-[0.24em] mb-2 text-[var(--warning)]">Observações do cliente</p>
+                <p className="overline font-display tracking-[0.24em] mb-2 text-[var(--warning)]">Observações do cliente</p>
                 <p className="text-sm leading-relaxed">{order.customer_notes || order.notes}</p>
               </div>
             )}
@@ -882,7 +882,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             {/* Delivery address — always visible for delivery orders */}
             {compactAddress && order.delivery_method !== 'pickup' && (
               <div className="rounded border border-border-token bg-surface px-4 py-4 sm:px-5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] mb-2 text-fg-muted-token">Endereço de entrega</p>
+                <p className="overline tracking-[0.24em] mb-2">Endereço de entrega</p>
                 <div className="flex items-start gap-2 text-sm">
                   <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]" />
                   <span>{compactAddress}</span>
@@ -904,7 +904,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   {/* F3 — gerar cobrança PIX da diferença */}
                   {amountDue > 0 && (
                     <div className="space-y-3 rounded border border-dashed border-brand-soft bg-surface px-4 py-4 ">
-                      <p className="font-display text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--brand)]">
+                      <p className="overline font-display tracking-[0.2em] text-[var(--brand)]">
                         Gerar cobrança PIX
                       </p>
                       <div className="flex flex-wrap items-end gap-3">
@@ -978,7 +978,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   {/* F4 — lista de cobranças do pedido */}
                   {payments.length > 0 && (
                     <div className="space-y-2">
-                      <p className="font-display text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--brand)]">
+                      <p className="overline font-display tracking-[0.2em] text-[var(--brand)]">
                         Cobranças
                       </p>
                       {payments.map((payment) => (
@@ -1024,7 +1024,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-6 lg:h-fit">
           <div className="rounded border border-[var(--border-strong)] bg-brand-strong p-5 text-canvas dark:text-fg-token sm:p-6">
-            <p className="font-display text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--brand)]">
+            <p className="overline font-display tracking-[0.28em] text-[var(--brand)]">
               Ação principal
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">
@@ -1104,7 +1104,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
           </div>
 
           <div className="rounded border border-border-token bg-surface p-5 sm:p-6">
-            <p className="font-display text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--brand)]">
+            <p className="overline font-display tracking-[0.28em] text-[var(--brand)]">
               Leitura rápida
             </p>
             <div className="mt-4 grid gap-3">

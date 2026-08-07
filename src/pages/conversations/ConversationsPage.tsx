@@ -405,7 +405,7 @@ export const ConversationsPage: React.FC = () => {
                       {conversation.display_name}
                     </p>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="rounded-full bg-bg-subtle px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+                      <span className="rounded-full bg-bg-subtle px-2 py-0.5 text-badge font-medium text-fg-muted">
                         {platformLabels[conversation.platform]}
                       </span>
                       {conversation.secondary_identifier && (

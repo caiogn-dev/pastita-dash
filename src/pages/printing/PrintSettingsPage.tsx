@@ -268,7 +268,7 @@ const PrintSettingsPage: React.FC = () => {
                       ) : (
                         <span className="text-fg-token" title="Conecte o agent para detectar as impressoras automaticamente">
                           {agent.printer_name || '—'}
-                          <span className="block text-[11px] text-fg-muted-token">aguardando detecção…</span>
+                          <span className="block text-badge text-fg-muted-token">aguardando detecção…</span>
                         </span>
                       )}
                     </td>

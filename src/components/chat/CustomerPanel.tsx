@@ -183,7 +183,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                 </div>
               )}
               {profile.last_order_at && (
-                <p className="text-[10px] text-gray-400 dark:text-zinc-500">
+                <p className="text-badge text-gray-400 dark:text-zinc-500">
                   Último pedido:{' '}
                   {new Date(profile.last_order_at).toLocaleDateString('pt-BR')}
                 </p>
@@ -193,7 +193,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
             {/* Addresses */}
             {profile.addresses.length > 0 && (
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-2">
+                <p className="overline mb-2">
                   Endereços salvos
                 </p>
                 <div className="space-y-1.5">
@@ -206,7 +206,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                         <AddressIcon label={addr.label} />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[10px] font-semibold text-gray-500 dark:text-zinc-400 uppercase">
+                        <p className="overline">
                           {addr.label}
                           {addr.is_default && (
                             <span className="ml-1 text-primary-600 dark:text-primary-400">
@@ -217,7 +217,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                         <p className="text-xs text-gray-700 dark:text-zinc-300 truncate">
                           {addr.street}, {addr.number}
                         </p>
-                        <p className="text-[10px] text-gray-400 dark:text-zinc-500 truncate">
+                        <p className="text-badge text-gray-400 dark:text-zinc-500 truncate">
                           {addr.neighborhood}, {addr.city}-{addr.state}
                         </p>
                       </div>
@@ -230,12 +230,12 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
             {/* Active order */}
             {profile.active_order && activeOrderStatus && (
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-2">
+                <p className="overline mb-2">
                   Pedido ativo
                 </p>
                 <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-gray-100 dark:border-zinc-800">
                   <span
-                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${activeOrderStatus.cls}`}
+                    className={`text-badge font-semibold px-2 py-0.5 rounded-full ${activeOrderStatus.cls}`}
                   >
                     {activeOrderStatus.label}
                   </span>
@@ -248,7 +248,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
 
             {/* Quick actions */}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-2">
+              <p className="overline mb-2">
                 Ações rápidas
               </p>
               <div className="space-y-1.5">
@@ -271,7 +271,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                 >
                   <MapPinIcon className="h-4 w-4 flex-shrink-0" />
                   Enviar localização
-                  <span className="ml-auto text-[9px] italic">Em breve</span>
+                  <span className="ml-auto text-badge italic">Em breve</span>
                 </button>
 
                 {/* Confirmar pedido ativo */}
@@ -284,7 +284,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                   >
                     <CheckCircleIcon className="h-4 w-4 flex-shrink-0" />
                     Confirmar pedido
-                    <span className="ml-auto text-[9px] italic">Em breve</span>
+                    <span className="ml-auto text-badge italic">Em breve</span>
                   </button>
                 )}
 
@@ -298,7 +298,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                   >
                     <XCircleIcon className="h-4 w-4 flex-shrink-0" />
                     Cancelar pedido
-                    <span className="ml-auto text-[9px] italic">Em breve</span>
+                    <span className="ml-auto text-badge italic">Em breve</span>
                   </button>
                 )}
               </div>

@@ -545,7 +545,7 @@ export const DashboardPage: React.FC = () => {
               {healthLabel[projectHealth?.status || 'unknown'] || 'Indefinido'}
             </Badge>
             {(projectHealth?.automation.pipeline.dropped ?? 0) > 0 && (
-              <span className="flex items-center gap-1 text-[11px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 text-badge font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-full">
                 <ExclamationTriangleIcon className="h-3 w-3" />
                 {projectHealth!.automation.pipeline.dropped} mensagens perdidas
               </span>
@@ -567,50 +567,50 @@ export const DashboardPage: React.FC = () => {
             {/* ── Commerce ── */}
             <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Pedidos 24h</p>
+                <p className="overline mb-2">Pedidos 24h</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.commerce.orders_24h}</p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
+                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
               </div>
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Ticket médio</p>
+                <p className="overline mb-2">Ticket médio</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{fmt(projectHealth.commerce.avg_ticket_month)}</p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">
                   {projectHealth.commerce.cancelled_7d > 0
                     ? <span className="text-red-500">{projectHealth.commerce.cancelled_7d} cancel. (7d)</span>
                     : 'sem cancelamentos'}
                 </p>
               </div>
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Pag. pendentes</p>
+                <p className="overline mb-2">Pag. pendentes</p>
                 <p className={`text-xl font-bold ${projectHealth.commerce.payment_pending > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
                   {projectHealth.commerce.payment_pending}
                 </p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">aguardando</p>
+                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">aguardando</p>
               </div>
             </div>
 
             {/* ── Messaging ── */}
             <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Mensagens 24h</p>
+                <p className="overline mb-2">Mensagens 24h</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.messages_24h}</p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">
                   {projectHealth.messaging.inbound_24h}↓ · {projectHealth.messaging.outbound_24h}↑
                 </p>
               </div>
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Conversas</p>
+                <p className="overline mb-2">Conversas</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.open_conversations}</p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">
                   {projectHealth.messaging.human_conversations} c/ humano
                 </p>
               </div>
               <div className="p-4">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Pipeline</p>
+                <p className="overline mb-2">Pipeline</p>
                 <p className={`text-xl font-bold ${projectHealth.automation.pipeline.dropped > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
                   {projectHealth.automation.pipeline.dropped}
                 </p>
-                <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">
                   perdidas · {projectHealth.automation.pipeline.timeouts} timeouts
                 </p>
               </div>
@@ -625,26 +625,26 @@ export const DashboardPage: React.FC = () => {
                   <p className={`text-sm font-bold ${projectHealth.catalog.low_stock_products > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}`}>
                     {projectHealth.catalog.low_stock_products}
                   </p>
-                  <p className="text-[10px] text-gray-500 dark:text-zinc-500">Est. baixo</p>
+                  <p className="text-badge text-gray-500 dark:text-zinc-500">Est. baixo</p>
                 </div>
                 <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
                   <BoltIcon className="h-3.5 w-3.5 mx-auto mb-1 text-gray-400" />
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{projectHealth.automation.active_agents}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-zinc-500">Agentes</p>
+                  <p className="text-badge text-gray-500 dark:text-zinc-500">Agentes</p>
                 </div>
                 <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
                   <ExclamationTriangleIcon className={`h-3.5 w-3.5 mx-auto mb-1 ${projectHealth.issues.length > 0 ? 'text-yellow-500' : 'text-gray-400'}`} />
                   <p className={`text-sm font-bold ${projectHealth.issues.length > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
                     {projectHealth.issues.length}
                   </p>
-                  <p className="text-[10px] text-gray-500 dark:text-zinc-500">Alertas</p>
+                  <p className="text-badge text-gray-500 dark:text-zinc-500">Alertas</p>
                 </div>
               </div>
 
               {/* Top intents from pipeline */}
               {projectHealth.automation.pipeline.intent_log_summary?.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-2">
+                  <p className="overline mb-2">
                     Top intenções ({projectHealth.automation.pipeline.period_hours}h)
                   </p>
                   <div className="space-y-1.5">
@@ -653,13 +653,13 @@ export const DashboardPage: React.FC = () => {
                       const pct = Math.round((item.count / total) * 100);
                       return (
                         <div key={item.intent_type} className="flex items-center gap-2">
-                          <span className="text-[11px] text-gray-600 dark:text-zinc-400 truncate flex-1 capitalize">
+                          <span className="text-badge text-gray-600 dark:text-zinc-400 truncate flex-1 capitalize">
                             {item.intent_type.replace(/_/g, ' ')}
                           </span>
                           <div className="w-16 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                             <div className="h-full bg-brand rounded-full" style={{ width: `${Math.max(pct, 8)}%` }} />
                           </div>
-                          <span className="text-[11px] font-bold text-gray-700 dark:text-zinc-300 tabular-nums w-5 text-right">{item.count}</span>
+                          <span className="text-badge font-bold text-gray-700 dark:text-zinc-300 tabular-nums w-5 text-right">{item.count}</span>
                         </div>
                       );
                     })}
@@ -688,7 +688,7 @@ export const DashboardPage: React.FC = () => {
                       }`}
                     >
                       <p className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1">{issue.title}</p>
-                      <p className="mt-0.5 text-[10px] text-gray-500 dark:text-zinc-400 line-clamp-1">{issue.detail}</p>
+                      <p className="mt-0.5 text-badge text-gray-500 dark:text-zinc-400 line-clamp-1">{issue.detail}</p>
                     </button>
                   ))}
                 </div>

@@ -51,7 +51,7 @@ export const HeatmapSection: React.FC<{ range: DateRange; enabled: boolean }> = 
           <div className="inline-grid gap-1" style={{ gridTemplateColumns: `3rem repeat(${hours.length}, 2rem)` }}>
             <span />
             {hours.map((h) => (
-              <span key={h} className="text-center text-[11px] text-fg-muted-token">{h}h</span>
+              <span key={h} className="text-center text-badge text-fg-muted-token">{h}h</span>
             ))}
             {WEEKDAYS.map((label, wd) => (
               <React.Fragment key={label}>
@@ -71,7 +71,7 @@ export const HeatmapSection: React.FC<{ range: DateRange; enabled: boolean }> = 
               </React.Fragment>
             ))}
           </div>
-          <div className="flex items-center gap-2 mt-3 text-[11px] text-fg-muted-token">
+          <div className="flex items-center gap-2 mt-3 text-badge text-fg-muted-token">
             <span>menos</span>
             {[15, 35, 60, 85, 100].map((p) => (
               <span

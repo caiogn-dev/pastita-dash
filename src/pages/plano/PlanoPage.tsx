@@ -94,7 +94,7 @@ function PlanCard({
     >
       {(isCurrent || isRecommended) && (
         <div
-          className={`flex items-center justify-center gap-1 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+          className={`flex items-center justify-center gap-1 py-1 text-badge font-semibold uppercase tracking-wide ${
             isCurrent ? 'bg-brand text-white' : 'bg-brand-soft text-brand-ink'
           }`}
         >

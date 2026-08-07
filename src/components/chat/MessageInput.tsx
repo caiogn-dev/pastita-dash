@@ -346,7 +346,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       </div>
 
       {/* Hint */}
-      <p className="text-[10px] text-gray-400 pb-2 px-4 text-center block max-sm:hidden">
+      <p className="text-badge text-gray-400 pb-2 px-4 text-center block max-sm:hidden">
         Enter para enviar • Shift+Enter para nova linha
       </p>
     </div>

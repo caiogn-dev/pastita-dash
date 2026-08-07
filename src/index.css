@@ -471,3 +471,21 @@ textarea::placeholder {
   max-width: 100%;
   height: auto;
 }
+
+
+/* ---------------------------------------------------------------------------
+   .overline — rótulo de seção.
+   Havia 17 repetições EXATAS de `text-[10px] font-bold uppercase
+   tracking-widest text-fg-muted-token mb-2`, mais dezenas de variantes com
+   diferenças acidentais (font-bold vs semibold, tracking-wider vs widest) e
+   várias usando `text-gray-400 dark:text-zinc-500` — paleta crua do Tailwind,
+   furando os tokens do tema.
+   Uma classe, um lugar para mudar.
+   --------------------------------------------------------------------------- */
+.overline {
+  font-size: var(--text-overline);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-overline);
+  color: var(--fg-muted);
+}

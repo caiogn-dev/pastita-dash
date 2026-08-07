@@ -91,7 +91,7 @@ export function StepEntrega({
                   >
                     <span className="font-semibold">{addr.label}</span>: {addr.street}, {addr.number} — {addr.neighborhood}, {addr.city}
                     {addr.is_default && (
-                      <span className="ml-2 text-[10px] bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 text-badge bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 px-1.5 py-0.5 rounded-full">
                         padrão
                       </span>
                     )}

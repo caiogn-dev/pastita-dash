@@ -232,7 +232,7 @@ export const StorefrontPage: React.FC = () => {
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center text-fg-muted-token">
                   <span className="text-2xl">🏪</span>
-                  <span className="mt-0.5 text-[10px] font-medium">Logo</span>
+                  <span className="mt-0.5 text-badge font-medium">Logo</span>
                 </div>
               )}
               <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
