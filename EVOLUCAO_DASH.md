@@ -3,6 +3,42 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-07)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **604 testes / 143 suítes verdes** (era 600/142 antes desta fatia; +4/+1).
+- `npm run lint`: sem novos warnings nos arquivos tocados (os 2 warnings do
+  `CompanyProfileDetailPage` são pré-existentes, fora das linhas alteradas).
+
+### 2026-08-07 — A11y: nome acessível no primitivo compartilhado `Switch`
+- **Medido:** `src/components/common/Switch.tsx` é um `<button role="switch">` com
+  `aria-checked`, mas **sem nenhum nome acessível** — item pendente conhecido no
+  backlog. Leitores de tela anunciavam apenas "switch, ativado/desativado", sem
+  dizer *o que* está sendo alternado. Os 3 consumidores vivos herdavam a lacuna:
+  - `bio/LinkBioPage.tsx`: 4 toggles de visibilidade da bio (Cardápio/WhatsApp/
+    Maps/Instagram) — o texto visível estava dentro de um `<label>`, mas `<label>`
+    **não** nomeia um `<button>` (associação de label só vale para form controls),
+    então o nome não era programático; e o toggle "ativar link" de cada link
+    personalizado não tinha nome algum.
+  - `automation/CompanyProfileDetailPage.tsx`: switch "Aceitar pedidos pelo bot"
+    (já existia um `<label id="bot-order-enabled-label">` visível, mas desassociado).
+- **Mudado:**
+  - `Switch.tsx` passou a aceitar `aria-label` e `aria-labelledby` (repassados ao
+    `<button>`). Mudança aditiva e retrocompatível — nenhum consumidor existente quebra.
+  - `CompanyProfileDetailPage.tsx`: `aria-labelledby="bot-order-enabled-label"`
+    (reaproveita o `id` do label já presente).
+  - `LinkBioPage.tsx`: `aria-label={`Exibir ${label} na bio`}` nos toggles de seção
+    e `aria-label={`Ativar link ${link.title}`}` no toggle de cada link.
+- **Teste (TDD):** novo `components/common/__tests__/Switch.a11y.test.tsx` —
+  escrito vermelho antes (2/4 falhando: nome via `aria-label` e via
+  `aria-labelledby`), verde depois. Cobre `role="switch"` + `aria-checked`
+  refletindo o estado, nome por `aria-label`, nome por `aria-labelledby` e o
+  disparo de `onChange` com o valor invertido.
+- **Antes/depois:** 600/142 → **604/143**; tsc limpo nos dois lados; sem novos
+  warnings de lint. Próximo passo: `aria-modal`/trap de foco nos diálogos
+  (`ConnectionsPage`, `MessengerAccounts`, `EditOrderDrawer`).
+
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
 
