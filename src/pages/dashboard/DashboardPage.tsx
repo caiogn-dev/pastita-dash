@@ -15,7 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Badge, Button, Loading } from '../../components/common';
-import { Card, StatCard } from '../../components/ui';
+import { Card, StatCard, PageShell } from '../../components/ui';
 import OnboardingChecklist from '../../components/onboarding/OnboardingChecklist';
 import OnboardingWizard from '../../components/onboarding/wizard/OnboardingWizard';
 import { buildWizardSteps } from '../../components/onboarding/wizard/buildWizardSteps';
@@ -148,10 +148,25 @@ const OrderRow: React.FC<OrderRowProps> = ({ order, advancing, onAdvance, onOpen
 // Dashboard
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Saudação por faixa do dia.
+ *
+ * Parece enfeite e não é: a home abre igual às 6h e às 22h, e o operador usa o
+ * painel em pé, entre um pedido e outro. A saudação é o sinal barato de que a
+ * tela CARREGOU e é a sua — junto com o nome da loja, resolve a pergunta "estou
+ * na loja certa?" antes de qualquer número.
+ */
+function saudacaoDoDia(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bom dia';
+  if (h < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { storeId, storeSlug } = useStore();
+  const { store, storeId, storeSlug } = useStore();
   const storeRoute = storeSlug || storeId || '';
 
   // Detalhe do pedido em modal (?pedido=<id>) — abre sem sair do dashboard.
@@ -312,10 +327,13 @@ export const DashboardPage: React.FC = () => {
   const maxPipeline = Math.max(...PIPELINE.map((s) => pipelineCounts[s.key] || 0), 1);
 
   return (
-    <div className="space-y-5">
-      {/* Heading acessível da página (a11y) — visualmente o layout já contextualiza */}
-      <h1 className="sr-only">Dashboard</h1>
-
+    <PageShell
+      // A home não tinha título visível — só um h1 `sr-only`. Quem abre o
+      // painel de manhã não sabe de cara em qual loja está, e com multi-loja
+      // isso é um erro caro. A saudação nomeia a loja.
+      titulo={`${saudacaoDoDia()}${store?.name ? `, ${store.name}` : ''}!`}
+      descricao="O que precisa da sua atenção agora, e como o dia está indo."
+    >
       {storeId && (
         <OnboardingWizard open={wizardOpen} steps={buildWizardSteps(storeId)} onClose={() => setWizardOpen(false)} />
       )}
@@ -381,19 +399,28 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── KPI row ── */}
+      {/* ── KPI row ──
+          Cada número diz o que ELE conta. "Receita hoje R$ 1.557" já foi
+          contestado três vezes porque ninguém sabia se incluía frete, se
+          contava o cancelado, ou se o dia era o do pedido ou o do pagamento —
+          e das três, duas viraram auditoria de backend por engano. A definição
+          fica impressa, não em tooltip: no celular tooltip não existe. */}
       <div className="grid grid-cols-4 max-xl:grid-cols-2 gap-3">
         <StatCard
           label="Pedidos hoje"
           value={loading ? '—' : ordersToday}
-          sub={!loading && ordersToday === 0 ? 'Nenhum ainda' : undefined}
+          sub={
+            !loading && ordersToday === 0
+              ? 'Nenhum ainda hoje'
+              : 'Todos os pedidos criados hoje, inclusive cancelados.'
+          }
           onClick={() => navigate(`/stores/${storeRoute}/orders`)}
         />
         <StatCard
           label="Receita hoje"
           value={loading ? '—' : fmt(revenueToday)}
           tone="brand"
-          ajuda="Pedidos pagos e não cancelados, pela data do pagamento. Exclui pedido de teste."
+          sub="Pagos e não cancelados, pela data do pagamento. Sem pedido de teste."
           comparativo={
             cmpHoje && !loading
               ? { variacaoPct: cmpHoje.variacao_pct, rotulo: cmpHoje.rotulo }
@@ -404,12 +431,17 @@ export const DashboardPage: React.FC = () => {
           label="Aguardando"
           value={loading ? '—' : pendingCount}
           tone={pendingCount > 0 ? 'warning' : 'default'}
-          sub={pendingCount > 0 ? 'Precisam de confirmação' : 'Tudo em dia ✓'}
+          sub={
+            pendingCount > 0
+              ? 'Pedidos parados esperando você confirmar.'
+              : 'Nenhum pedido parado ✓'
+          }
           onClick={() => navigate(`/stores/${storeRoute}/orders?status=pending`)}
         />
         <StatCard
           label="Conversas abertas"
           value={loading ? '—' : conversationsOpen}
+          sub="Conversas de WhatsApp ainda sem resposta ou não encerradas."
           onClick={() => navigate('/conversations')}
         />
       </div>
@@ -715,7 +747,7 @@ export const DashboardPage: React.FC = () => {
         </button>
       </p>
 
-    </div>
+    </PageShell>
   );
 };
 

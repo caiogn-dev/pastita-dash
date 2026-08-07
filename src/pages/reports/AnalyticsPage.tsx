@@ -14,7 +14,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toCsv, downloadCsv } from '../../utils/csv';
 import { formatAxisCurrency } from '../../utils/formatters';
-import { Card, Button, Badge, StatCard } from '../../components/ui';
+import { Card, Button, Badge, StatCard, PageShell } from '../../components/ui';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankedList } from './sections/shared';
 import { useStore } from '../../hooks/useStore';
@@ -570,15 +570,12 @@ const AnalyticsPage: React.FC = () => {
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-fg-token">Relatórios</h1>
-          <p className="text-sm text-fg-muted-token mt-0.5">Análise completa do seu negócio</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <ReportsFilterBar value={range} onChange={setRange} />
+    <PageShell
+      trilha={[{ rotulo: 'Relatórios' }]}
+      titulo="Relatórios"
+      descricao="Vendas, produtos, clientes e operação — sempre comparados com o período anterior."
+      acoes={
+        <>
           {/* Um menu só: cada relatório aparece uma vez, com CSV e Excel lado
               a lado. Antes eram dois botões soltos e só CSV cru. */}
           <MenuDownloads
@@ -591,9 +588,12 @@ const AnalyticsPage: React.FC = () => {
           <Button variant="ghost" onClick={loadData} disabled={anyFetching} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
             Atualizar
           </Button>
-        </div>
-      </div>
-
+        </>
+      }
+      // O filtro de período é sobre os DADOS, não sobre a página — por isso
+      // desce para a faixa de filtros em vez de ficar entre os botões de ação.
+      filtros={<ReportsFilterBar value={range} onChange={setRange} />}
+    >
       {/* Error */}
       {error && (
         <div className="flex items-center gap-3 p-4 mb-6 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
@@ -675,7 +675,7 @@ const AnalyticsPage: React.FC = () => {
         onFechar={() => setCardapioAberto(false)}
         storeId={storeId ?? undefined}
       />
-    </div>
+    </PageShell>
   );
 };
 

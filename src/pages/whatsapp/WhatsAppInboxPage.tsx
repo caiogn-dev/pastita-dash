@@ -22,6 +22,7 @@ import { useRootStore } from '../../stores/rootStore';
 import { MessageBubble, MessageBubbleProps } from '../../components/chat/MessageBubble';
 import { MediaViewer } from '../../components/chat/MediaViewer';
 import toast from 'react-hot-toast';
+import { EmptyState } from '../../components/ui';
 import { formatPhone } from '../../utils/formatters';
 import { messagePreviewText } from '../../utils/messagePreview';
 import { formatConversationTime, formatDayLabel, isSameDay } from '../../utils/chatTime';
@@ -563,7 +564,17 @@ const WhatsAppInboxPage: React.FC = () => {
             <div className="empty-state">Carregando conversas...</div>
           ) : filteredConversations.length === 0 ? (
             <div className="empty-state">
-              {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa'}
+              {/* Busca vazia e caixa vazia são problemas diferentes: no primeiro
+                  a saída é limpar o termo, no segundo é esperar/ativar o canal.
+                  Dizer só "Nenhuma conversa" nos dois deixa o operador sem ação. */}
+              <EmptyState
+                titulo={searchTerm ? 'Nada encontrado' : 'Nenhuma conversa ainda'}
+                descricao={
+                  searchTerm
+                    ? `Nenhuma conversa casa com "${searchTerm}". Tente outro nome ou número.`
+                    : 'Quando um cliente mandar mensagem no WhatsApp, a conversa aparece aqui.'
+                }
+              />
             </div>
           ) : (
             filteredConversations.map((conv) => {
@@ -748,12 +759,15 @@ const WhatsAppInboxPage: React.FC = () => {
             </form>
           </>
         ) : (
+          // 81% da tela ficavam pretos com uma frase de nove palavras no meio.
+          // Quem abre o inbox sem conversa selecionada não precisa só saber que
+          // precisa clicar — precisa saber o que dá pra fazer aqui.
           <div className="no-conversation-selected">
-            <div className="empty-message">
-              <ChatBubbleIcon className="w-16 h-16 text-gray-300" />
-              <h2>Selecione uma conversa</h2>
-              <p>Escolha uma conversa na lista para começar a trocar mensagens</p>
-            </div>
+            <EmptyState
+              icone={<ChatBubbleIcon className="h-14 w-14" />}
+              titulo="Selecione uma conversa"
+              descricao="Escolha um contato na lista à esquerda para ver o histórico e responder. Mensagens novas aparecem no topo em tempo real."
+            />
           </div>
         )}
       </div>
