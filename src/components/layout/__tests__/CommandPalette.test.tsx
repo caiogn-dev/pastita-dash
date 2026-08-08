@@ -63,9 +63,14 @@ describe('CommandPalette', () => {
 
   it('busca ignora acento e caixa', () => {
     // Ninguém digita "Relatórios" com acento no meio da correria.
+    //
+    // `getAllBy`: "Relatórios" é seção com filhos, e a paleta mostra a seção ao
+    // lado de CADA item — é o que faz ela ensinar o menu em vez de substituí-lo.
     renderizar();
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'relatorios' } });
-    expect(screen.getByRole('option', { name: /Relatórios/ })).toBeInTheDocument();
+    const achados = screen.getAllByRole('option', { name: /Relatórios/ });
+    expect(achados.length).toBeGreaterThan(0);
+    expect(achados.some((o) => /Metas e Conquistas/.test(o.textContent ?? ''))).toBe(true);
   });
 
   it('setas movem a seleção e Enter navega para ela', () => {
