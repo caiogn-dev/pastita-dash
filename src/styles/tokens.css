@@ -61,8 +61,23 @@
   --danger-soft: #fee2e2;
   --info: #2361EB;
   --info-soft: #dbeafe;
-  --radius: 4px;
-  --radius-pill: 999px;
+  /* RAIO POR PAPEL, não por gosto do call site.
+     Em 08/ago o painel usava DEZ raios diferentes em 2.128 lugares:
+     `rounded` (4px) 1.244x, `rounded-lg` 359x, `rounded-full` 225x,
+     `rounded-md` 103x, `rounded-xl` 158x, `rounded-2xl` 33x… Um card de 4px
+     encostado num de 16px é o que faz a tela parecer montada por duas pessoas
+     diferentes — e o 4px sozinho é o que a deixa "quadradona".
+
+     A escala é mapeada sobre os NOMES do Tailwind em tailwind.config.js, então
+     os 2.128 usos existentes herdam o sistema sem editar 2.128 lugares.
+     Mudar a personalidade do painel é mudar estas seis linhas. */
+  --radius-xs: 6px;      /* etiqueta, contador, chip pequeno */
+  --radius-sm: 8px;      /* campo, botão */
+  --radius: 10px;        /* card, painel — o padrão */
+  --radius-lg: 12px;     /* seção destacada, dropdown */
+  --radius-xl: 16px;     /* modal, hero */
+  --radius-2xl: 20px;    /* superfície grande, ilustração */
+  --radius-pill: 999px;  /* pílula, avatar */
 
   /* ELEVAÇÃO POR PAPEL. Antes cada card decidia a própria sombra no call site
      (`shadow-card`, `shadow-soft`, `shadow-xl`, nenhuma), e o resultado era um

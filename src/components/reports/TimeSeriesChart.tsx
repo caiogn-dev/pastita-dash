@@ -86,7 +86,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
         contentStyle={{
           backgroundColor: 'var(--surface, #fff)',
           border: '1px solid var(--border, #e5e7eb)',
-          borderRadius: '10px',
+          borderRadius: 'var(--radius)',
           color: 'var(--fg, #171717)',
           fontSize: '12px',
         }}

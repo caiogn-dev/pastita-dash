@@ -311,12 +311,21 @@ export default {
       // ============================================
       // BORDER RADIUS
       // ============================================
+      // Os nomes do Tailwind apontam para a ESCALA (tokens.css), não para
+      // pixels soltos. É o que faz os 2.128 `rounded-*` já escritos herdarem
+      // o sistema sem edição em massa — e o que impede o próximo `rounded-2xl`
+      // avulso de reabrir o descompasso.
       borderRadius: {
-        DEFAULT: 'var(--radius)', // visual enquadrado (cantos retos ~2px)
+        'none': '0',
+        'sm': 'var(--radius-xs)',
+        DEFAULT: 'var(--radius)',
+        'md': 'var(--radius-sm)',
+        'lg': 'var(--radius-lg)',
+        'xl': 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        '3xl': 'var(--radius-2xl)',
         'pill': 'var(--radius-pill)',
-        'xl': '1rem',
-        '2xl': '1.5rem',
-        '3xl': '2rem',
+        'full': 'var(--radius-pill)',
       },
       // ============================================
       // BACKDROP BLUR

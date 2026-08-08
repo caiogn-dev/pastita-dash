@@ -38,3 +38,5 @@ export { ChoiceCards } from './ChoiceCards';
 export type { ChoiceCardsProps, OpcaoDeEscolha } from './ChoiceCards';
 export { FormSummary } from './FormSummary';
 export type { FormSummaryProps, LinhaDeResumo } from './FormSummary';
+export { FormStepper } from './FormStepper';
+export type { FormStepperProps, PassoDeFormulario } from './FormStepper';

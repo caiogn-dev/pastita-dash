@@ -37,7 +37,7 @@ export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId,
     }}>
       <div style={{
         backgroundColor: '#fff',
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-sm)',
         padding: '24px',
         maxWidth: '500px',
         width: '90%',
@@ -66,7 +66,7 @@ export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId,
             <div style={{
               backgroundColor: '#f5f5f5',
               padding: '16px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-xs)',
               marginBottom: '16px'
             }}>
               <div style={{ marginBottom: '12px' }}>
@@ -101,7 +101,7 @@ export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId,
                   backgroundColor: '#28a745',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   cursor: 'pointer',
                   fontWeight: '600'
                 }}
@@ -116,7 +116,7 @@ export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId,
                   backgroundColor: '#ffc107',
                   color: '#000',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   cursor: 'pointer',
                   fontWeight: '600'
                 }}
@@ -142,7 +142,7 @@ export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId,
                   backgroundColor: '#007bff',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   cursor: 'pointer',
                   fontWeight: '600'
                 }}
@@ -157,7 +157,7 @@ export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId,
                   backgroundColor: '#6c757d',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   cursor: 'pointer',
                   fontWeight: '600'
                 }}
@@ -183,7 +183,7 @@ export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId,
                   backgroundColor: '#007bff',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   cursor: 'pointer',
                   fontWeight: '600'
                 }}
@@ -198,7 +198,7 @@ export const OrderDeliveryModal: React.FC<OrderDeliveryModalProps> = ({ orderId,
                   backgroundColor: '#6c757d',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   cursor: 'pointer',
                   fontWeight: '600'
                 }}
