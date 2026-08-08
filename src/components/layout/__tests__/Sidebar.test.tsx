@@ -74,6 +74,29 @@ describe('Sidebar', () => {
     );
   });
 
+  it('recolhida, clicar num grupo EXPANDE a coluna e abre o grupo', () => {
+    // Antes, abrir um grupo com a coluna recolhida mostrava os filhos como
+    // ícones mudos empilhados: você clicava em "Cardápio" e recebia cinco
+    // quadradinhos sem nome. O gesto de abrir um grupo é um pedido para VER o
+    // grupo — a coluna precisa expandir junto.
+    renderizar();
+    fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /Cardápio/ }));
+
+    // Expandiu: o botão de recolher voltou a existir…
+    expect(screen.getByRole('button', { name: /recolher menu/i })).toBeInTheDocument();
+    // …e os filhos aparecem com nome, não como ícone solto.
+    expect(screen.getByRole('link', { name: /Combos/ })).toBeInTheDocument();
+  });
+
+  it('mostra a marca no topo, e ela leva ao início', () => {
+    // A coluna abria direto nos itens, sem nada dizendo de que produto é a
+    // tela — e recolhida virava uma faixa de ícones órfã.
+    renderizar();
+    expect(screen.getByRole('link', { name: /Cardapidex/i })).toHaveAttribute('href', '/');
+  });
+
   it('colapsar esconde os rótulos mas mantém os destinos alcançáveis', () => {
     // Modo ícone é para ganhar largura, não para perder navegação: o nome
     // continua no accessible name, senão leitor de tela vê só ícones mudos.

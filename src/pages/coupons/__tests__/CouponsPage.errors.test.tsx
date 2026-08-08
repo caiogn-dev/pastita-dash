@@ -75,13 +75,30 @@ describe('CouponsPage — feedback de erro', () => {
       target: { value: '10' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criar' }));
+    // O formulário virou assistente de 3 passos (Benefício › Regras › Alcance),
+    // como o do Prefiro: o botão que conclui só existe no último, e é isso que
+    // evita o "cliquei em avançar achando que ia salvar".
+    fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Criar cupom' }));
 
     await waitFor(() => {
       expect(mockedToast.error).toHaveBeenCalledWith(
         expect.stringContaining('cupom duplicado')
       );
     });
+  });
+
+  it('não deixa avançar sem código nem valor — o cupom não existe sem os dois', async () => {
+    // Descobrir isso no último passo obriga a voltar depois de já ter
+    // preenchido tudo o mais.
+    renderPage();
+    fireEvent.click((await screen.findAllByText('Novo Cupom'))[0]);
+
+    fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
+
+    expect(mockedToast.error).toHaveBeenCalledWith(expect.stringContaining('código'));
+    expect(screen.getByRole('button', { name: /Avançar/ })).toBeInTheDocument();
   });
 
   it('mostra toast de erro quando o carregamento de cupons falha', async () => {

@@ -8,9 +8,11 @@ import {
   TrashIcon,
   MagnifyingGlassIcon,
   TagIcon,
+  AdjustmentsHorizontalIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import { StatCard, RowActions, linhaClicavel } from '../../components/ui';
+import { StatCard, RowActions, linhaClicavel, FormStepper } from '../../components/ui';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
 import { getCategories, StoreCategory } from '../../services/storesApi';
 import { useStore } from '../../hooks';
@@ -507,7 +509,30 @@ export const CouponsPage: React.FC = () => {
         onClose={handleCloseModal}
         title={editingCoupon ? 'Editar Cupom' : 'Novo Cupom'}
       >
+        <FormStepper
+          passos={[
+            { id: 'beneficio', rotulo: 'Benefício', icone: TagIcon, pendente: !formData.code || !formData.discount_value },
+            { id: 'regras', rotulo: 'Regras', icone: AdjustmentsHorizontalIcon },
+            { id: 'alcance', rotulo: 'Alcance', icone: UserGroupIcon },
+          ]}
+          onCancelar={handleCloseModal}
+          onConcluir={handleSave}
+          concluindo={saving}
+          rotuloConcluir={editingCoupon ? 'Salvar cupom' : 'Criar cupom'}
+          // Segura no primeiro passo enquanto faltar código ou valor: sem os
+          // dois o cupom não existe, e descobrir isso no terceiro passo obriga
+          // a voltar depois de já ter preenchido tudo.
+          podeAvancar={(passo) => {
+            if (passo !== 'beneficio') return true;
+            if (!formData.code) { toast.error('O cupom precisa de um código.'); return false; }
+            if (!formData.discount_value) { toast.error('Defina o valor do desconto.'); return false; }
+            return true;
+          }}
+        >
+        {(passo) => (
         <div className="space-y-4">
+          {passo === 'beneficio' && (
+            <>
           <div>
             <label
               htmlFor="cupom-codigo"
@@ -559,7 +584,6 @@ export const CouponsPage: React.FC = () => {
               placeholder="Descrição do cupom"
             />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
@@ -587,7 +611,11 @@ export const CouponsPage: React.FC = () => {
               />
             </div>
           </div>
+            </>
+          )}
 
+          {passo === 'regras' && (
+            <>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
@@ -670,7 +698,11 @@ export const CouponsPage: React.FC = () => {
               </div>
             </div>
           )}
+            </>
+          )}
 
+          {passo === 'alcance' && (
+            <>
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -719,16 +751,11 @@ export const CouponsPage: React.FC = () => {
               Cupom ativo
             </label>
           </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={handleCloseModal}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSave} disabled={saving || !formData.code || !formData.discount_value}>
-              {saving ? 'Salvando...' : editingCoupon ? 'Salvar' : 'Criar'}
-            </Button>
-          </div>
+            </>
+          )}
         </div>
+        )}
+        </FormStepper>
       </Modal>
 
       {/* Delete Confirmation Modal */}

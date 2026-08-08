@@ -53,29 +53,68 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
     if (dono) setAberto(dono.label);
   }, [pathname, sections]);
 
-  const largura = recolhido ? 'w-16' : 'w-64';
+  // 72px e não 64: com 64 o ícone de 20px ficava com 22px de folga de cada
+  // lado, e o alvo de clique encostava na borda da tela. 72 dá respiro e
+  // permite o ícone maior sem apertar.
+  const largura = recolhido ? 'w-[72px]' : 'w-64';
+  const tamIcone = recolhido ? 'h-6 w-6' : 'h-5 w-5';
 
   return (
     <nav
       aria-label="Navegação principal"
       className={cn(
-        'sticky top-0 flex h-screen shrink-0 flex-col border-r border-border-token bg-surface transition-[width] duration-150',
+        'sticky top-0 flex h-screen shrink-0 flex-col border-r border-border-token bg-surface',
+        // A largura anima com a MESMA curva elástica do indicador ativo:
+        // recolher e expandir é movimento de matéria, não corte de frame.
+        'transition-[width] duration-300',
         largura,
         className
       )}
+      style={{ transitionTimingFunction: 'var(--mola)' }}
     >
-      <div className="flex items-center justify-end px-2 py-3">
+      {/* Marca no topo. A coluna abria direto nos itens, sem nada dizendo de
+          que produto é a tela — e recolhida virava uma faixa de ícones órfã. */}
+      <div className="flex items-center gap-2 px-3 py-3">
+        <Link
+          to="/"
+          aria-label="Cardapidex — ir para o início"
+          className="flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          <img
+            src="/brand/symbol-256.png"
+            alt=""
+            className="h-8 w-8 shrink-0 rounded-md object-contain"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+          {!recolhido && (
+            <span className="truncate font-brand text-lead uppercase tracking-[0.16em] text-brand-ink">
+              Cardapidex
+            </span>
+          )}
+        </Link>
+
+        {!recolhido && (
+          <button
+            type="button"
+            onClick={() => setRecolhido(true)}
+            aria-label="Recolher menu"
+            className="ml-auto rounded-md p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <ChevronDoubleLeftIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {recolhido && (
         <button
           type="button"
-          onClick={() => setRecolhido((v) => !v)}
-          aria-label={recolhido ? 'Expandir menu' : 'Recolher menu'}
-          className="rounded p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          onClick={() => setRecolhido(false)}
+          aria-label="Expandir menu"
+          className="mx-auto mb-1 rounded-md p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
-          <ChevronDoubleLeftIcon
-            className={cn('h-4 w-4 transition-transform', recolhido && 'rotate-180')}
-          />
+          <ChevronDoubleLeftIcon className="h-4 w-4 rotate-180" />
         </button>
-      </div>
+      )}
 
       <ul className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
         {sections.map((secao) => {
@@ -93,7 +132,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   aria-current={estaAtiva ? 'page' : undefined}
                   title={recolhido ? secao.label : undefined}
                   className={cn(
-                    'relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-body font-medium',
+                    'relative flex items-center gap-2.5 rounded-md py-2 text-body font-medium',
+                    recolhido ? 'justify-center px-0' : 'px-2.5',
                     'transition-colors duration-200',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     estaAtiva
@@ -117,7 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                     )}
                     style={{ transitionTimingFunction: 'var(--mola)' }}
                   />
-                  <Icone className={cn('h-5 w-5 shrink-0', estaAtiva && 'text-brand-ink')} />
+                  <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
                   {/* Recolhido esconde o rótulo VISUALMENTE, nunca do leitor de
                       tela — senão a coluna vira uma fileira de ícones mudos. */}
                   <span className={cn('truncate', recolhido && 'sr-only')}>{secao.label}</span>
@@ -136,10 +176,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
               <button
                 type="button"
                 aria-expanded={estaAberta}
-                onClick={() => setAberto(estaAberta ? null : secao.label)}
+                onClick={() => {
+                  // Recolhida, abrir um grupo mostrava os filhos como ícones
+                  // mudos empilhados — você clicava em "Cardápio" e recebia
+                  // cinco quadradinhos sem nome. O gesto de abrir um grupo é
+                  // um pedido para VER o grupo: a coluna expande junto.
+                  if (recolhido) {
+                    setRecolhido(false);
+                    setAberto(secao.label);
+                    return;
+                  }
+                  setAberto(estaAberta ? null : secao.label);
+                }}
                 title={recolhido ? secao.label : undefined}
                 className={cn(
-                  'relative flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-body font-medium',
+                  'relative flex w-full items-center gap-2.5 rounded-md py-2 text-body font-medium',
+                  recolhido ? 'justify-center px-0' : 'px-2.5',
                   'transition-colors duration-200',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                   estaAtiva
@@ -156,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   )}
                   style={{ transitionTimingFunction: 'var(--mola)' }}
                 />
-                <Icone className={cn('h-5 w-5 shrink-0', estaAtiva && 'text-brand-ink')} />
+                <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
                 <span className={cn('truncate', recolhido && 'sr-only')}>{secao.label}</span>
                 {!recolhido && (
                   <ChevronDownIcon
