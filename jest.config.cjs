@@ -15,6 +15,12 @@ module.exports = {
     '/src/utils/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     // src/components/maps lê a chave do Google via `import.meta.env`.
     '/src/components/maps/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
+    // src/services e src/config leem `import.meta.env` (API base, slug da loja).
+    // `(?!__tests__)` porque o transform reescreve `import.meta.env` no texto:
+    // aplicado a um teste que MENCIONA a expressão num comentário, ele injeta
+    // o stub no meio da prosa e o arquivo deixa de compilar.
+    '/src/services/(?!__tests__/).+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
+    '/src/config/(?!__tests__/).+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
 };

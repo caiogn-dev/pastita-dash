@@ -9,6 +9,7 @@ import {
   MagnifyingGlassIcon,
   MapPinIcon,
   Cog6ToothIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
 import { Card, Button, Badge, StatCard, PageShell } from '../../components/ui';
@@ -63,6 +64,7 @@ export const DeliveryZonesPage: React.FC = () => {
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [_error, setError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,10 @@ export const DeliveryZonesPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const [zonesData, statsData, storeData] = await Promise.all([
+      // allSettled e não all: a localização falhar não pode apagar as faixas
+      // da tela. Elas são o conteúdo principal, e continuam valendo para o
+      // cálculo de frete mesmo sem mapa.
+      const [zonesRes, statsRes, storeRes] = await Promise.allSettled([
         deliveryService.getZones({
           store: storeId,
           search: search || undefined,
@@ -112,10 +117,21 @@ export const DeliveryZonesPage: React.FC = () => {
         deliveryService.getStats(storeId),
         deliveryService.getStoreLocation(),
       ]);
-      setZones(zonesData.results);
-      setStats(statsData);
-      if (storeData) {
-        setStoreLocation(storeData);
+
+      if (zonesRes.status === 'rejected') throw zonesRes.reason;
+      setZones(zonesRes.value.results);
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value);
+
+      if (storeRes.status === 'fulfilled') {
+        setStoreLocation(storeRes.value);
+        setLocationError(null);
+      } else {
+        // Distinguir os dois casos: `null` é "loja sem endereço cadastrado" e
+        // pede "Configurar Localização"; exceção é falha nossa e precisa dizer
+        // isso, senão mandamos o dono cadastrar o que já está cadastrado.
+        logger.error('Falha ao carregar a localização da loja', storeRes.reason);
+        setStoreLocation(null);
+        setLocationError('Não foi possível carregar a localização desta loja.');
       }
     } catch (err) {
       logger.error('Error loading delivery zones:', err);
@@ -323,13 +339,23 @@ export const DeliveryZonesPage: React.FC = () => {
               </div>
             )}
           </div>
+        ) : locationError ? (
+          <div className="py-8 text-center">
+            <ExclamationTriangleIcon className="mx-auto mb-3 h-10 w-10 text-[var(--warning)]" />
+            <p className="mb-1 text-body font-semibold text-fg-token">{locationError}</p>
+            <p className="mb-4 text-caption text-fg-muted-token">
+              O endereço pode estar cadastrado — foi a leitura que falhou. As faixas
+              abaixo continuam valendo.
+            </p>
+            <Button variant="outline" onClick={loadData}>Tentar novamente</Button>
+          </div>
         ) : (
           <div className="text-center py-8">
             <MapPinIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
             <p className="text-fg-muted-token mb-4">Localização não configurada</p>
             <Link
               to={settingsPath}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand rounded hover:bg-brand-hover transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-on-brand bg-brand rounded hover:bg-brand-hover transition-colors"
             >
               <Cog6ToothIcon className="w-4 h-4" />
               Configurar Localização

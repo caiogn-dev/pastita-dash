@@ -1,6 +1,7 @@
 import api from './api';
+import logger from './logger';
 import { PaginatedResponse } from '../types';
-import { getStoreSlug } from '../hooks/useStore';
+import { getStoreSlugWithFallback } from '../hooks/useStore';
 import { requireStoreSlug } from '../config/storeConfig';
 
 export interface DeliveryZone {
@@ -104,7 +105,18 @@ export interface DeliveryZoneFilters {
 class DeliveryService {
   private baseUrl = '/stores/delivery-zones';
   private storeUrl = '/stores';
-  private get storeSlug(): string { return requireStoreSlug(getStoreSlug()); }
+  /**
+   * Slug da loja SELECIONADA.
+   *
+   * Era `requireStoreSlug(getStoreSlug())`, e `getStoreSlug()` é um stub morto
+   * que só emite warn e devolve `null` — existe para empurrar quem chama para
+   * o hook. Com `null`, o `requireStoreSlug` caía em `VITE_STORE_SLUG`, vazio
+   * em produção multi-tenant, e LANÇAVA. O `getStoreLocation` engolia a
+   * exceção e devolvia `null`, então a página de Zonas de Entrega concluía que
+   * a loja não tinha endereço — e mostrava "Configurar Localização" para lojas
+   * com endereço, CEP, latitude e longitude preenchidos.
+   */
+  private get storeSlug(): string { return requireStoreSlug(getStoreSlugWithFallback()); }
 
   async getZones(filters?: DeliveryZoneFilters): Promise<PaginatedResponse<DeliveryZone>> {
     const params = new URLSearchParams();
@@ -181,8 +193,16 @@ class DeliveryService {
       }
       return null;
     } catch (error) {
-      console.error('Error fetching store location:', error);
-      return null;
+      // `null` aqui significa "esta loja não tem localização cadastrada", e a
+      // tela age em cima disso oferecendo "Configurar Localização".
+      //
+      // Falha de REDE ou de CONFIGURAÇÃO não é isso — e foi exatamente o que
+      // aconteceu: o slug não resolvia, `requireStoreSlug` lançava, este catch
+      // devolvia `null`, e a página acusava de "sem endereço" lojas que tinham
+      // endereço, CEP e coordenadas. Erro de infra vestido de dado ausente é o
+      // pior tipo, porque manda o usuário consertar o que não está quebrado.
+      logger.error('Falha ao buscar a localização da loja', error);
+      throw error;
     }
   }
 
