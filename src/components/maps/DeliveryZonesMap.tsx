@@ -18,10 +18,15 @@ export type DeliveryZonesMapProps = {
   height?: string;
 };
 
+/** Cor de cada anel, na mesma ordem em que o mapa desenha — para a legenda. */
+export const corDoAnel = (index: number) => COLORS[index % COLORS.length].stroke;
+
 const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
   storeLocation,
   zones = [],
-  height = '320px',
+  // 480px: com 360 os 17 km de raio viravam um retângulo baixo e largo onde
+  // não se distinguem as faixas internas. Altura é o que falta, não largura.
+  height = '480px',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -45,9 +50,17 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
           center,
           zoom: 13,
           streetViewControl: false,
-          fullscreenControl: false,
+          // Tela cheia LIGADA: julgar um raio de 17 km num retângulo de 360px
+          // é impossível. É o único jeito de ver a área toda sem sair da tela.
+          fullscreenControl: true,
           mapTypeControl: false,
           zoomControl: true,
+          // 'greedy' seria pior: a roda do mouse passaria a dar zoom em vez de
+          // rolar a página, e o usuário fica preso no mapa ao descer a tela.
+          // 'cooperative' exige Ctrl+roda para zoom — os botões e a tela cheia
+          // cobrem quem não conhece o gesto.
+          gestureHandling: 'cooperative',
+          clickableIcons: false,
         });
 
         if (active) setMapReady(true);
@@ -96,10 +109,17 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
           radius: c.raioMetros,
           map,
           strokeColor: color.stroke,
-          strokeOpacity: 0.85,
-          strokeWeight: 2,
+          strokeOpacity: 0.9,
+          strokeWeight: c.aberta ? 3 : 2,
           fillColor: color.stroke,
-          fillOpacity: 0.10,
+          // A faixa aberta ("17km+") não tem área definida — não faz sentido
+          // preenchê-la. Só o contorno grosso, marcando onde ela começa.
+          fillOpacity: c.aberta ? 0 : 0.09,
+          // ESTE era o motivo de o mapa não arrastar: `clickable` é true por
+          // padrão no Circle, e 16 círculos empilhados cobrindo a tela inteira
+          // engoliam todo mousedown antes de o mapa vê-lo. O mapa parecia
+          // travado e ninguém desconfiaria da forma geométrica.
+          clickable: false,
         });
         objectsRef.current.push(circle);
       });

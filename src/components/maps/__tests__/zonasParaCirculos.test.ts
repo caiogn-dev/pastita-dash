@@ -62,6 +62,35 @@ describe('zonasParaCirculos', () => {
     expect(zonasParaCirculos([z({ max_km: '2.00' })])[0].raioMetros).toBe(2000);
   });
 
+  it('999 km é sentinela de "sem limite", não raio', () => {
+    // A última faixa do cadastro real é "17km+" com max_km=999. Desenhar 999 km
+    // põe um anel do tamanho da região Norte em cima do mapa e arrasta o
+    // fitBounds junto — a área de entrega de verdade vira um ponto invisível.
+    // O anel que interessa é onde a faixa COMEÇA: 17 km.
+    const c = zonasParaCirculos([z({ name: '17km+', min_km: 17, max_km: 999 })]);
+    expect(c).toHaveLength(1);
+    expect(c[0].raioMetros).toBe(17000);
+    expect(c[0].aberta).toBe(true);
+  });
+
+  it('faixa aberta sem min_km não vira círculo', () => {
+    // "sem limite a partir de lugar nenhum" não tem onde ser desenhado.
+    expect(zonasParaCirculos([z({ min_km: null, max_km: 999 })])).toHaveLength(0);
+  });
+
+  it('faixa normal não é marcada como aberta', () => {
+    expect(zonasParaCirculos([z({ min_km: 0, max_km: 2 })])[0].aberta).toBe(false);
+  });
+
+  it('o 999 não distorce a ordem de desenho', () => {
+    const raios = zonasParaCirculos([
+      z({ min_km: 17, max_km: 999 }),
+      z({ min_km: 0, max_km: 2 }),
+      z({ min_km: 5, max_km: 6 }),
+    ]).map((c) => c.raioMetros);
+    expect(raios).toEqual([17000, 6000, 2000]);
+  });
+
   it('lista vazia não quebra', () => {
     expect(zonasParaCirculos([])).toEqual([]);
     expect(zonasParaCirculos(undefined)).toEqual([]);

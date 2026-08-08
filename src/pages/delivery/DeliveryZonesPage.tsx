@@ -13,7 +13,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
 import { Card, Button, Badge, StatCard, PageShell } from '../../components/ui';
-import DeliveryZonesMap from '../../components/maps/DeliveryZonesMap';
+import DeliveryZonesMap, { corDoAnel } from '../../components/maps/DeliveryZonesMap';
+import { zonasParaCirculos } from '../../components/maps/zonasParaCirculos';
 import {
   deliveryService,
   DeliveryZone,
@@ -92,6 +93,10 @@ export const DeliveryZonesPage: React.FC = () => {
   // Google, e só caía nas coordenadas se não houvesse nome — ou seja, nunca.
   // Loja que não está cadastrada no Google Maps (a maioria) abria num lugar
   // errado ou em lugar nenhum, mesmo com latitude e longitude no banco.
+  // Mesma fonte que o mapa usa para desenhar — legenda e desenho não podem
+  // divergir, senão a cor da legenda aponta para o anel errado.
+  const circulosDoMapa = useMemo(() => zonasParaCirculos(zones), [zones]);
+
   const temCoordenadas =
     Number.isFinite(Number(storeLocation?.latitude)) &&
     Number.isFinite(Number(storeLocation?.longitude));
@@ -308,14 +313,44 @@ export const DeliveryZonesPage: React.FC = () => {
                     Configurar frete é abstrato — você digita "12 km, R$ 20" sem
                     ver o que está vendendo. O desenho responde a pergunta que o
                     formulário não responde: até onde eu entrego? */}
-                <DeliveryZonesMap
-                  storeLocation={storeLocation}
-                  zones={zones}
-                  height="360px"
-                />
+                <DeliveryZonesMap storeLocation={storeLocation} zones={zones} />
+
+                {/* Legenda ligando COR → faixa → taxa.
+                    Sem ela o mapa é bonito e mudo: você vê seis anéis
+                    coloridos e não sabe qual cobra quanto, então volta para a
+                    tabela e o desenho não serviu para nada. */}
+                {circulosDoMapa.length > 0 && (
+                  <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+                    {circulosDoMapa.map((c, i) => {
+                      const zona = zones.find((z) => String(z.id) === c.id);
+                      return (
+                        <li key={c.id} className="flex items-center gap-1.5 text-caption">
+                          <span
+                            aria-hidden
+                            className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
+                            style={{
+                              borderColor: corDoAnel(i),
+                              background: c.aberta ? 'transparent' : `${corDoAnel(i)}33`,
+                            }}
+                          />
+                          <span className="font-semibold text-fg-token">{c.nome}</span>
+                          {zona && (
+                            <span className="tabular-nums text-fg-muted-token">
+                              R$ {formatMoney(zona.delivery_fee)}
+                            </span>
+                          )}
+                          {c.aberta && (
+                            <span className="text-fg-muted-token">(sem limite)</span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-caption text-fg-muted-token">
-                    Cada anel é uma faixa de entrega. O ponto no centro é a loja.
+                    Ctrl + roda do mouse dá zoom. O botão de tela cheia abre o mapa inteiro.
                   </p>
                   <a
                     href={`https://www.google.com/maps?q=${storeLocation?.latitude},${storeLocation?.longitude}`}
