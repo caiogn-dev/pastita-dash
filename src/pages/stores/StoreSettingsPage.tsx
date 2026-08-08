@@ -8,6 +8,7 @@ import {
   CurrencyDollarIcon,
   ClockIcon,
   ChartBarIcon,
+  StarIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -20,7 +21,7 @@ import {
 } from '../../services/storesApi';
 import { useStore } from '../../hooks';
 import logger from '../../services/logger';
-import { Card, Button, StatCard, PageShell } from '../../components/ui';
+import { Card, Button, StatCard, PageShell, PageTabs } from '../../components/ui';
 
 interface DeliveryConfig {
   delivery_base_fee: number;
@@ -354,6 +355,32 @@ export const StoreSettingsPage: React.FC = () => {
       className="mx-auto max-w-6xl"
     >
 
+      {/* Os KPIs ficam FORA das abas: respondem "como esta loja está", e a
+          resposta não muda conforme a seção aberta. Dentro de uma aba,
+          sumiriam nas outras três. */}
+        <div className="grid grid-cols-3 max-md:grid-cols-1 gap-4">
+          <StatCard
+            label="Status"
+            value={store?.status === 'active' ? 'Ativa' : 'Inativa'}
+            tone={store?.status === 'active' ? 'brand' : 'default'}
+          />
+          <StatCard label="Pedidos" value={store?.orders_count ?? 0} />
+          <StatCard label="Produtos" value={store?.products_count ?? 0} />
+        </div>
+
+      <PageTabs
+        ariaLabel="Seções das configurações da loja"
+        abas={[
+          { id: 'loja', rotulo: 'Loja', icone: BuildingStorefrontIcon },
+          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon },
+          { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon },
+          { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon },
+        ]}
+      >
+        {(aba) => (
+          <div className="flex flex-col gap-6">
+            {aba === 'loja' && (
+              <>
         <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -481,7 +508,11 @@ export const StoreSettingsPage: React.FC = () => {
             </div>
           </Card>
         </div>
+              </>
+            )}
 
+            {aba === 'entrega' && (
+              <>
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <TruckIcon className="w-5 h-5 text-fg-muted-token" />
@@ -621,7 +652,11 @@ export const StoreSettingsPage: React.FC = () => {
             {saving ? 'Salvando...' : 'Salvar Horários'}
           </Button>
         </Card>
+              </>
+            )}
 
+            {aba === 'rastreamento' && (
+              <>
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-2">
             <ChartBarIcon className="w-5 h-5 text-fg-muted-token" />
@@ -718,7 +753,11 @@ export const StoreSettingsPage: React.FC = () => {
             {saving ? 'Salvando...' : 'Salvar Rastreamento'}
           </Button>
         </Card>
+              </>
+            )}
 
+            {aba === 'avaliacoes' && (
+              <>
         <Card className="p-6">
           <h3 className="text-base font-semibold text-fg-token">Avaliações no Google</h3>
           <p className="text-sm text-fg-muted-token mt-1">
@@ -743,16 +782,11 @@ export const StoreSettingsPage: React.FC = () => {
             {saving ? 'Salvando...' : 'Salvar Link de Avaliação'}
           </Button>
         </Card>
-
-        <div className="grid grid-cols-3 max-md:grid-cols-1 gap-4">
-          <StatCard
-            label="Status"
-            value={store?.status === 'active' ? 'Ativa' : 'Inativa'}
-            tone={store?.status === 'active' ? 'brand' : 'default'}
-          />
-          <StatCard label="Pedidos" value={store?.orders_count ?? 0} />
-          <StatCard label="Produtos" value={store?.products_count ?? 0} />
-        </div>
+              </>
+            )}
+          </div>
+        )}
+      </PageTabs>
     </PageShell>
   );
 };

@@ -7,6 +7,7 @@ import {
   CubeIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validarProduto';
 import { Card, Button } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
@@ -53,7 +54,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   const [saving, setSaving] = useState(false);
   const [paywall, setPaywall] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'inventory' | 'variants' | 'media' | 'seo'>('basic');
+  const [activeTab, setActiveTab] = useState<AbaDoProduto>('basic');
+  const [errosPorAba, setErrosPorAba] = useState<ErroDeProduto[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Internal navigation state
@@ -192,12 +194,16 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
-      toast.error('Nome é obrigatório');
-      return;
-    }
-    if (formData.price <= 0) {
-      toast.error('Preço deve ser maior que zero');
+    // Um erro precisa ser um LUGAR, não uma mensagem que some em 4s. A
+    // validação devolve a aba, então pulamos para ela e a marcamos — antes o
+    // toast "Preço deve ser maior que zero" aparecia sobre a aba Mídia, onde
+    // não existe campo de preço, e o usuário concluía que salvar estava
+    // quebrado.
+    const erros = validarProduto(formData);
+    setErrosPorAba(erros);
+    if (erros.length > 0) {
+      setActiveTab(erros[0].aba);
+      toast.error(erros[0].mensagem);
       return;
     }
 
@@ -391,13 +397,24 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         )}
 
         {/* Tabs */}
-        <div className="flex overflow-x-auto border-b border-border-token mb-6 -mx-6 px-6">
+        {/* role=tablist: eram seis <button> soltos, então o leitor de tela
+            anunciava "botão Preços" sem dizer que é uma aba, de quantas, nem
+            qual está aberta. */}
+        <div
+          role="tablist"
+          aria-label="Seções do produto"
+          className="flex overflow-x-auto border-b border-border-token mb-6 -mx-6 px-6"
+        >
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 type="button"
+                role="tab"
+                id={`aba-${tab.id}`}
+                aria-selected={activeTab === tab.id}
+                aria-controls={`painel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={`flex shrink-0 items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === tab.id
@@ -407,6 +424,19 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
+                {/* Ponto vermelho só na aba que tem problema. Sem ele, seis
+                    abas iguais e nenhuma pista de onde o erro mora — o
+                    usuário abre uma por uma. O `sr-only` diz o mesmo em
+                    texto, porque cor sozinha não é sinal. */}
+                {errosPorAba.some((e) => e.aba === tab.id) && (
+                  <>
+                    <span
+                      aria-hidden
+                      className="h-1.5 w-1.5 rounded-full bg-[var(--danger)]"
+                    />
+                    <span className="sr-only">(contém erro)</span>
+                  </>
+                )}
               </button>
             );
           })}

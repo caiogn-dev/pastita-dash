@@ -30,3 +30,5 @@ export { PhonePreview } from './PhonePreview';
 export type { PhonePreviewProps } from './PhonePreview';
 export { RowActions, linhaClicavel } from './RowActions';
 export type { RowActionsProps, RowAction } from './RowActions';
+export { PageTabs } from './PageTabs';
+export type { PageTabsProps, PageTab } from './PageTabs';
