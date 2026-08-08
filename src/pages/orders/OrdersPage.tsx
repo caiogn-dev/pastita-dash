@@ -749,6 +749,19 @@ export const OrdersPage: React.FC = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {/* O kanban só mostra a operação de agora. Quem chega aqui
+                procurando um pedido de semana passada precisava saber que a
+                outra tela existe. */}
+            {storeQuery && (
+              <Button
+                variant="outline"
+                className="py-1.5"
+                onClick={() => navigate(`/stores/${storeQuery}/orders/historico`)}
+                leftIcon={<ClockIcon className="h-4 w-4" />}
+              >
+                Histórico
+              </Button>
+            )}
             {storeQuery && (
               <a
                 href={`/stores/${storeQuery}/kds`}

@@ -75,6 +75,7 @@ const parseAddress = (addr: string | Record<string, unknown> | undefined): Recor
 import { useOrderPrint } from '../../components/orders/OrderPrint';
 import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
 import { useStore } from '../../hooks';
+import { marcosDoPedido, duracaoLegivel } from './marcosDoPedido';
 
 // =============================================================================
 // STATUS CONFIGURATION
@@ -515,6 +516,10 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   };
 
   // Get next action based on current status
+  // Antes de qualquer `return` condicional: hook depois de early return muda
+  // a quantidade de hooks entre renders e o React derruba a árvore.
+  const marcos = useMemo(() => (order ? marcosDoPedido(order as never) : []), [order]);
+
   const nextAction = useMemo(() => {
     if (!order) return null;
     const status = order.status.toLowerCase();
@@ -544,7 +549,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
   if (loadError && !order) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded border border-border-token bg-surface px-6 py-12 text-center">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-border-token bg-surface px-6 py-12 text-center">
         <XMarkIcon className="h-10 w-10 text-[var(--danger)]" />
         <div>
           <p className="text-base font-semibold text-fg-token">
@@ -603,14 +608,14 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_360px]">
-        <section className="rounded border border-border-token bg-surface p-5 sm:p-7">
+        <section className="rounded-xl border border-border-token bg-surface p-5 sm:p-7">
           <div className="flex flex-col gap-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex min-w-0 items-start gap-4">
                 <button
                   onClick={onClose}
                   aria-label={variant === 'modal' ? 'Fechar' : 'Voltar'}
-                  className="flex h-11 w-11 items-center justify-center rounded border border-border-token bg-surface text-fg-token transition hover:bg-surface-2"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-border-token bg-surface text-fg-token transition hover:bg-surface-2"
                 >
                   {variant === 'modal' ? <XMarkIcon className="h-5 w-5" /> : <ArrowLeftIcon className="h-5 w-5" />}
                 </button>
@@ -619,11 +624,15 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                     Pedido Nº {order.order_number}
                   </p>
                   <div className="mt-3 flex items-center gap-3">
-                    <div className="flex h-14 w-14 items-center justify-center rounded bg-brand-strong text-base font-semibold text-[var(--brand)]">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-strong text-base font-semibold text-[var(--brand)]">
                       {customerInitials}
                     </div>
                     <div className="min-w-0">
-                      <h1 className="truncate text-3xl font-semibold tracking-[-0.04em] text-fg-token sm:text-4xl">
+                      {/* Era `text-4xl`: o nome do cliente ocupava a largura
+                          toda e empurrava itens e pagamento para baixo da
+                          dobra. O assunto da tela é o PEDIDO; o nome é quem
+                          pediu. */}
+                      <h1 className="truncate text-2xl font-semibold tracking-[-0.03em] text-fg-token">
                         {order.customer_name || 'Cliente sem nome'}
                       </h1>
                       <p className="mt-1 text-sm text-fg-muted-token">
@@ -650,7 +659,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded border border-border-token bg-canvas px-4 py-3">
+              <div className="rounded-xl border border-border-token bg-canvas px-4 py-3">
                 <p className="overline font-display tracking-[0.24em] text-[var(--brand)]">Contato</p>
                 <div className="mt-2 flex items-center gap-2 text-sm font-medium">
                   <PhoneIcon className="h-4 w-4 text-[var(--brand)]" />
@@ -690,7 +699,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 </button>
               </div>
 
-              <div className="rounded border border-border-token bg-canvas px-4 py-3">
+              <div className="rounded-xl border border-border-token bg-canvas px-4 py-3">
                 <p className="overline font-display tracking-[0.24em] text-[var(--brand)]">Entrega</p>
                 <div className="mt-2 flex items-center gap-2 text-sm font-medium">
                   {order.delivery_method === 'pickup' ? (
@@ -713,7 +722,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 )}
               </div>
 
-              <div className="rounded border border-border-token bg-canvas px-4 py-3">
+              <div className="rounded-xl border border-border-token bg-canvas px-4 py-3">
                 <p className="overline font-display tracking-[0.24em] text-[var(--brand)]">Pagamento</p>
                 <div className="mt-2 flex items-center justify-between gap-2 text-sm">
                   <span className="font-medium">
@@ -726,7 +735,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               </div>
             </div>
 
-            <div className="rounded border border-border-token bg-surface-2 px-4 py-4 sm:px-5">
+            <div className="rounded-xl border border-border-token bg-surface-2 px-4 py-4 sm:px-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="overline font-display tracking-[0.28em] text-[var(--brand)]">
@@ -740,9 +749,34 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               <div className="mt-4">
                 <ProgressTimeline currentStatus={order.status} isCancelled={isCancelled} />
               </div>
+
+              {/* As bolinhas dizem ONDE o pedido está. Não dizem QUANDO cada
+                  coisa aconteceu nem quanto demorou — e é a duração que
+                  responde a reclamação do cliente e mostra onde a operação
+                  trava. A API já gravava todos esses horários; ninguém
+                  mostrava. */}
+              {marcos.length > 1 && (
+                <ol className="mt-5 space-y-2 border-t border-border-token pt-4">
+                  {marcos.map((m) => (
+                    <li key={m.chave} className="flex items-baseline gap-3 text-sm">
+                      <span className="w-12 shrink-0 font-mono text-xs text-fg-muted-token">
+                        {m.quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className={m.ruim ? 'font-semibold text-[var(--danger)]' : 'text-fg-token'}>
+                        {m.rotulo}
+                      </span>
+                      {m.minutosDesdeAnterior !== null && (
+                        <span className="ml-auto text-xs text-fg-muted-token">
+                          +{duracaoLegivel(m.minutosDesdeAnterior)}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
             </div>
 
-            <div className="rounded border border-border-token bg-surface px-4 py-4 sm:px-5">
+            <div className="rounded-xl border border-border-token bg-surface px-4 py-4 sm:px-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-base font-semibold">Itens do pedido</h2>
@@ -751,7 +785,9 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   </p>
                 </div>
                 <span className="text-sm font-semibold text-fg-muted-token">
-                  {order.items?.length || 0} item(ns)
+                  {/* "1 item(ns)" denuncia a máquina numa tela que o dono
+                      mostra para o cliente ao telefone. */}
+                  {order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'itens'}
                 </span>
               </div>
 
@@ -763,7 +799,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   return (
                     <div
                       key={item.id || index}
-                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded border border-border-token bg-surface-2 px-4 py-3"
+                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-border-token bg-surface-2 px-4 py-3"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -855,7 +891,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               amountDue > 0 ? (
                 <div
                   role="status"
-                  className="flex items-center justify-between gap-3 rounded border border-border-token bg-[var(--warning-soft)] px-4 py-4 text-fg-token sm:px-5"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border-token bg-[var(--warning-soft)] px-4 py-4 text-fg-token sm:px-5"
                 >
                   <span className="text-sm font-semibold">Falta receber</span>
                   <span className="text-lg font-semibold tracking-[-0.02em]">{formatMoney(amountDue)}</span>
@@ -863,7 +899,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               ) : (
                 <div
                   role="status"
-                  className="flex items-center gap-2 rounded border border-border-token bg-[var(--success-soft)] px-4 py-4 text-sm font-semibold text-[var(--success)] sm:px-5"
+                  className="flex items-center gap-2 rounded-xl border border-border-token bg-[var(--success-soft)] px-4 py-4 text-sm font-semibold text-[var(--success)] sm:px-5"
                 >
                   <CheckIcon className="h-5 w-5" />
                   Pago integralmente
@@ -873,7 +909,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
             {/* Notes — always visible, critical for kitchen ops */}
             {(order.customer_notes || order.notes) && (
-              <div className="rounded border border-border-token bg-[var(--warning-soft)] px-4 py-4 text-fg-token sm:px-5">
+              <div className="rounded-xl border border-border-token bg-[var(--warning-soft)] px-4 py-4 text-fg-token sm:px-5">
                 <p className="overline font-display tracking-[0.24em] mb-2 text-[var(--warning)]">Observações do cliente</p>
                 <p className="text-sm leading-relaxed">{order.customer_notes || order.notes}</p>
               </div>
@@ -881,7 +917,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
             {/* Delivery address — always visible for delivery orders */}
             {compactAddress && order.delivery_method !== 'pickup' && (
-              <div className="rounded border border-border-token bg-surface px-4 py-4 sm:px-5">
+              <div className="rounded-xl border border-border-token bg-surface px-4 py-4 sm:px-5">
                 <p className="overline tracking-[0.24em] mb-2">Endereço de entrega</p>
                 <div className="flex items-start gap-2 text-sm">
                   <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]" />
@@ -892,7 +928,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
             {/* Payment details — secondary info in collapsible */}
             {(paymentLink || order.pix_code || payments.length > 0 || (hasPaymentBalance && amountDue > 0)) && (
-              <details className="group rounded border border-border-token bg-surface px-4 py-4 sm:px-5" open>
+              <details className="group rounded-xl border border-border-token bg-surface px-4 py-4 sm:px-5" open>
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                   <div>
                     <h2 className="text-base font-semibold">Dados de pagamento</h2>
@@ -918,7 +954,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                             aria-label="Valor da cobrança"
                             value={chargeAmount}
                             onChange={(e) => setChargeAmount(e.target.value)}
-                            className="w-36 rounded border border-border-token bg-surface px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+                            className="w-36 rounded-xl border border-border-token bg-surface px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
                           />
                         </label>
                         <button
@@ -959,7 +995,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                             ? generatedPix.pix_qr_code
                             : `data:image/png;base64,${generatedPix.pix_qr_code}`}
                           alt="QR Code PIX"
-                          className="h-40 w-40 rounded border border-border-token"
+                          className="h-40 w-40 rounded-xl border border-border-token"
                         />
                       )}
                       {generatedPix.ticket_url && (
@@ -982,7 +1018,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                         Cobranças
                       </p>
                       {payments.map((payment) => (
-                        <div key={payment.id} className="flex items-center justify-between gap-3 rounded border border-border-token px-4 py-3">
+                        <div key={payment.id} className="flex items-center justify-between gap-3 rounded-xl border border-border-token px-4 py-3">
                           <div>
                             <p className="font-medium">
                               {payment.payment_method === 'pix' ? 'PIX' :
@@ -1103,7 +1139,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             </div>
           </div>
 
-          <div className="rounded border border-border-token bg-surface p-5 sm:p-6">
+          <div className="rounded-xl border border-border-token bg-surface p-5 sm:p-6">
             <p className="overline font-display tracking-[0.28em] text-[var(--brand)]">
               Leitura rápida
             </p>

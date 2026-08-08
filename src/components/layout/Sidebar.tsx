@@ -124,6 +124,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           const estaAberta = aberto === secao.label;
 
           // Seção sem filhos é um link direto — não vira botão de acordeão.
+          //
+          // Com filhos E destino próprio (Pedidos → kanban + Histórico) o
+          // rótulo continua sendo link e a seta ganha um botão separado:
+          // transformar tudo em acordeão custaria um clique a mais na tela
+          // mais usada do dia.
           if (!temFilhos && secao.href) {
             return (
               <li key={secao.label}>
@@ -167,6 +172,88 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                     </span>
                   )}
                 </Link>
+              </li>
+            );
+          }
+
+          if (temFilhos && secao.href) {
+            return (
+              <li key={secao.label}>
+                <div
+                  className={cn(
+                    'relative flex items-center rounded-md',
+                    'transition-colors duration-200',
+                    estaAtiva
+                      ? 'bg-brand-soft text-brand-ink'
+                      : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-pill bg-brand',
+                      'transition-[height,opacity] duration-300',
+                      estaAtiva ? 'h-5 opacity-100' : 'h-0 opacity-0'
+                    )}
+                    style={{ transitionTimingFunction: 'var(--mola)' }}
+                  />
+                  <Link
+                    to={secao.href}
+                    aria-current={estaAtiva ? 'page' : undefined}
+                    title={recolhido ? secao.label : undefined}
+                    className={cn(
+                      'flex flex-1 items-center gap-2.5 py-2 text-body font-medium',
+                      recolhido ? 'justify-center px-0' : 'px-2.5',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                      estaAtiva && 'text-brand-ink'
+                    )}
+                  >
+                    <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
+                    <span className={cn('truncate', recolhido && 'sr-only')}>{secao.label}</span>
+                  </Link>
+                  {!recolhido && (
+                    <button
+                      type="button"
+                      aria-expanded={estaAberta}
+                      aria-label={`${estaAberta ? 'Fechar' : 'Abrir'} subitens de ${secao.label}`}
+                      onClick={() => setAberto(estaAberta ? null : secao.label)}
+                      className="px-2 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      <ChevronDownIcon
+                        className={cn('h-4 w-4 shrink-0 transition-transform', estaAberta && 'rotate-180')}
+                        aria-hidden
+                      />
+                    </button>
+                  )}
+                </div>
+
+                {estaAberta && !recolhido && (
+                  <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-border-token pl-2">
+                    {secao.items.map((item) => {
+                      const ItemIcone = item.icon;
+                      const itemAtivo = ativo(pathname, item.href);
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            to={item.href}
+                            aria-current={itemAtivo ? 'page' : undefined}
+                            className={cn(
+                              'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-body',
+                              'transition-colors duration-200',
+                              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                              itemAtivo
+                                ? 'bg-brand-soft font-semibold text-brand-ink'
+                                : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
+                            )}
+                          >
+                            <ItemIcone className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{item.name}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </li>
             );
           }

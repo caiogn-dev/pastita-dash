@@ -1000,6 +1000,12 @@ export const getOrders = async (params?: {
   ordering?: string;
   page?: number;
   page_size?: number;
+  /** YYYY-MM-DD, pela data de ENTRADA do pedido, no fuso da loja. */
+  date_from?: string;
+  date_to?: string;
+  /** Canal de origem: web, whatsapp, pdv. */
+  source?: string;
+  payment_method?: string;
 }): Promise<PaginatedResponse<StoreOrder>> => {
   try {
     const response = await api.get(`${BASE_URL}/orders/`, { params });
@@ -1008,6 +1014,45 @@ export const getOrders = async (params?: {
     logger.error('Failed to fetch orders', error);
     throw error;
   }
+};
+
+export interface QuebraDeResumo {
+  chave: string;
+  pedidos: number;
+  total: string;
+}
+
+export interface ResumoDePedidos {
+  pedidos: number;
+  cancelados: number;
+  pedidos_faturados: number;
+  faturamento: string;
+  /** `null` quando nada faturou — "R$ 0,00" leria como venda de graça. */
+  ticket_medio: string | null;
+  por_pagamento: QuebraDeResumo[];
+  por_canal: QuebraDeResumo[];
+  definicoes: Record<string, string>;
+}
+
+/**
+ * Totais do MESMO recorte que a lista está mostrando.
+ *
+ * Recebe os mesmos filtros da `getOrders` de propósito: um resumo calculado
+ * sobre outro recorte mostraria um total que não bate com a soma das linhas
+ * logo abaixo, e duas verdades na mesma tela derrubam a confiança nas duas.
+ */
+export const getOrdersResumo = async (params: {
+  store?: string;
+  status?: string;
+  payment_status?: string;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+  source?: string;
+  payment_method?: string;
+}): Promise<ResumoDePedidos> => {
+  const response = await api.get(`${BASE_URL}/orders/resumo/`, { params });
+  return response.data;
 };
 
 export const getOrder = async (id: string): Promise<StoreOrder> => {
@@ -1884,6 +1929,7 @@ export default {
   deleteCombo,
   // Orders
   getOrders,
+  getOrdersResumo,
   getOrder,
   updateOrderStatus,
   markOrderPaid,

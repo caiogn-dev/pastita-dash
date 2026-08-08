@@ -109,7 +109,21 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
   return [
     { label: 'Início', icon: HomeIcon, href: '/', items: [] },
 
-    { label: 'Pedidos', icon: ShoppingCartIcon, href: storeHref('orders'), items: [] },
+    {
+      // Duas perguntas diferentes, dois destinos. O kanban responde "o que
+      // está acontecendo agora"; o histórico responde "o que aconteceu" — e
+      // até 08/ago só existia a primeira, então fechar o mês era impossível
+      // pelo painel.
+      label: 'Pedidos',
+      icon: ShoppingCartIcon,
+      // `href` E `items`: o rótulo leva ao kanban num clique (tela mais usada
+      // do dia) e a seta abre o histórico.
+      href: storeHref('orders'),
+      items: [
+        { name: 'Em andamento', href: storeHref('orders'), icon: ShoppingCartIcon },
+        { name: 'Histórico', href: storeHref('orders/historico'), icon: ClockIcon },
+      ],
+    },
     {
       label: 'Chat',
       icon: ChatBubbleLeftRightIcon,

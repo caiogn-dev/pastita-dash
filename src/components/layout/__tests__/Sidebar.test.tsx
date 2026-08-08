@@ -104,4 +104,28 @@ describe('Sidebar', () => {
     fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
     expect(screen.getByRole('link', { name: /Pedidos/ })).toBeInTheDocument();
   });
+
+  describe('seção que também é destino (Pedidos)', () => {
+    // Pedidos ganhou um filho (Histórico) e por um momento virou acordeão puro:
+    // a tela mais usada do dia passou de um clique para dois. Uma seção pode
+    // ter destino próprio E filhos — o rótulo navega, a seta abre.
+    it('o rótulo navega direto para o destino principal', () => {
+      renderizar();
+      const link = screen.getByRole('link', { name: /^Pedidos/ });
+      expect(link).toHaveAttribute('href', '/stores/minha-loja/orders');
+    });
+
+    it('a seta abre o grupo sem sair da tela atual', () => {
+      renderizar();
+      const seta = screen.getByRole('button', { name: /abrir.*Pedidos|Pedidos.*subitens/i });
+      fireEvent.click(seta);
+      expect(screen.getByRole('link', { name: /Histórico/ })).toBeInTheDocument();
+    });
+
+    it('estar dentro da seção abre o grupo sozinho', () => {
+      // Chegar no Histórico por link e ver o menu fechado esconde onde você está.
+      renderizar('/stores/minha-loja/orders/historico');
+      expect(screen.getByRole('link', { name: /Histórico/ })).toBeInTheDocument();
+    });
+  });
 });
