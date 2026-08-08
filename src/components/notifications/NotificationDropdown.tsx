@@ -155,7 +155,7 @@ export const NotificationDropdown: React.FC = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Notificações"
-        className="relative p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+        className="relative rounded-md p-2 text-chrome-muted transition-colors hover:bg-chrome-hover hover:text-chrome-fg"
       >
         <BellIcon className="w-5 h-5" />
         {unreadCount > 0 && (

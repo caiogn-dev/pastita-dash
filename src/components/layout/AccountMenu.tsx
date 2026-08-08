@@ -60,17 +60,17 @@ export const AccountMenu: React.FC = () => {
   const initial = user?.first_name?.[0] || user?.username?.[0] || 'U';
 
   return (
-    <div className="flex items-center pl-2 border-l border-white/20">
+    <div className="flex items-center border-l border-chrome-border pl-2">
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
         aria-label="Menu da conta"
-        className="flex items-center gap-1.5 rounded-md p-0.5 hover:bg-white/10 transition-colors"
+        className="flex items-center gap-1.5 rounded-md p-0.5 transition-colors hover:bg-chrome-hover"
       >
-        <div className="w-6 h-6 bg-white/15 rounded-full flex items-center justify-center flex-shrink-0">
-          <span className="text-badge font-semibold text-white">{initial}</span>
+        <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-pill bg-brand">
+          <span className="text-badge font-semibold text-on-brand">{initial}</span>
         </div>
-        <span className="block max-md:hidden text-xs font-medium text-white truncate max-w-[70px]">
+        <span className="block max-md:hidden max-w-[70px] truncate text-xs font-medium text-chrome-fg">
           {user?.first_name || user?.username}
         </span>
       </button>
