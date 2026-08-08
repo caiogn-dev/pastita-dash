@@ -97,3 +97,59 @@ describe('FormStepper', () => {
     expect(screen.getByText(/Passo 1 de 3/i)).toBeInTheDocument();
   });
 });
+
+describe('FormStepper controlado', () => {
+  it('o pai manda no passo, e é avisado quando ele muda', () => {
+    // A validação e o checklist precisam empurrar a pessoa para o lugar do
+    // erro. Com o passo em estado interno, ninguém de fora consegue.
+    const onMudarPasso = jest.fn();
+    const { rerender } = render(
+      <FormStepper
+        passos={PASSOS}
+        onConcluir={jest.fn()}
+        rotuloConcluir="Salvar"
+        passoAtivo="preco"
+        onMudarPasso={onMudarPasso}
+      >
+        {(p) => <div data-testid="painel">{p}</div>}
+      </FormStepper>
+    );
+    expect(screen.getByTestId('painel')).toHaveTextContent('preco');
+
+    fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
+    expect(onMudarPasso).toHaveBeenCalledWith('midia');
+
+    // Controlado de verdade: só muda quando o pai manda.
+    expect(screen.getByTestId('painel')).toHaveTextContent('preco');
+
+    rerender(
+      <FormStepper
+        passos={PASSOS}
+        onConcluir={jest.fn()}
+        rotuloConcluir="Salvar"
+        passoAtivo="midia"
+        onMudarPasso={onMudarPasso}
+      >
+        {(p) => <div data-testid="painel">{p}</div>}
+      </FormStepper>
+    );
+    expect(screen.getByTestId('painel')).toHaveTextContent('midia');
+  });
+
+  it('passo controlado que não existe cai no primeiro, em vez de sumir a tela', () => {
+    // Acontece de verdade: `variants` só existe na edição. Ao criar, o pai
+    // pode apontar para um passo que a lista não tem.
+    render(
+      <FormStepper
+        passos={PASSOS}
+        onConcluir={jest.fn()}
+        rotuloConcluir="Salvar"
+        passoAtivo="passo-que-nao-existe"
+        onMudarPasso={jest.fn()}
+      >
+        {(p) => <div data-testid="painel">{p}</div>}
+      </FormStepper>
+    );
+    expect(screen.getByTestId('painel')).toHaveTextContent('basico');
+  });
+});

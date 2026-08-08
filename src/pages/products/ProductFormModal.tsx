@@ -8,7 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validarProduto';
-import { FormChecklist, FormSummary, ChoiceCards } from '../../components/ui';
+import { FormChecklist, FormSummary, ChoiceCards, FormStepper } from '../../components/ui';
 import { Card, Button } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
@@ -208,8 +208,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     setImagePreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
 
     // Um erro precisa ser um LUGAR, não uma mensagem que some em 4s. A
     // validação devolve a aba, então pulamos para ela e a marcamos — antes o
@@ -401,10 +401,34 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   const modalTitle = isCurrentlyEditing ? 'Editar Produto' : 'Novo Produto';
 
+  /**
+   * As abas viram PASSOS, na criação e na edição.
+   *
+   * Abas dizem "escolha uma"; passos dizem "faça nesta ordem e acaba aqui".
+   * Quem já conhece o formulário não perde nada: a trilha continua clicável,
+   * então dá para pular direto ao campo que se quer mexer.
+   *
+   * `Variações` só existe com produto salvo — variação precisa de um id para
+   * pendurar. Mostrar o passo antes disso seria prometer um lugar vazio.
+   */
   // O checklist sai da MESMA função que bloqueia o salvar. Duas listas de
   // requisitos — uma para mostrar, outra para validar — divergem no primeiro
   // ajuste, e aí o painel diz "tudo pronto" e o botão recusa.
   const pendencias = useMemo(() => validarProduto(formData), [formData]);
+
+  const passos = useMemo(
+    () =>
+      tabs
+        .filter((t) => t.id !== 'variants' || isCurrentlyEditing)
+        .map((t) => ({
+          id: t.id,
+          rotulo: t.label,
+          icone: t.icon,
+          pendente: pendencias.some((e) => e.aba === t.id),
+        })),
+    [tabs, isCurrentlyEditing, pendencias]
+  );
+
   const checklist = useMemo(() => {
     const falta = (campo: string) => pendencias.find((e) => e.campo === campo);
     const linha = (campo: string, rotulo: string) => {
@@ -456,59 +480,52 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         )}
 
         {/* Tabs */}
-        {/* role=tablist: eram seis <button> soltos, então o leitor de tela
-            anunciava "botão Preços" sem dizer que é uma aba, de quantas, nem
-            qual está aberta. */}
-        <div
-          role="tablist"
-          aria-label="Seções do produto"
-          className="flex overflow-x-auto border-b border-border-token mb-6 -mx-6 px-6"
-        >
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
+        <FormStepper
+          passos={passos}
+          // Controlado: a validação e o checklist precisam empurrar a pessoa
+          // para o passo do erro, e com o passo em estado interno do stepper
+          // ninguém de fora consegue.
+          passoAtivo={activeTab}
+          onMudarPasso={(id) => setActiveTab(id as AbaDoProduto)}
+          onCancelar={onClose}
+          onConcluir={() => handleSubmit()}
+          concluindo={saving}
+          rotuloConcluir={isCurrentlyEditing ? 'Salvar alterações' : 'Criar produto'}
+          // Segura no passo que tem problema. Deixar avançar faria o erro
+          // aparecer só no fim, depois de a pessoa ter preenchido todo o resto.
+          podeAvancar={(passo) => {
+            const erro = pendencias.find((e) => e.aba === passo);
+            if (!erro) return true;
+            setErrosPorAba(pendencias);
+            toast.error(erro.mensagem);
+            return false;
+          }}
+          acoesExtras={
+            // "Salvar e criar outro" só na criação: quem monta cardápio
+            // cadastra trinta itens seguidos. Editando, você veio mexer NESTE
+            // item, não criar o próximo.
+            !isCurrentlyEditing ? (
+              <Button
                 type="button"
-                role="tab"
-                id={`aba-${tab.id}`}
-                aria-selected={activeTab === tab.id}
-                aria-controls={`painel-${tab.id}`}
-                onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`flex shrink-0 items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-brand text-brand-ink'
-                    : 'border-transparent text-fg-muted-token hover:text-fg-token'
-                }`}
+                variant="outline"
+                disabled={saving}
+                onClick={() => { manterAbertoRef.current = true; handleSubmit(); }}
               >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-                {/* Ponto vermelho só na aba que tem problema. Sem ele, seis
-                    abas iguais e nenhuma pista de onde o erro mora — o
-                    usuário abre uma por uma. O `sr-only` diz o mesmo em
-                    texto, porque cor sozinha não é sinal. */}
-                {errosPorAba.some((e) => e.aba === tab.id) && (
-                  <>
-                    <span
-                      aria-hidden
-                      className="h-1.5 w-1.5 rounded-full bg-[var(--danger)]"
-                    />
-                    <span className="sr-only">(contém erro)</span>
-                  </>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
+                Salvar e criar outro
+              </Button>
+            ) : undefined
+          }
+        >
+        {(passoAtivo) => (
+        <>
         {/* Formulário à esquerda, checklist à direita.
             Antes você só descobria o que faltava ao clicar em salvar — e o
             aviso vinha como toast, que some. Agora a lista fica na tela o
-            tempo todo, e cada pendência leva à aba do campo. */}
+            tempo todo, e cada pendência leva ao passo do campo. */}
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_250px]">
         <div className="space-y-6 max-h-[60vh] overflow-y-auto px-1">
           {/* Basic Tab */}
-          {activeTab === 'basic' && (
+          {passoAtivo === 'basic' && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg-token mb-1">
@@ -685,7 +702,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           )}
 
           {/* Pricing Tab */}
-          {activeTab === 'pricing' && (
+          {passoAtivo === 'pricing' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -782,7 +799,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           )}
 
           {/* Inventory Tab */}
-          {activeTab === 'inventory' && (
+          {passoAtivo === 'inventory' && (
             <div className="space-y-4">
               <label className="flex items-center gap-2">
                 <input
@@ -870,12 +887,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           )}
 
           {/* Variants Tab — only in edit mode */}
-          {activeTab === 'variants' && isCurrentlyEditing && effectiveProduct && 'id' in effectiveProduct && (
+          {passoAtivo === 'variants' && isCurrentlyEditing && effectiveProduct && 'id' in effectiveProduct && (
             <VariantsManager productId={(effectiveProduct as Product).id} basePrice={(effectiveProduct as Product).price} />
           )}
 
           {/* Media Tab */}
-          {activeTab === 'media' && (
+          {passoAtivo === 'media' && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg-token mb-2">
@@ -939,7 +956,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           )}
 
           {/* SEO Tab */}
-          {activeTab === 'seo' && (
+          {passoAtivo === 'seo' && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg-token mb-1">
@@ -1009,30 +1026,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             />
           </aside>
         </div>
+        </>
+        )}
+        </FormStepper>
 
-        {/* Footer */}
-        <div className="flex flex-wrap justify-end gap-3 mt-6 pt-4 border-t border-border-token">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          {/* "Salvar e novo" só na CRIAÇÃO: quem monta cardápio cadastra trinta
-              itens seguidos, e fechar/reabrir o modal a cada um são três
-              cliques extras por produto. Editando, não faz sentido — você veio
-              mexer neste item, não criar o próximo. */}
-          {!isCurrentlyEditing && (
-            <Button
-              type="submit"
-              variant="outline"
-              disabled={saving}
-              onClick={() => { manterAbertoRef.current = true; }}
-            >
-              Salvar e criar outro
-            </Button>
-          )}
-          <Button type="submit" variant="primary" disabled={saving}>
-            {saving ? 'Salvando...' : isCurrentlyEditing ? 'Salvar Alterações' : 'Criar Produto'}
-          </Button>
-        </div>
+        {/* O rodapé é do FormStepper: ele sabe se está no último passo, e o
+            botão de concluir não pode existir em dois lugares com regras
+            diferentes. */}
       </form>
       <PaywallModal open={!!paywall} message={paywall ?? ''} onClose={() => setPaywall(null)} />
     </Modal>

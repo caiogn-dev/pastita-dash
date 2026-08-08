@@ -44,7 +44,23 @@ export interface FormStepperProps {
   /** Retorne false para segurar o usuário no passo atual. */
   podeAvancar?: (passoAtual: string) => boolean;
   onCancelar?: () => void;
+  /**
+   * Ações extras no rodapé, à esquerda do primário.
+   *
+   * Existe para "Salvar e criar outro": é uma conclusão alternativa, não uma
+   * navegação, então não cabe na trilha nem substitui o primário.
+   */
+  acoesExtras?: React.ReactNode;
   concluindo?: boolean;
+  /**
+   * Passo atual controlado pelo pai.
+   *
+   * Sem isso o passo é estado interno, e quem está de fora não consegue
+   * mandar a pessoa para o lugar do erro — que é exatamente o que o checklist
+   * e a validação precisam fazer. Omitindo, o componente se controla sozinho.
+   */
+  passoAtivo?: string;
+  onMudarPasso?: (id: string) => void;
   className?: string;
 }
 
@@ -55,18 +71,35 @@ export const FormStepper: React.FC<FormStepperProps> = ({
   rotuloConcluir,
   podeAvancar,
   onCancelar,
+  acoesExtras,
   concluindo = false,
+  passoAtivo,
+  onMudarPasso,
   className,
 }) => {
-  const [i, setI] = useState(0);
+  const [interno, setInterno] = useState(0);
+
+  const controlado = passoAtivo !== undefined;
+  const indiceControlado = passos.findIndex((p) => p.id === passoAtivo);
+  // Passo controlado que não existe na lista (ex.: `variants` some ao criar)
+  // cairia em -1 e sumiria o formulário inteiro. Volta para o primeiro.
+  const i = controlado ? Math.max(0, indiceControlado) : interno;
+
   const atual = passos[i];
   const ultimo = i === passos.length - 1;
+
+  const irPara = (idx: number) => {
+    const alvo = passos[idx];
+    if (!alvo) return;
+    if (controlado) onMudarPasso?.(alvo.id);
+    else setInterno(idx);
+  };
 
   if (!atual) return null;
 
   const avancar = () => {
     if (podeAvancar && !podeAvancar(atual.id)) return;
-    setI((n) => Math.min(n + 1, passos.length - 1));
+    irPara(Math.min(i + 1, passos.length - 1));
   };
 
   return (
@@ -85,7 +118,7 @@ export const FormStepper: React.FC<FormStepperProps> = ({
               <button
                 type="button"
                 aria-current={ativo ? 'step' : undefined}
-                onClick={() => setI(idx)}
+                onClick={() => irPara(idx)}
                 className={cn(
                   'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-body font-medium transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
@@ -131,10 +164,11 @@ export const FormStepper: React.FC<FormStepperProps> = ({
             </Button>
           )}
           {i > 0 && (
-            <Button type="button" variant="outline" onClick={() => setI((n) => n - 1)}>
+            <Button type="button" variant="outline" onClick={() => irPara(i - 1)}>
               ← Voltar
             </Button>
           )}
+          {ultimo && acoesExtras}
           {ultimo ? (
             <Button type="button" variant="primary" onClick={onConcluir} disabled={concluindo}>
               {concluindo ? 'Salvando…' : rotuloConcluir}
