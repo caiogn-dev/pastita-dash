@@ -40,6 +40,16 @@ jest.mock('../../../components/ui', () => ({
   Card: ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <div className={className}>{children}</div>
   ),
+  // O modal passou a mostrar um checklist do que falta para salvar. O mock
+  // precisa acompanhar: mockar o barrel inteiro significa assumir a
+  // responsabilidade de fornecer tudo o que o componente consome de lá.
+  FormChecklist: ({ itens }: { itens: { rotulo: string; ok: boolean }[] }) => (
+    <ul data-testid="checklist">
+      {itens.map((i) => (
+        <li key={i.rotulo}>{i.rotulo}: {i.ok ? 'ok' : 'pendente'}</li>
+      ))}
+    </ul>
+  ),
   Button: ({
     children,
     type,

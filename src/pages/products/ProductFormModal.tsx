@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validarProduto';
+import { FormChecklist } from '../../components/ui';
 import { Card, Button } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
@@ -364,6 +365,28 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   const modalTitle = isCurrentlyEditing ? 'Editar Produto' : 'Novo Produto';
 
+  // O checklist sai da MESMA função que bloqueia o salvar. Duas listas de
+  // requisitos — uma para mostrar, outra para validar — divergem no primeiro
+  // ajuste, e aí o painel diz "tudo pronto" e o botão recusa.
+  const pendencias = useMemo(() => validarProduto(formData), [formData]);
+  const checklist = useMemo(() => {
+    const falta = (campo: string) => pendencias.find((e) => e.campo === campo);
+    const linha = (campo: string, rotulo: string) => {
+      const erro = falta(campo);
+      return {
+        rotulo,
+        ok: !erro,
+        onIr: erro ? () => setActiveTab(erro.aba) : undefined,
+      };
+    };
+    return [
+      linha('name', 'Nome do produto'),
+      linha('price', 'Preço de venda'),
+      linha('compare_at_price', 'Preço promocional coerente'),
+      linha('stock_quantity', 'Estoque válido'),
+    ];
+  }, [pendencias]);
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} size="xl">
       <form onSubmit={handleSubmit}>
@@ -442,7 +465,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           })}
         </div>
 
-        {/* Tab Content */}
+        {/* Formulário à esquerda, checklist à direita.
+            Antes você só descobria o que faltava ao clicar em salvar — e o
+            aviso vinha como toast, que some. Agora a lista fica na tela o
+            tempo todo, e cada pendência leva à aba do campo. */}
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_250px]">
         <div className="space-y-6 max-h-[60vh] overflow-y-auto px-1">
           {/* Basic Tab */}
           {activeTab === 'basic' && (
@@ -911,6 +938,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </Card>
             </div>
           )}
+        </div>
+
+          <aside className="xl:sticky xl:top-0 xl:self-start">
+            <FormChecklist itens={checklist} />
+          </aside>
         </div>
 
         {/* Footer */}

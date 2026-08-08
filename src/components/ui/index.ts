@@ -32,3 +32,5 @@ export { RowActions, linhaClicavel } from './RowActions';
 export type { RowActionsProps, RowAction } from './RowActions';
 export { PageTabs } from './PageTabs';
 export type { PageTabsProps, PageTab } from './PageTabs';
+export { FormChecklist } from './FormChecklist';
+export type { FormChecklistProps, ItemDeChecklist } from './FormChecklist';
