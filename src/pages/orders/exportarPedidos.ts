@@ -11,18 +11,11 @@
  * parece certo até alguém somar a coluna errada.
  */
 import type { StoreOrder } from '../../services/storesApi';
+import {
+  STATUS_LABELS as STATUS,
+  PAYMENT_METHOD_LABELS as PAGAMENTO,
+} from './rotulosDePedido';
 
-const STATUS: Record<string, string> = {
-  pending: 'Pendente', confirmed: 'Confirmado', preparing: 'Preparando',
-  ready: 'Pronto', out_for_delivery: 'Em entrega', delivered: 'Entregue',
-  completed: 'Concluído', cancelled: 'Cancelado', failed: 'Falhou',
-  refunded: 'Estornado',
-};
-
-const PAGAMENTO: Record<string, string> = {
-  pix: 'PIX', cash: 'Dinheiro', credit_card: 'Cartão de crédito',
-  debit_card: 'Cartão de débito', card: 'Cartão',
-};
 
 const COLUNAS = [
   'Pedido', 'Data', 'Hora', 'Cliente', 'Telefone', 'Itens',

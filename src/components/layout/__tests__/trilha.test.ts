@@ -27,8 +27,8 @@ describe('trilhaDoCaminho', () => {
   });
 
   it('seção que é link direto devolve um elo só', () => {
-    const trilha = trilhaDoCaminho(sections, '/stores/minha-loja/orders');
-    expect(trilha.map((t) => t.rotulo)).toEqual(['Pedidos']);
+    const trilha = trilhaDoCaminho(sections, '/stores/minha-loja/customers');
+    expect(trilha.map((t) => t.rotulo)).toEqual(['Clientes']);
   });
 
   it('caminho desconhecido devolve trilha vazia em vez de inventar', () => {
@@ -37,9 +37,10 @@ describe('trilhaDoCaminho', () => {
   });
 
   it('sub-rota de um item casa com o item pai', () => {
-    // /orders/123 continua sendo "Pedidos" — o detalhe não é uma seção nova.
+    // /orders/123 é o detalhe de um pedido: continua dentro da Central, não
+    // vira seção nova.
     const trilha = trilhaDoCaminho(sections, '/stores/minha-loja/orders/123');
-    expect(trilha.map((t) => t.rotulo)).toEqual(['Pedidos']);
+    expect(trilha.map((t) => t.rotulo)).toEqual(['Pedidos', 'Central de Pedidos']);
   });
 
   it('a raiz não gera trilha', () => {

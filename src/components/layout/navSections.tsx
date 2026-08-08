@@ -13,6 +13,14 @@ export interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  /**
+   * Abre em aba própria, nomeada.
+   *
+   * Para telas que ficam abertas o expediente inteiro (a Central de Pedidos):
+   * navegar para dentro delas pelo menu faz perder o lugar toda vez. A aba
+   * nomeada é reaproveitada, então clicar de novo foca em vez de empilhar.
+   */
+  novaAba?: boolean;
   /** Quando presente, renderiza um cabeçalho de seção acima deste item */
   sectionHeader?: string;
 }
@@ -110,17 +118,19 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     { label: 'Início', icon: HomeIcon, href: '/', items: [] },
 
     {
-      // Duas perguntas diferentes, dois destinos. O kanban responde "o que
+      // Duas perguntas diferentes, dois destinos. A Central responde "o que
       // está acontecendo agora"; o histórico responde "o que aconteceu" — e
       // até 08/ago só existia a primeira, então fechar o mês era impossível
       // pelo painel.
+      //
+      // A seção não tem `href` próprio de propósito: um link "Pedidos" ao
+      // lado de "Central de Pedidos" seriam DOIS caminhos para a mesma tela
+      // com nomes diferentes. E o custo do clique a mais é pago uma vez por
+      // expediente, já que a Central passa a viver em aba própria.
       label: 'Pedidos',
       icon: ShoppingCartIcon,
-      // `href` E `items`: o rótulo leva ao kanban num clique (tela mais usada
-      // do dia) e a seta abre o histórico.
-      href: storeHref('orders'),
       items: [
-        { name: 'Em andamento', href: storeHref('orders'), icon: ShoppingCartIcon },
+        { name: 'Central de Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon, novaAba: true },
         { name: 'Histórico', href: storeHref('orders/historico'), icon: ClockIcon },
       ],
     },

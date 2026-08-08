@@ -20,10 +20,10 @@
  */
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDownIcon, ChevronDoubleLeftIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronDoubleLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 
 import { cn } from '../../utils/cn';
-import { NavSection } from './navSections';
+import { NavItem, NavSection } from './navSections';
 
 export interface SidebarProps {
   sections: NavSection[];
@@ -40,6 +40,81 @@ function secaoAtiva(pathname: string, secao: NavSection): boolean {
   if (secao.href && ativo(pathname, secao.href)) return true;
   return secao.items.some((i) => ativo(pathname, i.href));
 }
+
+/**
+ * Um item do menu — e a decisão de abrir aqui ou em aba própria.
+ *
+ * A Central de Pedidos fica aberta o expediente inteiro: navegar para dentro
+ * dela pelo menu faz perder o lugar toda vez. Mas link que rouba para outra
+ * aba SEM AVISAR é um dos incômodos clássicos de web, então o contrato é
+ * visível — ícone de "abre fora" para quem vê, texto para quem ouve.
+ *
+ * A aba é nomeada: clicar cinco vezes durante o turno reaproveita a mesma em
+ * vez de empilhar cinco cópias da tela.
+ */
+const ItemDeMenu: React.FC<{
+  item: NavItem;
+  ativo: boolean;
+  Icone: React.ComponentType<{ className?: string }>;
+  rotuloOculto?: boolean;
+}> = ({ item, ativo: itemAtivo, Icone, rotuloOculto }) => {
+  const classe = cn(
+    'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-body transition-colors duration-200',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+    itemAtivo
+      ? 'bg-brand-soft font-semibold text-brand-ink'
+      : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
+  );
+
+  const miolo = (
+    <>
+      <Icone className="h-4 w-4 shrink-0" />
+      <span className={cn('truncate', rotuloOculto && 'sr-only')}>{item.name}</span>
+      {item.novaAba && (
+        <>
+          <ArrowTopRightOnSquareIcon className="ml-auto h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+          <span className="sr-only">(abre em nova aba)</span>
+        </>
+      )}
+      {item.badge && !rotuloOculto && !item.novaAba && (
+        <span className="ml-auto rounded-full bg-surface-2 px-1.5 py-0.5 text-badge font-bold text-fg-muted-token">
+          {item.badge}
+        </span>
+      )}
+    </>
+  );
+
+  if (item.novaAba) {
+    return (
+      <a
+        href={item.href}
+        // `aria-current` descreve a RELAÇÃO com a página atual, não o
+        // comportamento do clique — continua verdadeiro e útil aqui.
+        aria-current={itemAtivo ? 'page' : undefined}
+        // Nome fixo: a segunda visita foca a aba existente.
+        target="central-de-pedidos"
+        // `noopener`: sem isto a aba nova recebe `window.opener` e consegue
+        // manipular a aba de origem.
+        rel="noopener noreferrer"
+        title={rotuloOculto ? item.name : undefined}
+        className={classe}
+      >
+        {miolo}
+      </a>
+    );
+  }
+
+  return (
+    <Link
+      to={item.href}
+      aria-current={itemAtivo ? 'page' : undefined}
+      title={rotuloOculto ? item.name : undefined}
+      className={classe}
+    >
+      {miolo}
+    </Link>
+  );
+};
 
 export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   const { pathname } = useLocation();
@@ -124,11 +199,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           const estaAberta = aberto === secao.label;
 
           // Seção sem filhos é um link direto — não vira botão de acordeão.
-          //
-          // Com filhos E destino próprio (Pedidos → kanban + Histórico) o
-          // rótulo continua sendo link e a seta ganha um botão separado:
-          // transformar tudo em acordeão custaria um clique a mais na tela
-          // mais usada do dia.
           if (!temFilhos && secao.href) {
             return (
               <li key={secao.label}>
@@ -172,88 +242,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                     </span>
                   )}
                 </Link>
-              </li>
-            );
-          }
-
-          if (temFilhos && secao.href) {
-            return (
-              <li key={secao.label}>
-                <div
-                  className={cn(
-                    'relative flex items-center rounded-md',
-                    'transition-colors duration-200',
-                    estaAtiva
-                      ? 'bg-brand-soft text-brand-ink'
-                      : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
-                  )}
-                >
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-pill bg-brand',
-                      'transition-[height,opacity] duration-300',
-                      estaAtiva ? 'h-5 opacity-100' : 'h-0 opacity-0'
-                    )}
-                    style={{ transitionTimingFunction: 'var(--mola)' }}
-                  />
-                  <Link
-                    to={secao.href}
-                    aria-current={estaAtiva ? 'page' : undefined}
-                    title={recolhido ? secao.label : undefined}
-                    className={cn(
-                      'flex flex-1 items-center gap-2.5 py-2 text-body font-medium',
-                      recolhido ? 'justify-center px-0' : 'px-2.5',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
-                      estaAtiva && 'text-brand-ink'
-                    )}
-                  >
-                    <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
-                    <span className={cn('truncate', recolhido && 'sr-only')}>{secao.label}</span>
-                  </Link>
-                  {!recolhido && (
-                    <button
-                      type="button"
-                      aria-expanded={estaAberta}
-                      aria-label={`${estaAberta ? 'Fechar' : 'Abrir'} subitens de ${secao.label}`}
-                      onClick={() => setAberto(estaAberta ? null : secao.label)}
-                      className="px-2 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                    >
-                      <ChevronDownIcon
-                        className={cn('h-4 w-4 shrink-0 transition-transform', estaAberta && 'rotate-180')}
-                        aria-hidden
-                      />
-                    </button>
-                  )}
-                </div>
-
-                {estaAberta && !recolhido && (
-                  <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-border-token pl-2">
-                    {secao.items.map((item) => {
-                      const ItemIcone = item.icon;
-                      const itemAtivo = ativo(pathname, item.href);
-                      return (
-                        <li key={item.href}>
-                          <Link
-                            to={item.href}
-                            aria-current={itemAtivo ? 'page' : undefined}
-                            className={cn(
-                              'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-body',
-                              'transition-colors duration-200',
-                              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
-                              itemAtivo
-                                ? 'bg-brand-soft font-semibold text-brand-ink'
-                                : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
-                            )}
-                          >
-                            <ItemIcone className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{item.name}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
               </li>
             );
           }
@@ -315,28 +303,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                     const itemAtivo = ativo(pathname, item.href);
                     return (
                       <li key={item.href}>
-                        <Link
-                          to={item.href}
-                          aria-current={itemAtivo ? 'page' : undefined}
-                          title={recolhido ? item.name : undefined}
-                          className={cn(
-                            'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-body transition-colors duration-200',
-                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
-                            itemAtivo
-                              ? 'bg-brand-soft font-semibold text-brand-ink'
-                              : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
-                          )}
-                        >
-                          <ItemIcone className="h-4 w-4 shrink-0" />
-                          <span className={cn('truncate', recolhido && 'sr-only')}>
-                            {item.name}
-                          </span>
-                          {item.badge && !recolhido && (
-                            <span className="ml-auto rounded-full bg-surface-2 px-1.5 py-0.5 text-badge font-bold text-fg-muted-token">
-                              {item.badge}
-                            </span>
-                          )}
-                        </Link>
+                        <ItemDeMenu
+                          item={item}
+                          ativo={itemAtivo}
+                          Icone={ItemIcone}
+                          rotuloOculto={recolhido}
+                        />
                       </li>
                     );
                   })}

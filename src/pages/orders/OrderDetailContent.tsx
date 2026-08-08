@@ -76,6 +76,13 @@ import { useOrderPrint } from '../../components/orders/OrderPrint';
 import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
 import { useStore } from '../../hooks';
 import { marcosDoPedido, duracaoLegivel } from './marcosDoPedido';
+// Os rótulos moram num arquivo só, com teste que confere contra a lista de
+// status do backend: era esta duplicação que deixava "cancelled" cru na tela.
+import {
+  STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+  PAYMENT_METHOD_LABELS,
+} from './rotulosDePedido';
 
 // =============================================================================
 // STATUS CONFIGURATION
@@ -115,19 +122,6 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-[var(--danger-soft)] text-[var(--danger)]',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendente',
-  confirmed: 'Confirmado',
-  paid: 'Pago',
-  preparing: 'Preparando',
-  processing: 'Processando',
-  ready: 'Pronto',
-  out_for_delivery: 'Em Entrega',
-  shipped: 'Enviado',
-  delivered: 'Entregue',
-  completed: 'Concluído',
-  cancelled: 'Cancelado',
-};
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -576,21 +570,10 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   const statusColors = STATUS_COLORS[order.status.toLowerCase()] || STATUS_COLORS.pending;
   const address = parseAddress(order.delivery_address || order.shipping_address);
   const paymentStatus = order.payment_status || 'pending';
-  const paymentStatusLabel: Record<string, string> = {
-    pending: 'Pendente',
-    processing: 'Processando',
-    paid: 'Pago',
-    failed: 'Falhou',
-    refunded: 'Reembolsado',
-  };
-  const paymentMethodLabel: Record<string, string> = {
-    pix: 'PIX',
-    credit_card: 'Cartão de Crédito',
-    debit_card: 'Cartão de Débito',
-    cash: 'Dinheiro',
-    card: 'Cartão',
-    mercadopago: 'Mercado Pago',
-  };
+  const paymentStatusLabel = PAYMENT_STATUS_LABELS;
+
+  const paymentMethodLabel = PAYMENT_METHOD_LABELS;
+
   const paymentLink = order.pix_ticket_url || order.payment_url || order.payment_link || order.init_point || null;
   // Fase 3 — saldo de pagamento (campos read-only do backend; podem não existir em respostas antigas)
   const hasPaymentBalance = order.amount_due !== undefined && order.amount_due !== null;
