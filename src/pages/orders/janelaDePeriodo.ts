@@ -113,3 +113,16 @@ export const PERIODOS_DE_HISTORICO = [
   { value: 'mes_passado', label: 'Mês passado' },
   { value: 'personalizado', label: 'Escolher datas' },
 ] as const;
+
+/**
+ * O intervalo está de trás para frente?
+ *
+ * O seletor de datas aceita 10/08 → 08/08 sem reclamar, e a resposta honesta
+ * do servidor é uma lista vazia. Só que "nenhum pedido neste recorte" é
+ * verdade e não ajuda: quem lê vai procurar o pedido que sumiu em vez de olhar
+ * para as duas datas que digitou.
+ */
+export function janelaInvertida(j: JanelaDeDatas): boolean {
+  if (!j.date_from || !j.date_to) return false;
+  return j.date_from > j.date_to;
+}

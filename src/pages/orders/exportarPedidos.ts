@@ -60,7 +60,7 @@ export function pedidosParaCsv(pedidos: StoreOrder[]): string {
       campo(p.customer_name),
       campo(p.customer_phone),
       campo(qtd),
-      campo((p as { source?: string }).source ?? ''),
+      campo(p.source ?? ''),
       campo(PAGAMENTO[p.payment_method] ?? p.payment_method ?? ''),
       campo(p.payment_status === 'paid' ? 'Sim' : 'Não'),
       campo(STATUS[p.status] ?? p.status),

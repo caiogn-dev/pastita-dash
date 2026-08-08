@@ -9,7 +9,7 @@
  * e, para quem está em Brasília, devolve o dia seguinte a partir das 21h — o
  * horário de pico do delivery.
  */
-import { janelaDePeriodo, rotuloDaJanela } from '../janelaDePeriodo';
+import { janelaDePeriodo, rotuloDaJanela, janelaInvertida } from '../janelaDePeriodo';
 
 // 08/08/2026 às 22h, horário local: depois do fuso virar em UTC.
 const AGORA = new Date(2026, 7, 8, 22, 0, 0);
@@ -87,5 +87,24 @@ describe('rotuloDaJanela', () => {
 
   it('sem período diz que está mostrando tudo', () => {
     expect(rotuloDaJanela({})).toMatch(/todo|tudo/i);
+  });
+});
+
+describe('janelaInvertida', () => {
+  it('acusa início depois do fim', () => {
+    // O seletor de datas aceita 10/08 → 08/08 sem reclamar, e a tela
+    // respondia só "nenhum pedido neste recorte" — que é verdade e não
+    // ajuda: o operador fica procurando o pedido que sumiu em vez de
+    // olhar para as duas datas.
+    expect(janelaInvertida({ date_from: '2026-08-10', date_to: '2026-08-08' })).toBe(true);
+  });
+
+  it('mesmo dia nas duas pontas é válido', () => {
+    expect(janelaInvertida({ date_from: '2026-08-08', date_to: '2026-08-08' })).toBe(false);
+  });
+
+  it('só uma ponta preenchida não é inversão', () => {
+    expect(janelaInvertida({ date_from: '2026-08-10' })).toBe(false);
+    expect(janelaInvertida({})).toBe(false);
   });
 });

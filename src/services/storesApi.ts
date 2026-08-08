@@ -397,6 +397,14 @@ export interface StoreOrder {
   carrier: string;
   customer_notes: string;
   internal_notes: string;
+  /** Canal de origem: web, whatsapp, pdv, instagram. */
+  source?: string;
+  confirmed_at?: string;
+  preparing_at?: string;
+  ready_at?: string;
+  out_for_delivery_at?: string;
+  picked_up_at?: string;
+  refunded_at?: string;
   paid_at?: string;
   shipped_at?: string;
   delivered_at?: string;

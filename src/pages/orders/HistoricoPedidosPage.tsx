@@ -42,6 +42,7 @@ import { useStore, useDebounce } from '../../hooks';
 import { getOrders, getOrdersResumo, type StoreOrder } from '../../services/storesApi';
 import {
   janelaDePeriodo,
+  janelaInvertida,
   rotuloDaJanela,
   PERIODOS_DE_HISTORICO,
   type ChaveDePeriodo,
@@ -145,6 +146,7 @@ export const HistoricoPedidosPage: React.FC = () => {
   const total = listaQuery.data?.count ?? 0;
   const totalPaginas = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const resumo = resumoQuery.data;
+  const invertida = janelaInvertida(janela);
 
   // Anterior/próximo dentro do modal seguem a ORDEM DA LISTA filtrada. Sem
   // isso, conferir dez pedidos do mês custa dez idas e voltas à tabela.
@@ -224,6 +226,9 @@ export const HistoricoPedidosPage: React.FC = () => {
                 id="hist-de"
                 type="date"
                 className={selectCls}
+                // `max` deixa o próprio navegador barrar parte do intervalo
+                // invertido, antes de virar uma lista vazia inexplicável.
+                max={params.get('ate') || undefined}
                 value={params.get('de') ?? ''}
                 onChange={(e) => mudar('de', e.target.value)}
               />
@@ -232,6 +237,7 @@ export const HistoricoPedidosPage: React.FC = () => {
                 id="hist-ate"
                 type="date"
                 className={selectCls}
+                min={params.get('de') || undefined}
                 value={params.get('ate') ?? ''}
                 onChange={(e) => mudar('ate', e.target.value)}
               />
@@ -330,6 +336,31 @@ export const HistoricoPedidosPage: React.FC = () => {
 
       <Card className="overflow-hidden">
         {pedidos.length === 0 ? (
+          invertida ? (
+            /* "Nenhum pedido neste recorte" seria verdade e inútil: manda o
+               operador procurar um pedido que não sumiu, em vez de olhar para
+               as duas datas. */
+            <EmptyState
+              icone={<ReceiptPercentIcon className="h-8 w-8 text-[var(--warning)]" />}
+              titulo="As datas estão invertidas"
+              descricao={`A data inicial (${rotuloDaJanela({ date_from: janela.date_from })}) vem depois da final. Nenhum período existe entre elas.`}
+              acao={
+                <Button
+                  onClick={() => {
+                    setParams((prev) => {
+                      const p = new URLSearchParams(prev);
+                      const de = p.get('de');
+                      p.set('de', p.get('ate') ?? '');
+                      p.set('ate', de ?? '');
+                      return p;
+                    }, { replace: true });
+                  }}
+                >
+                  Trocar as datas de lugar
+                </Button>
+              }
+            />
+          ) : (
           <EmptyState
             icone={<ReceiptPercentIcon className="h-8 w-8 text-fg-muted-token" />}
             titulo="Nenhum pedido neste recorte"
@@ -340,6 +371,7 @@ export const HistoricoPedidosPage: React.FC = () => {
               </Button>
             }
           />
+          )
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -380,7 +412,7 @@ export const HistoricoPedidosPage: React.FC = () => {
                           {qtdItens}
                         </td>
                         <td className="px-4 py-3 hidden xl:table-cell text-fg-muted-token">
-                          {CANAL_LABEL[(p as { source?: string }).source ?? ''] ?? '—'}
+                          {CANAL_LABEL[p.source ?? ''] ?? p.source ?? '—'}
                         </td>
                         <td className="px-4 py-3 hidden md:table-cell text-fg-muted-token">
                           {PAGAMENTO_LABEL[p.payment_method] ?? p.payment_method ?? '—'}
