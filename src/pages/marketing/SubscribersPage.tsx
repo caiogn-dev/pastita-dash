@@ -240,8 +240,8 @@ export const SubscribersPage: React.FC = () => {
     return (
       <div className="p-6 text-center">
         <UserGroupIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">Selecione uma loja para visualizar a base de clientes.</p>
+        <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma loja selecionada</h2>
+        <p className="text-fg-muted-token mb-4">Selecione uma loja para visualizar a base de clientes.</p>
         <Button onClick={() => navigate('/stores')}>Ver lojas</Button>
       </div>
     );
@@ -285,8 +285,8 @@ export const SubscribersPage: React.FC = () => {
               <UserGroupIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total na base</p>
+              <p className="text-2xl font-bold text-fg-token">{stats.total}</p>
+              <p className="text-sm text-fg-muted-token">Total na base</p>
             </div>
           </div>
         </Card>
@@ -297,8 +297,8 @@ export const SubscribersPage: React.FC = () => {
               <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Ativos</p>
+              <p className="text-2xl font-bold text-fg-token">{stats.active}</p>
+              <p className="text-sm text-fg-muted-token">Ativos</p>
             </div>
           </div>
         </Card>
@@ -309,8 +309,8 @@ export const SubscribersPage: React.FC = () => {
               <ShoppingBagIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.withOrders}</p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Já compraram</p>
+              <p className="text-2xl font-bold text-fg-token">{stats.withOrders}</p>
+              <p className="text-sm text-fg-muted-token">Já compraram</p>
             </div>
           </div>
         </Card>
@@ -321,8 +321,8 @@ export const SubscribersPage: React.FC = () => {
               <XCircleIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.unsubscribed}</p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Descadastrados</p>
+              <p className="text-2xl font-bold text-fg-token">{stats.unsubscribed}</p>
+              <p className="text-sm text-fg-muted-token">Descadastrados</p>
             </div>
           </div>
         </Card>
@@ -333,10 +333,10 @@ export const SubscribersPage: React.FC = () => {
               <EnvelopeIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-fg-token">
                 R$ {revenueFromBase.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Receita identificada</p>
+              <p className="text-sm text-fg-muted-token">Receita identificada</p>
             </div>
           </div>
         </Card>
@@ -345,19 +345,19 @@ export const SubscribersPage: React.FC = () => {
       <Card className="p-4">
         <div className="flex flex-col gap-4 md:flex-row">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-fg-muted-token" />
             <input
               type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+              className="w-full rounded-lg border border-border-token py-2 pl-10 pr-4 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="Buscar por e-mail, nome ou telefone..."
             />
           </div>
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+            className="rounded-lg border border-border-token px-4 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
           >
             <option value="all">Todos os status</option>
             <option value="active">Ativos</option>
@@ -371,10 +371,10 @@ export const SubscribersPage: React.FC = () => {
         {filteredSubscribers.length === 0 ? (
           <div className="p-12 text-center">
             <UserGroupIcon className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-            <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="mb-2 text-lg font-semibold text-fg-token">
               {subscribers.length === 0 ? 'Nenhum cliente na base ainda' : 'Nenhum resultado encontrado'}
             </h3>
-            <p className="mb-4 text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            <p className="mb-4 text-fg-muted-token">
               {subscribers.length === 0
                 ? 'Assim que os pedidos entrarem ou contatos forem importados, eles aparecerão aqui.'
                 : 'Ajuste os filtros ou refine a busca para encontrar o cliente.'}
@@ -389,24 +389,24 @@ export const SubscribersPage: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="border-b bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)]">
+              <thead className="border-b bg-surface-2">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Cliente</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Tags</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Compras</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Ações</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Cliente</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Tags</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Compras</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {filteredSubscribers.map((subscriber) => (
-                  <tr key={subscriber.id} className="hover:bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] dark:hover:bg-zinc-700/60">
+                  <tr key={subscriber.id} className="hover:bg-surface-2 dark:hover:bg-zinc-700/60">
                     <td className="px-4 py-3">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{subscriber.name || subscriber.email}</p>
-                        <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{subscriber.email}</p>
+                        <p className="font-medium text-fg-token">{subscriber.name || subscriber.email}</p>
+                        <p className="text-sm text-fg-muted-token">{subscriber.email}</p>
                         {subscriber.phone && (
-                          <p className="text-sm text-gray-400">{subscriber.phone}</p>
+                          <p className="text-sm text-fg-muted-token">{subscriber.phone}</p>
                         )}
                       </div>
                     </td>
@@ -424,20 +424,20 @@ export const SubscribersPage: React.FC = () => {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {subscriber.tags?.slice(0, 3).map((tag) => (
-                          <span key={tag} className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-[var(--dark-bg-hover,#161616)] dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                          <span key={tag} className="rounded bg-surface-2 px-2 py-0.5 text-xs text-fg-muted-token dark:bg-[var(--dark-bg-hover,#161616)] dark:text-[var(--dark-text-primary,#FAF9F7)]">
                             {tag}
                           </span>
                         ))}
                         {subscriber.tags && subscriber.tags.length > 3 && (
-                          <span className="text-xs text-gray-400">+{subscriber.tags.length - 3}</span>
+                          <span className="text-xs text-fg-muted-token">+{subscriber.tags.length - 3}</span>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="space-y-1">
-                        <span className="block text-gray-900 dark:text-white">{subscriber.total_orders || 0} pedidos</span>
+                        <span className="block text-fg-token">{subscriber.total_orders || 0} pedidos</span>
                         {subscriber.total_spent > 0 && (
-                          <span className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                          <span className="text-sm text-fg-muted-token">
                             R$ {Number(subscriber.total_spent).toFixed(2)}
                           </span>
                         )}
@@ -447,7 +447,7 @@ export const SubscribersPage: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => navigate('/marketing/email/new')}
-                          className="rounded p-1.5 text-gray-400 hover:bg-primary-50 hover:text-primary-600"
+                          className="rounded p-1.5 text-fg-muted-token hover:bg-primary-50 hover:text-primary-600"
                           title="Iniciar campanha de e-mail"
                         >
                           <EnvelopeIcon className="h-5 w-5" />
@@ -455,7 +455,7 @@ export const SubscribersPage: React.FC = () => {
                         {subscriber.status === 'active' && (
                           <button
                             onClick={() => handleUnsubscribe(subscriber)}
-                            className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                            className="rounded p-1.5 text-fg-muted-token hover:bg-red-50 hover:text-red-600"
                             title="Marcar como descadastrado"
                           >
                             <TrashIcon className="h-5 w-5" />
@@ -474,32 +474,32 @@ export const SubscribersPage: React.FC = () => {
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Novo cliente">
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">E-mail *</label>
+            <label className="mb-1 block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">E-mail *</label>
             <input
               type="email"
               value={newSubscriber.email}
               onChange={(event) => setNewSubscriber((prev) => ({ ...prev, email: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+              className="w-full rounded-lg border border-border-token px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="cliente@exemplo.com"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">Nome</label>
+            <label className="mb-1 block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">Nome</label>
             <input
               type="text"
               value={newSubscriber.name}
               onChange={(event) => setNewSubscriber((prev) => ({ ...prev, name: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+              className="w-full rounded-lg border border-border-token px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="Nome do cliente"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">Telefone</label>
+            <label className="mb-1 block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">Telefone</label>
             <input
               type="tel"
               value={newSubscriber.phone}
               onChange={(event) => setNewSubscriber((prev) => ({ ...prev, phone: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+              className="w-full rounded-lg border border-border-token px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="(11) 99999-9999"
             />
           </div>
@@ -516,13 +516,13 @@ export const SubscribersPage: React.FC = () => {
 
       <Modal isOpen={showImportModal} onClose={() => setShowImportModal(false)} title="Importar clientes">
         <div className="space-y-4">
-          <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-            Cole os contatos no formato <code className="rounded bg-gray-100 px-1 dark:bg-[var(--dark-bg-hover,#161616)]">email,nome,telefone</code>, um por linha.
+          <p className="text-sm text-fg-muted-token">
+            Cole os contatos no formato <code className="rounded bg-surface-2 px-1 dark:bg-[var(--dark-bg-hover,#161616)]">email,nome,telefone</code>, um por linha.
           </p>
           <textarea
             value={importText}
             onChange={(event) => setImportText(event.target.value)}
-            className="h-48 w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+            className="h-48 w-full rounded-lg border border-border-token px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
             placeholder={`joao@email.com,João Silva,11999999999\nmaria@email.com,Maria Santos\npedro@email.com`}
           />
           <div className="flex justify-end gap-2 pt-4">

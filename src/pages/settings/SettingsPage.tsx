@@ -36,7 +36,7 @@ const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled = false, la
       disabled={disabled}
       aria-label={label}
     />
-    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] after:border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+    <div className="w-11 h-6 bg-surface-2 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-border-token after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
   </label>
 );
 
@@ -218,20 +218,20 @@ export const SettingsPage: React.FC = () => {
       <Card title="Informações do Usuário">
         <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Usuário</label>
-            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.username}</p>
+            <label className="block text-sm font-medium text-fg-muted-token">Usuário</label>
+            <p className="text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.username}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Email</label>
-            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.email || '-'}</p>
+            <label className="block text-sm font-medium text-fg-muted-token">Email</label>
+            <p className="text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.email || '-'}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Nome</label>
-            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.first_name || '-'} {user?.last_name || ''}</p>
+            <label className="block text-sm font-medium text-fg-muted-token">Nome</label>
+            <p className="text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{user?.first_name || '-'} {user?.last_name || ''}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Tipo de conta</label>
-            <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+            <label className="block text-sm font-medium text-fg-muted-token">Tipo de conta</label>
+            <p className="text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
               {user?.is_superuser || user?.is_staff ? 'Administrador da plataforma' : 'Dono de loja'}
             </p>
           </div>
@@ -286,7 +286,7 @@ export const SettingsPage: React.FC = () => {
         {isLoadingPreferences ? (
           <div className="py-10">
             <Loading size="lg" />
-            <p className="mt-3 text-center text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            <p className="mt-3 text-center text-sm text-fg-muted-token">
               Carregando preferências...
             </p>
           </div>
@@ -300,11 +300,11 @@ export const SettingsPage: React.FC = () => {
               const isSectionEnabled = preferences[section.enabledKey];
 
               return (
-                <div key={section.id} className="rounded-lg border border-gray-100 p-4">
+                <div key={section.id} className="rounded-lg border border-border-token p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{section.title}</p>
-                      <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{section.description}</p>
+                      <p className="text-sm font-semibold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{section.title}</p>
+                      <p className="text-sm text-fg-muted-token">{section.description}</p>
                     </div>
                     <Toggle
                       label={`Ativar ${section.title}`}
@@ -317,8 +317,8 @@ export const SettingsPage: React.FC = () => {
                       {section.options.map((option) => (
                         <div key={String(option.key)} className="flex items-center justify-between gap-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-800 dark:text-[var(--dark-text-primary,#FAF9F7)]">{option.label}</p>
-                            <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{option.description}</p>
+                            <p className="text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{option.label}</p>
+                            <p className="text-xs text-fg-muted-token">{option.description}</p>
                           </div>
                           <Toggle
                             label={`${section.title} - ${option.label}`}

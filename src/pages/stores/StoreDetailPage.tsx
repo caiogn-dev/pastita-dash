@@ -121,7 +121,7 @@ export const StoreDetailPage: React.FC = () => {
   if (!store) {
     return (
       <div className="p-6 text-center">
-        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Loja não encontrada</p>
+        <p className="text-fg-muted-token">Loja não encontrada</p>
         <Button onClick={() => navigate('/stores')} className="mt-4">
           Voltar para Lojas
         </Button>
@@ -135,7 +135,7 @@ export const StoreDetailPage: React.FC = () => {
       <div className="mb-6">
         <button
           onClick={() => navigate('/stores')}
-          className="flex items-center text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] hover:text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4"
+          className="flex items-center text-fg-muted-token hover:text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-2" />
           Voltar para Lojas
@@ -155,13 +155,13 @@ export const StoreDetailPage: React.FC = () => {
               </div>
             )}
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{store.name}</h1>
-              <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{store.slug}</p>
+              <h1 className="text-2xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{store.name}</h1>
+              <p className="text-fg-muted-token">{store.slug}</p>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={store.status === 'active' ? 'success' : 'gray'}>
                   {store.status === 'active' ? 'Ativa' : 'Inativa'}
                 </Badge>
-                <span className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                <span className="text-sm text-fg-muted-token">
                   {store.store_type === 'food' ? '🍕 Alimentação' : store.store_type}
                 </span>
               </div>
@@ -200,32 +200,32 @@ export const StoreDetailPage: React.FC = () => {
       {stats && (
         <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4 mb-6">
           <Card className="p-4">
-            <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Receita Total</p>
+            <p className="text-sm text-fg-muted-token">Receita Total</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
               R$ {stats.revenue.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            <p className="text-xs text-fg-muted-token">
               Hoje: R$ {stats.revenue.today.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Pedidos</p>
+            <p className="text-sm text-fg-muted-token">Pedidos</p>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.orders.total}</p>
-            <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            <p className="text-xs text-fg-muted-token">
               Hoje: {stats.orders.today}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Produtos</p>
+            <p className="text-sm text-fg-muted-token">Produtos</p>
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.products.total}</p>
-            <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            <p className="text-xs text-fg-muted-token">
               Ativos: {stats.products.active}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Clientes</p>
+            <p className="text-sm text-fg-muted-token">Clientes</p>
             <p className="text-2xl font-bold text-orange-600">{stats.customers.total}</p>
-            <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+            <p className="text-xs text-fg-muted-token">
               Total cadastrados
             </p>
           </Card>
@@ -233,7 +233,7 @@ export const StoreDetailPage: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] mb-6">
+      <div className="border-b border-border-token mb-6">
         <nav className="flex gap-4 overflow-x-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -247,7 +247,7 @@ export const StoreDetailPage: React.FC = () => {
                   transition-colors duration-200
                   ${isActive 
                     ? 'border-primary-500 text-primary-600' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                    : 'border-transparent text-fg-muted-token hover:text-fg-token hover:border-border-token'}
                 `}
               >
                 <Icon className="w-5 h-5" />
@@ -267,52 +267,52 @@ export const StoreDetailPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <Link
                 to={`/stores/${storeId}/products`}
-                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
               >
                 <CubeIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                 <div>
                   <p className="font-medium">Produtos</p>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{store.products_count} itens</p>
+                  <p className="text-sm text-fg-muted-token">{store.products_count} itens</p>
                 </div>
               </Link>
               <Link
                 to={`/stores/${storeId}/orders`}
-                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
               >
                 <ShoppingCartIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                 <div>
                   <p className="font-medium">Pedidos</p>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{store.orders_count} pedidos</p>
+                  <p className="text-sm text-fg-muted-token">{store.orders_count} pedidos</p>
                 </div>
               </Link>
               <Link
                 to={`/stores/${storeId}/combos`}
-                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
               >
                 <CubeIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <p className="font-medium">Combos</p>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Kits de produtos</p>
+                  <p className="text-sm text-fg-muted-token">Kits de produtos</p>
                 </div>
               </Link>
               <Link
                 to={`/stores/${storeId}/coupons`}
-                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
               >
                 <TagIcon className="w-8 h-8 text-green-600 dark:text-green-400" />
                 <div>
                   <p className="font-medium">Cupons</p>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Gerenciar descontos</p>
+                  <p className="text-sm text-fg-muted-token">Gerenciar descontos</p>
                 </div>
               </Link>
               <Link
                 to={`/stores/${storeId}/delivery`}
-                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
               >
                 <TruckIcon className="w-8 h-8 text-orange-600" />
                 <div>
                   <p className="font-medium">Entrega</p>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Zonas e taxas</p>
+                  <p className="text-sm text-fg-muted-token">Zonas e taxas</p>
                 </div>
               </Link>
             </div>
@@ -324,25 +324,25 @@ export const StoreDetailPage: React.FC = () => {
             <div className="space-y-3">
               {store.email && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Email</p>
+                  <p className="text-sm text-fg-muted-token">Email</p>
                   <p className="font-medium">{store.email}</p>
                 </div>
               )}
               {store.phone && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Telefone</p>
+                  <p className="text-sm text-fg-muted-token">Telefone</p>
                   <p className="font-medium">{store.phone}</p>
                 </div>
               )}
               {store.whatsapp_number && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">WhatsApp</p>
+                  <p className="text-sm text-fg-muted-token">WhatsApp</p>
                   <p className="font-medium">{store.whatsapp_number}</p>
                 </div>
               )}
               {store.address && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Endereço</p>
+                  <p className="text-sm text-fg-muted-token">Endereço</p>
                   <p className="font-medium">
                     {store.address}
                     {store.city && `, ${store.city}`}
@@ -351,12 +351,12 @@ export const StoreDetailPage: React.FC = () => {
                 </div>
               )}
               <div className="pt-3 border-t">
-                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Configurações de Entrega</p>
+                <p className="text-sm text-fg-muted-token">Configurações de Entrega</p>
                 <div className="flex gap-4 mt-1">
-                  <span className={`text-sm ${store.delivery_enabled ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span className={`text-sm ${store.delivery_enabled ? 'text-green-600' : 'text-fg-muted-token'}`}>
                     {store.delivery_enabled ? '✓ Delivery' : '✗ Delivery'}
                   </span>
-                  <span className={`text-sm ${store.pickup_enabled ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span className={`text-sm ${store.pickup_enabled ? 'text-green-600' : 'text-fg-muted-token'}`}>
                     {store.pickup_enabled ? '✓ Retirada' : '✗ Retirada'}
                   </span>
                 </div>
@@ -373,7 +373,7 @@ export const StoreDetailPage: React.FC = () => {
         title="Editar Loja"
         size="lg"
       >
-        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+        <p className="text-fg-muted-token">
           Funcionalidade de edição em desenvolvimento.
           Por enquanto, use o Django Admin para editar os dados da loja.
         </p>

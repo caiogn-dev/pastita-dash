@@ -71,7 +71,7 @@ const PaymentStatusBadge: React.FC<{ status: string }> = ({ status }) => {
     processing: { bg: 'bg-purple-100 dark:bg-purple-900/40 dark:bg-purple-900/40', text: 'text-purple-800 dark:text-purple-300', icon: <ArrowPathIcon className="w-4 h-4 animate-spin" /> },
     paid: { bg: 'bg-green-100 dark:bg-green-900/40 dark:bg-green-900/40', text: 'text-green-800 dark:text-green-300', icon: <CheckCircleIcon className="w-4 h-4" /> },
     failed: { bg: 'bg-red-100 dark:bg-red-900/40 dark:bg-red-900/40', text: 'text-red-800 dark:text-red-300', icon: <XCircleIcon className="w-4 h-4" /> },
-    refunded: { bg: 'bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-hover,#161616)]', text: 'text-gray-800 dark:text-gray-200 dark:text-[var(--dark-text-primary,#FAF9F7)]', icon: <ArrowPathIcon className="w-4 h-4" /> },
+    refunded: { bg: 'bg-surface-2 dark:bg-[var(--dark-bg-hover,#161616)]', text: 'text-fg-token dark:text-gray-200 dark:text-[var(--dark-text-primary,#FAF9F7)]', icon: <ArrowPathIcon className="w-4 h-4" /> },
     partially_refunded: { bg: 'bg-orange-100 dark:bg-orange-900/40 dark:bg-orange-900/40', text: 'text-orange-800 dark:text-orange-300', icon: <ArrowPathIcon className="w-4 h-4" /> },
   };
   
@@ -194,8 +194,8 @@ export const PaymentsPage: React.FC = () => {
       header: 'Pedido',
       render: (order: Order) => (
         <div>
-          <span className="font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">#{order.order_number}</span>
-          <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{order.customer_name}</p>
+          <span className="font-semibold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">#{order.order_number}</span>
+          <p className="text-xs text-fg-muted-token">{order.customer_name}</p>
         </div>
       ),
     },
@@ -203,7 +203,7 @@ export const PaymentsPage: React.FC = () => {
       key: 'total',
       header: 'Valor',
       render: (order: Order) => (
-        <span className="font-semibold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(order.total)}</span>
+        <span className="font-semibold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(order.total)}</span>
       ),
     },
     {
@@ -213,7 +213,7 @@ export const PaymentsPage: React.FC = () => {
         const method = order.payment_method || 'pix';
         const methodInfo = PAYMENT_METHOD_LABELS[method] || { label: method, icon: <CurrencyDollarIcon className="w-4 h-4" /> };
         return (
-          <span className="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+          <span className="inline-flex items-center gap-1.5 text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
             {methodInfo.icon}
             {methodInfo.label}
           </span>
@@ -268,7 +268,7 @@ export const PaymentsPage: React.FC = () => {
                   if (ok) toast.success('Link copiado! Envie para o cliente.');
                   else toast.error('Não foi possível copiar. Copie manualmente.');
                 }}
-                className="p-1.5 text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] hover:text-gray-700 dark:hover:text-zinc-300 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-hover,#161616)] rounded"
+                className="p-1.5 text-fg-muted-token hover:text-fg-token dark:hover:text-zinc-300 dark:hover:text-zinc-300 hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-hover,#161616)] rounded"
                 title="Copiar link"
               >
                 <ClipboardIcon className="w-4 h-4" />
@@ -279,11 +279,11 @@ export const PaymentsPage: React.FC = () => {
         
         // If payment method is cash, no link needed
         if (payment_method === 'cash') {
-          return <span className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">💵 Dinheiro</span>;
+          return <span className="text-sm text-fg-muted-token">💵 Dinheiro</span>;
         }
         
         // No payment info yet
-        return <span className="text-sm text-gray-400">-</span>;
+        return <span className="text-sm text-fg-muted-token">-</span>;
       },
     },
     {
@@ -291,8 +291,8 @@ export const PaymentsPage: React.FC = () => {
       header: 'Data',
       render: (order: Order) => (
         <div className="text-sm">
-          <p className="text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">{format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}</p>
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{format(new Date(order.created_at), "HH:mm", { locale: ptBR })}</p>
+          <p className="text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}</p>
+          <p className="text-fg-muted-token">{format(new Date(order.created_at), "HH:mm", { locale: ptBR })}</p>
         </div>
       ),
     },
@@ -389,9 +389,9 @@ export const PaymentsPage: React.FC = () => {
                 <CurrencyDollarIcon className="w-6 h-6 text-green-600 dark:text-green-400 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">Receita Hoje</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(stats.todayRevenue)}</p>
-                <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">{stats.todayCount} pedido(s)</p>
+                <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Receita Hoje</p>
+                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(stats.todayRevenue)}</p>
+                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{stats.todayCount} pedido(s)</p>
               </div>
             </div>
           </Card>
@@ -402,9 +402,9 @@ export const PaymentsPage: React.FC = () => {
                 <CheckCircleIcon className="w-6 h-6 text-blue-600 dark:text-blue-400 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total Recebido</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(stats.totalRevenue)}</p>
-                <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">{stats.paidCount} pago(s)</p>
+                <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total Recebido</p>
+                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(stats.totalRevenue)}</p>
+                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{stats.paidCount} pago(s)</p>
               </div>
             </div>
           </Card>
@@ -415,9 +415,9 @@ export const PaymentsPage: React.FC = () => {
                 <ClockIcon className="w-6 h-6 text-amber-600 dark:text-amber-400 dark:text-amber-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">Aguardando</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.pendingCount}</p>
-                <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">{formatMoney(stats.pendingRevenue)} a receber</p>
+                <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Aguardando</p>
+                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.pendingCount}</p>
+                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{formatMoney(stats.pendingRevenue)} a receber</p>
               </div>
             </div>
           </Card>
@@ -428,9 +428,9 @@ export const PaymentsPage: React.FC = () => {
                 <BanknotesIcon className="w-6 h-6 text-purple-600 dark:text-purple-400 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total Pedidos</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.total}</p>
-                <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] dark:text-[var(--dark-text-secondary,#a1a1aa)]">todos os tempos</p>
+                <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total Pedidos</p>
+                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.total}</p>
+                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">todos os tempos</p>
               </div>
             </div>
           </Card>

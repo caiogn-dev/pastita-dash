@@ -437,7 +437,7 @@ const EtiquetasPage: React.FC = () => {
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-1.5">Pré-visualização (tamanho real do papel)</p>
             <div
-              className="rounded border border-black/15 dark:border-white/15 overflow-hidden bg-white"
+              className="rounded border border-black/15 dark:border-white/15 overflow-hidden bg-surface"
               style={{ width: preview.w * previewScale + 2, height: preview.h * previewScale + 2 }}
             >
               <iframe

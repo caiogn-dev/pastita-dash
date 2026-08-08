@@ -115,15 +115,15 @@ const AutomationLogsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">Logs de Automação</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+          <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">Logs de Automação</h1>
+          <p className="mt-1 text-sm text-fg-muted-token">
             Histórico de todas as ações de automação
           </p>
         </div>
         <div className="flex space-x-2">
           <button
             onClick={loadStats}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
+            className="inline-flex items-center px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
           >
             <ChartBarIcon className="h-5 w-5 mr-2" />
             Estatísticas
@@ -133,7 +133,7 @@ const AutomationLogsPage: React.FC = () => {
             className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
               showFilters
                 ? 'border-green-500 text-green-700 bg-green-50'
-                : 'border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
+                : 'border-border-token text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
             }`}
           >
             <FunnelIcon className="h-5 w-5 mr-2" />
@@ -143,7 +143,7 @@ const AutomationLogsPage: React.FC = () => {
             type="button"
             aria-label="Atualizar logs"
             onClick={loadLogs}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
+            className="inline-flex items-center px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
           >
             <ArrowPathIcon className="h-5 w-5" />
           </button>
@@ -152,17 +152,17 @@ const AutomationLogsPage: React.FC = () => {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] shadow rounded-lg p-4">
+        <div className="bg-surface shadow rounded-lg p-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Empresa</label>
+              <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Empresa</label>
               <select
                 value={filters.company_id}
                 onChange={(e) => {
                   setFilters({ ...filters, company_id: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
               >
                 <option value="">Todas</option>
                 {companies.map((company) => (
@@ -173,14 +173,14 @@ const AutomationLogsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Tipo de Ação</label>
+              <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Tipo de Ação</label>
               <select
                 value={filters.action_type}
                 onChange={(e) => {
                   setFilters({ ...filters, action_type: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
               >
                 <option value="">Todos</option>
                 {Object.entries(actionTypeLabels).map(([value, label]) => (
@@ -189,14 +189,14 @@ const AutomationLogsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Status</label>
+              <label className="block text-sm font-medium text-fg-token">Status</label>
               <select
                 value={filters.is_error}
                 onChange={(e) => {
                   setFilters({ ...filters, is_error: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
               >
                 <option value="">Todos</option>
                 <option value="false">Sucesso</option>
@@ -204,7 +204,7 @@ const AutomationLogsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Telefone</label>
+              <label className="block text-sm font-medium text-fg-token">Telefone</label>
               <input
                 type="text"
                 value={filters.phone_number}
@@ -213,7 +213,7 @@ const AutomationLogsPage: React.FC = () => {
                   setPage(1);
                 }}
                 placeholder="Buscar por telefone"
-                className="mt-1 block w-full rounded-md border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
               />
             </div>
             <div className="flex items-end">
@@ -222,7 +222,7 @@ const AutomationLogsPage: React.FC = () => {
                   setFilters({ company_id: '', action_type: '', is_error: '', phone_number: '' });
                   setPage(1);
                 }}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:text-white"
+                className="px-4 py-2 text-sm text-fg-muted-token hover:text-fg-token"
               >
                 Limpar filtros
               </button>
@@ -232,68 +232,68 @@ const AutomationLogsPage: React.FC = () => {
       )}
 
       {/* Logs Table */}
-      <div className="bg-white dark:bg-zinc-900 shadow rounded-lg overflow-hidden">
+      <div className="bg-surface dark:bg-zinc-900 shadow rounded-lg overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <LoadingSpinner size="lg" />
           </div>
         ) : logs.length === 0 ? (
           <div className="text-center py-12">
-            <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum log encontrado</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+            <DocumentTextIcon className="mx-auto h-12 w-12 text-fg-muted-token" />
+            <h3 className="mt-2 text-sm font-medium text-fg-token">Nenhum log encontrado</h3>
+            <p className="mt-1 text-sm text-fg-muted-token">
               Os logs aparecerão aqui conforme as automações são executadas.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 dark:bg-black">
+              <thead className="bg-surface-2 dark:bg-black">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                     Data/Hora
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                     Empresa
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                     Ação
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                     Telefone
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                     Descrição
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200">
+              <tbody className="bg-surface dark:bg-zinc-900 divide-y divide-gray-200">
                 {logs.map((log) => (
                   <tr
                     key={log.id}
-                    className="hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black cursor-pointer"
+                    className="hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black cursor-pointer"
                     onClick={() => setSelectedLog(log)}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
                       {formatDate(log.created_at)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-token">
                       {log.company_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        actionTypeColors[log.action_type || ''] || 'bg-gray-100 text-gray-800'
+                        actionTypeColors[log.action_type || ''] || 'bg-surface-2 text-fg-token'
                       }`}>
                         {actionTypeLabels[log.action_type || ''] || log.action_type || '-'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
                       {log.phone_number || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-zinc-400 max-w-xs truncate">
+                    <td className="px-6 py-4 text-sm text-fg-muted-token max-w-xs truncate">
                       {log.description}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -312,26 +312,26 @@ const AutomationLogsPage: React.FC = () => {
 
         {/* Pagination */}
         {totalCount > 50 && (
-          <div className="bg-white dark:bg-zinc-900 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-zinc-800 sm:px-6">
+          <div className="bg-surface dark:bg-zinc-900 px-4 py-3 flex items-center justify-between border-t border-border-token dark:border-zinc-800 sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 text-sm font-medium rounded-md text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
+                className="relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
               >
                 Anterior
               </button>
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={page * 50 >= totalCount}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 text-sm font-medium rounded-md text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
               >
                 Próximo
               </button>
             </div>
             <div className="flex max-sm:hidden-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-gray-700 dark:text-zinc-300">
+                <p className="text-sm text-fg-token">
                   Mostrando <span className="font-medium">{(page - 1) * 50 + 1}</span> a{' '}
                   <span className="font-medium">{Math.min(page * 50, totalCount)}</span> de{' '}
                   <span className="font-medium">{totalCount}</span> resultados
@@ -341,14 +341,14 @@ const AutomationLogsPage: React.FC = () => {
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 text-sm font-medium rounded-md text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
+                  className="relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
                 >
                   Anterior
                 </button>
                 <button
                   onClick={() => setPage(p => p + 1)}
                   disabled={page * 50 >= totalCount}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-zinc-700 text-sm font-medium rounded-md text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
+                  className="relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
                 >
                   Próximo
                 </button>
@@ -363,14 +363,14 @@ const AutomationLogsPage: React.FC = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
             <div className="fixed inset-0 bg-gray-500/75 dark:bg-black/75" onClick={() => setSelectedLog(null)} />
-            <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
+            <div className="relative bg-surface dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="px-6 py-4 border-b border-border-token dark:border-zinc-800">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  <h3 className="text-lg font-medium text-fg-token">
                     Detalhes do Log
                   </h3>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    actionTypeColors[selectedLog.action_type || ''] || 'bg-gray-100 text-gray-800'
+                    actionTypeColors[selectedLog.action_type || ''] || 'bg-surface-2 text-fg-token'
                   }`}>
                     {actionTypeLabels[selectedLog.action_type || ''] || selectedLog.action_type || '-'}
                   </span>
@@ -379,26 +379,26 @@ const AutomationLogsPage: React.FC = () => {
               <div className="px-6 py-4 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Data/Hora</label>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{formatDate(selectedLog.created_at)}</p>
+                    <label className="block text-sm font-medium text-fg-muted-token">Data/Hora</label>
+                    <p className="mt-1 text-sm text-fg-token">{formatDate(selectedLog.created_at)}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Empresa</label>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedLog.company_name}</p>
+                    <label className="block text-sm font-medium text-fg-muted-token">Empresa</label>
+                    <p className="mt-1 text-sm text-fg-token">{selectedLog.company_name}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Telefone</label>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedLog.phone_number || '-'}</p>
+                    <label className="block text-sm font-medium text-fg-muted-token">Telefone</label>
+                    <p className="mt-1 text-sm text-fg-token">{selectedLog.phone_number || '-'}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Tipo de Evento</label>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedLog.event_type || '-'}</p>
+                    <label className="block text-sm font-medium text-fg-muted-token">Tipo de Evento</label>
+                    <p className="mt-1 text-sm text-fg-token">{selectedLog.event_type || '-'}</p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400">Descrição</label>
-                  <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedLog.description}</p>
+                  <label className="block text-sm font-medium text-fg-muted-token">Descrição</label>
+                  <p className="mt-1 text-sm text-fg-token">{selectedLog.description}</p>
                 </div>
 
                 {selectedLog.is_error && selectedLog.error_message && (
@@ -410,8 +410,8 @@ const AutomationLogsPage: React.FC = () => {
 
                 {selectedLog.request_data && Object.keys(selectedLog.request_data || {}).length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Dados da Requisição</label>
-                    <pre className="bg-gray-50 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
+                    <label className="block text-sm font-medium text-fg-muted-token mb-2">Dados da Requisição</label>
+                    <pre className="bg-surface-2 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
                       {JSON.stringify(selectedLog.request_data, null, 2)}
                     </pre>
                   </div>
@@ -419,17 +419,17 @@ const AutomationLogsPage: React.FC = () => {
 
                 {selectedLog.response_data && Object.keys(selectedLog.response_data || {}).length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Dados da Resposta</label>
-                    <pre className="bg-gray-50 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
+                    <label className="block text-sm font-medium text-fg-muted-token mb-2">Dados da Resposta</label>
+                    <pre className="bg-surface-2 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
                       {JSON.stringify(selectedLog.response_data, null, 2)}
                     </pre>
                   </div>
                 )}
               </div>
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end">
+              <div className="px-6 py-4 border-t border-border-token dark:border-zinc-800 flex justify-end">
                 <button
                   onClick={() => setSelectedLog(null)}
-                  className="px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
+                  className="px-4 py-2 border border-border-token dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black"
                 >
                   Fechar
                 </button>
@@ -444,45 +444,45 @@ const AutomationLogsPage: React.FC = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
             <div className="fixed inset-0 bg-gray-500/75 dark:bg-black/75" onClick={() => setShowStats(false)} />
-            <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-lg w-full">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            <div className="relative bg-surface dark:bg-zinc-900 rounded-lg shadow-xl max-w-lg w-full">
+              <div className="px-6 py-4 border-b border-border-token dark:border-zinc-800">
+                <h3 className="text-lg font-medium text-fg-token">
                   Estatísticas de Automação
                 </h3>
               </div>
               <div className="px-6 py-4 space-y-6">
                 {/* Summary */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-50 dark:bg-black rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-                    <p className="text-sm text-gray-500 dark:text-zinc-400">Total de Logs</p>
+                  <div className="bg-surface-2 dark:bg-black rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-fg-token">{stats.total}</p>
+                    <p className="text-sm text-fg-muted-token">Total de Logs</p>
                   </div>
-                  <div className="bg-gray-50 dark:bg-black rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.today}</p>
-                    <p className="text-sm text-gray-500 dark:text-zinc-400">Hoje</p>
+                  <div className="bg-surface-2 dark:bg-black rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-fg-token">{stats.today}</p>
+                    <p className="text-sm text-fg-muted-token">Hoje</p>
                   </div>
-                  <div className="bg-gray-50 dark:bg-black rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.this_week}</p>
-                    <p className="text-sm text-gray-500 dark:text-zinc-400">Esta Semana</p>
+                  <div className="bg-surface-2 dark:bg-black rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-fg-token">{stats.this_week}</p>
+                    <p className="text-sm text-fg-muted-token">Esta Semana</p>
                   </div>
                   <div className="bg-red-50 rounded-lg p-4 text-center">
                     <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.error_rate}%</p>
-                    <p className="text-sm text-gray-500 dark:text-zinc-400">Taxa de Erro</p>
+                    <p className="text-sm text-fg-muted-token">Taxa de Erro</p>
                   </div>
                 </div>
 
                 {/* By Action Type */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Por Tipo de Ação</h4>
+                  <h4 className="text-sm font-medium text-fg-token mb-3">Por Tipo de Ação</h4>
                   <div className="space-y-2">
                     {stats.by_action_type?.map((item) => (
                       <div key={item.action_type} className="flex items-center justify-between">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          actionTypeColors[item.action_type] || 'bg-gray-100 text-gray-800'
+                          actionTypeColors[item.action_type] || 'bg-surface-2 text-fg-token'
                         }`}>
                           {actionTypeLabels[item.action_type] || item.action_type}
                         </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{item.count}</span>
+                        <span className="text-sm font-medium text-fg-token">{item.count}</span>
                       </div>
                     ))}
                   </div>
@@ -490,27 +490,27 @@ const AutomationLogsPage: React.FC = () => {
 
                 {/* By Day */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Últimos 7 Dias</h4>
+                  <h4 className="text-sm font-medium text-fg-token mb-3">Últimos 7 Dias</h4>
                   <div className="space-y-2">
                     {stats.by_day?.map((item) => (
                       <div key={item.date} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500 dark:text-zinc-400">{item.date}</span>
+                        <span className="text-sm text-fg-muted-token">{item.date}</span>
                         <div className="flex items-center">
                           <div
                             className="h-2 bg-green-500 rounded"
                             style={{ width: `${Math.max(4, (item.count / Math.max(...(stats.by_day?.map(d => d.count) || [1]))) * 100)}px` }}
                           />
-                          <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">{item.count}</span>
+                          <span className="ml-2 text-sm font-medium text-fg-token">{item.count}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end">
+              <div className="px-6 py-4 border-t border-border-token dark:border-zinc-800 flex justify-end">
                 <button
                   onClick={() => setShowStats(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-black"
+                  className="px-4 py-2 border border-border-token dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black"
                 >
                   Fechar
                 </button>

@@ -191,13 +191,13 @@ const WhatsAppTemplatesPage: React.FC = () => {
 
               {/* WhatsApp Preview */}
               <div className="p-4 bg-[#e5ddd5] min-h-[300px]">
-                <div className="bg-white rounded-lg rounded-tl-none shadow-sm p-3 max-w-[90%] relative">
+                <div className="bg-surface rounded-lg rounded-tl-none shadow-sm p-3 max-w-[90%] relative">
                   <div className="absolute -left-2 top-0 w-0 h-0 border-t-[10px] border-t-transparent border-r-[10px] border-r-white border-b-[10px] border-b-transparent"></div>
-                  <pre className="text-sm text-gray-800 whitespace-pre-wrap font-sans">
+                  <pre className="text-sm text-fg-token whitespace-pre-wrap font-sans">
                     {getPreviewContent()}
                   </pre>
                   <div className="text-right mt-1">
-                    <span className="text-xs text-gray-400">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="text-xs text-fg-muted-token">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
               </div>

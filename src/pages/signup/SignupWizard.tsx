@@ -227,7 +227,7 @@ export const SignupWizard: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--canvas)' }}>
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8">
+      <div className="w-full max-w-lg bg-surface rounded-2xl shadow-xl p-8">
         <div className="flex flex-col items-center mb-6">
           <img src="/brand/logo.png" alt="Cardapidex" className="h-12 mb-1" />
           <p className="text-sm" style={{ color: BRAND_2 }}>
@@ -239,7 +239,7 @@ export const SignupWizard: React.FC = () => {
 
         {step === 1 && (
           <form onSubmit={submitStep1} className="space-y-4" noValidate>
-            <h2 className="text-lg font-semibold text-gray-900">Sua conta e sua loja</h2>
+            <h2 className="text-lg font-semibold text-fg-token">Sua conta e sua loja</h2>
             <Input
               ref={nameRef}
               label="Seu nome *"
@@ -318,7 +318,7 @@ export const SignupWizard: React.FC = () => {
             <Button type="submit" disabled={loading} className="w-full" style={{ background: BRAND }}>
               {loading ? 'Criando...' : 'Criar minha loja'}
             </Button>
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-fg-muted-token">
               Já tem conta?{' '}
               <button
                 type="button"
@@ -335,11 +335,11 @@ export const SignupWizard: React.FC = () => {
 
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">A cara da sua loja</h2>
-            <p className="text-sm text-gray-500">Você pode mudar tudo isso depois no painel.</p>
+            <h2 className="text-lg font-semibold text-fg-token">A cara da sua loja</h2>
+            <p className="text-sm text-fg-muted-token">Você pode mudar tudo isso depois no painel.</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="signup-primary-color" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="signup-primary-color" className="block text-sm font-medium text-fg-token mb-1">
                   Cor primária
                 </label>
                 <input
@@ -347,12 +347,12 @@ export const SignupWizard: React.FC = () => {
                   type="color"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="w-full h-10 rounded-md border border-gray-300"
+                  className="w-full h-10 rounded-md border border-border-token"
                   disabled={loading}
                 />
               </div>
               <div>
-                <label htmlFor="signup-secondary-color" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="signup-secondary-color" className="block text-sm font-medium text-fg-token mb-1">
                   Cor secundária
                 </label>
                 <input
@@ -360,7 +360,7 @@ export const SignupWizard: React.FC = () => {
                   type="color"
                   value={secondaryColor}
                   onChange={(e) => setSecondaryColor(e.target.value)}
-                  className="w-full h-10 rounded-md border border-gray-300"
+                  className="w-full h-10 rounded-md border border-border-token"
                   disabled={loading}
                 />
               </div>
@@ -380,14 +380,14 @@ export const SignupWizard: React.FC = () => {
               disabled={loading}
             />
             <div>
-              <label htmlFor="signup-template" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="signup-template" className="block text-sm font-medium text-fg-token mb-1">
                 Template
               </label>
               <select
                 id="signup-template"
                 value={template}
                 onChange={(e) => setTemplate(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border-token px-3 py-2 text-sm"
                 disabled={loading}
               >
                 {TEMPLATES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -407,8 +407,8 @@ export const SignupWizard: React.FC = () => {
         {step === 3 && (
           <div className="text-center space-y-4 py-4">
             <div className="text-5xl">🎉</div>
-            <h2 className="text-xl font-bold text-gray-900">Sua loja está no ar!</h2>
-            <p className="text-gray-600">
+            <h2 className="text-xl font-bold text-fg-token">Sua loja está no ar!</h2>
+            <p className="text-fg-muted-token">
               Você tem <strong style={{ color: BRAND }}>{trialDays} dias grátis</strong>. Agora cadastre seu
               cardápio, configure entrega e conecte o WhatsApp pelo painel.
             </p>

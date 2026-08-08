@@ -117,7 +117,7 @@ export const AccountsPage: React.FC = () => {
           {isLoading ? (
             <div className="p-4 flex flex-col gap-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-14 animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                <div key={i} className="h-14 animate-pulse bg-surface-2 dark:bg-gray-700 rounded-lg" />
               ))}
             </div>
           ) : accounts.length === 0 ? (

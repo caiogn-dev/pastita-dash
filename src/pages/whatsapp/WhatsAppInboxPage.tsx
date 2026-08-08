@@ -529,7 +529,7 @@ const WhatsAppInboxPage: React.FC = () => {
             </span>
           </div>
           <div className="search-box">
-            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
+            <MagnifyingGlassIcon className="w-5 h-5 text-fg-muted-token" />
             <input
               type="text"
               placeholder="Buscar conversa..."

@@ -17,7 +17,8 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading } from '../../../components/common';
-import { PageShell, EmptyState } from '../../../components/ui';
+import { PageShell, EmptyState, KpiGrid, InsightList, Modal } from '../../../components/ui';
+import { resumoDeCampanha, insightsDeCampanhas, type TomDeMetrica } from './resumoDeCampanha';
 import { useConfirm } from '../../../hooks';
 import { campaignsService, Campaign } from '../../../services/campaigns';
 import logger from '../../../services/logger';
@@ -174,55 +175,78 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   };
 
   // =============================================================================
+  // DERIVADOS
+  // =============================================================================
+
+  const insights = React.useMemo(() => insightsDeCampanhas(campaigns), [campaigns]);
+
+  const totalEnviadas = campaigns.reduce((a, c) => a + (c.messages_sent ?? 0), 0);
+  const totalEntregues = campaigns.reduce((a, c) => a + (c.messages_delivered ?? 0), 0);
+  const totalLidas = campaigns.reduce((a, c) => a + (c.messages_read ?? 0), 0);
+  const totalFalhas = campaigns.reduce((a, c) => a + (c.messages_failed ?? 0), 0);
+  // `null` sem envio: "0%" acusaria um canal ruim que nem foi usado.
+  const leituraMedia = totalEnviadas > 0 ? Math.round((totalLidas / totalEnviadas) * 100) : null;
+
+  // =============================================================================
   // HELPERS
   // =============================================================================
 
+  // Estados em tokens do tema. Antes eram `bg-surface-2 text-fg-token` fixos:
+  // no modo escuro o cinza claro brigava com o fundo, e a página parecia de
+  // outro sistema depois que o resto migrou para os tokens.
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { className: string; label: string; icon: React.ReactNode }> = {
-      draft: { 
-        className: 'bg-gray-100 text-gray-700 dark:bg-[var(--dark-bg-hover,#161616)] dark:text-zinc-300', 
-        label: 'Rascunho', 
-        icon: null 
+      draft: {
+        className: 'bg-surface-2 text-fg-muted-token',
+        label: 'Rascunho',
+        icon: null,
       },
-      scheduled: { 
-        className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300', 
-        label: 'Agendada', 
-        icon: <ClockIcon className="w-3 h-3" /> 
+      scheduled: {
+        className: 'bg-surface-2 text-fg-token',
+        label: 'Agendada',
+        icon: <ClockIcon className="w-3 h-3" />,
       },
-      running: { 
-        className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300', 
-        label: 'Enviando', 
-        icon: <ArrowPathIcon className="w-3 h-3 animate-spin" /> 
+      running: {
+        className: 'bg-brand-soft text-brand-ink',
+        label: 'Enviando',
+        icon: <ArrowPathIcon className="w-3 h-3 animate-spin" />,
       },
-      paused: { 
-        className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300', 
-        label: 'Pausada', 
-        icon: <PauseIcon className="w-3 h-3" /> 
+      paused: {
+        className: 'bg-surface-2 text-fg-token',
+        label: 'Pausada',
+        icon: <PauseIcon className="w-3 h-3" />,
       },
-      completed: { 
-        className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', 
-        label: 'Concluída', 
-        icon: <CheckCircleIcon className="w-3 h-3" /> 
+      completed: {
+        className: 'bg-[color-mix(in_srgb,var(--success)_14%,transparent)] text-[var(--success)]',
+        label: 'Concluída',
+        icon: <CheckCircleIcon className="w-3 h-3" />,
       },
-      cancelled: { 
-        className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300', 
-        label: 'Cancelada', 
-        icon: <XCircleIcon className="w-3 h-3" /> 
+      cancelled: {
+        className: 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] text-[var(--danger)]',
+        label: 'Cancelada',
+        icon: <XCircleIcon className="w-3 h-3" />,
       },
     };
 
-    const config = statusConfig[status] || { 
-      className: 'bg-gray-100 text-gray-700 dark:bg-[var(--dark-bg-hover,#161616)] dark:text-zinc-300', 
-      label: status, 
-      icon: null 
+    const config = statusConfig[status] || {
+      className: 'bg-surface-2 text-fg-muted-token',
+      label: status,
+      icon: null,
     };
 
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-pill text-xs font-semibold ${config.className}`}>
         {config.icon}
         {config.label}
       </span>
     );
+  };
+
+  /** Cor do número na linha. O rótulo já diz o que é; a cor só apressa a leitura. */
+  const TOM_METRICA: Record<TomDeMetrica, string> = {
+    neutro: 'text-fg-token',
+    bom: 'text-[var(--success)]',
+    perigo: 'text-[var(--danger)]',
   };
 
   // =============================================================================
@@ -245,6 +269,45 @@ export const WhatsAppCampaignsPage: React.FC = () => {
         </Button>
       }
     >
+
+      {/* Duas campanhas com "Concluída" não dizem se o canal está funcionando.
+          O agregado diz — e o insight diz o que fazer a respeito. */}
+      {campaigns.length > 0 && (
+        <div className="space-y-5 mb-5">
+          <KpiGrid
+            itens={[
+              {
+                label: 'Campanhas',
+                value: campaigns.length,
+                definicao: 'todas já criadas nesta conta, em qualquer estado',
+              },
+              {
+                label: 'Pessoas alcançadas',
+                value: totalEntregues,
+                definicao: 'mensagens confirmadas no aparelho, somando as campanhas',
+              },
+              {
+                label: 'Leitura média',
+                value: leituraMedia === null ? '—' : `${leituraMedia}%`,
+                tone: 'brand',
+                definicao: 'lidas ÷ enviadas no total — abaixo de 50% o texto pede revisão',
+              },
+              {
+                label: 'Falhas',
+                value: totalFalhas,
+                definicao: 'não chegaram: número inválido ou fora da janela de 24h',
+              },
+            ]}
+          />
+          {insights.length > 0 && (
+            <InsightList
+              titulo="O que fazer com isso"
+              tom={insights.some((i) => i.direcao === 'baixa') ? 'alerta' : 'neutro'}
+              itens={insights}
+            />
+          )}
+        </div>
+      )}
 
       {/* Campaigns List */}
       {campaigns.length === 0 ? (
@@ -282,44 +345,35 @@ export const WhatsAppCampaignsPage: React.FC = () => {
         />
       ) : (
         <div className="space-y-4">
-          {campaigns.map((campaign) => (
-            <Card key={campaign.id} className="p-4">
-              <div className="flex items-center justify-between">
+          {campaigns.map((campaign) => {
+            const r = resumoDeCampanha(campaign);
+            return (
+            <Card key={campaign.id} className="p-5">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="font-semibold text-fg-token truncate">
                       {campaign.name}
                     </h3>
                     {getStatusBadge(campaign.status)}
                   </div>
-                  
-                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-                    <span>{campaign.total_recipients} destinatários</span>
-                    <span>•</span>
-                    <span>{campaign.messages_sent} enviadas</span>
-                    {campaign.messages_delivered > 0 && (
-                      <>
-                        <span>•</span>
-                        <span>{campaign.messages_delivered} entregues</span>
-                      </>
+
+                  <p className="text-sm text-fg-muted-token">
+                    {r.publico}
+                    {campaign.started_at && (
+                      <> · enviada em {new Date(campaign.started_at).toLocaleDateString('pt-BR')}</>
                     )}
-                    {campaign.messages_failed > 0 && (
-                      <>
-                        <span>•</span>
-                        <span className="text-red-500">{campaign.messages_failed} falhas</span>
-                      </>
-                    )}
-                  </div>
+                  </p>
 
                   {campaign.scheduled_at && campaign.status === 'scheduled' && (
-                    <p className="text-sm text-blue-600 mt-1">
+                    <p className="text-sm text-brand-ink mt-1">
                       <ClockIcon className="w-4 h-4 inline mr-1" />
                       Agendada para {new Date(campaign.scheduled_at).toLocaleString('pt-BR')}
                     </p>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {/* Action Buttons based on status */}
                   {campaign.status === 'draft' && (
                     <Button
@@ -340,7 +394,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
                         disabled={actionLoading === campaign.id}
                       >
                         <PlayIcon className="w-4 h-4 mr-1" />
-                        Iniciar Agora
+                        Iniciar agora
                       </Button>
                       <Button
                         size="sm"
@@ -348,7 +402,8 @@ export const WhatsAppCampaignsPage: React.FC = () => {
                         onClick={() => handleCancelCampaign(campaign)}
                         disabled={actionLoading === campaign.id}
                       >
-                        <StopIcon className="w-4 h-4" />
+                        <StopIcon className="w-4 h-4 mr-1" />
+                        Cancelar
                       </Button>
                     </>
                   )}
@@ -392,126 +447,161 @@ export const WhatsAppCampaignsPage: React.FC = () => {
                         onClick={() => handleCancelCampaign(campaign)}
                         disabled={actionLoading === campaign.id}
                       >
-                        <StopIcon className="w-4 h-4" />
+                        <StopIcon className="w-4 h-4 mr-1" />
+                        Cancelar
                       </Button>
                     </>
                   )}
 
+                  {/* Era um botão só com o ícone de gráfico. Ícone sozinho não
+                      se descobre: quem não clicou nunca não sabe que existe
+                      relatório. O rótulo custa 60px e resolve. */}
                   <Button
                     size="sm"
                     variant="secondary"
                     onClick={() => handleViewStats(campaign)}
                   >
-                    <ChartBarIcon className="w-4 h-4" />
+                    <ChartBarIcon className="w-4 h-4 mr-1" />
+                    Relatório
                   </Button>
                 </div>
               </div>
 
+              {/* O RESULTADO na linha, não no modal. A pergunta da tela é "deu
+                  retorno?" — enviadas é esforço, lidas é resultado. */}
+              {r.metricas.length > 0 ? (
+                <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3 border-t border-border-token pt-3">
+                  {r.metricas.map((m) => (
+                    <div key={m.rotulo}>
+                      <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">{m.rotulo}</p>
+                      <p className={`text-lg font-bold leading-tight ${TOM_METRICA[m.tom]}`}>{m.valor}</p>
+                      {m.detalhe && <p className="text-xs text-fg-muted-token">{m.detalhe}</p>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                r.chamada && (
+                  <p className="mt-3 border-t border-border-token pt-3 text-sm text-fg-muted-token">
+                    {r.chamada}
+                  </p>
+                )
+              )}
+
               {/* Progress Bar for running campaigns */}
-              {campaign.status === 'running' && campaign.total_recipients > 0 && (
+              {r.progresso !== null && (
                 <div className="mt-4">
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Progresso</span>
-                    <span>{Math.round((campaign.messages_sent / campaign.total_recipients) * 100)}%</span>
+                  <div className="flex justify-between text-xs text-fg-muted-token mb-1">
+                    <span>Progresso do envio</span>
+                    <span>{r.progresso}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="w-full bg-surface-2 rounded-pill h-2"
+                    role="progressbar"
+                    aria-valuenow={r.progresso}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Envio de ${campaign.name}`}
+                  >
                     <div
-                      className="bg-green-500 h-2 rounded-full transition-all"
-                      style={{ width: `${(campaign.messages_sent / campaign.total_recipients) * 100}%` }}
+                      className="bg-brand h-2 rounded-pill transition-all"
+                      style={{ width: `${r.progresso}%` }}
                     />
                   </div>
                 </div>
               )}
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Stats Modal */}
-      {selectedCampaign && stats && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Estatísticas da Campanha
-              </h2>
-              <button
-                onClick={() => { setSelectedCampaign(null); setStats(null); }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
+      {/* Era um `fixed inset-0` caseiro: sem Escape, sem foco preso, sem
+          role=dialog. Leitor de tela continuava lendo a página atrás. */}
+      <Modal
+        open={Boolean(selectedCampaign && stats)}
+        onClose={() => { setSelectedCampaign(null); setStats(null); }}
+        title="Relatório da campanha"
+        size="lg"
+      >
+        {stats && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-3">
+              <h3 className="font-semibold text-fg-token">{stats.name}</h3>
+              {getStatusBadge(stats.status)}
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{stats.name}</h3>
-                {getStatusBadge(stats.status)}
-              </div>
+            <KpiGrid
+              itens={[
+                {
+                  label: 'Destinatários',
+                  value: stats.total_recipients,
+                  definicao: 'quantas pessoas entraram na lista de envio',
+                },
+                {
+                  label: 'Enviadas',
+                  value: stats.messages_sent,
+                  definicao: 'saíram do nosso lado — não garante que chegaram',
+                },
+                {
+                  label: 'Entregues',
+                  // A taxa vai colada no número: "90" sozinho não diz se é bom,
+                  // e o operador não deveria dividir de cabeça.
+                  value: (
+                    <>
+                      {stats.messages_delivered}
+                      {stats.delivery_rate != null && (
+                        <span className="text-base font-semibold text-fg-muted-token ml-2">
+                          {stats.delivery_rate.toFixed(0)}%
+                        </span>
+                      )}
+                    </>
+                  ),
+                  definicao: 'confirmadas pelo WhatsApp no aparelho do cliente',
+                },
+                {
+                  label: 'Lidas',
+                  value: (
+                    <>
+                      {stats.messages_read}
+                      {stats.read_rate != null && (
+                        <span className="text-base font-semibold text-fg-muted-token ml-2">
+                          {stats.read_rate.toFixed(0)}%
+                        </span>
+                      )}
+                    </>
+                  ),
+                  tone: 'brand',
+                  definicao: 'a única métrica que mostra atenção de verdade',
+                },
+              ]}
+            />
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 dark:bg-[var(--dark-bg-hover,#161616)] p-3 rounded-lg">
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_recipients}</p>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                  <p className="text-sm text-blue-600">Enviadas</p>
-                  <p className="text-2xl font-bold text-blue-700">{stats.messages_sent}</p>
-                </div>
-                <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                  <p className="text-sm text-green-600">Entregues</p>
-                  <p className="text-2xl font-bold text-green-700">{stats.messages_delivered}</p>
-                </div>
-                <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
-                  <p className="text-sm text-purple-600">Lidas</p>
-                  <p className="text-2xl font-bold text-purple-700">{stats.messages_read}</p>
-                </div>
-              </div>
-
-              {stats.messages_failed > 0 && (
-                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                  <p className="text-sm text-red-600">Falhas</p>
-                  <p className="text-2xl font-bold text-red-700">{stats.messages_failed}</p>
-                </div>
-              )}
-
-              <div className="pt-4 border-t space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Taxa de Entrega</span>
-                  <span className="font-medium">{stats.delivery_rate.toFixed(1)}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Taxa de Leitura</span>
-                  <span className="font-medium">{stats.read_rate.toFixed(1)}%</span>
-                </div>
-                {stats.pending > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Pendentes</span>
-                    <span className="font-medium">{stats.pending}</span>
-                  </div>
-                )}
-              </div>
-
-              {stats.started_at && (
-                <p className="text-xs text-gray-500">
-                  Iniciada em {new Date(stats.started_at).toLocaleString('pt-BR')}
+            {stats.messages_failed > 0 && (
+              <div className="rounded-xl border border-border-token bg-surface-2 p-4">
+                <p className="text-sm font-semibold text-[var(--danger)]">
+                  {stats.messages_failed} {stats.messages_failed === 1 ? 'mensagem falhou' : 'mensagens falharam'}
                 </p>
-              )}
-              {stats.completed_at && (
-                <p className="text-xs text-gray-500">
-                  Concluída em {new Date(stats.completed_at).toLocaleString('pt-BR')}
+                <p className="text-sm text-fg-muted-token mt-1">
+                  Quase sempre é número inválido ou contato fora da janela de 24h — vale
+                  conferir a lista antes do próximo disparo.
                 </p>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div className="mt-6 flex justify-end">
-              <Button variant="secondary" onClick={() => { setSelectedCampaign(null); setStats(null); }}>
-                Fechar
-              </Button>
+            {stats.pending > 0 && (
+              <p className="text-sm text-fg-muted-token">
+                {stats.pending} ainda na fila de envio.
+              </p>
+            )}
+
+            <div className="text-xs text-fg-muted-token space-y-1 border-t border-border-token pt-3">
+              {stats.started_at && <p>Iniciada em {new Date(stats.started_at).toLocaleString('pt-BR')}</p>}
+              {stats.completed_at && <p>Concluída em {new Date(stats.completed_at).toLocaleString('pt-BR')}</p>}
             </div>
-          </Card>
-        </div>
-      )}
+          </div>
+        )}
+      </Modal>
+
       {ConfirmDialog}
     </PageShell>
   );

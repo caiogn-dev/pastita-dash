@@ -914,7 +914,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     {imagePreview ? (
                       <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
-                      <PhotoIcon className="w-12 h-12 text-gray-400" />
+                      <PhotoIcon className="w-12 h-12 text-fg-muted-token" />
                     )}
                   </div>
                   <div className="flex-1">
@@ -1003,7 +1003,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </p>
               </div>
 
-              <Card className="p-4 bg-gray-50 dark:bg-black">
+              <Card className="p-4 bg-surface-2 dark:bg-black">
                 <h4 className="text-sm font-medium text-fg-token mb-2">Prévia no Google</h4>
                 <div className="bg-surface p-3 rounded border border-border-token">
                   <p className="text-blue-600 dark:text-blue-400 text-lg hover:underline cursor-pointer">

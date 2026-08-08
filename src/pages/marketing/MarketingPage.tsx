@@ -49,9 +49,9 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon: Icon,
   <Card className="p-6">
     <div className="flex items-start justify-between">
       <div>
-        <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{title}</p>
+        <p className="text-sm text-fg-muted-token">{title}</p>
         <p className={`text-3xl font-bold ${color} mt-1`}>{value}</p>
-        {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-fg-muted-token mt-1">{subtitle}</p>}
         {trend !== undefined && (
           <div className={`flex items-center gap-1 mt-2 text-sm ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             <ArrowTrendingUpIcon className={`w-4 h-4 ${trend < 0 ? 'rotate-180' : ''}`} />
@@ -84,8 +84,8 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
     order_confirmation: 'bg-purple-100 text-purple-700',
     abandoned_cart: 'bg-yellow-100 text-yellow-700',
     newsletter: 'bg-pink-100 text-pink-700',
-    transactional: 'bg-gray-100 text-gray-700',
-    custom: 'bg-gray-100 text-gray-700',
+    transactional: 'bg-surface-2 text-fg-token',
+    custom: 'bg-surface-2 text-fg-token',
   };
 
   const typeLabels: Record<string, string> = {
@@ -116,10 +116,10 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button
             onClick={onPreview}
-            className="p-2 bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-full hover:bg-gray-100 dark:hover:bg-zinc-700 dark:hover:bg-zinc-700"
+            className="p-2 bg-surface rounded-full hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-zinc-700"
             title="Visualizar"
           >
-            <EyeIcon className="w-5 h-5 text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]" />
+            <EyeIcon className="w-5 h-5 text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]" />
           </button>
           <button
             onClick={onUse}
@@ -138,19 +138,19 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
             {typeLabels[template.template_type]}
           </span>
         </div>
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{template.name}</h3>
-        <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] line-clamp-1">{template.subject}</p>
+        <h3 className="font-semibold text-fg-token mb-1">{template.name}</h3>
+        <p className="text-sm text-fg-muted-token line-clamp-1">{template.subject}</p>
         
         {/* Variables */}
         {template.variables.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
             {template.variables.slice(0, 3).map((v) => (
-              <span key={v} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] px-1.5 py-0.5 rounded">
+              <span key={v} className="text-xs bg-surface-2 dark:bg-gray-700 text-fg-muted-token px-1.5 py-0.5 rounded">
                 {`{{${v}}}`}
               </span>
             ))}
             {template.variables.length > 3 && (
-              <span className="text-xs text-gray-400">+{template.variables.length - 3}</span>
+              <span className="text-xs text-fg-muted-token">+{template.variables.length - 3}</span>
             )}
           </div>
         )}
@@ -174,14 +174,14 @@ interface QuickActionProps {
 const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon: Icon, color, onClick }) => (
   <button
     onClick={onClick}
-    className="flex items-start gap-4 p-4 bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] hover:border-primary-300 hover:shadow-md transition-all text-left w-full"
+    className="flex items-start gap-4 p-4 bg-surface rounded-xl border border-border-token hover:border-primary-300 hover:shadow-md transition-all text-left w-full"
   >
     <div className={`p-3 rounded-xl ${color}`}>
       <Icon className="w-6 h-6 text-white" />
     </div>
     <div>
-      <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-      <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{description}</p>
+      <h3 className="font-semibold text-fg-token">{title}</h3>
+      <p className="text-sm text-fg-muted-token">{description}</p>
     </div>
   </button>
 );
@@ -253,8 +253,8 @@ export const MarketingPage: React.FC = () => {
     return (
       <div className="p-6 text-center">
         <MegaphoneIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">Selecione uma loja para acessar o marketing.</p>
+        <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma loja selecionada</h2>
+        <p className="text-fg-muted-token mb-4">Selecione uma loja para acessar o marketing.</p>
         <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
       </div>
     );
@@ -323,7 +323,7 @@ export const MarketingPage: React.FC = () => {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ações Rápidas</h2>
+        <h2 className="text-lg font-semibold text-fg-token mb-4">Ações Rápidas</h2>
         <div className="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 gap-4">
           <QuickAction
             title="Enviar Cupom"
@@ -359,7 +359,7 @@ export const MarketingPage: React.FC = () => {
       {/* Email Templates */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Templates de Email</h2>
+          <h2 className="text-lg font-semibold text-fg-token">Templates de Email</h2>
           <Button variant="secondary" size="sm" onClick={() => navigate('/marketing/email/templates')}>
             Ver Todos
           </Button>
@@ -379,7 +379,7 @@ export const MarketingPage: React.FC = () => {
       {/* Recent Campaigns */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Campanhas Recentes</h2>
+          <h2 className="text-lg font-semibold text-fg-token">Campanhas Recentes</h2>
           <Button variant="secondary" size="sm" onClick={() => navigate('/marketing/email')}>
             Ver Todas ({campaigns.length || stats?.email?.total_campaigns || 0})
           </Button>
@@ -389,18 +389,18 @@ export const MarketingPage: React.FC = () => {
             {campaigns.map((campaign) => (
               <div 
                 key={campaign.id} 
-                className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-lg border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-surface rounded-lg border border-border-token p-4 hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => navigate('/marketing/email')}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 dark:text-white truncate">{campaign.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate">{campaign.subject}</p>
+                    <h3 className="font-medium text-fg-token truncate">{campaign.name}</h3>
+                    <p className="text-sm text-fg-muted-token truncate">{campaign.subject}</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       campaign.status === 'sent' ? 'bg-green-100 text-green-700' :
-                      campaign.status === 'draft' ? 'bg-gray-100 text-gray-700' :
+                      campaign.status === 'draft' ? 'bg-surface-2 text-fg-token' :
                       campaign.status === 'sending' ? 'bg-yellow-100 text-yellow-700' :
                       'bg-blue-100 text-blue-700'
                     }`}>
@@ -409,7 +409,7 @@ export const MarketingPage: React.FC = () => {
                        campaign.status === 'sending' ? 'Enviando' :
                        campaign.status}
                     </span>
-                    <span className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{campaign.emails_sent || 0} enviados</span>
+                    <span className="text-sm text-fg-muted-token">{campaign.emails_sent || 0} enviados</span>
                   </div>
                 </div>
               </div>
@@ -418,7 +418,7 @@ export const MarketingPage: React.FC = () => {
         ) : (
           <Card className="p-8 text-center">
             <MegaphoneIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">Nenhuma campanha criada ainda</p>
+            <p className="text-fg-muted-token mb-4">Nenhuma campanha criada ainda</p>
             <Button onClick={() => navigate('/marketing/email/new')}>
               <PlusIcon className="w-5 h-5 mr-2" />
               Criar Primeira Campanha
@@ -436,9 +436,9 @@ export const MarketingPage: React.FC = () => {
       >
         {previewTemplate && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-black rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-surface-2 dark:bg-black rounded-lg">
               <div>
-                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Assunto:</p>
+                <p className="text-sm text-fg-muted-token">Assunto:</p>
                 <p className="font-medium">{previewTemplate.subject}</p>
               </div>
               <Button onClick={() => {

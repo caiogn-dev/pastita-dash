@@ -218,7 +218,7 @@ export default function AutomationsPage() {
   if (!storeId) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Selecione uma loja para gerenciar automações</p>
+        <p className="text-fg-muted-token">Selecione uma loja para gerenciar automações</p>
       </div>
     );
   }
@@ -244,8 +244,8 @@ export default function AutomationsPage() {
               <BoltIcon className="w-6 h-6 text-primary-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{automations.length}</p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total</p>
+              <p className="text-2xl font-bold text-fg-token">{automations.length}</p>
+              <p className="text-sm text-fg-muted-token">Total</p>
             </div>
           </div>
         </Card>
@@ -255,10 +255,10 @@ export default function AutomationsPage() {
               <PlayIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-fg-token">
                 {automations.filter(a => a.is_active).length}
               </p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Ativas</p>
+              <p className="text-sm text-fg-muted-token">Ativas</p>
             </div>
           </div>
         </Card>
@@ -268,10 +268,10 @@ export default function AutomationsPage() {
               <EnvelopeIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-fg-token">
                 {automations.reduce((sum, a) => sum + a.total_sent, 0)}
               </p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Emails Enviados</p>
+              <p className="text-sm text-fg-muted-token">Emails Enviados</p>
             </div>
           </div>
         </Card>
@@ -281,10 +281,10 @@ export default function AutomationsPage() {
               <CheckCircleIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-fg-token">
                 {automations.reduce((sum, a) => sum + a.total_opened, 0)}
               </p>
-              <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Abertos</p>
+              <p className="text-sm text-fg-muted-token">Abertos</p>
             </div>
           </div>
         </Card>
@@ -293,11 +293,11 @@ export default function AutomationsPage() {
       {/* Automations List */}
       {automations.length === 0 ? (
         <Card className="p-12 text-center">
-          <BoltIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <BoltIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-fg-token mb-2">
             Nenhuma automação configurada
           </h3>
-          <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">
+          <p className="text-fg-muted-token mb-4">
             Crie automações para enviar emails automaticamente quando eventos ocorrerem
           </p>
           <Button onClick={() => setShowCreateModal(true)}>
@@ -310,8 +310,8 @@ export default function AutomationsPage() {
           {automations.map(automation => {
             const config = TRIGGER_CONFIG[automation.trigger_type] || {
               icon: '📧',
-              color: 'text-gray-600',
-              bgColor: 'bg-gray-100',
+              color: 'text-fg-muted-token',
+              bgColor: 'bg-surface-2',
             };
 
             return (
@@ -323,18 +323,18 @@ export default function AutomationsPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900 dark:text-white">{automation.name}</h3>
+                        <h3 className="font-medium text-fg-token">{automation.name}</h3>
                         {automation.is_active ? (
                           <span className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full">
                             Ativa
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)] text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)] rounded-full">
+                          <span className="px-2 py-0.5 text-xs bg-surface-2 text-fg-muted-token rounded-full">
                             Pausada
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                      <p className="text-sm text-fg-muted-token">
                         {automation.trigger_type_display}
                         {automation.delay_minutes > 0 && (
                           <span className="ml-2">
@@ -343,7 +343,7 @@ export default function AutomationsPage() {
                           </span>
                         )}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-fg-muted-token mt-1">
                         Assunto: {automation.subject}
                       </p>
                     </div>
@@ -351,14 +351,14 @@ export default function AutomationsPage() {
 
                   <div className="flex items-center gap-4">
                     <div className="text-right text-sm">
-                      <p className="text-gray-900 dark:text-white font-medium">{automation.total_sent}</p>
-                      <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">enviados</p>
+                      <p className="text-fg-token font-medium">{automation.total_sent}</p>
+                      <p className="text-fg-muted-token">enviados</p>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => openTestModal(automation)}
-                        className="p-2 text-gray-400 hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 rounded-lg"
+                        className="p-2 text-fg-muted-token hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 rounded-lg"
                         title="Enviar teste"
                       >
                         <BeakerIcon className="w-5 h-5" />
@@ -380,7 +380,7 @@ export default function AutomationsPage() {
                       </button>
                       <button
                         onClick={() => handleDelete(automation)}
-                        className="p-2 text-gray-400 hover:text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
+                        className="p-2 text-fg-muted-token hover:text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
                         title="Excluir"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -406,26 +406,26 @@ export default function AutomationsPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
               Nome da Automação *
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="Ex: Email de confirmação de pedido"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
               Gatilho (Quando enviar) *
             </label>
             <select
               value={formData.trigger_type}
               onChange={e => setFormData(prev => ({ ...prev, trigger_type: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Selecione um gatilho...</option>
               {triggerTypes.map(type => (
@@ -437,14 +437,14 @@ export default function AutomationsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
               Assunto do Email *
             </label>
             <input
               type="text"
               value={formData.subject}
               onChange={e => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="Ex: Seu pedido #{{order_number}} foi confirmado!"
             />
           </div>
@@ -467,23 +467,23 @@ export default function AutomationsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
               Conteúdo HTML *
             </label>
             <textarea
               value={formData.html_content}
               onChange={e => setFormData(prev => ({ ...prev, html_content: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 font-mono text-sm"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 font-mono text-sm"
               rows={8}
               placeholder="<html>...</html>"
             />
-            <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
+            <p className="text-xs text-fg-muted-token mt-1">
               💡 Dica: Copie um template da página de Marketing e personalize aqui
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
               Delay (minutos)
             </label>
             <input
@@ -491,9 +491,9 @@ export default function AutomationsPage() {
               min="0"
               value={formData.delay_minutes}
               onChange={e => setFormData(prev => ({ ...prev, delay_minutes: parseInt(e.target.value) || 0 }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
             />
-            <p className="text-xs text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-1">
+            <p className="text-xs text-fg-muted-token mt-1">
               0 = envio imediato. Use delay para emails como "solicitar avaliação" (ex: 1440 = 24h)
             </p>
           </div>
@@ -504,9 +504,9 @@ export default function AutomationsPage() {
               id="is_active"
               checked={formData.is_active}
               onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-              className="rounded border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] text-primary-600 focus:ring-primary-500"
+              className="rounded border-border-token text-primary-600 focus:ring-primary-500"
             />
-            <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+            <label htmlFor="is_active" className="text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
               Ativar automação imediatamente
             </label>
           </div>
@@ -539,20 +539,20 @@ export default function AutomationsPage() {
         title="Enviar Email de Teste"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+          <p className="text-fg-muted-token">
             Envie um email de teste para verificar como a automação 
             <strong> "{selectedAutomation?.name}"</strong> será exibida.
           </p>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
               Email para teste
             </label>
             <input
               type="email"
               value={testEmail}
               onChange={e => setTestEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="seu@email.com"
             />
           </div>

@@ -53,7 +53,7 @@ export const AgentTestPage: React.FC = () => {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="text-center py-16">
-          <p className="text-xl font-medium text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
+          <p className="text-xl font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
             Agente não encontrado
           </p>
           <button
@@ -80,14 +80,14 @@ export const AgentTestPage: React.FC = () => {
           onClick={() => navigate(`/agents/${id}`)}
           className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
         >
-          <ArrowLeftIcon className="w-5 h-5 text-zinc-500" />
+          <ArrowLeftIcon className="w-5 h-5 text-fg-muted-token" />
         </button>
         
         <div>
-          <h1 className="text-2xl font-display font-bold text-zinc-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+          <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
             Testar: {agentName}
           </h1>
-          <p className="text-zinc-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+          <p className="text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">
             {agentProvider} / {agentModel}
           </p>
         </div>

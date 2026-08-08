@@ -441,13 +441,13 @@ const PdvBalcaoPage: React.FC = () => {
             data-testid="pdv-busca-manual"
           />
           {manualMatches.length > 0 && (
-            <ul className="absolute z-10 left-0 right-0 mt-1 rounded border border-black/15 dark:border-white/15 bg-white dark:bg-neutral-900 shadow-lg divide-y divide-black/10 dark:divide-white/10 max-h-64 overflow-y-auto">
+            <ul className="absolute z-10 left-0 right-0 mt-1 rounded border border-black/15 dark:border-white/15 bg-surface dark:bg-neutral-900 shadow-lg divide-y divide-black/10 dark:divide-white/10 max-h-64 overflow-y-auto">
               {manualMatches.map((c) => (
                 <li key={c.product.id}>
                   <button
                     type="button"
                     onClick={() => addManual(c)}
-                    className="w-full flex items-center justify-between gap-2 py-2.5 px-3 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                    className="w-full flex items-center justify-between gap-2 py-2.5 px-3 text-left hover:bg-black/5 dark:hover:bg-surface/10"
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{c.product.name}</span>
@@ -514,14 +514,14 @@ const PdvBalcaoPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 mb-4" data-testid="pdv-cliente">
           {customer ? (
             <>
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium bg-black/5 dark:bg-white/10 rounded-full pl-2.5 pr-1 py-1">
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium bg-black/5 dark:bg-surface/10 rounded-full pl-2.5 pr-1 py-1">
                 <UserIcon className="w-4 h-4" />
                 {customer.name}
                 <span className="opacity-60 font-normal">· {customer.phone}</span>
                 <button
                   type="button"
                   aria-label="Remover cliente"
-                  className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+                  className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-surface/10"
                   onClick={() => setCustomer(null)}
                 >
                   <XMarkIcon className="w-4 h-4" />
@@ -596,7 +596,7 @@ const PdvBalcaoPage: React.FC = () => {
                   type="button"
                   disabled={linking}
                   onClick={() => handleLinkProduct(c)}
-                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-black/5 dark:hover:bg-surface/5 rounded"
                 >
                   <span className="min-w-0">
                     <span className="block truncate">{c.product.name}</span>
@@ -637,7 +637,7 @@ const PdvBalcaoPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => pickCustomer(c)}
-                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-black/5 dark:hover:bg-surface/5 rounded"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{c.user_name || 'Sem nome'}</span>
@@ -702,7 +702,7 @@ const PdvBalcaoPage: React.FC = () => {
                   <img
                     src={`data:image/png;base64,${c.order.pix_qr_code}`}
                     alt={`QR Code PIX de ${c.storeName}`}
-                    className="w-52 h-52 mx-auto mb-3 rounded bg-white p-2"
+                    className="w-52 h-52 mx-auto mb-3 rounded bg-surface p-2"
                   />
                 )}
                 {!c.paid && c.order.pix_code && (

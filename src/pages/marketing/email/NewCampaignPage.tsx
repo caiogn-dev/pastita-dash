@@ -401,8 +401,8 @@ export const NewCampaignPage: React.FC = () => {
     return (
       <div className="p-6 text-center">
         <EnvelopeIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">Selecione uma loja para criar campanhas.</p>
+        <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma loja selecionada</h2>
+        <p className="text-fg-muted-token mb-4">Selecione uma loja para criar campanhas.</p>
         <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
       </div>
     );
@@ -413,21 +413,21 @@ export const NewCampaignPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-surface-2 dark:bg-black">
       {/* Header */}
-      <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] border-b sticky top-0 z-10">
+      <div className="bg-surface border-b sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/marketing')}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-hover,#161616)] rounded-lg transition-colors"
+                className="p-2 hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-hover,#161616)] rounded-lg transition-colors"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="font-display text-xl font-bold text-gray-900 dark:text-white">Nova Campanha</h1>
-                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{storeName}</p>
+                <h1 className="font-display text-xl font-bold text-fg-token">Nova Campanha</h1>
+                <p className="text-sm text-fg-muted-token">{storeName}</p>
               </div>
             </div>
             
@@ -457,7 +457,7 @@ export const NewCampaignPage: React.FC = () => {
                         ? 'bg-primary-100 text-primary-700'
                         : isPast
                         ? 'bg-green-100 text-green-700 cursor-pointer hover:bg-green-200'
-                        : 'bg-gray-100 text-gray-400'
+                        : 'bg-surface-2 text-fg-muted-token'
                     }`}
                   >
                     {isPast ? (
@@ -468,7 +468,7 @@ export const NewCampaignPage: React.FC = () => {
                     <span className="font-medium">{step.label}</span>
                   </button>
                   {index < STEPS.length - 1 && (
-                    <div className={`w-8 h-0.5 ${isPast ? 'bg-green-300' : 'bg-gray-200'}`} />
+                    <div className={`w-8 h-0.5 ${isPast ? 'bg-green-300' : 'bg-surface-2'}`} />
                   )}
                 </React.Fragment>
               );
@@ -483,8 +483,8 @@ export const NewCampaignPage: React.FC = () => {
         {currentStep === 'template' && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Escolha um Template</h2>
-              <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Selecione um template para começar sua campanha.</p>
+              <h2 className="text-lg font-semibold text-fg-token mb-2">Escolha um Template</h2>
+              <p className="text-fg-muted-token">Selecione um template para começar sua campanha.</p>
             </div>
 
             <div className="grid grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
@@ -492,18 +492,18 @@ export const NewCampaignPage: React.FC = () => {
                 <button
                   key={template.id}
                   onClick={() => handleSelectTemplate(template)}
-                  className={`bg-white rounded-xl border text-left cursor-pointer transition-all hover:shadow-lg ${
+                  className={`bg-surface rounded-xl border text-left cursor-pointer transition-all hover:shadow-lg ${
                     selectedTemplate?.id === template.id
                       ? 'ring-2 ring-primary-500 border-primary-500'
-                      : 'border-gray-200 hover:border-gray-300'
+                      : 'border-border-token hover:border-border-token'
                   }`}
                 >
                   <div className="h-32 bg-gradient-to-br from-primary-50 to-primary-100 relative overflow-hidden rounded-t-xl flex items-center justify-center">
                     <EnvelopeIcon className="w-12 h-12 text-primary-300" />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{template.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] line-clamp-1">{template.subject}</p>
+                    <h3 className="font-semibold text-fg-token">{template.name}</h3>
+                    <p className="text-sm text-fg-muted-token line-clamp-1">{template.subject}</p>
                   </div>
                 </button>
               ))}
@@ -516,41 +516,41 @@ export const NewCampaignPage: React.FC = () => {
           <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
             <div className="space-y-6">
               <Card className="p-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Informações da Campanha</h3>
+                <h3 className="font-semibold text-fg-token mb-4">Informações da Campanha</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+                    <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
                       Nome da Campanha
                     </label>
                     <input
                       type="text"
                       value={campaignData.name}
                       onChange={e => setCampaignData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Ex: Promoção de Natal"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+                    <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
                       Assunto do Email
                     </label>
                     <input
                       type="text"
                       value={campaignData.subject}
                       onChange={e => setCampaignData(prev => ({ ...prev, subject: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Ex: 🎁 Presente especial para você!"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+                    <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
                       Nome do Remetente
                     </label>
                     <input
                       type="text"
                       value={campaignData.from_name}
                       onChange={e => setCampaignData(prev => ({ ...prev, from_name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Ex: Nome da loja"
                     />
                   </div>
@@ -591,8 +591,8 @@ export const NewCampaignPage: React.FC = () => {
                 !['customer_name', 'first_name', 'name', 'email', 'phone', 'store_name', 'store_url', 'year'].includes(v)
               ).length > 0 && (
                 <Card className="p-6">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Valores Personalizados</h3>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mb-4">
+                  <h3 className="font-semibold text-fg-token mb-4">Valores Personalizados</h3>
+                  <p className="text-sm text-fg-muted-token mb-4">
                     Preencha os valores específicos desta campanha:
                   </p>
                   <div className="space-y-4">
@@ -600,14 +600,14 @@ export const NewCampaignPage: React.FC = () => {
                       .filter(v => !['customer_name', 'first_name', 'name', 'email', 'phone', 'store_name', 'store_url', 'year'].includes(v))
                       .map(variable => (
                         <div key={variable}>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+                          <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
                             {variable.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </label>
                           <input
                             type="text"
                             value={campaignData.variables[variable] || ''}
                             onChange={e => handleVariableChange(variable, e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             placeholder={`Ex: ${variable === 'coupon_code' ? 'DESCONTO10' : variable === 'discount_value' ? '10%' : variable === 'expiry_date' ? '31/12/2026' : ''}`}
                           />
                         </div>
@@ -620,13 +620,13 @@ export const NewCampaignPage: React.FC = () => {
             <div>
               <Card className="p-4 sticky top-32">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Preview</h3>
+                  <h3 className="font-semibold text-fg-token">Preview</h3>
                   <Button variant="secondary" size="sm" onClick={() => setShowPreview(true)}>
                     <EyeIcon className="w-4 h-4 mr-1" />
                     Expandir
                   </Button>
                 </div>
-                <div className="border rounded-lg overflow-hidden bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)]" style={{ height: '400px' }}>
+                <div className="border rounded-lg overflow-hidden bg-surface-2" style={{ height: '400px' }}>
                   <iframe srcDoc={getPreviewHtml()} className="w-full h-full" title="Preview" />
                 </div>
               </Card>
@@ -638,8 +638,8 @@ export const NewCampaignPage: React.FC = () => {
         {currentStep === 'audience' && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Selecione a Audiência</h2>
-              <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+              <h2 className="text-lg font-semibold text-fg-token mb-2">Selecione a Audiência</h2>
+              <p className="text-fg-muted-token">
                 Você tem <strong>{subscribers.length}</strong> contatos ativos.
               </p>
             </div>
@@ -661,14 +661,14 @@ export const NewCampaignPage: React.FC = () => {
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
                       isSelected
                         ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                        : 'border-border-token hover:border-border-token bg-surface'
                     }`}
                   >
-                    <Icon className={`w-8 h-8 mb-2 ${isSelected ? 'text-primary-600' : 'text-gray-400'}`} />
-                    <h3 className={`font-semibold ${isSelected ? 'text-primary-900' : 'text-gray-900'}`}>
+                    <Icon className={`w-8 h-8 mb-2 ${isSelected ? 'text-primary-600' : 'text-fg-muted-token'}`} />
+                    <h3 className={`font-semibold ${isSelected ? 'text-primary-900' : 'text-fg-token'}`}>
                       {option.title}
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">{option.description}</p>
+                    <p className="text-sm text-fg-muted-token">{option.description}</p>
                   </button>
                 );
               })}
@@ -677,12 +677,12 @@ export const NewCampaignPage: React.FC = () => {
             {/* Segment Filters */}
             {campaignData.audienceType === 'segment' && (
               <Card className="p-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Filtros do Segmento</h3>
+                <h3 className="font-semibold text-fg-token mb-4">Filtros do Segmento</h3>
                 <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
                   {/* Tags */}
                   {availableTags.length > 0 && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">Tags</label>
+                      <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">Tags</label>
                       <div className="flex flex-wrap gap-2">
                         {availableTags.map(tag => (
                           <button
@@ -701,7 +701,7 @@ export const NewCampaignPage: React.FC = () => {
                             className={`px-3 py-1 rounded-full text-sm transition-colors ${
                               campaignData.segmentFilters.tags.includes(tag)
                                 ? 'bg-primary-100 text-primary-700'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                : 'bg-surface-2 text-fg-muted-token hover:bg-surface-2'
                             }`}
                           >
                             {tag}
@@ -713,7 +713,7 @@ export const NewCampaignPage: React.FC = () => {
 
                   {/* Min Orders */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
+                    <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
                       Mínimo de Pedidos
                     </label>
                     <input
@@ -727,14 +727,14 @@ export const NewCampaignPage: React.FC = () => {
                           minOrders: e.target.value ? parseInt(e.target.value) : null,
                         },
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
                       placeholder="Ex: 1"
                     />
                   </div>
 
                   {/* Has Ordered */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
+                    <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
                       Histórico de Compras
                     </label>
                     <select
@@ -746,7 +746,7 @@ export const NewCampaignPage: React.FC = () => {
                           hasOrdered: e.target.value === '' ? null : e.target.value === 'true',
                         },
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
                     >
                       <option value="">Todos</option>
                       <option value="true">Já compraram</option>
@@ -755,8 +755,8 @@ export const NewCampaignPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 p-3 bg-gray-50 dark:bg-black rounded-lg">
-                  <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                <div className="mt-4 p-3 bg-surface-2 dark:bg-black rounded-lg">
+                  <p className="text-sm text-fg-muted-token">
                     <strong>{filteredSubscribers.length}</strong> contatos correspondem aos filtros
                   </p>
                 </div>
@@ -767,7 +767,7 @@ export const NewCampaignPage: React.FC = () => {
             {campaignData.audienceType === 'custom' && (
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Selecionar Contatos</h3>
+                  <h3 className="font-semibold text-fg-token">Selecionar Contatos</h3>
                   <div className="flex gap-2">
                     <Button variant="secondary" size="sm" onClick={handleSelectAllFiltered}>
                       Selecionar Todos
@@ -780,12 +780,12 @@ export const NewCampaignPage: React.FC = () => {
 
                 {/* Search */}
                 <div className="relative mb-4">
-                  <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token" />
                   <input
                     type="text"
                     value={subscriberSearch}
                     onChange={e => setSubscriberSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full pl-10 pr-4 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="Buscar por email ou nome..."
                   />
                 </div>
@@ -793,14 +793,14 @@ export const NewCampaignPage: React.FC = () => {
                 {/* Subscriber List */}
                 <div className="border rounded-lg divide-y max-h-80 overflow-y-auto">
                   {filteredSubscribers.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                    <div className="p-8 text-center text-fg-muted-token">
                       Nenhum contato encontrado
                     </div>
                   ) : (
                     filteredSubscribers.map(subscriber => (
                       <label
                         key={subscriber.id}
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-black cursor-pointer"
+                        className="flex items-center gap-3 p-3 hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-black cursor-pointer"
                       >
                         <input
                           type="checkbox"
@@ -809,9 +809,9 @@ export const NewCampaignPage: React.FC = () => {
                           className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 dark:text-white truncate">{subscriber.email}</p>
+                          <p className="font-medium text-fg-token truncate">{subscriber.email}</p>
                           {subscriber.name && (
-                            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] truncate">{subscriber.name}</p>
+                            <p className="text-sm text-fg-muted-token truncate">{subscriber.name}</p>
                           )}
                         </div>
                         {subscriber.total_orders > 0 && (
@@ -824,7 +824,7 @@ export const NewCampaignPage: React.FC = () => {
                   )}
                 </div>
 
-                <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-4">
+                <p className="text-sm text-fg-muted-token mt-4">
                   {campaignData.selectedSubscribers.length} de {filteredSubscribers.length} selecionados
                 </p>
               </Card>
@@ -854,26 +854,26 @@ export const NewCampaignPage: React.FC = () => {
           <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
             <div className="space-y-6">
               <Card className="p-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Resumo da Campanha</h3>
+                <h3 className="font-semibold text-fg-token mb-4">Resumo da Campanha</h3>
                 <dl className="space-y-3">
                   <div className="flex justify-between py-2 border-b">
-                    <dt className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Nome</dt>
-                    <dd className="font-medium text-gray-900 dark:text-white">{campaignData.name}</dd>
+                    <dt className="text-fg-muted-token">Nome</dt>
+                    <dd className="font-medium text-fg-token">{campaignData.name}</dd>
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <dt className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Assunto</dt>
-                    <dd className="font-medium text-gray-900 dark:text-white">{campaignData.subject}</dd>
+                    <dt className="text-fg-muted-token">Assunto</dt>
+                    <dd className="font-medium text-fg-token">{campaignData.subject}</dd>
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <dt className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Remetente</dt>
-                    <dd className="font-medium text-gray-900 dark:text-white">{campaignData.from_name}</dd>
+                    <dt className="text-fg-muted-token">Remetente</dt>
+                    <dd className="font-medium text-fg-token">{campaignData.from_name}</dd>
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <dt className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Template</dt>
-                    <dd className="font-medium text-gray-900 dark:text-white">{selectedTemplate?.name}</dd>
+                    <dt className="text-fg-muted-token">Template</dt>
+                    <dd className="font-medium text-fg-token">{selectedTemplate?.name}</dd>
                   </div>
                   <div className="flex justify-between py-2">
-                    <dt className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Destinatários</dt>
+                    <dt className="text-fg-muted-token">Destinatários</dt>
                     <dd className="font-medium text-primary-600">{audienceCount} contatos</dd>
                   </div>
                 </dl>
@@ -893,8 +893,8 @@ export const NewCampaignPage: React.FC = () => {
 
             <div>
               <Card className="p-4 sticky top-32">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Preview Final</h3>
-                <div className="border rounded-lg overflow-hidden bg-gray-100 dark:bg-[var(--dark-bg-hover,#161616)]" style={{ height: '400px' }}>
+                <h3 className="font-semibold text-fg-token mb-4">Preview Final</h3>
+                <div className="border rounded-lg overflow-hidden bg-surface-2" style={{ height: '400px' }}>
                   <iframe srcDoc={getPreviewHtml()} className="w-full h-full" title="Preview" />
                 </div>
               </Card>
@@ -942,12 +942,12 @@ export const NewCampaignPage: React.FC = () => {
       {/* Full Preview Modal */}
       {showPreview && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+          <div className="bg-surface rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="font-semibold">Preview do Email</h3>
               <button
                 onClick={() => setShowPreview(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-hover,#161616)] rounded-lg"
+                className="p-2 hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-hover,#161616)] rounded-lg"
               >
                 ✕
               </button>

@@ -596,7 +596,7 @@ export default function ConnectionsPage() {
         <div className="flex flex-col items-center gap-4 py-2">
           <p className="text-center text-fg-muted text-sm">Escaneie o QR Code com seu WhatsApp para conectar</p>
           {qrCode ? (
-            <div className="p-4 bg-white rounded-xl">
+            <div className="p-4 bg-surface rounded-xl">
               {/* Render SVG as <img> to prevent script execution — never use dangerouslySetInnerHTML for untrusted SVG */}
               <img
                 src={qrCode.trim().startsWith('<') ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrCode)}` : qrCode}

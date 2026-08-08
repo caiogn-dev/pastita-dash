@@ -103,24 +103,24 @@ const OrderRow: React.FC<OrderRowProps> = ({ order, advancing, onAdvance, onOpen
 
   return (
     <tr
-      className="border-b border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-900/50
+      className="border-b border-border-token dark:border-zinc-800 hover:bg-surface-2 dark:hover:bg-zinc-900/50
                  transition-colors cursor-pointer"
       onClick={() => onOpen(order.id)}
     >
       <td className="px-4 py-3 whitespace-nowrap">
-        <p className="text-sm font-mono font-semibold text-gray-900 dark:text-white">
+        <p className="text-sm font-mono font-semibold text-fg-token">
           #{order.order_number}
         </p>
-        <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">
+        <p className="text-xs text-fg-muted-token mt-0.5">
           {new Date(order.created_at).toLocaleString('pt-BR', {
             day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
           })}
         </p>
       </td>
       <td className="px-4 py-3 hidden md:table-cell">
-        <p className="text-sm font-medium text-gray-900 dark:text-white">{order.customer_name || '—'}</p>
+        <p className="text-sm font-medium text-fg-token">{order.customer_name || '—'}</p>
         {order.customer_phone && (
-          <p className="text-xs text-gray-400 dark:text-zinc-500">{order.customer_phone}</p>
+          <p className="text-xs text-fg-muted-token">{order.customer_phone}</p>
         )}
       </td>
       <td className="px-4 py-3">
@@ -129,7 +129,7 @@ const OrderRow: React.FC<OrderRowProps> = ({ order, advancing, onAdvance, onOpen
         </Badge>
       </td>
       <td className="px-4 py-3 text-right">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(order.total)}</p>
+        <p className="text-sm font-semibold text-fg-token">{fmt(order.total)}</p>
       </td>
       <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
         {action && (
@@ -332,7 +332,7 @@ export const DashboardPage: React.FC = () => {
   if (!storeId) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <p className="text-gray-500 dark:text-zinc-400">Selecione uma loja para ver o dashboard.</p>
+        <p className="text-fg-muted-token">Selecione uma loja para ver o dashboard.</p>
         <Button onClick={() => navigate('/stores')}>Selecionar loja</Button>
       </div>
     );
@@ -551,7 +551,7 @@ export const DashboardPage: React.FC = () => {
           {loading ? (
             <div className="flex justify-center items-center h-40"><Loading /></div>
           ) : recentOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-gray-400 dark:text-zinc-500">
+            <div className="flex flex-col items-center justify-center h-40 text-fg-muted-token">
               <ShoppingCartIcon className="h-8 w-8 mb-2 opacity-40" />
               <p className="text-sm">Nenhum pedido ainda</p>
             </div>
@@ -559,12 +559,12 @@ export const DashboardPage: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-800">
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400">Pedido</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400 hidden md:table-cell">Cliente</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400">Status</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400">Total</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-gray-500 dark:text-zinc-400">Ação rápida</th>
+                  <tr className="bg-surface-2 dark:bg-zinc-900/50 border-b border-border-token dark:border-zinc-800">
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-fg-muted-token">Pedido</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-fg-muted-token hidden md:table-cell">Cliente</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-fg-muted-token">Status</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-fg-muted-token">Total</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-fg-muted-token">Ação rápida</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -603,15 +603,15 @@ export const DashboardPage: React.FC = () => {
                     className="w-full text-left group"
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400
-                                       group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                      <span className="text-xs font-semibold text-fg-muted-token
+                                       group-hover:text-fg-token dark:group-hover:text-white transition-colors">
                         {label}
                       </span>
-                      <span className={`text-sm font-bold tabular-nums ${count > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-700'}`}>
+                      <span className={`text-sm font-bold tabular-nums ${count > 0 ? 'text-fg-token' : 'text-gray-300 dark:text-fg-token'}`}>
                         {count}
                       </span>
                     </div>
-                    <div className="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-surface-2 dark:bg-zinc-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${color} rounded-full transition-all duration-700`}
                         style={{ width: count > 0 ? `${Math.max(pct, 6)}%` : '0%' }}
@@ -668,13 +668,13 @@ export const DashboardPage: React.FC = () => {
             <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
               <div className="p-4">
                 <p className="overline mb-2">Pedidos 24h</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.commerce.orders_24h}</p>
-                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
+                <p className="text-xl font-bold text-fg-token">{projectHealth.commerce.orders_24h}</p>
+                <p className="text-badge text-fg-muted-token mt-1">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
               </div>
               <div className="p-4">
                 <p className="overline mb-2">Ticket médio</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{fmt(projectHealth.commerce.avg_ticket_month)}</p>
-                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-xl font-bold text-fg-token">{fmt(projectHealth.commerce.avg_ticket_month)}</p>
+                <p className="text-badge text-fg-muted-token mt-1">
                   {projectHealth.commerce.cancelled_7d > 0
                     ? <span className="text-red-500">{projectHealth.commerce.cancelled_7d} cancel. (7d)</span>
                     : 'sem cancelamentos'}
@@ -682,10 +682,10 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div className="p-4">
                 <p className="overline mb-2">Pag. pendentes</p>
-                <p className={`text-xl font-bold ${projectHealth.commerce.payment_pending > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
+                <p className={`text-xl font-bold ${projectHealth.commerce.payment_pending > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-fg-token'}`}>
                   {projectHealth.commerce.payment_pending}
                 </p>
-                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">aguardando</p>
+                <p className="text-badge text-fg-muted-token mt-1">aguardando</p>
               </div>
             </div>
 
@@ -693,24 +693,24 @@ export const DashboardPage: React.FC = () => {
             <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
               <div className="p-4">
                 <p className="overline mb-2">Mensagens 24h</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.messages_24h}</p>
-                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-xl font-bold text-fg-token">{projectHealth.messaging.messages_24h}</p>
+                <p className="text-badge text-fg-muted-token mt-1">
                   {projectHealth.messaging.inbound_24h}↓ · {projectHealth.messaging.outbound_24h}↑
                 </p>
               </div>
               <div className="p-4">
                 <p className="overline mb-2">Conversas</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{projectHealth.messaging.open_conversations}</p>
-                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-xl font-bold text-fg-token">{projectHealth.messaging.open_conversations}</p>
+                <p className="text-badge text-fg-muted-token mt-1">
                   {projectHealth.messaging.human_conversations} c/ humano
                 </p>
               </div>
               <div className="p-4">
                 <p className="overline mb-2">Pipeline</p>
-                <p className={`text-xl font-bold ${projectHealth.automation.pipeline.dropped > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                <p className={`text-xl font-bold ${projectHealth.automation.pipeline.dropped > 0 ? 'text-red-600 dark:text-red-400' : 'text-fg-token'}`}>
                   {projectHealth.automation.pipeline.dropped}
                 </p>
-                <p className="text-badge text-gray-400 dark:text-zinc-500 mt-1">
+                <p className="text-badge text-fg-muted-token mt-1">
                   perdidas · {projectHealth.automation.pipeline.timeouts} timeouts
                 </p>
               </div>
@@ -720,24 +720,24 @@ export const DashboardPage: React.FC = () => {
             <div className="p-4 space-y-4">
               {/* Quick stats */}
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
-                  <CubeIcon className="h-3.5 w-3.5 mx-auto mb-1 text-gray-400" />
-                  <p className={`text-sm font-bold ${projectHealth.catalog.low_stock_products > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}`}>
+                <div className="rounded-lg bg-surface-2 dark:bg-zinc-900 p-2.5">
+                  <CubeIcon className="h-3.5 w-3.5 mx-auto mb-1 text-fg-muted-token" />
+                  <p className={`text-sm font-bold ${projectHealth.catalog.low_stock_products > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-fg-token'}`}>
                     {projectHealth.catalog.low_stock_products}
                   </p>
-                  <p className="text-badge text-gray-500 dark:text-zinc-500">Est. baixo</p>
+                  <p className="text-badge text-fg-muted-token dark:text-fg-muted-token">Est. baixo</p>
                 </div>
-                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
-                  <BoltIcon className="h-3.5 w-3.5 mx-auto mb-1 text-gray-400" />
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">{projectHealth.automation.active_agents}</p>
-                  <p className="text-badge text-gray-500 dark:text-zinc-500">Agentes</p>
+                <div className="rounded-lg bg-surface-2 dark:bg-zinc-900 p-2.5">
+                  <BoltIcon className="h-3.5 w-3.5 mx-auto mb-1 text-fg-muted-token" />
+                  <p className="text-sm font-bold text-fg-token">{projectHealth.automation.active_agents}</p>
+                  <p className="text-badge text-fg-muted-token dark:text-fg-muted-token">Agentes</p>
                 </div>
-                <div className="rounded-lg bg-gray-50 dark:bg-zinc-900 p-2.5">
-                  <ExclamationTriangleIcon className={`h-3.5 w-3.5 mx-auto mb-1 ${projectHealth.issues.length > 0 ? 'text-yellow-500' : 'text-gray-400'}`} />
-                  <p className={`text-sm font-bold ${projectHealth.issues.length > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
+                <div className="rounded-lg bg-surface-2 dark:bg-zinc-900 p-2.5">
+                  <ExclamationTriangleIcon className={`h-3.5 w-3.5 mx-auto mb-1 ${projectHealth.issues.length > 0 ? 'text-yellow-500' : 'text-fg-muted-token'}`} />
+                  <p className={`text-sm font-bold ${projectHealth.issues.length > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-fg-token'}`}>
                     {projectHealth.issues.length}
                   </p>
-                  <p className="text-badge text-gray-500 dark:text-zinc-500">Alertas</p>
+                  <p className="text-badge text-fg-muted-token dark:text-fg-muted-token">Alertas</p>
                 </div>
               </div>
 
@@ -753,13 +753,13 @@ export const DashboardPage: React.FC = () => {
                       const pct = Math.round((item.count / total) * 100);
                       return (
                         <div key={item.intent_type} className="flex items-center gap-2">
-                          <span className="text-badge text-gray-600 dark:text-zinc-400 truncate flex-1 capitalize">
+                          <span className="text-badge text-fg-muted-token truncate flex-1 capitalize">
                             {item.intent_type.replace(/_/g, ' ')}
                           </span>
-                          <div className="w-16 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="w-16 h-1.5 bg-surface-2 dark:bg-zinc-800 rounded-full overflow-hidden">
                             <div className="h-full bg-brand rounded-full" style={{ width: `${Math.max(pct, 8)}%` }} />
                           </div>
-                          <span className="text-badge font-bold text-gray-700 dark:text-zinc-300 tabular-nums w-5 text-right">{item.count}</span>
+                          <span className="text-badge font-bold text-fg-token tabular-nums w-5 text-right">{item.count}</span>
                         </div>
                       );
                     })}
@@ -779,16 +779,16 @@ export const DashboardPage: React.FC = () => {
                         else if (issue.area === 'messages') navigate('/whatsapp/inbox');
                         else navigate('/analytics');
                       }}
-                      className={`w-full text-left rounded-lg border p-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-zinc-900 ${
+                      className={`w-full text-left rounded-lg border p-2.5 transition-colors hover:bg-surface-2 dark:hover:bg-zinc-900 ${
                         issue.level === 'critical'
                           ? 'border-red-200 dark:border-red-900/50'
                           : issue.level === 'warning'
                           ? 'border-yellow-200 dark:border-yellow-900/50'
-                          : 'border-gray-100 dark:border-zinc-800'
+                          : 'border-border-token dark:border-zinc-800'
                       }`}
                     >
-                      <p className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1">{issue.title}</p>
-                      <p className="mt-0.5 text-badge text-gray-500 dark:text-zinc-400 line-clamp-1">{issue.detail}</p>
+                      <p className="text-xs font-semibold text-fg-token line-clamp-1">{issue.title}</p>
+                      <p className="mt-0.5 text-badge text-fg-muted-token line-clamp-1">{issue.detail}</p>
                     </button>
                   ))}
                 </div>
@@ -802,12 +802,12 @@ export const DashboardPage: React.FC = () => {
 
           </div>
         ) : (
-          <div className="p-5 text-sm text-gray-500 dark:text-zinc-400">Saúde do sistema indisponível.</div>
+          <div className="p-5 text-sm text-fg-muted-token">Saúde do sistema indisponível.</div>
         )}
       </Card>}
 
       {/* Footer */}
-      <p className="text-right text-xs text-gray-400 dark:text-zinc-600">
+      <p className="text-right text-xs text-fg-muted-token dark:text-zinc-600">
         Atualizado às {refreshedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         {' · '}
         <button onClick={loadData} className="hover:text-brand-ink underline transition-colors">

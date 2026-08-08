@@ -1060,7 +1060,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             {order && order.delivery_method === 'delivery' && !isCancelled && !isCompleted && (
               <button
                 onClick={() => setShowUberModal(true)}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-base font-semibold transition-colors hover:bg-white/5"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-base font-semibold transition-colors hover:bg-surface/5"
               >
                 <TruckIcon className="h-5 w-5" />
                 Enviar para Uber Direct
@@ -1070,7 +1070,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             <div className="mt-6 grid gap-2">
               <button
                 onClick={() => handlePrint(false)}
-                className="flex items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-white/5"
+                className="flex items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-surface/5"
               >
                 <PrinterIcon className="h-4 w-4" />
                 Imprimir (completo)
@@ -1086,7 +1086,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
               <button
                 onClick={() => setEditing(true)}
-                className="flex items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-white/5"
+                className="flex items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-surface/5"
               >
                 Editar pedido
               </button>
@@ -1094,7 +1094,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               {!isCancelled && !isCompleted && (
                 <button
                   onClick={() => setShowCancelModal(true)}
-                  className="flex items-center justify-center gap-2 rounded border border-white/10 px-4 py-3 text-sm font-medium text-danger-400 transition hover:bg-white/5"
+                  className="flex items-center justify-center gap-2 rounded border border-white/10 px-4 py-3 text-sm font-medium text-danger-400 transition hover:bg-surface/5"
                 >
                   <XMarkIcon className="h-4 w-4" />
                   Cancelar pedido

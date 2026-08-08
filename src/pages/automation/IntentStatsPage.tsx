@@ -48,10 +48,10 @@ export const IntentStatsPage: React.FC = () => {
             <ChartBarIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+            <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
               Estatísticas de Intenções
             </h1>
-            <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] mt-0.5">
+            <p className="text-sm text-fg-muted-token mt-0.5">
               Análise de detecção de intenções nas mensagens
             </p>
           </div>
@@ -61,7 +61,7 @@ export const IntentStatsPage: React.FC = () => {
           <select
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)] text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="px-3 py-2 rounded-lg border border-border-token bg-surface text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           >
             <option value={1}>Últimas 24h</option>
             <option value={7}>Últimos 7 dias</option>
@@ -71,7 +71,7 @@ export const IntentStatsPage: React.FC = () => {
           <button
             onClick={loadStats}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-[var(--dark-border,#2a2a2a)] bg-white dark:bg-[var(--dark-bg-card,#1a1a1a)] text-gray-700 dark:text-[var(--dark-text-secondary,#a1a1aa)] text-sm hover:bg-gray-50 dark:hover:bg-[var(--dark-bg-hover,#161616)] disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border-token bg-surface text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] text-sm hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] disabled:opacity-50 transition-colors"
           >
             <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
@@ -97,59 +97,59 @@ export const IntentStatsPage: React.FC = () => {
         <>
           {/* Stats Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-5">
+            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-5">
               <div className="flex items-center gap-2 mb-1">
                 <BoltIcon className="w-4 h-4 text-indigo-500" />
-                <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium uppercase tracking-wide">Total</span>
+                <span className="text-xs text-fg-muted-token font-medium uppercase tracking-wide">Total</span>
               </div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-white">{totalIntents.toLocaleString()}</div>
-              <div className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Intenções detectadas</div>
+              <div className="text-3xl font-bold text-fg-token">{totalIntents.toLocaleString()}</div>
+              <div className="text-sm text-fg-muted-token mt-0.5">Intenções detectadas</div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-5">
+            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-5">
               <div className="flex items-center gap-2 mb-1">
                 <SparklesIcon className="w-4 h-4 text-purple-500" />
-                <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium uppercase tracking-wide">Únicas</span>
+                <span className="text-xs text-fg-muted-token font-medium uppercase tracking-wide">Únicas</span>
               </div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-white">{uniqueIntents}</div>
-              <div className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Tipos distintos</div>
+              <div className="text-3xl font-bold text-fg-token">{uniqueIntents}</div>
+              <div className="text-sm text-fg-muted-token mt-0.5">Tipos distintos</div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-5">
+            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-5">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium uppercase tracking-wide">Regex / Padrão</span>
+                <span className="text-xs text-fg-muted-token font-medium uppercase tracking-wide">Regex / Padrão</span>
               </div>
               <div className="text-3xl font-bold text-blue-600">{(stats.by_method?.regex || 0).toLocaleString()}</div>
-              <div className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Detecções por padrão</div>
+              <div className="text-sm text-fg-muted-token mt-0.5">Detecções por padrão</div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-5">
+            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-5">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium uppercase tracking-wide">IA / LLM</span>
+                <span className="text-xs text-fg-muted-token font-medium uppercase tracking-wide">IA / LLM</span>
               </div>
               <div className="text-3xl font-bold text-purple-600">{(stats.by_method?.llm || 0).toLocaleString()}</div>
-              <div className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Detecções por IA</div>
+              <div className="text-sm text-fg-muted-token mt-0.5">Detecções por IA</div>
             </div>
           </div>
 
           {/* Top Intents Table */}
           {stats.top_intents && stats.top_intents.length > 0 && (
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
-                <h2 className="text-base font-semibold text-gray-900 dark:text-white">Top Intenções</h2>
-                <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
+            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 overflow-hidden">
+              <div className="px-6 py-4 border-b border-border-token dark:border-zinc-800">
+                <h2 className="text-base font-semibold text-fg-token">Top Intenções</h2>
+                <p className="text-sm text-fg-muted-token mt-0.5">
                   {format(subDays(new Date(), days), 'dd/MM/yyyy', { locale: ptBR })} — {format(new Date(), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
                   <thead>
-                    <tr className="bg-gray-50 dark:bg-zinc-800/50">
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Intenção</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Quantidade</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Percentual</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Distribuição</th>
+                    <tr className="bg-surface-2 dark:bg-zinc-800/50">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wide">#</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wide">Intenção</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-fg-muted-token uppercase tracking-wide">Quantidade</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-fg-muted-token uppercase tracking-wide">Percentual</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wide">Distribuição</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-zinc-800">
@@ -157,27 +157,27 @@ export const IntentStatsPage: React.FC = () => {
                       const intent = (item.intent_type || item.intent) as IntentType;
                       const pct = totalIntents > 0 ? (item.count / totalIntents) * 100 : 0;
                       return (
-                        <tr key={intent} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
-                          <td className="px-6 py-4 text-sm text-gray-500 dark:text-zinc-400">{idx + 1}</td>
+                        <tr key={intent} className="hover:bg-surface-2 dark:hover:bg-zinc-800/50 transition-colors">
+                          <td className="px-6 py-4 text-sm text-fg-muted-token">{idx + 1}</td>
                           <td className="px-6 py-4">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            <span className="text-sm font-medium text-fg-token">
                               {intentTypeLabels[intent] || intent}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{item.count.toLocaleString()}</span>
+                            <span className="text-sm font-semibold text-fg-token">{item.count.toLocaleString()}</span>
                           </td>
                           <td className="px-6 py-4 text-right">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               pct >= 30 ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300' :
                               pct >= 10 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' :
-                              'bg-gray-100 text-gray-800 dark:bg-zinc-700 dark:text-zinc-300'
+                              'bg-surface-2 text-fg-token dark:bg-zinc-700 dark:text-zinc-300'
                             }`}>
                               {pct.toFixed(1)}%
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2 max-w-[200px]">
+                            <div className="w-full bg-surface-2 dark:bg-zinc-700 rounded-full h-2 max-w-[200px]">
                               <div
                                 className="bg-indigo-500 h-2 rounded-full transition-all"
                                 style={{ width: `${pct}%` }}
@@ -195,9 +195,9 @@ export const IntentStatsPage: React.FC = () => {
 
           {/* Empty state */}
           {(!stats.top_intents || stats.top_intents.length === 0) && (
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-12 text-center">
+            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-12 text-center">
               <ChartBarIcon className="w-12 h-12 text-gray-300 dark:text-zinc-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-zinc-400">Nenhum dado disponível para o período selecionado</p>
+              <p className="text-fg-muted-token">Nenhum dado disponível para o período selecionado</p>
             </div>
           )}
         </>

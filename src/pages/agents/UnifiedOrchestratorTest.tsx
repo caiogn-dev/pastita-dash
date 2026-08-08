@@ -232,7 +232,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
       case 'agent':
         return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
+        return 'bg-surface-2 text-fg-token dark:bg-gray-900/30 dark:text-gray-300';
     }
   };
 
@@ -243,7 +243,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-token bg-gradient-to-r from-primary-600 to-primary-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-surface/20 flex items-center justify-center">
               <CpuChipIcon className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -261,8 +261,8 @@ export const UnifiedOrchestratorTest: React.FC = () => {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                 showContext 
-                  ? "bg-white text-primary-600" 
-                  : "bg-white/20 text-white hover:bg-white/30"
+                  ? "bg-surface text-primary-600" 
+                  : "bg-surface/20 text-white hover:bg-surface/30"
               )}
             >
               <VariableIcon className="w-4 h-4 inline mr-1" />
@@ -272,7 +272,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
               type="button"
               aria-label="Limpar conversa"
               onClick={handleClear}
-              className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition-colors"
+              className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-surface/20 transition-colors"
             >
               <TrashIcon className="w-5 h-5" />
             </button>

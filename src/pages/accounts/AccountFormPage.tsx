@@ -105,7 +105,7 @@ export const AccountFormPage: React.FC = () => {
         />
         <Link
           to="/accounts"
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+          className="inline-flex items-center gap-2 text-sm text-fg-muted-token hover:text-fg-token"
         >
           <ArrowLeftIcon className="h-4 w-4" />
           Voltar
@@ -175,13 +175,13 @@ export const AccountFormPage: React.FC = () => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
+              <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
                 Agente Padrão
               </label>
               <select
                 value={formData.default_agent}
                 onChange={(e) => setFormData({ ...formData, default_agent: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-[var(--dark-border,#2a2a2a)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
               >
                 <option value="">Nenhum</option>
                 {agents.map((agent) => (
@@ -199,9 +199,9 @@ export const AccountFormPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.auto_response_enabled}
                 onChange={(e) => setFormData({ ...formData, auto_response_enabled: e.target.checked })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-border-token text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">Resposta automática ativada</span>
+              <span className="text-sm text-fg-token">Resposta automática ativada</span>
             </label>
 
             <label className="flex items-center gap-2">
@@ -209,9 +209,9 @@ export const AccountFormPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.human_handoff_enabled}
                 onChange={(e) => setFormData({ ...formData, human_handoff_enabled: e.target.checked })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-border-token text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">Transferência para humano ativada</span>
+              <span className="text-sm text-fg-token">Transferência para humano ativada</span>
             </label>
           </div>
 

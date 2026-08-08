@@ -154,7 +154,7 @@ export const AccountDetailPage: React.FC = () => {
           <div className="flex flex-row max-md:flex-col md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
               <StatusBadge status={account.status} />
-              <span className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+              <span className="text-sm text-fg-muted-token">
                 Token v{account.token_version}
               </span>
             </div>
@@ -219,41 +219,41 @@ export const AccountDetailPage: React.FC = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Phone Number ID</p>
+                  <p className="text-sm text-fg-muted-token">Phone Number ID</p>
                   <p className="font-mono text-sm">{account.phone_number_id}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">WABA ID</p>
+                  <p className="text-sm text-fg-muted-token">WABA ID</p>
                   <p className="font-mono text-sm">{account.waba_id}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Resposta Automática</p>
-                  <p className={account.auto_response_enabled ? 'text-green-600' : 'text-gray-400'}>
+                  <p className="text-sm text-fg-muted-token">Resposta Automática</p>
+                  <p className={account.auto_response_enabled ? 'text-green-600' : 'text-fg-muted-token'}>
                     {account.auto_response_enabled ? 'Ativada' : 'Desativada'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Handoff Humano</p>
-                  <p className={account.human_handoff_enabled ? 'text-green-600' : 'text-gray-400'}>
+                  <p className="text-sm text-fg-muted-token">Handoff Humano</p>
+                  <p className={account.human_handoff_enabled ? 'text-green-600' : 'text-fg-muted-token'}>
                     {account.human_handoff_enabled ? 'Ativado' : 'Desativado'}
                   </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Criado em</p>
+                  <p className="text-sm text-fg-muted-token">Criado em</p>
                   <p>{format(new Date(account.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Atualizado em</p>
+                  <p className="text-sm text-fg-muted-token">Atualizado em</p>
                   <p>{format(new Date(account.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
                 </div>
               </div>
               {account.default_agent && (
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Agente IA Padrão</p>
+                  <p className="text-sm text-fg-muted-token">Agente IA Padrão</p>
                   <p className="font-medium">{account.default_agent_name || account.default_agent}</p>
                 </div>
               )}
@@ -266,31 +266,31 @@ export const AccountDetailPage: React.FC = () => {
               <div className="space-y-4">
                 {(businessProfile as Record<string, string>).about && (
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Sobre</p>
+                    <p className="text-sm text-fg-muted-token">Sobre</p>
                     <p>{(businessProfile as Record<string, string>).about}</p>
                   </div>
                 )}
                 {(businessProfile as Record<string, string>).address && (
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Endereço</p>
+                    <p className="text-sm text-fg-muted-token">Endereço</p>
                     <p>{(businessProfile as Record<string, string>).address}</p>
                   </div>
                 )}
                 {(businessProfile as Record<string, string>).email && (
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Email</p>
+                    <p className="text-sm text-fg-muted-token">Email</p>
                     <p>{(businessProfile as Record<string, string>).email}</p>
                   </div>
                 )}
                 {(businessProfile as Record<string, string>).websites && (
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Websites</p>
+                    <p className="text-sm text-fg-muted-token">Websites</p>
                     <p>{(businessProfile as Record<string, string>).websites}</p>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">Perfil não disponível</p>
+              <p className="text-fg-muted-token">Perfil não disponível</p>
             )}
           </Card>
         </div>
@@ -302,16 +302,16 @@ export const AccountDetailPage: React.FC = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead>
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted-token uppercase">
                       Nome
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted-token uppercase">
                       Idioma
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted-token uppercase">
                       Categoria
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] uppercase">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted-token uppercase">
                       Status
                     </th>
                   </tr>
@@ -319,13 +319,13 @@ export const AccountDetailPage: React.FC = () => {
                 <tbody className="divide-y divide-gray-200">
                   {templates.map((template) => (
                     <tr key={template.id}>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                      <td className="px-4 py-3 text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
                         {template.name}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                      <td className="px-4 py-3 text-sm text-fg-muted-token">
                         {template.language}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+                      <td className="px-4 py-3 text-sm text-fg-muted-token">
                         {template.category}
                       </td>
                       <td className="px-4 py-3">
@@ -337,7 +337,7 @@ export const AccountDetailPage: React.FC = () => {
               </table>
             </div>
           ) : (
-            <p className="text-gray-500 dark:text-[var(--dark-text-secondary,#a1a1aa)] text-center py-8">
+            <p className="text-fg-muted-token text-center py-8">
               Nenhum template encontrado. Clique em "Sincronizar Templates" para importar.
             </p>
           )}
@@ -351,7 +351,7 @@ export const AccountDetailPage: React.FC = () => {
         size="sm"
       >
         <form onSubmit={handleRotateToken} className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-[var(--dark-text-secondary,#a1a1aa)]">
+          <p className="text-sm text-fg-muted-token">
             Insira o novo token de acesso do WhatsApp Business API. O token atual será substituído.
           </p>
           <Input
