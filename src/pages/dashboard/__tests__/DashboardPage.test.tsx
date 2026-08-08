@@ -40,6 +40,11 @@ jest.mock('../../../hooks/useOrderSound', () => ({
 // Componentes filhos pesados renderizam nada — foco é o estado de erro da página.
 // useAiDailySummary -> services/ai -> services/api, que lê import.meta.env e
 // quebra no jest. O painel de previsão é testado à parte (ForecastPanel).
+// A home passou a mostrar as avaliações.
+jest.mock('../../../hooks/queries/useAvaliacoesDaLoja', () => ({
+  useAvaliacoesDaLoja: () => ({ data: undefined, isLoading: false }),
+}));
+
 jest.mock('../../../hooks/queries/useAiDailySummary', () => ({
   useAiDailySummary: () => ({ data: undefined, isLoading: false }),
   aiDailySummaryQueryKey: () => ['ai-daily-summary'],

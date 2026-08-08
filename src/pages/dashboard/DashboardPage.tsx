@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCartIcon,
@@ -35,6 +35,9 @@ import { useAiDailySummary } from '../../hooks/queries/useAiDailySummary';
 import type { Order } from '../../types';
 import type { ProjectHealth } from '../../types/dashboard';
 import { STATUS_LABELS } from '../../utils/rotulosDeEstado';
+import { StarIcon } from '@heroicons/react/24/outline';
+import { useAvaliacoesDaLoja } from '../../hooks/queries/useAvaliacoesDaLoja';
+import { leituraDeAvaliacoes } from './leituraDeAvaliacoes';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -231,6 +234,11 @@ export const DashboardPage: React.FC = () => {
   // então não há requisição extra. O forecast já vinha no payload e estava sendo
   // descartado — o card só renderizava o `summary` em texto.
   const { data: aiSummary, isLoading: aiSummaryLoading } = useAiDailySummary(storeSlug || storeId);
+
+  // Avaliações dos últimos 30 dias. O endpoint já existia e alimentava só a
+  // aba de relatório — que o dono raramente abre.
+  const { data: avaliacoes, isLoading: avaliacoesLoading } = useAvaliacoesDaLoja(storeSlug || storeId);
+  const leitura = useMemo(() => leituraDeAvaliacoes(avaliacoes), [avaliacoes]);
 
   const loadData = useCallback(async () => {
     if (!storeId) return;
@@ -639,6 +647,68 @@ export const DashboardPage: React.FC = () => {
         </Card>
 
       </div>
+
+      {/* ── Avaliações ──
+          A loja tinha 4 avaliações com média 5,0 e o dono não via nenhuma: o
+          endpoint existia, a aba de relatório existia, e a tela que ele abre
+          todo dia não tocava no assunto. */}
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-border-token">
+          <div className="flex items-center gap-2">
+            <StarIcon className="h-4 w-4 text-brand-ink" />
+            <h2 className="text-sm font-semibold text-fg-token">O que os clientes acharam</h2>
+          </div>
+          <button
+            onClick={() => navigate('/analytics?aba=avaliacoes')}
+            className="flex items-center gap-1 text-xs text-brand-ink hover:underline font-medium"
+          >
+            Ver todas <ArrowRightIcon className="h-3 w-3" />
+          </button>
+        </div>
+
+        {avaliacoesLoading && !avaliacoes ? (
+          <div className="flex justify-center items-center h-28"><Loading /></div>
+        ) : (
+          <div className="flex flex-wrap items-start gap-x-10 gap-y-4 px-5 py-4">
+            <div>
+              <p className="overline mb-1">Nota média</p>
+              <p className="text-3xl font-bold text-fg-token leading-none">
+                {/* "0,0 estrelas" numa loja que ninguém avaliou seria uma nota
+                    péssima inventada por falta de dado. */}
+                {leitura.nota ?? '—'}
+                {leitura.nota && <span className="text-base font-semibold text-fg-muted-token ml-1">de 5</span>}
+              </p>
+              <p className="text-xs text-fg-muted-token mt-1">
+                {leitura.total} {leitura.total === 1 ? 'avaliação' : 'avaliações'}
+              </p>
+            </div>
+
+            <div className="flex-1 min-w-[260px]">
+              <p className="text-sm text-fg-token">{leitura.contexto}</p>
+              <p className="text-sm text-fg-muted-token mt-1">{leitura.recomendacao}</p>
+            </div>
+
+            {(avaliacoes?.recent ?? []).filter((r) => r.comment?.trim()).slice(0, 2).length > 0 && (
+              <div className="w-full border-t border-border-token pt-3 space-y-2">
+                {(avaliacoes?.recent ?? [])
+                  .filter((r) => r.comment?.trim())
+                  .slice(0, 2)
+                  .map((r, i) => (
+                    <div key={i} className="text-sm">
+                      <span className="font-semibold text-fg-token">
+                        {'★'.repeat(r.rating)}
+                        <span className="text-fg-muted-token">{'★'.repeat(Math.max(0, 5 - r.rating))}</span>
+                      </span>
+                      <span className="text-fg-muted-token ml-2">
+                        {r.customer_name || 'Cliente'}: “{r.comment}”
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
 
       {/* ── Project health (admins only) ── */}
       {user?.is_staff && <Card>
