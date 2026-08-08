@@ -23,7 +23,12 @@ import toast from 'react-hot-toast';
 // Os dois lados somam: o kebab/linha clicável desta sessão e o EmptyState de
 // erro dos KPIs que o bot trouxe. Nenhum substitui o outro.
 import { PageLoading, EmptyState } from '../../components/common';
-import { Card, Button, Badge, StatCard, RowActions, linhaClicavel } from '../../components/ui';
+import {
+  Card, Button, Badge, RowActions, linhaClicavel,
+  PageShell, KpiGrid, InsightList,
+} from '../../components/ui';
+import { insightsDeClientes } from './insightsDeClientes';
+import { rotuloDeDias, rotuloDePerfil, type TomDeCrm } from './rotulosDeCrm';
 import { getErrorMessage } from '../../services';
 import { StoreCustomer, StoreCustomerAddress, createCustomer, updateCustomer } from '../../services/storesApi';
 import { useStore, useDebounce } from '../../hooks';
@@ -49,6 +54,13 @@ const formatDate = (v?: string | null) => {
   const d = new Date(v);
   if (isNaN(d.getTime())) return '—';
   return format(d, 'dd/MM/yyyy', { locale: ptBR });
+};
+
+/** Cor da célula "sem comprar". O texto já diz tudo — a cor só apressa a varredura. */
+const TOM_CRM: Record<TomDeCrm, string> = {
+  neutro: 'text-fg-muted-token',
+  atencao: 'text-[var(--warning)]',
+  perigo: 'text-[var(--danger)]',
 };
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
@@ -502,6 +514,14 @@ export const CustomersPage: React.FC = () => {
     totalRevenue: Number(statsQuery.data?.total_revenue ?? 0),
   };
 
+  // Os segmentos são o que transforma a lista em ferramenta de reengajamento:
+  // "12 em risco, 30 a 45 dias sem comprar" dá para agir hoje; "2.386
+  // cadastrados" não.
+  const insights = useMemo(
+    () => insightsDeClientes(statsQuery.data?.segmentos),
+    [statsQuery.data?.segmentos]
+  );
+
   // Erro isolado da seção de KPIs: sem isto, uma falha do endpoint de stats
   // deixava os cards com zeros ("Total 0", "Receita total R$ 0,00"), enganando
   // o lojista a achar que perdeu todos os clientes/faturamento. Só tratamos como
@@ -527,7 +547,38 @@ export const CustomersPage: React.FC = () => {
 
   return (
     <>
-    <div className="p-6 space-y-5">
+    <PageShell
+      titulo="Clientes"
+      descricao="Quem compra, quem parou de comprar e quem nunca comprou."
+      acoes={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Atualizar clientes"
+            onClick={refresh}
+            disabled={refreshing}
+            className="p-2 rounded-lg bg-surface border border-border-token text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors disabled:opacity-50"
+          >
+            <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+          <Button onClick={() => { setEditingCustomer(null); setFormOpen(true); }}>
+            Novo cliente
+          </Button>
+        </div>
+      }
+      filtros={
+        <div className="relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-muted-token" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, email ou telefone…"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); if (page !== 1) setPage(1); }}
+            className="w-72 max-sm:w-full bg-surface border border-border-token text-fg-token placeholder-fg-muted-token rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand transition-colors"
+          />
+        </div>
+      }
+    >
 
       {/* ── KPIs ── */}
       {statsFailed ? (
@@ -540,45 +591,41 @@ export const CustomersPage: React.FC = () => {
           />
         </Card>
       ) : (
-        <div className="grid grid-cols-4 max-xl:grid-cols-2 gap-4">
-          <StatCard label="Total" value={kpis.total} />
-          <StatCard label="Ativos" value={kpis.active} tone="brand" />
-          <StatCard label="Com pedidos" value={kpis.withOrders} />
-          <StatCard label="Receita total" value={`R$ ${formatMoney(kpis.totalRevenue)}`} tone="brand" />
-        </div>
+        <KpiGrid
+          itens={[
+            { label: 'Total', value: kpis.total, definicao: 'cadastros nesta loja, comprando ou não' },
+            { label: 'Ativos', value: kpis.active, tone: 'brand', definicao: 'cadastro habilitado a pedir' },
+            { label: 'Com pedidos', value: kpis.withOrders, definicao: 'já fizeram ao menos uma compra' },
+            {
+              label: 'Receita total',
+              value: `R$ ${formatMoney(kpis.totalRevenue)}`,
+              tone: 'brand',
+              definicao: 'soma dos pedidos pagos de todos os clientes',
+            },
+          ]}
+        />
       )}
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-lg font-semibold text-fg-token">Clientes</h1>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-muted-token" />
-            <input
-              type="text"
-              placeholder="Buscar por nome, email ou telefone…"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); if (page !== 1) setPage(1); }}
-              className="w-64 bg-surface border border-border-token text-fg-token placeholder-fg-muted-token rounded pl-9 pr-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand transition-colors"
-            />
-          </div>
-          <button
-            type="button"
-            aria-label="Atualizar clientes"
-            onClick={refresh}
-            disabled={refreshing}
-            className="p-1.5 rounded bg-surface border border-border-token text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors disabled:opacity-50"
-          >
-            <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            onClick={() => { setEditingCustomer(null); setFormOpen(true); }}
-            className="px-3 py-1.5 rounded bg-brand text-white text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            + Novo cliente
-          </button>
-        </div>
-      </div>
+      {insights.length > 0 && (
+        <InsightList
+          titulo="Sua base agora"
+          descricao="Cada grupo pede uma conversa diferente — a régua vai escrita."
+          tom={insights.some((i) => i.direcao === 'baixa') ? 'alerta' : 'neutro'}
+          itens={insights.map((i) => ({
+            direcao: i.direcao,
+            titulo: i.titulo,
+            valor: i.valor,
+            recomendacao: i.recomendacao,
+            // Reativação sai daqui direto para onde se cria a oferta. Sem isso
+            // o diagnóstico morre em texto e o operador precisa lembrar onde
+            // ficam os cupons.
+            acao:
+              i.chave === 'saudavel'
+                ? undefined
+                : { rotulo: 'Criar cupom', onClick: () => navigate(storeSlug ? `/stores/${storeSlug}/coupons` : '/') },
+          }))}
+        />
+      )}
 
       {/* ── Table ── */}
       <Card className="overflow-hidden">
@@ -596,7 +643,11 @@ export const CustomersPage: React.FC = () => {
                   <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden md:table-cell">Contato</th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden lg:table-cell">Pedidos</th>
                   <th className="px-4 py-3 text-right text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden lg:table-cell">Gasto total</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden xl:table-cell">Último pedido</th>
+                  {/* "Último pedido" virou "Sem comprar": a data crua obriga
+                      cada linha a uma subtração mental, e é a distância — não
+                      a data — que decide quem recebe mensagem hoje. */}
+                  <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden xl:table-cell">Sem comprar</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden lg:table-cell">Perfil</th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-fg-muted-token uppercase tracking-widest">Status</th>
                   <th className="px-2 py-3"><span className="sr-only">Ações</span></th>
                 </tr>
@@ -605,7 +656,14 @@ export const CustomersPage: React.FC = () => {
                 {customers.map((customer) => {
                   const avatarBg = getAvatarColor(customer.user_name || customer.user_email || '');
                   const avatarInitials = getInitials(customer.user_name, customer.whatsapp || customer.phone);
-                  const ltv = Number(customer.total_spent ?? 0);
+                  // Preferimos os campos derivados dos pedidos: os contadores
+                  // gravados por signal divergiram em 12 dos 78 clientes da Cê
+                  // Saladas. `??` e não `||` — zero real é resposta válida.
+                  const gasto = customer.gasto_real ?? Number(customer.total_spent ?? 0);
+                  const pedidos = customer.pedidos_reais ?? customer.total_orders ?? 0;
+                  const ltv = Number(gasto);
+                  const dias = rotuloDeDias(customer.dias_sem_comprar);
+                  const perfil = rotuloDePerfil(customer.perfil);
                   return (
                   <tr
                     key={customer.id}
@@ -644,7 +702,7 @@ export const CustomersPage: React.FC = () => {
                     <td className="px-4 py-3 text-center hidden lg:table-cell">
                       <Badge tone="neutral" className="gap-1.5">
                         <ShoppingBagIcon className="h-3 w-3" />
-                        {customer.total_orders ?? 0}
+                        {pedidos}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-right hidden lg:table-cell">
@@ -652,12 +710,22 @@ export const CustomersPage: React.FC = () => {
                         <Badge tone="success">R$ {ltv.toFixed(2)}</Badge>
                       ) : (
                         <span className="font-bold text-fg-token">
-                          R$ {formatMoney(customer.total_spent)}
+                          R$ {formatMoney(gasto)}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-3 hidden xl:table-cell">
-                      <span className="text-xs text-fg-muted-token">{formatDate(customer.last_order_at)}</span>
+                      <span className={`text-xs font-semibold ${TOM_CRM[dias.tom]}`} title={formatDate(customer.last_order_at)}>
+                        {dias.texto}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center hidden lg:table-cell">
+                      {/* O corte no `title`: "VIP" sem régua é magia, e quem
+                          atende precisa saber explicar por que aquele cliente
+                          é VIP. */}
+                      <Badge tone={customer.perfil === 'vip' ? 'success' : 'neutral'} title={perfil.definicao}>
+                        {perfil.texto}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-center">
                       {customer.is_active ? (
@@ -709,7 +777,7 @@ export const CustomersPage: React.FC = () => {
         )}
       </Card>
 
-    </div>
+    </PageShell>
 
     <CustomerDrawer
       customer={selectedCustomer}

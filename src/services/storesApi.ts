@@ -441,6 +441,19 @@ export interface StoreCustomer {
   total_orders: number;
   total_spent: number;
   last_order_at?: string;
+  /**
+   * Campos DERIVADOS dos pedidos, não dos contadores gravados por signal.
+   *
+   * `total_spent` / `total_orders` divergem: em 07/ago/2026, 12 dos 78
+   * clientes da Cê Saladas estavam errados (R$ 2.726,01 na lista contra
+   * R$ 2.613,21 nos pedidos). Estes vêm do mesmo núcleo que produz o
+   * faturamento, então a lista e o relatório contam a mesma história.
+   */
+  gasto_real?: number;
+  pedidos_reais?: number;
+  /** `null` = nunca comprou. NÃO é zero — zero lê como "comprou hoje". */
+  dias_sem_comprar?: number | null;
+  perfil?: 'novo' | 'ocasional' | 'vip';
   tags: string[];
   notes: string;
   accepts_marketing: boolean;
@@ -1189,11 +1202,33 @@ export const getCustomers = async (params?: {
   }
 };
 
+/**
+ * Segmentos de CRM, agregados pelo backend com a régua junto.
+ *
+ * O contrato inclui `reguas` de propósito: o corte de "em risco" é decisão de
+ * produto que pode mudar, e a tela precisa poder imprimir o corte vigente em
+ * vez de repetir um número que envelhece no frontend.
+ */
+export interface SegmentosDeClientes {
+  ativos: number;
+  em_risco: number;
+  inativos: number;
+  sem_compra: number;
+  reguas: {
+    ativos: string;
+    em_risco: string;
+    inativos: string;
+    sem_compra: string;
+  };
+}
+
 export interface CustomerStats {
   total: number;
   active: number;
   with_orders: number;
   total_revenue: string;
+  /** Opcional: backend antigo não manda, e a página só esconde a seção. */
+  segmentos?: SegmentosDeClientes;
 }
 
 export const getCustomerStats = async (params: {
