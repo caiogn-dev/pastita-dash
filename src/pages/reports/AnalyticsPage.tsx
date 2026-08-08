@@ -1,7 +1,7 @@
 /**
  * AnalyticsPage - Relatórios (sem Chakra UI)
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDownTrayIcon,
@@ -40,6 +40,7 @@ import { Link } from 'react-router-dom';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 import { useAnalyticsReport } from '../../hooks/queries/useReports';
 import type { HeatmapReport } from '../../services/reports';
+import { matrizDeProdutos, QUADRANTES, type Quadrante, type ProdutoClassificado } from './matrizDeProdutos';
 
 // 403 plan_upgrade_required nos endpoints de analytics → aba mostra o convite
 // de upgrade em vez de seções vazias.
@@ -534,8 +535,76 @@ const AnalyticsPage: React.FC = () => {
     </div>
   );
 
+  // Classificação do cardápio nos quatro quadrantes. Calculada sobre o mesmo
+  // `top_products` que a lista abaixo mostra: dois cortes diferentes dos
+  // mesmos dados discordariam na tela.
+  const matriz = useMemo(
+    () => matrizDeProdutos(productsReport?.top_products),
+    [productsReport?.top_products]
+  );
+
   const renderProducts = () => (
     <div className="flex flex-col gap-6">
+      {/* O ranking responde "o que mais vendeu" e para por aí. Estes quatro
+          grupos respondem o que FAZER com cada item — e um prato que sai muito
+          e fatura pouco não é ruim, é chamariz: a ação é subir o combo em
+          volta dele, não tirá-lo. */}
+      {matriz.length > 0 && (
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold text-fg-token mb-1">O que fazer com o cardápio</h2>
+          <p className="text-sm text-fg-muted-token mb-4">
+            Cada item comparado com a MEDIANA do cardápio em duas medidas: quanto sai e
+            quanto fatura. Mediana e não média — um prato caro puxaria a média e jogaria
+            metade do cardápio para o lado fraco.
+          </p>
+          <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-4">
+            {(Object.keys(QUADRANTES) as Quadrante[]).map((chave: Quadrante) => {
+              const q = QUADRANTES[chave];
+              const itens: ProdutoClassificado[] = matriz.filter((p: ProdutoClassificado) => p.quadrante === chave);
+              return (
+                <div key={chave} className="rounded-xl border border-border-token p-4">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h3 className={`font-semibold ${
+                      q.tom === 'bom' ? 'text-[var(--success)]'
+                        : q.tom === 'atencao' ? 'text-[var(--warning)]'
+                        : 'text-fg-token'
+                    }`}>
+                      {q.rotulo}
+                    </h3>
+                    <span className="text-sm text-fg-muted-token">
+                      {itens.length} {itens.length === 1 ? 'item' : 'itens'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-fg-muted-token mt-0.5">{q.definicao}</p>
+
+                  {itens.length === 0 ? (
+                    <p className="mt-3 text-sm text-fg-muted-token">Nenhum item aqui.</p>
+                  ) : (
+                    <ul className="mt-3 space-y-1">
+                      {itens.slice(0, 5).map((p: ProdutoClassificado) => (
+                        <li key={p.product_id ?? p.product_name} className="flex justify-between gap-3 text-sm">
+                          <span className="truncate text-fg-token">{p.product_name}</span>
+                          <span className="shrink-0 text-fg-muted-token">
+                            {p.total_quantity}un · {formatCurrency(p.total_revenue)}
+                          </span>
+                        </li>
+                      ))}
+                      {itens.length > 5 && (
+                        <li className="text-xs text-fg-muted-token">e mais {itens.length - 5}…</li>
+                      )}
+                    </ul>
+                  )}
+
+                  <p className="mt-3 border-t border-border-token pt-2 text-sm text-fg-token">
+                    {q.acao}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
       <Card className="p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-fg-token">Performance de Produtos</h2>
