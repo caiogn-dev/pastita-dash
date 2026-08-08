@@ -55,10 +55,27 @@ export interface AiForecast {
   days_without_sale: number;
 }
 
+/**
+ * Um pedaço do resumo, com natureza própria.
+ *
+ * Quatro tipos e só quatro — são as quatro perguntas que o dono faz ao abrir o
+ * painel de manhã. Cada um custa um ícone e uma cor; mais que isso vira
+ * taxonomia sem uso.
+ */
+export type TipoDeBloco = 'resultado' | 'tendencia' | 'atencao' | 'acao';
+
+export interface BlocoDoResumo {
+  tipo: TipoDeBloco;
+  titulo: string;
+  texto: string;
+}
+
 export interface AiDailySummary {
   stats: AiDailySummaryStats;
   /** Ausente se o cálculo do forecast falhar — o painel degrada, não quebra. */
   forecast?: AiForecast;
+  /** Opcional: backend antigo (ou cache velho) ainda devolve só `summary`. */
+  blocos?: BlocoDoResumo[];
   summary: string;
   source: 'llm' | 'template';
   cached: boolean;

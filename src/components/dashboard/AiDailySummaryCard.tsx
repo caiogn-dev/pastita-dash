@@ -7,7 +7,14 @@
  */
 import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowPathIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowPathIcon,
+  SparklesIcon,
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  ExclamationTriangleIcon,
+  LightBulbIcon,
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card } from '../ui';
 import { EmptyState, Skeleton } from '../common';
@@ -39,6 +46,38 @@ export interface AiDailySummaryCardProps {
   store: string;
   className?: string;
 }
+
+/**
+ * Ícone, cor e nome de cada natureza de bloco.
+ *
+ * As cores são semânticas, não decorativas: `atencao` usa o âmbar de aviso do
+ * painel e `acao` usa o ouro da marca, porque é a linha que pede um clique.
+ */
+const ESTILO_DO_BLOCO: Record<
+  string,
+  { icone: React.ComponentType<{ className?: string }>; chip: string; rotulo: string }
+> = {
+  resultado: {
+    icone: ChartBarIcon,
+    chip: 'bg-surface-2 text-fg-muted-token',
+    rotulo: 'resultado de ontem',
+  },
+  tendencia: {
+    icone: ArrowTrendingUpIcon,
+    chip: 'bg-[var(--info-soft)] text-[var(--info)]',
+    rotulo: 'tendência',
+  },
+  atencao: {
+    icone: ExclamationTriangleIcon,
+    chip: 'bg-[var(--warning-soft)] text-[var(--warning)]',
+    rotulo: 'requer atenção',
+  },
+  acao: {
+    icone: LightBulbIcon,
+    chip: 'bg-brand-soft text-brand-ink',
+    rotulo: 'o que fazer hoje',
+  },
+};
 
 export const AiDailySummaryCard: React.FC<AiDailySummaryCardProps> = ({ store, className }) => {
   const queryClient = useQueryClient();
@@ -106,9 +145,46 @@ export const AiDailySummaryCard: React.FC<AiDailySummaryCardProps> = ({ store, c
         />
       ) : (
         <div className="p-5 space-y-4">
-          <p className="text-sm leading-relaxed text-fg-token font-medium">
-            {data.summary}
-          </p>
+          {/* Blocos, não parágrafo.
+              O texto corrido de 4 a 6 frases nivelava informações de natureza
+              diferente — como foi ontem, para onde está indo, o que fazer hoje
+              — e enterrava a AÇÃO, que é a única parte acionável, na última
+              linha. Cada bloco tem ícone e cor da sua natureza.
+              O `summary` continua sendo o plano B: cache antigo e backend não
+              atualizado ainda devolvem só ele. */}
+          {data.blocos?.length ? (
+            <ul className="space-y-2.5">
+              {data.blocos.map((bloco, i) => {
+                const estilo = ESTILO_DO_BLOCO[bloco.tipo] ?? ESTILO_DO_BLOCO.resultado;
+                const Icone = estilo.icone;
+                return (
+                  <li key={`${bloco.tipo}-${i}`} className="flex gap-2.5">
+                    <span
+                      aria-hidden
+                      className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${estilo.chip}`}
+                    >
+                      <Icone className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-body font-semibold text-fg-token">
+                        {bloco.titulo}
+                        {/* A natureza do bloco em palavra: cor e ícone não
+                            chegam a quem usa leitor de tela. */}
+                        <span className="sr-only"> ({estilo.rotulo})</span>
+                      </p>
+                      <p className="mt-0.5 text-body leading-relaxed text-fg-muted-token">
+                        {bloco.texto}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm leading-relaxed text-fg-token font-medium">
+              {data.summary}
+            </p>
+          )}
 
           <div className="grid grid-cols-5 max-md:grid-cols-2 gap-3 pt-1 border-t border-border-token [&>*]:pt-3">
             <MiniStat label="Pedidos" value={data.stats.orders} />
