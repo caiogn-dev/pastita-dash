@@ -71,8 +71,24 @@ export const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const clickable = typeof onClick === 'function';
   const pct = comparativo?.variacaoPct;
-  const subiu = typeof pct === 'number' && pct > 0;
-  const caiu = typeof pct === 'number' && pct < 0;
+
+  /**
+   * Dia que ainda não começou não é queda.
+   *
+   * Às 8h da manhã a receita de hoje é R$ 0, e o comparativo devolve −100%.
+   * O card pintava isso de vermelho com "▼ 100,0% vs ontem" — a primeira
+   * coisa que o dono via ao abrir o painel era um alarme sobre um dia que
+   * ainda nem aconteceu. Alarme que aparece todo dia às 8h não é alarme.
+   *
+   * −100% exato com valor zerado é o dia não começado; a comparação volta a
+   * fazer sentido assim que entrar o primeiro pedido.
+   */
+  const valorZerado =
+    value === 0 || value === '0' || (typeof value === 'string' && /^R\$\s*0[,.]00$/.test(value));
+  const semBase = valorZerado && pct !== null && pct !== undefined && pct <= -99.9;
+
+  const subiu = !semBase && typeof pct === 'number' && pct > 0;
+  const caiu = !semBase && typeof pct === 'number' && pct < 0;
 
   return (
     <Card
@@ -118,6 +134,8 @@ export const StatCard: React.FC<StatCardProps> = ({
           {pct === null ? (
             // Sem período anterior não há percentual honesto a mostrar.
             <span className="text-fg-muted-token">sem base de comparação</span>
+          ) : semBase ? (
+            <span className="text-fg-muted-token">ainda sem movimento hoje</span>
           ) : (
             <>
               <span

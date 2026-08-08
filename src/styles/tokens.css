@@ -40,11 +40,17 @@
      traço dourado sobre marfim vira sujeira. */
   --chrome-hairline: transparent;
   --brand-soft: rgba(201,162,75,.14);
-  --canvas: #FBF7EF;
+  /* FUNDO NEUTRO, não marfim.
+     Era #FBF7EF — bege amarelado. Em card pequeno passa por "quente"; em tela
+     cheia lê como papel velho, e junto com o ouro da marca puxa o painel para
+     um tom amador. O ouro rende MAIS sobre cinza neutro: sem outro amarelo
+     competindo, ele vira o único acento quente da tela.
+     Guardado o calor onde ele funciona: --brand-soft continua dourado. */
+  --canvas: #F7F7F8;
   --surface: #ffffff;
-  --surface-2: #F4EEE2;
-  --border: #E6DAC4;
-  --border-strong: #D8C8AC;
+  --surface-2: #F0F0F2;
+  --border: #E4E4E8;
+  --border-strong: #D6D6DC;
   --fg: #2B2620;
   /* 4,53–5,23:1. Era #8A7E6C (3,44–3,98) — reprovava para texto normal, e é o
      tom de 652 usos: legenda, sub-rótulo, "vs ontem", preview de conversa. */
@@ -86,9 +92,16 @@
        repouso   superfície que apenas existe (card de conteúdo)
        hover     o card responde ao ponteiro, sinalizando que é clicável
        flutuante o que paira sobre a página (menu, modal, dropdown) */
-  --elev-repouso: 0 1px 2px rgba(43,38,32,.05), 0 1px 3px rgba(43,38,32,.04);
-  --elev-hover: 0 4px 10px -2px rgba(43,38,32,.10), 0 2px 6px -2px rgba(43,38,32,.06);
-  --elev-flutuante: 0 12px 28px -8px rgba(43,38,32,.22), 0 4px 10px -4px rgba(43,38,32,.12);
+  /* Sombra AMPLA e fraca, não estreita e escura. Borda cinza sólida cerca o
+     card e achata a tela; uma sombra de grande dispersão e baixa opacidade faz
+     o mesmo card parecer pousado sobre o fundo. */
+  --elev-repouso: 0 1px 2px rgba(24,24,27,.04), 0 8px 24px -12px rgba(24,24,27,.10);
+  --elev-hover: 0 2px 4px rgba(24,24,27,.05), 0 16px 32px -12px rgba(24,24,27,.16);
+  --elev-flutuante: 0 4px 8px rgba(24,24,27,.06), 0 24px 48px -12px rgba(24,24,27,.24);
+
+  /* Elástica: estica na largada, corre no meio, desacelera no fim. É o que
+     faz o indicador da navegação parecer matéria, não um retângulo teletransportado. */
+  --mola: cubic-bezier(0.34, 1.56, 0.64, 1);
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Cinzel', Georgia, serif;
 
@@ -127,6 +140,7 @@
 
   /* No escuro a sombra some contra o fundo; o que dá relevo é a luz na borda
      de cima. Mesmos nomes, técnica diferente — quem consome não precisa saber. */
+  --mola: cubic-bezier(0.34, 1.56, 0.64, 1);
   --elev-repouso: 0 1px 0 rgba(245,236,222,.05) inset, 0 2px 6px rgba(0,0,0,.35);
   --elev-hover: 0 1px 0 rgba(245,236,222,.08) inset, 0 8px 18px rgba(0,0,0,.45);
   --elev-flutuante: 0 1px 0 rgba(245,236,222,.10) inset, 0 18px 40px rgba(0,0,0,.6);

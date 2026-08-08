@@ -4,11 +4,21 @@ import { Card } from '../Card';
 import { Badge } from '../Badge';
 
 describe('Card (canônico)', () => {
-  it('aplica border e surface', () => {
+  it('separa do fundo por ELEVAÇÃO, não por borda', () => {
+    // A borda cinza sólida cercava o bloco e achatava a tela: tudo virava
+    // retângulo delimitado no mesmo plano. A sombra ampla e fraca faz o mesmo
+    // trabalho de separar do fundo, mas por profundidade — o card parece
+    // pousado, não emoldurado.
     render(<Card data-testid="card">conteúdo</Card>);
     const el = screen.getByTestId('card');
-    expect(el.className).toContain('border');
     expect(el.className).toContain('bg-surface');
+    expect(el.className).toContain('shadow-repouso');
+    expect(el.className).not.toContain('border-border-token');
+  });
+
+  it('a variante outline mantém a borda — é o que ela é', () => {
+    render(<Card variant="outline" data-testid="card">x</Card>);
+    expect(screen.getByTestId('card').className).toContain('border-border-token');
   });
 
   it('mescla className extra e repassa props', () => {

@@ -34,12 +34,19 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hoverable?: boolean;
 }
 
-// `shadow-repouso` no default: sem elevação nenhuma o painel fica achatado —
-// tudo no mesmo plano, nada guiando o olho. `outline` e `filled` seguem sem
-// sombra de propósito: um é contorno, o outro é preenchimento; ambos existem
-// justamente para NÃO se destacar.
+/**
+ * O card padrão NÃO tem borda.
+ *
+ * Borda cinza sólida cerca o bloco e achata a tela: tudo vira retângulo
+ * delimitado no mesmo plano. A sombra ampla e fraca faz o mesmo trabalho de
+ * separar do fundo, mas por PROFUNDIDADE — o card parece pousado, não
+ * emoldurado.
+ *
+ * `outline` mantém a borda porque é o que ele é: contorno sem superfície.
+ * `filled` não tem nem uma nem outra — existe para NÃO se destacar.
+ */
 const variantClasses: Record<CardVariant, string> = {
-  default: 'bg-surface border border-border-token shadow-repouso',
+  default: 'bg-surface shadow-repouso',
   outline: 'bg-transparent border border-border-token',
   filled: 'bg-surface-2 border-0',
 };
@@ -89,7 +96,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       return (
         <div
           ref={ref}
-          className={cn('bg-surface border border-border-token rounded shadow-repouso', className)}
+          // rounded-xl (16px): card grande com canto de 10px ainda lê como
+          // caixa. O arredondamento precisa acompanhar o tamanho da forma.
+          className={cn('bg-surface rounded-xl shadow-repouso', className)}
           {...props}
         >
           {children}
@@ -106,7 +115,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'rounded',
+          'rounded-xl',
           variantClasses[resolvedVariant],
           // Sobe um degrau de elevação no hover, além da cor: movimento diz
           // "isto responde" mais rápido que mudança de tom.

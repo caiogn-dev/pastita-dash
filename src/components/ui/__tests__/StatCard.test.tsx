@@ -28,3 +28,42 @@ describe('StatCard (canônico)', () => {
     expect(container.firstChild).toHaveClass('cursor-pointer');
   });
 });
+
+describe('StatCard — dia que não começou não é queda', () => {
+  it('valor zerado com -100% vira neutro, não alarme vermelho', () => {
+    // Às 8h da manhã a receita de hoje é R$ 0 e o comparativo devolve -100%.
+    // O card pintava "▼ 100,0% vs ontem" em vermelho: a primeira coisa que o
+    // dono via ao abrir o painel era um alarme sobre um dia que ainda nem
+    // aconteceu. Alarme que aparece todo dia às 8h ninguém lê.
+    render(
+      <StatCard
+        label="Receita hoje"
+        value="R$ 0,00"
+        comparativo={{ variacaoPct: -100, rotulo: 'vs ontem' }}
+      />
+    );
+    expect(screen.getByText(/ainda sem movimento hoje/i)).toBeInTheDocument();
+    expect(screen.queryByText(/100/)).not.toBeInTheDocument();
+  });
+
+  it('queda de verdade continua vermelha', () => {
+    // O sinal precisa continuar valendo quando há dado real.
+    render(
+      <StatCard
+        label="Receita hoje"
+        value="R$ 320,00"
+        comparativo={{ variacaoPct: -42, rotulo: 'vs ontem' }}
+      />
+    );
+    expect(screen.getByText(/42\.0%/)).toBeInTheDocument();
+  });
+
+  it('zero com queda parcial não é silenciado', () => {
+    // -30% com valor zerado seria dado inconsistente; só o -100% exato é o
+    // caso do dia não começado.
+    render(
+      <StatCard label="x" value={0} comparativo={{ variacaoPct: -30, rotulo: 'vs ontem' }} />
+    );
+    expect(screen.getByText(/30\.0%/)).toBeInTheDocument();
+  });
+});

@@ -42,9 +42,9 @@ const CLARO = {
   warning: '#AF5109',
   danger: '#D32222',
   info: '#2361EB',
-  canvas: '#FBF7EF',
+  canvas: '#F7F7F8',
   surface: '#ffffff',
-  'surface-2': '#F4EEE2',
+  'surface-2': '#F0F0F2',
   // Cromo (navbar + coluna lateral). Duas pontas do gradiente: o texto tem de
   // passar nas DUAS, senão fica legível no topo da barra e some na base.
   'chrome-bg': '#FFFFFF',

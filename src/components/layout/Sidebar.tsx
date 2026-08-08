@@ -93,14 +93,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   aria-current={estaAtiva ? 'page' : undefined}
                   title={recolhido ? secao.label : undefined}
                   className={cn(
-                    'flex items-center gap-2.5 rounded px-2.5 py-2 text-body font-medium transition-colors',
+                    'relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-body font-medium',
+                    'transition-colors duration-200',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     estaAtiva
-                      ? 'bg-surface-2 text-brand-ink'
+                      ? 'bg-brand-soft text-brand-ink'
                       : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
                   )}
                 >
-                  <Icone className="h-5 w-5 shrink-0" />
+                  {/* Barra da marca que ESTICA ao entrar.
+                      O item ativo era só um fundo cinza — indistinguível do
+                      hover, e sem nada da identidade. A barra dourada marca
+                      onde você está com a cor da loja, e a curva elástica
+                      (--mola) faz ela parecer matéria: estica na largada,
+                      corre no meio, desacelera no fim. Retângulo que aparece
+                      pronto lê como troca de tela; este lê como movimento. */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-pill bg-brand',
+                      'transition-[height,opacity] duration-300',
+                      estaAtiva ? 'h-5 opacity-100' : 'h-0 opacity-0'
+                    )}
+                    style={{ transitionTimingFunction: 'var(--mola)' }}
+                  />
+                  <Icone className={cn('h-5 w-5 shrink-0', estaAtiva && 'text-brand-ink')} />
                   {/* Recolhido esconde o rótulo VISUALMENTE, nunca do leitor de
                       tela — senão a coluna vira uma fileira de ícones mudos. */}
                   <span className={cn('truncate', recolhido && 'sr-only')}>{secao.label}</span>
@@ -122,14 +139,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                 onClick={() => setAberto(estaAberta ? null : secao.label)}
                 title={recolhido ? secao.label : undefined}
                 className={cn(
-                  'flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-body font-medium transition-colors',
+                  'relative flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-body font-medium',
+                  'transition-colors duration-200',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                   estaAtiva
-                    ? 'bg-surface-2 text-brand-ink'
+                    ? 'bg-brand-soft text-brand-ink'
                     : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
                 )}
               >
-                <Icone className="h-5 w-5 shrink-0" />
+                <span
+                  aria-hidden
+                  className={cn(
+                    'absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-pill bg-brand',
+                    'transition-[height,opacity] duration-300',
+                    estaAtiva ? 'h-5 opacity-100' : 'h-0 opacity-0'
+                  )}
+                  style={{ transitionTimingFunction: 'var(--mola)' }}
+                />
+                <Icone className={cn('h-5 w-5 shrink-0', estaAtiva && 'text-brand-ink')} />
                 <span className={cn('truncate', recolhido && 'sr-only')}>{secao.label}</span>
                 {!recolhido && (
                   <ChevronDownIcon
@@ -154,10 +181,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                           aria-current={itemAtivo ? 'page' : undefined}
                           title={recolhido ? item.name : undefined}
                           className={cn(
-                            'flex items-center gap-2.5 rounded px-2.5 py-1.5 text-body transition-colors',
+                            'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-body transition-colors duration-200',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                             itemAtivo
-                              ? 'font-semibold text-brand-ink'
+                              ? 'bg-brand-soft font-semibold text-brand-ink'
                               : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
                           )}
                         >
