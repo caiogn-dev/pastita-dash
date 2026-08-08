@@ -12,7 +12,8 @@ import {
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import { StatCard, RowActions, linhaClicavel, FormStepper } from '../../components/ui';
+import { StatCard, RowActions, linhaClicavel, FormStepper, InsightList } from '../../components/ui';
+import { insightsDeCupons } from './insightsDeCupons';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
 import { getCategories, StoreCategory } from '../../services/storesApi';
 import { useStore } from '../../hooks';
@@ -128,6 +129,24 @@ export const CouponsPage: React.FC = () => {
   useEffect(() => {
     setFormData(prev => ({ ...prev, store: storeId || undefined }));
   }, [storeId]);
+
+  /**
+   * Diagnóstico da lista, com o cupom de cada linha anexado.
+   *
+   * A regra de cálculo mora em `insightsDeCupons` (pura e testada); aqui só se
+   * amarra cada achado ao registro que ele acusa, para a linha virar navegação.
+   */
+  const insights = useMemo(
+    () =>
+      insightsDeCupons(coupons).map((i) => ({
+        ...i,
+        cupom:
+          i.chave === 'campeao' || i.chave === 'limite'
+            ? coupons.find((c) => i.titulo.includes(c.code) || i.valor.includes(c.code))
+            : undefined,
+      })),
+    [coupons]
+  );
 
   const handleOpenModal = (coupon?: Coupon) => {
     if (coupon) {
@@ -249,6 +268,27 @@ export const CouponsPage: React.FC = () => {
           Novo Cupom
         </Button>
       </div>
+
+      {/* Diagnóstico antes da tabela.
+          Quatro números e uma lista não dizem o que fazer: "21 cupons ativos"
+          tanto pode ser operação saudável quanto vinte cupons esquecidos. O
+          que muda a semana é a frase, e cada linha leva ao cupom. */}
+      <InsightList
+        titulo="O que pede atenção"
+        descricao="Calculado dos seus cupons ativos."
+        tom="alerta"
+        itens={insights.map((i) => ({
+          direcao: i.direcao,
+          titulo: i.titulo,
+          valor: i.valor,
+          recomendacao: i.recomendacao,
+          // Diagnóstico que termina em texto morre ali: você teria que achar
+          // o cupom na tabela por conta própria.
+          acao: i.cupom
+            ? { rotulo: 'Abrir cupom', onClick: () => handleOpenModal(i.cupom!) }
+            : undefined,
+        }))}
+      />
 
       {/* Stats */}
       {stats && (

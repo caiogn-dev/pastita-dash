@@ -4,6 +4,8 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import * as storesApi from '../../services/storesApi';
 import type { StoreCategory, StoreProductType } from '../../services/storesApi';
 import type { Product } from '../../services/products';
+import { InsightList } from '../../components/ui';
+import { insightsDeCardapio } from './insightsDeCardapio';
 import { useStore } from '../../hooks/useStore';
 // react-hot-toast e NÃO useToast: aquele hook guarda os toasts num useState
 // local e devolve o array para o componente renderizar — mas o ToastProvider
@@ -140,10 +142,45 @@ export const ProductsPage: React.FC = () => {
   // Spinner apenas na carga inicial real (sem dados ainda). Na renavegação a
   // query de produtos vem do cache (isLoading=false) e não bloqueia a tela.
   const initialLoading = (loading || productsQuery.isLoading) && categories.length === 0 && products.length === 0;
+  // A regra mora em `insightsDeCardapio` (pura e testada); aqui só se liga à
+  // lista já carregada — um endpoint novo para reprocessar o que está na
+  // memória adicionaria latência e um segundo lugar onde a regra diverge.
+  //
+  // ANTES do return antecipado: hook depois de `if (…) return` muda a ordem
+  // de chamada entre renders e o React quebra — foi o que aconteceu aqui.
+  const insights = useMemo(() => insightsDeCardapio(products as never), [products]);
+
   if (initialLoading) return <div>Carregando…</div>;
 
   return (
     <div className="p-4">
+      {/* Diagnóstico antes da lista.
+          203 linhas de produto respondem "o que eu vendo"; nenhuma responde
+          "o que eu faço com o cardápio esta semana". Item sem estoque, sem
+          preço ou sem foto está na tela e não salta aos olhos. */}
+      <InsightList
+        className="mb-4"
+        titulo="O que pede atenção no cardápio"
+        tom="alerta"
+        itens={insights.map((i) => ({
+          direcao: i.direcao,
+          titulo: i.titulo,
+          valor: i.valor,
+          recomendacao: i.recomendacao,
+          // Só quando é UM item: com dez, apontar para um seria arbitrário, e
+          // o que fazer é abrir a lista, não um produto.
+          acao: i.produtoId
+            ? {
+                rotulo: 'Abrir item',
+                onClick: () => {
+                  const alvo = products.find((p) => String(p.id) === i.produtoId);
+                  if (alvo) rowHandlers.onOpen(alvo);
+                },
+              }
+            : undefined,
+        }))}
+      />
+
       <ProductsToolbar
         search={search}
         onSearch={setSearch}
