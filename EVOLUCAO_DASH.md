@@ -90,6 +90,47 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   open redirect) e `vite` 5→8 (corrige esbuild/postcss dev-only), cada um como
   fatia dedicada com validação de build. (3) **Estados de erro:** seguem maduros
   nas páginas de query (Analytics/Payments/IntentStats já cobertas).
+## Baseline atual (2026-08-03)
+
+- `npm ci`: ok (6 vulnerabilidades: 3 moderate, 3 high). `npm audit fix` não-`--force`
+  desta vez arrasta bumps de `vite`/`rollup` (binários de plataforma) — não é uma
+  fatia mínima/segura; adiado.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **563 testes / 137 suítes verdes** (era 561/136; +2/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~17s).
+
+## Histórico
+
+### 2026-08-03 — UX/Resiliência: estado de erro nos KPIs da página de Clientes
+- **Medido:** varredura das páginas orientadas a query em busca do mesmo padrão de
+  "zeros enganosos" já corrigido em `PaymentsPage` (2026-07-24). `CustomersPage.tsx`
+  tinha a falha: os 4 KPIs do topo (**Total**, **Ativos**, **Com pedidos**,
+  **Receita total**) derivam de `useCustomerStats`, mas **`statsQuery.error` era
+  totalmente ignorado** — só `customersQuery.error` disparava toast. Quando o
+  endpoint `/stores/customers/stats/` caía (rede/500) sem cache, os cards
+  renderizavam `0`, `0`, `0`, `R$ 0,00`, enganando o lojista a achar que perdeu
+  todos os clientes e o faturamento.
+- **Descartado antes (sem bug):** `useAutomationEnabled` usa `queryKey: ['agents','gating']`
+  sem store — **intencional e documentado** (`/agents/` é account-scoped). As demais
+  queryKeys (`useReports`, `useCustomerStats`, `useOrderStats`, `usePaymentsOrders`,
+  `useProducts`, `useCustomers`…) já incluem a loja. `IntentStatsPage` já trata erro.
+- **Mudado (`CustomersPage.tsx`, mesmo padrão do `PaymentsPage`):** quando o stats
+  falha SEM cache (`isError && data === undefined`), a seção de KPIs mostra um
+  `EmptyState` acionável ("Não foi possível carregar os indicadores" + botão
+  **"Tentar novamente"** que refaz as duas queries) em vez dos zeros. Com dado em
+  cache (falha só ao atualizar), mantém os números anteriores.
+- **Teste (TDD, vermelho→verde):** novo `__tests__/CustomersKpiError.test.tsx` (2 casos):
+  (1) stats falha sem cache → não renderiza "Receita total"/`R$ 0,00`, mostra o erro
+  e o clique em "Tentar novamente" chama `refetch`; (2) stats com dados → KPIs reais,
+  sem estado de erro. Escrito vermelho (caso 1 falhando: "Receita total" presente),
+  verde após a correção.
+- **Antes/depois:** 561→563 testes, 136→137 suítes; tsc limpo e `vite build` ok nos
+  dois lados; lint sem novos warnings nos arquivos tocados.
+- **Próximo passo priorizado:** continuar a varredura de "zeros enganosos" nas
+  seções de KPI derivadas de query — próximas candidatas: `ProductsPage` (contadores
+  do topo), seções de `reports/` que somam via query, e `AnalyticsPage`. Auditar cada
+  uma antes de tocar. Deps: reavaliar `npm audit` num ambiente onde o `audit fix`
+  não-`--force` resolva sem arrastar `vite`/`rollup` (hoje 3 high/3 moderate).
 
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
