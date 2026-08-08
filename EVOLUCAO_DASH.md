@@ -3,6 +3,46 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-08)
+
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
+  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
+  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
+- `npm run build` (vite): **ok** (~14s).
+- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+
+## Histórico
+
+### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
+- **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
+  `<button role="switch" aria-checked>` **sem nome acessível**. Leitores de tela
+  anunciavam só "alternância, ligada/desligada" sem dizer O QUE se alternava —
+  viola WCAG 4.1.2 (Name, Role, Value). Os 3 consumidores ativos estavam mudos:
+  `LinkBioPage` (toggles de blocos do link-na-bio e ativar/desativar link
+  personalizado) e `CompanyProfileDetailPage` (aceitar pedidos pelo bot), este
+  último já tinha um `<label id="bot-order-enabled-label">` visível **não
+  associado** ao controle.
+- **Mudado (componentes ativos):**
+  - `Switch.tsx` ganhou props opcionais `ariaLabel` e `ariaLabelledby`,
+    encaminhadas ao botão como `aria-label`/`aria-labelledby` (sem mudar visual
+    nem comportamento; toggles sem nome continuam válidos em TS mas agora podem
+    ser rotulados).
+  - `LinkBioPage.tsx`: toggles de blocos → `ariaLabel="Exibir <bloco> no link da
+    bio"`; switch de link personalizado → `ariaLabel="Ativar/Desativar link
+    <título>"`.
+  - `CompanyProfileDetailPage.tsx`: switch do bot → `ariaLabelledby` apontando
+    para o `<label>` visível já existente (reaproveita o rótulo, sem duplicar
+    texto).
+- **Teste (TDD):** novo `Switch.a11y.test.tsx` — escrito **vermelho antes**
+  (3/3 falhando: sem nome acessível o `getByRole('switch', { name })` não
+  encontra) **verde depois**. Cobre nome via `aria-label`, via `aria-labelledby`
+  e a preservação de `aria-checked`.
+- **Antes/depois:** `npm test` 705/157 → **708/158**; tsc limpo e `vite build`
+  ok nos dois lados. Só produção alterada: atributos de acessibilidade
+  opcionais, risco baixo.
+
 ## Baseline atual (2026-07-19)
 ## Baseline atual (2026-07-20)
 

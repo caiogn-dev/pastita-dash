@@ -774,7 +774,11 @@ const CompanyProfileDetailPage: React.FC = () => {
                   Quando desligado, o bot responde dúvidas mas não monta carrinho nem fecha pedidos
                 </p>
               </div>
-              <Switch checked={botOrderEnabled} onChange={setBotOrderEnabled} />
+              <Switch
+                ariaLabelledby="bot-order-enabled-label"
+                checked={botOrderEnabled}
+                onChange={setBotOrderEnabled}
+              />
             </div>
 
             <div>

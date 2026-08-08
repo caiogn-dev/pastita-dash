@@ -318,6 +318,7 @@ const LinkBioPage: React.FC = () => {
               <label key={key} className="flex items-center justify-between gap-3 text-sm text-fg-token">
                 {label}
                 <Switch
+                  ariaLabel={`Exibir ${label} no link da bio`}
                   checked={bioSettings.links[key] !== false}
                   onChange={(checked) =>
                     setBioSettings((prev) => ({
@@ -367,7 +368,11 @@ const LinkBioPage: React.FC = () => {
                     <p className="truncate text-sm font-medium text-fg-token">{link.title}</p>
                     <p className="truncate text-xs text-fg-muted-token">{link.url}</p>
                   </div>
-                  <Switch checked={link.is_active} onChange={() => handleToggleActive(link)} />
+                  <Switch
+                    ariaLabel={`${link.is_active ? 'Desativar' : 'Ativar'} link ${link.title}`}
+                    checked={link.is_active}
+                    onChange={() => handleToggleActive(link)}
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
