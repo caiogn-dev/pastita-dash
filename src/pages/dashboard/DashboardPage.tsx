@@ -207,6 +207,11 @@ export const DashboardPage: React.FC = () => {
   const [cmpHoje, setCmpHoje] = useState<{ variacao_pct: number | null; rotulo: string } | undefined>();
   const [pendingCount, setPendingCount]         = useState(0);
   const [conversationsOpen, setConversationsOpen] = useState(0);
+  // Série curta dos últimos 14 dias, por KPI. Vem do overview.
+  const [sparkline, setSparkline] = useState<{ revenue: number[]; orders: number[] }>({
+    revenue: [],
+    orders: [],
+  });
   const [recentOrders, setRecentOrders]         = useState<StoreOrder[]>([]);
   const [pipelineCounts, setPipelineCounts]     = useState<Record<string, number>>({});
   const [projectHealth, setProjectHealth]       = useState<ProjectHealth | null>(null);
@@ -286,6 +291,8 @@ export const DashboardPage: React.FC = () => {
         // mostrava "208 conversas em aberto — cliente esperando resposta"
         // quando havia 5. Fallback mantido só para backend antigo.
         if (cv) setConversationsOpen(Number(cv.waiting_reply ?? cv.by_status?.open ?? cv.active ?? 0));
+        const sk = (overview as { sparkline?: { revenue?: number[]; orders?: number[] } })?.sparkline;
+        if (sk) setSparkline({ revenue: sk.revenue ?? [], orders: sk.orders ?? [] });
         if (ov) {
           resolvedPendingCount = Number(ov.by_status?.pending ?? 0);
           setPendingCount(resolvedPendingCount);
@@ -460,6 +467,7 @@ export const DashboardPage: React.FC = () => {
         <StatCard
           label="Pedidos hoje"
           icone={<ShoppingBagIcon />}
+          serie={sparkline.orders}
           value={loading ? '—' : ordersToday}
           sub={
             !loading && ordersToday === 0
@@ -471,6 +479,7 @@ export const DashboardPage: React.FC = () => {
         <StatCard
           label="Receita hoje"
           icone={<BanknotesIcon />}
+          serie={sparkline.revenue}
           value={loading ? '—' : fmt(revenueToday)}
           tone="brand"
           sub="Pagos e não cancelados, pela data do pagamento. Sem pedido de teste."

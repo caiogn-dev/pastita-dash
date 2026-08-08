@@ -40,3 +40,5 @@ export { FormSummary } from './FormSummary';
 export type { FormSummaryProps, LinhaDeResumo } from './FormSummary';
 export { FormStepper } from './FormStepper';
 export type { FormStepperProps, PassoDeFormulario } from './FormStepper';
+export { Sparkline } from './Sparkline';
+export type { SparklineProps } from './Sparkline';

@@ -5,6 +5,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 import { Card } from './Card';
+import { Sparkline } from './Sparkline';
 
 export type StatCardTone = 'default' | 'brand' | 'warning' | 'success' | 'danger';
 
@@ -37,6 +38,13 @@ export interface StatCardProps {
    * pela cor antes de ler a palavra.
    */
   icone?: React.ReactNode;
+  /**
+   * Série curta para o mini-gráfico.
+   *
+   * Vive ABAIXO do valor e do comparativo, nunca no lugar deles: é contexto,
+   * não a informação. Quem quer o número exato lê o número.
+   */
+  serie?: number[];
   onClick?: () => void;
   className?: string;
 }
@@ -66,6 +74,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   comparativo,
   ajuda,
   icone,
+  serie,
   onClick,
   className,
 }) => {
@@ -154,6 +163,16 @@ export const StatCard: React.FC<StatCardProps> = ({
         </p>
       )}
       {sub && <p className="mt-1 text-xs text-fg-muted-token">{sub}</p>}
+
+      {serie && serie.length > 1 && (
+        // Depois do texto, não antes: a linha é contexto do número, e ler
+        // primeiro a forma e depois o valor inverte a ordem da pergunta.
+        <Sparkline
+          valores={serie}
+          rotulo={`${label}: variação dos últimos ${serie.length} dias`}
+          className={cn('mt-2.5', VALUE_TONE[tone])}
+        />
+      )}
     </Card>
   );
 };
