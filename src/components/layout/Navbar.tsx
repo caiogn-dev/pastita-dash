@@ -398,8 +398,14 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
               <StoreSelector />
             </div>
 
-            {accounts.length > 0 && (
+            {/* Filtro de conta de WhatsApp — só faz sentido com MAIS DE UMA.
+                Com uma conta, "Todas as contas" e o nome dela levam ao mesmo
+                lugar: um controle que não muda nada, ocupando espaço no cromo
+                e ensinando o operador a ignorar aquela região. A maioria das
+                lojas tem uma conta só. */}
+            {accounts.length > 1 && (
               <select
+                aria-label="Filtrar por conta de WhatsApp"
                 value={selectedAccount?.id || ''}
                 onChange={(e) => setSelectedAccount(accounts.find((a) => a.id === e.target.value) || null)}
                 className="block max-xl:hidden rounded-lg border border-chrome-border bg-chrome-hover px-2 py-1 text-xs text-chrome-fg outline-none focus:border-brand max-w-[130px]"

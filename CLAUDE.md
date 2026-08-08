@@ -36,8 +36,21 @@ Current production API may still use `backend.pastita.com.br` until DNS/backend 
 
 ## Navegação (CRÍTICO)
 
-- **A navegação real do painel é a `src/components/layout/Navbar.tsx`** (barra superior com dropdowns via portal). É ela que o `MainLayout` renderiza.
-- **`src/components/layout/Sidebar.tsx` é LEGADO e não é renderizado** — não adicionar itens de menu nela. Todo item novo de navegação vai na `Navbar.tsx` (array `sections`).
+- **A árvore de navegação é `src/components/layout/navSections.tsx`** (`buildNavSections`). É a ÚNICA fonte: item novo entra aí e aparece sozinho nos três consumidores.
+- Três consumidores, via o hook `useNavSections()`:
+  - `Sidebar.tsx` — coluna lateral acordeão do desktop (é ela que o `MainLayout` renderiza).
+  - `CommandPalette.tsx` — Ctrl+K.
+  - `trilhaDoCaminho()` — o breadcrumb do `PageShell`.
+- `Navbar.tsx` continua na tela, mas só como **cromo**: identidade da loja, busca, tema, notificações, conta. No desktop ela recebe `semNavegacaoDesktop` e NÃO desenha seções — duas navegações para os mesmos destinos ensinam o operador duas vezes. No celular ela mantém o drawer.
+- Não adicione item de menu direto na `Sidebar.tsx` nem na `Navbar.tsx`.
+
+> Antes de 07/ago a navegação era a navbar horizontal e a `Sidebar.tsx` era código morto. Inverteu: a navbar media a largura e empurrava o excedente para um dropdown "Mais", então funções sumiam conforme o tamanho da janela.
+
+## Chassi de página
+
+Toda página usa `PageShell` (`src/components/ui`): trilha → título → descrição → ações → filtros → conteúdo. Não monte cabeçalho à mão.
+
+Companheiros, no mesmo barrel: `KpiGrid` (definição do indicador é obrigatória e impressa, não em tooltip), `InsightList` (alerta que termina em botão), `EmptyState` (variante `ativacao` vende a feature desligada), `PhonePreview` (iframe da página pública real), `RowActions` + `linhaClicavel` (kebab e linha clicável acessível).
 
 ## Important Areas
 
