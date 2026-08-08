@@ -40,7 +40,7 @@ describe('trilhaDoCaminho', () => {
     // /orders/123 é o detalhe de um pedido: continua dentro da Central, não
     // vira seção nova.
     const trilha = trilhaDoCaminho(sections, '/stores/minha-loja/orders/123');
-    expect(trilha.map((t) => t.rotulo)).toEqual(['Pedidos', 'Central de Pedidos']);
+    expect(trilha.map((t) => t.rotulo)).toEqual(['Pedidos', 'Em andamento']);
   });
 
   it('a raiz não gera trilha', () => {

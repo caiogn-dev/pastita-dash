@@ -13,14 +13,6 @@ export interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
-  /**
-   * Abre em aba própria, nomeada.
-   *
-   * Para telas que ficam abertas o expediente inteiro (a Central de Pedidos):
-   * navegar para dentro delas pelo menu faz perder o lugar toda vez. A aba
-   * nomeada é reaproveitada, então clicar de novo foca em vez de empilhar.
-   */
-  novaAba?: boolean;
   /** Quando presente, renderiza um cabeçalho de seção acima deste item */
   sectionHeader?: string;
 }
@@ -123,14 +115,14 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       // até 08/ago só existia a primeira, então fechar o mês era impossível
       // pelo painel.
       //
-      // A seção não tem `href` próprio de propósito: um link "Pedidos" ao
-      // lado de "Central de Pedidos" seriam DOIS caminhos para a mesma tela
-      // com nomes diferentes. E o custo do clique a mais é pago uma vez por
-      // expediente, já que a Central passa a viver em aba própria.
+      // O atalho "Central de Pedidos" que abre em aba própria mora na NAVBAR:
+      // o menu é para navegar dentro do painel, a navbar é para abrir a
+      // estação de trabalho. Repetir o nome aqui daria dois itens com nomes
+      // diferentes para a mesma tela.
       label: 'Pedidos',
       icon: ShoppingCartIcon,
       items: [
-        { name: 'Central de Pedidos', href: storeHref('orders'), icon: ShoppingCartIcon, novaAba: true },
+        { name: 'Em andamento', href: storeHref('orders'), icon: ShoppingCartIcon },
         { name: 'Histórico', href: storeHref('orders/historico'), icon: ClockIcon },
       ],
     },

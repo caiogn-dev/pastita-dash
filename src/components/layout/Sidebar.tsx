@@ -20,7 +20,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDownIcon, ChevronDoubleLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronDoubleLeftIcon } from '@heroicons/react/24/outline';
 
 import { cn } from '../../utils/cn';
 import { NavItem, NavSection } from './navSections';
@@ -44,13 +44,9 @@ function secaoAtiva(pathname: string, secao: NavSection): boolean {
 /**
  * Um item do menu — e a decisão de abrir aqui ou em aba própria.
  *
- * A Central de Pedidos fica aberta o expediente inteiro: navegar para dentro
- * dela pelo menu faz perder o lugar toda vez. Mas link que rouba para outra
- * aba SEM AVISAR é um dos incômodos clássicos de web, então o contrato é
- * visível — ícone de "abre fora" para quem vê, texto para quem ouve.
- *
- * A aba é nomeada: clicar cinco vezes durante o turno reaproveita a mesma em
- * vez de empilhar cinco cópias da tela.
+ * Extraído porque o mesmo item aparece nos dois desenhos de seção (acordeão
+ * puro e seção com destino próprio) — duplicar o markup fazia os dois
+ * divergirem em foco e estado ativo.
  */
 const ItemDeMenu: React.FC<{
   item: NavItem;
@@ -70,39 +66,13 @@ const ItemDeMenu: React.FC<{
     <>
       <Icone className="h-4 w-4 shrink-0" />
       <span className={cn('truncate', rotuloOculto && 'sr-only')}>{item.name}</span>
-      {item.novaAba && (
-        <>
-          <ArrowTopRightOnSquareIcon className="ml-auto h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
-          <span className="sr-only">(abre em nova aba)</span>
-        </>
-      )}
-      {item.badge && !rotuloOculto && !item.novaAba && (
+      {item.badge && !rotuloOculto && (
         <span className="ml-auto rounded-full bg-surface-2 px-1.5 py-0.5 text-badge font-bold text-fg-muted-token">
           {item.badge}
         </span>
       )}
     </>
   );
-
-  if (item.novaAba) {
-    return (
-      <a
-        href={item.href}
-        // `aria-current` descreve a RELAÇÃO com a página atual, não o
-        // comportamento do clique — continua verdadeiro e útil aqui.
-        aria-current={itemAtivo ? 'page' : undefined}
-        // Nome fixo: a segunda visita foca a aba existente.
-        target="central-de-pedidos"
-        // `noopener`: sem isto a aba nova recebe `window.opener` e consegue
-        // manipular a aba de origem.
-        rel="noopener noreferrer"
-        title={rotuloOculto ? item.name : undefined}
-        className={classe}
-      >
-        {miolo}
-      </a>
-    );
-  }
 
   return (
     <Link

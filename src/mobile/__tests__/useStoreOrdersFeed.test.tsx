@@ -18,8 +18,23 @@ beforeEach(() => {
 test('loads orders for the active store and exposes them', async () => {
   const { result } = renderHook(() => useStoreOrdersFeed());
   await waitFor(() => expect(getOrders).toHaveBeenCalledWith(expect.objectContaining({ store: 's1', page_size: 50 })));
-  await waitFor(() => expect(result.current.orders).toHaveLength(1));
-  expect(result.current.loading).toBe(false);
+
+  // As duas condições juntas, num waitFor só.
+  //
+  // Separadas, o teste falhava ~1 vez a cada 3 execuções da suíte completa (e
+  // nunca sozinho): a lista vive no store do zustand, que é externo ao React e
+  // notifica os assinantes assim que `setOrders` roda — ANTES do
+  // `setLoading(false)` do `finally`. Existe, portanto, um render legítimo com
+  // 1 pedido e `loading: true`, e o `waitFor` de uma condição só saía
+  // exatamente nele.
+  //
+  // O estado intermediário não é bug: é o que permite revalidar mostrando os
+  // dados antigos. Quem estava errado era a asserção, ao supor que os dois
+  // acontecem no mesmo render.
+  await waitFor(() => {
+    expect(result.current.orders).toHaveLength(1);
+    expect(result.current.loading).toBe(false);
+  });
 });
 
 test('sets error when the fetch fails', async () => {

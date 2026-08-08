@@ -23,6 +23,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../../components/common';
 import { useStore, useConfirm } from '../../../hooks';
 import api from '@/services/api';
+import { EMAIL_RECIPIENT_STATUS_LABELS } from '../../../utils/rotulosDeEstado';
 
 interface EmailCampaign {
   id: string;
@@ -367,7 +368,7 @@ export const CampaignsListPage: React.FC = () => {
                           recipient.status === 'failed' || recipient.status === 'bounced' ? 'bg-red-100 text-red-700' :
                           'bg-surface-2 text-fg-token'
                         }`}>
-                          {recipient.status}
+                          {EMAIL_RECIPIENT_STATUS_LABELS[recipient.status] ?? recipient.status}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-sm text-fg-muted-token">

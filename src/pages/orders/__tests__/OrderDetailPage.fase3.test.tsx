@@ -136,7 +136,7 @@ describe('OrderDetailPage — Fase 3 (F4 lista de cobranças)', () => {
   it('renderiza todas as cobranças do pedido com valor e status', async () => {
     mockGetOrder.mockResolvedValue({ ...baseOrder, amount_paid: 20, amount_due: 30, is_fully_paid: false });
     const payments: Payment[] = [
-      { id: 'p1', order: 'o1', gateway: 'mp', external_id: 'e1', amount: 20, status: 'paid', payment_method: 'pix', created_at: '', updated_at: '' },
+      { id: 'p1', order: 'o1', gateway: 'mp', external_id: 'e1', amount: 20, status: 'completed', payment_method: 'pix', created_at: '', updated_at: '' },
       { id: 'p2', order: 'o1', gateway: 'mp', external_id: 'e2', amount: 30, status: 'pending', payment_method: 'pix', created_at: '', updated_at: '' },
     ];
     mockGetByOrder.mockResolvedValue(payments);
@@ -146,8 +146,11 @@ describe('OrderDetailPage — Fase 3 (F4 lista de cobranças)', () => {
     await screen.findByText('Cobranças');
     // 2 cobranças renderizadas (PIX duas vezes na lista)
     expect(screen.getAllByText('PIX').length).toBeGreaterThanOrEqual(2);
-    // status de cada cobrança aparece (Pago + Pendente)
-    expect(screen.getAllByText('Pago').length).toBeGreaterThanOrEqual(1);
+    // Status de cada cobrança, no vocabulário da COBRANÇA: ela fica
+    // `completed` ("Recebido") enquanto o PEDIDO fica `paid` ("Pago").
+    // Reusar o mapa do pedido aqui era o que fazia a tela exibir "completed"
+    // cru quando o estado não existia lá.
+    expect(screen.getAllByText('Recebido').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Pendente').length).toBeGreaterThanOrEqual(1);
     // valores das cobranças aparecem
     const valores = screen.getAllByText((_, el) => {

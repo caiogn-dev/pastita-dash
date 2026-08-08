@@ -34,6 +34,7 @@ import ForecastPanel from '../../components/dashboard/ForecastPanel';
 import { useAiDailySummary } from '../../hooks/queries/useAiDailySummary';
 import type { Order } from '../../types';
 import type { ProjectHealth } from '../../types/dashboard';
+import { STATUS_LABELS } from '../../utils/rotulosDeEstado';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -125,7 +126,12 @@ const OrderRow: React.FC<OrderRowProps> = ({ order, advancing, onAdvance, onOpen
       </td>
       <td className="px-4 py-3">
         <Badge variant={STATUS_BADGE[order.status] ?? 'gray'}>
-          {order.status_display || order.status}
+          {/* Nosso mapa PRIMEIRO, `status_display` como reserva. O rótulo do
+              backend também está em português agora, mas quem manda no texto
+              da tela é a tela: um pedido antigo em cache, uma resposta de
+              outra versão da API ou um status novo ainda sem tradução lá não
+              podem devolver "Delivered" para o dono da loja. */}
+          {STATUS_LABELS[order.status] ?? order.status_display ?? order.status}
         </Badge>
       </td>
       <td className="px-4 py-3 text-right">

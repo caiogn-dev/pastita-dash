@@ -52,7 +52,7 @@ import { baixarCsv, pedidosParaCsv } from './exportarPedidos';
 import {
   STATUS_LABELS as STATUS_LABEL,
   PAYMENT_METHOD_LABELS as PAGAMENTO_LABEL,
-} from './rotulosDePedido';
+} from '../../utils/rotulosDeEstado';
 
 const PAGE_SIZE = 50;
 

@@ -14,7 +14,7 @@ import type { StoreOrder } from '../../services/storesApi';
 import {
   STATUS_LABELS as STATUS,
   PAYMENT_METHOD_LABELS as PAGAMENTO,
-} from './rotulosDePedido';
+} from '../../utils/rotulosDeEstado';
 
 
 const COLUNAS = [

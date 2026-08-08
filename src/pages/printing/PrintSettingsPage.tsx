@@ -18,6 +18,7 @@ import { Card, Button, Badge } from '../../components/ui';
 import { Modal, Loading } from '../../components/common';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useStore } from '../../hooks/useStore';
+import { PRINT_JOB_STATUS_LABELS } from '../../utils/rotulosDeEstado';
 import {
   PrintAgent,
   PrintJob,
@@ -341,7 +342,9 @@ const PrintSettingsPage: React.FC = () => {
                     <td className="py-2 px-2 font-medium text-fg-token">{job.order_number || job.title || '—'}</td>
                     <td className="py-2 px-2 text-fg-muted-token">{job.template}</td>
                     <td className="py-2 px-2">
-                      <Badge tone={JOB_STATUS_TONE[job.status] || 'neutral'}>{job.status}</Badge>
+                      <Badge tone={JOB_STATUS_TONE[job.status] || 'neutral'}>
+                        {PRINT_JOB_STATUS_LABELS[job.status] ?? job.status}
+                      </Badge>
                       {job.last_error && (
                         <p className="text-xs text-[var(--danger)] mt-0.5 max-w-[180px] truncate" title={job.last_error}>
                           {job.last_error}

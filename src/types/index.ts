@@ -445,7 +445,12 @@ export interface Payment {
   gateway: string;
   external_id: string;
   amount: number;
-  status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded';
+  /**
+   * Vocabulário da COBRANÇA, não do pedido: aqui o dinheiro entra como
+   * `completed`. O tipo declarava `paid`, que o backend nunca produz para
+   * `StorePayment` — e o teste que usava esse valor passava por acidente.
+   */
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded' | 'partially_refunded';
   payment_method: string;
   paid_at?: string;
   refunded_at?: string;

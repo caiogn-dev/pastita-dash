@@ -14,6 +14,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useTotalUnreadCount, useWsConnected } from '../../stores/chatStore';
 import { useAccountStore } from '../../stores/accountStore';
 import { StoreSelector } from './StoreSelector';
+import { CentralDePedidosLink } from './CentralDePedidosLink';
 import { ThemeToggle } from '../theme';
 import { NotificationDropdown } from '../notifications';
 import { buildNavSections, type NavSection } from './navSections';
@@ -386,6 +387,10 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
           />
 
           <div className="w-px h-5 bg-chrome-border flex-shrink-0" />
+
+          {/* Abre a estação de trabalho, não navega. Fica ao lado da marca
+              porque é a primeira coisa que se clica ao começar o expediente. */}
+          <CentralDePedidosLink storeSlug={storeKey} />
 
           {/* Desktop nav — itens que não cabem caem no dropdown "Mais" (nunca corta).
               Com a coluna lateral na tela, some: duas navegações para os mesmos

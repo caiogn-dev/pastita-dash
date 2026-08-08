@@ -82,7 +82,8 @@ import {
   STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
-} from './rotulosDePedido';
+  PAYMENT_RECORD_STATUS_LABELS,
+} from '../../utils/rotulosDeEstado';
 
 // =============================================================================
 // STATUS CONFIGURATION
@@ -1004,13 +1005,14 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                         <div key={payment.id} className="flex items-center justify-between gap-3 rounded-xl border border-border-token px-4 py-3">
                           <div>
                             <p className="font-medium">
-                              {payment.payment_method === 'pix' ? 'PIX' :
-                               payment.payment_method === 'credit_card' ? 'Cartão' :
-                               payment.payment_method === 'cash' ? 'Dinheiro' :
-                               payment.payment_method}
+                              {PAYMENT_METHOD_LABELS[payment.payment_method] ?? payment.payment_method}
                             </p>
                             <p className="text-xs text-fg-muted-token">
-                              {paymentStatusLabel[payment.status] || payment.status}
+                              {/* Vocabulário da COBRANÇA, não do pedido: aqui o
+                                  dinheiro fica `completed`, o pedido fica
+                                  `paid`. Reusar o mapa do pedido é o que
+                                  mostrava "completed" cru na lista. */}
+                              {PAYMENT_RECORD_STATUS_LABELS[payment.status] ?? payment.status}
                             </p>
                           </div>
                           <span className="font-semibold">{formatMoney(payment.amount)}</span>

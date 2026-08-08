@@ -1,10 +1,14 @@
 /**
- * A Central de Pedidos abre em aba própria.
+ * A Central de Pedidos vive na barra do topo e abre em aba própria.
  *
  * É a tela que fica aberta o expediente inteiro: o operador acompanha os
  * pedidos nela enquanto usa o resto do painel para cadastrar produto,
  * responder cliente, conferir caixa. Navegar para dentro dela pelo menu
- * significa perder o lugar toda vez — e voltar pelo botão do navegador.
+ * significa perder o lugar toda vez.
+ *
+ * Fica na NAVBAR, não no menu lateral: o menu é para navegar dentro do
+ * painel; isto é abrir a estação de trabalho. São gestos diferentes, e o
+ * de abrir a estação acontece uma vez por turno.
  *
  * DUAS REGRAS:
  *
@@ -12,48 +16,39 @@
  *    incômodos clássicos de web; com o ícone de "abre fora" e o texto para
  *    leitor de tela, vira escolha.
  *
- * 2. A aba é NOMEADA. Clicar cinco vezes durante o turno reaproveita a mesma
- *    aba em vez de empilhar cinco cópias da mesma tela.
+ * 2. A aba é NOMEADA. Clicar de novo durante o turno reaproveita a mesma aba
+ *    em vez de empilhar cópias da mesma tela.
  */
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { MemoryRouter } from 'react-router-dom';
 
-import { Sidebar } from '../Sidebar';
-import { buildNavSections } from '../navSections';
-
-const sections = buildNavSections({
-  storeHref: (p) => `/stores/minha-loja/${p}`,
-  automationEnabled: false,
-});
-
-function renderizar(pathname = '/stores/minha-loja/orders') {
-  return render(
-    <MemoryRouter initialEntries={[pathname]}>
-      <Sidebar sections={sections} />
-    </MemoryRouter>
-  );
-}
+import { CentralDePedidosLink } from '../CentralDePedidosLink';
 
 describe('Central de Pedidos', () => {
-  it('aparece no menu com o destino do painel de pedidos', () => {
-    renderizar();
-    const link = screen.getByRole('link', { name: /Central de Pedidos/ });
-    expect(link).toHaveAttribute('href', '/stores/minha-loja/orders');
+  it('aponta para o painel de pedidos da loja atual', () => {
+    render(<CentralDePedidosLink storeSlug="minha-loja" />);
+    expect(screen.getByRole('link', { name: /Central de Pedidos/ }))
+      .toHaveAttribute('href', '/stores/minha-loja/orders');
   });
 
   it('abre em aba nomeada — clicar de novo reaproveita, não empilha', () => {
-    renderizar();
+    render(<CentralDePedidosLink storeSlug="minha-loja" />);
     const link = screen.getByRole('link', { name: /Central de Pedidos/ });
     expect(link).toHaveAttribute('target', 'central-de-pedidos');
-    // `noopener`: sem isso a aba nova recebe `window.opener` e pode manipular
-    // a aba de origem.
+    // `noopener`: sem isso a aba nova recebe `window.opener` e consegue
+    // manipular a aba de origem.
     expect(link.getAttribute('rel')).toMatch(/noopener/);
   });
 
   it('avisa que abre fora — para quem vê e para quem ouve', () => {
-    renderizar();
-    const link = screen.getByRole('link', { name: /Central de Pedidos/ });
-    expect(link).toHaveAccessibleName(/nova aba/i);
+    render(<CentralDePedidosLink storeSlug="minha-loja" />);
+    expect(screen.getByRole('link', { name: /Central de Pedidos/ }))
+      .toHaveAccessibleName(/nova aba/i);
+  });
+
+  it('sem loja escolhida não aparece', () => {
+    // Levaria a /stores//orders — uma tela de erro no meio do expediente.
+    const { container } = render(<CentralDePedidosLink storeSlug={undefined} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

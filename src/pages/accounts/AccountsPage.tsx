@@ -18,6 +18,7 @@ import { useAccountStore } from '../../stores/accountStore';
 import { WhatsAppAccount } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ACCOUNT_STATUS_LABELS } from '../../utils/rotulosDeEstado';
 
 const STATUS_VARIANT: Record<string, string> = {
   active: 'success',
@@ -161,7 +162,9 @@ export const AccountsPage: React.FC = () => {
                         <span className="font-mono text-xs text-fg-muted">{account.phone_number_id}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={STATUS_VARIANT[account.status] as any}>{account.status}</Badge>
+                        <Badge variant={STATUS_VARIANT[account.status] as any}>
+                          {ACCOUNT_STATUS_LABELS[account.status] ?? account.status}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3">
                         <span className={account.auto_response_enabled ? 'text-green-600 dark:text-green-400 text-sm' : 'text-fg-muted text-sm'}>

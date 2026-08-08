@@ -68,7 +68,7 @@ describe('Sidebar', () => {
 
   it('o item atual é marcado com aria-current', () => {
     renderizar('/stores/minha-loja/orders');
-    expect(screen.getByRole('link', { name: /Central de Pedidos/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Em andamento/ })).toHaveAttribute(
       'aria-current',
       'page'
     );
