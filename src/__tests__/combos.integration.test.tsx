@@ -169,13 +169,15 @@ describe('ComboFormPage Integration', () => {
     jest.clearAllMocks();
   });
 
-  it('should render form page container', () => {
-    const { container } = renderWithRouter(
-      <ComboFormPage />,
-      '/stores/meu-restaurante/combos/new'
-    );
+  it('a página de combo tem título e trilha, não só um container', () => {
+    // Antes isto checava `.p-4` — uma classe de padding do cabeçalho montado à
+    // mão. Testar padding não prova que a página funciona, e quebrou assim que
+    // ela passou a usar o PageShell (que espaça no <main>, não em si).
+    //
+    // O que importa é o que o usuário encontra: onde está e o que é a tela.
+    renderWithRouter(<ComboFormPage />, '/stores/meu-restaurante/combos/new');
 
-    // Should render the page component
-    expect(container.querySelector('.p-4')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /Novo combo/i })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: /trilha/i })).toBeInTheDocument();
   });
 });

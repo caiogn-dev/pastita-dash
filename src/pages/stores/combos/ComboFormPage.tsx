@@ -11,7 +11,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button } from '../../../components/ui';
+import { Card, Button, PageShell } from '../../../components/ui';
 import { Loading } from '../../../components/common';
 import ComboForm from '../../../components/Combos/ComboForm';
 import { useStore } from '../../../hooks';
@@ -122,27 +122,20 @@ export const ComboFormPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded hover:bg-surface-2 transition-colors"
-          title="Voltar"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-fg-muted-token" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-fg-token">
-            {isEditing ? `Editar Combo — ${combo?.name}` : 'Novo Combo'}
-          </h1>
-          <p className="text-fg-muted-token">
-            {storeName ? `Loja: ${storeName}` : 'Configure um novo combo para sua loja'}
-          </p>
-        </div>
-      </div>
-
-      {/* Form Card */}
+    <PageShell
+      trilha={[
+        { rotulo: 'Cardápio' },
+        { rotulo: 'Combos', href: `/stores/${storeSlug}/combos` },
+        { rotulo: isEditing ? 'Editar' : 'Novo combo' },
+      ]}
+      titulo={isEditing ? `Editar combo — ${combo?.name}` : 'Novo combo'}
+      descricao="Junte itens do cardápio num preço só. O cliente escolhe os sabores dentro dos grupos que você definir."
+      acoes={
+        <Button variant="outline" onClick={() => navigate(-1)} leftIcon={<ArrowLeftIcon className="h-4 w-4" />}>
+          Voltar
+        </Button>
+      }
+    >
       <Card className="p-6">
         <ComboForm
           combo={combo}
@@ -152,7 +145,7 @@ export const ComboFormPage: React.FC = () => {
           isLoading={saving}
         />
       </Card>
-    </div>
+    </PageShell>
   );
 };
 

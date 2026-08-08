@@ -113,6 +113,23 @@ const mockCombo: StoreCombo = {
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
+
+/**
+ * Leva o formulário até o último passo, onde vive o botão que conclui.
+ *
+ * O combo virou assistente (Informações › Itens › Configurações): abas dizem
+ * "escolha uma", passos dizem "faça nesta ordem e acaba aqui", e o primário só
+ * vira "Criar combo" no fim — é o que evita o "cliquei em avançar achando que
+ * ia salvar".
+ *
+ * Os passos VALIDAM ao avançar, então este helper usa a trilha (que permite
+ * pular direto) e não os botões de avançar: os testes abaixo verificam
+ * justamente o que acontece ao submeter com dado faltando.
+ */
+async function irParaOFim(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /Configurações/ }));
+}
+
 describe('ComboForm', () => {
   const mockOnSubmit = jest.fn();
 
@@ -574,6 +591,7 @@ describe('ComboForm', () => {
         </>
       );
 
+      await irParaOFim(user);
       const submitButton = screen.getByText(/Criar combo/i);
       await user.click(submitButton);
 
@@ -598,6 +616,7 @@ describe('ComboForm', () => {
       const nameInput = screen.getByPlaceholderText(/Ex: Combo Executivo/i);
       await user.type(nameInput, 'Test Combo');
 
+      await irParaOFim(user);
       const submitButton = screen.getByText(/Criar combo/i);
       await user.click(submitButton);
 
@@ -632,6 +651,7 @@ describe('ComboForm', () => {
       await user.click(addButton);
 
       // Try to submit without selecting product
+      await irParaOFim(user);
       const submitButton = screen.getByText(/Criar combo/i);
       await user.click(submitButton);
 
@@ -659,6 +679,7 @@ describe('ComboForm', () => {
       const priceInputs = screen.getAllByRole('spinbutton');
       fireEvent.change(priceInputs[0], { target: { value: '15' } });
 
+      await irParaOFim(user);
       const submitButton = screen.getByText(/Criar combo/i);
       await user.click(submitButton);
 
@@ -707,6 +728,7 @@ describe('ComboForm', () => {
         expect(rondelli.length).toBeGreaterThan(0);
       });
 
+      await irParaOFim(user);
       const submitButton = screen.getByText(/Criar combo/i);
       await user.click(submitButton);
 
@@ -744,6 +766,9 @@ describe('ComboForm', () => {
         </>
       );
 
+      // O botão que conclui vive no ÚLTIMO passo — é o que evita o "cliquei
+      // em avançar achando que ia salvar".
+      await irParaOFim(user);
       const submitButton = screen.getByText(/Salvando/i);
       expect(submitButton).toBeDisabled();
     });
@@ -781,7 +806,8 @@ describe('ComboForm', () => {
   });
 
   describe('Editing Existing Combo', () => {
-    it('loads existing combo data in form', () => {
+    it('loads existing combo data in form', async () => {
+      const user = userEvent.setup();
       render(
         <>
           <ComboForm
@@ -795,10 +821,12 @@ describe('ComboForm', () => {
       );
 
       expect(screen.getByDisplayValue('Combo Executivo')).toBeInTheDocument();
+      await irParaOFim(user);
       expect(screen.getByText(/Salvar alterações/)).toBeInTheDocument();
     });
 
-    it('shows edit mode submit button', () => {
+    it('shows edit mode submit button', async () => {
+      const user = userEvent.setup();
       render(
         <>
           <ComboForm
@@ -811,6 +839,7 @@ describe('ComboForm', () => {
         </>
       );
 
+      await irParaOFim(user);
       expect(screen.getByText(/Salvar alterações/)).toBeInTheDocument();
       expect(screen.queryByText(/Criar combo/)).not.toBeInTheDocument();
     });

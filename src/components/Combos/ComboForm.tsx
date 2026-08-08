@@ -22,9 +22,13 @@ import {
   TagIcon,
   ChevronDownIcon,
   CurrencyDollarIcon,
+  PencilSquareIcon,
+  Squares2X2Icon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Input, Button } from '../common';
+import { FormStepper } from '../ui';
 import { StoreCombo, StoreComboInput, StoreComboPayload, StoreProduct as Product } from '../../services/storesApi';
 
 
@@ -586,8 +590,8 @@ export const ComboForm: React.FC<ComboFormProps> = ({
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!form.name.trim()) {
       toast.error('Nome obrigatório');
       return;
@@ -661,23 +665,38 @@ export const ComboForm: React.FC<ComboFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-0">
-      {/* Tabs */}
-      <div className="flex gap-1 mb-5 border-b border-gray-200 dark:border-border-token">
-        {tabs.map(t => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setActiveTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors ${
-              activeTab === t.key
-                ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-500 -mb-px bg-white dark:bg-surface'
-                : 'text-gray-500 dark:text-fg-muted-token hover:text-gray-700 dark:hover:text-fg-token'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <FormStepper
+        passos={[
+          { id: 'basic', rotulo: 'Informações', icone: PencilSquareIcon, pendente: !form.name.trim() },
+          {
+            id: 'groups',
+            rotulo: `Itens (${form.items.length})`,
+            icone: Squares2X2Icon,
+            pendente: form.items.length === 0,
+          },
+          { id: 'settings', rotulo: 'Configurações', icone: Cog6ToothIcon },
+        ]}
+        passoAtivo={activeTab}
+        onMudarPasso={(id) => setActiveTab(id as typeof activeTab)}
+        onConcluir={() => handleSubmit()}
+        concluindo={isLoading}
+        rotuloConcluir={combo ? 'Salvar alterações' : 'Criar combo'}
+        // Combo sem nome e sem item não é combo. Descobrir isso no último
+        // passo obriga a voltar depois de ter configurado preço e estoque.
+        podeAvancar={(passo) => {
+          if (passo === 'basic' && !form.name.trim()) {
+            toast.error('Dê um nome ao combo.');
+            return false;
+          }
+          if (passo === 'groups' && form.items.length === 0) {
+            toast.error('Um combo precisa de pelo menos um item.');
+            return false;
+          }
+          return true;
+        }}
+      >
+      {(activeTab) => (
+      <>
 
       {/* Tab: Informações */}
       {activeTab === 'basic' && (
@@ -842,14 +861,12 @@ export const ComboForm: React.FC<ComboFormProps> = ({
         </div>
       )}
 
-      <div className="flex justify-end gap-3 pt-5 mt-5 border-t border-gray-200 dark:border-border-token">
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Salvando...' : combo ? 'Salvar alterações' : 'Criar combo'}
-        </Button>
-        <Button type="button" variant="secondary" onClick={() => setActiveTab('basic')}>
-          Visualizar
-        </Button>
-      </div>
+      </>
+      )}
+      </FormStepper>
+      {/* Rodapé antigo removido: o botão de concluir agora é do FormStepper,
+          que sabe se está no último passo. E o botão "Visualizar" só voltava
+          para a primeira aba — nome que prometia uma prévia que nunca existiu. */}
     </form>
   );
 };
