@@ -109,7 +109,11 @@ export const StoreSelector: React.FC = () => {
         <div
           role="menu"
           aria-label="Trocar de loja"
-          className="absolute right-0 z-50 mt-1 w-64 overflow-hidden rounded border border-border-token bg-surface shadow-flutuante"
+          // `left-0`, não `right-0`: o seletor vive na PONTA ESQUERDA da barra, e
+          // um menu ancorado à direita cresce para fora da tela — os 256px
+          // entravam na faixa da coluna lateral, que pinta por cima. O clique
+          // funcionava, o menu abria, e nada aparecia.
+          className="absolute left-0 z-50 mt-1 w-64 overflow-hidden rounded border border-border-token bg-surface shadow-flutuante"
         >
           {comBusca && (
             <div className="flex items-center gap-2 border-b border-border-token px-3">
