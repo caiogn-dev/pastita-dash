@@ -34,3 +34,7 @@ export { PageTabs } from './PageTabs';
 export type { PageTabsProps, PageTab } from './PageTabs';
 export { FormChecklist } from './FormChecklist';
 export type { FormChecklistProps, ItemDeChecklist } from './FormChecklist';
+export { ChoiceCards } from './ChoiceCards';
+export type { ChoiceCardsProps, OpcaoDeEscolha } from './ChoiceCards';
+export { FormSummary } from './FormSummary';
+export type { FormSummaryProps, LinhaDeResumo } from './FormSummary';

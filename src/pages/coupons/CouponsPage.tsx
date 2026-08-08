@@ -15,6 +15,16 @@ import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from 
 import { getCategories, StoreCategory } from '../../services/storesApi';
 import { useStore } from '../../hooks';
 
+/**
+ * Códigos sugeridos.
+ *
+ * Campo de código é página em branco: o lojista trava escolhendo o nome, e o
+ * nome importa muito menos que existir um cupom no ar. Estes cobrem os três
+ * usos que aparecem em toda loja — primeira compra, promoção genérica, data
+ * comemorativa.
+ */
+const SUGESTOES_DE_CODIGO = ['BEMVINDO10', 'PROMO15', 'VOLTEI10'] as const;
+
 export const CouponsPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, stores } = useStore();
@@ -499,16 +509,43 @@ export const CouponsPage: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
-              Código do Cupom *
+            <label
+              htmlFor="cupom-codigo"
+              className="mb-1 block text-body font-medium text-fg-token"
+            >
+              Código do cupom <span className="text-[var(--danger)]">*</span>
             </label>
             <Input
+              id="cupom-codigo"
               type="text"
               value={formData.code}
               onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
               placeholder="Ex: DESCONTO10"
               className="font-mono"
             />
+            {/* Sugestões que PREENCHEM. Campo de código é página em branco: o
+                lojista trava escolhendo nome, e o nome não importa tanto quanto
+                existir um cupom no ar. Um clique resolve.
+                Só aparecem com o campo vazio — depois de digitar, virariam
+                botões que apagam o que você escreveu. */}
+            {!formData.code && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="text-caption text-fg-muted-token">Sugestões:</span>
+                {SUGESTOES_DE_CODIGO.map((sugestao) => (
+                  <button
+                    key={sugestao}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, code: sugestao })}
+                    className="rounded-pill border border-border-token px-2.5 py-1 font-mono text-badge font-semibold text-fg-muted-token transition-colors hover:border-brand hover:text-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    {sugestao}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="mt-1.5 text-caption text-fg-muted-token">
+              É isto que o cliente digita no carrinho. Curto e fácil de ditar no WhatsApp.
+            </p>
           </div>
 
           <div>

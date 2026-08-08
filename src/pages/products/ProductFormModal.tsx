@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   MagnifyingGlassIcon,
   Squares2X2Icon,
@@ -8,7 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validarProduto';
-import { FormChecklist } from '../../components/ui';
+import { FormChecklist, FormSummary, ChoiceCards } from '../../components/ui';
 import { Card, Button } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
@@ -40,6 +40,14 @@ export interface ProductFormModalProps {
   productTypes?: ProductType[];
 }
 
+/** Rótulos curtos de status para o resumo — os longos ficam nos cards. */
+const ROTULO_STATUS: Record<string, string> = {
+  active: 'Ativo',
+  inactive: 'Pausado',
+  out_of_stock: 'Sem estoque',
+  discontinued: 'Descontinuado',
+};
+
 const ProductFormModal: React.FC<ProductFormModalProps> = ({
   isOpen,
   onClose,
@@ -57,6 +65,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [paywall, setPaywall] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AbaDoProduto>('basic');
   const [errosPorAba, setErrosPorAba] = useState<ErroDeProduto[]>([]);
+  /**
+   * "Salvar e criar outro" precisa sobreviver ao envio.
+   *
+   * Um `useState` aqui não serve: o clique no botão e o `submit` do formulário
+   * são dois eventos, e o estado só estaria atualizado no render seguinte —
+   * o handler leria o valor velho e fecharia o modal do mesmo jeito.
+   */
+  const manterAbertoRef = useRef(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Internal navigation state
@@ -219,6 +235,26 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         toast.success('Produto criado!');
       }
       onSaved();
+
+      if (manterAbertoRef.current) {
+        // Limpa só o que identifica o item; categoria e status ficam, porque
+        // quem cadastra em série está enchendo UMA categoria de cada vez.
+        manterAbertoRef.current = false;
+        setFormData((prev) => ({
+          ...prev,
+          name: '',
+          description: '',
+          short_description: '',
+          sku: '',
+          barcode: '',
+          price: 0,
+          compare_at_price: undefined,
+        }));
+        setErrosPorAba([]);
+        setActiveTab('basic');
+        return;
+      }
+
       onClose();
     } catch (error) {
       const axiosErr = error as { response?: { status?: number; data?: { detail?: string } } };
@@ -798,21 +834,38 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-fg-token mb-1">
-                  Status do Produto
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as ProductInput['status'] }))}
-                  className="w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
-                >
-                  <option value="active">Ativo</option>
-                  <option value="inactive">Inativo</option>
-                  <option value="out_of_stock">Sem Estoque</option>
-                  <option value="discontinued">Descontinuado</option>
-                </select>
-              </div>
+              {/* Era um <select> com quatro rótulos secos. "Descontinuado" e
+                  "Inativo" somem do cardápio do mesmo jeito — a diferença é o
+                  que você pretende fazer depois, e o select não contava isso.
+                  Cada opção agora diz a consequência. */}
+              <ChoiceCards
+                rotulo="Status do produto"
+                descricao="Define se o item aparece no cardápio do cliente."
+                valor={formData.status ?? 'active'}
+                onChange={(v) => setFormData((prev) => ({ ...prev, status: v as ProductInput['status'] }))}
+                opcoes={[
+                  {
+                    valor: 'active',
+                    titulo: 'Ativo',
+                    descricao: 'Aparece no cardápio e pode ser pedido.',
+                  },
+                  {
+                    valor: 'inactive',
+                    titulo: 'Pausado',
+                    descricao: 'Sai do cardápio, mas continua cadastrado para voltar depois.',
+                  },
+                  {
+                    valor: 'out_of_stock',
+                    titulo: 'Sem estoque',
+                    descricao: 'Aparece esgotado — o cliente sabe que existe e volta.',
+                  },
+                  {
+                    valor: 'discontinued',
+                    titulo: 'Descontinuado',
+                    descricao: 'Saiu do cardápio de vez. O histórico de pedidos é mantido.',
+                  },
+                ]}
+              />
             </div>
           )}
 
@@ -940,16 +993,42 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           )}
         </div>
 
-          <aside className="xl:sticky xl:top-0 xl:self-start">
+          <aside className="flex flex-col gap-3 xl:sticky xl:top-0 xl:self-start">
             <FormChecklist itens={checklist} />
+            {/* Seis abas: você marca algo em Preços, passa por Estoque e Mídia
+                e ao chegar em salvar não lembra o que escolheu. Conferir custa
+                reabrir cada aba — o resumo responde sem sair do lugar. */}
+            <FormSummary
+              linhas={[
+                { rotulo: 'Nome', valor: formData.name },
+                { rotulo: 'Preço', valor: formData.price ? `R$ ${Number(formData.price).toFixed(2)}` : '' },
+                { rotulo: 'Categoria', valor: categories.find((c) => c.id === formData.category)?.name },
+                { rotulo: 'Status', valor: ROTULO_STATUS[formData.status ?? 'active'] },
+                { rotulo: 'SKU', valor: formData.sku },
+              ]}
+            />
           </aside>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border-token">
+        <div className="flex flex-wrap justify-end gap-3 mt-6 pt-4 border-t border-border-token">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
+          {/* "Salvar e novo" só na CRIAÇÃO: quem monta cardápio cadastra trinta
+              itens seguidos, e fechar/reabrir o modal a cada um são três
+              cliques extras por produto. Editando, não faz sentido — você veio
+              mexer neste item, não criar o próximo. */}
+          {!isCurrentlyEditing && (
+            <Button
+              type="submit"
+              variant="outline"
+              disabled={saving}
+              onClick={() => { manterAbertoRef.current = true; }}
+            >
+              Salvar e criar outro
+            </Button>
+          )}
           <Button type="submit" variant="primary" disabled={saving}>
             {saving ? 'Salvando...' : isCurrentlyEditing ? 'Salvar Alterações' : 'Criar Produto'}
           </Button>

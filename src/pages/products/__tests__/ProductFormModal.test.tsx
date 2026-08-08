@@ -35,20 +35,22 @@ jest.mock('../../../components/common', () => ({
   Loading: () => <div />,
 }));
 
-// Stub UI components
+/**
+ * Stub apenas do que este teste precisa controlar — o RESTO vem de verdade.
+ *
+ * Antes o mock substituía o barrel inteiro por um punhado de componentes, e
+ * cada componente novo que o modal passasse a usar quebrava os quatro testes
+ * daqui com "Element type is invalid: got undefined" — mensagem que não diz
+ * qual componente falta. Já aconteceu duas vezes seguidas (FormChecklist,
+ * depois FormSummary e ChoiceCards).
+ *
+ * Com `requireActual` espalhado antes, o mock deixa de ser uma lista que
+ * precisa ser mantida em sincronia com os imports de outro arquivo.
+ */
 jest.mock('../../../components/ui', () => ({
+  ...jest.requireActual('../../../components/ui'),
   Card: ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <div className={className}>{children}</div>
-  ),
-  // O modal passou a mostrar um checklist do que falta para salvar. O mock
-  // precisa acompanhar: mockar o barrel inteiro significa assumir a
-  // responsabilidade de fornecer tudo o que o componente consome de lá.
-  FormChecklist: ({ itens }: { itens: { rotulo: string; ok: boolean }[] }) => (
-    <ul data-testid="checklist">
-      {itens.map((i) => (
-        <li key={i.rotulo}>{i.rotulo}: {i.ok ? 'ok' : 'pendente'}</li>
-      ))}
-    </ul>
   ),
   Button: ({
     children,
@@ -65,8 +67,6 @@ jest.mock('../../../components/ui', () => ({
       {children}
     </button>
   ),
-  Badge: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
-  StatCard: () => null,
 }));
 
 const makeProduct = (id: string, name: string) =>
