@@ -37,10 +37,10 @@ describe('trilhaDoCaminho', () => {
   });
 
   it('sub-rota de um item casa com o item pai', () => {
-    // /orders/123 é o detalhe de um pedido: continua dentro da Central, não
-    // vira seção nova.
-    const trilha = trilhaDoCaminho(sections, '/stores/minha-loja/orders/123');
-    expect(trilha.map((t) => t.rotulo)).toEqual(['Pedidos', 'Em andamento']);
+    // /link-bio/editar continua sendo "Cardápio › Link na Bio" — a sub-rota
+    // não vira seção nova.
+    const trilha = trilhaDoCaminho(sections, '/stores/minha-loja/link-bio/editar');
+    expect(trilha.map((t) => t.rotulo)).toEqual(['Cardápio', 'Link na Bio']);
   });
 
   it('a raiz não gera trilha', () => {

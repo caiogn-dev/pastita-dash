@@ -4,8 +4,10 @@ const storeHref = (p: string) => `/stores/loja-x/${p}`;
 
 it('main bar has the expected top-level labels (foco na operação, sem Campanhas/Automação)', () => {
   const labels = buildNavSections({ storeHref, automationEnabled: false }).map((s) => s.label);
+  // "Pedidos" saiu do menu e virou "Histórico": a operação ao vivo mora no
+  // botão Central de Pedidos da navbar, que abre em aba própria.
   expect(labels).toEqual([
-    'Início', 'Pedidos', 'Chat', 'PDV', 'Clientes',
+    'Início', 'Histórico', 'Chat', 'PDV', 'Clientes',
     'Cardápio', 'Relatórios', 'Configurações',
   ]);
   expect(labels).not.toContain('Marketing');

@@ -110,21 +110,20 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     { label: 'Início', icon: HomeIcon, href: '/', items: [] },
 
     {
-      // Duas perguntas diferentes, dois destinos. A Central responde "o que
-      // está acontecendo agora"; o histórico responde "o que aconteceu" — e
-      // até 08/ago só existia a primeira, então fechar o mês era impossível
-      // pelo painel.
+      // Só o histórico. A operação ao vivo saiu do menu: mora no botão
+      // "Central de Pedidos" da barra do topo, que abre em aba própria e fica
+      // ligada o expediente inteiro.
       //
-      // O atalho "Central de Pedidos" que abre em aba própria mora na NAVBAR:
-      // o menu é para navegar dentro do painel, a navbar é para abrir a
-      // estação de trabalho. Repetir o nome aqui daria dois itens com nomes
-      // diferentes para a mesma tela.
-      label: 'Pedidos',
-      icon: ShoppingCartIcon,
-      items: [
-        { name: 'Em andamento', href: storeHref('orders'), icon: ShoppingCartIcon },
-        { name: 'Histórico', href: storeHref('orders/historico'), icon: ClockIcon },
-      ],
+      // Repetir a Central aqui daria dois caminhos para a mesma tela com
+      // comportamentos diferentes — um navega, o outro troca de aba —, e é
+      // esse tipo de inconsistência que faz o operador desconfiar do clique.
+      //
+      // Vira link direto: seção de acordeão com um filho só custa um clique
+      // para revelar o que já cabia na linha.
+      label: 'Histórico',
+      icon: ClockIcon,
+      href: storeHref('orders/historico'),
+      items: [],
     },
     {
       label: 'Chat',

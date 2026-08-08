@@ -67,8 +67,10 @@ describe('Sidebar', () => {
   });
 
   it('o item atual é marcado com aria-current', () => {
-    renderizar('/stores/minha-loja/orders');
-    expect(screen.getByRole('link', { name: /Em andamento/ })).toHaveAttribute(
+    // O kanban saiu do menu (mora na navbar, em aba própria), então usamos
+    // Clientes — um link direto qualquer serve para o contrato do aria-current.
+    renderizar('/stores/minha-loja/customers');
+    expect(screen.getByRole('link', { name: /Clientes/ })).toHaveAttribute(
       'aria-current',
       'page'
     );
