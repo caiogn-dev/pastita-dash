@@ -13,6 +13,8 @@ module.exports = {
     // arquivo inteiro fica intestável — foi o que manteve storefrontUrl.ts sem
     // teste até agora.
     '/src/utils/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
+    // src/components/maps lê a chave do Google via `import.meta.env`.
+    '/src/components/maps/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
 };

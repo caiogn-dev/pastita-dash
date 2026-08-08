@@ -19,6 +19,24 @@ import { NotificationDropdown } from '../notifications';
 import { buildNavSections, type NavSection } from './navSections';
 import { useAutomationEnabled } from '../../hooks/useAutomationEnabled';
 
+/**
+ * Glifo do WhatsApp.
+ *
+ * Os heroicons não têm marca de terceiro, e `ChatBubble` genérico não diz de
+ * QUAL canal se trata — o painel tem conta de usuário, de loja e de pagamento,
+ * e "Todas as contas" sozinho é ambíguo. Desenhado inline para não puxar um
+ * pacote de ícones de marca inteiro por causa de um símbolo.
+ *
+ * `currentColor` de propósito: acompanha o tema do cromo em vez de fixar o
+ * verde da marca, que sobre o carvão do tema escuro fica sujo.
+ */
+const WhatsAppGlifo: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
+    <path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.01-1.04 2.47s1.06 2.86 1.21 3.06c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.23 1.36.19 1.87.12.57-.09 1.75-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z" />
+    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23a8.23 8.23 0 0 1 0 16.47z" />
+  </svg>
+);
+
 // Portal dropdown — rendered at document.body level, positioned via getBoundingClientRect
 function PortalDropdown({
   section,
@@ -404,15 +422,22 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
                 e ensinando o operador a ignorar aquela região. A maioria das
                 lojas tem uma conta só. */}
             {accounts.length > 1 && (
-              <select
-                aria-label="Filtrar por conta de WhatsApp"
-                value={selectedAccount?.id || ''}
-                onChange={(e) => setSelectedAccount(accounts.find((a) => a.id === e.target.value) || null)}
-                className="block max-xl:hidden rounded-lg border border-chrome-border bg-chrome-hover px-2 py-1 text-xs text-chrome-fg outline-none focus:border-brand max-w-[130px]"
-              >
-                <option value="">Todas as contas</option>
-                {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
+              // O ícone do WhatsApp identifica DE QUE conta se trata. Sem ele o
+              // controle dizia só "Todas as contas" — e "conta" no painel pode
+              // ser conta de usuário, de loja ou de pagamento. O glifo resolve
+              // a ambiguidade sem gastar largura com a palavra "WhatsApp".
+              <label className="flex max-xl:hidden items-center gap-1.5 rounded-lg border border-chrome-border bg-chrome-hover px-2 py-1 text-chrome-muted focus-within:border-brand">
+                <WhatsAppGlifo className="h-4 w-4 shrink-0" />
+                <span className="sr-only">Filtrar por conta de WhatsApp</span>
+                <select
+                  value={selectedAccount?.id || ''}
+                  onChange={(e) => setSelectedAccount(accounts.find((a) => a.id === e.target.value) || null)}
+                  className="max-w-[120px] cursor-pointer border-0 bg-transparent text-xs text-chrome-fg outline-none"
+                >
+                  <option value="">Todas as contas</option>
+                  {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              </label>
             )}
 
             {onAbrirBusca && (

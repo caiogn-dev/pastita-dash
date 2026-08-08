@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { DeliveryZone, StoreLocation } from '../../services/delivery';
+import { zonasParaCirculos } from './zonasParaCirculos';
 import { GOOGLE_MAPS_KEY, loadGoogleMaps } from './loadGoogleMaps';
 
 const DEFAULT_CENTER = { lat: -10.1853248, lng: -48.3037058 };
@@ -84,35 +85,47 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
       });
       objectsRef.current.push(storeMarker);
 
-      const sortedZones = [...zones].sort((a, b) => (a.max_km || 0) - (b.max_km || 0));
-      sortedZones.forEach((zone, index) => {
-        const maxKm = zone.max_km ?? zone.min_km;
-        if (!maxKm) return;
+      // Do MAIOR para o menor: o Google pinta na ordem de criação, e um
+      // círculo grande criado depois cobre os menores — o mapa vira mancha e
+      // some a faixa mais próxima da loja, que é a que mais entrega.
+      const circulos = zonasParaCirculos(zones);
+      circulos.forEach((c, index) => {
         const color = COLORS[index % COLORS.length];
         const circle = new maps.Circle({
           center: { lat, lng },
-          radius: maxKm * 1000,
+          radius: c.raioMetros,
           map,
           strokeColor: color.stroke,
-          strokeOpacity: 0.8,
+          strokeOpacity: 0.85,
           strokeWeight: 2,
           fillColor: color.stroke,
-          fillOpacity: 0.12,
+          fillOpacity: 0.10,
         });
         objectsRef.current.push(circle);
       });
 
       map.setCenter({ lat, lng });
+
+      // Enquadra a MAIOR faixa. Sem isto o mapa abre no zoom padrão e a área
+      // de entrega ou não cabe na tela ou vira um ponto — em nenhum dos dois
+      // casos você consegue julgar se o raio está certo.
+      const maior = circulos[0];
+      if (maior) {
+        const limites = new maps.Circle({ center: { lat, lng }, radius: maior.raioMetros });
+        map.fitBounds(limites.getBounds());
+      }
     }
   }, [mapReady, storeLocation, zones]);
 
   if (!GOOGLE_MAPS_KEY) {
     return (
       <div
-        className="flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50"
+        className="flex items-center justify-center rounded border border-dashed border-border-token bg-surface-2 p-4 text-center"
         style={{ height }}
       >
-        <span className="text-sm text-gray-500">Chave Google Maps não configurada.</span>
+        <span className="text-body text-fg-muted-token">
+          Mapa indisponível: a chave do Google Maps não está configurada neste ambiente.
+        </span>
       </div>
     );
   }
@@ -120,10 +133,12 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
   if (loadError) {
     return (
       <div
-        className="flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50"
+        className="flex items-center justify-center rounded border border-dashed border-border-token bg-surface-2 p-4 text-center"
         style={{ height }}
       >
-        <span className="text-sm text-gray-500">Erro ao carregar o mapa.</span>
+        <span className="text-body text-fg-muted-token">
+          Não foi possível carregar o mapa. As faixas abaixo continuam valendo.
+        </span>
       </div>
     );
   }
@@ -131,7 +146,7 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
   return (
     <div
       ref={mapContainerRef}
-      className="w-full rounded-lg border border-gray-200 overflow-hidden"
+      className="w-full overflow-hidden rounded border border-border-token"
       style={{ height }}
     />
   );

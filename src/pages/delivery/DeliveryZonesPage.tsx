@@ -11,7 +11,8 @@ import {
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
-import { Card, Button, Badge, StatCard } from '../../components/ui';
+import { Card, Button, Badge, StatCard, PageShell } from '../../components/ui';
+import DeliveryZonesMap from '../../components/maps/DeliveryZonesMap';
 import {
   deliveryService,
   DeliveryZone,
@@ -49,36 +50,6 @@ const DISTANCE_BANDS = [
   { value: '15_20', label: '15 - 20 km' },
 ];
 
-const buildMapUrls = ({
-  lat,
-  lng,
-  query,
-}: {
-  lat?: number | string | null;
-  lng?: number | string | null;
-  query?: string;
-}) => {
-  const parsedLat = typeof lat === 'string' ? Number.parseFloat(lat) : lat;
-  const parsedLng = typeof lng === 'string' ? Number.parseFloat(lng) : lng;
-  const hasCoords = Number.isFinite(parsedLat) && Number.isFinite(parsedLng);
-  const normalizedQuery = query?.trim();
-  if (normalizedQuery) {
-    const encoded = encodeURIComponent(normalizedQuery);
-    return {
-      mapUrl: `https://www.google.com/maps?q=${encoded}&output=embed`,
-      externalUrl: `https://www.google.com/maps?q=${encoded}`,
-    };
-  }
-  if (hasCoords && parsedLat != null && parsedLng != null) {
-    const coords = `${parsedLat},${parsedLng}`;
-    return {
-      mapUrl: `https://www.google.com/maps?q=${coords}&output=embed`,
-      externalUrl: `https://www.google.com/maps?q=${coords}`,
-    };
-  }
-  return null;
-};
-
 export const DeliveryZonesPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, stores } = useStore();
@@ -113,22 +84,15 @@ export const DeliveryZonesPage: React.FC = () => {
     is_active: true,
   });
 
-  const mapInfo = useMemo(() => {
-    if (!storeLocation) return null;
-    const queryParts = [
-      storeLocation.name,
-      storeLocation.address,
-      storeLocation.city,
-      storeLocation.state,
-      storeLocation.zip_code,
-      'Brasil',
-    ].filter(Boolean);
-    return buildMapUrls({
-      lat: storeLocation.latitude,
-      lng: storeLocation.longitude,
-      query: storeLocation.name?.trim() || queryParts.join(', '),
-    });
-  }, [storeLocation]);
+  // As coordenadas da loja são a fonte da verdade do mapa.
+  //
+  // O código antigo montava uma URL de EMBED que BUSCAVA PELO NOME da loja no
+  // Google, e só caía nas coordenadas se não houvesse nome — ou seja, nunca.
+  // Loja que não está cadastrada no Google Maps (a maioria) abria num lugar
+  // errado ou em lugar nenhum, mesmo com latitude e longitude no banco.
+  const temCoordenadas =
+    Number.isFinite(Number(storeLocation?.latitude)) &&
+    Number.isFinite(Number(storeLocation?.longitude));
 
   const loadData = useCallback(async () => {
     if (!storeId) {
@@ -267,17 +231,16 @@ export const DeliveryZonesPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-fg-token">Zonas de Entrega</h1>
-          <p className="text-sm md:text-base text-fg-muted-token">Calcule frete por quilometragem e gerencie faixas de preço</p>
-        </div>
-        <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto justify-center" leftIcon={<PlusIcon className="w-5 h-5" />}>
+    <PageShell
+      trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Zonas de Entrega' }]}
+      titulo="Zonas de Entrega"
+      descricao="Até onde você entrega e quanto cobra por distância. O cliente vê a taxa da faixa dele no checkout."
+      acoes={
+        <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
           Nova Faixa
         </Button>
-      </div>
+      }
+    >
 
       {/* Store Location Card - Read Only */}
       <Card className="p-4 md:p-6">
@@ -323,24 +286,40 @@ export const DeliveryZonesPage: React.FC = () => {
               <p className="text-base text-fg-token">{storeLocation.address || '-'}</p>
             </div>
 
-            {mapInfo && (
-              <div className="mt-4">
-                <div className="rounded overflow-hidden border border-border-token">
-                  <iframe
-                    title="Mapa da loja"
-                    src={mapInfo.mapUrl}
-                    className="w-full h-48 md:h-64"
-                    loading="lazy"
-                  />
+            {temCoordenadas ? (
+              <div className="mt-4 space-y-2">
+                {/* Mapa de verdade: pin na loja + um círculo por faixa.
+                    Configurar frete é abstrato — você digita "12 km, R$ 20" sem
+                    ver o que está vendendo. O desenho responde a pergunta que o
+                    formulário não responde: até onde eu entrego? */}
+                <DeliveryZonesMap
+                  storeLocation={storeLocation}
+                  zones={zones}
+                  height="360px"
+                />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-caption text-fg-muted-token">
+                    Cada anel é uma faixa de entrega. O ponto no centro é a loja.
+                  </p>
+                  <a
+                    href={`https://www.google.com/maps?q=${storeLocation?.latitude},${storeLocation?.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-caption font-semibold text-brand-ink hover:underline"
+                  >
+                    Abrir no Google Maps →
+                  </a>
                 </div>
-                <a
-                  href={mapInfo.externalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-brand-ink hover:text-brand-hover inline-flex items-center mt-2"
-                >
-                  Ver no Google Maps →
-                </a>
+              </div>
+            ) : (
+              <div className="mt-4 rounded border border-dashed border-border-token bg-surface-2 p-4">
+                <p className="text-body text-fg-muted-token">
+                  Sem latitude e longitude não dá para desenhar o mapa nem calcular
+                  distância — o frete cai na faixa padrão.{' '}
+                  <Link to={settingsPath} className="font-semibold text-brand-ink hover:underline">
+                    Definir a localização
+                  </Link>
+                </p>
               </div>
             )}
           </div>
@@ -687,7 +666,7 @@ export const DeliveryZonesPage: React.FC = () => {
           </div>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 
