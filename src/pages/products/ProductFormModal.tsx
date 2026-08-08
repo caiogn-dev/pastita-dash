@@ -5,6 +5,8 @@ import {
   PhotoIcon,
   TagIcon,
   CubeIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validarProduto';
@@ -450,31 +452,33 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} size="xl">
       <form onSubmit={handleSubmit}>
-        {/* Prev/next navigation */}
-        {flatProducts.length > 0 && (
-          <div className="flex items-center gap-2 mb-4">
+        {/* Navegação entre PRODUTOS, não entre passos.
+            Ficava como duas setas soltas logo acima da trilha do assistente —
+            duas navegações empilhadas, uma de item e outra de etapa, sem nada
+            dizendo qual é qual. Agora tem rótulo e fica isolada numa faixa
+            própria, alinhada à direita, longe da trilha. */}
+        {flatProducts.length > 0 && idx >= 0 && (
+          <div className="mb-4 flex items-center justify-end gap-1.5">
+            <span className="text-caption text-fg-muted-token">
+              Produto {idx + 1} de {flatProducts.length}
+            </span>
             <button
               type="button"
-              aria-label="produto anterior"
+              aria-label="Produto anterior"
               disabled={idx <= 0}
               onClick={() => goto(-1)}
-              className="px-3 py-1 rounded border border-border-token disabled:opacity-40 hover:bg-surface-2 transition-colors text-lg font-bold"
+              className="rounded-md border border-border-token p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
-              ‹
+              <ChevronLeftIcon className="h-4 w-4" />
             </button>
-            {idx >= 0 && (
-              <span className="text-xs text-fg-muted-token">
-                {idx + 1} / {flatProducts.length}
-              </span>
-            )}
             <button
               type="button"
-              aria-label="próximo produto"
-              disabled={idx < 0 || idx >= flatProducts.length - 1}
+              aria-label="Próximo produto"
+              disabled={idx >= flatProducts.length - 1}
               onClick={() => goto(1)}
-              className="px-3 py-1 rounded border border-border-token disabled:opacity-40 hover:bg-surface-2 transition-colors text-lg font-bold"
+              className="rounded-md border border-border-token p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
-              ›
+              <ChevronRightIcon className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -522,8 +526,15 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             Antes você só descobria o que faltava ao clicar em salvar — e o
             aviso vinha como toast, que some. Agora a lista fica na tela o
             tempo todo, e cada pendência leva ao passo do campo. */}
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_250px]">
-        <div className="space-y-6 max-h-[60vh] overflow-y-auto px-1">
+        {/* `2xl` e não `xl`: o modal tem 896px de largura máxima, então em
+            telas de 1280px o breakpoint `xl` já ativava a coluna e espremia o
+            checklist em 250px dentro de um modal que não tinha essa folga.
+            Abaixo disso, o painel desce e vira uma faixa larga — legível. */}
+        <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_260px]">
+        {/* Sem `max-h` nem `overflow` aqui: o corpo do Modal já rola. Dois
+             contêineres roláveis aninhados criavam a barra dupla e empurravam
+             o rodapé do assistente para fora da tela. */}
+        <div className="space-y-5">
           {/* Basic Tab */}
           {passoAtivo === 'basic' && (
             <div className="space-y-4">
@@ -1010,7 +1021,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           )}
         </div>
 
-          <aside className="flex flex-col gap-3 xl:sticky xl:top-0 xl:self-start">
+          <aside className="flex flex-col gap-3 2xl:sticky 2xl:top-0 2xl:self-start max-2xl:order-first max-2xl:flex-row max-2xl:flex-wrap max-2xl:[&>*]:flex-1">
             <FormChecklist itens={checklist} />
             {/* Seis abas: você marca algo em Preços, passa por Estoque e Mídia
                 e ao chegar em salvar não lembra o que escolheu. Conferir custa

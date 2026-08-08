@@ -123,7 +123,7 @@ describe('ProductFormModal', () => {
 
     expect(screen.getByDisplayValue('Arroz')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText('próximo produto'));
+    fireEvent.click(screen.getByLabelText(/Próximo produto/i));
 
     expect(screen.getByDisplayValue('Feijão')).toBeInTheDocument();
   });
@@ -143,7 +143,7 @@ describe('ProductFormModal', () => {
 
     expect(screen.getByDisplayValue('Feijão')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText('produto anterior'));
+    fireEvent.click(screen.getByLabelText(/Produto anterior/i));
 
     expect(screen.getByDisplayValue('Arroz')).toBeInTheDocument();
   });
@@ -161,8 +161,8 @@ describe('ProductFormModal', () => {
       />
     );
 
-    expect(screen.getByLabelText('produto anterior')).toBeDisabled();
-    expect(screen.getByLabelText('próximo produto')).not.toBeDisabled();
+    expect(screen.getByLabelText(/Produto anterior/i)).toBeDisabled();
+    expect(screen.getByLabelText(/Próximo produto/i)).not.toBeDisabled();
   });
 
   it('botão próximo desabilitado no último produto', () => {
@@ -178,8 +178,8 @@ describe('ProductFormModal', () => {
       />
     );
 
-    expect(screen.getByLabelText('próximo produto')).toBeDisabled();
-    expect(screen.getByLabelText('produto anterior')).not.toBeDisabled();
+    expect(screen.getByLabelText(/Próximo produto/i)).toBeDisabled();
+    expect(screen.getByLabelText(/Produto anterior/i)).not.toBeDisabled();
   });
 
   it('não renderiza nada quando isOpen=false', () => {

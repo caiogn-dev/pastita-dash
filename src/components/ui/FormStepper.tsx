@@ -150,7 +150,14 @@ export const FormStepper: React.FC<FormStepperProps> = ({
 
       <div>{children(atual.id)}</div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-token pt-4">
+      {/* Rodapé PEGAJOSO.
+          Dentro de um modal, o corpo é que rola — e com o rodapé rolando junto
+          o botão "Avançar" ficava abaixo da dobra num formulário de seis
+          campos: você preenchia tudo e não achava como seguir. Grudado na
+          base, ele está sempre onde a mão espera.
+          `-mx-*` + `px-*` para o fundo cobrir toda a largura do corpo do
+          modal, senão o conteúdo passa por baixo pelas beiradas. */}
+      <div className="sticky bottom-0 -mx-6 -mb-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-token bg-surface px-6 py-3">
         {/* Progresso em TEXTO: a trilha colorida não existe para quem usa
             leitor de tela, e some para quem não distingue as cores. */}
         <p className="text-caption text-fg-muted-token">
