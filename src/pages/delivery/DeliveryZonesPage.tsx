@@ -24,6 +24,8 @@ import {
   StoreLocation,
 } from '../../services/delivery';
 import { useStore } from '../../hooks';
+import { ZonasDePrecoFixoCard } from './ZonasDePrecoFixoCard';
+import { getStore, updateStore } from '../../services/storesApi';
 
 const formatKm = (value?: number | string | null) => {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
@@ -65,6 +67,10 @@ export const DeliveryZonesPage: React.FC = () => {
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
+  // Metadata completo da loja: as zonas de preço fixo moram nele, e a tela
+  // precisa reenviar o resto intacto ao salvar — um PATCH com metadata parcial
+  // apagaria coordenadas, fidelidade e configuração de entrega.
+  const [storeMetadata, setStoreMetadata] = useState<Record<string, unknown> | undefined>();
   const [locationError, setLocationError] = useState<string | null>(null);
   const [_error, setError] = useState<string | null>(null);
 
@@ -129,7 +135,7 @@ export const DeliveryZonesPage: React.FC = () => {
       // allSettled e não all: a localização falhar não pode apagar as faixas
       // da tela. Elas são o conteúdo principal, e continuam valendo para o
       // cálculo de frete mesmo sem mapa.
-      const [zonesRes, statsRes, storeRes] = await Promise.allSettled([
+      const [zonesRes, statsRes, storeRes, lojaRes] = await Promise.allSettled([
         deliveryService.getZones({
           store: storeId,
           search: search || undefined,
@@ -137,11 +143,18 @@ export const DeliveryZonesPage: React.FC = () => {
         }),
         deliveryService.getStats(storeId),
         deliveryService.getStoreLocation(),
+        // O metadata completo, para ler as zonas de preço fixo e devolver o
+        // resto intacto no save.
+        getStore(storeId),
       ]);
 
       if (zonesRes.status === 'rejected') throw zonesRes.reason;
       setZones(zonesRes.value.results);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value);
+
+      if (lojaRes.status === 'fulfilled') {
+        setStoreMetadata((lojaRes.value.metadata ?? {}) as Record<string, unknown>);
+      }
 
       if (storeRes.status === 'fulfilled') {
         setStoreLocation(storeRes.value);
@@ -414,6 +427,23 @@ export const DeliveryZonesPage: React.FC = () => {
           </div>
         )}
       </Card>
+
+      {/* As faixas por km resolvem a cidade; as zonas abaixo resolvem as
+          exceções (condomínio longe, prédio com portaria demorada). O recurso
+          já existia no backend e ninguém conseguia ligar sem editar JSON no
+          banco — por isso nenhuma loja tinha uma zona sequer. */}
+      {storeId && (
+        <ZonasDePrecoFixoCard
+          key={storeId}
+          metadataAtual={storeMetadata}
+          onSalvar={async (fixedPriceZones) => {
+            const atual = storeMetadata ?? {};
+            const novo = { ...atual, fixed_price_zones: fixedPriceZones };
+            await updateStore(storeId, { metadata: novo });
+            setStoreMetadata(novo);
+          }}
+        />
+      )}
 
       {/* Stats Cards */}
       {stats && (

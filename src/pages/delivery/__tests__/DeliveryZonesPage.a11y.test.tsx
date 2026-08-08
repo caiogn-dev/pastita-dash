@@ -26,6 +26,14 @@ jest.mock('../../../services/delivery', () => ({
   },
 }));
 
+// A página passou a ler o metadata da loja (zonas de preço fixo). Sem o mock,
+// o import do storesApi carrega o cliente axios, que exige VITE_API_URL e
+// derruba a suíte inteira antes do primeiro teste.
+jest.mock('../../../services/storesApi', () => ({
+  getStore: jest.fn().mockResolvedValue({ id: 'store-1', metadata: {} }),
+  updateStore: jest.fn().mockResolvedValue({}),
+}));
+
 jest.mock('../../../hooks', () => ({
   useStore: () => ({
     storeId: 'store-1',

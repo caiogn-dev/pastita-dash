@@ -356,40 +356,31 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
         />
         <div className="flex items-center gap-3 px-4 h-16">
 
-          {/* Logo */}
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 flex-shrink-0">
-            {brandInfo.logo ? (
-              <img
-                src={brandInfo.logo}
-                alt={brandInfo.name}
-                className="w-7 h-7 rounded-md object-contain"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-            ) : (
-              <div
-                className="w-7 h-7 rounded-md flex items-center justify-center text-white text-xs font-bold"
-                style={{ background: brandInfo.color }}
-              >
-                {brandInfo.initial}
-              </div>
-            )}
-            {brandInfo.isPlatform && (
-              <span className="hidden sm:block text-lg tracking-[0.18em] uppercase text-brand-ink font-brand">
-                Cardapidex
-              </span>
-            )}
-          </button>
+          {/* ESQUERDA — o contexto da LOJA.
+              Ver `ordemDaNavbar.ts`: a barra separa o que é da loja do que é
+              da pessoa. Antes o logo da loja ficava aqui e o NOME da mesma
+              loja na outra ponta, a 800px de distância — a mesma informação
+              duas vezes, e nenhum dos lados com significado próprio. */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="block max-sm:hidden">
+              <StoreSelector />
+            </div>
 
-          {/* WS dot */}
-          <div
-            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${wsConnected ? 'bg-emerald-500' : 'bg-amber-400'}`}
-            title={wsConnected ? 'Online' : 'Offline'}
-          />
+            {/* O ponto de conexão colado na loja: é o estado DELA (recebendo
+                pedidos ao vivo), não do navegador. Solto no meio da barra, não
+                dizia de quê. */}
+            <span
+              className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${wsConnected ? 'bg-emerald-500' : 'bg-amber-400'}`}
+              title={wsConnected ? 'Recebendo pedidos ao vivo' : 'Sem conexão ao vivo — atualize a página'}
+              role="img"
+              aria-label={wsConnected ? 'Recebendo pedidos ao vivo' : 'Sem conexão ao vivo'}
+            />
+          </div>
 
           <div className="w-px h-5 bg-chrome-border flex-shrink-0" />
 
-          {/* Abre a estação de trabalho, não navega. Fica ao lado da marca
-              porque é a primeira coisa que se clica ao começar o expediente. */}
+          {/* Ação DA LOJA, logo depois dela. No meio dos ícones utilitários
+              da direita viraria mais um botãozinho de sistema. */}
           <CentralDePedidosLink storeSlug={storeKey} />
 
           {/* Desktop nav — itens que não cabem caem no dropdown "Mais" (nunca corta).
@@ -415,11 +406,24 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
             </>
           )}
 
-          {/* Right side */}
+          {/* DIREITA — as ferramentas da PESSOA: busca, contas, tema, avisos,
+              conta. Da mais usada para a menos usada, com o avatar na ponta —
+              convenção que não vale a pena quebrar. */}
           <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
-            <div className="block max-sm:hidden">
-              <StoreSelector />
-            </div>
+            {onAbrirBusca && (
+              <button
+                type="button"
+                onClick={onAbrirBusca}
+                aria-label="Buscar tela (Ctrl+K)"
+                className="flex max-sm:hidden items-center gap-2 rounded-lg border border-chrome-border bg-chrome-hover px-2.5 py-1.5 text-xs text-chrome-muted transition-colors hover:border-brand hover:text-chrome-fg"
+              >
+                <MagnifyingGlassIcon className="h-4 w-4" />
+                <span className="max-lg:hidden">Ir para…</span>
+                <kbd className="rounded border border-chrome-border px-1 text-badge leading-4">
+                  Ctrl K
+                </kbd>
+              </button>
+            )}
 
             {/* Filtro de conta de WhatsApp — só faz sentido com MAIS DE UMA.
                 Com uma conta, "Todas as contas" e o nome dela levam ao mesmo
@@ -443,21 +447,6 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
                   {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </label>
-            )}
-
-            {onAbrirBusca && (
-              <button
-                type="button"
-                onClick={onAbrirBusca}
-                aria-label="Buscar tela (Ctrl+K)"
-                className="flex max-sm:hidden items-center gap-2 rounded-lg border border-chrome-border bg-chrome-hover px-2.5 py-1.5 text-xs text-chrome-muted transition-colors hover:border-brand hover:text-chrome-fg"
-              >
-                <MagnifyingGlassIcon className="h-4 w-4" />
-                <span className="max-lg:hidden">Ir para…</span>
-                <kbd className="rounded border border-chrome-border px-1 text-badge leading-4">
-                  Ctrl K
-                </kbd>
-              </button>
             )}
 
             <ThemeToggle />
