@@ -11,6 +11,10 @@ export interface DialogProps {
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
   className?: string;
+  /** Nome acessível do diálogo (repassado ao Modal). */
+  ariaLabel?: string;
+  /** Id do heading que nomeia o diálogo (repassado ao Modal). */
+  ariaLabelledby?: string;
 }
 
 export const Dialog: React.FC<DialogProps> = ({
@@ -18,12 +22,16 @@ export const Dialog: React.FC<DialogProps> = ({
   onOpenChange,
   children,
   className,
+  ariaLabel,
+  ariaLabelledby,
 }) => (
   <Modal
     open={open}
     onClose={() => onOpenChange(false)}
     className={className}
     showCloseButton={false}
+    ariaLabel={ariaLabel}
+    ariaLabelledby={ariaLabelledby}
   >
     {children}
   </Modal>

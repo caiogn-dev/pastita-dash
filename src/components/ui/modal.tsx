@@ -10,7 +10,7 @@
  * Accessibility: closes on Escape and overlay click, locks body scroll while open.
  * `isOpen` is an alias for `open` (legacy headlessui API) — both work.
  */
-import React, { forwardRef, useEffect, useRef } from 'react';
+import React, { forwardRef, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn';
 
@@ -24,6 +24,16 @@ export interface ModalProps {
   className?: string;
   /** When provided, renders a built-in title header + padded body wrapper. */
   title?: string;
+  /**
+   * Nome acessível do diálogo quando não há `title` embutido (caminho composto).
+   * Ignorado se `ariaLabelledby` for informado ou se `title` estiver presente.
+   */
+  ariaLabel?: string;
+  /**
+   * Id de um heading próprio que nomeia o diálogo (caminho composto). Tem
+   * precedência sobre `title`/`ariaLabel`.
+   */
+  ariaLabelledby?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
@@ -73,6 +83,8 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
       children,
       className,
       title,
+      ariaLabel,
+      ariaLabelledby,
       size = 'md',
       closeOnOverlayClick = true,
       closeOnEscape = true,
@@ -83,6 +95,13 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
     const overlayRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement | null>(null);
     const isVisible = open ?? isOpen ?? false;
+
+    // Nome acessível do diálogo. Precedência: aria-labelledby explícito → título
+    // embutido (heading gerado com este id) → aria-label. Um role="dialog" sem
+    // nenhum deles é anunciado só como "diálogo" pelos leitores de tela.
+    const generatedTitleId = useId();
+    const builtInTitleId = title ? generatedTitleId : undefined;
+    const labelledBy = ariaLabelledby ?? builtInTitleId;
 
     // Encaminha o ref externo sem perder o interno (necessário pro focus trap).
     const setPanelRef = (node: HTMLDivElement | null) => {
@@ -189,6 +208,8 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
         )}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={labelledBy}
+        aria-label={labelledBy ? undefined : ariaLabel}
       >
         <div
           ref={setPanelRef}
@@ -209,7 +230,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
               {(title || showCloseButton) && (
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
                   {title ? (
-                    <h2 className="text-lg font-semibold text-fg-token pr-8">{title}</h2>
+                    <h2 id={builtInTitleId} className="text-lg font-semibold text-fg-token pr-8">{title}</h2>
                   ) : (
                     <span />
                   )}
@@ -386,6 +407,7 @@ export const ConfirmModal = forwardRef<HTMLDivElement, ConfirmModalProps>(
     const styles = variantStyles[variant] ?? variantStyles.default;
     const busy = isLoading ?? loading ?? false;
     const body = message ?? description;
+    const titleId = useId();
 
     const defaultIcon = variant === 'danger' ? (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -409,12 +431,13 @@ export const ConfirmModal = forwardRef<HTMLDivElement, ConfirmModalProps>(
         onClose={onClose}
         size={size}
         showCloseButton={false}
+        ariaLabelledby={titleId}
       >
         <div className="p-6 text-center">
           <div className={cn('inline-flex p-3 rounded-full mb-4', styles.icon)}>
             {icon || defaultIcon}
           </div>
-          <h3 className="text-lg font-semibold text-fg-token mb-2">{title}</h3>
+          <h3 id={titleId} className="text-lg font-semibold text-fg-token mb-2">{title}</h3>
           {body && <p className="text-sm text-fg-muted-token mb-6">{body}</p>}
           <div className="flex gap-3 justify-center">
             <button
