@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DeliveryZonesPage } from '../DeliveryZonesPage';
 import { deliveryService } from '../../../services/delivery';
@@ -69,14 +69,29 @@ describe('DeliveryZonesPage — acessibilidade dos botões de ação', () => {
     mockedService.getStoreLocation.mockResolvedValue(null as never);
   });
 
-  it('nomeia os botões de editar e excluir com o nome da faixa (mobile e desktop)', async () => {
+  it('nomeia toda porta de entrada de ação com o nome da faixa', async () => {
     renderPage();
 
+    // Card mobile e linha desktop renderizam ambos no jsdom, com formas
+    // diferentes: no card as ações são botões diretos; na linha moram num
+    // kebab, para não gastar largura de tabela nem deixar "excluir" colado em
+    // "editar". A garantia que não muda: toda entrada diz de QUAL faixa.
     const editar = await screen.findAllByRole('button', { name: /Editar faixa Centro/i });
     const excluir = await screen.findAllByRole('button', { name: /Excluir faixa Centro/i });
+    const kebab = await screen.findAllByRole('button', { name: /Ações da faixa Centro/i });
 
-    expect(editar).toHaveLength(2);
-    expect(excluir).toHaveLength(2);
+    expect(editar).toHaveLength(1);
+    expect(excluir).toHaveLength(1);
+    expect(kebab).toHaveLength(1);
+  });
+
+  it('o menu da linha nomeia a faixa, e não só a ação', async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /Ações da faixa Centro/i }));
+
+    const menu = screen.getByRole('menu', { name: /Ações da faixa Centro/i });
+    expect(within(menu).getByRole('menuitem', { name: 'Editar' })).toBeInTheDocument();
+    expect(within(menu).getByRole('menuitem', { name: 'Excluir' })).toBeInTheDocument();
   });
 
   it('não deixa botões de ação com nome genérico "Editar"/"Excluir" sem contexto', async () => {

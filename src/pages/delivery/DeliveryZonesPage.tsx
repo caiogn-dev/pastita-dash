@@ -12,7 +12,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
-import { Card, Button, Badge, StatCard, PageShell } from '../../components/ui';
+import { Card, Button, Badge, StatCard, PageShell, RowActions, linhaClicavel } from '../../components/ui';
 import DeliveryZonesMap, { corDoAnel } from '../../components/maps/DeliveryZonesMap';
 import { zonasParaCirculos } from '../../components/maps/zonasParaCirculos';
 import {
@@ -96,6 +96,22 @@ export const DeliveryZonesPage: React.FC = () => {
   // Mesma fonte que o mapa usa para desenhar — legenda e desenho não podem
   // divergir, senão a cor da legenda aponta para o anel errado.
   const circulosDoMapa = useMemo(() => zonasParaCirculos(zones), [zones]);
+
+  /**
+   * Cor do anel de uma faixa, para casar tabela e mapa.
+   *
+   * Faixa que não vira anel (sem km) fica cinza: pintá-la com uma cor da
+   * paleta prometeria um anel que não existe no desenho.
+   */
+  const corDaFaixa = useCallback(
+    (zoneId: string): React.CSSProperties => {
+      const i = circulosDoMapa.findIndex((c) => c.id === String(zoneId));
+      if (i < 0) return { borderColor: 'var(--border)', background: 'transparent' };
+      const cor = corDoAnel(i);
+      return { borderColor: cor, background: `${cor}33` };
+    },
+    [circulosDoMapa],
+  );
 
   const temCoordenadas =
     Number.isFinite(Number(storeLocation?.latitude)) &&
@@ -531,10 +547,21 @@ export const DeliveryZonesPage: React.FC = () => {
             </thead>
             <tbody className="bg-surface divide-y divide-border-token">
               {zones.map((zone) => (
-                <tr key={zone.id} className="hover:bg-surface-2">
+                <tr
+                  key={zone.id}
+                  {...linhaClicavel(() => handleOpenModal(zone), `Editar faixa ${zone.name}`)}
+                >
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <MapPinIcon className="w-5 h-5 text-fg-muted-token mr-2" />
+                    <div className="flex items-center gap-2">
+                      {/* A bolinha usa a MESMA cor do anel no mapa. Sem isso o
+                          desenho e a tabela são dois objetos soltos: você vê
+                          seis anéis em cima e seis linhas embaixo, e precisa
+                          contar de fora para dentro para casar os dois. */}
+                      <span
+                        aria-hidden
+                        className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
+                        style={corDaFaixa(zone.id)}
+                      />
                       <span className="font-medium text-fg-token">{zone.name}</span>
                     </div>
                   </td>
@@ -557,36 +584,39 @@ export const DeliveryZonesPage: React.FC = () => {
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <button
-                      onClick={() => handleToggleActive(zone)}
-                      className="focus:outline-none"
+                      onClick={(e) => { e.stopPropagation(); handleToggleActive(zone); }}
+                      aria-label={`${zone.is_active ? 'Desativar' : 'Ativar'} faixa ${zone.name}`}
+                      className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
-                      <Badge tone={zone.is_active ? 'success' : 'danger'}>
+                      {/* 'Inativa' era vermelho, mesma cor de "excluir" e de
+                          erro. Faixa desligada não é falha — é escolha sua.
+                          Vermelho ali gasta o sinal que deveria alarmar. */}
+                      <Badge tone={zone.is_active ? 'success' : 'neutral'}>
                         {zone.is_active ? 'Ativa' : 'Inativa'}
                       </Badge>
                     </button>
                   </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => handleOpenModal(zone)}
-                        className="p-2 text-fg-muted-token hover:text-brand-ink hover:bg-surface-2 rounded transition-colors"
-                        aria-label={`Editar faixa ${zone.name}`}
-                        title={`Editar faixa ${zone.name}`}
-                      >
-                        <PencilIcon className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeletingZone(zone);
-                          setIsDeleteModalOpen(true);
-                        }}
-                        className="p-2 text-[var(--danger)] hover:bg-red-50 rounded transition-colors"
-                        aria-label={`Excluir faixa ${zone.name}`}
-                        title={`Excluir faixa ${zone.name}`}
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
-                    </div>
+                  <td className="px-2 py-4 text-right">
+                    <RowActions
+                      rotulo={`Ações da faixa ${zone.name}`}
+                      acoes={[
+                        {
+                          rotulo: 'Editar',
+                          icone: <PencilIcon className="h-4 w-4" />,
+                          onClick: () => handleOpenModal(zone),
+                        },
+                        {
+                          rotulo: zone.is_active ? 'Desativar' : 'Ativar',
+                          onClick: () => handleToggleActive(zone),
+                        },
+                        {
+                          rotulo: 'Excluir',
+                          icone: <TrashIcon className="h-4 w-4" />,
+                          destrutiva: true,
+                          onClick: () => { setDeletingZone(zone); setIsDeleteModalOpen(true); },
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}
@@ -616,20 +646,21 @@ export const DeliveryZonesPage: React.FC = () => {
         onClose={handleCloseModal}
         title={editingZone ? 'Editar Faixa de Entrega' : 'Nova Faixa de Entrega'}
       >
-        <div className="space-y-4">
-          <Input
-            label="Nome da Faixa *"
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Ex: Até 5km, Zona Metropolitana"
-          />
-
+        <div className="space-y-5">
+          {/* ORDEM: distância PRIMEIRO, nome depois.
+              O formulário pedia o nome antes da faixa, mas o nome é derivado
+              dela ("3 - 5 km"). Você era obrigado a inventar um rótulo para um
+              intervalo que ainda não tinha escolhido — e o campo já sabia
+              preencher sozinho, só que tarde demais para ajudar. */}
           <div>
-            <label className="block text-sm font-medium text-fg-token mb-1">
-              Faixa de Distância *
+            <label
+              htmlFor="zona-distancia"
+              className="mb-1 block text-body font-medium text-fg-token"
+            >
+              Faixa de distância <span className="text-[var(--danger)]">*</span>
             </label>
             <select
+              id="zona-distancia"
               value={formData.distance_band}
               onChange={(e) => {
                 const nextBand = e.target.value;
@@ -640,46 +671,80 @@ export const DeliveryZonesPage: React.FC = () => {
                   name: prev.name || matched?.label || prev.name,
                 }));
               }}
-              className="w-full px-3 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand text-sm md:text-base"
+              className="w-full rounded border border-border-input bg-surface px-3 py-2 text-body text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value="">Selecione uma faixa</option>
               {DISTANCE_BANDS.map((band) => (
                 <option key={band.value} value={band.value}>{band.label}</option>
               ))}
             </select>
+            <p className="mt-1 text-caption text-fg-muted-token">
+              Distância em linha reta entre a loja e o endereço do cliente.
+            </p>
           </div>
 
-          <Input
-            label="Valor da Entrega (R$) *"
-            type="number"
-            value={formData.delivery_fee}
-            onChange={(e) => setFormData({ ...formData, delivery_fee: parseFloat(e.target.value) || 0 })}
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-          />
-
-          <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
+          <div>
             <Input
-              label="Prazo de Entrega (dias) *"
-              type="number"
-              value={formData.estimated_days}
-              onChange={(e) => setFormData({ ...formData, estimated_days: parseInt(e.target.value) || 1 })}
-              min="1"
+              label="Nome da faixa *"
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Ex: Até 5km, Zona Metropolitana"
             />
-            <div className="flex items-center sm:mt-7">
-              <input
-                type="checkbox"
-                id="is_active"
-                checked={formData.is_active}
-                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="h-4 w-4 text-brand-ink focus:ring-brand border-border-token rounded"
+            <p className="mt-1 text-caption text-fg-muted-token">
+              Só você vê este nome — o cliente vê a taxa.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+            <div>
+              <Input
+                label="Valor da entrega (R$) *"
+                type="number"
+                value={formData.delivery_fee}
+                onChange={(e) => setFormData({ ...formData, delivery_fee: parseFloat(e.target.value) || 0 })}
+                min="0"
+                step="0.01"
+                placeholder="0,00"
               />
-              <label htmlFor="is_active" className="ml-2 block text-sm text-fg-token">
-                Faixa ativa
-              </label>
+              <p className="mt-1 text-caption text-fg-muted-token">
+                Cobrado do cliente no checkout.
+              </p>
+            </div>
+            <div>
+              <Input
+                label="Prazo de entrega (dias) *"
+                type="number"
+                value={formData.estimated_days}
+                onChange={(e) => setFormData({ ...formData, estimated_days: parseInt(e.target.value) || 1 })}
+                min="1"
+              />
+              <p className="mt-1 text-caption text-fg-muted-token">
+                Aparece como previsão no pedido.
+              </p>
             </div>
           </div>
+
+          {/* Era um checkbox de 16px espremido ao lado de um campo numérico,
+              alinhado com `mt-7` chutado. Ligar ou desligar uma faixa muda o
+              que o cliente paga — merece a própria linha e a consequência
+              escrita. */}
+          <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
+            <span className="min-w-0">
+              <span className="block text-body font-semibold text-fg-token">Faixa ativa</span>
+              <span className="mt-0.5 block text-caption text-fg-muted-token">
+                Desligada, o cliente desta distância não consegue fechar pedido
+                por entrega — a menos que outra faixa o cubra.
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              className="mt-1 h-5 w-5 shrink-0 accent-[var(--brand)]"
+            />
+          </label>
 
           <div className="flex flex-row max-sm:flex-col-reverse justify-end gap-3 pt-4 border-t border-border-token">
             <Button variant="outline" onClick={handleCloseModal} className="w-full sm:w-auto justify-center">
