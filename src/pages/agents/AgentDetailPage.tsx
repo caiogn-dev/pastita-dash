@@ -14,8 +14,23 @@ import { cn } from '../../utils/cn';
 import { AgentForm, AgentStats, AgentChatTest, ConversationList } from '../../components/agents';
 import agentsService, { AgentDetail, AgentStats as Stats, AgentConversation } from '../../services/agents';
 import { useConfirm } from '../../hooks';
+import { whatsappService } from '../../services';
 
 type Tab = 'overview' | 'edit' | 'test' | 'conversations';
+
+interface WhatsAppAccountOption {
+  id: string;
+  name: string;
+  phone_number: string;
+}
+
+/** `accounts` chega ora como objetos (leitura), ora como PKs (respostas antigas
+ *  de escrita). Um `.map(a => a.id)` cego sobre PKs produzia [undefined], que
+ *  o DRF recusava com «Pk inválido "None"». */
+export const toAccountIds = (accounts: unknown): string[] =>
+  (Array.isArray(accounts) ? accounts : [])
+    .map(a => (typeof a === 'string' ? a : (a as { id?: string })?.id))
+    .filter((id): id is string => Boolean(id));
 
 export const AgentDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +44,7 @@ export const AgentDetailPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [selectedConversation, setSelectedConversation] = useState<AgentConversation | null>(null);
+  const [whatsappAccounts, setWhatsappAccounts] = useState<WhatsAppAccountOption[]>([]);
 
   const loadAgent = useCallback(async () => {
     if (!id) return;
@@ -54,6 +70,17 @@ export const AgentDetailPage: React.FC = () => {
   useEffect(() => {
     loadAgent();
   }, [loadAgent]);
+
+  // Sem isto a aba "Contas" só mostrava "Nenhuma conta WhatsApp cadastrada" ao
+  // editar — a lista só era carregada na tela de criação.
+  useEffect(() => {
+    whatsappService.getAccounts()
+      .then(response => {
+        const data = response.data as { results?: WhatsAppAccountOption[] } | WhatsAppAccountOption[] | undefined;
+        setWhatsappAccounts(Array.isArray(data) ? data : (data?.results ?? []));
+      })
+      .catch(error => console.error('Erro ao carregar contas WhatsApp:', error));
+  }, []);
 
   const handleUpdate = async (data: any) => {
     if (!id) return;
@@ -372,9 +399,13 @@ export const AgentDetailPage: React.FC = () => {
       {activeTab === 'edit' && (
         <div className="bg-surface rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] overflow-hidden">
           <AgentForm
+            whatsappAccounts={whatsappAccounts}
             agent={{
               ...agent,
-              accounts: agent.accounts?.map(a => a.id) || []
+              // O backend já responde objetos no PATCH, mas uma aba aberta antes
+              // do deploy ainda carrega PKs em memória. Aceitar os dois shapes
+              // evita o `accounts: [null]` que virava 400 no save seguinte.
+              accounts: toAccountIds(agent.accounts)
             }}
             onSubmit={handleUpdate}
             onCancel={() => setActiveTab('overview')}

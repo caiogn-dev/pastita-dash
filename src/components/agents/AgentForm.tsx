@@ -130,7 +130,9 @@ export const AgentForm: React.FC<AgentFormProps> = ({
         status: formData.status,
         use_memory: formData.use_memory,
         memory_ttl: formData.memory_ttl,
-        accounts: formData.accounts,
+        // Nunca mandar entrada nula: `accounts` não é obrigatório no backend,
+        // então omitir é melhor que enviar lixo e tomar 400.
+        accounts: (formData.accounts || []).filter(Boolean),
       };
       onSubmit(submitData);
     }
