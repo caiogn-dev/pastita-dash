@@ -1697,6 +1697,8 @@ export interface StoreCombo {
   track_stock: boolean;
   stock_quantity: number;
   dynamic_pricing?: boolean;
+  /** JSON livre: `loyalty_units` e `inclui` (brinde fixo lido pelo atendente). */
+  metadata?: Record<string, unknown>;
   groups: ComboProductGroup[];
   created_at: string;
   updated_at: string;
@@ -1715,6 +1717,7 @@ export interface StoreComboInput {
   track_stock?: boolean;
   stock_quantity?: number;
   dynamic_pricing?: boolean;
+  metadata?: Record<string, unknown>;
 }
 
 export const getCombos = async (storeId?: string): Promise<PaginatedResponse<StoreCombo>> => {

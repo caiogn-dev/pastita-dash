@@ -10,7 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validarProduto';
-import { FormChecklist, FormSummary, ChoiceCards, FormStepper } from '../../components/ui';
+import { FormChecklist, FormSummary, ChoiceCards, FormStepper, StringListField } from '../../components/ui';
 import { Card, Button } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
@@ -48,6 +48,14 @@ const ROTULO_STATUS: Record<string, string> = {
   inactive: 'Pausado',
   out_of_stock: 'Sem estoque',
   discontinued: 'Descontinuado',
+};
+
+/** `attributes` é JSON livre: alguém vai salvar string onde devia ser lista. */
+const itensInclusos = (attributes?: Record<string, unknown>): string[] => {
+  const bruto = attributes?.inclui;
+  if (typeof bruto === 'string') return bruto.trim() ? [bruto] : [];
+  if (!Array.isArray(bruto)) return [];
+  return bruto.map((item) => String(item)).filter((item) => item.trim());
 };
 
 const ProductFormModal: React.FC<ProductFormModalProps> = ({
@@ -677,6 +685,25 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   <span className="text-sm">Produto em destaque</span>
                 </label>
               </div>
+
+              <StringListField
+                label="O que já vem incluso"
+                value={itensInclusos(formData.attributes)}
+                onChange={(itens) =>
+                  setFormData((prev) => {
+                    const attrs = { ...(prev.attributes || {}) };
+                    // Chave ausente ≠ lista vazia: sem `inclui`, o atendente
+                    // afirma que nada acompanha. Com lista vazia salva, seria
+                    // a mesma coisa — então apagamos a chave para não poluir.
+                    if (itens.length === 0) delete attrs.inclui;
+                    else attrs.inclui = itens;
+                    return { ...prev, attributes: attrs };
+                  })
+                }
+                placeholder="Ex.: 1 Molho Branco"
+                addLabel="Adicionar"
+                helperText="Use em pratos que já saem acompanhados (ex.: Sexta do Bacalhau = 1 rondelli + 1 molho). O atendente do WhatsApp só afirma que algo acompanha se estiver listado aqui — em branco, ele diz que o item é vendido à parte."
+              />
 
               <div>
                 <label className="block text-sm font-medium text-fg-token mb-1">

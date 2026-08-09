@@ -12,6 +12,7 @@
  * - Save & Preview button
  */
 import React, { useState } from 'react';
+import { StringListField } from '../ui';
 import {
   PlusIcon,
   TrashIcon,
@@ -448,6 +449,14 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
 // ─────────────────────────────────────────────────────────────────────────────
 // ComboForm Component
 // ─────────────────────────────────────────────────────────────────────────────
+/** `metadata` é JSON livre: tolera string onde devia ser lista. */
+const itensInclusos = (metadata?: Record<string, unknown>): string[] => {
+  const bruto = metadata?.inclui;
+  if (typeof bruto === 'string') return bruto.trim() ? [bruto] : [];
+  if (!Array.isArray(bruto)) return [];
+  return bruto.map(item => String(item)).filter(item => item.trim());
+};
+
 export const ComboForm: React.FC<ComboFormProps> = ({
   combo,
   storeId,
@@ -518,6 +527,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
       track_stock: combo?.track_stock || false,
       stock_quantity: combo?.stock_quantity || 0,
       dynamic_pricing: combo?.dynamic_pricing || false,
+      metadata: combo?.metadata || {},
       items,
     };
   });
@@ -649,6 +659,9 @@ export const ComboForm: React.FC<ComboFormProps> = ({
         track_stock: form.track_stock,
         stock_quantity: form.track_stock ? form.stock_quantity || 0 : 0,
         dynamic_pricing: form.dynamic_pricing,
+        // Whitelist: sem esta linha o `inclui` some no submit e o atendente
+        // volta a não saber do brinde fixo do combo.
+        metadata: form.metadata,
         groups,
       };
       await onSubmit(payload);
@@ -720,6 +733,19 @@ export const ComboForm: React.FC<ComboFormProps> = ({
               className="w-full rounded-lg border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
+          <StringListField
+            label="Brinde ou item fixo que acompanha"
+            value={itensInclusos(form.metadata)}
+            onChange={itens => {
+              const meta = { ...(form.metadata || {}) };
+              if (itens.length === 0) delete meta.inclui;
+              else meta.inclui = itens;
+              set('metadata', meta);
+            }}
+            placeholder="Ex.: 2 Molhos grátis"
+            addLabel="Adicionar"
+            helperText="Para o que vem junto sem o cliente escolher (ex.: na compra de 8, ganhe 2 molhos). Os grupos de escolha abaixo já são informados ao atendente automaticamente."
+          />
           <div className="grid grid-cols-2 gap-4">
             <Input
               label={form.dynamic_pricing ? 'Preço-base (R$) — itens somam por cima' : 'Preço do combo (R$) *'}
