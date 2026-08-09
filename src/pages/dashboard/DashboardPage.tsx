@@ -688,6 +688,28 @@ export const DashboardPage: React.FC = () => {
               <p className="text-sm text-fg-muted-token mt-1">{leitura.recomendacao}</p>
             </div>
 
+            {/* Pilares, do PIOR para o melhor. A ordem já é o diagnóstico:
+                "nota 4,2" não diz o que consertar, "entrega 3,1" diz. */}
+            {leitura.pilares.length > 0 && (
+              <div className="flex flex-wrap gap-x-8 gap-y-3 w-full border-t border-border-token pt-3">
+                {leitura.pilares.map((p, i) => (
+                  <div key={p.chave}>
+                    <p className="overline mb-0.5">{p.rotulo}</p>
+                    <p className={`text-xl font-bold leading-none ${
+                      i === 0 && (p.media as number) < 4.5 ? 'text-[var(--warning)]' : 'text-fg-token'
+                    }`}>
+                      {(p.media as number).toFixed(1).replace('.', ',')}
+                    </p>
+                    {/* O volume junto: cada pilar tem o seu, porque responder é
+                        opcional e quem retira não avalia entrega. */}
+                    <p className="text-badge text-fg-muted-token mt-0.5">
+                      {p.total} {p.total === 1 ? 'nota' : 'notas'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {(avaliacoes?.recent ?? []).filter((r) => r.comment?.trim()).slice(0, 2).length > 0 && (
               <div className="w-full border-t border-border-token pt-3 space-y-2">
                 {(avaliacoes?.recent ?? [])

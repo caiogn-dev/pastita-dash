@@ -75,3 +75,54 @@ describe('leituraDeAvaliacoes', () => {
     expect(leituraDeAvaliacoes({} as never).vazio).toBe(true);
   });
 });
+
+describe('pilares', () => {
+  const comPilares = (pilares: unknown[]) => resumo({
+    summary: { avg_rating: 4.2, count: 20 },
+    distribution: [{ rating: 5, count: 14 }, { rating: 3, count: 6 }],
+    pilares,
+  });
+
+  it('ordena do pior para o melhor — a ordem já é o diagnóstico', () => {
+    const l = leituraDeAvaliacoes(comPilares([
+      { chave: 'comida', rotulo: 'Qualidade da comida', media: 4.8, total: 12 },
+      { chave: 'entrega', rotulo: 'Tempo de entrega', media: 3.1, total: 10 },
+      { chave: 'atendimento', rotulo: 'Atendimento', media: 4.5, total: 11 },
+    ]));
+    // 3,1 < 4,5 < 4,8
+    expect(l.pilares.map((p) => p.chave)).toEqual(['entrega', 'atendimento', 'comida']);
+    expect(l.piorPilar?.chave).toBe('entrega');
+  });
+
+  it('o pilar fraco vira a recomendação, com o número junto', () => {
+    // "Sua nota é 4,2" não diz nada. "A entrega está em 3,1" diz o que atacar.
+    const l = leituraDeAvaliacoes(comPilares([
+      { chave: 'entrega', rotulo: 'Tempo de entrega', media: 3.1, total: 10 },
+    ]));
+    expect(l.recomendacao).toMatch(/entrega/i);
+    expect(l.recomendacao).toMatch(/3,1/);
+  });
+
+  it('pilar com pouquíssimas notas não vira diagnóstico', () => {
+    // Duas notas baixas em "entrega" podem ser dois dias ruins, não um padrão
+    // — e mandar o dono reestruturar a logística por causa disso é pior que
+    // não dizer nada.
+    const l = leituraDeAvaliacoes(comPilares([
+      { chave: 'entrega', rotulo: 'Tempo de entrega', media: 2.0, total: 2 },
+    ]));
+    expect(l.recomendacao).not.toMatch(/entrega/i);
+  });
+
+  it('pilar sem nenhuma nota não entra na lista', () => {
+    const l = leituraDeAvaliacoes(comPilares([
+      { chave: 'comida', rotulo: 'Qualidade da comida', media: 4.8, total: 12 },
+      { chave: 'entrega', rotulo: 'Tempo de entrega', media: null, total: 0 },
+    ]));
+    expect(l.pilares.map((p) => p.chave)).toEqual(['comida']);
+  });
+
+  it('resposta sem pilares (backend antigo) não quebra', () => {
+    expect(leituraDeAvaliacoes(resumo()).pilares).toEqual([]);
+    expect(leituraDeAvaliacoes(resumo()).piorPilar).toBeNull();
+  });
+});

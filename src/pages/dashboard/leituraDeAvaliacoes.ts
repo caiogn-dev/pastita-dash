@@ -14,11 +14,22 @@
  * 2. O que consertar. "3,2 de média" não sugere ação nenhuma; "12 pessoas
  *    deram 1 ou 2 estrelas — leia os comentários" sugere.
  */
+export interface PilarDeAvaliacao {
+  chave: string;
+  rotulo: string;
+  /** `null` quando ninguém avaliou este pilar — "0,0" leria como péssimo. */
+  media: number | null;
+  total: number;
+}
+
 export interface ResumoDeAvaliacoes {
   summary?: { avg_rating: number | null; count: number };
   distribution?: { rating: number; count: number }[];
   recent?: { rating: number; comment: string; customer_name: string; created_at: string }[];
   by_product?: { product_name: string; avg_rating: number; count: number }[];
+  pilares?: PilarDeAvaliacao[];
+  /** Chave do pilar com a pior média — o que atacar primeiro. */
+  pior_pilar?: string | null;
 }
 
 export interface LeituraDeAvaliacoes {
@@ -32,6 +43,9 @@ export interface LeituraDeAvaliacoes {
   confiavel: boolean;
   contexto: string;
   recomendacao: string;
+  /** Pilares com nota, do pior para o melhor — a ordem já é o diagnóstico. */
+  pilares: PilarDeAvaliacao[];
+  piorPilar: PilarDeAvaliacao | null;
 }
 
 /**
@@ -49,9 +63,18 @@ export function leituraDeAvaliacoes(
   const total = dados?.summary?.count ?? 0;
   const media = dados?.summary?.avg_rating ?? null;
 
+  // Só os pilares que alguém avaliou, do PIOR para o melhor: a ordem já é o
+  // diagnóstico, e o dono lê a primeira linha antes de decidir se lê o resto.
+  const pilares = (dados?.pilares ?? [])
+    .filter((p) => p.media != null)
+    .sort((a, b) => (a.media as number) - (b.media as number));
+  const piorPilar = pilares[0] ?? null;
+
   if (!total || media == null) {
     return {
       vazio: true,
+      pilares: [],
+      piorPilar: null,
       // `null` e não `0`: "0,0 estrelas" seria uma nota péssima inventada por
       // falta de dado — o oposto da verdade numa loja que ninguém avaliou.
       nota: null,
@@ -89,7 +112,14 @@ export function leituraDeAvaliacoes(
     recomendacao = 'peça a avaliação sempre — nota alta com volume é o que convence quem nunca comprou';
   }
 
-  return { vazio: false, nota, total, insatisfeitos, confiavel, contexto, recomendacao };
+  // O pilar mais fraco vira a recomendação quando ele destoa: "sua entrega
+  // está em 3,1" diz o que atacar; "sua nota é 4,2" não diz nada.
+  if (piorPilar && (piorPilar.media as number) < NOTA_DE_ATENCAO && piorPilar.total >= 3) {
+    const nota = (piorPilar.media as number).toFixed(1).replace('.', ',');
+    recomendacao = `o ponto fraco é ${piorPilar.rotulo.toLowerCase()} (${nota}) — ataque isso primeiro`;
+  }
+
+  return { vazio: false, nota, total, insatisfeitos, confiavel, contexto, recomendacao, pilares, piorPilar };
 }
 
 export default leituraDeAvaliacoes;
