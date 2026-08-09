@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { AgentChatTest } from '../../components/agents';
 import agentsService, { AgentDetail } from '../../services/agents';
+import { useStore } from '../../hooks';
 
 export const AgentTestPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,12 +29,18 @@ export const AgentTestPage: React.FC = () => {
     loadAgent();
   }, [loadAgent]);
 
+  const { storeSlug } = useStore();
+
   const handleSendMessage = async (message: string, sessionId?: string) => {
     if (!id) throw new Error('ID do agente não encontrado');
     
     return await agentsService.processMessage(id, {
       message,
       session_id: sessionId,
+      // A loja selecionada no painel: sem ela o agente responde "Cardápio
+      // indisponível no momento" a qualquer pergunta sobre produto, e quem
+      // testa conclui que o catálogo quebrou.
+      store: storeSlug ?? undefined,
       context: { test: true },
     });
   };

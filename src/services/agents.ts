@@ -94,6 +94,14 @@ export interface CreateAgentData {
 }
 
 export interface ProcessMessageRequest {
+  /**
+   * Loja do teste (slug).
+   *
+   * Sem ela a ferramenta de catálogo devolve "Cardápio indisponível no
+   * momento" e quem testa conclui que o catálogo caiu — o agente é global,
+   * não tem vínculo com loja, então ela precisa vir na requisição.
+   */
+  store?: string;
   message: string;
   session_id?: string;
   phone_number?: string;
