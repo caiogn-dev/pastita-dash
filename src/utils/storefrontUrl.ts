@@ -70,16 +70,14 @@ export const buildStorefrontPreviewUrl = (
 ): string | null => {
   const slug = store?.slug?.trim();
   if (!slug) return null;
-  if (store?.custom_domain?.trim()) return null;
 
-  const metadataUrl = metadataString(store?.metadata, [
-    'storefront_url',
-    'storefront_origin',
-    'site_url',
-    'website',
-    'public_url',
-  ]);
-  if (metadataUrl) return null;
-
+  // SEMPRE no domínio padrão, mesmo com domínio próprio configurado.
+  //
+  // A rota `/preview` só existe aqui, e só aqui o enquadramento pelo painel
+  // está liberado — mas o conteúdo é a MESMA loja. Antes, domínio próprio
+  // desligava a pré-visualização, e a Cê Saladas (cesaladas.com.br) lia
+  // "a loja ainda não tem um endereço público": o oposto da verdade,
+  // justamente por ter endereço próprio. O endereço real continua impresso
+  // ao lado, vindo de `buildStorefrontUrl`.
   return `${stripTrailingSlash(DEFAULT_STOREFRONT_BASE_URL)}/preview/${slug}`;
 };

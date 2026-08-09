@@ -16,22 +16,23 @@ describe('buildStorefrontPreviewUrl', () => {
     expect(url).not.toEqual(buildStorefrontUrl({ slug: 'ce-saladas' } as never));
   });
 
-  it('domínio próprio não tem preview embutível', () => {
-    // Quem configurou domínio customizado publicou a loja na raiz dele — não
-    // existe /preview lá, e mandar o iframe para uma 404 é pior que não ter
-    // preview. Devolvendo null o componente explica em vez de errar.
-    expect(
-      buildStorefrontPreviewUrl({ slug: 'x', custom_domain: 'loja.com.br' } as never)
-    ).toBeNull();
+  it('domínio próprio continua tendo pré-visualização', () => {
+    // O preview vive no domínio PADRÃO, que serve a mesma loja e libera o
+    // enquadramento pelo painel. Não existe /preview no domínio da loja — mas
+    // a conclusão de desligar o preview estava errada: a Cê Saladas
+    // (cesaladas.com.br) via "a loja ainda não tem um endereço público", o
+    // oposto da verdade, justamente por TER endereço próprio.
+    const url = buildStorefrontPreviewUrl({ slug: 'x', custom_domain: 'loja.com.br' } as never);
+    expect(url).toMatch(/\/preview\/x$/);
+    expect(url).not.toMatch(/loja\.com\.br/);
   });
 
-  it('URL vinda de metadata também desliga o preview', () => {
-    expect(
-      buildStorefrontPreviewUrl({
-        slug: 'x',
-        metadata: { storefront_url: 'https://outro.com' },
-      } as never)
-    ).toBeNull();
+  it('URL vinda de metadata também não desliga o preview', () => {
+    const url = buildStorefrontPreviewUrl({
+      slug: 'x',
+      metadata: { storefront_url: 'https://outro.com' },
+    } as never);
+    expect(url).toMatch(/\/preview\/x$/);
   });
 
   it('sem slug não inventa endereço', () => {

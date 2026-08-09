@@ -71,7 +71,9 @@ export function pedidosParaCsv(pedidos: StoreOrder[]): string {
 export function baixarCsv(conteudo: string, nomeDoArquivo: string): void {
   // BOM: sem ele o Excel no Windows lê UTF-8 como Latin-1 e "Ação" vira
   // "AÃ§Ã£o" na primeira coluna que o dono olha.
-  const blob = new Blob([`﻿${conteudo}`], { type: 'text/csv;charset=utf-8;' });
+  // `\ufeff` escapado, não o caractere literal: o BOM invisível no meio do
+  // código dispara `no-irregular-whitespace` e some em qualquer editor.
+  const blob = new Blob([`\ufeff${conteudo}`], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

@@ -5,9 +5,20 @@
  * estação de trabalho. O menu leva você a outra parte do painel; isto abre a
  * tela que fica ligada o turno inteiro, ao lado do que você estiver fazendo.
  *
- * A aba é nomeada — clicar de novo às 15h foca a aba aberta às 9h em vez de
- * empilhar a quinta cópia da mesma tela. E o "abre fora" é declarado: link
- * que muda de aba sem avisar é um dos incômodos clássicos de web.
+ * `_blank`, e NÃO uma aba nomeada.
+ *
+ * A primeira versão usava `target="central-de-pedidos"` para reaproveitar a
+ * aba já aberta. Na prática o link passou a navegar na PRÓPRIA aba: basta a
+ * aba onde o painel está carregado receber esse nome — o que acontece assim
+ * que alguém volta para o painel dentro da aba da Central — para que todo
+ * clique seguinte vire navegação comum. O reaproveitamento é bonito no papel
+ * e imprevisível no uso.
+ *
+ * `_blank` sempre abre guia nova, que é o comportamento pedido: a Central
+ * fica ligada ao lado do painel o expediente inteiro.
+ *
+ * O "abre fora" é declarado com ícone e texto: link que muda de aba sem
+ * avisar é um dos incômodos clássicos de web.
  */
 import React from 'react';
 import { ArrowTopRightOnSquareIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
@@ -28,7 +39,7 @@ export const CentralDePedidosLink: React.FC<CentralDePedidosLinkProps> = ({
   return (
     <a
       href={`/stores/${storeSlug}/orders`}
-      target="central-de-pedidos"
+      target="_blank"
       rel="noopener noreferrer"
       title="Abre em nova aba e fica disponível durante todo o expediente"
       className={

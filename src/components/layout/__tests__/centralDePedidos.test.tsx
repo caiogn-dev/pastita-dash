@@ -16,8 +16,11 @@
  *    incômodos clássicos de web; com o ícone de "abre fora" e o texto para
  *    leitor de tela, vira escolha.
  *
- * 2. A aba é NOMEADA. Clicar de novo durante o turno reaproveita a mesma aba
- *    em vez de empilhar cópias da mesma tela.
+ * 2. Sempre guia NOVA (`_blank`). A primeira versão usava uma aba nomeada
+ *    para reaproveitar a já aberta, e o link passou a navegar na própria aba:
+ *    basta a aba do painel receber esse nome — o que acontece assim que
+ *    alguém volta ao painel dentro da aba da Central — para todo clique
+ *    seguinte virar navegação comum.
  */
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -31,10 +34,12 @@ describe('Central de Pedidos', () => {
       .toHaveAttribute('href', '/stores/minha-loja/orders');
   });
 
-  it('abre em aba nomeada — clicar de novo reaproveita, não empilha', () => {
+  it('abre sempre em guia nova, nunca na atual', () => {
+    // Aba nomeada era imprevisível: quando o painel passava a rodar na aba
+    // com aquele nome, o link virava navegação comum.
     render(<CentralDePedidosLink storeSlug="minha-loja" />);
     const link = screen.getByRole('link', { name: /Central de Pedidos/ });
-    expect(link).toHaveAttribute('target', 'central-de-pedidos');
+    expect(link).toHaveAttribute('target', '_blank');
     // `noopener`: sem isso a aba nova recebe `window.opener` e consegue
     // manipular a aba de origem.
     expect(link.getAttribute('rel')).toMatch(/noopener/);
