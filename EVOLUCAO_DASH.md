@@ -3,17 +3,44 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-09)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high) —
+  `postcss` (2 high, dev/build-only, tem `npm audit fix` sem breaking) e
+  `react-router`/`react-router-dom` (open redirect + constructor injection,
+  moderate; só sai no 7.18.x, major bump). Ambos ficam para fatia dedicada com
+  validação de build.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test`: **933 testes / 183 suítes verdes** (era 931/183; +2 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~16s).
 
 ## Histórico
+
+### 2026-08-09 — A11y: nome acessível na busca e no filtro do `ProductsToolbar` (WCAG 4.1.2)
+- **Medido:** varredura por código de `<select>`/inputs sem nome acessível
+  (label não associada, `placeholder` no lugar de nome). ~41 `<select>` sem
+  `aria-label`/label associada em todo o painel. Alvo desta fatia: a barra de
+  ferramentas do cardápio (`src/pages/products/components/ProductsToolbar.tsx`),
+  fluxo diário de maior tráfego e componente isolado/testável. Dois defeitos:
+  (a) o campo de **busca de produto** só tinha `placeholder` — que NÃO é nome
+  acessível (some ao digitar; leitor de tela anuncia só "campo de edição");
+  (b) o `<select>` de **categoria** não tinha nome nenhum — leitor anunciava
+  "caixa de combinação" sem dizer O QUE filtra.
+- **Mudado (`ProductsToolbar.tsx`, puramente aditivo):**
+  - `<input>` de busca → `aria-label="Buscar produto"` (mantém o placeholder).
+  - `<select>` de categoria → `aria-label="Filtrar por categoria"`.
+  - Zero mudança de visual ou comportamento; só atributos de acessibilidade.
+- **Teste (TDD):** estendido `ProductsToolbar.test.tsx` — 2 casos novos escritos
+  **vermelhos antes** (`getByRole('textbox'/'combobox', { name })` não achava)
+  **verdes depois**: um valida os nomes acessíveis, outro valida que o filtro
+  dispara `onCategoryFilter` (cobre o select por nome, não por posição).
+- **Antes/depois:** `npm test` 931/183 → **933/183**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Risco baixo (atributos opcionais).
+- **Próximo passo priorizado:** continuar a mesma varredura de nome acessível em
+  `<select>` de filtros de maior tráfego — próximos alvos: `CouponsPage` (3),
+  `ScheduledMessagesPage` (4), `AutomationLogsPage` (3, labels visíveis mas SEM
+  `htmlFor` — associar via `id`/`htmlFor` já dá o nome), `AgentsPage` (2). Um
+  arquivo por fatia, com teste de regressão por componente.
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um

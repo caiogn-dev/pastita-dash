@@ -31,12 +31,14 @@ export const ProductsToolbar: React.FC<Props> = ({
       <input
         className="w-full rounded border py-2 pl-8 pr-3"
         placeholder="Buscar produto..."
+        aria-label="Buscar produto"
         value={search}
         onChange={(e) => onSearch(e.target.value)}
       />
     </div>
     <select
       className="rounded border px-3 py-2"
+      aria-label="Filtrar por categoria"
       value={categoryFilter}
       onChange={(e) => onCategoryFilter(e.target.value)}
     >
