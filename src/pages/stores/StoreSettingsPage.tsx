@@ -759,7 +759,14 @@ export const StoreSettingsPage: React.FC = () => {
               </>
             )}
 
-            {aba === 'recebimento' && store?.id && <RecebimentoSection storeId={store.id} />}
+            {aba === 'recebimento' && store?.id && (
+              <RecebimentoSection
+                storeId={store.id}
+                usaGatewayDaPlataforma={Boolean(
+                  (store as unknown as { usa_gateway_da_plataforma?: boolean }).usa_gateway_da_plataforma,
+                )}
+              />
+            )}
 
             {aba === 'avaliacoes' && (
               <>
