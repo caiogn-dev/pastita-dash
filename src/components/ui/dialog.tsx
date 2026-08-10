@@ -1,7 +1,7 @@
 /**
  * Dialog Component - Alias for Modal with Dialog-like API
  */
-import React, { createContext, useContext, useEffect, useId, useMemo, useState } from 'react';
+import React, { createContext, useContext, useId, useLayoutEffect, useMemo, useState } from 'react';
 import { Modal } from './modal';
 import { cn } from '../../utils/cn';
 
@@ -100,9 +100,15 @@ export const DialogTitle: React.FC<DialogTitleProps> = ({
   const titleId = id ?? generatedId;
 
   // Registra este heading como nome acessível do Dialog enquanto montado.
+  // useLayoutEffect (não useEffect): o registro precisa ser aplicado ao DOM
+  // ANTES do paint, senão o commit inicial do portal fica sem aria-labelledby
+  // e o Modal move o foco para dentro do painel (efeito próprio) antes do nome
+  // existir — um leitor de tela poderia anunciar o diálogo recém-aberto como
+  // "diálogo" sem nome. Layout effects rodam antes dos passive effects, então o
+  // nome já está no DOM quando o foco entra. (SPA Vite, sem SSR — seguro.)
   // Ao desmontar (diálogo fechado), limpa o registro para não apontar o
   // aria-labelledby para um id que não existe mais no DOM.
-  useEffect(() => {
+  useLayoutEffect(() => {
     ctx?.registerTitleId(titleId);
     return () => ctx?.registerTitleId(undefined);
   }, [ctx, titleId]);
