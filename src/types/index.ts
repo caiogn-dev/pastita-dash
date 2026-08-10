@@ -462,9 +462,22 @@ export interface Payment {
 export interface PaymentGateway {
   id: string;
   name: string;
-  code: string;
+  gateway_type: string;
+  gateway_type_display?: string;
+  is_enabled: boolean;
+  is_sandbox: boolean;
+  is_default: boolean;
   is_active: boolean;
-  config: Record<string, unknown>;
+  /** manual = token colado pelo lojista; oauth = autorizado no Mercado Pago. */
+  connection_type?: 'manual' | 'oauth';
+  /** A tela precisa distinguir "sem gateway" de "gateway sem token". */
+  tem_credencial?: boolean;
+  token_expirado?: boolean;
+  configuration?: Record<string, unknown>;
+  /** Só escrita — o backend nunca devolve credencial. */
+  access_token?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // ============================================

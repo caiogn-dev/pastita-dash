@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
   BuildingStorefrontIcon,
+  BanknotesIcon,
   MapPinIcon,
   TruckIcon,
   CurrencyDollarIcon,
@@ -22,6 +23,7 @@ import {
 import { useStore } from '../../hooks';
 import logger from '../../services/logger';
 import { Card, Button, StatCard, PageShell, PageTabs } from '../../components/ui';
+import RecebimentoSection from './RecebimentoSection';
 
 interface DeliveryConfig {
   delivery_base_fee: number;
@@ -375,6 +377,7 @@ export const StoreSettingsPage: React.FC = () => {
           { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon },
           { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon },
           { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon },
+          { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon },
         ]}
       >
         {(aba) => (
@@ -755,6 +758,8 @@ export const StoreSettingsPage: React.FC = () => {
         </Card>
               </>
             )}
+
+            {aba === 'recebimento' && store?.id && <RecebimentoSection storeId={store.id} />}
 
             {aba === 'avaliacoes' && (
               <>
