@@ -3,17 +3,50 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-10)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test`: **941 testes / 185 suítes verdes** (era 937/184; +4/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~17s).
 
 ## Histórico
+
+### 2026-08-10 — A11y: nome acessível automático nos diálogos compostos (`Dialog` + `DialogTitle`)
+- **Medido:** conclusão do item #1 do backlog priorizado de 2026-08-06. O caminho
+  **composto** de diálogo (`Dialog` + `DialogTitle`, em `src/components/ui/dialog.tsx`)
+  só ganhava nome acessível se o consumidor passasse `ariaLabelledby` **à mão** ao
+  `Dialog`. O único consumidor real, `WhatsAppAuthDialog.tsx`, renderizava um
+  `DialogTitle` ("Login com WhatsApp") mas **não** passava `ariaLabelledby` — logo o
+  `role="dialog"` saía **mudo**: leitores de tela anunciavam só "diálogo" no fluxo de
+  login por WhatsApp (viola WCAG 4.1.2 / ARIA Dialog Pattern).
+- **Mudado (`dialog.tsx`, aditivo, sem mudança visual/comportamental):**
+  - Novo `DialogContext` liga `DialogTitle`↔`Dialog`. O `DialogTitle` agora gera um
+    `id` (via `useId`), coloca-o no seu `<h2>` e **registra** esse id no contexto
+    enquanto montado (limpa o registro ao desmontar, para não deixar `aria-labelledby`
+    apontando para um id fora do DOM quando o diálogo fecha).
+  - O `Dialog` repassa `ariaLabelledby={ariaLabelledbyExplícito ?? idRegistrado}` ao
+    `Modal` — ou seja, **qualquer** diálogo composto com um `DialogTitle` passa a ser
+    nomeado automaticamente, sem tocar no consumidor. `ariaLabelledby` explícito
+    continua com precedência; sem `DialogTitle`, `ariaLabel` segue como fallback.
+  - Detalhe: usar import nomeado `createContext` (não `React.createContext`) porque o
+    ts-jest do repo roda sem `esModuleInterop` e o default `React` é `undefined` em
+    runtime — só os usos type-only (`React.FC`) sobreviviam.
+- **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — escrita **vermelha antes**
+  (2/4 falhando: nome via `DialogTitle` e preservação do texto com ícone ao lado)
+  **verde depois**. Cobre: nome automático via `DialogTitle`, texto do título
+  preservado com markup/ícone `aria-hidden` ao lado, precedência do `ariaLabelledby`
+  explícito e fallback para `ariaLabel` sem título — tudo via
+  `getByRole('dialog', { name })`, que resolve o nome acessível de verdade.
+- **Antes/depois:** `npm test` 937/184 → **941/185**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Só produção alterada: acessibilidade aditiva no
+  componente base, risco baixo.
+- **Próximo passo priorizado:** (1) **Segurança/deps:** planejar o major bump de
+  `react-router` 6→7 (corrige o open redirect via backslash) como fatia dedicada com
+  validação de build. (2) **A11y:** varrer os modais que usam `Modal` composto direto
+  (sem `title` embutido nem `ariaLabel`) atrás de outros diálogos mudos. (3)
+  **Performance:** medir bundles pesados (`vendor-charts` ~375kB) e avaliar
+  code-splitting/lazy nas rotas que só usam gráficos.
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
