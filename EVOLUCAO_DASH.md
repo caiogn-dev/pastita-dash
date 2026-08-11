@@ -5,8 +5,17 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Baseline atual (2026-08-11)
 
-- `npm ci`: ok. `npx tsc --noEmit`: **limpo**. `npm run build` (vite): **ok** (~18s).
-- `npm test`: **939 testes / 185 suítes verdes** (era 937/184; +2/+1 desta fatia).
+- `npm ci`: ok. `npx tsc --noEmit`: **limpo**. `npm run build` (vite): **ok** (~19s).
+- `npm test`: **940 testes / 185 suítes verdes** (era 937/184; +3/+1 desta fatia).
+- **⚠️ CI QUEBRADO NO REPO (infra, não código):** o workflow `build` (`.github/
+  workflows/ci.yml`) **falha em 2–9s em TODO push na `main` e em TODA PR** — o
+  arquivo de logs sai vazio (zip de 22 bytes), sinal de falha de *startup* antes
+  de qualquer step rodar. Assinatura típica de **GitHub Actions desabilitado ou
+  acima do limite de gasto/billing** na conta. Não é corrigível por código; o
+  dono precisa resolver nas configurações de Actions/billing do GitHub. Enquanto
+  isso, o gate local (`tsc && vite build && lint && test`) é a verificação real —
+  e o deploy de preview da **Vercel do PR #162 saiu `Ready`** (o build de produção
+  funciona).
 - **Observação operacional (fora do código):** há **11+ PRs `bot/evolucao-*`
   abertos e não mesclados** no GitHub (nºs 148–161), muitos redundantes entre si
   (5 variações de "Switch a11y", 2 de "Modal a11y", etc.). O trabalho equivalente
@@ -24,20 +33,26 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   página renderizava o `EmptyState` **"Nenhum pedido neste recorte"** — dizendo
   ao lojista que ele não vendeu nada no período quando, na verdade, a requisição
   falhou. A falha do `resumoQuery` também sumia os KPIs em silêncio.
-- **Mudado (`HistoricoPedidosPage.tsx`):** após o guard de loading, quando a
-  lista falha **sem dado em cache** (`isError && data === undefined`), a página
-  mostra um `EmptyState` acionável ("Não foi possível carregar o histórico" +
-  botão **"Tentar novamente"** que refaz lista **e** resumo) em vez do vazio
-  enganoso. Com dado em cache (falha só ao atualizar), `keepPreviousData` mantém
-  a tabela — não destrói dado bom por erro transitório.
+- **Mudado (`HistoricoPedidosPage.tsx`), dois caminhos de erro:**
+  - **Lista sem cache:** após o guard de loading, quando a lista falha **sem
+    dado em cache** (`isError && data === undefined`), a página mostra um
+    `EmptyState` acionável ("Não foi possível carregar o histórico" + botão
+    **"Tentar novamente"** que refaz lista **e** resumo) em vez do vazio enganoso.
+  - **Resumo sem cache (feedback do Codex na PR, P2):** quando a lista vem mas o
+    **resumo** falha sem cache, os KPIs e a quebra por pagamento sumiam em
+    silêncio. Agora, no lugar dos KPIs, aparece um aviso curto "Não foi possível
+    carregar os indicadores do período" + **"Tentar novamente"** que refaz só o
+    resumo. A tabela (conteúdo primário) continua visível.
+  - Com dado em cache (falha só ao atualizar), `keepPreviousData` mantém tabela e
+    KPIs — não destrói dado bom por erro transitório.
 - **Teste (TDD, vermelho→verde):** novo `__tests__/HistoricoPedidosError.test.tsx`
-  (2 casos): (1) lista falha sem cache → **não** renderiza "Nenhum pedido neste
+  (3 casos): (1) lista falha sem cache → **não** renderiza "Nenhum pedido neste
   recorte", mostra o erro e o clique em "Tentar novamente" chama os dois
-  `refetch`; (2) lista com dados → tabela normal, sem estado de erro. Escrito
-  vermelho (caso 1: "Nenhum pedido neste recorte" presente), verde após a
-  correção.
-- **Antes/depois:** `npm test` 937/184 → **939/185**; `tsc --noEmit` limpo e
-  `vite build` ok nos dois lados. Só produção alterada: novo caminho de erro,
+  `refetch`; (2) lista com dados → tabela normal, sem estado de erro; (3) lista ok
+  mas resumo falha sem cache → tabela visível + erro acionável nos indicadores que
+  refaz só o resumo. Casos 1 e 3 escritos vermelhos antes, verdes após a correção.
+- **Antes/depois:** `npm test` 937/184 → **940/185**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Só produção alterada: novos caminhos de erro,
   risco baixo (o caminho feliz é idêntico).
 - **Próximo passo priorizado:** (1) continuar a varredura de "vazios/zeros
   enganosos" — próximas candidatas: `ProductsPage` (contadores do topo),

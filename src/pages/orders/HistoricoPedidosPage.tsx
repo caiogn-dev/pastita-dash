@@ -307,7 +307,22 @@ export const HistoricoPedidosPage: React.FC = () => {
         </div>
       }
     >
-      {resumo && (
+      {resumoQuery.isError && resumoQuery.data === undefined ? (
+        /* Resumo falhou SEM cache: a lista pode ter vindo, mas os indicadores
+           não. Some-los em silêncio faria o operador ler "período sem resumo"
+           quando na verdade a requisição falhou — mesmo engano dos "zeros".
+           Mostra um aviso curto e acionável no lugar dos KPIs. */
+        <Card className="mb-5 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-fg-muted-token">
+              Não foi possível carregar os indicadores do período.
+            </p>
+            <Button variant="secondary" onClick={() => resumoQuery.refetch()}>
+              Tentar novamente
+            </Button>
+          </div>
+        </Card>
+      ) : resumo ? (
         <KpiGrid
           className="mb-5"
           itens={[
@@ -335,7 +350,7 @@ export const HistoricoPedidosPage: React.FC = () => {
             },
           ]}
         />
-      )}
+      ) : null}
 
       {resumo && resumo.por_pagamento.length > 0 && (
         <Card className="mb-5 p-4">

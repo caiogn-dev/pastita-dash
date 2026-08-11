@@ -60,27 +60,24 @@ test('lista falha sem cache → erro acionável, nunca o "Nenhum pedido" enganos
   expect(resumoRefetch).toHaveBeenCalled();
 });
 
+const umPedido = () => ({
+  id: 'o1',
+  order_number: '1234',
+  created_at: '2026-08-10T12:00:00Z',
+  customer_name: 'Maria',
+  customer_phone: '11999999999',
+  items: [],
+  combo_items: [],
+  source: 'web',
+  payment_method: 'pix',
+  payment_status: 'paid',
+  status: 'delivered',
+  total: 50,
+});
+
 test('lista com dados → renderiza a tabela, sem estado de erro', () => {
   listaState = {
-    data: {
-      count: 1,
-      results: [
-        {
-          id: 'o1',
-          order_number: '1234',
-          created_at: '2026-08-10T12:00:00Z',
-          customer_name: 'Maria',
-          customer_phone: '11999999999',
-          items: [],
-          combo_items: [],
-          source: 'web',
-          payment_method: 'pix',
-          payment_status: 'paid',
-          status: 'delivered',
-          total: 50,
-        },
-      ],
-    },
+    data: { count: 1, results: [umPedido()] },
     isLoading: false,
     isError: false,
   };
@@ -89,4 +86,22 @@ test('lista com dados → renderiza a tabela, sem estado de erro', () => {
 
   expect(screen.getByText('#1234')).toBeInTheDocument();
   expect(screen.queryByText(/não foi possível carregar o histórico/i)).not.toBeInTheDocument();
+});
+
+test('lista ok mas resumo falha sem cache → KPIs mostram erro acionável, não somem em silêncio', () => {
+  listaState = {
+    data: { count: 1, results: [umPedido()] },
+    isLoading: false,
+    isError: false,
+  };
+  resumoState = { data: undefined, isLoading: false, isError: true, error: new Error('500') };
+
+  render(<MemoryRouter><HistoricoPedidosPage /></MemoryRouter>);
+
+  // A tabela (conteúdo primário) continua visível.
+  expect(screen.getByText('#1234')).toBeInTheDocument();
+  // Os indicadores não podem simplesmente sumir: mostram erro + "Tentar novamente".
+  expect(screen.getByText(/não foi possível carregar os indicadores/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }));
+  expect(resumoRefetch).toHaveBeenCalled();
 });
