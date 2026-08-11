@@ -5,9 +5,10 @@ import toast from 'react-hot-toast';
 import { Card, Button, SearchInput } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { getStores, getProducts, updateProduct, StoreProduct } from '../../services/storesApi';
+import api, { normalizePaginatedResponse } from '../../services/api';
 import { generateInternalEan13 } from '../../utils/ean13';
 import {
-  buildBarcodeCatalogDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
+  buildBarcodeCatalogDoc, buildNutritionDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
   PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
 } from '../../utils/labelPrint';
 
@@ -15,7 +16,13 @@ const fmtMoney = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', c
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
 const MM_PX = 96 / 25.4;
 
-type Template = 'produto' | 'validade';
+type Template = 'produto' | 'validade' | 'nutricao';
+
+interface NutritionProfile {
+  product: string; serving_size_g: string; household_measure?: string;
+  calculation?: { per_100g?: Record<string, string | number | null>; missing_nutrients?: string[] } | null;
+  [key: string]: unknown;
+}
 
 interface CatalogEntry {
   product: StoreProduct;
@@ -95,6 +102,7 @@ const EtiquetasPage: React.FC = () => {
   const [template, setTemplate] = useState<Template>('produto');
   const [cfg, setCfg] = useState<SavedConfig>(loadConfig);
   const [preparing, setPreparing] = useState(false);
+  const [profiles, setProfiles] = useState<Map<string, NutritionProfile>>(new Map());
 
   useEffect(() => {
     try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch { /* quota/privado */ }
@@ -130,6 +138,11 @@ const EtiquetasPage: React.FC = () => {
         return all;
       }));
       setCatalog(perStore.flat());
+      try {
+        const nutrition = await api.get('/nutrition/profiles/', { params: { page_size: 500 } });
+        const rows = normalizePaginatedResponse<NutritionProfile>(nutrition.data);
+        setProfiles(new Map(rows.map((profile) => [profile.product, profile])));
+      } catch { /* backend antigo: produto/validade continuam funcionando */ }
     } catch {
       toast.error('Erro ao carregar o catálogo');
     } finally {
@@ -204,9 +217,24 @@ const EtiquetasPage: React.FC = () => {
           toast.success(`${newCodes.size} código(s) interno(s) gerado(s) e salvo(s)`);
         }
       }
+      const nutritionCopies = expandCopies((c) => {
+        const profile = profiles.get(c.product.id);
+        if (!profile) return null;
+        const calculated = profile.calculation?.per_100g;
+        const keys = ['energy_kcal','carbohydrates_g','total_sugars_g','added_sugars_g','protein_g','total_fat_g','saturated_fat_g','trans_fat_g','fiber_g','sodium_mg'];
+        const per100g = Object.fromEntries(keys.map((key) => {
+          const raw = calculated?.[key] ?? profile[key];
+          return [key, raw == null || raw === '' ? null : Number(raw)];
+        }));
+        return { name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure, per100g };
+      }).filter((row): row is NonNullable<typeof row> => Boolean(row));
+      if (template === 'nutricao' && nutritionCopies.length !== totalLabels) {
+        toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
+        return;
+      }
       const doc = template === 'produto'
         ? buildProdutoDoc(expandCopies((c) => produtoLabel(c, newCodes.get(c.product.id))), cfg.produto)
-        : buildValidadeDoc(
+        : template === 'nutricao' ? buildNutritionDoc(nutritionCopies) : buildValidadeDoc(
           expandCopies((c) => ({ name: c.product.name, manip: fmtDate(manip), val: fmtDate(val) })),
           cfg.validade,
         );
@@ -254,6 +282,10 @@ const EtiquetasPage: React.FC = () => {
         w: (p.rotate ? p.height : paper) * MM_PX,
         h: (p.rotate ? paper : p.height) * MM_PX,
       };
+    }
+    if (template === 'nutricao') {
+      const sample = { name: selected[0]?.product.name || 'Prato de exemplo', servingG: 350, householdMeasure: '1 unidade', per100g: { energy_kcal:128, carbohydrates_g:28.1,total_sugars_g:null,added_sugars_g:0,protein_g:8.5,total_fat_g:4.2,saturated_fat_g:1.1,trans_fat_g:0,fiber_g:3.2,sodium_mg:210 } };
+      return { doc: buildNutritionDoc([sample]), w: 100 * MM_PX, h: 80 * MM_PX };
     }
     const v = cfg.validade;
     const dates = { manip: fmtDate(manip), val: fmtDate(val) };
@@ -338,7 +370,7 @@ const EtiquetasPage: React.FC = () => {
         <Card className="p-4 sm:p-5 space-y-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-2">Modelo</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant={template === 'produto' ? 'primary' : 'secondary'}
                 onClick={() => setTemplate('produto')}
@@ -350,6 +382,12 @@ const EtiquetasPage: React.FC = () => {
                 onClick={() => setTemplate('validade')}
               >
                 Validade (Elgin)
+              </Button>
+              <Button
+                variant={template === 'nutricao' ? 'primary' : 'secondary'}
+                onClick={() => setTemplate('nutricao')}
+              >
+                Nutrição 100×80
               </Button>
             </div>
           </div>
@@ -401,6 +439,12 @@ const EtiquetasPage: React.FC = () => {
                   <NumField label="Deslocar vertical" value={cfg.produto.offsetY} min={-20} max={20} onChange={(v) => setProduto({ offsetY: v })} />
                 </div>
               </details>
+            </div>
+          ) : template === 'nutricao' ? (
+            <div className="rounded-lg bg-black/5 p-3 text-sm space-y-2">
+              <p className="font-semibold">Zebra 100 × 80 mm</p>
+              <p className="opacity-70">Tabela completa com colunas por 100 g, porção e %VD. Produtos sem perfil nutricional são bloqueados para evitar impressão enganosa.</p>
+              <p className="text-xs opacity-60">Cadastre ingredientes e valores no menu Cardápio → Ingredientes e TACO.</p>
             </div>
           ) : (
             <div className="space-y-2 text-sm">

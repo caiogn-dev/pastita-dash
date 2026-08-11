@@ -6,6 +6,12 @@ import EtiquetasPage from '../EtiquetasPage';
 import { getStores, getProducts, updateProduct } from '../../../services/storesApi';
 import { printHtmlDocument } from '../../../utils/labelPrint';
 
+jest.mock('../../../services/api', () => ({
+  __esModule: true,
+  default: { get: jest.fn().mockResolvedValue({ data: { results: [] } }) },
+  normalizePaginatedResponse: (data: { results?: unknown[] }) => data?.results || [],
+}));
+
 jest.mock('../../../services/storesApi', () => ({
   getStores: jest.fn(),
   getProducts: jest.fn(),

@@ -6,6 +6,7 @@ import {
   MegaphoneIcon, DocumentTextIcon, DocumentChartBarIcon, EnvelopeIcon,
   ClockIcon, PresentationChartLineIcon, SparklesIcon, RectangleGroupIcon,
   QrCodeIcon, GiftIcon, LinkIcon, TrophyIcon,
+  BeakerIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -150,6 +151,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       icon: Squares2X2Icon,
       items: [
         { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
+        { name: 'Ingredientes e TACO', href: storeHref('ingredientes'), icon: BeakerIcon },
         { name: 'Combos',   href: storeHref('combos'),   icon: RectangleGroupIcon },
         { name: 'Cupons',   href: storeHref('coupons'),  icon: TagIcon },
         { name: 'Fidelidade', href: storeHref('fidelidade'), icon: GiftIcon },

@@ -89,6 +89,7 @@ const PrintSettingsPage = lazy(() => import('./pages/printing/PrintSettingsPage'
 const CashPage = lazy(() => import('./pages/cash/CashPage'));
 const PdvBalcaoPage = lazy(() => import('./pages/pdv/PdvBalcaoPage'));
 const EtiquetasPage = lazy(() => import('./pages/pdv/EtiquetasPage'));
+const IngredientsPage = lazy(() => import('./pages/nutrition/IngredientsPage'));
 const KdsPage = lazy(() => import('./pages/kds/KdsPage'));
 
 
@@ -247,6 +248,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/cash" element={<PageBoundary><CashPage /></PageBoundary>} />
         <Route path="stores/:storeId/pdv" element={<PageBoundary><PdvBalcaoPage /></PageBoundary>} />
         <Route path="stores/:storeId/etiquetas" element={<PageBoundary><EtiquetasPage /></PageBoundary>} />
+        <Route path="stores/:storeId/ingredientes" element={<PageBoundary><IngredientsPage /></PageBoundary>} />
         
         {/* Marketing Routes */}
         <Route path="marketing" element={<PageBoundary><MarketingPage /></PageBoundary>} />

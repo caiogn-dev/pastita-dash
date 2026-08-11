@@ -42,6 +42,15 @@ export interface BarcodeCatalogStore {
   products: BarcodeCatalogProduct[];
 }
 
+export interface NutritionLabelData {
+  name: string;
+  servingG: number;
+  householdMeasure?: string;
+  ingredients?: string;
+  allergens?: string;
+  per100g: Record<string, number | null | undefined>;
+}
+
 export interface ProdutoConfig {
   /** Dimensões da etiqueta em mm (como o operador enxerga a etiqueta). */
   width: number;
@@ -240,6 +249,34 @@ body { font-size: 9pt; }
   </div>
 </section>`).join('')}`;
   return wrapDoc('Catálogo de códigos de barras', css, body);
+};
+
+const NUTRITION_ROWS = [
+  ['energy_kcal','Valor energético','kcal',2000], ['carbohydrates_g','Carboidratos','g',300],
+  ['total_sugars_g','Açúcares totais','g',null], ['added_sugars_g','Açúcares adicionados','g',50],
+  ['protein_g','Proteínas','g',50], ['total_fat_g','Gorduras totais','g',65],
+  ['saturated_fat_g','Gorduras saturadas','g',20], ['trans_fat_g','Gorduras trans','g',2],
+  ['fiber_g','Fibra alimentar','g',25], ['sodium_mg','Sódio','mg',2000],
+] as const;
+
+/** Etiqueta nutricional completa para a Zebra 100×80 mm. */
+export const buildNutritionDoc = (labels: NutritionLabelData[]): string => {
+  const css = `
+@page { size: 100mm 80mm; margin: 0; }
+.label { width:100mm; height:80mm; padding:3mm 4mm; overflow:hidden; break-after:page; }
+.product { font-size:11pt; font-weight:800; line-height:1.05; margin-bottom:1.2mm; }
+.title { border-top:1.2mm solid #000; border-bottom:.45mm solid #000; font-size:12pt; font-weight:900; padding:.7mm 0; }
+.serving { font-size:6.7pt; padding:.7mm 0; border-bottom:.3mm solid #000; }
+table { width:100%; border-collapse:collapse; font-size:6.2pt; line-height:1.05; }
+th,td { border-bottom:.18mm solid #000; padding:.45mm .5mm; text-align:right; }
+th:first-child,td:first-child { text-align:left; font-weight:700; }
+thead th { font-size:5.8pt; vertical-align:bottom; }
+.foot { font-size:5.3pt; line-height:1.1; margin-top:.7mm; }
+.ingredients { font-size:5.5pt; line-height:1.12; margin-top:.8mm; }
+.allergens { font-weight:900; text-transform:uppercase; }`;
+  const fmt=(v:number|null|undefined,unit:string)=>v==null?'—':`${v.toLocaleString('pt-BR',{maximumFractionDigits:unit==='mg'?0:1})}`;
+  const body=labels.map(l=>{const servingFactor=l.servingG/100;return `<section class="label"><div class="product">${esc(l.name)}</div><div class="title">INFORMAÇÃO NUTRICIONAL</div><div class="serving">Porções por embalagem: — &nbsp;|&nbsp; Porção: ${l.servingG} g${l.householdMeasure?` (${esc(l.householdMeasure)})`:''}</div><table><thead><tr><th></th><th>100 g</th><th>${l.servingG} g</th><th>%VD*</th></tr></thead><tbody>${NUTRITION_ROWS.map(([key,name,unit,vd])=>{const base=l.per100g[key];const serving=base==null?null:base*servingFactor;const pct=vd&&serving!=null?Math.round(serving/vd*100):null;return `<tr><td>${name} (${unit})</td><td>${fmt(base,unit)}</td><td>${fmt(serving,unit)}</td><td>${pct==null?'—':pct}</td></tr>`}).join('')}</tbody></table><div class="foot">*Percentual de valores diários fornecidos pela porção.</div>${l.ingredients?`<div class="ingredients"><b>INGREDIENTES:</b> ${esc(l.ingredients)}</div>`:''}${l.allergens?`<div class="ingredients allergens">${esc(l.allergens)}</div>`:''}</section>`}).join('');
+  return wrapDoc('Etiquetas nutricionais 100×80',css,body);
 };
 
 /** Imprime um documento HTML completo num iframe isolado e descartável. */
