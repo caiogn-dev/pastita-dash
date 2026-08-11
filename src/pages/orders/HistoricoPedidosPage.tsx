@@ -166,6 +166,39 @@ export const HistoricoPedidosPage: React.FC = () => {
 
   if (listaQuery.isLoading) return <PageLoading />;
 
+  // Falha ao carregar a lista SEM nenhum dado em cache: mostrar erro acionável
+  // em vez de cair no EmptyState "Nenhum pedido neste recorte", que leria como
+  // "você não vendeu nada" quando na verdade a requisição falhou (rede/500) —
+  // o mesmo engano de "zeros" já corrigido em Pagamentos e Clientes. Com dado
+  // em cache (falha só ao atualizar), `keepPreviousData` mantém a tabela.
+  if (listaQuery.isError && listaQuery.data === undefined) {
+    return (
+      <PageShell
+        trilha={[{ rotulo: 'Pedidos', href: `/stores/${storeQuery}/orders` }, { rotulo: 'Histórico' }]}
+        titulo="Histórico de pedidos"
+        descricao="Todos os pedidos do período."
+      >
+        <Card>
+          <EmptyState
+            icone={<ReceiptPercentIcon className="h-8 w-8 text-[var(--warning)]" />}
+            titulo="Não foi possível carregar o histórico"
+            descricao="Houve um erro ao buscar os pedidos deste período. Verifique a conexão e tente novamente."
+            acao={
+              <Button
+                onClick={() => {
+                  listaQuery.refetch();
+                  resumoQuery.refetch();
+                }}
+              >
+                Tentar novamente
+              </Button>
+            }
+          />
+        </Card>
+      </PageShell>
+    );
+  }
+
   const selectCls =
     'h-9 rounded-lg border border-border-token bg-surface px-3 text-sm text-fg-token outline-none focus:ring-2 focus:ring-brand';
 

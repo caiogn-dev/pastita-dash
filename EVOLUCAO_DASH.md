@@ -3,6 +3,49 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-11)
+
+- `npm ci`: ok. `npx tsc --noEmit`: **limpo**. `npm run build` (vite): **ok** (~18s).
+- `npm test`: **939 testes / 185 suítes verdes** (era 937/184; +2/+1 desta fatia).
+- **Observação operacional (fora do código):** há **11+ PRs `bot/evolucao-*`
+  abertos e não mesclados** no GitHub (nºs 148–161), muitos redundantes entre si
+  (5 variações de "Switch a11y", 2 de "Modal a11y", etc.). O trabalho equivalente
+  já entrou na `main` por commits diretos, então esses PRs ficaram obsoletos.
+  Vale o dono **fechar os PRs obsoletos** para o loop parar de aparentar duplicar
+  esforço. A PR #161 (auto-nome de diálogos compostos via `DialogTitle`) ainda é
+  válida e distinta desta fatia.
+
+### 2026-08-11 — UX/Resiliência: estado de erro no Histórico de pedidos
+- **Medido:** varredura de "vazios/zeros enganosos" nas telas orientadas a query
+  (mesmo padrão já corrigido em `PaymentsPage` e `CustomersPage`).
+  `src/pages/orders/HistoricoPedidosPage.tsx` **não tinha NENHUM tratamento de
+  erro**: o único guard era `if (listaQuery.isLoading) return <PageLoading />`.
+  Quando `getOrders` falhava (rede/500) **sem cache**, `pedidos` virava `[]` e a
+  página renderizava o `EmptyState` **"Nenhum pedido neste recorte"** — dizendo
+  ao lojista que ele não vendeu nada no período quando, na verdade, a requisição
+  falhou. A falha do `resumoQuery` também sumia os KPIs em silêncio.
+- **Mudado (`HistoricoPedidosPage.tsx`):** após o guard de loading, quando a
+  lista falha **sem dado em cache** (`isError && data === undefined`), a página
+  mostra um `EmptyState` acionável ("Não foi possível carregar o histórico" +
+  botão **"Tentar novamente"** que refaz lista **e** resumo) em vez do vazio
+  enganoso. Com dado em cache (falha só ao atualizar), `keepPreviousData` mantém
+  a tabela — não destrói dado bom por erro transitório.
+- **Teste (TDD, vermelho→verde):** novo `__tests__/HistoricoPedidosError.test.tsx`
+  (2 casos): (1) lista falha sem cache → **não** renderiza "Nenhum pedido neste
+  recorte", mostra o erro e o clique em "Tentar novamente" chama os dois
+  `refetch`; (2) lista com dados → tabela normal, sem estado de erro. Escrito
+  vermelho (caso 1: "Nenhum pedido neste recorte" presente), verde após a
+  correção.
+- **Antes/depois:** `npm test` 937/184 → **939/185**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Só produção alterada: novo caminho de erro,
+  risco baixo (o caminho feliz é idêntico).
+- **Próximo passo priorizado:** (1) continuar a varredura de "vazios/zeros
+  enganosos" — próximas candidatas: `ProductsPage` (contadores do topo),
+  `AnalyticsPage` e seções de `reports/` que somam via query. (2) **Higiene de
+  PRs:** fechar os PRs `bot/*` obsoletos (ver observação acima) para o loop não
+  reaparentar duplicação. (3) **Segurança/deps:** planejar o major bump de
+  `react-router` 6→7 (open redirect) como fatia dedicada com validação de build.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
