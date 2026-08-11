@@ -13,6 +13,7 @@
  * Os offsets X/Y são só calibração fina por cima disso.
  */
 import JsBarcode from 'jsbarcode';
+import * as qrcodeModule from 'qrcode-generator';
 import { isValidEan13 } from './ean13';
 
 export type LabelBorder = 'none' | 'solid' | 'dashed';
@@ -49,6 +50,7 @@ export interface NutritionLabelData {
   ingredients?: string;
   allergens?: string;
   per100g: Record<string, number | null | undefined>;
+  publicUrl?: string;
 }
 
 export interface ProdutoConfig {
@@ -127,6 +129,15 @@ const barcodeSvg = (value: string): string => {
   svg.removeAttribute('height');
   svg.setAttribute('style', 'width:100%;height:100%;');
   return new XMLSerializer().serializeToString(svg);
+};
+
+const qrSvg = (value: string): string => {
+  type QrInstance = { addData: (data: string) => void; make: () => void; createSvgTag: (cellSize: number, margin: number) => string };
+  const factory = ((qrcodeModule as unknown as { default?: unknown }).default || qrcodeModule) as unknown as (typeNumber: number, level: string) => QrInstance;
+  const qr = factory(0, 'M');
+  qr.addData(value);
+  qr.make();
+  return qr.createSvgTag(3, 0);
 };
 
 const wrapDoc = (title: string, css: string, body: string): string => `<!DOCTYPE html>
@@ -272,11 +283,21 @@ th,td { border-bottom:.18mm solid #000; padding:.45mm .5mm; text-align:right; }
 th:first-child,td:first-child { text-align:left; font-weight:700; }
 thead th { font-size:5.8pt; vertical-align:bottom; }
 .foot { font-size:5.3pt; line-height:1.1; margin-top:.7mm; }
+.after { display:grid; grid-template-columns:1fr auto; gap:2mm; align-items:end; }
 .ingredients { font-size:5.5pt; line-height:1.12; margin-top:.8mm; }
+.qr { width:13mm; height:13mm; margin-top:.6mm; }
+.qr svg { width:100%; height:100%; }
 .allergens { font-weight:900; text-transform:uppercase; }`;
   const fmt=(v:number|null|undefined,unit:string)=>v==null?'—':`${v.toLocaleString('pt-BR',{maximumFractionDigits:unit==='mg'?0:1})}`;
-  const body=labels.map(l=>{const servingFactor=l.servingG/100;return `<section class="label"><div class="product">${esc(l.name)}</div><div class="title">INFORMAÇÃO NUTRICIONAL</div><div class="serving">Porções por embalagem: — &nbsp;|&nbsp; Porção: ${l.servingG} g${l.householdMeasure?` (${esc(l.householdMeasure)})`:''}</div><table><thead><tr><th></th><th>100 g</th><th>${l.servingG} g</th><th>%VD*</th></tr></thead><tbody>${NUTRITION_ROWS.map(([key,name,unit,vd])=>{const base=l.per100g[key];const serving=base==null?null:base*servingFactor;const pct=vd&&serving!=null?Math.round(serving/vd*100):null;return `<tr><td>${name} (${unit})</td><td>${fmt(base,unit)}</td><td>${fmt(serving,unit)}</td><td>${pct==null?'—':pct}</td></tr>`}).join('')}</tbody></table><div class="foot">*Percentual de valores diários fornecidos pela porção.</div>${l.ingredients?`<div class="ingredients"><b>INGREDIENTES:</b> ${esc(l.ingredients)}</div>`:''}${l.allergens?`<div class="ingredients allergens">${esc(l.allergens)}</div>`:''}</section>`}).join('');
+  const body=labels.map(l=>{const servingFactor=l.servingG/100;return `<section class="label"><div class="product">${esc(l.name)}</div><div class="title">INFORMAÇÃO NUTRICIONAL</div><div class="serving">Porções por embalagem: — &nbsp;|&nbsp; Porção: ${l.servingG} g${l.householdMeasure?` (${esc(l.householdMeasure)})`:''}</div><table><thead><tr><th></th><th>100 g</th><th>${l.servingG} g</th><th>%VD*</th></tr></thead><tbody>${NUTRITION_ROWS.map(([key,name,unit,vd])=>{const base=l.per100g[key];const serving=base==null?null:base*servingFactor;const pct=vd&&serving!=null?Math.round(serving/vd*100):null;return `<tr><td>${name} (${unit})</td><td>${fmt(base,unit)}</td><td>${fmt(serving,unit)}</td><td>${pct==null?'—':pct}</td></tr>`}).join('')}</tbody></table><div class="foot">*Percentual de valores diários fornecidos pela porção.</div><div class="after"><div>${l.ingredients?`<div class="ingredients"><b>INGREDIENTES:</b> ${esc(l.ingredients)}</div>`:''}${l.allergens?`<div class="ingredients allergens">${esc(l.allergens)}</div>`:''}</div>${l.publicUrl?`<div class="qr">${qrSvg(l.publicUrl)}</div>`:''}</div></section>`}).join('');
   return wrapDoc('Etiquetas nutricionais 100×80',css,body);
+};
+
+/** Etiqueta compacta: a tabela completa permanece no link público. */
+export const buildNutritionQrDoc = (labels: NutritionLabelData[]): string => {
+  const css = `@page { size:30mm 22mm; margin:0 }.label{width:30mm;height:22mm;padding:1.2mm;display:grid;grid-template-columns:1fr 15mm;gap:1mm;break-after:page;overflow:hidden}.name{font-size:6pt;font-weight:800;line-height:1.1}.hint{font-size:4.5pt;line-height:1.1;margin-top:1mm}.qr,.qr svg{width:15mm;height:15mm}.qr{align-self:center}`;
+  const body = labels.map((label) => `<section class="label"><div><div class="name">${esc(label.name)}</div><div class="hint">Escaneie para consultar a informação nutricional</div></div><div class="qr">${label.publicUrl ? qrSvg(label.publicUrl) : ''}</div></section>`).join('');
+  return wrapDoc('QR nutricional 30×22', css, body);
 };
 
 /** Imprime um documento HTML completo num iframe isolado e descartável. */

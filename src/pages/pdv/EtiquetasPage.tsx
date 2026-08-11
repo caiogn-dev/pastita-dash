@@ -8,7 +8,7 @@ import { getStores, getProducts, updateProduct, StoreProduct } from '../../servi
 import api, { normalizePaginatedResponse } from '../../services/api';
 import { generateInternalEan13 } from '../../utils/ean13';
 import {
-  buildBarcodeCatalogDoc, buildNutritionDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
+  buildBarcodeCatalogDoc, buildNutritionDoc, buildNutritionQrDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
   PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
 } from '../../utils/labelPrint';
 
@@ -16,10 +16,11 @@ const fmtMoney = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', c
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
 const MM_PX = 96 / 25.4;
 
-type Template = 'produto' | 'validade' | 'nutricao';
+type Template = 'produto' | 'validade' | 'nutricao' | 'nutricao-qr';
 
 interface NutritionProfile {
   product: string; serving_size_g: string; household_measure?: string;
+  public_url?: string;
   calculation?: { per_100g?: Record<string, string | number | null>; missing_nutrients?: string[] } | null;
   [key: string]: unknown;
 }
@@ -226,15 +227,17 @@ const EtiquetasPage: React.FC = () => {
           const raw = calculated?.[key] ?? profile[key];
           return [key, raw == null || raw === '' ? null : Number(raw)];
         }));
-        return { name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure, per100g };
+        const publicUrl = profile.public_url;
+        return { name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure, per100g, publicUrl };
       }).filter((row): row is NonNullable<typeof row> => Boolean(row));
-      if (template === 'nutricao' && nutritionCopies.length !== totalLabels) {
+      if ((template === 'nutricao' || template === 'nutricao-qr') && nutritionCopies.length !== totalLabels) {
         toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
         return;
       }
       const doc = template === 'produto'
         ? buildProdutoDoc(expandCopies((c) => produtoLabel(c, newCodes.get(c.product.id))), cfg.produto)
-        : template === 'nutricao' ? buildNutritionDoc(nutritionCopies) : buildValidadeDoc(
+        : template === 'nutricao' ? buildNutritionDoc(nutritionCopies)
+          : template === 'nutricao-qr' ? buildNutritionQrDoc(nutritionCopies) : buildValidadeDoc(
           expandCopies((c) => ({ name: c.product.name, manip: fmtDate(manip), val: fmtDate(val) })),
           cfg.validade,
         );
@@ -284,8 +287,12 @@ const EtiquetasPage: React.FC = () => {
       };
     }
     if (template === 'nutricao') {
-      const sample = { name: selected[0]?.product.name || 'Prato de exemplo', servingG: 350, householdMeasure: '1 unidade', per100g: { energy_kcal:128, carbohydrates_g:28.1,total_sugars_g:null,added_sugars_g:0,protein_g:8.5,total_fat_g:4.2,saturated_fat_g:1.1,trans_fat_g:0,fiber_g:3.2,sodium_mg:210 } };
+      const sample = { name: selected[0]?.product.name || 'Prato de exemplo', servingG: 350, householdMeasure: '1 unidade', publicUrl:'https://backend.pastita.com.br/api/v1/nutrition/public/00000000-0000-0000-0000-000000000000/', per100g: { energy_kcal:128, carbohydrates_g:28.1,total_sugars_g:null,added_sugars_g:0,protein_g:8.5,total_fat_g:4.2,saturated_fat_g:1.1,trans_fat_g:0,fiber_g:3.2,sodium_mg:210 } };
       return { doc: buildNutritionDoc([sample]), w: 100 * MM_PX, h: 80 * MM_PX };
+    }
+    if (template === 'nutricao-qr') {
+      const sample = { name: selected[0]?.product.name || 'Prato de exemplo', servingG: 100, publicUrl:'https://backend.pastita.com.br/api/v1/nutrition/public/00000000-0000-0000-0000-000000000000/', per100g:{} };
+      return { doc: buildNutritionQrDoc([sample]), w: 30 * MM_PX, h: 22 * MM_PX };
     }
     const v = cfg.validade;
     const dates = { manip: fmtDate(manip), val: fmtDate(val) };
@@ -370,7 +377,7 @@ const EtiquetasPage: React.FC = () => {
         <Card className="p-4 sm:p-5 space-y-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-2">Modelo</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 variant={template === 'produto' ? 'primary' : 'secondary'}
                 onClick={() => setTemplate('produto')}
@@ -388,6 +395,12 @@ const EtiquetasPage: React.FC = () => {
                 onClick={() => setTemplate('nutricao')}
               >
                 Nutrição 100×80
+              </Button>
+              <Button
+                variant={template === 'nutricao-qr' ? 'primary' : 'secondary'}
+                onClick={() => setTemplate('nutricao-qr')}
+              >
+                QR Nutrição 30×22
               </Button>
             </div>
           </div>
@@ -440,10 +453,10 @@ const EtiquetasPage: React.FC = () => {
                 </div>
               </details>
             </div>
-          ) : template === 'nutricao' ? (
+          ) : template === 'nutricao' || template === 'nutricao-qr' ? (
             <div className="rounded-lg bg-black/5 p-3 text-sm space-y-2">
-              <p className="font-semibold">Zebra 100 × 80 mm</p>
-              <p className="opacity-70">Tabela completa com colunas por 100 g, porção e %VD. Produtos sem perfil nutricional são bloqueados para evitar impressão enganosa.</p>
+              <p className="font-semibold">{template === 'nutricao' ? 'Zebra 100 × 80 mm' : 'QR compacto 30 × 22 mm'}</p>
+              <p className="opacity-70">{template === 'nutricao' ? 'Tabela completa com colunas por 100 g, porção, %VD e QR Code.' : 'Para embalagens pequenas: o QR abre a tabela nutricional pública completa no celular.'}</p>
               <p className="text-xs opacity-60">Cadastre ingredientes e valores no menu Cardápio → Ingredientes e TACO.</p>
             </div>
           ) : (
