@@ -120,12 +120,21 @@ const stringifyApiErrorValue = (value: unknown): string | null => {
   }
   if (typeof value === 'object') {
     const record = value as Record<string, unknown>;
+    // `details` PRIMEIRO: o handler do backend responde sempre com o mesmo
+    // `message: "Invalid data provided."` e põe o campo culpado em `details`.
+    // Lendo `message` antes, o painel mostrava a frase genérica e engolia a
+    // única informação acionável — foi o que a dona da loja viu ao tentar
+    // lançar o pedido da Aline pelo PDV em 11/ago.
     const nestedMessage =
+      stringifyApiErrorValue(record.details) ||
       stringifyApiErrorValue(record.message) ||
       stringifyApiErrorValue(record.detail) ||
-      stringifyApiErrorValue(record.error) ||
-      stringifyApiErrorValue(record.details);
+      stringifyApiErrorValue(record.error);
     if (nestedMessage) return nestedMessage;
+
+    // `{}` é ausência de erro, não erro: sem isto um `details: {}` vazio
+    // vencia a mensagem de verdade e o painel exibia a string "{}".
+    if (Object.keys(record).length === 0) return null;
 
     try {
       return JSON.stringify(value);
