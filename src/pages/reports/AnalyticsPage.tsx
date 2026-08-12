@@ -1,7 +1,8 @@
 /**
  * AnalyticsPage - Relatórios (sem Chakra UI)
  */
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDownTrayIcon,
@@ -15,6 +16,7 @@ import { ptBR } from 'date-fns/locale';
 import { toCsv, downloadCsv } from '../../utils/csv';
 import { formatAxisCurrency } from '../../utils/formatters';
 import { Card, Button, Badge, StatCard, PageShell } from '../../components/ui';
+import { relatorioPorSlug, type TabValue } from './relatorios';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankedList } from './sections/shared';
 import { useStore } from '../../hooks/useStore';
@@ -67,9 +69,8 @@ const UpgradeCard: React.FC = () => (
 );
 
 type GroupBy = 'day' | 'week' | 'month';
-type TabValue =
-  | 'overview' | 'orders' | 'products' | 'stock'
-  | 'peaks' | 'geo' | 'operations' | 'crm' | 'finance' | 'bot';
+// TabValue e o mapa de relatórios moram em `relatorios.ts` — a página deixou
+// de ser dona da navegação dela.
 
 // Rótulos pt-BR dos status de pedido (para a distribuição na aba Pedidos).
 const ORDER_STATUS_LABELS: Record<string, string> = {
@@ -139,38 +140,21 @@ const tooltipDateLabel = (l: unknown, gb: GroupBy) => {
 };
 
 // Abas agrupadas por tema — a barra plana com 12 itens virava sopa de letras.
-const TAB_GROUPS: Array<{ group: string; tabs: { value: TabValue; label: string }[] }> = [
-  { group: 'Resumo', tabs: [{ value: 'overview', label: 'Visão Geral' }] },
-  {
-    group: 'Vendas',
-    tabs: [
-      { value: 'orders', label: 'Pedidos & Faturamento' },
-      { value: 'peaks', label: 'Picos & Canais' },
-      { value: 'products', label: 'Produtos' },
-      { value: 'stock', label: 'Estoque' },
-    ],
-  },
-  {
-    group: 'Clientes',
-    tabs: [
-      { value: 'crm', label: 'Clientes' },
-      { value: 'bot', label: 'Bot & Avaliações' },
-    ],
-  },
-  {
-    group: 'Operação & Financeiro',
-    tabs: [
-      { value: 'operations', label: 'Operação' },
-      { value: 'geo', label: 'Geografia' },
-      { value: 'finance', label: 'Taxas & Cupons' },
-    ],
-  },
-];
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 const AnalyticsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabValue>('overview');
+  // O relatório vem da URL: some a segunda navegação dentro da página e o
+  // link passa a valer (mandar por WhatsApp, voltar no histórico).
+  const { relatorio: slugDaRota } = useParams<{ relatorio?: string }>();
+  const relatorio = relatorioPorSlug(slugDaRota);
+  const [visaoEscolhida, setVisaoEscolhida] = useState<TabValue | null>(null);
+  const activeTab: TabValue =
+    (visaoEscolhida && relatorio.visoes.some((v) => v.value === visaoEscolhida)
+      ? visaoEscolhida
+      : relatorio.visoes[0].value);
+  // Trocar de relatório zera a visão: manter a antiga mostraria conteúdo de
+  // outro relatório sob um título que não é o dele.
+  useEffect(() => { setVisaoEscolhida(null); }, [relatorio.slug]);
   const [range, setRange] = useState<DateRange>({ period: '30d' });
   const [cardapioAberto, setCardapioAberto] = useState(false);
   const { storeId } = useStore();
@@ -640,9 +624,9 @@ const AnalyticsPage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'Relatórios' }]}
-      titulo="Relatórios"
-      descricao="Vendas, produtos, clientes e operação — sempre comparados com o período anterior."
+      trilha={[{ rotulo: 'Relatórios' }, { rotulo: relatorio.titulo }]}
+      titulo={relatorio.titulo}
+      descricao={relatorio.descricao}
       acoes={
         <>
           {/* Um menu só: cada relatório aparece uma vez, com CSV e Excel lado
@@ -672,31 +656,31 @@ const AnalyticsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tabs agrupadas por tema */}
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-2 mb-6 border-b border-border-token">
-        {TAB_GROUPS.map((g) => (
-          <div key={g.group} className="flex flex-col">
-            <span className="overline tracking-[0.14em] /70 px-1 mb-0.5">
-              {g.group}
-            </span>
-            <div className="flex">
-              {g.tabs.map((t) => (
-                <button
-                  key={t.value}
-                  onClick={() => setActiveTab(t.value)}
-                  className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                    activeTab === t.value
-                      ? 'border-brand text-brand-ink'
-                      : 'border-transparent text-fg-muted-token hover:text-fg-token'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Uma visão só = nenhum seletor. Botão que não escolhe nada é
+          decoração que o olho ainda precisa processar. */}
+      {relatorio.visoes.length > 1 && (
+        <div
+          role="tablist"
+          aria-label={`Visões de ${relatorio.titulo}`}
+          className="mb-6 inline-flex flex-wrap gap-1 rounded-xl border border-border-token bg-surface-2 p-1"
+        >
+          {relatorio.visoes.map((v) => (
+            <button
+              key={v.value}
+              role="tab"
+              aria-selected={activeTab === v.value}
+              onClick={() => setVisaoEscolhida(v.value)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                activeTab === v.value
+                  ? 'bg-surface text-fg-token shadow-sm'
+                  : 'text-fg-muted-token hover:text-fg-token'
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Tab Content */}
       {activeTab === 'orders' && renderOrders()}

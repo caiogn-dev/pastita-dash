@@ -13,7 +13,7 @@ import {
   ClipboardDocumentListIcon, PrinterIcon, BanknotesIcon, FireIcon, CubeIcon,
   TicketIcon, GlobeAltIcon, ChartBarIcon, CalendarDaysIcon, ShareIcon,
   UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
-  ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon,
+  ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -204,9 +204,15 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       grupo: 'Crescimento',
       label: 'Relatórios',
       icon: PresentationChartLineIcon,
+      // Os quatro relatórios eram DEZ abas numa faixa de duas camadas dentro
+      // da própria página — uma segunda navegação por cima desta. Agora são
+      // destinos de verdade: entram na coluna, têm URL e voltam no histórico.
       items: [
-        { name: 'Visão geral',        href: '/analytics',   icon: ChartBarIcon },
-        { name: 'Metas e Conquistas', href: '/conquistas',  icon: TrophyIcon },
+        { name: 'Visão geral',        href: '/analytics/visao-geral', icon: ChartBarIcon },
+        { name: 'Vendas',             href: '/analytics/vendas',      icon: ArrowTrendingUpIcon },
+        { name: 'Clientes',           href: '/analytics/clientes',    icon: UsersIcon },
+        { name: 'Operação',           href: '/analytics/operacao',    icon: ClockIcon },
+        { name: 'Metas e Conquistas', href: '/conquistas',            icon: TrophyIcon },
       ],
     },
     ...(automationEnabled ? [marketing, automacao] : []),
@@ -224,7 +230,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
         // Recuperadas: diagnósticos que existiam sem rota — quando o WhatsApp
         // cai, é aqui que se olha em vez de abrir o log do servidor.
         { name: 'Diagnóstico do WhatsApp', href: '/whatsapp/diagnostics', icon: WrenchScrewdriverIcon, sectionHeader: 'Quando algo falha' },
-        { name: 'Diagnóstico do chat',     href: '/whatsapp/debug',       icon: ClockIcon },
+        { name: 'Diagnóstico do chat',     href: '/whatsapp/debug',       icon: ChatBubbleLeftRightIcon },
       ],
     },
   ];

@@ -228,7 +228,8 @@ const AppContent: React.FC = () => {
         <Route path="automation/intents/stats" element={<PageBoundary><IntentStatsPage /></PageBoundary>} />
         
         {/* Analytics/Reports Routes */}
-        <Route path="analytics" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
+        <Route path="analytics" element={<Navigate to="/analytics/visao-geral" replace />} />
+        <Route path="analytics/:relatorio" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
         <Route path="conquistas" element={<PageBoundary><ConquistasPage /></PageBoundary>} />
         <Route path="reports" element={<Navigate to="/analytics" replace />} />
         
