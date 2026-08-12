@@ -13,26 +13,32 @@ import React from 'react';
 
 import { Modal, ModalBody, ModalHeader, SearchInput } from '../../components/ui';
 
+/**
+ * Só o que ESTE modal lê. Genérico no item para que a página passe o próprio
+ * `CatalogEntry` (que tem mais campos) e o callback continue recebendo o tipo
+ * dela — sem o genérico, o `onEscolher` fica contravariante e o TypeScript
+ * recusa, com razão: o componente devolveria menos do que a página espera.
+ */
 export interface CandidatoDeVinculo {
   product: { id: string; name: string; price: number | string; barcode?: string };
   storeName: string;
 }
 
-export interface ModalVincularCodigoProps {
+export interface ModalVincularCodigoProps<T extends CandidatoDeVinculo> {
   /** `null` = fechado. */
   codigo: string | null;
   onFechar: () => void;
   busca: string;
   onBuscar: (valor: string) => void;
-  candidatos: CandidatoDeVinculo[];
-  onEscolher: (candidato: CandidatoDeVinculo) => void;
+  candidatos: T[];
+  onEscolher: (candidato: T) => void;
   vinculando: boolean;
   /** Quantas lojas o usuário opera — abaixo de 2 o nome da loja é ruído. */
   totalDeLojas: number;
   formatarValor: (valor: number) => string;
 }
 
-export const ModalVincularCodigo: React.FC<ModalVincularCodigoProps> = ({
+export function ModalVincularCodigo<T extends CandidatoDeVinculo>({
   codigo,
   onFechar,
   busca,
@@ -42,7 +48,8 @@ export const ModalVincularCodigo: React.FC<ModalVincularCodigoProps> = ({
   vinculando,
   totalDeLojas,
   formatarValor,
-}) => (
+}: ModalVincularCodigoProps<T>) {
+  return (
   <Modal isOpen={codigo !== null} onClose={onFechar}>
     <ModalHeader title="Código não cadastrado" />
     <ModalBody>
@@ -86,7 +93,8 @@ export const ModalVincularCodigo: React.FC<ModalVincularCodigoProps> = ({
         )}
       </ul>
     </ModalBody>
-  </Modal>
-);
+    </Modal>
+  );
+}
 
 export default ModalVincularCodigo;

@@ -15,7 +15,9 @@ import toast from 'react-hot-toast';
 import { Card, Button, Modal, ModalHeader, ModalBody, SearchInput } from '../../components/ui';
 import { ModalCobrancaPix } from './ModalCobrancaPix';
 import { ComandaDoBalcao } from './ComandaDoBalcao';
+import { ModalVincularCodigo } from './ModalVincularCodigo';
 import { ClienteDaVenda } from './ClienteDaVenda';
+import { BuscaManualDeProduto } from './BuscaManualDeProduto';
 import { Loading } from '../../components/common';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import {
@@ -436,33 +438,14 @@ const PdvBalcaoPage: React.FC = () => {
       </div>
 
       <Card className="p-4 sm:p-5">
-        <div className="relative mb-3">
-          <SearchInput
-            placeholder="Adicionar sem bipar — busque o produto por nome…"
-            value={manualSearch}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setManualSearch(e.target.value)}
-            data-testid="pdv-busca-manual"
-          />
-          {manualMatches.length > 0 && (
-            <ul className="absolute z-10 left-0 right-0 mt-1 rounded border border-border-token bg-surface shadow-lg divide-y divide-[color:var(--border)] max-h-64 overflow-y-auto">
-              {manualMatches.map((c) => (
-                <li key={c.product.id}>
-                  <button
-                    type="button"
-                    onClick={() => addManual(c)}
-                    className="w-full flex items-center justify-between gap-2 py-2.5 px-3 text-left hover:bg-black/5 dark:hover:bg-surface/10"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">{c.product.name}</span>
-                      {storeCount > 1 && <span className="block text-xs opacity-60">{c.storeName}</span>}
-                    </span>
-                    <span className="text-sm opacity-70 shrink-0">{fmtMoney(Number(c.product.price))}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <BuscaManualDeProduto
+          valor={manualSearch}
+          onBuscar={setManualSearch}
+          candidatos={manualMatches}
+          onEscolher={addManual}
+          totalDeLojas={storeCount}
+          formatarValor={fmtMoney}
+        />
         <ComandaDoBalcao
           grupos={groups}
           vazia={items.length === 0}
@@ -514,48 +497,17 @@ const PdvBalcaoPage: React.FC = () => {
         </Button>
       </Card>
 
-      {/* Modal de vínculo de código desconhecido */}
-      <Modal isOpen={unknownCode !== null} onClose={() => setUnknownCode(null)}>
-        <ModalHeader title="Código não cadastrado" />
-        <ModalBody>
-          <p className="text-sm mb-3">
-            O código <span className="font-mono font-semibold">{unknownCode}</span> não
-            está vinculado a nenhum produto. Escolha o produto pra vincular — o próximo
-            bipe já entra direto.
-          </p>
-          <SearchInput
-            autoFocus
-            placeholder="Buscar produto por nome…"
-            value={linkSearch}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLinkSearch(e.target.value)}
-          />
-          <ul className="mt-3 divide-y divide-[color:var(--border)] max-h-64 overflow-y-auto">
-            {linkCandidates.map((c) => (
-              <li key={c.product.id}>
-                <button
-                  type="button"
-                  disabled={linking}
-                  onClick={() => handleLinkProduct(c)}
-                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-black/5 dark:hover:bg-surface/5 rounded"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate">{c.product.name}</span>
-                    {storeCount > 1 && (
-                      <span className="block text-xs opacity-60">{c.storeName}</span>
-                    )}
-                  </span>
-                  <span className="text-sm opacity-70 shrink-0">
-                    {fmtMoney(Number(c.product.price))}{c.product.barcode ? ' · já tem código' : ''}
-                  </span>
-                </button>
-              </li>
-            ))}
-            {linkCandidates.length === 0 && (
-              <li className="py-4 text-center text-sm opacity-60">Nenhum produto encontrado</li>
-            )}
-          </ul>
-        </ModalBody>
-      </Modal>
+      <ModalVincularCodigo
+        codigo={unknownCode}
+        onFechar={() => setUnknownCode(null)}
+        busca={linkSearch}
+        onBuscar={setLinkSearch}
+        candidatos={linkCandidates}
+        onEscolher={handleLinkProduct}
+        vinculando={linking}
+        totalDeLojas={storeCount}
+        formatarValor={fmtMoney}
+      />
 
       {/* Modal de vínculo de cliente: busca no cadastro ou cria na hora */}
       <Modal isOpen={customerModal} onClose={() => setCustomerModal(false)}>
