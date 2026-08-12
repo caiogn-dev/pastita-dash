@@ -5,19 +5,44 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 ## Baseline atual (2026-08-12)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high) — `postcss`
-  (high, dev/build-only) e `react-router` 6.x (moderate: open redirect via barra
-  invertida + injeção via `deserializeErrors` na hidratação SSR). O `npm audit fix`
-  sem `--force` **não** resolve (o resumo continua 8 após o dry-run): exigem major
-  bump (`react-router` 7.18+, `postcss` 8.5.23+). Fatia dedicada com validação de
-  build/rota — a SSR hydration não se aplica a este SPA client-side, o que reduz a
-  urgência do vetor de `react-router`.
+- `npm ci`: ok. `npm audit`: entrou em **8 vulnerabilidades** (3 moderate, 5 high);
+  após o `npm audit fix` sem `--force` desta fatia caiu para **4** (3 moderate,
+  1 high). O que **saiu** in-range: `postcss` 8.5.14 → **8.5.26** (2 advisories high
+  de path traversal no auto-load de source map, dev/build-only), dentro do range
+  `^8.4.32` já declarado — **não era major**. O que **fica** (exige major, fatia
+  dedicada com validação): `esbuild`/`vite` (moderate, só via `vite@8`) e
+  `react-router` 6.x (moderate: open redirect por barra invertida + injeção via
+  `deserializeErrors` na hidratação SSR — só corrige no `7.18+`; o `audit` anuncia
+  "fix available" mas o não-`--force` não atravessa o major, confirmado nesta
+  execução). A hidratação SSR não se aplica a este SPA client-side, o que reduz a
+  urgência do vetor do `react-router`.
 - `npx tsc --noEmit`: **limpo**.
 - `npm test`: **963 testes / 190 suítes verdes** (era 961/189; +2/+1 desta fatia).
-- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~22s).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~21s, com postcss 8.5.26).
 - `npm run lint`: gate em 400 warnings; **265 warnings** (0 errors).
 
 ## Histórico
+
+### 2026-08-12 — Segurança: `postcss` 8.5.14 → 8.5.26 (fix in-range, 2 highs a menos)
+- **Medido / corrigido de rota:** a nota de baseline anterior lumpava `postcss` junto
+  do `react-router` como "exige major bump". Errado — apontado em revisão do PR #163.
+  `postcss` está declarado como **`^8.4.32`** (devDependency direta) e o fix
+  (`8.5.23+`, resolvido para **8.5.26**) está **dentro do range**: é upgrade
+  in-range, não major. As 2 advisories high (path traversal no auto-load de source
+  map por `sourceMappingURL`, `GHSA-r28c-9q8g-f849` e `GHSA-fxqj-rqcc-2cmp`) são
+  dev/build-only, mas não custam nada para eliminar.
+- **Mudado:** `npm audit fix` sem `--force`. Só o **`package-lock.json`** mudou
+  (postcss e sua subárvore); `package.json` intacto (range `^8.4.32` preservado);
+  `react-router`/`vite`/`esbuild` **não** foram tocados (esses sim precisam de major).
+  `npm audit`: **8 → 4** vulnerabilidades.
+- **Zero-regressão:** `vite build` ok (~21s) e `npm test` 963/190 verdes com o novo
+  postcss — o bump é patch-level dentro do 8.5.x, usado por tailwind/autoprefixer/vite,
+  risco desprezível.
+- **Por que o dry-run parecia não mexer:** o resumo do `--dry-run` imprime o relatório
+  *antes* do fix; o `audit fix` de verdade aplica o in-range. A leitura anterior de
+  "continua 8" era do estado pré-fix, não do que o fix faria.
+
+### 2026-08-12 — Perf: `RecipeBuilder` deixa de fazer 2 GETs idênticos ao abrir o produto
 
 ### 2026-08-12 — Perf: `RecipeBuilder` deixa de fazer 2 GETs idênticos ao abrir o produto
 - **Medido (a nível de código):** `src/pages/nutrition/RecipeBuilder.tsx` disparava,
@@ -45,9 +70,11 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   roles ARIA (`role="combobox"/"listbox"/"option"`, `aria-expanded`,
   `aria-activedescendant`) nem navegação por setas — só `aria-label` no input.
   Dar semântica de combobox + navegação por teclado, com teste de regressão. (2)
-  **Segurança/deps:** planejar o major bump de `react-router` 6→7.18+ e `postcss`,
-  cada um como fatia dedicada com validação de build. (3) **Perf — varredura de
-  duplicatas:** procurar outros `useEffect` com GETs redundantes no mesmo endpoint.
+  **Segurança/deps (restante, exige major):** planejar `react-router` 6→7.18+
+  (open redirect) e `vite` 5→8 (esbuild dev-only), cada um como fatia dedicada com
+  validação de build/rota. `postcss` já resolvido in-range nesta execução. (3)
+  **Perf — varredura de duplicatas:** procurar outros `useEffect` com GETs
+  redundantes no mesmo endpoint.
 
 ---
 
