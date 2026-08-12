@@ -28,6 +28,7 @@ import { getStores } from '../../services/storesApi';
 import { Badge, Button, Card, Modal, PageShell, SearchInput } from '../../components/ui';
 import { Loading } from '../../components/common';
 import RecipeBuilder from './RecipeBuilder';
+import RevisaoDeAlergenicos from './RevisaoDeAlergenicos';
 import { useConfirm } from '../../hooks/useConfirm';
 
 type NutrientKey =
