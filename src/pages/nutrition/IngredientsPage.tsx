@@ -7,6 +7,7 @@ import { getStores } from '../../services/storesApi';
 import { Button, Card, SearchInput } from '../../components/ui';
 import { Loading } from '../../components/common';
 import RecipeBuilder from './RecipeBuilder';
+import { useConfirm } from '../../hooks/useConfirm';
 
 type NutrientKey = 'energy_kcal'|'carbohydrates_g'|'total_sugars_g'|'added_sugars_g'|'protein_g'|'total_fat_g'|'saturated_fat_g'|'trans_fat_g'|'fiber_g'|'sodium_mg';
 interface Ingredient { id:string; store:string|null; display_name:string; canonical_name:string; category:string; source:string; allergens?:string[]; may_contain?:string[]; allergens_reviewed?:boolean; [key:string]: unknown }
@@ -28,7 +29,7 @@ export default function IngredientsPage() {
   // interessa e esconde o que interessa. A busca da base vai ao servidor.
   const [buscaBase,setBuscaBase]=useState('');
   useEffect(()=>{ if(aba!=='base') return; const id=setTimeout(()=>setBuscaBase(search),400); return ()=>clearTimeout(id); },[search,aba]); const [editing,setEditing]=useState<Ingredient|null>(null);
-  const [modalOpen,setModalOpen]=useState(false);
+  const [modalOpen,setModalOpen]=useState(false); const [ConfirmDialog,confirmAction]=useConfirm();
   const [form,setForm]=useState<Record<string,string>>(empty); const [storeUuid,setStoreUuid]=useState<string>();
   // Alergênicos ficam FORA do `form` (que é tudo string) porque são listas.
   const [alergenicos,setAlergenicos]=useState<Alergenico[]>([]);
@@ -63,9 +64,12 @@ export default function IngredientsPage() {
       // a norma proíbe amaciar uma certeza com advertência de traço.
       allergens:contem, may_contain:podeConter.filter(v=>!contem.includes(v)), allergens_reviewed:revisado};
     try { if(editing) await api.patch(`/nutrition/ingredients/${editing.id}/`,payload); else await api.post('/nutrition/ingredients/',payload); toast.success('Ingrediente salvo'); setEditing(null);setForm(empty);setModalOpen(false);await load(); } catch { toast.error('Revise os valores informados'); }};
-  const remove=async(item:Ingredient)=>{if(!confirm(`Desativar ${item.display_name}?`))return;try{await api.delete(`/nutrition/ingredients/${item.id}/`);await load();}catch{toast.error('Ingrediente usado em receita não pode ser removido');}};
+  const remove=async(item:Ingredient)=>{
+    const ok=await confirmAction({title:'Desativar ingrediente',message:`Desativar "${item.display_name}"? Ele some das listas, mas as receitas que já o usam continuam válidas.`,confirmText:'Desativar',variant:'danger'});
+    if(!ok)return;try{await api.delete(`/nutrition/ingredients/${item.id}/`);await load();}catch{toast.error('Ingrediente usado em receita não pode ser removido');}};
   if(loading)return <Loading/>;
   return <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
+    {ConfirmDialog}
     <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-2xl font-semibold flex items-center gap-2"><BeakerIcon className="w-7 h-7"/>Ingredientes e TACO</h1><p className="text-sm opacity-70 mt-1">Valores por 100 g, com fonte explícita. Campos ausentes não viram zero.</p></div><Button onClick={()=>open()}><PlusIcon className="w-5 h-5"/>Novo ingrediente</Button></header>
     <RecipeBuilder storeSlug={storeId} ingredients={items}/>
     <Card className="p-4 flex flex-wrap gap-3 items-center"><div className="inline-flex rounded-lg border border-black/15 overflow-hidden text-sm">{([['loja',`Meus ingredientes (${daLoja.length})`],['base',`Base TACO/POF (${totalBase||daBase.length})`]] as const).map(([v,rotulo])=><button key={v} type="button" onClick={()=>setAba(v)} className={`px-3 py-1.5 ${aba===v?'bg-black/80 text-white':'hover:bg-black/5'}`}>{rotulo}</button>)}</div><div className="min-w-56 flex-1"><SearchInput placeholder="Buscar ingrediente…" value={search} onChange={(e:React.ChangeEvent<HTMLInputElement>)=>setSearch(e.target.value)}/></div><select className="rounded border border-black/15 bg-transparent px-3" value={category} onChange={e=>setCategory(e.target.value)}><option value="">Todas as categorias</option>{categories.map(c=><option key={c}>{c}</option>)}</select></Card>

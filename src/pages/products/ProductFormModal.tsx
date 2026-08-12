@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import {
   MagnifyingGlassIcon,
   Squares2X2Icon,
@@ -7,6 +7,7 @@ import {
   CubeIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  BeakerIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validarProduto';
@@ -14,6 +15,10 @@ import { FormChecklist, FormSummary, ChoiceCards, FormStepper, StringListField }
 import { Card, Button } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
+// Lazy de propósito: a aba Nutricional é a menos usada do formulário, e o
+// import direto arrastava o cliente de API para dentro de quem só veio mexer
+// no preço — inclusive nos testes do formulário.
+const RecipeBuilder = lazy(() => import('../nutrition/RecipeBuilder'));
 import DescriptionEditor from './DescriptionEditor';
 import storesApi, {
   StoreProduct as Product,
@@ -407,6 +412,9 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     ...(isCurrentlyEditing ? ([{ id: 'variants', label: 'Variantes', icon: Squares2X2Icon }] as const) : []),
     { id: 'media', label: 'Mídia', icon: PhotoIcon },
     { id: 'seo', label: 'SEO', icon: MagnifyingGlassIcon },
+    // Só na edição, como Variantes: a receita é vinculada ao produto por id,
+    // e um produto que ainda não existe não tem a que vincular.
+    ...(isCurrentlyEditing ? ([{ id: 'nutrition', label: 'Nutricional', icon: BeakerIcon }] as const) : []),
   ] as const;
 
   const modalTitle = isCurrentlyEditing ? 'Editar Produto' : 'Novo Produto';
@@ -994,6 +1002,19 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           )}
 
           {/* SEO Tab */}
+          {passoAtivo === 'nutrition' && isCurrentlyEditing && effectiveProduct && 'id' in effectiveProduct && (
+            <div className="space-y-3">
+              <p className="text-sm opacity-70">
+                Informe os ingredientes e os pesos deste prato. A tabela nutricional, os alergênicos e a
+                lupa da rotulagem frontal saem daí — e a etiqueta só fica liberada quando estiver tudo
+                conferido.
+              </p>
+              <Suspense fallback={<p className="text-sm opacity-60">Carregando…</p>}>
+                <RecipeBuilder productId={String(effectiveProduct.id)} storeUuid={storeId} ingredients={[]} />
+              </Suspense>
+            </div>
+          )}
+
           {passoAtivo === 'seo' && (
             <div className="space-y-4">
               <div>

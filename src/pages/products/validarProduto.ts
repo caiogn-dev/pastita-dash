@@ -15,7 +15,7 @@
  */
 import type { StoreProductInput as ProductInput } from '../../services/storesApi';
 
-export type AbaDoProduto = 'basic' | 'pricing' | 'inventory' | 'variants' | 'media' | 'seo';
+export type AbaDoProduto = 'basic' | 'pricing' | 'inventory' | 'variants' | 'media' | 'seo' | 'nutrition';
 
 export interface ErroDeProduto {
   aba: AbaDoProduto;
@@ -24,7 +24,7 @@ export interface ErroDeProduto {
 }
 
 /** Mesma ordem das abas na tela. */
-const ORDEM: AbaDoProduto[] = ['basic', 'pricing', 'inventory', 'variants', 'media', 'seo'];
+const ORDEM: AbaDoProduto[] = ['basic', 'pricing', 'inventory', 'variants', 'media', 'seo', 'nutrition'];
 
 export function validarProduto(dados: ProductInput): ErroDeProduto[] {
   const erros: ErroDeProduto[] = [];
