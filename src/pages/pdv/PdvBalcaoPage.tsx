@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, ModalHeader, ModalBody, SearchInput } from '../../components/ui';
+import { ModalCobrancaPix } from './ModalCobrancaPix';
 import { Loading } from '../../components/common';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import {
@@ -441,7 +442,7 @@ const PdvBalcaoPage: React.FC = () => {
             data-testid="pdv-busca-manual"
           />
           {manualMatches.length > 0 && (
-            <ul className="absolute z-10 left-0 right-0 mt-1 rounded border border-black/15 dark:border-white/15 bg-surface dark:bg-neutral-900 shadow-lg divide-y divide-black/10 dark:divide-white/10 max-h-64 overflow-y-auto">
+            <ul className="absolute z-10 left-0 right-0 mt-1 rounded border border-border-token bg-surface shadow-lg divide-y divide-[color:var(--border)] max-h-64 overflow-y-auto">
               {manualMatches.map((c) => (
                 <li key={c.product.id}>
                   <button
@@ -470,7 +471,7 @@ const PdvBalcaoPage: React.FC = () => {
             {groups.map((g) => (
               <div key={g.storeSlug}>
                 {groups.length > 1 && (
-                  <div className="flex items-center justify-between gap-2 mb-1 pb-2 border-b border-black/10 dark:border-white/10">
+                  <div className="flex items-center justify-between gap-2 mb-1 pb-2 border-b border-border-token">
                     <div className="flex items-center gap-1.5 text-sm font-semibold opacity-80">
                       <BuildingStorefrontIcon className="w-4 h-4" /> {g.storeName}
                     </div>
@@ -479,7 +480,7 @@ const PdvBalcaoPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                <ul className="divide-y divide-black/10 dark:divide-white/10">
+                <ul className="divide-y divide-[color:var(--border)]">
                   {g.items.map((i) => (
                     <li key={i.product.id} className="flex items-center gap-3 py-3">
                       <div className="flex-1 min-w-0">
@@ -521,7 +522,7 @@ const PdvBalcaoPage: React.FC = () => {
                 <button
                   type="button"
                   aria-label="Remover cliente"
-                  className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-surface/10"
+                  className="p-0.5 rounded-full hover:bg-surface-2"
                   onClick={() => setCustomer(null)}
                 >
                   <XMarkIcon className="w-4 h-4" />
@@ -589,7 +590,7 @@ const PdvBalcaoPage: React.FC = () => {
             value={linkSearch}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLinkSearch(e.target.value)}
           />
-          <ul className="mt-3 divide-y divide-black/10 dark:divide-white/10 max-h-64 overflow-y-auto">
+          <ul className="mt-3 divide-y divide-[color:var(--border)] max-h-64 overflow-y-auto">
             {linkCandidates.map((c) => (
               <li key={c.product.id}>
                 <button
@@ -631,7 +632,7 @@ const PdvBalcaoPage: React.FC = () => {
             value={custSearch}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustSearch(e.target.value)}
           />
-          <ul className="mt-3 divide-y divide-black/10 dark:divide-white/10 max-h-56 overflow-y-auto">
+          <ul className="mt-3 divide-y divide-[color:var(--border)] max-h-56 overflow-y-auto">
             {custResults.map((c) => (
               <li key={c.id}>
                 <button
@@ -653,17 +654,17 @@ const PdvBalcaoPage: React.FC = () => {
               <li className="py-3 text-center text-sm opacity-60">Ninguém encontrado — cadastre abaixo</li>
             )}
           </ul>
-          <div className="mt-4 pt-4 border-t border-black/10 dark:border-white/10 space-y-2">
+          <div className="mt-4 pt-4 border-t border-border-token space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide opacity-60">Cadastrar novo</p>
             <input
-              className="w-full rounded border border-black/15 dark:border-white/15 bg-transparent px-3 py-2 text-sm"
+              className="w-full rounded border border-border-token bg-transparent px-3 py-2 text-sm"
               placeholder="Nome"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               aria-label="Nome do cliente"
             />
             <input
-              className="w-full rounded border border-black/15 dark:border-white/15 bg-transparent px-3 py-2 text-sm"
+              className="w-full rounded border border-border-token bg-transparent px-3 py-2 text-sm"
               placeholder="WhatsApp com DDD (ex.: 63992001122)"
               value={newPhone}
               onChange={(e) => setNewPhone(e.target.value)}
@@ -675,59 +676,14 @@ const PdvBalcaoPage: React.FC = () => {
         </ModalBody>
       </Modal>
 
-      {/* Modal de cobrança PIX: QR na tela + acompanhamento até pagar */}
-      <Modal isOpen={pixCharges !== null} onClose={() => setPixCharges(null)}>
-        <ModalHeader title="Cobrança PIX" />
-        <ModalBody>
-          <p className="text-sm mb-4 opacity-80">
-            Mostre o QR pro cliente pagar. O status atualiza sozinho quando o PIX cair.
-          </p>
-          <div className="space-y-5" data-testid="pdv-pix-charges">
-            {(pixCharges ?? []).map((c) => (
-              <div key={c.order.id} className="border border-black/10 dark:border-white/10 rounded p-4">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="font-semibold">
-                    {c.storeName}
-                    <span className="opacity-70 font-normal"> — {fmtMoney(Number(c.order.total))}</span>
-                  </div>
-                  {c.paid ? (
-                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-green-600 dark:text-green-400">
-                      <CheckCircleIcon className="w-5 h-5" /> Pago
-                    </span>
-                  ) : (
-                    <span className="text-sm opacity-70">Aguardando…</span>
-                  )}
-                </div>
-                {!c.paid && c.order.pix_qr_code && (
-                  <img
-                    src={`data:image/png;base64,${c.order.pix_qr_code}`}
-                    alt={`QR Code PIX de ${c.storeName}`}
-                    className="w-52 h-52 mx-auto mb-3 rounded bg-surface p-2"
-                  />
-                )}
-                {!c.paid && c.order.pix_code && (
-                  <Button variant="secondary" className="w-full" onClick={() => copyPix(c.order.pix_code)}>
-                    <ClipboardDocumentIcon className="w-4 h-4 mr-1.5" /> Copiar código PIX
-                  </Button>
-                )}
-                {!c.paid && !c.order.pix_code && (
-                  <p className="text-sm text-red-500">
-                    O QR não foi gerado ({String((c.order as { payment_error?: string }).payment_error || 'erro no provedor')}).
-                    Abra o pedido {c.order.order_number} e use “Gerar cobrança”.
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-          <Button
-            variant="secondary"
-            className="w-full mt-4"
-            onClick={() => setPixCharges(null)}
-          >
-            {pixCharges?.every((c) => c.paid) ? 'Concluir' : 'Fechar (pedido fica aguardando pagamento)'}
-          </Button>
-        </ModalBody>
-      </Modal>
+      {/* O QR mora em componente próprio: a tela do balcão precisa saber
+          vender, não desenhar QR. */}
+      <ModalCobrancaPix
+        cobrancas={pixCharges}
+        onFechar={() => setPixCharges(null)}
+        onCopiar={copyPix}
+        formatarValor={fmtMoney}
+      />
     </div>
   );
 };

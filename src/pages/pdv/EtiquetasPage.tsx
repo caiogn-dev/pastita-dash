@@ -52,7 +52,7 @@ const BorderSelect: React.FC<{ value: LabelBorder; onChange: (v: LabelBorder) =>
   <label className="flex items-center justify-between gap-2 text-sm">
     <span className="opacity-80">Borda</span>
     <select
-      className="rounded border border-black/15 dark:border-white/15 bg-transparent px-2 py-1 text-sm"
+      className="rounded border border-border-token bg-transparent px-2 py-1 text-sm"
       value={value}
       onChange={(e) => onChange(e.target.value as LabelBorder)}
       data-testid="etq-border"
@@ -91,7 +91,7 @@ const NumField: React.FC<{
     <span className="flex items-center gap-1.5">
       <input
         type="number" min={min} max={max} step={step}
-        className="w-20 rounded border border-black/15 dark:border-white/15 bg-transparent px-2 py-1 text-right tabular-nums"
+        className="w-20 rounded border border-border-token bg-transparent px-2 py-1 text-right tabular-nums"
         value={value}
         data-testid={testId}
         onChange={(e) => {
@@ -358,7 +358,7 @@ const EtiquetasPage: React.FC = () => {
             </div>
             {stores.length > 1 && (
               <select
-                className="rounded border border-black/15 dark:border-white/15 bg-transparent px-2 py-1.5 text-sm"
+                className="rounded border border-border-token bg-transparent px-2 py-1.5 text-sm"
                 value={storeFilter}
                 onChange={(e) => setStoreFilter(e.target.value)}
                 aria-label="Filtrar por loja"
@@ -368,7 +368,7 @@ const EtiquetasPage: React.FC = () => {
               </select>
             )}
           </div>
-          <ul className="divide-y divide-black/10 dark:divide-white/10 max-h-[26rem] overflow-y-auto" data-testid="etq-produtos">
+          <ul className="divide-y divide-[color:var(--border)] max-h-[26rem] overflow-y-auto" data-testid="etq-produtos">
             {visible.map((c) => (
               <li key={c.product.id} className="flex items-center gap-3 py-2.5">
                 <div className="flex-1 min-w-0">
@@ -383,7 +383,7 @@ const EtiquetasPage: React.FC = () => {
                   type="number"
                   min={0}
                   max={999}
-                  className="w-20 rounded border border-black/15 dark:border-white/15 bg-transparent px-2 py-1.5 text-sm text-right tabular-nums"
+                  className="w-20 rounded border border-border-token bg-transparent px-2 py-1.5 text-sm text-right tabular-nums"
                   value={qty.get(c.product.id) ?? 0}
                   onChange={(e) => setProductQty(c.product.id, Number(e.target.value) || 0)}
                   aria-label={`Quantidade de etiquetas de ${c.product.name}`}
@@ -516,7 +516,7 @@ const EtiquetasPage: React.FC = () => {
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-1.5">Pré-visualização (tamanho real do papel)</p>
             <div
-              className="rounded border border-black/15 dark:border-white/15 overflow-hidden bg-surface"
+              className="rounded border border-border-token overflow-hidden bg-surface"
               style={{ width: preview.w * previewScale + 2, height: preview.h * previewScale + 2 }}
             >
               <iframe
