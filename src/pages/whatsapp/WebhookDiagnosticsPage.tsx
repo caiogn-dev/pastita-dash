@@ -166,7 +166,9 @@ export const WebhookDiagnosticsPage: React.FC = () => {
   // depender de tudo estar certo para aparecer.
   const {
     diagnosis = {} as Partial<NonNullable<typeof data>['diagnosis']>,
-    stats,
+    // `stats` também é lido em cadeia (`stats.webhook_events.pending`): um
+    // nível faltando derruba tudo igual.
+    stats = {} as Partial<NonNullable<typeof data>['stats']>,
     accounts = [],
     recent_events = [],
     recent_inbound_messages = [],
@@ -224,11 +226,11 @@ export const WebhookDiagnosticsPage: React.FC = () => {
               Status do Sistema
             </h2>
             <div className="grid grid-cols-3 max-md:grid-cols-2 gap-4">
-              <StatusIndicator ok={diagnosis.has_active_accounts} label="Contas ativas" />
-              <StatusIndicator ok={diagnosis.celery_connected} label="Celery conectado" />
+              <StatusIndicator ok={Boolean(diagnosis.has_active_accounts)} label="Contas ativas" />
+              <StatusIndicator ok={Boolean(diagnosis.celery_connected)} label="Celery conectado" />
               <StatusIndicator ok={!diagnosis.has_failed_events} label="Sem eventos falhos" />
-              <StatusIndicator ok={diagnosis.receiving_webhooks} label="Recebendo webhooks" />
-              <StatusIndicator ok={diagnosis.receiving_messages} label="Recebendo mensagens" />
+              <StatusIndicator ok={Boolean(diagnosis.receiving_webhooks)} label="Recebendo webhooks" />
+              <StatusIndicator ok={Boolean(diagnosis.receiving_messages)} label="Recebendo mensagens" />
               <StatusIndicator ok={!diagnosis.has_pending_events} label="Sem eventos pendentes" />
             </div>
           </div>
@@ -249,7 +251,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
             <SignalIcon className="w-8 h-8 text-blue-500" />
             <div>
               <p className="text-2xl font-bold text-fg-token">
-                {stats.webhook_events.last_hour}
+                {stats.webhook_events?.last_hour ?? 0}
               </p>
               <p className="text-sm text-fg-muted-token">Webhooks (última hora)</p>
             </div>
@@ -260,7 +262,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
             <ChatBubbleLeftRightIcon className="w-8 h-8 text-green-500" />
             <div>
               <p className="text-2xl font-bold text-fg-token">
-                {stats.messages.inbound_last_hour}
+                {stats.messages?.inbound_last_hour ?? 0}
               </p>
               <p className="text-sm text-fg-muted-token">Mensagens (última hora)</p>
             </div>
@@ -271,7 +273,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
             <ClockIcon className="w-8 h-8 text-yellow-500" />
             <div>
               <p className="text-2xl font-bold text-fg-token">
-                {stats.webhook_events.pending}
+                {stats.webhook_events?.pending ?? 0}
               </p>
               <p className="text-sm text-fg-muted-token">Eventos pendentes</p>
             </div>
@@ -282,7 +284,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
             <XCircleIcon className="w-8 h-8 text-red-500" />
             <div>
               <p className="text-2xl font-bold text-fg-token">
-                {stats.webhook_events.failed}
+                {stats.webhook_events?.failed ?? 0}
               </p>
               <p className="text-sm text-fg-muted-token">Eventos com falha</p>
             </div>
@@ -343,7 +345,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
                 onClick={() => handleReprocess('reprocess_pending')}
                 disabled={reprocessing}
               >
-                {reprocessing ? 'Processando...' : `Processar ${stats.webhook_events.pending} eventos pendentes`}
+                {reprocessing ? 'Processando...' : `Processar ${stats.webhook_events?.pending ?? 0} eventos pendentes`}
               </Button>
             )}
             {diagnosis.has_failed_events && (
@@ -352,7 +354,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
                 onClick={() => handleReprocess('reprocess_failed')}
                 disabled={reprocessing}
               >
-                {reprocessing ? 'Processando...' : `Reprocessar ${stats.webhook_events.failed} eventos com falha`}
+                {reprocessing ? 'Processando...' : `Reprocessar ${stats.webhook_events?.failed ?? 0} eventos com falha`}
               </Button>
             )}
           </div>

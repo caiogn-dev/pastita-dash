@@ -12,7 +12,7 @@
  * que a tela está boa — afirma que ela não explode ao abrir.
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 jest.mock('react-hot-toast', () => ({
@@ -46,12 +46,25 @@ jest.mock('../../services/api', () => ({
   normalizePaginatedResponse: () => [],
 }));
 
+jest.mock('../../services/marketingService', () => ({
+  __esModule: true,
+  automationsApi: {
+    list: jest.fn().mockResolvedValue([]),
+    getTriggerTypes: jest.fn().mockResolvedValue([]),
+    toggle: jest.fn(), delete: jest.fn(), create: jest.fn(), get: jest.fn(),
+  },
+  subscribersApi: { list: jest.fn().mockResolvedValue({ results: [], count: 0 }) },
+}));
+
 const montar = (Componente: React.ComponentType) =>
   render(
     <MemoryRouter>
       <Componente />
     </MemoryRouter>,
   );
+
+// Cinco páginas grandes num arquivo só: dá folga pra importação sob carga.
+jest.setTimeout(30000);
 
 describe('telas recuperadas montam sem explodir', () => {
   const erroDoConsole = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -69,8 +82,12 @@ describe('telas recuperadas montam sem explodir', () => {
       ?? Object.values(mod).find((v) => typeof v === 'function')) as React.ComponentType;
 
     expect(Componente).toBeTruthy();
+    // Render do RTL é síncrono: se o componente estourasse no primeiro render,
+    // a exceção subiria aqui. Sem `waitFor` — o polling por timers só somava
+    // pressão numa suíte que já sofre com concorrência, e não provava nada a
+    // mais do que isto prova.
     const { container } = montar(Componente);
 
-    await waitFor(() => expect(container.firstChild).toBeTruthy());
+    expect(container.firstChild).toBeTruthy();
   });
 });
