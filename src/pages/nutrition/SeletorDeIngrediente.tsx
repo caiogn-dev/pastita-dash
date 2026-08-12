@@ -59,15 +59,33 @@ export default function SeletorDeIngrediente({
   const rotulo = (o: IngredienteOpcao) =>
     `${o.display_name}${o.preparation_state ? ` (${o.preparation_state.toLowerCase()})` : ''}`;
 
+  // Escolhido, o ingrediente é TEXTO, não campo. Deixar o nome como
+  // placeholder de um input vazio faz a linha inteira parecer não preenchida —
+  // que foi exatamente como a tela ficou. Vira campo só quando se clica para
+  // trocar, que é o único momento em que digitar faz sentido.
+  if (valor && !aberto) {
+    return (
+      <button
+        type="button"
+        onClick={() => { setAberto(true); setTermo(''); }}
+        className="w-full truncate rounded px-2 py-1.5 text-left hover:bg-black/5"
+        title={`${rotulo(valor)} — clique para trocar`}
+      >
+        {rotulo(valor)}
+      </button>
+    );
+  }
+
   return (
     <div ref={caixa} className="relative">
       <input
-        autoFocus={autoFocus}
-        className="w-full rounded border p-2 bg-transparent"
-        placeholder={valor ? rotulo(valor) : 'Buscar ingrediente…'}
+        autoFocus={autoFocus || Boolean(valor)}
+        className="w-full rounded border p-1.5 bg-transparent"
+        placeholder="Buscar ingrediente…"
         value={termo}
         onFocus={() => setAberto(true)}
         onChange={(e) => { setTermo(e.target.value); setAberto(true); }}
+        onKeyDown={(e) => { if (e.key === 'Escape') setAberto(false); }}
         aria-label="Buscar ingrediente"
       />
       {aberto && (
