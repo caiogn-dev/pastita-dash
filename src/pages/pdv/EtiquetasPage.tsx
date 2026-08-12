@@ -21,7 +21,17 @@ type Template = 'produto' | 'validade' | 'nutricao' | 'nutricao-qr';
 interface NutritionProfile {
   product: string; serving_size_g: string; household_measure?: string;
   public_url?: string;
-  calculation?: { per_100g?: Record<string, string | number | null>; missing_nutrients?: string[] } | null;
+  calculation?: {
+    per_100g?: Record<string, string | number | null>;
+    /** Arredondados pela IN 75/2020 — é o que vai impresso. */
+    label_per_100g?: Record<string, string | number | null>;
+    label_per_serving?: Record<string, string | number | null>;
+    missing_nutrients?: string[];
+    /** Vazio quando algum ingrediente ainda não teve alergênico revisado. */
+    allergens?: { texto?: string; revisado?: boolean };
+    /** `conclusivo:false` = falta dado para afirmar que não leva selo. */
+    front_of_pack?: { texto?: string[]; conclusivo?: boolean };
+  } | null;
   [key: string]: unknown;
 }
 
@@ -221,14 +231,26 @@ const EtiquetasPage: React.FC = () => {
       const nutritionCopies = expandCopies((c) => {
         const profile = profiles.get(c.product.id);
         if (!profile) return null;
-        const calculated = profile.calculation?.per_100g;
+        const calc = profile.calculation;
+        // `label_per_100g`/`label_per_serving` já vêm arredondados pela IN
+        // 75/2020 (casa por nutriente + regra de zero). Usar `per_100g`, que é
+        // o valor cru, imprime "0,04 g" de trans onde a norma manda "0 g".
+        const calculated = calc?.label_per_100g ?? calc?.per_100g;
         const keys = ['energy_kcal','carbohydrates_g','total_sugars_g','added_sugars_g','protein_g','total_fat_g','saturated_fat_g','trans_fat_g','fiber_g','sodium_mg'];
-        const per100g = Object.fromEntries(keys.map((key) => {
-          const raw = calculated?.[key] ?? profile[key];
-          return [key, raw == null || raw === '' ? null : Number(raw)];
-        }));
+        const num = (raw: unknown) => (raw == null || raw === '' ? null : Number(raw));
+        const per100g = Object.fromEntries(keys.map((key) => [key, num(calculated?.[key] ?? profile[key])]));
+        const porcao = calc?.label_per_serving;
+        const perServing = porcao
+          ? Object.fromEntries(keys.map((key) => [key, num(porcao[key])]))
+          : undefined;
+        // Só sai declaração de alergênico se TODOS os ingredientes foram
+        // revisados; o backend devolve texto vazio quando não foram.
+        const allergens = calc?.allergens?.texto || undefined;
+        // Sem os três nutrientes não dá para afirmar que não leva selo, então
+        // a lupa só é impressa quando a avaliação foi conclusiva.
+        const frontOfPack = calc?.front_of_pack?.conclusivo ? calc.front_of_pack.texto : undefined;
         const publicUrl = profile.public_url;
-        return { name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure, per100g, publicUrl };
+        return { name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure, per100g, perServing, allergens, frontOfPack, publicUrl };
       }).filter((row): row is NonNullable<typeof row> => Boolean(row));
       if ((template === 'nutricao' || template === 'nutricao-qr') && nutritionCopies.length !== totalLabels) {
         toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');

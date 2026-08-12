@@ -48,8 +48,17 @@ export interface NutritionLabelData {
   servingG: number;
   householdMeasure?: string;
   ingredients?: string;
+  /** Declaração pronta da RDC 26/2015. Vem calculada do backend — vazia
+   *  significa que algum ingrediente ainda não teve alergênico revisado, e aí
+   *  a etiqueta não pode afirmar nada. */
   allergens?: string;
+  /** Selos "ALTO EM …" da RDC 429/2020, já avaliados por 100 g/ml. */
+  frontOfPack?: string[];
   per100g: Record<string, number | null | undefined>;
+  /** Coluna da porção já arredondada pela IN 75/2020. Sem isto a coluna é
+   *  derivada de per100g, o que reintroduz casa decimal que a norma manda
+   *  cortar. */
+  perServing?: Record<string, number | null | undefined>;
   publicUrl?: string;
 }
 
@@ -287,9 +296,11 @@ thead th { font-size:5.8pt; vertical-align:bottom; }
 .ingredients { font-size:5.5pt; line-height:1.12; margin-top:.8mm; }
 .qr { width:13mm; height:13mm; margin-top:.6mm; }
 .qr svg { width:100%; height:100%; }
-.allergens { font-weight:900; text-transform:uppercase; }`;
+.allergens { font-weight:900; text-transform:uppercase; }
+.fop { display:flex; gap:2mm; margin-bottom:1mm; }
+.fop span { background:#000; color:#fff; font-weight:900; font-size:2.2mm; line-height:1.15; padding:1mm 1.5mm; text-transform:uppercase; text-align:center; }`;
   const fmt=(v:number|null|undefined,unit:string)=>v==null?'—':`${v.toLocaleString('pt-BR',{maximumFractionDigits:unit==='mg'?0:1})}`;
-  const body=labels.map(l=>{const servingFactor=l.servingG/100;return `<section class="label"><div class="product">${esc(l.name)}</div><div class="title">INFORMAÇÃO NUTRICIONAL</div><div class="serving">Porções por embalagem: — &nbsp;|&nbsp; Porção: ${l.servingG} g${l.householdMeasure?` (${esc(l.householdMeasure)})`:''}</div><table><thead><tr><th></th><th>100 g</th><th>${l.servingG} g</th><th>%VD*</th></tr></thead><tbody>${NUTRITION_ROWS.map(([key,name,unit,vd])=>{const base=l.per100g[key];const serving=base==null?null:base*servingFactor;const pct=vd&&serving!=null?Math.round(serving/vd*100):null;return `<tr><td>${name} (${unit})</td><td>${fmt(base,unit)}</td><td>${fmt(serving,unit)}</td><td>${pct==null?'—':pct}</td></tr>`}).join('')}</tbody></table><div class="foot">*Percentual de valores diários fornecidos pela porção.</div><div class="after"><div>${l.ingredients?`<div class="ingredients"><b>INGREDIENTES:</b> ${esc(l.ingredients)}</div>`:''}${l.allergens?`<div class="ingredients allergens">${esc(l.allergens)}</div>`:''}</div>${l.publicUrl?`<div class="qr">${qrSvg(l.publicUrl)}</div>`:''}</div></section>`}).join('');
+  const body=labels.map(l=>{const servingFactor=l.servingG/100;return `<section class="label">${l.frontOfPack&&l.frontOfPack.length?`<div class="fop">${l.frontOfPack.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}<div class="product">${esc(l.name)}</div><div class="title">INFORMAÇÃO NUTRICIONAL</div><div class="serving">Porções por embalagem: — &nbsp;|&nbsp; Porção: ${l.servingG} g${l.householdMeasure?` (${esc(l.householdMeasure)})`:''}</div><table><thead><tr><th></th><th>100 g</th><th>${l.servingG} g</th><th>%VD*</th></tr></thead><tbody>${NUTRITION_ROWS.map(([key,name,unit,vd])=>{const base=l.per100g[key];const serving=l.perServing?(l.perServing[key]??null):(base==null?null:base*servingFactor);const pct=vd&&serving!=null?Math.round(serving/vd*100):null;return `<tr><td>${name} (${unit})</td><td>${fmt(base,unit)}</td><td>${fmt(serving,unit)}</td><td>${pct==null?'—':pct}</td></tr>`}).join('')}</tbody></table><div class="foot">*Percentual de valores diários fornecidos pela porção.</div><div class="after"><div>${l.ingredients?`<div class="ingredients"><b>INGREDIENTES:</b> ${esc(l.ingredients)}</div>`:''}${l.allergens?`<div class="ingredients allergens">${esc(l.allergens)}</div>`:''}</div>${l.publicUrl?`<div class="qr">${qrSvg(l.publicUrl)}</div>`:''}</div></section>`}).join('');
   return wrapDoc('Etiquetas nutricionais 100×80',css,body);
 };
 
