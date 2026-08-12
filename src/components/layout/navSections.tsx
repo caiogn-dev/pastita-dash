@@ -124,8 +124,13 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       { name: 'Respostas automáticas', href: '/automation/companies', icon: BoltIcon },
       { name: 'Fluxos do agente',     href: '/automation/flows',     icon: ShareIcon },
       { name: 'Agendamentos',         href: '/automation/scheduled', icon: CalendarDaysIcon },
-      { name: 'Logs da IA',   href: '/automation/logs',         icon: DocumentChartBarIcon, sectionHeader: 'Monitoramento' },
-      { name: 'Intenções',    href: '/automation/intents/stats', icon: SignalIcon },
+      // Duas telas de log, uma delas permanentemente vazia: `AutomationLog`
+      // (/automation/logs) só é escrito em evento de carrinho, e o caminho
+      // real da mensagem não passa por lá. O `IntentLog` passou a registrar
+      // TODA mensagem — texto, intenção, handler, resposta, duração e também
+      // o silêncio —, então ele é o log. A rota antiga continua de pé para
+      // não virar link quebrado; fora do menu para não prometer o que não tem.
+      { name: 'Conversas da IA', href: '/automation/intents/stats', icon: SignalIcon, sectionHeader: 'Monitoramento' },
     ],
   };
 
