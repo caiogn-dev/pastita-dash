@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import api, { normalizePaginatedResponse } from '../../services/api';
+import api, { getErrorMessage, normalizePaginatedResponse } from '../../services/api';
+import { salvarRevisaoDeAlergenicos } from '../../services/nutrition';
 import { getProducts, StoreProduct } from '../../services/storesApi';
 import { Button, Card } from '../../components/ui';
 import SeletorDeIngrediente from './SeletorDeIngrediente';
@@ -41,7 +42,7 @@ export default function RecipeBuilder({storeSlug,ingredients,productId,storeUuid
   // achar cada um e voltar é onde a pessoa desiste.
   const [revisandoAlergenico,setRevisandoAlergenico]=useState(false);
   const [alergenicos,setAlergenicos]=useState<{valor:string;rotulo:string}[]>([]);
-  const [pendentes,setPendentes]=useState<{id:string;display_name:string;allergens:string[];may_contain:string[]}[]>([]);
+  const [pendentes,setPendentes]=useState<{id:string;store:string|null;display_name:string;allergens:string[];may_contain:string[]}[]>([]);
   const [salvandoAlergenico,setSalvandoAlergenico]=useState('');
 
   const [recipe,setRecipe]=useState<Recipe|null>(null); const [rows,setRows]=useState<Row[]>([]);
@@ -77,11 +78,23 @@ export default function RecipeBuilder({storeSlug,ingredients,productId,storeUuid
     Promise.all(rows.filter(r=>r.ingredient).map(r=>api.get(`/nutrition/ingredients/${r.ingredient}/`).then(x=>x.data).catch(()=>null)))
       .then(lista=>setPendentes(lista.filter(Boolean).filter((i)=>nomesPendentes.includes(i.display_name))));
   },[revisandoAlergenico,previa,recipe,rows]);
-  const marcarRevisado=async(ing:{id:string;allergens:string[];may_contain:string[]})=>{
+  // Alimento oficial (TACO/POF) não é editável: a base é compartilhada entre
+  // lojistas. Revisar um deles ADOTA uma cópia na loja e reaponta esta receita
+  // — por isso a linha troca de id e a receita precisa ser relida.
+  const marcarRevisado=async(ing:{id:string;store:string|null;allergens:string[];may_contain:string[]})=>{
     setSalvandoAlergenico(ing.id);
-    try{ await api.patch(`/nutrition/ingredients/${ing.id}/`,{allergens:ing.allergens,may_contain:ing.may_contain,allergens_reviewed:true});
-      setPendentes(p=>p.filter(x=>x.id!==ing.id)); setPrevia(p=>p?{...p}:p); toast.success('Alergênicos revisados');
-    }catch{ toast.error('Não foi possível salvar'); } finally{ setSalvandoAlergenico(''); }
+    try{
+      const r=await salvarRevisaoDeAlergenicos(ing,
+        {allergens:ing.allergens||[],may_contain:ing.may_contain||[],allergens_reviewed:true},storeUuid);
+      setPendentes(p=>p.filter(x=>x.id!==ing.id));
+      if(r.adotado){
+        setRows(rs=>rs.map(linha=>linha.ingredient===ing.id?{...linha,ingredient:r.id}:linha));
+        toast.success('Alimento adotado na sua loja e alergênicos revisados');
+      } else {
+        setPrevia(p=>p?{...p}:p);
+        toast.success('Alergênicos revisados');
+      }
+    }catch(e){ toast.error(getErrorMessage(e)); } finally{ setSalvandoAlergenico(''); }
   };
   const fatias=rows.filter(r=>r.ingredient&&Number(r.quantity_g)>0).map(r=>({id:r.ingredient,nome:nomes[r.ingredient]||ingredients.find(i=>i.id===r.ingredient)?.display_name||'Ingrediente',gramas:Number(r.quantity_g)}));
   const save=async()=>{if(!product||rows.length===0)return toast.error('Escolha o prato e adicione ingredientes');if(rows.some(r=>!r.ingredient))return toast.error('Há linha sem ingrediente escolhido');setSaving(true);const payload={product,serving_size_g:serving,household_measure:measure,status:'estimated',calculation_mode:'calculated',items:rows.map((r,i)=>({...r,sort_order:i}))};try{const response=recipe?await api.patch(`/nutrition/recipes/${recipe.id}/`,payload):await api.post('/nutrition/recipes/',payload);setRecipe(response.data);toast.success('Receita calculada e perfil nutricional atualizado');}catch{toast.error('Não foi possível salvar a receita');}finally{setSaving(false)}};
@@ -139,7 +152,8 @@ export default function RecipeBuilder({storeSlug,ingredients,productId,storeUuid
         {!pendentes.length&&<p className="text-xs opacity-70">Nada pendente nesta receita.</p>}
         {pendentes.map(ing=>(
           <div key={ing.id} className="rounded border border-black/10 p-2.5 space-y-2">
-            <p className="text-sm font-medium">{ing.display_name}</p>
+            <p className="text-sm font-medium">{ing.display_name}
+              {!ing.store&&<span className="ml-2 text-xs font-normal opacity-60">alimento oficial — será copiado para a sua loja</span>}</p>
             <div className="flex flex-wrap gap-1.5">{alergenicos.map(a=>{const on=(ing.allergens||[]).includes(a.valor);return (
               <button key={a.valor} type="button" aria-pressed={on}
                 onClick={()=>setPendentes(p=>p.map(x=>x.id===ing.id?{...x,allergens:on?x.allergens.filter(v=>v!==a.valor):[...(x.allergens||[]),a.valor]}:x))}
@@ -147,7 +161,7 @@ export default function RecipeBuilder({storeSlug,ingredients,productId,storeUuid
             </div>
             <div className="flex items-center gap-2">
               <Button variant="secondary" disabled={salvandoAlergenico===ing.id} onClick={()=>marcarRevisado(ing)}>
-                {salvandoAlergenico===ing.id?'Salvando…':'Marcar como revisado'}
+                {salvandoAlergenico===ing.id?'Salvando…':(ing.store?'Marcar como revisado':'Adotar e marcar como revisado')}
               </Button>
               {/* Sem alergênico é uma resposta válida — mas precisa ser dita,
                   não deduzida do silêncio. */}
