@@ -60,23 +60,18 @@ import type { Order } from '../../types';
 import { COLUMNS, resolveFocusColumn } from './orderColumns';
 import type { ColumnId } from './orderColumns';
 import { getStageStart, getAvgPrepMinutes } from './orderSla';
+import { proximaAcaoDoPedido } from './proximaAcao';
 
 // Next status for advance button
+/**
+ * Adaptador para a função única de `proximaAcao.ts`.
+ *
+ * A regra morava aqui e uma SEGUNDA cópia morava no detalhe do pedido — e foi
+ * a cópia de lá que mandou "pronto para retirada" numa entrega. Uma fonte só.
+ */
 const getNextAction = (order: StoreOrder): { status: string; label: string; color: string } | null => {
-  switch (order.status) {
-    case 'pending': case 'processing':
-      return { status: 'confirmed', label: 'Confirmar', color: 'bg-blue-500 hover:bg-blue-600' };
-    case 'confirmed': case 'paid':
-      return { status: 'preparing', label: 'Preparar', color: 'bg-orange-500 hover:bg-orange-600' };
-    case 'preparing':
-      return order.delivery_method === 'pickup' || order.delivery_method === 'digital'
-        ? { status: 'ready',            label: 'Pronto p/ Retirada', color: 'bg-indigo-500 hover:bg-indigo-600' }
-        : { status: 'out_for_delivery', label: 'Saiu p/ Entrega',    color: 'bg-indigo-500 hover:bg-indigo-600' };
-    case 'out_for_delivery': case 'ready': case 'shipped':
-      return { status: 'delivered', label: 'Entregue ✓', color: 'bg-emerald-500 hover:bg-emerald-600' };
-    default:
-      return null;
-  }
+  const acao = proximaAcaoDoPedido(order as unknown as Order);
+  return acao ? { status: acao.status, label: acao.rotulo, color: acao.cor } : null;
 };
 
 const needsPayment = (order: StoreOrder) =>

@@ -77,6 +77,7 @@ import { useOrderPrint } from '../../components/orders/OrderPrint';
 import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
 import { useStore } from '../../hooks';
 import { marcosDoPedido, duracaoLegivel } from './marcosDoPedido';
+import { proximaAcaoDoPedido } from './proximaAcao';
 // Os rótulos moram num arquivo só, com teste que confere contra a lista de
 // status do backend: era esta duplicação que deixava "cancelled" cru na tela.
 import {
@@ -503,34 +504,19 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     }
   };
 
-  const handleAction = async (action: string) => {
+  /**
+   * Recebe o STATUS final, não um apelido de ação.
+   *
+   * Antes havia um dicionário de apelidos ('deliver' → out_for_delivery) que
+   * duplicava a máquina de estados e escondia qual status ia de fato ser
+   * gravado. O passo agora vem pronto de `proximaAcao.ts`.
+   */
+  const handleAction = async (novoStatus: string) => {
     if (!order) return;
-    setActionLoading(action);
+    setActionLoading(novoStatus);
     try {
-      let updated: Order;
-      switch (action) {
-        case 'confirm':
-          updated = await ordersService.updateStatus(order.id, 'confirmed');
-          break;
-        case 'prepare':
-          updated = await ordersService.updateStatus(order.id, 'preparing');
-          break;
-        case 'ready':
-          updated = await ordersService.updateStatus(order.id, 'ready');
-          break;
-        case 'deliver':
-          updated = await ordersService.updateStatus(order.id, 'out_for_delivery');
-          break;
-        case 'complete':
-          updated = await ordersService.updateStatus(order.id, 'delivered');
-          break;
-        case 'cancel':
-          updated = await ordersService.updateStatus(order.id, 'cancelled');
-          setShowCancelModal(false);
-          break;
-        default:
-          return;
-      }
+      const updated: Order = await ordersService.updateStatus(order.id, novoStatus);
+      if (novoStatus === 'cancelled') setShowCancelModal(false);
       setOrder(updated);
       onOrderChanged?.(updated);
       toast.success('Status atualizado!');
@@ -546,24 +532,22 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   // a quantidade de hooks entre renders e o React derruba a árvore.
   const marcos = useMemo(() => (order ? marcosDoPedido(order as never) : []), [order]);
 
+  /**
+   * O passo seguinte vem de `proximaAcao.ts`, a mesma função do kanban.
+   *
+   * Esta tela tinha a PRÓPRIA tabela de status e ela ignorava o
+   * `delivery_method`: mandava todo pedido por "Marcar como Pronto" antes de
+   * "Saiu para Entrega". Como cada status dispara uma mensagem, a cliente de
+   * uma entrega recebia "pronto para retirada" e, segundos depois, "está a
+   * caminho" (CE-2608129257, 12/ago). Uma cópia da regra a menos.
+   *
+   * Um único CTA de marca (ouro sobre carvão) — a etiqueta já diz o passo;
+   * cor por status virava um arco-íris fora da paleta do painel.
+   */
   const nextAction = useMemo(() => {
     if (!order) return null;
-    const status = order.status.toLowerCase();
-
-    // Um único CTA de marca (ouro sobre carvão) — a etiqueta já diz o passo;
-    // cor por status virava um arco-íris fora da paleta do painel.
-    const actions: Record<string, { action: string; label: string }> = {
-      pending: { action: 'confirm', label: 'Confirmar Pedido' },
-      confirmed: { action: 'prepare', label: 'Iniciar Preparo' },
-      paid: { action: 'prepare', label: 'Iniciar Preparo' },
-      preparing: { action: 'ready', label: 'Marcar como Pronto' },
-      processing: { action: 'prepare', label: 'Iniciar Preparo' },
-      ready: { action: 'deliver', label: 'Saiu para Entrega' },
-      out_for_delivery: { action: 'complete', label: 'Marcar Entregue' },
-      shipped: { action: 'complete', label: 'Marcar Entregue' },
-    };
-
-    return actions[status] || null;
+    const acao = proximaAcaoDoPedido(order);
+    return acao ? { action: acao.status, label: acao.rotulo } : null;
   }, [order]);
 
   const isCancelled = order?.status.toLowerCase() === 'cancelled';
@@ -1221,8 +1205,8 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             </Button>
             <Button
               variant="danger"
-              onClick={() => handleAction('cancel')}
-              isLoading={actionLoading === 'cancel'}
+              onClick={() => handleAction('cancelled')}
+              isLoading={actionLoading === 'cancelled'}
             >
               Confirmar Cancelamento
             </Button>
