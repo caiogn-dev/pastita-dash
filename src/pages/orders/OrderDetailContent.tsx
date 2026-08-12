@@ -13,6 +13,7 @@ import { copyToClipboard } from '../../utils/clipboard';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   ArrowLeftIcon,
+  ArrowPathIcon,
   PhoneIcon,
   MapPinIcon,
   ClockIcon,
@@ -469,6 +470,36 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
       setLoadError(getErrorMessage(error));
     } finally {
       if (idEmVooRef.current === idDestaCarga) setIsLoading(false);
+    }
+  };
+
+  const [recalculandoFidelidade, setRecalculandoFidelidade] = useState(false);
+
+  /**
+   * Acerta os selos de um pedido já entregue. Necessário porque o crédito é
+   * uma fotografia tirada na entrega: mudar os "selos por unidade" de um
+   * produto depois da venda não retroage nos pedidos antigos.
+   */
+  const handleRecalcularFidelidade = async () => {
+    if (!order || recalculandoFidelidade) return;
+    setRecalculandoFidelidade(true);
+    try {
+      const r = await ordersService.recalcularFidelidade(order.id);
+      if (r.reason === 'sem_cliente') {
+        toast('Pedido sem cliente cadastrado — não há conta de fidelidade.');
+      } else if (r.reason === 'fidelidade_desligada') {
+        toast('A fidelidade está desligada nesta loja.');
+      } else if (!r.changed) {
+        toast.success(`Já estava certo: ${r.after} selo(s).`);
+      } else {
+        toast.success(
+          `Fidelidade ajustada: ${r.before} → ${r.after} selo(s) (${r.delta > 0 ? '+' : ''}${r.delta}).`,
+        );
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setRecalculandoFidelidade(false);
     }
   };
 
@@ -1110,6 +1141,18 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 className="flex items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-surface/5"
               >
                 Editar pedido
+              </button>
+
+              {/* Sempre visível: pedido de convidado responde 'sem_cliente' e
+                  o toast explica — esconder daria a impressão de bug. */}
+              <button
+                onClick={handleRecalcularFidelidade}
+                disabled={recalculandoFidelidade}
+                title="Use depois de corrigir os selos de um produto: os pedidos antigos ficam com o valor da época."
+                className="flex items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-surface/5 disabled:opacity-50"
+              >
+                <ArrowPathIcon className={`h-4 w-4 ${recalculandoFidelidade ? 'animate-spin' : ''}`} />
+                {recalculandoFidelidade ? 'Recalculando…' : 'Recalcular fidelidade'}
               </button>
 
               {!isCancelled && !isCompleted && (

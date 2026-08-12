@@ -1,6 +1,15 @@
 import api, { normalizePaginatedEnvelope } from './api';
 import { Order, OrderEvent, CreateOrder, OrderAdjustPayload, PaginatedResponse } from '../types';
 
+/** Resposta de `POST /orders/{id}/recalcular-fidelidade/`. */
+export interface RecalculoFidelidade {
+  before: number;
+  after: number;
+  delta: number;
+  changed: boolean;
+  reason: string;
+}
+
 /**
  * Orders Service - API V2
  * 
@@ -109,6 +118,23 @@ export const ordersService = {
       suppress_notifications: suppress,
     });
     return normalizeOrder(response.data);
+  },
+
+  /**
+   * Recalcula os selos de fidelidade deste pedido pelas regras atuais.
+   *
+   * O crédito é uma fotografia tirada na entrega: corrigir os "selos por
+   * unidade" de um produto depois da venda não mexe nos pedidos antigos.
+   * Este é o único caminho para acertar um pedido já creditado.
+   */
+  recalcularFidelidade: async (
+    id: string,
+    storeSlug?: string,
+  ): Promise<RecalculoFidelidade> => {
+    const response = await api.post<RecalculoFidelidade>(
+      `${getBaseUrl(storeSlug)}/${id}/recalcular-fidelidade/`,
+    );
+    return response.data;
   },
 
   adjustOrder: async (id: string, payload: OrderAdjustPayload, storeSlug?: string): Promise<Order> => {
