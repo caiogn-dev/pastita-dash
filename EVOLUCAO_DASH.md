@@ -3,17 +3,53 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-12)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high) — `postcss`
+  (high, dev/build-only) e `react-router` 6.x (moderate: open redirect via barra
+  invertida + injeção via `deserializeErrors` na hidratação SSR). O `npm audit fix`
+  sem `--force` **não** resolve (o resumo continua 8 após o dry-run): exigem major
+  bump (`react-router` 7.18+, `postcss` 8.5.23+). Fatia dedicada com validação de
+  build/rota — a SSR hydration não se aplica a este SPA client-side, o que reduz a
+  urgência do vetor de `react-router`.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test`: **963 testes / 190 suítes verdes** (era 961/189; +2/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~22s).
+- `npm run lint`: gate em 400 warnings; **265 warnings** (0 errors).
 
 ## Histórico
+
+### 2026-08-12 — Perf: `RecipeBuilder` deixa de fazer 2 GETs idênticos ao abrir o produto
+- **Medido (a nível de código):** `src/pages/nutrition/RecipeBuilder.tsx` disparava,
+  no mesmo `useEffect([product])`, **duas chamadas idênticas** a
+  `GET /nutrition/recipes/?product=<id>&page_size=1` — a primeira preenchia o estado
+  da receita (linhas, porção, medida caseira), a segunda re-buscava a MESMA resposta
+  só para extrair `items` e resolver o `display_name` de cada ingrediente. Como o
+  `RecipeBuilder` é embutido dentro do produto (aba de nutrição), esse par disparava
+  a cada abertura de prato: um round-trip de rede redundante em caminho quente.
+- **Mudado (mudança puramente interna, comportamento idêntico):** fundidas as duas
+  chamadas em **uma só**. A resolução de nomes dos ingredientes agora encadeia a
+  partir da mesma resposta (`found?.items`), dentro do `.then` que já tratava a
+  receita. Os `catch` foram preservados (erro da receita → toast; erro por
+  ingrediente → `catch(()=>null)` item a item, sem rejeitar o `Promise.all`).
+- **Teste (TDD):** novo `src/pages/nutrition/__tests__/RecipeBuilder.test.tsx` —
+  escrito **vermelho antes** (contava 2 chamadas a `/nutrition/recipes/`) **verde
+  depois** (exatamente 1). Um segundo teste garante que os nomes dos ingredientes
+  continuam resolvidos (`/nutrition/ingredients/i1/` chamado; "Farinha" na tela),
+  provando que a dedupe não regrediu o recurso.
+- **Antes/depois:** `npm test` 961/189 → **963/190**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Requisições ao endpoint de receitas por abertura
+  de produto: **2 → 1**.
+- **Próximo passo priorizado:** (1) **A11y — `SeletorDeIngrediente`:** o typeahead de
+  ingredientes (`src/pages/nutrition/SeletorDeIngrediente.tsx`) é um combobox sem
+  roles ARIA (`role="combobox"/"listbox"/"option"`, `aria-expanded`,
+  `aria-activedescendant`) nem navegação por setas — só `aria-label` no input.
+  Dar semântica de combobox + navegação por teclado, com teste de regressão. (2)
+  **Segurança/deps:** planejar o major bump de `react-router` 6→7.18+ e `postcss`,
+  cada um como fatia dedicada com validação de build. (3) **Perf — varredura de
+  duplicatas:** procurar outros `useEffect` com GETs redundantes no mesmo endpoint.
+
+---
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um

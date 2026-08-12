@@ -48,14 +48,19 @@ export default function RecipeBuilder({storeSlug,ingredients,productId,storeUuid
   const [serving,setServing]=useState('100'); const [measure,setMeasure]=useState('1 unidade'); const [saving,setSaving]=useState(false);
   const [perfil,setPerfil]=useState<Perfil|null>(null);
   useEffect(()=>{if(!storeSlug||embutido)return;getProducts({store:storeSlug,status:'active',page_size:500}).then(r=>setProducts(r.results)).catch(()=>toast.error('Erro ao carregar pratos'));},[storeSlug]);
-  useEffect(()=>{if(!product){setRecipe(null);setRows([]);return;}api.get('/nutrition/recipes/',{params:{product,page_size:1}}).then(r=>{const found=normalizePaginatedResponse<Recipe>(r.data)[0]||null;setRecipe(found);setRows((found?.items||[]).map(i=>({...i,quantity_g:paraCampo(i.quantity_g)})));setServing(paraCampo(found?.serving_size_g)||'100');setMeasure(found?.household_measure||'1 unidade');}).catch(()=>toast.error('Erro ao carregar receita'));
+  useEffect(()=>{if(!product){setRecipe(null);setRows([]);return;}
+    // Uma única ida ao endpoint de receitas: a mesma resposta abastece o estado
+    // da receita E a resolução dos nomes dos ingredientes. Antes eram duas
+    // chamadas idênticas ao abrir cada produto.
     api.get('/nutrition/recipes/',{params:{product,page_size:1}}).then(async r=>{
+      const found=normalizePaginatedResponse<Recipe>(r.data)[0]||null;
+      setRecipe(found);setRows((found?.items||[]).map(i=>({...i,quantity_g:paraCampo(i.quantity_g)})));setServing(paraCampo(found?.serving_size_g)||'100');setMeasure(found?.household_measure||'1 unidade');
       // Sem isto a barra rotula tudo como "Ingrediente": o nome só existia
       // para o que foi escolhido nesta sessão.
-      const itens=normalizePaginatedResponse<Recipe>(r.data)[0]?.items||[];
+      const itens=found?.items||[];
       const achados=await Promise.all(itens.map(i=>api.get(`/nutrition/ingredients/${i.ingredient}/`).then(x=>[i.ingredient,x.data.display_name] as const).catch(()=>null)));
       setNomes(n=>({...n,...Object.fromEntries(achados.filter(Boolean) as (readonly [string,string])[])}));
-    }).catch(()=>{});
+    }).catch(()=>toast.error('Erro ao carregar receita'));
     api.get('/nutrition/profiles/',{params:{product,page_size:1}}).then(r=>setPerfil(normalizePaginatedResponse<Perfil>(r.data)[0]||null)).catch(()=>{});},[product]);
   const salvarPerfil=async(campos:Partial<Perfil>)=>{ if(!perfil) return toast.error('Salve a receita antes'); try{ const r=await api.patch(`/nutrition/profiles/${perfil.id}/`,campos); setPerfil(r.data); toast.success('Perfil atualizado'); }catch{ toast.error('Não foi possível atualizar o perfil'); } };
   const available=useMemo(()=>ingredients.filter(i=>!rows.some(r=>r.ingredient===i.id)),[ingredients,rows]);
