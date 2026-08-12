@@ -100,7 +100,7 @@ describe('EtiquetasPage', () => {
     renderPage();
     await screen.findByText('Marmita P');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Folha de códigos (A4)' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Folha de códigos/ }));
 
     await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
     const doc = mockedPrint.mock.calls[0][0] as string;

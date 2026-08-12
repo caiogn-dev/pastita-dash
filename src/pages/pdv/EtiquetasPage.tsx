@@ -108,12 +108,23 @@ const EtiquetasPage: React.FC = () => {
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [storeFilter, setStoreFilter] = useState<string>('all');
+  // Nasce na loja da rota, não em "todas". A bancada de etiquetas é de UMA
+  // loja: abrir com o catálogo das doze misturado faz o operador procurar o
+  // produto dele no meio do produto dos outros — e imprimir errado é papel,
+  // fita e um pote com a etiqueta de outra cozinha. "Todas as lojas" continua
+  // disponível no seletor para quem opera mais de uma no mesmo balcão.
+  const [storeFilter, setStoreFilter] = useState<string>(storeId ?? 'all');
   const [qty, setQty] = useState<Map<string, number>>(new Map());
   const [template, setTemplate] = useState<Template>('produto');
   // Folha compacta: 4 colunas em vez de 2. Com muitas lojas e produtos, o que
   // importa é caber a operação inteira em poucas folhas.
   const [catalogoCompacto, setCatalogoCompacto] = useState(true);
+  // A folha carregava TODAS as lojas ativas e imprimia tudo junto. Quem tem
+  // muitas lojas quase nunca quer isso: quer a folha de uma operação.
+  const [lojaDaFolha, setLojaDaFolha] = useState<string>(storeId || '');
+  // Categorias escolhidas. Vazio = todas — é o estado inicial e o mais óbvio;
+  // marcar é restringir.
+  const [categoriasDaFolha, setCategoriasDaFolha] = useState<Set<string>>(new Set());
   const [cfg, setCfg] = useState<SavedConfig>(loadConfig);
   const [preparing, setPreparing] = useState(false);
   const [profiles, setProfiles] = useState<Map<string, NutritionProfile>>(new Map());
@@ -274,9 +285,29 @@ const EtiquetasPage: React.FC = () => {
     }
   };
 
+  /** Lojas e categorias existentes no que foi carregado — a lista de escolha
+   *  sai do dado real, não de uma constante que envelhece. */
+  const lojasDisponiveis = useMemo(() => {
+    const m = new Map<string, string>();
+    catalog.forEach((e) => m.set(e.storeSlug, e.storeName));
+    return [...m].map(([slug, name]) => ({ slug, name })).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  }, [catalog]);
+
+  const categoriasDisponiveis = useMemo(() => {
+    const nomes = new Set<string>();
+    catalog.filter((e) => !lojaDaFolha || e.storeSlug === lojaDaFolha)
+      .forEach((e) => { if (e.product.category_name) nomes.add(e.product.category_name); });
+    return [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [catalog, lojaDaFolha]);
+
+  const daFolha = useMemo(() => catalog.filter((e) => (
+    (!lojaDaFolha || e.storeSlug === lojaDaFolha)
+    && (!categoriasDaFolha.size || categoriasDaFolha.has(e.product.category_name || ''))
+  )), [catalog, lojaDaFolha, categoriasDaFolha]);
+
   const handleExportPdf = async () => {
     const grouped = new Map<string, { name: string; products: CatalogEntry[] }>();
-    catalog.forEach((entry) => {
+    daFolha.forEach((entry) => {
       const group = grouped.get(entry.storeSlug) ?? { name: entry.storeName, products: [] };
       group.products.push(entry);
       grouped.set(entry.storeSlug, group);
@@ -344,11 +375,40 @@ const EtiquetasPage: React.FC = () => {
             produto sem código ganha um EAN-13 interno na hora.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
-          <Button variant="secondary" disabled={catalog.length === 0} onClick={handleExportPdf}>
-            <ArrowDownTrayIcon className="w-5 h-5" />
-            Folha de códigos (A4)
-          </Button>
+        <div className="flex flex-col items-stretch gap-2 sm:min-w-80">
+          <div className="flex flex-wrap items-center gap-2">
+            <select className="rounded border border-black/15 bg-transparent px-2 py-1.5 text-sm"
+                    value={lojaDaFolha} onChange={(e) => { setLojaDaFolha(e.target.value); setCategoriasDaFolha(new Set()); }}>
+              <option value="">Todas as lojas</option>
+              {lojasDisponiveis.map((l) => <option key={l.slug} value={l.slug}>{l.name}</option>)}
+            </select>
+            <Button variant="secondary" disabled={daFolha.length === 0} onClick={handleExportPdf}>
+              <ArrowDownTrayIcon className="w-5 h-5" />
+              Folha de códigos ({daFolha.length})
+            </Button>
+          </div>
+          {categoriasDisponiveis.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {categoriasDisponiveis.map((c) => {
+                const on = categoriasDaFolha.has(c);
+                return (
+                  <button key={c} type="button" aria-pressed={on}
+                    onClick={() => setCategoriasDaFolha((s) => {
+                      const novo = new Set(s);
+                      if (novo.has(c)) novo.delete(c); else novo.add(c);
+                      return novo;
+                    })}
+                    className={`rounded-full border px-2 py-0.5 text-xs ${on ? 'border-black bg-black text-white' : 'border-black/15 opacity-70 hover:opacity-100'}`}>
+                    {c}
+                  </button>
+                );
+              })}
+              {categoriasDaFolha.size > 0 && (
+                <button type="button" className="px-2 py-0.5 text-xs underline"
+                        onClick={() => setCategoriasDaFolha(new Set())}>limpar</button>
+              )}
+            </div>
+          )}
           <label className="flex items-center gap-1.5 text-xs opacity-75">
             <input type="checkbox" checked={catalogoCompacto}
                    onChange={(e) => setCatalogoCompacto(e.target.checked)} />

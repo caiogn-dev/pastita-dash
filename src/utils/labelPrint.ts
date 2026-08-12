@@ -124,12 +124,15 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (ch) => (
 ));
 
 /** SVG do código de barras serializado, escalável (viewBox) pra caber na etiqueta. */
-const barcodeSvg = (value: string): string => {
+const barcodeSvg = (value: string, { comDigitos = true } = {}): string => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   try {
     JsBarcode(svg, value, {
       format: isValidEan13(value) ? 'EAN13' : 'CODE128',
-      displayValue: true,
+      // Na folha os dígitos já saem numa linha própria embaixo. Com os dois, o
+      // número aparecia DUAS VEZES, e as barras eram espremidas para caber a
+      // legenda interna dentro dos 11 mm da célula.
+      displayValue: comDigitos,
       fontSize: 16,
       margin: 0,
       height: 56,
@@ -261,11 +264,14 @@ body { font-size: 9pt; }
 .item {
   min-height: ${alturaItem}mm; padding: ${compacto ? 2 : 3}mm; border: 0.25mm solid #aaa;
   break-inside: avoid; display: flex; flex-direction: column;
+  /* Centralizado nos dois eixos: a célula é uma etiqueta, e etiqueta com o
+     conteúdo encostado num canto parece defeito de impressão. */
+  align-items: center; justify-content: center; text-align: center; gap: 0.8mm;
 }
 .name { font-size: ${compacto ? 8 : 10}pt; font-weight: 700; line-height: 1.2; }
 .meta { margin-top: 1mm; color: #444; font-size: 7.5pt; line-height: 1.25; }
 .preco { font-size: ${compacto ? 9 : 11}pt; font-weight: 700; }
-.barcode { height: ${alturaBarra}mm; margin-top: auto; padding-top: ${compacto ? 1 : 2}mm; }
+.barcode { width: 100%; height: ${alturaBarra}mm; }
 .barcode svg { width: 100%; height: 100%; }
 .digits { margin-top: 0.5mm; font-size: 8pt; text-align: center; letter-spacing: .08em; }
 .missing {
@@ -286,7 +292,7 @@ body { font-size: 9pt; }
         product.sku ? `SKU: ${esc(product.sku)}` : '',
       ].filter(Boolean).join(' · ')}</div>`}
       ${product.barcode
-        ? `<div class="barcode">${barcodeSvg(product.barcode)}</div><div class="digits">${esc(product.barcode)}</div>`
+        ? `<div class="barcode">${barcodeSvg(product.barcode, { comDigitos: false })}</div><div class="digits">${esc(product.barcode)}</div>`
         : '<div class="missing">Sem código</div>'}
     </article>`).join('')}
   </div>
