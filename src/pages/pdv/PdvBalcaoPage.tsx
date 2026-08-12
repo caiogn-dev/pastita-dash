@@ -14,6 +14,8 @@ import {
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, ModalHeader, ModalBody, SearchInput } from '../../components/ui';
 import { ModalCobrancaPix } from './ModalCobrancaPix';
+import { ComandaDoBalcao } from './ComandaDoBalcao';
+import { ClienteDaVenda } from './ClienteDaVenda';
 import { Loading } from '../../components/common';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import {
@@ -461,84 +463,21 @@ const PdvBalcaoPage: React.FC = () => {
             </ul>
           )}
         </div>
-        {items.length === 0 ? (
-          <div className="py-14 text-center opacity-60">
-            <QrCodeIcon className="w-12 h-12 mx-auto mb-3" />
-            Comanda vazia — bipe o primeiro produto.
-          </div>
-        ) : (
-          <div className="space-y-5" data-testid="pdv-comanda">
-            {groups.map((g) => (
-              <div key={g.storeSlug}>
-                {groups.length > 1 && (
-                  <div className="flex items-center justify-between gap-2 mb-1 pb-2 border-b border-border-token">
-                    <div className="flex items-center gap-1.5 text-sm font-semibold opacity-80">
-                      <BuildingStorefrontIcon className="w-4 h-4" /> {g.storeName}
-                    </div>
-                    <div className="text-sm opacity-70">
-                      {fmtMoney(g.items.reduce((s, i) => s + Number(i.product.price) * i.quantity, 0))}
-                    </div>
-                  </div>
-                )}
-                <ul className="divide-y divide-[color:var(--border)]">
-                  {g.items.map((i) => (
-                    <li key={i.product.id} className="flex items-center gap-3 py-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{i.product.name}</div>
-                        <div className="text-sm opacity-70">{fmtMoney(Number(i.product.price))} un.</div>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Button variant="ghost" size="sm" aria-label={`Diminuir ${i.product.name}`} onClick={() => changeQty(i.product.id, -1)}>
-                          <MinusIcon className="w-4 h-4" />
-                        </Button>
-                        <span className="w-8 text-center font-semibold tabular-nums">{i.quantity}</span>
-                        <Button variant="ghost" size="sm" aria-label={`Aumentar ${i.product.name}`} onClick={() => changeQty(i.product.id, 1)}>
-                          <PlusIcon className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="w-24 text-right font-semibold tabular-nums">
-                        {fmtMoney(Number(i.product.price) * i.quantity)}
-                      </div>
-                      <Button variant="ghost" size="sm" aria-label={`Remover ${i.product.name}`} onClick={() => removeItem(i.product.id)}>
-                        <TrashIcon className="w-4 h-4" />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
+        <ComandaDoBalcao
+          grupos={groups}
+          vazia={items.length === 0}
+          onAlterarQuantidade={changeQty}
+          onRemover={removeItem}
+          formatarValor={fmtMoney}
+        />
       </Card>
 
       <Card className="p-4 sm:p-5">
-        <div className="flex flex-wrap items-center gap-2 mb-4" data-testid="pdv-cliente">
-          {customer ? (
-            <>
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium bg-black/5 dark:bg-surface/10 rounded-full pl-2.5 pr-1 py-1">
-                <UserIcon className="w-4 h-4" />
-                {customer.name}
-                <span className="opacity-60 font-normal">· {customer.phone}</span>
-                <button
-                  type="button"
-                  aria-label="Remover cliente"
-                  className="p-0.5 rounded-full hover:bg-surface-2"
-                  onClick={() => setCustomer(null)}
-                >
-                  <XMarkIcon className="w-4 h-4" />
-                </button>
-              </span>
-              <span className="text-xs opacity-60">a venda entra no histórico dele</span>
-            </>
-          ) : (
-            <>
-              <Button variant="secondary" size="sm" onClick={() => setCustomerModal(true)}>
-                <UserIcon className="w-4 h-4 mr-1.5" /> Vincular cliente
-              </Button>
-              <span className="text-xs opacity-60">opcional — sem vínculo sai como venda anônima</span>
-            </>
-          )}
-        </div>
+        <ClienteDaVenda
+          cliente={customer}
+          onVincular={() => setCustomerModal(true)}
+          onRemover={() => setCustomer(null)}
+        />
         <div className="flex flex-wrap items-center gap-2 mb-4">
           {(Object.keys(PAYMENT_LABELS) as PaymentChoice[]).map((key) => (
             <Button
