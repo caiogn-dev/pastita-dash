@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BeakerIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import api, { normalizePaginatedResponse } from '../../services/api';
+import api, { getErrorMessage, normalizePaginatedResponse } from '../../services/api';
 import { getStores } from '../../services/storesApi';
 import { Button, Card, SearchInput } from '../../components/ui';
 import { Loading } from '../../components/common';
@@ -59,11 +59,22 @@ export default function IngredientsPage() {
   const open=(item?:Ingredient)=>{setEditing(item||null);setForm(item?Object.fromEntries(Object.entries(item).map(([k,v])=>[k,v==null?'':String(v)])):{...empty});
     setContem(item?.allergens??[]); setPodeConter(item?.may_contain??[]); setRevisado(Boolean(item?.allergens_reviewed)); setModalOpen(true);};
   const alternar=(lista:string[],set:(v:string[])=>void,valor:string)=>set(lista.includes(valor)?lista.filter(v=>v!==valor):[...lista,valor]);
-  const save=async()=>{ if(!form.display_name.trim()) return toast.error('Informe o nome'); const payload={...form,canonical_name:form.canonical_name||form.display_name,store:editing?.store??storeUuid,...Object.fromEntries(nutrients.map(n=>[n.key,form[n.key]===''?null:form[n.key]])),
+  const save=async()=>{ if(!form.display_name.trim()) return toast.error('Informe o nome');
+    // Só o que este formulário edita. Devolver o objeto inteiro stringificado
+    // mandava `source_accessed_at: ""` de volta — o campo de data é nulo em
+    // todo ingrediente, "" não é data, e o salvamento morria em 400 para
+    // TODOS eles. Formulário posta o que edita, não o que recebeu.
+    const payload={
+      display_name:form.display_name,
+      canonical_name:form.canonical_name||form.display_name,
+      category:form.category||'',
+      store:editing?editing.store:storeUuid,
+      ...Object.fromEntries(nutrients.map(n=>[n.key,form[n.key]===''||form[n.key]==null?null:form[n.key]])),
       // Um alergênico marcado como "contém" nunca vai também em "pode conter":
       // a norma proíbe amaciar uma certeza com advertência de traço.
       allergens:contem, may_contain:podeConter.filter(v=>!contem.includes(v)), allergens_reviewed:revisado};
-    try { if(editing) await api.patch(`/nutrition/ingredients/${editing.id}/`,payload); else await api.post('/nutrition/ingredients/',payload); toast.success('Ingrediente salvo'); setEditing(null);setForm(empty);setModalOpen(false);await load(); } catch { toast.error('Revise os valores informados'); }};
+    try { if(editing) await api.patch(`/nutrition/ingredients/${editing.id}/`,payload); else await api.post('/nutrition/ingredients/',payload); toast.success('Ingrediente salvo'); setEditing(null);setForm(empty);setModalOpen(false);await load(); }
+    catch(e){ toast.error(getErrorMessage(e)); }};
   const remove=async(item:Ingredient)=>{
     const ok=await confirmAction({title:'Desativar ingrediente',message:`Desativar "${item.display_name}"? Ele some das listas, mas as receitas que já o usam continuam válidas.`,confirmText:'Desativar',variant:'danger'});
     if(!ok)return;try{await api.delete(`/nutrition/ingredients/${item.id}/`);await load();}catch{toast.error('Ingrediente usado em receita não pode ser removido');}};
