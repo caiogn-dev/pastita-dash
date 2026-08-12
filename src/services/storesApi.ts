@@ -923,6 +923,25 @@ export const deleteProductVariant = async (productId: string, variantId: string)
   await api.delete(`${BASE_URL}/products/${productId}/variants/${variantId}/`);
 };
 
+/**
+ * Pede ao backend um código de barras interno para os produtos que não têm.
+ *
+ * O painel sorteava um EAN-13 aleatório e gravava. Três problemas: o código
+ * não dizia de que loja era; dois operadores imprimindo ao mesmo tempo podiam
+ * sortear o mesmo número, porque a lista de "já usados" era local; e o código
+ * só nascia se alguém por acaso imprimisse aquele produto. O backend gera
+ * determinístico, com o número da loja embutido, e nunca sobrescreve.
+ */
+export const gerarCodigosInternos = async (
+  storeId: string, produtos?: string[],
+): Promise<{ gerados: Record<string, string>; total: number }> => {
+  const { data } = await api.post(
+    `/stores/stores/${storeId}/products/gerar-codigos-internos/`,
+    produtos?.length ? { produtos } : {},
+  );
+  return data;
+};
+
 export const updateProduct = async (id: string, data: Partial<StoreProductInput>): Promise<StoreProduct> => {
   try {
     if (data.main_image && isFile(data.main_image)) {

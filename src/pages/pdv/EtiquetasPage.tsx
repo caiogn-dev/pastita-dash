@@ -4,9 +4,8 @@ import { ArrowDownTrayIcon, PrinterIcon, TagIcon } from '@heroicons/react/24/out
 import toast from 'react-hot-toast';
 import { Card, Button, SearchInput } from '../../components/ui';
 import { Loading } from '../../components/common';
-import { getStores, getProducts, updateProduct, StoreProduct } from '../../services/storesApi';
+import { getStores, getProducts, gerarCodigosInternos, StoreProduct } from '../../services/storesApi';
 import api, { normalizePaginatedResponse } from '../../services/api';
-import { generateInternalEan13 } from '../../utils/ean13';
 import {
   buildBarcodeCatalogDoc, buildNutritionDoc, buildNutritionQrDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
   PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
@@ -226,14 +225,20 @@ const EtiquetasPage: React.FC = () => {
     setPreparing(true);
     try {
       const newCodes = new Map<string, string>();
-      // Etiqueta de produto sem código → gera EAN-13 interno e grava no produto
+      // Etiqueta de produto sem código → o BACKEND gera o EAN-13 interno.
+      // Aqui era sorteado no navegador, o que dava código sem identidade de
+      // loja e podia colidir entre dois operadores imprimindo ao mesmo tempo.
       if (template === 'produto') {
-        const taken = new Set(catalog.map((c) => c.product.barcode).filter(Boolean));
-        for (const c of selected.filter((x) => !x.product.barcode)) {
-          const code = generateInternalEan13(taken);
-          await updateProduct(c.product.id, { barcode: code });
-          taken.add(code);
-          newCodes.set(c.product.id, code);
+        const semCodigo = selected.filter((x) => !x.product.barcode);
+        const porLoja = new Map<string, string[]>();
+        semCodigo.forEach((c) => {
+          const atual = porLoja.get(c.product.store) || [];
+          atual.push(c.product.id);
+          porLoja.set(c.product.store, atual);
+        });
+        for (const [storeUuid, ids] of porLoja) {
+          const { gerados } = await gerarCodigosInternos(storeUuid, ids);
+          Object.entries(gerados).forEach(([id, code]) => newCodes.set(id, code));
         }
         if (newCodes.size > 0) {
           setCatalog((prev) => prev.map((x) => (newCodes.has(x.product.id)

@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import EtiquetasPage from '../EtiquetasPage';
-import { getStores, getProducts, updateProduct } from '../../../services/storesApi';
+import { getStores, getProducts, gerarCodigosInternos } from '../../../services/storesApi';
 import { printHtmlDocument } from '../../../utils/labelPrint';
 
 jest.mock('../../../services/api', () => ({
@@ -15,7 +15,7 @@ jest.mock('../../../services/api', () => ({
 jest.mock('../../../services/storesApi', () => ({
   getStores: jest.fn(),
   getProducts: jest.fn(),
-  updateProduct: jest.fn(),
+  gerarCodigosInternos: jest.fn(),
 }));
 
 jest.mock('../../../utils/labelPrint', () => ({
@@ -25,7 +25,7 @@ jest.mock('../../../utils/labelPrint', () => ({
 
 const mockedGetStores = getStores as jest.Mock;
 const mockedGetProducts = getProducts as jest.Mock;
-const mockedUpdateProduct = updateProduct as jest.Mock;
+const mockedGerarCodigos = gerarCodigosInternos as jest.Mock;
 const mockedPrint = printHtmlDocument as jest.Mock;
 
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
@@ -56,10 +56,10 @@ describe('EtiquetasPage', () => {
         barcode: '7891000000014', price: 8, status: 'active', description: '', short_description: '',
       },
     ]));
-    mockedUpdateProduct.mockResolvedValue({});
+    mockedGerarCodigos.mockResolvedValue({ gerados: { p1: '2010000000015' }, total: 1 });
   });
 
-  it('imprimir etiqueta de produto gera EAN-13 interno pra quem não tem código', async () => {
+  it('imprimir etiqueta de produto PEDE AO BACKEND o EAN-13 de quem não tem código', async () => {
     renderPage();
     await screen.findByText('Marmita P');
 
@@ -67,21 +67,22 @@ describe('EtiquetasPage', () => {
     await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '2');
     await userEvent.click(screen.getByTestId('etq-imprimir'));
 
+    // Antes o código era sorteado no navegador: sem identidade de loja e com
+    // risco de dois operadores tirarem o mesmo número. Agora quem gera é o
+    // backend, que conhece todos os códigos já usados.
     await waitFor(() => {
-      expect(mockedUpdateProduct).toHaveBeenCalledWith('p1', {
-        barcode: expect.stringMatching(/^2\d{12}$/),
-      });
+      expect(mockedGerarCodigos).toHaveBeenCalledWith('s1', ['p1']);
     });
     await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
     const doc = mockedPrint.mock.calls[0][0] as string;
     expect(doc).toContain('Marmita P');
     // duas cópias = duas páginas, cada uma com o código novo
     expect(doc.match(/class="page"/g)).toHaveLength(2);
-    const code = mockedUpdateProduct.mock.calls[0][1].barcode as string;
+    const code = mockedGerarCodigos.mock.results[0].value as Promise<{ gerados: Record<string,string> }>;
     expect(doc).toContain('@page { size: 100mm 80mm; margin: 0; }');
     // barcode entra como SVG gerado a partir do código salvo
     expect(mockedPrint).toHaveBeenCalledTimes(1);
-    expect(code).toMatch(/^2\d{12}$/);
+    expect((await code).gerados.p1).toMatch(/^2\d{12}$/);
   });
 
   it('produto que já tem código não é alterado ao imprimir', async () => {
@@ -93,7 +94,7 @@ describe('EtiquetasPage', () => {
     await userEvent.click(screen.getByTestId('etq-imprimir'));
 
     await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
-    expect(mockedUpdateProduct).not.toHaveBeenCalled();
+    expect(mockedGerarCodigos).not.toHaveBeenCalled();
   });
 
   it('exporta folha A4 organizada sem gerar código para produto vazio', async () => {
@@ -110,7 +111,7 @@ describe('EtiquetasPage', () => {
     expect(doc).toContain('Sem código');
     expect(doc).toContain('Suco');
     expect(doc).toContain('7891000000014');
-    expect(mockedUpdateProduct).not.toHaveBeenCalled();
+    expect(mockedGerarCodigos).not.toHaveBeenCalled();
   });
 
   it('modo validade imprime linhas de 3 colunas com página do tamanho do papel', async () => {
@@ -125,7 +126,7 @@ describe('EtiquetasPage', () => {
     await userEvent.click(screen.getByTestId('etq-imprimir'));
 
     await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
-    expect(mockedUpdateProduct).not.toHaveBeenCalled();
+    expect(mockedGerarCodigos).not.toHaveBeenCalled();
 
     const doc = mockedPrint.mock.calls[0][0] as string;
     // bobina padrão 107mm (3×33 + 2×3 = 105 centralizado), 4 etiquetas → 2 páginas (3+1)
