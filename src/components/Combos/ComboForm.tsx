@@ -766,6 +766,41 @@ export const ComboForm: React.FC<ComboFormProps> = ({
               placeholder="Para exibir tachado"
             />
           </div>
+          {/* Até 12/ago este campo só existia para PRODUTO: combo de verdade
+              (StoreCombo) precisava de acesso ao banco para valer mais de um
+              selo, e o que ninguém configura vale zero — foi assim que o
+              "COMBO 8 SALADAS" ficou creditando nada. */}
+          <div>
+            <label
+              htmlFor="combo-loyalty-units"
+              className="mb-1 block text-sm font-medium text-gray-700 dark:text-fg-token"
+            >
+              Selos de fidelidade por combo
+            </label>
+            <input
+              id="combo-loyalty-units"
+              type="number"
+              min={0}
+              step={1}
+              value={(form.metadata?.loyalty_units as number | undefined) ?? ''}
+              onChange={e => {
+                const meta = { ...(form.metadata || {}) };
+                const parsed = parseInt(e.target.value, 10);
+                if (!e.target.value || Number.isNaN(parsed) || parsed <= 0) delete meta.loyalty_units;
+                else meta.loyalty_units = parsed;
+                set('metadata', meta);
+              }}
+              placeholder="Vazio = o combo não credita selo"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-border-token dark:bg-surface dark:text-white"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-fg-muted-token">
+              Quantos selos o cliente ganha por combo comprado — normalmente o número
+              de itens que ele leva (combo de 8 saladas = 8). Vazio significa zero: o
+              item de combo não tem categoria, então nunca cai na regra da categoria.
+              Mudar aqui não recalcula pedidos antigos; para isso use “Recalcular
+              fidelidade” no pedido.
+            </p>
+          </div>
           <Input
             label="URL da imagem"
             value={form.image_url || ''}

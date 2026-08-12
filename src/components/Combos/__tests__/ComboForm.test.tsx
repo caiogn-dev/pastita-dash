@@ -130,6 +130,9 @@ async function irParaOFim(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: /Configurações/ }));
 }
 
+const campoDePreco = () =>
+  screen.getByLabelText(/Pre\u00e7o (do combo|-base)/i) as HTMLInputElement;
+
 describe('ComboForm', () => {
   const mockOnSubmit = jest.fn();
 
@@ -641,8 +644,9 @@ describe('ComboForm', () => {
       const nameInput = screen.getByPlaceholderText(/Ex: Combo Executivo/i);
       await user.type(nameInput, 'Test Combo');
 
-      const priceInputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(priceInputs[0], { target: { value: '15' } });
+      // Por rótulo, não por índice: o teste já quebrou quando um campo
+      // numérico novo entrou antes do preço no formulário.
+      fireEvent.change(campoDePreco(), { target: { value: '15' } });
 
       const groupsTab = screen.getByText(/Itens \(0\)/);
       fireEvent.click(groupsTab);
@@ -676,8 +680,9 @@ describe('ComboForm', () => {
       const nameInput = screen.getByPlaceholderText(/Ex: Combo Executivo/i);
       await user.type(nameInput, 'Test Combo');
 
-      const priceInputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(priceInputs[0], { target: { value: '15' } });
+      // Por rótulo, não por índice: o teste já quebrou quando um campo
+      // numérico novo entrou antes do preço no formulário.
+      fireEvent.change(campoDePreco(), { target: { value: '15' } });
 
       await irParaOFim(user);
       const submitButton = screen.getByText(/Criar combo/i);
@@ -711,8 +716,9 @@ describe('ComboForm', () => {
       const nameInput = screen.getByPlaceholderText(/Ex: Combo Executivo/i);
       await user.type(nameInput, 'Test Combo');
 
-      const priceInputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(priceInputs[0], { target: { value: '15' } });
+      // Por rótulo, não por índice: o teste já quebrou quando um campo
+      // numérico novo entrou antes do preço no formulário.
+      fireEvent.change(campoDePreco(), { target: { value: '15' } });
 
       const groupsTab = screen.getByText(/Itens \(0\)/);
       fireEvent.click(groupsTab);
