@@ -159,7 +159,19 @@ export const WebhookDiagnosticsPage: React.FC = () => {
     );
   }
 
-  const { diagnosis, stats, accounts, recent_events, recent_inbound_messages, failed_events } = data;
+  // Defaults em vez de desestruturação crua: a tela lia `diagnosis.x` logo
+  // abaixo e um payload sem `diagnosis` (erro do backend, contrato mudado,
+  // resposta parcial) derrubava a página inteira com tela branca. Justo a tela
+  // de diagnóstico — a que se abre QUANDO algo já está errado — não pode
+  // depender de tudo estar certo para aparecer.
+  const {
+    diagnosis = {} as Partial<NonNullable<typeof data>['diagnosis']>,
+    stats,
+    accounts = [],
+    recent_events = [],
+    recent_inbound_messages = [],
+    failed_events = [],
+  } = data;
 
   // Calculate overall health
   const healthScore = [

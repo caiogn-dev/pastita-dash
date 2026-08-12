@@ -111,6 +111,9 @@ const EtiquetasPage: React.FC = () => {
   const [storeFilter, setStoreFilter] = useState<string>('all');
   const [qty, setQty] = useState<Map<string, number>>(new Map());
   const [template, setTemplate] = useState<Template>('produto');
+  // Folha compacta: 4 colunas em vez de 2. Com muitas lojas e produtos, o que
+  // importa é caber a operação inteira em poucas folhas.
+  const [catalogoCompacto, setCatalogoCompacto] = useState(true);
   const [cfg, setCfg] = useState<SavedConfig>(loadConfig);
   const [preparing, setPreparing] = useState(false);
   const [profiles, setProfiles] = useState<Map<string, NutritionProfile>>(new Map());
@@ -289,9 +292,10 @@ const EtiquetasPage: React.FC = () => {
             category: product.category_name || undefined,
             sku: product.sku || undefined,
             barcode: product.barcode || undefined,
+            price: product.price ?? undefined,
           })),
       }));
-    await printHtmlDocument(buildBarcodeCatalogDoc(storesForPdf));
+    await printHtmlDocument(buildBarcodeCatalogDoc(storesForPdf, { compacto: catalogoCompacto }));
   };
 
   /** Primeira página, renderizada com o mesmo gerador da impressão. */
@@ -340,10 +344,17 @@ const EtiquetasPage: React.FC = () => {
             produto sem código ganha um EAN-13 interno na hora.
           </p>
         </div>
-        <Button variant="secondary" disabled={catalog.length === 0} onClick={handleExportPdf}>
-          <ArrowDownTrayIcon className="w-5 h-5" />
-          Exportar PDF A4
-        </Button>
+        <div className="flex flex-col items-end gap-1.5">
+          <Button variant="secondary" disabled={catalog.length === 0} onClick={handleExportPdf}>
+            <ArrowDownTrayIcon className="w-5 h-5" />
+            Folha de códigos (A4)
+          </Button>
+          <label className="flex items-center gap-1.5 text-xs opacity-75">
+            <input type="checkbox" checked={catalogoCompacto}
+                   onChange={(e) => setCatalogoCompacto(e.target.checked)} />
+            Compacta — só nome, código e preço, 4 por linha
+          </label>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-[1fr,360px] gap-4 md:gap-5 items-start">

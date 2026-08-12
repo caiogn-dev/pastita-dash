@@ -31,11 +31,17 @@ export interface ValidadeLabelData {
   val: string;
 }
 
+/** R$ com vírgula decimal — é como o preço aparece em todo o resto do painel. */
+const formatarPreco = (valor: number | string): string =>
+  `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
+
 export interface BarcodeCatalogProduct {
   name: string;
   category?: string;
   sku?: string;
   barcode?: string;
+  /** Preço do produto. Quem bipa no caixa confere pelo preço, não pelo SKU. */
+  price?: number | string | null;
 }
 
 export interface BarcodeCatalogStore {
@@ -227,7 +233,20 @@ export const buildValidadeDoc = (labels: ValidadeLabelData[], cfg: ValidadeConfi
 };
 
 /** Folha A4 de consulta, agrupada por loja, para imprimir ou salvar como PDF. */
-export const buildBarcodeCatalogDoc = (stores: BarcodeCatalogStore[]): string => {
+/**
+ * Folha de conferência: nome, código e preço, para colar ou consultar.
+ *
+ * `compacto` troca a grade de 2 colunas grandes por 4 menores. Com muitas
+ * lojas e produtos, o que importa é caber a operação inteira em poucas folhas
+ * — bipar produto por produto para descobrir o código é justamente o que a
+ * folha existe para evitar.
+ */
+export const buildBarcodeCatalogDoc = (
+  stores: BarcodeCatalogStore[], { compacto = false }: { compacto?: boolean } = {},
+): string => {
+  const colunas = compacto ? 4 : 2;
+  const alturaItem = compacto ? 22 : 31;
+  const alturaBarra = compacto ? 11 : 16;
   const css = `
 @page { size: A4 portrait; margin: 12mm; }
 body { font-size: 9pt; }
@@ -238,14 +257,15 @@ body { font-size: 9pt; }
   margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 0.5mm solid #000;
   font-size: 14pt; line-height: 1.1;
 }
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4mm; }
+.grid { display: grid; grid-template-columns: repeat(${colunas}, minmax(0, 1fr)); gap: ${compacto ? 2.5 : 4}mm; }
 .item {
-  min-height: 31mm; padding: 3mm; border: 0.25mm solid #aaa;
+  min-height: ${alturaItem}mm; padding: ${compacto ? 2 : 3}mm; border: 0.25mm solid #aaa;
   break-inside: avoid; display: flex; flex-direction: column;
 }
-.name { font-size: 10pt; font-weight: 700; line-height: 1.2; }
+.name { font-size: ${compacto ? 8 : 10}pt; font-weight: 700; line-height: 1.2; }
 .meta { margin-top: 1mm; color: #444; font-size: 7.5pt; line-height: 1.25; }
-.barcode { height: 16mm; margin-top: auto; padding-top: 2mm; }
+.preco { font-size: ${compacto ? 9 : 11}pt; font-weight: 700; }
+.barcode { height: ${alturaBarra}mm; margin-top: auto; padding-top: ${compacto ? 1 : 2}mm; }
 .barcode svg { width: 100%; height: 100%; }
 .digits { margin-top: 0.5mm; font-size: 8pt; text-align: center; letter-spacing: .08em; }
 .missing {
@@ -258,10 +278,13 @@ body { font-size: 9pt; }
   <div class="grid">${store.products.map((product) => `
     <article class="item">
       <div class="name">${esc(product.name)}</div>
-      <div class="meta">${[
+      ${product.price == null || product.price === ''
+        ? ''
+        : `<div class="preco">${esc(formatarPreco(product.price))}</div>`}
+      ${compacto ? '' : `<div class="meta">${[
         product.category ? esc(product.category) : '',
         product.sku ? `SKU: ${esc(product.sku)}` : '',
-      ].filter(Boolean).join(' · ')}</div>
+      ].filter(Boolean).join(' · ')}</div>`}
       ${product.barcode
         ? `<div class="barcode">${barcodeSvg(product.barcode)}</div><div class="digits">${esc(product.barcode)}</div>`
         : '<div class="missing">Sem código</div>'}
