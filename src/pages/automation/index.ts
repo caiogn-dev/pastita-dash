@@ -5,6 +5,7 @@ export { default as CustomerSessionsPage } from './CustomerSessionsPage';
 export { default as AutomationLogsPage } from './AutomationLogsPage';
 export { default as ScheduledMessagesPage } from './ScheduledMessagesPage';
 export { default as ConversationInsightsPage } from './ConversationInsightsPage';
+export { default as AgentFlowsPage } from './AgentFlowsPage';
 
 // Novas páginas de Intent Detection
 export { default as IntentStatsPage } from './IntentStatsPage';

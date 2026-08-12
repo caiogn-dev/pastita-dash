@@ -77,6 +77,12 @@ const StorefrontPage = lazy(() => import('./pages/stores').then(m => ({ default:
 // Marketing Pages
 const MarketingPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.MarketingPage })));
 const SubscribersPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.SubscribersPage })));
+// Páginas que existiam no código sem rota nenhuma — renderizavam em lugar
+// nenhum. Ver navSections.tsx: agora têm caminho no menu.
+const EmailAutomationsPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.AutomationsPage })));
+const AgentFlowsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AgentFlowsPage })));
+const WebhookDiagnosticsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WebhookDiagnosticsPage })));
+const DebugDashboardPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.DebugDashboardPage })));
 const NewCampaignPage = lazy(() => import('./pages/marketing/email').then(m => ({ default: m.NewCampaignPage })));
 const CampaignsListPage = lazy(() => import('./pages/marketing/email').then(m => ({ default: m.CampaignsListPage })));
 const NewWhatsAppCampaignPage = lazy(() => import('./pages/marketing/whatsapp').then(m => ({ default: m.NewWhatsAppCampaignPage })));
@@ -215,6 +221,7 @@ const AppContent: React.FC = () => {
         <Route path="automation/logs" element={<PageBoundary><AutomationLogsPage /></PageBoundary>} />
         <Route path="automation/scheduled" element={<PageBoundary><ScheduledMessagesPage /></PageBoundary>} />
         <Route path="automation/conversation-insights" element={<PageBoundary><ConversationInsightsPage /></PageBoundary>} />
+        <Route path="automation/flows" element={<PageBoundary><AgentFlowsPage /></PageBoundary>} />
 
         {/* Intent Detection Routes */}
         <Route path="automation/intents" element={<Navigate to="/automation/intents/stats" replace />} />
@@ -253,6 +260,7 @@ const AppContent: React.FC = () => {
         {/* Marketing Routes */}
         <Route path="marketing" element={<PageBoundary><MarketingPage /></PageBoundary>} />
         <Route path="marketing/subscribers" element={<PageBoundary><SubscribersPage /></PageBoundary>} />
+        <Route path="marketing/automations" element={<PageBoundary><EmailAutomationsPage /></PageBoundary>} />
         <Route path="marketing/email" element={<Navigate to="/marketing/email/campaigns" replace />} />
         <Route path="marketing/email/campaigns" element={<PageBoundary><CampaignsListPage /></PageBoundary>} />
         <Route path="marketing/email/new" element={<PageBoundary><NewCampaignPage /></PageBoundary>} />
@@ -270,6 +278,8 @@ const AppContent: React.FC = () => {
         <Route path="whatsapp" element={<Navigate to="/inbox/whatsapp" replace />} />
         <Route path="whatsapp/inbox" element={<Navigate to="/inbox/whatsapp" replace />} />
         <Route path="whatsapp/chat" element={<Navigate to="/inbox/whatsapp" replace />} />
+        <Route path="whatsapp/diagnostics" element={<PageBoundary><WebhookDiagnosticsPage /></PageBoundary>} />
+        <Route path="whatsapp/debug" element={<PageBoundary><DebugDashboardPage /></PageBoundary>} />
         <Route path="whatsapp/handover" element={<PageBoundary><HandoverRequestsPage /></PageBoundary>} />
       </Route>
 

@@ -18,7 +18,7 @@
  *
  * Este componente é DESKTOP. No celular quem manda é a MobileShell.
  */
-import React, { useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDownIcon, ChevronDoubleLeftIcon } from '@heroicons/react/24/outline';
 
@@ -162,16 +162,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
       )}
 
       <ul className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
-        {sections.map((secao) => {
+        {sections.map((secao, indice) => {
           const Icone = secao.icon;
           const temFilhos = secao.items.length > 0;
           const estaAtiva = secaoAtiva(pathname, secao);
           const estaAberta = aberto === secao.label;
+          // Cabeçalho do bloco só na PRIMEIRA seção dele. Onze seções numa
+          // lista corrida obrigam a ler tudo para achar uma; o bloco diz de
+          // longe se aquilo é coisa de hoje, de catálogo, de crescer ou de
+          // ajuste. Recolhida a coluna vira um traço: o texto não caberia, mas
+          // a separação ainda vale.
+          const primeiraDoGrupo = secao.grupo && sections[indice - 1]?.grupo !== secao.grupo;
+          const cabecalhoDoGrupo = primeiraDoGrupo ? (
+            recolhido ? (
+              <li aria-hidden className="mx-auto my-2 h-px w-6 bg-border-token" />
+            ) : (
+              <li
+                className={cn(
+                  'px-2.5 pb-1 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-fg-muted-token/70',
+                  indice === 0 ? 'pt-1' : 'pt-4',
+                )}
+              >
+                {secao.grupo}
+              </li>
+            )
+          ) : null;
 
           // Seção sem filhos é um link direto — não vira botão de acordeão.
           if (!temFilhos && secao.href) {
             return (
-              <li key={secao.label}>
+              <Fragment key={secao.label}>
+                {cabecalhoDoGrupo}
+                <li>
                 <Link
                   to={secao.href}
                   aria-current={estaAtiva ? 'page' : undefined}
@@ -212,12 +234,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                     </span>
                   )}
                 </Link>
-              </li>
+                </li>
+              </Fragment>
             );
           }
 
           return (
-            <li key={secao.label}>
+            <Fragment key={secao.label}>
+              {cabecalhoDoGrupo}
+              <li>
               <button
                 type="button"
                 aria-expanded={estaAberta}
@@ -284,7 +309,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   })}
                 </ul>
               )}
-            </li>
+              </li>
+            </Fragment>
           );
         })}
       </ul>

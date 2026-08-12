@@ -1,17 +1,23 @@
 /**
- * PaymentLinkPage — Link de pagamento AVULSO (Fase 3)
+ * PaymentLinkPage — Link de pagamento AVULSO
  *
  * Gera um LINK DE PAGAMENTO (Checkout Pro / preference do Mercado Pago) de valor
  * arbitrário SEM pedido vinculado (StorePayment.order=null). É uma página hospedada
  * onde o cliente escolhe cartão/PIX/boleto — não apenas um PIX copia-e-cola.
- * Fluxo: valor + descrição (+ pagador opcional) → createPaymentLink → payment_url.
  *
- * TODO (Fase 3b): listar as cobranças avulsas já geradas. O backend ainda escopa
- * a listagem por order__store, então a lista de avulsas depende de evolução do backend.
+ * A TELA GUARDAVA O LINK SÓ NO ESTADO DO REACT (12/ago): um F5 e o lojista
+ * perdia a cobrança, sem lugar nenhum para reencontrar o link nem para saber se
+ * o cliente pagou. E havia 14 cobranças reais no banco que a tela nunca mostrou
+ * — 5 delas pendentes, algumas pagas. O comentário antigo dizia que o backend
+ * não sabia listá-las; sabia desde sempre (`Q(order__store) | Q(store)`).
+ *
+ * Agora o histórico é a memória: o link vive na lista, com status de pagamento,
+ * e o formulário volta a ser só o formulário.
  */
 import { copyToClipboard } from '../../utils/clipboard';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { paymentsService, getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
 
@@ -20,8 +26,44 @@ interface GeneratedLink {
   amount?: number | string;
 }
 
+/** Cobrança avulsa como a listagem devolve. */
+interface Cobranca {
+  id: string;
+  amount: number | string;
+  status: string;
+  status_display?: string;
+  payment_url?: string;
+  description?: string;
+  payer_name?: string;
+  created_at: string;
+  paid_at?: string | null;
+}
+
 const formatMoney = (value: number | undefined | null) =>
   `R$ ${(value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+const formatDate = (iso?: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ''
+    : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+};
+
+/**
+ * O vocabulário da cobrança é o do dinheiro, não o do pedido: aqui "pago" é
+ * `completed`. A pergunta que o lojista faz nesta tela é uma só — "pagou?" —,
+ * então o rótulo responde isso, não o nome técnico do estado.
+ */
+const SITUACAO: Record<string, { rotulo: string; classe: string }> = {
+  completed: { rotulo: 'Pago', classe: 'bg-[var(--success-soft)] text-[var(--success)]' },
+  pending: { rotulo: 'Aguardando pagamento', classe: 'bg-[var(--warning-soft)] text-[var(--warning)]' },
+  processing: { rotulo: 'Processando', classe: 'bg-[var(--info-soft)] text-[var(--info)]' },
+  failed: { rotulo: 'Falhou', classe: 'bg-[var(--danger-soft)] text-[var(--danger)]' },
+  cancelled: { rotulo: 'Cancelada', classe: 'bg-surface-2 text-fg-muted-token' },
+  refunded: { rotulo: 'Estornada', classe: 'bg-surface-2 text-fg-muted-token' },
+  partially_refunded: { rotulo: 'Estorno parcial', classe: 'bg-surface-2 text-fg-muted-token' },
+};
 
 export const PaymentLinkPage: React.FC = () => {
   const { storeId, storeName, isStoreSelected } = useStore();
@@ -33,6 +75,28 @@ export const PaymentLinkPage: React.FC = () => {
   const [payerDocument, setPayerDocument] = useState('');
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState<GeneratedLink | null>(null);
+  const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
+  const [carregandoLista, setCarregandoLista] = useState(false);
+
+  const carregarCobrancas = useCallback(async () => {
+    if (!storeId) return;
+    setCarregandoLista(true);
+    try {
+      const r = await paymentsService.getPayments({
+        store: storeId,
+        sem_pedido: '1',
+        page_size: '30',
+      } as unknown as Record<string, string>);
+      setCobrancas((r.results || []) as unknown as Cobranca[]);
+    } catch {
+      // Lista é complemento: falhar aqui não pode impedir de gerar cobrança.
+      toast.error('Não foi possível carregar as cobranças anteriores.');
+    } finally {
+      setCarregandoLista(false);
+    }
+  }, [storeId]);
+
+  useEffect(() => { carregarCobrancas(); }, [carregarCobrancas]);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +129,8 @@ export const PaymentLinkPage: React.FC = () => {
         amount: (payment.amount as number | string) ?? parsed,
       });
       toast.success('Link de pagamento gerado!');
+      // O histórico é o que sobrevive ao F5 — a cobrança nova entra nele agora.
+      carregarCobrancas();
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -221,7 +287,85 @@ export const PaymentLinkPage: React.FC = () => {
         </section>
       )}
 
-      {/* TODO (Fase 3b): listar cobranças avulsas já geradas (backend ainda escopa por order__store). */}
+      <section className="mt-8">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold text-fg-token">Cobranças geradas</h2>
+            <p className="text-xs text-fg-muted-token">
+              O link fica guardado aqui — não se perde ao atualizar a página. O
+              pagamento aparece assim que o Mercado Pago avisa.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={carregarCobrancas}
+            disabled={carregandoLista}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border-token px-3 py-1.5 text-xs font-medium text-fg-token transition hover:bg-surface-2 disabled:opacity-60"
+          >
+            <ArrowPathIcon className={`h-4 w-4 ${carregandoLista ? 'animate-spin' : ''}`} />
+            Atualizar
+          </button>
+        </div>
+
+        {cobrancas.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-border-token px-4 py-8 text-center text-sm text-fg-muted-token">
+            {carregandoLista ? 'Carregando…' : 'Nenhuma cobrança avulsa ainda.'}
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {cobrancas.map((c) => {
+              const situacao = SITUACAO[c.status] ?? {
+                rotulo: c.status_display || c.status,
+                classe: 'bg-surface-2 text-fg-muted-token',
+              };
+              return (
+                <li
+                  key={c.id}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-border-token bg-surface px-4 py-3"
+                >
+                  <div className="min-w-40 flex-1">
+                    <p className="text-sm font-semibold text-fg-token">
+                      {formatMoney(Number(c.amount))}
+                      {c.description ? (
+                        <span className="ml-2 font-normal text-fg-muted-token">{c.description}</span>
+                      ) : null}
+                    </p>
+                    <p className="text-xs text-fg-muted-token">
+                      {formatDate(c.created_at)}
+                      {c.payer_name ? ` · ${c.payer_name}` : ''}
+                      {c.paid_at ? ` · pago em ${formatDate(c.paid_at)}` : ''}
+                    </p>
+                  </div>
+
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${situacao.classe}`}>
+                    {situacao.rotulo}
+                  </span>
+
+                  {c.payment_url && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(c.payment_url!)}
+                        className="rounded-full border border-border-token px-3 py-1.5 text-xs font-medium text-fg-token transition hover:bg-surface-2"
+                      >
+                        Copiar link
+                      </button>
+                      <a
+                        href={c.payment_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-border-token px-3 py-1.5 text-xs font-medium text-fg-token transition hover:bg-surface-2"
+                      >
+                        Abrir
+                      </a>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 };

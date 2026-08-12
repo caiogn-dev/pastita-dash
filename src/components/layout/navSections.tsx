@@ -7,6 +7,13 @@ import {
   ClockIcon, PresentationChartLineIcon, SparklesIcon, RectangleGroupIcon,
   QrCodeIcon, GiftIcon, LinkIcon, TrophyIcon,
   BeakerIcon,
+  // Um ícone por destino. Antes CreditCardIcon aparecia em três itens,
+  // ClockIcon em três e TagIcon em dois: com o mesmo desenho repetido o
+  // operador para de usar o ícone para se localizar e lê tudo de novo.
+  ClipboardDocumentListIcon, PrinterIcon, BanknotesIcon, FireIcon, CubeIcon,
+  TicketIcon, GlobeAltIcon, ChartBarIcon, CalendarDaysIcon, ShareIcon,
+  UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
+  ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -24,7 +31,19 @@ export interface NavSection {
   items: NavItem[];
   href?: string;
   badge?: string;
+  /**
+   * Bloco a que a seção pertence ("Operação", "Catálogo", …).
+   *
+   * Onze seções numa lista corrida obrigam a ler tudo para achar uma. O bloco
+   * responde antes: "isso é coisa de hoje, de catálogo, de crescer ou de
+   * ajuste?" — e o operador só varre o pedaço certo.
+   */
+  grupo?: GrupoDoMenu;
 }
+
+/** A ordem aqui é a ordem dos blocos na coluna. */
+export const GRUPOS = ['Operação', 'Catálogo', 'Crescimento', 'Ajustes'] as const;
+export type GrupoDoMenu = typeof GRUPOS[number];
 
 /** Elo da trilha de navegação. Sem `href` = página atual. */
 export interface TrilhaElo {
@@ -80,96 +99,121 @@ export interface BuildNavSectionsOpts {
  * intentionally NOT here — they live in the avatar menu (AccountMenu.tsx).
  */
 export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: BuildNavSectionsOpts): NavSection[] {
-  // Campanhas (marketing) é feature avançada: fica sob o mesmo gate da Automação
-  // pra manter o navbar focado na operação (pedidos/cardápio/chat). Reversível.
-  const campanhas: NavSection = {
-    label: 'Campanhas',
+  // Marketing e Automação são features avançadas: ficam sob o mesmo gate para
+  // manter a coluna focada em operação (pedidos/cardápio/atendimento).
+  const marketing: NavSection = {
+    grupo: 'Crescimento',
+    label: 'Marketing',
     icon: MegaphoneIcon,
     items: [
-      { name: 'WhatsApp',  href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
-      { name: 'Templates', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-      { name: 'Email',     href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
+      { name: 'Campanha WhatsApp',   href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
+      { name: 'Campanha por e-mail', href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
+      // Recuperadas: existiam no código e não tinham caminho nenhum no menu.
+      { name: 'E-mails automáticos', href: '/marketing/automations',        icon: ArrowPathRoundedSquareIcon },
+      { name: 'Modelos de mensagem', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
+      { name: 'Assinantes',          href: '/marketing/subscribers',        icon: UsersIcon },
     ],
   };
 
   const automacao: NavSection = {
+    grupo: 'Crescimento',
     label: 'Automação',
     icon: SparklesIcon,
     items: [
-      { name: 'Agentes IA',   href: '/agents',               icon: CpuChipIcon, badge: 'Beta', sectionHeader: 'Principal' },
-      { name: 'Automações',   href: '/automation/companies', icon: BoltIcon },
-      { name: 'Agendamentos', href: '/automation/scheduled', icon: ClockIcon },
-      { name: 'Handover',     href: '/whatsapp/handover',    icon: UserGroupIcon },
-      { name: 'Insights (IA)', href: '/automation/conversation-insights', icon: ChatBubbleLeftRightIcon },
-      { name: 'Logs IA',      href: '/automation/logs',         icon: DocumentChartBarIcon, sectionHeader: 'Monitoramento' },
-      { name: 'Intenções',    href: '/automation/intents/stats', icon: DocumentChartBarIcon },
-      { name: 'Sessões',      href: '/automation/sessions',      icon: ChatBubbleLeftRightIcon },
+      { name: 'Agentes de IA',        href: '/agents',               icon: CpuChipIcon, badge: 'Beta' },
+      { name: 'Respostas automáticas', href: '/automation/companies', icon: BoltIcon },
+      { name: 'Fluxos do agente',     href: '/automation/flows',     icon: ShareIcon },
+      { name: 'Agendamentos',         href: '/automation/scheduled', icon: CalendarDaysIcon },
+      { name: 'Logs da IA',   href: '/automation/logs',         icon: DocumentChartBarIcon, sectionHeader: 'Monitoramento' },
+      { name: 'Intenções',    href: '/automation/intents/stats', icon: SignalIcon },
     ],
   };
 
   return [
-    { label: 'Início', icon: HomeIcon, href: '/', items: [] },
-
+    // ── Operação: o que se toca durante o expediente ──────────────────────
+    { grupo: 'Operação', label: 'Início', icon: HomeIcon, href: '/', items: [] },
     {
-      // Só o histórico. A operação ao vivo saiu do menu: mora no botão
-      // "Central de Pedidos" da barra do topo, que abre em aba própria e fica
-      // ligada o expediente inteiro.
-      //
-      // Repetir a Central aqui daria dois caminhos para a mesma tela com
-      // comportamentos diferentes — um navega, o outro troca de aba —, e é
-      // esse tipo de inconsistência que faz o operador desconfiar do clique.
-      //
-      // Vira link direto: seção de acordeão com um filho só custa um clique
-      // para revelar o que já cabia na linha.
-      label: 'Histórico',
-      icon: ClockIcon,
+      // Só o histórico. A operação ao vivo mora no botão "Central de Pedidos"
+      // da barra do topo, que abre em aba própria e fica ligada o expediente
+      // inteiro; repetir aqui daria dois caminhos com comportamentos
+      // diferentes para a mesma tela.
+      grupo: 'Operação',
+      label: 'Pedidos',
+      icon: ClipboardDocumentListIcon,
       href: storeHref('orders/historico'),
       items: [],
     },
     {
-      label: 'Chat',
+      // Atendimento era um item solto ("Chat") enquanto fila humana, sessões e
+      // insights viviam espalhados dentro de Automação — três telas sobre a
+      // MESMA conversa em dois lugares distantes.
+      grupo: 'Operação',
+      label: 'Atendimento',
       icon: ChatBubbleLeftRightIcon,
-      href: '/inbox/whatsapp',
       badge: unreadBadge,
-      items: [],
-    },
-    {
-      label: 'PDV',
-      icon: CreditCardIcon,
       items: [
-        { name: 'Balcão (Scanner)',   href: storeHref('pdv'),      icon: QrCodeIcon },
-        { name: 'Etiquetas',          href: storeHref('etiquetas'), icon: TagIcon },
-        { name: 'Caixa',              href: storeHref('cash'),     icon: CreditCardIcon },
-        { name: 'Link de pagamento',  href: '/payments/link',      icon: CreditCardIcon },
-        { name: 'Modo Cozinha (KDS)', href: storeHref('kds'),      icon: ClockIcon },
-        { name: 'Impressão',          href: storeHref('printing'), icon: DocumentTextIcon },
+        { name: 'Conversas',    href: '/inbox/whatsapp',                     icon: ChatBubbleLeftRightIcon },
+        { name: 'Fila humana',  href: '/whatsapp/handover',                  icon: HandRaisedIcon },
+        { name: 'Sessões',      href: '/automation/sessions',                icon: RectangleStackIcon },
+        { name: 'Insights',     href: '/automation/conversation-insights',   icon: LightBulbIcon },
       ],
     },
-    { label: 'Clientes', icon: UserGroupIcon, href: storeHref('customers'), items: [] },
     {
+      // "PDV" carregava etiqueta, impressora e KDS junto com a venda. Aqui
+      // fica só o dinheiro entrando no balcão.
+      grupo: 'Operação',
+      label: 'Balcão',
+      icon: QrCodeIcon,
+      items: [
+        { name: 'Venda no balcão',   href: storeHref('pdv'),  icon: QrCodeIcon },
+        { name: 'Caixa',             href: storeHref('cash'), icon: BanknotesIcon },
+        { name: 'Link de pagamento', href: '/payments/link',  icon: LinkIcon },
+        { name: 'Cozinha (KDS)',     href: storeHref('kds'),  icon: FireIcon },
+      ],
+    },
+
+    // ── Catálogo: o que a loja vende e o que sai impresso ────────────────
+    {
+      grupo: 'Catálogo',
       label: 'Cardápio',
       icon: Squares2X2Icon,
       items: [
-        { name: 'Produtos', href: storeHref('products'), icon: Squares2X2Icon },
-        { name: 'Ingredientes e TACO', href: storeHref('ingredientes'), icon: BeakerIcon },
-        { name: 'Combos',   href: storeHref('combos'),   icon: RectangleGroupIcon },
-        { name: 'Cupons',   href: storeHref('coupons'),  icon: TagIcon },
-        { name: 'Fidelidade', href: storeHref('fidelidade'), icon: GiftIcon },
-        { name: 'Link na Bio', href: storeHref('link-bio'), icon: LinkIcon },
+        { name: 'Produtos',    href: storeHref('products'), icon: CubeIcon },
+        { name: 'Combos',      href: storeHref('combos'),   icon: RectangleGroupIcon },
+        { name: 'Cupons',      href: storeHref('coupons'),  icon: TicketIcon },
+        { name: 'Fidelidade',  href: storeHref('fidelidade'), icon: GiftIcon },
+        { name: 'Link na Bio', href: storeHref('link-bio'), icon: GlobeAltIcon },
       ],
     },
     {
+      // A bancada: o dado nutricional alimenta a etiqueta, que sai na
+      // impressora. Estavam em três lugares diferentes do menu.
+      grupo: 'Catálogo',
+      label: 'Etiquetas',
+      icon: TagIcon,
+      items: [
+        { name: 'Ingredientes e TACO', href: storeHref('ingredientes'), icon: BeakerIcon },
+        { name: 'Imprimir etiquetas',  href: storeHref('etiquetas'),    icon: TagIcon },
+        { name: 'Impressoras',         href: storeHref('printing'),     icon: PrinterIcon },
+      ],
+    },
+
+    // ── Crescimento: o que faz voltar e o que mede ───────────────────────
+    { grupo: 'Crescimento', label: 'Clientes', icon: UserGroupIcon, href: storeHref('customers'), items: [] },
+    {
+      grupo: 'Crescimento',
       label: 'Relatórios',
       icon: PresentationChartLineIcon,
       items: [
-        { name: 'Visão geral', href: '/analytics', icon: PresentationChartLineIcon },
-        { name: 'Metas e Conquistas', href: '/conquistas', icon: TrophyIcon },
+        { name: 'Visão geral',        href: '/analytics',   icon: ChartBarIcon },
+        { name: 'Metas e Conquistas', href: '/conquistas',  icon: TrophyIcon },
       ],
     },
+    ...(automationEnabled ? [marketing, automacao] : []),
 
-    ...(automationEnabled ? [campanhas, automacao] : []),
-
+    // ── Ajustes ──────────────────────────────────────────────────────────
     {
+      grupo: 'Ajustes',
       label: 'Configurações',
       icon: Cog6ToothIcon,
       items: [
@@ -177,6 +221,10 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
         { name: 'Entrega',    href: storeHref('delivery'),   icon: ShoppingCartIcon },
         { name: 'Storefront', href: storeHref('storefront'), icon: BuildingStorefrontIcon },
         { name: 'Pagamentos', href: storeHref('payments'),   icon: CreditCardIcon },
+        // Recuperadas: diagnósticos que existiam sem rota — quando o WhatsApp
+        // cai, é aqui que se olha em vez de abrir o log do servidor.
+        { name: 'Diagnóstico do WhatsApp', href: '/whatsapp/diagnostics', icon: WrenchScrewdriverIcon, sectionHeader: 'Quando algo falha' },
+        { name: 'Diagnóstico do chat',     href: '/whatsapp/debug',       icon: ClockIcon },
       ],
     },
   ];
