@@ -14,6 +14,7 @@ import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
 import { getErrorMessage } from '../../services';
 import { conversationsService } from '../../services/conversations';
 import * as whatsappService from '../../services/whatsapp';
+import { interpretar, sugestoes } from './comandos';
 import { handoverService } from '../../services/handover';
 import { useWhatsAppWsContext } from '../../context/WhatsAppWsContext';
 import { useChatStore } from '../../stores/chatStore';
@@ -330,6 +331,25 @@ const WhatsAppInboxPage: React.FC = () => {
     e.preventDefault();
     if (!messageText.trim() || !selectedConversation) return;
     if (sendLockRef.current) return;
+
+    // Barra no início NUNCA vira mensagem para o cliente. O risco real não é o
+    // comando falhar — é a dona digitar `/pixx`, o sistema não reconhecer, e a
+    // CLIENTE receber "/pixx" no WhatsApp.
+    const comando = interpretar(messageText);
+    if (comando) {
+      if (!comando.conhecido) {
+        toast.error(
+          comando.sugestao
+            ? `Não conheço /${comando.nome}. Quis dizer /${comando.sugestao}?`
+            : `Não conheço /${comando.nome}. Digite / para ver os atalhos.`,
+        );
+        return;
+      }
+      // Execução dos comandos ainda não está ligada — melhor avisar do que
+      // fingir que agiu, e MUITO melhor do que mandar o texto para a cliente.
+      toast(`/${comando.nome} ainda não está ligado — em breve.`, { icon: '🚧' });
+      return;
+    }
 
     sendLockRef.current = true;
     setSending(true);
@@ -737,11 +757,33 @@ const WhatsAppInboxPage: React.FC = () => {
               )}
             </div>
 
+            {/* Paleta de atalhos — aparece ao digitar "/" no começo.
+                Mostrar a descrição junto do nome é o que separa atalho de
+                adivinhação: quem usa uma vez por semana não decora. */}
+            {sugestoes(messageText).length > 0 && (
+              <div className="paleta-comandos" role="listbox" aria-label="Atalhos">
+                {sugestoes(messageText).map(c => (
+                  <button
+                    key={c.nome}
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    className="paleta-item"
+                    onClick={() => setMessageText(`/${c.nome} `)}
+                  >
+                    <code>/{c.nome}</code>
+                    <span>{c.descricao}</span>
+                    {c.confirmar && <em title="pede confirmação">⚠️</em>}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Input Area */}
             <form onSubmit={handleSendMessage} className="input-area">
               <input
                 type="text"
-                placeholder="Digite uma mensagem..."
+                placeholder="Digite uma mensagem ou / para atalhos..."
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 disabled={sending}

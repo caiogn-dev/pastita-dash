@@ -1486,3 +1486,44 @@ select.item-name {
 
 /* Dark mode: sem overrides locais — os tokens em src/styles/tokens.css
    trocam de valor dentro de .dark, então todas as regras acima já respondem. */
+
+/* Paleta de atalhos "/" — flutua acima do campo, sem empurrar a conversa.
+   Empurrar faria a última mensagem sair da vista justamente quando o operador
+   está agindo sobre ela. */
+.paleta-comandos {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-token, #e5e7eb);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+}
+.paleta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+}
+.paleta-item:hover,
+.paleta-item:focus-visible {
+  background: var(--bg-hover, #f4f4f5);
+}
+.paleta-item code {
+  font-weight: 700;
+  min-width: 82px;
+}
+.paleta-item span {
+  color: var(--fg-muted-token, #6b7280);
+}
