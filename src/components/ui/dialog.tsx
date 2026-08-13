@@ -4,8 +4,8 @@
 import React, {
   createContext,
   useContext,
-  useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useState,
 } from 'react';
@@ -120,7 +120,14 @@ export const DialogTitle: React.FC<DialogTitleProps> = ({
   // Usa o `id` explícito do consumidor, senão o id gerado pelo Dialog.
   const effectiveId = id ?? titleContext?.titleId;
 
-  useEffect(() => {
+  // useLayoutEffect (não useEffect): o registro faz `setState` no Dialog, que
+  // aplica o `aria-labelledby` num segundo render. O `Modal` move o foco pra
+  // dentro do painel a partir de um efeito PASSIVO (modal.tsx). Se o registro
+  // fosse passivo também, o foco chegaria ao diálogo AINDA sem nome no primeiro
+  // render, e leitores de tela que anunciam no foco não repetiriam depois da
+  // mutação tardia do atributo. Um efeito de layout roda síncrono antes do
+  // paint e força o re-render do nome ANTES de o efeito passivo do foco disparar.
+  useLayoutEffect(() => {
     if (!titleContext || !effectiveId) return;
     titleContext.registerTitle(effectiveId);
     return () => titleContext.unregisterTitle(effectiveId);
