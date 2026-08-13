@@ -3,17 +3,54 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-13)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test`: **1013 testes / 195 suítes verdes** (era 1009/194; +4/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~18s).
+- `npm run lint`: gate em 400 warnings; **277 warnings** restantes (0 errors).
 
 ## Histórico
+
+### 2026-08-13 — A11y: `DialogTitle` nomeia o `Dialog` automaticamente (caminho composto)
+- **Medido:** fatia aberta desde 2026-08-06 no backlog. O caminho **composto** de
+  `src/components/ui/dialog.tsx` (`<Dialog>` + `<DialogTitle>`) exigia que o
+  consumidor passasse `ariaLabelledby` à mão para nomear o diálogo — e ninguém
+  passava. `WhatsAppAuthDialog.tsx` (login por WhatsApp) montava
+  `<Dialog><DialogContent><DialogHeader><DialogTitle>Login com WhatsApp</DialogTitle>`
+  e o `role="dialog"` saía **sem nome acessível**: leitores de tela anunciavam só
+  "diálogo" (viola a ARIA Dialog Pattern / WCAG 4.1.2). O `Modal` de baixo já
+  sabia resolver `aria-labelledby`; faltava o `DialogTitle` se ligar a ele.
+- **Mudado (`dialog.tsx`, aditivo e retrocompatível):**
+  - Novo `DialogTitleContext`: o `Dialog` gera um `id` (via `useId`) e expõe
+    `registerTitle`/`unregisterTitle`. O `DialogTitle` renderiza seu `<h2>` com
+    esse id e se **auto-registra** (efeito com cleanup no desmonte). O `Dialog`
+    passa `aria-labelledby` para o título registrado — sem o consumidor tocar em
+    nada.
+  - **Precedência:** `ariaLabelledby` explícito no `Dialog` → título
+    auto-registrado → `ariaLabel` (resolvido pelo `Modal`). Um `id` próprio no
+    `DialogTitle` é preservado e ainda nomeia o diálogo.
+  - Import mudou para hooks nomeados (`createContext`, `useContext`, `useEffect`,
+    `useId`, `useMemo`, `useState`) — o default `React` é `undefined` em runtime
+    no Jest sem `esModuleInterop`, então `React.createContext` quebrava a suíte.
+  - **Beneficiário direto sem mudar 1 linha nele:** `WhatsAppAuthDialog.tsx`
+    passa a ter nome acessível ("Login com WhatsApp") de graça.
+- **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — escrita **vermelha antes**
+  (2/4 falhando: os casos de auto-wire), **verde depois** (4/4). Cobre: nome via
+  `DialogTitle` sem config extra, precedência do `ariaLabelledby` explícito,
+  fallback para `ariaLabel` sem título, e preservação de `id` próprio.
+- **Antes/depois:** `npm test` 1009/194 → **1013/195**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Zero mudança visual/comportamental — só
+  atributos de acessibilidade adicionados. Risco baixo.
+- **Próximo passo priorizado:** (1) **Segurança/deps:** planejar o major bump de
+  `react-router` 6→7 (open redirect via backslash) como fatia dedicada com
+  validação de build/roteamento. (2) **A11y:** varrer `<Dialog>`/`Modal` sem
+  título nem `ariaLabel` (diálogos ainda mudos) e nomeá-los. (3) **Bundles:**
+  `vendor-charts` (~375kB) e `EtiquetasPage` (~115kB) são candidatos a
+  code-splitting/lazy.
+
+### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
