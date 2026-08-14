@@ -15,6 +15,9 @@ jest.mock('../../../services', () => ({
     getPayments: (...a: unknown[]) => mockGetPayments(...a),
   },
   getErrorMessage: (e: unknown) => String(e),
+  // A página passou a listar os pedidos em aberto para permitir vincular a
+  // cobrança a um deles. Sem pedido, o pagamento entra como dinheiro sem venda.
+  ordersService: { getOrders: jest.fn().mockResolvedValue({ results: [] }) },
 }));
 
 jest.mock('../../../hooks', () => ({

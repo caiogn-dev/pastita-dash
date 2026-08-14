@@ -20,6 +20,8 @@ import toast from 'react-hot-toast';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { paymentsService, getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
+import { ordersService } from '../../services';
+import type { Order } from '../../types';
 
 interface GeneratedLink {
   payment_url?: string;
@@ -73,6 +75,8 @@ export const PaymentLinkPage: React.FC = () => {
   const [payerName, setPayerName] = useState('');
   const [payerEmail, setPayerEmail] = useState('');
   const [payerDocument, setPayerDocument] = useState('');
+  const [pedidoId, setPedidoId] = useState('');
+  const [pedidos, setPedidos] = useState<Order[]>([]);
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState<GeneratedLink | null>(null);
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
@@ -98,6 +102,31 @@ export const PaymentLinkPage: React.FC = () => {
 
   useEffect(() => { carregarCobrancas(); }, [carregarCobrancas]);
 
+  // Pedidos ainda não pagos desta loja — são os únicos que faz sentido cobrar.
+  useEffect(() => {
+    if (!storeId) return;
+    ordersService
+      .getOrders({ store_slug: storeId, payment_status: 'pending', page_size: 50 })
+      .then((r) => setPedidos(r.results))
+      .catch(() => setPedidos([]));
+  }, [storeId]);
+
+  /**
+   * Escolher o pedido preenche o valor e a descrição.
+   *
+   * A cobrança tem que bater com o pedido: gerar link de R$ 50 para um pedido
+   * de R$ 142 deixa a venda paga pela metade e ninguém percebe até fechar o
+   * caixa.
+   */
+  const escolherPedido = (id: string) => {
+    setPedidoId(id);
+    const p = pedidos.find((o) => String(o.id) === id);
+    if (!p) return;
+    setAmount(String(p.total ?? ''));
+    if (!description.trim()) setDescription(`Pedido ${p.order_number}`);
+    if (!payerName.trim() && p.customer_name) setPayerName(p.customer_name);
+  };
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!storeId) {
@@ -114,6 +143,7 @@ export const PaymentLinkPage: React.FC = () => {
       const { payment } = await paymentsService.createPaymentLink({
         store: storeId,
         amount: parsed,
+        ...(pedidoId ? { order: pedidoId } : {}),
         ...(description.trim() ? { description: description.trim() } : {}),
         ...(payerName.trim() ? { payer_name: payerName.trim() } : {}),
         ...(payerEmail.trim() ? { payer_email: payerEmail.trim() } : {}),
@@ -162,6 +192,32 @@ export const PaymentLinkPage: React.FC = () => {
       )}
 
       <form onSubmit={handleGenerate} className="space-y-4 rounded-2xl border border-border-token bg-surface p-5">
+        {/* Vem ANTES do valor porque é ele que preenche o valor. Sem vínculo, o
+            pagamento entra como cobrança solta: o dinheiro aparece, a venda
+            não. Foi assim que 2 cobranças pagas de R$ 249,01 ficaram fora do
+            faturamento. */}
+        <div>
+          <label htmlFor="pl-order" className="block text-sm font-medium text-fg-token">
+            Pedido <span className="font-normal text-fg-muted-token">(opcional)</span>
+          </label>
+          <select
+            id="pl-order"
+            value={pedidoId}
+            onChange={(e) => escolherPedido(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-border-token bg-surface-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
+          >
+            <option value="">Cobrança avulsa — sem pedido</option>
+            {pedidos.map((p) => (
+              <option key={String(p.id)} value={String(p.id)}>
+                {p.order_number} — {p.customer_name || 'Sem nome'} — R$ {p.total}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-fg-muted-token">
+            Vinculado a um pedido, o pagamento conta como venda daquele pedido.
+          </p>
+        </div>
+
         <div>
           <label htmlFor="pl-amount" className="block text-sm font-medium text-fg-token">
             Valor (R$)

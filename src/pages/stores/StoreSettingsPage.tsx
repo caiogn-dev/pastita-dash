@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import {
   BuildingStorefrontIcon,
   BanknotesIcon,
+  DocumentTextIcon,
   MapPinIcon,
   TruckIcon,
   CurrencyDollarIcon,
@@ -24,6 +25,7 @@ import { useStore } from '../../hooks';
 import logger from '../../services/logger';
 import { Card, Button, StatCard, PageShell, PageTabs } from '../../components/ui';
 import RecebimentoSection from './RecebimentoSection';
+import NotaFiscalSection from './NotaFiscalSection';
 
 interface DeliveryConfig {
   delivery_base_fee: number;
@@ -378,6 +380,7 @@ export const StoreSettingsPage: React.FC = () => {
           { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon },
           { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon },
           { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon },
+          { id: 'fiscal', rotulo: 'Nota fiscal', icone: DocumentTextIcon },
         ]}
       >
         {(aba) => (
@@ -766,6 +769,10 @@ export const StoreSettingsPage: React.FC = () => {
                   (store as unknown as { usa_gateway_da_plataforma?: boolean }).usa_gateway_da_plataforma,
                 )}
               />
+            )}
+
+            {aba === 'fiscal' && store?.id && (
+              <NotaFiscalSection storeId={store.id} />
             )}
 
             {aba === 'avaliacoes' && (

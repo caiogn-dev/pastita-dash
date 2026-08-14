@@ -198,3 +198,71 @@ describe('ProductFormModal', () => {
     expect(screen.queryByTestId('modal')).not.toBeInTheDocument();
   });
 });
+
+describe('promoção semanal', () => {
+  /**
+   * Caso do dono: "quarta é quarta da almôndega", "30,75 é o preço da quarta...
+   * e tem outras, é um dia da semana para cada salada".
+   *
+   * Os campos existiam no model e no cálculo de preço desde 14/ago e não
+   * apareciam em tela nenhuma — recurso pronto, desligado e silencioso, igual
+   * ao classificador que nunca foi injetado.
+   *
+   * O aviso de preço maior importa mais do que parece: promoção cadastrada
+   * ACIMA do preço normal é ignorada pelo backend, de propósito, para cadastro
+   * errado não aumentar o preço do cliente. Sem o aviso a dona cadastra, não vê
+   * efeito nenhum e conclui que a função está quebrada.
+   */
+  /** Abre o modal já na aba de Preços, que é onde a promoção mora. */
+  const abrir = (produto = flat[0]) => {
+    const r = render(
+      <ProductFormModal
+        isOpen
+        product={produto}
+        categories={[]}
+        flatProducts={flat}
+        onClose={jest.fn()}
+        onSaved={jest.fn()}
+        storeId="store1"
+      />
+    );
+    fireEvent.click(screen.getByText('Preços'));
+    return r;
+  };
+
+  it('oferece preço do dia e dia da semana', () => {
+    abrir();
+
+    expect(screen.getByLabelText(/preço no dia/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/dia da semana/i)).toBeInTheDocument();
+  });
+
+  it('tem os sete dias mais "sem promoção"', () => {
+    abrir();
+
+    expect(screen.getByLabelText(/dia da semana/i).querySelectorAll('option')).toHaveLength(8);
+  });
+
+  it('avisa quando falta o dia — sem dia a promoção não vale nunca', () => {
+    abrir();
+
+    fireEvent.change(screen.getByLabelText(/preço no dia/i), { target: { value: '30.75' } });
+
+    expect(screen.getByText(/não vale nunca/i)).toBeInTheDocument();
+  });
+
+  it('avisa quando o preço da promo não é menor — o backend ignora', () => {
+    abrir();
+
+    fireEvent.change(screen.getByLabelText(/preço no dia/i), { target: { value: '9999' } });
+
+    expect(screen.getByText(/precisa ser menor/i)).toBeInTheDocument();
+  });
+
+  it('produto sem promoção não mostra aviso nenhum', () => {
+    abrir();
+
+    expect(screen.queryByText(/não vale nunca/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/precisa ser menor/i)).not.toBeInTheDocument();
+  });
+});

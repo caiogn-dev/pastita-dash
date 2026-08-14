@@ -11,6 +11,36 @@ export interface RecalculoFidelidade {
 }
 
 /**
+ * Estado fiscal do pedido. `status: null` = ainda não emitiu — resposta
+ * legítima, não erro: o painel pergunta isso de todo pedido.
+ */
+export interface NotaFiscal {
+  id: string | null;
+  status: 'pending' | 'authorized' | 'rejected' | 'cancelled' | 'error' | null;
+  /** 65 = NFC-e (consumidor final); 55 = NF-e (venda a empresa). */
+  modelo: '65' | '55' | null;
+  provider?: string;
+  chave_acesso?: string;
+  numero?: string;
+  serie?: string;
+  qrcode_url?: string;
+  danfe_url?: string;
+  xml_url?: string;
+  error_message?: string;
+  created_at?: string;
+}
+
+/**
+ * `GET /orders/{id}/nfce/`. Um pedido pode ter NFC-e e NF-e ao mesmo tempo —
+ * são documentos diferentes, não versões da mesma nota.
+ */
+export interface EstadoFiscalDoPedido {
+  /** Loja com emissão configurada e ligada. Falso = não mostrar nada. */
+  habilitado: boolean;
+  documentos: NotaFiscal[];
+}
+
+/**
  * Orders Service - API V2
  * 
  * ATUALIZADO: Endpoint migrado de /commerce/ para /stores/ (2026-03-04)
@@ -133,6 +163,40 @@ export const ordersService = {
   ): Promise<RecalculoFidelidade> => {
     const response = await api.post<RecalculoFidelidade>(
       `${getBaseUrl(storeSlug)}/${id}/recalcular-fidelidade/`,
+    );
+    return response.data;
+  },
+
+  /**
+   * NFC-e do pedido. A emissão é manual: nota sai por decisão do operador,
+   * nunca sozinha — nota errada só se cancela em até 30 minutos.
+   */
+  consultarNfce: async (id: string, storeSlug?: string): Promise<EstadoFiscalDoPedido> => {
+    const response = await api.get<EstadoFiscalDoPedido>(`${getBaseUrl(storeSlug)}/${id}/nfce/`);
+    return response.data;
+  },
+
+  emitirNfce: async (
+    id: string,
+    opcoes: { modelo?: '65' | '55'; cpf?: string } = {},
+    storeSlug?: string,
+  ): Promise<NotaFiscal> => {
+    const response = await api.post<NotaFiscal>(`${getBaseUrl(storeSlug)}/${id}/emit_nfce/`, {
+      modelo: opcoes.modelo ?? '65',
+      ...(opcoes.cpf ? { cpf: opcoes.cpf } : {}),
+    });
+    return response.data;
+  },
+
+  cancelarNfce: async (
+    id: string,
+    justificativa: string,
+    modelo: '65' | '55' = '65',
+    storeSlug?: string,
+  ): Promise<NotaFiscal> => {
+    const response = await api.post<NotaFiscal>(
+      `${getBaseUrl(storeSlug)}/${id}/cancel_nfce/`,
+      { justificativa, modelo },
     );
     return response.data;
   },

@@ -265,6 +265,11 @@ export interface StoreProduct {
   barcode: string;
   price: number;
   compare_at_price?: number;
+  /** Promoção que se repete toda semana: preço menor válido só num dia.
+   *  O `price` NUNCA é alterado — o sistema decide na leitura. */
+  promo_price?: number | null;
+  /** 0=segunda … 6=domingo, igual a `datetime.weekday()` no backend. */
+  promo_weekday?: number | null;
   cost_price?: number;
   is_on_sale: boolean;
   discount_percentage: number;
@@ -310,6 +315,11 @@ export interface StoreProductInput {
   barcode?: string;
   price: number;
   compare_at_price?: number;
+  /** Promoção que se repete toda semana: preço menor válido só num dia.
+   *  O `price` NUNCA é alterado — o sistema decide na leitura. */
+  promo_price?: number | null;
+  /** 0=segunda … 6=domingo, igual a `datetime.weekday()` no backend. */
+  promo_weekday?: number | null;
   cost_price?: number;
   track_stock?: boolean;
   stock_quantity?: number;
@@ -601,6 +611,43 @@ export const updateStoreMetaTracking = async (
   data: Partial<StoreMetaTracking>,
 ): Promise<StoreMetaTracking> => {
   const response = await api.patch(`${STORES_ADMIN_URL}/${id}/meta-tracking/`, data, { skipAutoLogout: true });
+  return response.data;
+};
+
+// ── Nota fiscal (NFC-e) ────────────────────────────────────────────────
+// Opt-in por loja: emitir exige CNPJ, credenciamento na SEFAZ e credencial do
+// provedor. Segredos entram por escrita e voltam só como "*_configurado".
+export interface ConfigFiscal {
+  habilitado: boolean;
+  provider: 'focus' | 'sefaz';
+  ambiente: 'homologacao' | 'producao';
+  cnpj: string;
+  inscricao_estadual: string;
+  /** UF do emitente — decide CFOP 5102 (no estado) x 6102 (interestadual) na NF-e. */
+  uf: string;
+  serie: string;
+  csosn: string;
+  ncm_padrao: string;
+  cfop_padrao: string;
+  csc_id: string;
+  focus_token_configurado: boolean;
+  csc_configurado: boolean;
+  cert_password_configurado: boolean;
+  focus_token?: string;
+  csc?: string;
+  cert_password?: string;
+}
+
+export const getConfigFiscal = async (id: string): Promise<ConfigFiscal> => {
+  const response = await api.get(`${STORES_ADMIN_URL}/${id}/fiscal-config/`, { skipAutoLogout: true });
+  return response.data;
+};
+
+export const updateConfigFiscal = async (
+  id: string,
+  data: Partial<ConfigFiscal>,
+): Promise<ConfigFiscal> => {
+  const response = await api.patch(`${STORES_ADMIN_URL}/${id}/fiscal-config/`, data, { skipAutoLogout: true });
   return response.data;
 };
 

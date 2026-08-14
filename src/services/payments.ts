@@ -113,14 +113,23 @@ export const paymentsService = {
   },
 
   /**
-   * Cria um LINK DE PAGAMENTO AVULSO (Fase 3), sem pedido vinculado.
-   * Checkout Pro do Mercado Pago (cartão/PIX/boleto). `payment.payment_url` é o link.
-   * POST /stores/payments/create_link/ → { payment, store_payment }.
-   * `store_payment.order` é null no avulso.
+   * Cria um LINK DE PAGAMENTO — avulso ou VINCULADO A UM PEDIDO.
+   *
+   * Checkout Pro do Mercado Pago (cartão/PIX/boleto). `payment.payment_url` é o
+   * link. POST /stores/payments/create_link/ → { payment, store_payment }.
+   *
+   * `order` opcional: com ele a cobrança nasce amarrada ao pedido e o
+   * pagamento aparece como venda daquele pedido. Sem ele é avulsa —
+   * `store_payment.order` fica null, e quando alguém paga o backend cria uma
+   * venda avulsa para o dinheiro não sumir do faturamento (foi assim que 2
+   * cobranças de R$ 249,01 ficaram pagas sem virar venda).
+   *
+   * O backend valida que o pedido é DESTA loja: mandar id de outra devolve 400.
    */
   createPaymentLink: async (data: {
     store: string;
     amount: number;
+    order?: string;
     description?: string;
     payer_name?: string;
     payer_email?: string;

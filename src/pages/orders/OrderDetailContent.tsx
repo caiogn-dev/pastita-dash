@@ -32,7 +32,9 @@ import toast from 'react-hot-toast';
 import { Button, Modal, PageLoading } from '../../components/common';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
+import NotaFiscalPedido from './NotaFiscalPedido';
 import { Order, Payment, OrderComboItem, ComboSelectedItem } from '../../types';
+import { AvisoEnderecoDivergente } from '../../components/orders/AvisoEnderecoDivergente';
 
 // Linhas de seleção de combo (ex.: "Escolha sua salada: 1x Tilápia Suprema")
 // a partir do snapshot salvo no pedido (display_data.groups ou selected_variants_data).
@@ -1149,6 +1151,10 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Só renderiza em loja com emissão configurada — o componente
+                se esconde sozinho quando a loja não emite. */}
+            <NotaFiscalPedido orderId={order.id} storeSlug={store?.slug || undefined} />
           </div>
 
           <div className="rounded-xl border border-border-token bg-surface p-5 sm:p-6">

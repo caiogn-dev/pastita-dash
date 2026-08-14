@@ -248,6 +248,24 @@ export const useOrderPrint = () => {
     ` : '';
 
     const addressLines = formatAddressLines();
+
+    // Pin do mapa x endereço escrito. Vai NA COMANDA, não só na tela: é este
+    // papel que o entregador leva, e o aviso só serve se chegar antes da moto
+    // sair. Origem: CE-2608140823, pin a 5,15 km do endereço digitado — o Maps
+    // segue a coordenada, e a taxa também.
+    const divergenciaHtml = (() => {
+      const meta = pedido.metadata as Record<string, unknown> | undefined;
+      const d = meta?.endereco_divergente as
+        { digitado?: string; pin?: string } | undefined;
+      if (!d?.digitado || !d?.pin) return '';
+      return `
+        <div class="address-warning">
+          !! CONFERIR ENDERECO ANTES DE SAIR !!<br/>
+          Cliente escreveu: ${escapeHtml(d.digitado)}<br/>
+          Pin do mapa cai em: ${escapeHtml(d.pin)}
+        </div>
+      `;
+    })();
     const scheduledLabel = [pedido.scheduled_date, pedido.scheduled_time]
       .filter(Boolean)
       .join(' ');
@@ -390,6 +408,18 @@ export const useOrderPrint = () => {
             font-size: 9px;
             text-transform: uppercase;
             margin-bottom: 3px;
+          }
+          /* Comanda térmica é preto e branco: o destaque tem que ser borda e
+             peso, não cor. Sem isto o aviso vira mais uma linha no meio do
+             endereço e ninguém para para ler. */
+          .address-warning {
+            margin-top: 4px;
+            padding: 4px;
+            border: 2px solid #000;
+            font-weight: 900;
+            font-size: 10px;
+            text-transform: uppercase;
+            line-height: 1.35;
           }
           
           /* ===== ITEMS ===== */
@@ -636,6 +666,7 @@ export const useOrderPrint = () => {
             <div class="customer-address">
               <div class="address-label">ENDERECO DE ENTREGA</div>
               ${addressLines.map((line) => `<div>${escapeHtml(line)}</div>`).join('')}
+              ${divergenciaHtml}
             </div>
           ` : ''}
         </div>

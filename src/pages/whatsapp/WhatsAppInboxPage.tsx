@@ -19,6 +19,7 @@ import { handoverService } from '../../services/handover';
 import { useWhatsAppWsContext } from '../../context/WhatsAppWsContext';
 import { useChatStore } from '../../stores/chatStore';
 import { useStore } from '../../hooks/useStore';
+import { useConfirm } from '../../hooks/useConfirm';
 import { useRootStore } from '../../stores/rootStore';
 import { MessageBubble, MessageBubbleProps } from '../../components/chat/MessageBubble';
 import { MediaViewer } from '../../components/chat/MediaViewer';
@@ -115,6 +116,9 @@ const PAGE_SIZE = 30;
 const WhatsAppInboxPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { storeId, storeSlug, storeName, store } = useStore();
+  // Confirmação de comando destrutivo (/cancelar, /entregue) pelo modal do
+  // design system — o confirm() nativo é proibido por teste neste repo.
+  const [ConfirmDialog, confirm] = useConfirm();
   const lojasDoUsuario = useRootStore((s) => s.stores);
   // Com uma loja só, a tag em toda linha vira ruído.
   const mostrarLojaNaConversa = lojasDoUsuario.length > 1;
@@ -345,9 +349,51 @@ const WhatsAppInboxPage: React.FC = () => {
         );
         return;
       }
-      // Execução dos comandos ainda não está ligada — melhor avisar do que
-      // fingir que agiu, e MUITO melhor do que mandar o texto para a cliente.
-      toast(`/${comando.nome} ainda não está ligado — em breve.`, { icon: '🚧' });
+      // Destrutivo pede confirmação explícita: `/cancelar` por engano de
+      // digitação vira venda perdida, e não dá pra desfazer. Pelo ConfirmModal
+      // do design system, não pelo confirm() nativo — tem teste no repo
+      // proibindo o nativo, que não tem tema, contexto nem estado de carga.
+      if (comando.precisaConfirmar) {
+        const ok = await confirm({
+          title: `Confirmar /${comando.nome}`,
+          message: `Executar /${comando.nome} no pedido desta cliente? Não dá para desfazer.`,
+        });
+        if (!ok) return;
+      }
+
+      try {
+        const { data } = await whatsappService.executarComando({
+          texto: messageText,
+          conversation_id: selectedConversation.id,
+          confirmado: comando.precisaConfirmar,
+        });
+
+        if (!data.ok) {
+          toast.error(data.texto || `Não consegui executar /${comando.nome}.`);
+          return;
+        }
+
+        // Só `/pix` fala com a cliente. O envio sai pelo MESMO caminho das
+        // mensagens normais — abrir um segundo caminho criaria duas formas de
+        // a mesma mensagem sair, que foi o defeito das duas notificações.
+        if (data.enviar_ao_cliente) {
+          await whatsappService.sendMessage({
+            account_id: selectedConversation.account,
+            to: selectedConversation.phone_number,
+            text: data.texto,
+            metadata: {
+              client_request_id: crypto.randomUUID(),
+              source: 'whatsapp_inbox_comando',
+            },
+          });
+          void loadMessages(selectedConversation.id);
+        }
+
+        toast.success(data.texto);
+        setMessageText('');
+      } catch (error: unknown) {
+        toast.error(getErrorMessage(error) || `Falha ao executar /${comando.nome}.`);
+      }
       return;
     }
 
@@ -538,6 +584,7 @@ const WhatsAppInboxPage: React.FC = () => {
 
   return (
     <div className="whatsapp-inbox">
+      {ConfirmDialog}
       {/* Conversations List */}
       <div className="conversations-panel">
         <div className="conversations-header">

@@ -222,3 +222,16 @@ export default {
   sendDocument,
   sendFile,
 };
+
+/**
+ * Executa um atalho "/" do inbox.
+ *
+ * O comando é reinterpretado no servidor de propósito: o cliente HTTP não é
+ * fonte confiável para decidir se `/cancelar` precisa de confirmação, e essa
+ * decisão cancela vendas.
+ */
+export const executarComando = (data: {
+  texto: string;
+  conversation_id: string;
+  confirmado?: boolean;
+}) => api.post('/whatsapp/comandos/executar/', data);

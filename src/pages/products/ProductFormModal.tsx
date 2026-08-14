@@ -120,6 +120,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     barcode: '',
     price: 0,
     compare_at_price: undefined,
+    promo_price: undefined,
+    promo_weekday: undefined,
     cost_price: undefined,
     category: null,
     product_type: null,
@@ -151,6 +153,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         barcode: p.barcode || '',
         price: p.price || 0,
         compare_at_price: p.compare_at_price,
+        promo_price: p.promo_price ?? undefined,
+        promo_weekday: p.promo_weekday ?? undefined,
         cost_price: p.cost_price,
         category: p.category ?? null,
         product_type: p.product_type ?? null,
@@ -790,6 +794,83 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     />
                   </div>
                   <p className="text-xs text-fg-muted-token mt-1">Para mostrar desconto</p>
+                </div>
+
+                {/* Promoção que se repete toda semana — "quarta da almôndega".
+                    O preço normal NUNCA é alterado: o sistema decide na hora de
+                    mostrar. Foi de propósito: uma tarefa que troca o preço na
+                    quarta e devolve na quinta deixa o preço errado para sempre
+                    se falhar, e foi assim que a Almôndega ficou a R$ 42,99 por
+                    dois dias sem ninguém ver. */}
+                <div className="sm:col-span-2 rounded-lg border border-border-token bg-surface-2 p-3">
+                  <p className="text-sm font-medium text-fg-token mb-1">
+                    Promoção semanal <span className="font-normal text-fg-muted-token">(opcional)</span>
+                  </p>
+                  <p className="text-xs text-fg-muted-token mb-3">
+                    Um preço menor que vale só num dia da semana, toda semana. O
+                    preço normal continua intacto.
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-medium text-fg-token mb-1" htmlFor="promo_price">
+                        Preço no dia
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token">R$</span>
+                        <input
+                          id="promo_price"
+                          type="number"
+                          value={formData.promo_price ?? ''}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              promo_price: e.target.value ? Number(e.target.value) : undefined,
+                            }))
+                          }
+                          className="w-full pl-10 pr-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
+                          step="0.01"
+                          min="0"
+                          placeholder="30,75"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-fg-token mb-1" htmlFor="promo_weekday">
+                        Dia da semana
+                      </label>
+                      <select
+                        id="promo_weekday"
+                        value={formData.promo_weekday ?? ''}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            promo_weekday: e.target.value === '' ? undefined : Number(e.target.value),
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
+                      >
+                        <option value="">Sem promoção</option>
+                        <option value="0">Segunda-feira</option>
+                        <option value="1">Terça-feira</option>
+                        <option value="2">Quarta-feira</option>
+                        <option value="3">Quinta-feira</option>
+                        <option value="4">Sexta-feira</option>
+                        <option value="5">Sábado</option>
+                        <option value="6">Domingo</option>
+                      </select>
+                    </div>
+                  </div>
+                  {formData.promo_price != null && formData.promo_weekday == null && (
+                    <p className="mt-2 text-xs text-[var(--warning)]">
+                      Escolha o dia — sem dia, a promoção não vale nunca.
+                    </p>
+                  )}
+                  {formData.promo_price != null
+                    && formData.promo_price >= (formData.price || 0) && (
+                    <p className="mt-2 text-xs text-[var(--warning)]">
+                      O preço da promoção precisa ser menor que R$ {formData.price} — senão ela é ignorada.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-fg-token mb-1">
