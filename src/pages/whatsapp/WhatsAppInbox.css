@@ -1490,6 +1490,14 @@ select.item-name {
 /* Paleta de atalhos "/" — flutua acima do campo, sem empurrar a conversa.
    Empurrar faria a última mensagem sair da vista justamente quando o operador
    está agindo sobre ela. */
+/* A paleta ancora AQUI. Sem um ancestral posicionado, `bottom: 100%` mede a
+   partir do bloco inicial da página e joga a lista acima da viewport — ela
+   renderiza e ninguém vê. Foi o que aconteceu ao digitar "/" em 14/ago. */
+.area-de-digitacao {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .paleta-comandos {
   position: absolute;
   bottom: 100%;

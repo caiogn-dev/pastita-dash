@@ -804,6 +804,11 @@ const WhatsAppInboxPage: React.FC = () => {
               )}
             </div>
 
+            {/* A paleta é `position:absolute; bottom:100%` e precisa de um
+                ancestral POSICIONADO. Sem este contêiner ela ancorava no bloco
+                inicial da página e ia parar acima da viewport: renderizava e
+                ninguém via — foi exatamente o que aconteceu ao digitar "/". */}
+            <div className="area-de-digitacao">
             {/* Paleta de atalhos — aparece ao digitar "/" no começo.
                 Mostrar a descrição junto do nome é o que separa atalho de
                 adivinhação: quem usa uma vez por semana não decora. */}
@@ -846,6 +851,7 @@ const WhatsAppInboxPage: React.FC = () => {
                 {sending ? <span className="send-spinner" aria-hidden="true" /> : <PaperAirplaneIcon className="w-5 h-5" />}
               </button>
             </form>
+            </div>
           </>
         ) : (
           // 81% da tela ficavam pretos com uma frase de nove palavras no meio.
