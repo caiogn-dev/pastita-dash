@@ -1,6 +1,6 @@
 /** Utilitários compartilhados das seções de analytics (BI Fase 1). */
 import React from 'react';
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Card } from '../../../components/ui';
 import { toCsv, downloadCsv } from '../../../utils/csv';
 
@@ -34,14 +34,44 @@ export const Spinner: React.FC = () => (
   </div>
 );
 
+/**
+ * Aviso de falha da seção — usado quando a query da seção erra. Sem ele, a
+ * seção cairia no ramo "sem dados" e diria ao operador que não há pedidos/
+ * clientes quando na verdade a requisição falhou (número zerado enganoso).
+ */
+export const SectionError: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => (
+  <div
+    role="alert"
+    className="flex flex-col items-center gap-2 py-8 text-center"
+  >
+    <ExclamationTriangleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+    <p className="text-sm text-fg-muted-token">
+      Não foi possível carregar esta seção. Os números podem estar incompletos.
+    </p>
+    {onRetry && (
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-1 rounded-lg border border-border-token px-3 py-1.5 text-sm font-medium text-fg-token hover:bg-surface-2 transition-colors"
+      >
+        Tentar novamente
+      </button>
+    )}
+  </div>
+);
+
 export const SectionCard: React.FC<{
   title: string;
   subtitle?: string;
   loading?: boolean;
+  /** quando true, mostra aviso de falha no lugar do conteúdo (não confundir com "sem dados"). */
+  error?: boolean;
+  /** callback do botão "Tentar novamente" exibido no estado de erro. */
+  onRetry?: () => void;
   /** ação no canto do header (ex.: botão de export da seção). */
   action?: React.ReactNode;
   children: React.ReactNode;
-}> = ({ title, subtitle, loading, action, children }) => (
+}> = ({ title, subtitle, loading, error, onRetry, action, children }) => (
   <Card className="p-5">
     <div className="flex items-start justify-between gap-3 mb-4 pb-3 border-b border-border-token/60">
       <div>
@@ -50,7 +80,7 @@ export const SectionCard: React.FC<{
       </div>
       {action}
     </div>
-    {loading ? <Spinner /> : children}
+    {loading ? <Spinner /> : error ? <SectionError onRetry={onRetry} /> : children}
   </Card>
 );
 
