@@ -31,6 +31,9 @@ export const COMANDOS: MetaComando[] = [
   { nome: 'cupom', descricao: 'Aplica um cupom ao pedido', confirmar: false, exemplo: '/cupom BEMVINDO10' },
   { nome: 'nota', descricao: 'Recado interno, o cliente não vê', confirmar: false, exemplo: '/nota cliente pediu sem cebola' },
   { nome: 'bot', descricao: 'Liga ou desliga o bot nesta conversa', confirmar: false, exemplo: '/bot off' },
+  // Entrou depois do resto: o dono digitou /cardapio esperando que existisse.
+  // Atalho que a pessoa tenta sozinha é atalho que faltava.
+  { nome: 'cardapio', descricao: 'Envia o link do cardápio para a cliente', confirmar: false },
 ];
 
 export interface Comando {

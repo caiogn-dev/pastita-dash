@@ -28,18 +28,26 @@ const PAGINA = fs.readFileSync(
   'utf8',
 );
 
-describe('a paleta tem onde ancorar', () => {
-  it('a paleta é posicionada de forma absoluta', () => {
-    const bloco = CSS.slice(CSS.indexOf('.paleta-comandos {'));
-    expect(bloco).toMatch(/position:\s*absolute/);
+describe('a paleta não pode ser recortada', () => {
+  /**
+   * Ela ficou invisível DUAS vezes por posicionamento absoluto. Na segunda, o
+   * ancestral posicionado mais próximo era `.chat-panel`, então `bottom: 100%`
+   * colocava a lista inteira acima do painel — e `.whatsapp-inbox` tem
+   * `overflow: hidden`, que cortava fora. Montada, sem erro, invisível.
+   *
+   * No fluxo normal não há ancestral para cortar nem coordenada para errar.
+   */
+  it('a paleta NÃO usa posicionamento absoluto', () => {
+    const bloco = CSS.slice(
+      CSS.indexOf('.paleta-comandos {'),
+      CSS.indexOf('.paleta-item {'),
+    );
+    expect(bloco).not.toMatch(/position:\s*(absolute|fixed)/);
   });
 
-  it('existe um contêiner posicionado em volta dela', () => {
-    const bloco = CSS.slice(
-      CSS.indexOf('.area-de-digitacao {'),
-      CSS.indexOf('.paleta-comandos {'),
-    );
-    expect(bloco).toMatch(/position:\s*relative/);
+  it('o contêiner do inbox continua com overflow hidden — é por isso que importa', () => {
+    const bloco = CSS.slice(CSS.indexOf('.whatsapp-inbox {'), CSS.indexOf('.conversations-panel'));
+    expect(bloco).toMatch(/overflow:\s*hidden/);
   });
 
   it('a página usa esse contêiner', () => {

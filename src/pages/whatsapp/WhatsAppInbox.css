@@ -1490,22 +1490,26 @@ select.item-name {
 /* Paleta de atalhos "/" — flutua acima do campo, sem empurrar a conversa.
    Empurrar faria a última mensagem sair da vista justamente quando o operador
    está agindo sobre ela. */
-/* A paleta ancora AQUI. Sem um ancestral posicionado, `bottom: 100%` mede a
-   partir do bloco inicial da página e joga a lista acima da viewport — ela
-   renderiza e ninguém vê. Foi o que aconteceu ao digitar "/" em 14/ago. */
+/* ⚠️ A paleta fica NO FLUXO, de propósito.
+
+   A primeira versão era `position: absolute; bottom: 100%`. O ancestral
+   posicionado mais próximo é `.chat-panel`, então `bottom: 100%` colocava a
+   lista inteira ACIMA do painel — e `.whatsapp-inbox` tem `overflow: hidden`,
+   que a cortava fora. Ela renderizava, montava, e ninguém via.
+   
+   Empurrar as mensagens alguns pixels é preço barato perto de um componente
+   invisível que parece quebrado. No fluxo não há ancestral para cortar nem
+   coordenada para errar. */
 .area-de-digitacao {
-  position: relative;
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
 }
 
 .paleta-comandos {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  right: 0;
-  margin-bottom: 6px;
-  max-height: 260px;
+  max-height: 240px;
   overflow-y: auto;
+  margin: 0 8px 6px;
   background: var(--surface, #fff);
   border: 1px solid var(--border-token, #e5e7eb);
   border-radius: 10px;
