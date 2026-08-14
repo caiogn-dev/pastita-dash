@@ -76,6 +76,23 @@ export const OverviewSummarySection: React.FC<{ range: DateRange; enabled: boole
           <p className="text-xs text-fg-muted-token mt-1">período anterior: {formatBRL(prev?.revenue ?? 0)}</p>
           {stats.isLoading ? (
             <Spinner />
+          ) : stats.isError ? (
+            // Sem este ramo, uma falha do resumo de hoje viraria "R$ 0,00 · 0
+            // pedidos" com os alertas (pendentes/estoque) silenciosamente
+            // sumidos — zero enganoso apresentado como fato.
+            <div
+              role="alert"
+              className="mt-4 pt-3 border-t border-border-token/60 flex flex-wrap items-center gap-2 text-sm text-fg-muted-token"
+            >
+              <span>Não foi possível carregar o resumo de hoje.</span>
+              <button
+                type="button"
+                onClick={() => { void stats.refetch(); }}
+                className="rounded-lg border border-border-token px-2.5 py-1 text-xs font-medium text-fg-token hover:bg-surface-2 transition-colors"
+              >
+                Tentar novamente
+              </button>
+            </div>
           ) : (
             <div className="mt-4 pt-3 border-t border-border-token/60 flex flex-wrap gap-x-4 gap-y-1 text-sm">
               <span className="text-fg-token">

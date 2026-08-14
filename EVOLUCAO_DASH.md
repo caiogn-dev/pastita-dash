@@ -50,7 +50,14 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
     `useAnalyticsReport`/`useStore` e prova a fiação ponta a ponta — na falha
     mostra os alertas + retry (chama `refetch`) e **não** o "sem dados"
     enganoso; no sucesso vazio, mantém o estado vazio normal (sem falso alarme).
-- **Antes/depois:** `npm test` 1023/195 → **1030/197**; `npx tsc --noEmit`
+- **Correção de revisão (Codex P2):** a `OverviewSummarySection` tem DUAS
+  queries — `overview` (herói do período) e `useDashboardStats` (strip "Hoje" +
+  alertas). A fiação inicial só cobriu a `overview`; se o `stats` falhasse com a
+  `overview` OK, o "Hoje" mostrava "R$ 0,00 · 0 pedidos" com os alertas
+  silenciosamente sumidos. Adicionado ramo `stats.isError` na subseção "Hoje"
+  (aviso + retry próprio), sem esconder o herói que carregou bem. Teste novo
+  `OverviewSummarySection.error.test.tsx`.
+- **Antes/depois:** `npm test` 1023/195 → **1032/198**; `npx tsc --noEmit`
   limpo e `vite build` ok nos dois lados. Só produção alterada, aditiva.
 - **Próximo passo priorizado:** estender o mesmo padrão de erro+retry às
   páginas fora de relatórios que ainda só tratam `isLoading` e podem exibir
