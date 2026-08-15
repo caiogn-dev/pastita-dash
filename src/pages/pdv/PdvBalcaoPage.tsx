@@ -317,6 +317,9 @@ const PdvBalcaoPage: React.FC = () => {
             delivery_method: 'pickup',
             payment_method: payment,
             items: g.items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
+            // Venda de balcão. Sem declarar o canal, o backend cai em 'web'
+            // e o relatório por canal credita o site pelo que o balcão vendeu.
+            source: 'pdv',
             suppress_notifications: true,
             ...(printReceipt ? { print_receipt: true } : {}),
           });

@@ -130,6 +130,8 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         delivery_address: deliveryAddress,
         delivery_fee: deliveryMethod === 'delivery' ? (routeQuote?.fee ?? 0) : 0,
         items: cart.map((c) => ({ product_id: c.product.id, quantity: c.quantity })),
+        // Pedido lançado por dentro da loja — mesmo canal do PDV no relatório.
+        source: 'dashboard',
         payment_method: apiPaymentMethod,
         notes: paymentMethod === 'fiado' ? 'Fiado' : undefined,
         ...(discountAmount > 0 ? { discount: Number(discountAmount.toFixed(2)) } : {}),

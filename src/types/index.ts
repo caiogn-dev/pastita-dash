@@ -413,6 +413,12 @@ export interface CreateOrder {
   scheduled_date?: string;
   scheduled_time?: string;
   customer_notes?: string;
+  /**
+   * Canal da venda. Sem isto o backend cai em `'web'` e o relatório por canal
+   * credita o site pelo que o balcão vendeu. `'pdv'` e `'dashboard'` viram a
+   * mesma coluna — venda feita por dentro da loja.
+   */
+  source?: 'pdv' | 'dashboard';
   /** Pedido de balcão: não enviar as mensagens automáticas de status ao cliente */
   suppress_notifications?: boolean;
   /** Balcão: imprimir cupom do cliente (customer_receipt) na estação 'balcao' */

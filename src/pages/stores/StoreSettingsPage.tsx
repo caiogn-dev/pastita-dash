@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
   BuildingStorefrontIcon,
@@ -27,14 +27,6 @@ import { Card, Button, StatCard, PageShell, PageTabs } from '../../components/ui
 import RecebimentoSection from './RecebimentoSection';
 import NotaFiscalSection from './NotaFiscalSection';
 
-interface DeliveryConfig {
-  delivery_base_fee: number;
-  delivery_fee_per_km: number;
-  delivery_free_km: number;
-  delivery_max_fee: number;
-  delivery_max_distance: number;
-}
-
 const DAYS = [
   { key: 'monday',    label: 'Segunda' },
   { key: 'tuesday',   label: 'Terça' },
@@ -49,14 +41,6 @@ type DayHours = { is_open: boolean; open: string; close: string };
 type OperatingHours = Record<string, DayHours>;
 
 const DEFAULT_HOURS: DayHours = { is_open: true, open: '08:00', close: '22:00' };
-
-const defaultDeliveryConfig: DeliveryConfig = {
-  delivery_base_fee: 5.0,
-  delivery_fee_per_km: 1.0,
-  delivery_free_km: 2.0,
-  delivery_max_fee: 25.0,
-  delivery_max_distance: 20.0,
-};
 
 const defaultMetaTracking: StoreMetaTracking = {
   meta_pixel_id: '',
@@ -82,7 +66,6 @@ export const StoreSettingsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [store, setStore] = useState<Store | null>(null);
-  const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig>(defaultDeliveryConfig);
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
   const [googleReviewUrl, setGoogleReviewUrl] = useState('');
@@ -129,14 +112,6 @@ export const StoreSettingsPage: React.FC = () => {
 
       const metadata = data.metadata || {};
       setGoogleReviewUrl(String(metadata.google_review_url || ''));
-      setDeliveryConfig({
-        delivery_base_fee: Number(metadata.delivery_base_fee) || defaultDeliveryConfig.delivery_base_fee,
-        delivery_fee_per_km: Number(metadata.delivery_fee_per_km) || defaultDeliveryConfig.delivery_fee_per_km,
-        delivery_free_km: Number(metadata.delivery_free_km) || defaultDeliveryConfig.delivery_free_km,
-        delivery_max_fee: Number(metadata.delivery_max_fee) || defaultDeliveryConfig.delivery_max_fee,
-        delivery_max_distance: Number(metadata.delivery_max_distance) || defaultDeliveryConfig.delivery_max_distance,
-      });
-
       const stored = (data.operating_hours as OperatingHours) || {};
       const initialized: OperatingHours = {};
       DAYS.forEach(d => {
@@ -193,33 +168,6 @@ export const StoreSettingsPage: React.FC = () => {
     } catch (error) {
       logger.error('Error saving google review url:', error);
       toast.error('Erro ao salvar link de avaliação');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveDeliveryConfig = async () => {
-    if (!effectiveStoreId) return;
-    setSaving(true);
-    try {
-      const currentMetadata = store?.metadata || {};
-      const payload = {
-        metadata: {
-          ...currentMetadata,
-          delivery_base_fee: deliveryConfig.delivery_base_fee,
-          delivery_fee_per_km: deliveryConfig.delivery_fee_per_km,
-          delivery_free_km: deliveryConfig.delivery_free_km,
-          delivery_max_fee: deliveryConfig.delivery_max_fee,
-          delivery_max_distance: deliveryConfig.delivery_max_distance,
-        },
-      };
-
-      await updateStore(effectiveStoreId, payload);
-      toast.success('Configurações de entrega atualizadas!');
-      loadStore();
-    } catch (error) {
-      logger.error('Error saving delivery config:', error);
-      toast.error('Erro ao salvar configurações de entrega');
     } finally {
       setSaving(false);
     }
@@ -311,15 +259,6 @@ export const StoreSettingsPage: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  };
-
-  const calculateExampleFee = (distance: number): number => {
-    if (distance <= deliveryConfig.delivery_free_km) {
-      return deliveryConfig.delivery_base_fee;
-    }
-    const extraKm = distance - deliveryConfig.delivery_free_km;
-    const fee = deliveryConfig.delivery_base_fee + (extraKm * deliveryConfig.delivery_fee_per_km);
-    return Math.min(fee, deliveryConfig.delivery_max_fee);
   };
 
   if (loading) {
@@ -519,79 +458,27 @@ export const StoreSettingsPage: React.FC = () => {
 
             {aba === 'entrega' && (
               <>
+        {/* O PREÇO da entrega mora em Zonas de Entrega, não aqui.
+            Esta aba tinha os mesmos campos e uma TERCEIRA cópia da matemática
+            do frete (`calculateExampleFee`) — três implementações do mesmo
+            número, e as faixas do banco tinham precedência sobre as duas telas,
+            então o que se editava aqui não valia nada. */}
         <Card className="p-6">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2">
             <TruckIcon className="w-5 h-5 text-fg-muted-token" />
             <h2 className="text-lg font-semibold text-fg-token">Entrega</h2>
           </div>
-          <div className="grid grid-cols-2 max-md:grid-cols-1 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">Taxa Base</label>
-                <input
-                  type="number"
-                  value={deliveryConfig.delivery_base_fee}
-                  onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_base_fee: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">Taxa por KM</label>
-                <input
-                  type="number"
-                  value={deliveryConfig.delivery_fee_per_km}
-                  onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_fee_per_km: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">KM Grátis</label>
-                <input
-                  type="number"
-                  value={deliveryConfig.delivery_free_km}
-                  onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_free_km: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">Taxa Máxima</label>
-                <input
-                  type="number"
-                  value={deliveryConfig.delivery_max_fee}
-                  onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_max_fee: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">Distância Máxima</label>
-                <input
-                  type="number"
-                  value={deliveryConfig.delivery_max_distance}
-                  onChange={(e) => setDeliveryConfig({ ...deliveryConfig, delivery_max_distance: parseFloat(e.target.value) })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <div className="bg-surface-2 rounded p-4">
-                <div className="flex items-center gap-2 text-fg-muted-token mb-2">
-                  <CurrencyDollarIcon className="w-4 h-4" />
-                  <span className="text-sm font-medium">Exemplo</span>
-                </div>
-                <div className="flex items-center justify-between text-sm text-fg-token">
-                  <span>5 km</span>
-                  <span className="font-semibold">R$ {calculateExampleFee(5).toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <Button
-            onClick={handleSaveDeliveryConfig}
-            disabled={saving}
-            className="mt-6 w-full justify-center"
+          <p className="text-sm text-fg-muted-token">
+            O preço da entrega é configurado em uma tela só, com prévia do valor por
+            distância enquanto você digita.
+          </p>
+          <Link
+            to={effectiveStoreId ? `/stores/${effectiveStoreId}/delivery-zones` : '/delivery-zones'}
+            className="mt-4 inline-flex items-center gap-2 rounded bg-brand-soft px-4 py-2 text-sm font-medium text-brand-ink transition-colors hover:bg-brand-soft/80"
           >
-            {saving ? 'Salvando...' : 'Salvar Configurações de Entrega'}
-          </Button>
+            <TruckIcon className="w-4 h-4" />
+            Abrir preço da entrega
+          </Link>
         </Card>
 
         {/* Horários de Funcionamento */}
