@@ -25,6 +25,7 @@ import {
 } from '../../services/delivery';
 import { useStore } from '../../hooks';
 import { ZonasDePrecoFixoCard } from './ZonasDePrecoFixoCard';
+import { FormulaDeEntregaCard } from './FormulaDeEntregaCard';
 import { getStore, updateStore } from '../../services/storesApi';
 
 const formatKm = (value?: number | string | null) => {
@@ -427,6 +428,23 @@ export const DeliveryZonesPage: React.FC = () => {
           </div>
         )}
       </Card>
+
+      {/* O PREÇO mora aqui, não nas 16 faixas. Cada loja tinha uma faixa por
+          quilômetro — três números digitados dezesseis vezes, com uma
+          irregularidade escondida (a faixa 3-5km cobria 2 km). E a fórmula que
+          o dono editava em Configurações não valia nada, porque as faixas têm
+          precedência: duas telas discordando sobre o mesmo número. */}
+      {storeId && (
+        <FormulaDeEntregaCard
+          key={storeId}
+          metadataAtual={storeMetadata ?? {}}
+          faixasAtivas={zones.filter((z) => z.is_active).length}
+          onSalvar={async (novoMetadata) => {
+            await updateStore(storeId, { metadata: novoMetadata });
+            setStoreMetadata(novoMetadata);
+          }}
+        />
+      )}
 
       {/* As faixas por km resolvem a cidade; as zonas abaixo resolvem as
           exceções (condomínio longe, prédio com portaria demorada). O recurso
