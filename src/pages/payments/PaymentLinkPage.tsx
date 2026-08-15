@@ -15,7 +15,7 @@
  * e o formulário volta a ser só o formulário.
  */
 import { copyToClipboard } from '../../utils/clipboard';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { paymentsService, getErrorMessage } from '../../services';
@@ -127,6 +127,24 @@ export const PaymentLinkPage: React.FC = () => {
     if (!payerName.trim() && p.customer_name) setPayerName(p.customer_name);
   };
 
+  /**
+   * Pedido em aberto do MESMO valor, quando nenhum foi vinculado.
+   *
+   * Em 14/ago uma venda de R$ 62,89 foi lançada às 20:41 e às 20:54 saiu um
+   * link AVULSO do mesmo valor. Pago, o link virou um segundo pedido: a mesma
+   * venda contada duas vezes no faturamento, e a cópia sem item nenhum — foi
+   * ela que apareceu na página de pedidos "só com o valor".
+   *
+   * O valor idêntico a um pedido não pago é o sinal, e ele chega ANTES do
+   * envio: depois de gerado, o link já está com o cliente.
+   */
+  const pedidoDoMesmoValor = useMemo(() => {
+    if (pedidoId) return undefined;
+    const parsed = Number(amount.trim().replace(',', '.'));
+    if (!parsed || Number.isNaN(parsed)) return undefined;
+    return pedidos.find((p) => Math.abs(Number(p.total ?? 0) - parsed) < 0.005);
+  }, [amount, pedidoId, pedidos]);
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!storeId) {
@@ -216,6 +234,27 @@ export const PaymentLinkPage: React.FC = () => {
           <p className="mt-1 text-xs text-fg-muted-token">
             Vinculado a um pedido, o pagamento conta como venda daquele pedido.
           </p>
+
+          {/* Aviso, não bloqueio: cobrar avulso um valor que coincide com um
+              pedido é raro, mas legítimo. Quem decide é quem está no balcão. */}
+          {pedidoDoMesmoValor && (
+            <div
+              role="alert"
+              className="mt-2 rounded-xl border border-[var(--warning)] bg-[var(--warning-soft)] px-3 py-2 text-xs text-fg-token"
+            >
+              O pedido <strong>{pedidoDoMesmoValor.order_number}</strong>
+              {pedidoDoMesmoValor.customer_name ? ` (${pedidoDoMesmoValor.customer_name})` : ''} está
+              em aberto com o <strong>mesmo valor</strong>. Cobrando avulso, o pagamento vira uma
+              segunda venda e o faturamento conta as duas.{' '}
+              <button
+                type="button"
+                onClick={() => escolherPedido(String(pedidoDoMesmoValor.id))}
+                className="font-semibold underline underline-offset-2"
+              >
+                Vincular a esse pedido
+              </button>
+            </div>
+          )}
         </div>
 
         <div>

@@ -90,6 +90,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   const { pathname } = useLocation();
   const [aberto, setAberto] = useState<string | null>(null);
   const [recolhido, setRecolhido] = useState(false);
+  // Espiada por ponteiro/teclado. É SEPARADA de `recolhido` de propósito: o
+  // clique é a preferência do usuário ("quero a coluna estreita"), o hover é
+  // só uma consulta. Se o hover escrevesse na preferência, o primeiro passar
+  // de mouse deixaria a coluna larga para sempre.
+  const [espiando, setEspiando] = useState(false);
 
   // O grupo da rota atual abre sozinho a cada navegação. Sem isso, entrar em
   // /combos por link direto deixa o menu mostrando outra coisa.
@@ -98,22 +103,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
     if (dono) setAberto(dono.label);
   }, [pathname, sections]);
 
+  // O modo ícone é a PREFERÊNCIA; `estreita` é o que a tela mostra agora.
+  // Enquanto o ponteiro (ou o foco) está na coluna, ela mostra tudo.
+  const estreita = recolhido && !espiando;
+  const espiada = recolhido && espiando;
+
   // 72px e não 64: com 64 o ícone de 20px ficava com 22px de folga de cada
   // lado, e o alvo de clique encostava na borda da tela. 72 dá respiro e
   // permite o ícone maior sem apertar.
-  const largura = recolhido ? 'w-[72px]' : 'w-64';
-  const tamIcone = recolhido ? 'h-6 w-6' : 'h-5 w-5';
+  const largura = estreita ? 'w-[72px]' : 'w-64';
+  const tamIcone = estreita ? 'h-6 w-6' : 'h-5 w-5';
 
   return (
+    // O invólucro segura o ESPAÇO da coluna na preferência do usuário. Sem ele,
+    // a espiada empurraria o conteúdo da página 184px para o lado a cada passar
+    // de mouse — a tela inteira tremendo por um gesto que não pediu nada. Aqui
+    // a coluna expandida flutua POR CIMA e devolve o espaço intacto ao sair.
+    <div
+      className={cn('relative shrink-0', recolhido ? 'w-[72px]' : 'w-64', className)}
+      onMouseEnter={() => setEspiando(true)}
+      onMouseLeave={() => setEspiando(false)}
+      // Quem navega por Tab não tem ponteiro: sem isto o teclado ficaria preso
+      // numa fileira de ícones enquanto o mouse ganha a coluna inteira.
+      onFocusCapture={() => setEspiando(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setEspiando(false);
+      }}
+    >
     <nav
       aria-label="Navegação principal"
       className={cn(
-        'sticky top-0 flex h-screen shrink-0 flex-col border-r border-border-token bg-surface',
+        'sticky top-0 flex h-screen flex-col border-r border-border-token bg-surface',
         // A largura anima com a MESMA curva elástica do indicador ativo:
         // recolher e expandir é movimento de matéria, não corte de frame.
         'transition-[width] duration-300',
         largura,
-        className
+        // A coluna TRANSBORDA do invólucro de 72px (nada corta) e sobe de
+        // camada. Continua `sticky`, não `absolute`: absoluto se ancoraria no
+        // topo da PÁGINA, e a coluna precisa acompanhar a rolagem da janela.
+        // A sombra é o que faz ela ler como camada de cima — sem ela o
+        // conteúdo atrás encosta e as duas viram a mesma superfície.
+        espiada && 'z-40 shadow-2xl'
       )}
       style={{ transitionTimingFunction: 'var(--mola)' }}
     >
@@ -131,7 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
             className="h-8 w-8 shrink-0 rounded-md object-contain"
             onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
-          {!recolhido && (
+          {!estreita && (
             <span className="truncate font-brand text-lead uppercase tracking-[0.16em] text-brand-ink">
               Cardapidex
             </span>
@@ -150,12 +180,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         )}
       </div>
 
+      {/* Durante a espiada a coluna JÁ está larga, então este botão deixa de
+          significar "abrir" e passa a significar "deixar assim" — o rótulo
+          precisa dizer isso, senão o operador clica esperando outra coisa. */}
       {recolhido && (
         <button
           type="button"
           onClick={() => setRecolhido(false)}
-          aria-label="Expandir menu"
-          className="mx-auto mb-1 rounded-md p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          aria-label={espiada ? 'Fixar menu aberto' : 'Expandir menu'}
+          className={cn(
+            'mb-1 rounded-md p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+            espiada ? 'mr-3 self-end' : 'mx-auto',
+          )}
         >
           <ChevronDoubleLeftIcon className="h-4 w-4 rotate-180" />
         </button>
@@ -174,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           // a separação ainda vale.
           const primeiraDoGrupo = secao.grupo && sections[indice - 1]?.grupo !== secao.grupo;
           const cabecalhoDoGrupo = primeiraDoGrupo ? (
-            recolhido ? (
+            estreita ? (
               <li aria-hidden className="mx-auto my-2 h-px w-6 bg-border-token" />
             ) : (
               <li
@@ -197,10 +233,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                 <Link
                   to={secao.href}
                   aria-current={estaAtiva ? 'page' : undefined}
-                  title={recolhido ? secao.label : undefined}
+                  title={estreita ? secao.label : undefined}
                   className={cn(
                     'relative flex items-center gap-2.5 rounded-md py-2 text-body font-medium',
-                    recolhido ? 'justify-center px-0' : 'px-2.5',
+                    estreita ? 'justify-center px-0' : 'px-2.5',
                     'transition-colors duration-200',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     estaAtiva
@@ -227,8 +263,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
                   {/* Recolhido esconde o rótulo VISUALMENTE, nunca do leitor de
                       tela — senão a coluna vira uma fileira de ícones mudos. */}
-                  <span className={cn('truncate', recolhido && 'sr-only')}>{secao.label}</span>
-                  {secao.badge && !recolhido && (
+                  <span className={cn('truncate', estreita && 'sr-only')}>{secao.label}</span>
+                  {secao.badge && !estreita && (
                     <span className="ml-auto rounded-full bg-brand px-1.5 py-0.5 text-badge font-bold text-on-brand">
                       {secao.badge}
                     </span>
@@ -258,10 +294,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   }
                   setAberto(estaAberta ? null : secao.label);
                 }}
-                title={recolhido ? secao.label : undefined}
+                title={estreita ? secao.label : undefined}
                 className={cn(
                   'relative flex w-full items-center gap-2.5 rounded-md py-2 text-body font-medium',
-                  recolhido ? 'justify-center px-0' : 'px-2.5',
+                  estreita ? 'justify-center px-0' : 'px-2.5',
                   'transition-colors duration-200',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                   estaAtiva
@@ -279,8 +315,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   style={{ transitionTimingFunction: 'var(--mola)' }}
                 />
                 <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
-                <span className={cn('truncate', recolhido && 'sr-only')}>{secao.label}</span>
-                {!recolhido && (
+                <span className={cn('truncate', estreita && 'sr-only')}>{secao.label}</span>
+                {!estreita && (
                   <ChevronDownIcon
                     className={cn(
                       'ml-auto h-4 w-4 shrink-0 transition-transform',
@@ -292,7 +328,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
               </button>
 
               {estaAberta && (
-                <ul className={cn('mt-0.5 space-y-0.5', !recolhido && 'ml-4 border-l border-border-token pl-2')}>
+                <ul className={cn('mt-0.5 space-y-0.5', !estreita && 'ml-4 border-l border-border-token pl-2')}>
                   {secao.items.map((item) => {
                     const ItemIcone = item.icon;
                     const itemAtivo = ativo(pathname, item.href);
@@ -302,7 +338,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                           item={item}
                           ativo={itemAtivo}
                           Icone={ItemIcone}
-                          rotuloOculto={recolhido}
+                          rotuloOculto={estreita}
                         />
                       </li>
                     );
@@ -315,6 +351,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         })}
       </ul>
     </nav>
+    </div>
   );
 };
 

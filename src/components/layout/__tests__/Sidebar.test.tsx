@@ -92,6 +92,54 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: /Combos/ })).toBeInTheDocument();
   });
 
+  it('recolhida, passar o mouse expande — sem precisar clicar', () => {
+    // Recolher e expandir por clique cobra dois cliques por consulta ao menu:
+    // um para abrir, outro para fechar. O ponteiro já está lá; a coluna deve
+    // responder à presença dele.
+    renderizar();
+    fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
+    expect(screen.queryByText('Cardapidex')).not.toBeInTheDocument();
+
+    fireEvent.mouseEnter(screen.getByRole('navigation', { name: /principal/i }));
+    expect(screen.getByText('Cardapidex')).toBeInTheDocument();
+  });
+
+  it('tirar o mouse volta ao modo ícone — hover não vira preferência', () => {
+    // O clique é a PREFERÊNCIA do usuário ("quero a coluna estreita"); o hover
+    // é uma espiada. Espiar não pode reescrever a preferência, senão a coluna
+    // fica larga para sempre depois do primeiro passar de mouse.
+    renderizar();
+    fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
+    const nav = screen.getByRole('navigation', { name: /principal/i });
+
+    fireEvent.mouseEnter(nav);
+    fireEvent.mouseLeave(nav);
+
+    expect(screen.queryByText('Cardapidex')).not.toBeInTheDocument();
+    // A preferência continua "recolhida": o botão de expandir segue lá.
+    expect(screen.getByRole('button', { name: /expandir menu/i })).toBeInTheDocument();
+  });
+
+  it('foco pelo teclado expande igual ao mouse', () => {
+    // Quem navega por Tab não tem ponteiro. Sem isso, o teclado ficaria preso
+    // numa fileira de ícones enquanto o mouse ganha a coluna inteira.
+    renderizar();
+    fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
+
+    fireEvent.focus(screen.getByRole('button', { name: /Cardápio/ }));
+    expect(screen.getByText('Cardapidex')).toBeInTheDocument();
+  });
+
+  it('expandida por clique, o mouse não muda nada', () => {
+    // Só o modo recolhido reage ao ponteiro. Aberta, ela já está aberta.
+    renderizar();
+    const nav = screen.getByRole('navigation', { name: /principal/i });
+    fireEvent.mouseEnter(nav);
+    expect(screen.getByText('Cardapidex')).toBeInTheDocument();
+    fireEvent.mouseLeave(nav);
+    expect(screen.getByText('Cardapidex')).toBeInTheDocument();
+  });
+
   it('mostra a marca no topo, e ela leva ao início', () => {
     // A coluna abria direto nos itens, sem nada dizendo de que produto é a
     // tela — e recolhida virava uma faixa de ícones órfã.

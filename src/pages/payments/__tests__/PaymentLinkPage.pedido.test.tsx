@@ -99,6 +99,43 @@ describe('o avulso continua existindo', () => {
     expect(criarLink.mock.calls[0][0].order).toBeUndefined();
   });
 
+  it('avisa quando o valor bate com um pedido em aberto e nenhum foi escolhido', async () => {
+    // Aconteceu em 14/ago: venda de R$ 62,89 lançada às 20:41, e às 20:54 um
+    // link AVULSO do mesmo valor. Pago, o link virou um segundo pedido — a
+    // mesma venda contada duas vezes, e uma delas sem itens nenhum. O valor
+    // idêntico a um pedido não pago é o sinal, e ele aparece antes do envio.
+    render(<PaymentLinkPage />);
+
+    await screen.findByRole('option', { name: /CE-123/ });
+    await userEvent.type(screen.getByLabelText(/valor/i), '142');
+
+    const aviso = await screen.findByRole('alert');
+    expect(aviso).toHaveTextContent(/CE-123/);
+    expect(aviso).toHaveTextContent(/mesmo valor/i);
+  });
+
+  it('o aviso some quando o pedido é vinculado', async () => {
+    render(<PaymentLinkPage />);
+
+    await screen.findByRole('option', { name: /CE-123/ });
+    await userEvent.type(screen.getByLabelText(/valor/i), '142');
+    await screen.findByRole('alert');
+
+    await userEvent.selectOptions(screen.getByLabelText(/pedido/i), 'ped-1');
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('valor que não bate com pedido nenhum não gera aviso', async () => {
+    // Cobrança avulsa legítima é caso normal — não pode virar tela de susto.
+    render(<PaymentLinkPage />);
+
+    await screen.findByRole('option', { name: /CE-123/ });
+    await userEvent.type(screen.getByLabelText(/valor/i), '37');
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('a opção de cobrança avulsa é a padrão', async () => {
     render(<PaymentLinkPage />);
 
