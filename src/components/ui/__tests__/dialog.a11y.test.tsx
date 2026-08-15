@@ -1,5 +1,5 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
+import React, { useState } from 'react';
+import { render, screen, act } from '@testing-library/react';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +58,40 @@ describe('Dialog — nome acessível automático via DialogTitle', () => {
 
     expect(
       screen.getByRole('dialog', { name: 'Diálogo sem título' })
+    ).toBeInTheDocument();
+  });
+
+  // Regressão (review Codex, P2): se o `DialogTitle` deixa de existir, o registro
+  // precisa ser desfeito, senão o diálogo ficaria com `aria-labelledby` apontando
+  // para um id inexistente e suprimiria o fallback `ariaLabel` — diálogo sem nome.
+  it('volta ao ariaLabel quando o DialogTitle é removido em runtime', () => {
+    const Harness: React.FC = () => {
+      const [showTitle, setShowTitle] = useState(true);
+      return (
+        <>
+          <button onClick={() => setShowTitle(false)}>ocultar</button>
+          <Dialog open onOpenChange={() => {}} ariaLabel="Nome de reserva">
+            <DialogContent>
+              {showTitle && <DialogTitle>Título temporário</DialogTitle>}
+              <p>corpo</p>
+            </DialogContent>
+          </Dialog>
+        </>
+      );
+    };
+
+    render(<Harness />);
+    // Com título presente, ele nomeia o diálogo.
+    expect(
+      screen.getByRole('dialog', { name: 'Título temporário' })
+    ).toBeInTheDocument();
+
+    // Remove o título → o diálogo NÃO pode ficar mudo: cai no ariaLabel.
+    act(() => {
+      screen.getByText('ocultar').click();
+    });
+    expect(
+      screen.getByRole('dialog', { name: 'Nome de reserva' })
     ).toBeInTheDocument();
   });
 });

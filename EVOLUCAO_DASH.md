@@ -37,10 +37,18 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   antes** (auto-nomeação faltando), verde depois; as outras 2 (precedência de
   `ariaLabelledby` e fallback de `ariaLabel`) já passavam e travam o contrato.
   Tudo via `getByRole('dialog', { name })`, que resolve o nome acessível real.
-- **Antes/depois:** `npm test` 1070/199 → **1073/200**; `tsc --noEmit` limpo,
+- **Antes/depois:** `npm test` 1070/199 → **1074/200**; `tsc --noEmit` limpo,
   `eslint` sem warnings nos arquivos tocados e `vite build` ok nos dois lados.
   Só atributos de acessibilidade adicionados — zero mudança visual/comportamental,
   risco baixo.
+- **Robustez (review Codex, 2 P2 endereçados):** (a) registro passou de
+  `useEffect` para **`useLayoutEffect`**: o `aria-labelledby` é aplicado na fase
+  de layout, antes do `useEffect` do `Modal` que move o foco ao abrir — no
+  primeiro open a AT não anuncia mais um diálogo sem nome. (b) o flag booleano de
+  mão única virou **contagem com baixa (unregister)**: `DialogTitle` removido ou
+  trocado por `id` próprio desfaz o registro, então o diálogo volta ao fallback
+  `ariaLabel` em vez de apontar para um id inexistente. Novo teste de regressão
+  cobre a remoção do título em runtime.
 - **Próximo passo priorizado:** (1) **Segurança/deps:** planejar os majors de
   `react-router` 6→7 (open redirect) e `vite` 5→8 (esbuild/postcss dev-only),
   cada um como fatia dedicada com validação de build. (2) **A11y — varredura de
