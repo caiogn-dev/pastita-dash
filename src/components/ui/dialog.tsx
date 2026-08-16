@@ -3,29 +3,31 @@
  */
 import React, {
   createContext,
-  useCallback,
+  isValidElement,
   useContext,
-  useEffect,
   useId,
   useMemo,
-  useState,
 } from 'react';
 import { Modal } from './modal';
 import { cn } from '../../utils/cn';
 
 /**
- * Fio automático de nome acessível no caminho composto: um `<DialogTitle>` que
- * renderiza dentro de um `<Dialog>` registra o id do seu heading, e o `Dialog`
- * o repassa como `aria-labelledby` ao `Modal`. Assim qualquer consumidor que use
- * `DialogTitle` ganha nome acessível sem refazer o fio à mão (WCAG 4.1.2). Se
- * nenhum `DialogTitle` registrar, nada é apontado — nunca deixamos um
- * `aria-labelledby` pendurado para um id inexistente.
+ * Fio automático de nome acessível no caminho composto: um `<DialogTitle>` dentro
+ * de um `<Dialog>` nomeia o diálogo sem o consumidor refazer o `aria-labelledby`
+ * à mão (WCAG 4.1.2 / ARIA Dialog Pattern).
+ *
+ * A detecção é feita em tempo de RENDER, varrendo a árvore de `children` atrás de
+ * um `<DialogTitle>` — de propósito NÃO via efeito/registro. O `Modal` move o
+ * foco para dentro do diálogo num efeito passivo que só roda no commit de
+ * abertura e não re-dispara quando um rótulo chega depois; um registro por efeito
+ * commitaria o `aria-labelledby` tarde demais e o leitor de tela anunciaria um
+ * diálogo sem nome no instante do foco. Varrer no render deixa o rótulo pronto já
+ * no primeiro commit, antes do foco entrar. Sem `DialogTitle`, nada é apontado —
+ * nunca deixamos um `aria-labelledby` pendurado para um id inexistente.
  */
 interface DialogTitleContextValue {
-  /** Id estável que o DialogTitle deve usar no heading, se não trouxer id próprio. */
+  /** Id estável que o DialogTitle usa no heading quando não traz id próprio. */
   titleId: string;
-  registerTitle: (id: string) => void;
-  unregisterTitle: (id: string) => void;
 }
 
 const DialogTitleContext = createContext<DialogTitleContextValue | null>(null);
@@ -42,6 +44,31 @@ export interface DialogProps {
   ariaLabelledby?: string;
 }
 
+/**
+ * Varre a árvore de elementos à procura do primeiro `<DialogTitle>` e devolve o
+ * id que ele usará no heading (`props.id` se informado, senão o `fallbackId`),
+ * ou `undefined` se não houver título. Puro e síncrono — roda no render.
+ */
+function findDialogTitleId(
+  node: React.ReactNode,
+  fallbackId: string
+): string | undefined {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = findDialogTitleId(child, fallbackId);
+      if (found !== undefined) return found;
+    }
+    return undefined;
+  }
+  if (!isValidElement(node)) return undefined;
+  if (node.type === DialogTitle) {
+    const ownId = (node.props as { id?: string }).id;
+    return ownId ?? fallbackId;
+  }
+  const children = (node.props as { children?: React.ReactNode }).children;
+  return children != null ? findDialogTitleId(children, fallbackId) : undefined;
+}
+
 export const Dialog: React.FC<DialogProps> = ({
   open,
   onOpenChange,
@@ -51,23 +78,22 @@ export const Dialog: React.FC<DialogProps> = ({
   ariaLabelledby,
 }) => {
   const fallbackTitleId = useId();
-  const [registeredTitleId, setRegisteredTitleId] = useState<string | undefined>();
-
-  const registerTitle = useCallback((id: string) => setRegisteredTitleId(id), []);
-  const unregisterTitle = useCallback(
-    (id: string) => setRegisteredTitleId((prev) => (prev === id ? undefined : prev)),
-    []
-  );
 
   const ctx = useMemo<DialogTitleContextValue>(
-    () => ({ titleId: fallbackTitleId, registerTitle, unregisterTitle }),
-    [fallbackTitleId, registerTitle, unregisterTitle]
+    () => ({ titleId: fallbackTitleId }),
+    [fallbackTitleId]
+  );
+
+  // Título detectado no render (ver comentário do módulo).
+  const autoTitleId = useMemo(
+    () => findDialogTitleId(children, fallbackTitleId),
+    [children, fallbackTitleId]
   );
 
   // Precedência: aria-labelledby explícito → aria-label explícito → título
   // automático do DialogTitle. Props explícitas sempre vencem o fio automático.
   const resolvedLabelledby =
-    ariaLabelledby ?? (ariaLabel ? undefined : registeredTitleId);
+    ariaLabelledby ?? (ariaLabel ? undefined : autoTitleId);
 
   return (
     <DialogTitleContext.Provider value={ctx}>
@@ -121,15 +147,9 @@ export const DialogTitle: React.FC<DialogTitleProps> = ({
   ...props
 }) => {
   const ctx = useContext(DialogTitleContext);
-  // Usa id próprio do consumidor se houver; senão o id estável do contexto.
+  // Usa id próprio do consumidor se houver; senão o id estável do contexto — o
+  // mesmo que o Dialog detectou no render e apontou como aria-labelledby.
   const effectiveId = id ?? ctx?.titleId;
-
-  // Registra o heading no Dialog pai para nomear o diálogo automaticamente.
-  useEffect(() => {
-    if (!ctx || !effectiveId) return;
-    ctx.registerTitle(effectiveId);
-    return () => ctx.unregisterTitle(effectiveId);
-  }, [ctx, effectiveId]);
 
   return (
     <h2

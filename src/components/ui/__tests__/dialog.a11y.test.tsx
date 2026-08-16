@@ -59,6 +59,38 @@ describe('Dialog — nome acessível automático via DialogTitle', () => {
     ).toBeInTheDocument();
   });
 
+  it('já tem nome acessível no instante em que o foco entra ao abrir', () => {
+    // Ao abrir, o Modal move o foco para dentro do diálogo. Nesse instante o
+    // diálogo PRECISA já ter nome acessível — senão o leitor de tela anuncia um
+    // diálogo sem nome. Este teste captura o estado do DOM no exato momento do
+    // primeiro `focusin` (o foco que o Modal move para dentro).
+    let nameAtFocusTime: string | null = null;
+    const onFocusIn = () => {
+      if (nameAtFocusTime !== null) return; // só o primeiro foco (o de abertura)
+      const dialog = document.querySelector('[role="dialog"]');
+      const labelledBy = dialog?.getAttribute('aria-labelledby');
+      const target = labelledBy ? document.getElementById(labelledBy) : null;
+      nameAtFocusTime = target?.textContent ?? '';
+    };
+    document.addEventListener('focusin', onFocusIn);
+    try {
+      render(
+        <Dialog open onOpenChange={() => {}}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Conectar WhatsApp</DialogTitle>
+            </DialogHeader>
+            <button type="button">Continuar</button>
+          </DialogContent>
+        </Dialog>
+      );
+    } finally {
+      document.removeEventListener('focusin', onFocusIn);
+    }
+
+    expect(nameAtFocusTime).toBe('Conectar WhatsApp');
+  });
+
   it('não deixa aria-labelledby pendurado (dangling) quando não há DialogTitle', () => {
     render(
       <Dialog open onOpenChange={() => {}}>

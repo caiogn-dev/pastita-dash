@@ -25,23 +25,34 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   `<DialogTitle>Conectar WhatsApp…</DialogTitle>` mas o diálogo era anunciado
   pelos leitores de tela só como "diálogo" (viola WCAG 4.1.2 / ARIA Dialog Pattern).
 - **Mudado (componente ativo, puramente aditivo):**
-  - `Dialog`: cria um `titleId` estável (`useId`) exposto por contexto e mantém
-    em estado o id do título de fato registrado. Precedência do nome:
-    `ariaLabelledby` explícito → `ariaLabel` explícito → título automático do
-    `DialogTitle`. Props explícitas sempre vencem o fio automático.
-  - `DialogTitle`: consome o contexto, aplica o `id` no `<h2>` (respeitando `id`
-    próprio do consumidor, se houver) e **registra** esse id no `Dialog` pai via
-    `useEffect`, cancelando no unmount. Assim o `aria-labelledby` só é apontado
-    quando existe de fato um heading — **nunca fica pendurado** (dangling) para
-    um id inexistente quando não há `DialogTitle`.
-- **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — escrita **vermelha antes**
-  (o caso de fio automático falhava: sem o wiring, `getByRole('dialog', { name })`
-  não achava) **verde depois**. Cobre: nome automático via `DialogTitle`,
-  precedência do `aria-labelledby` explícito, `aria-label` explícito sem título e
-  a ausência de `aria-labelledby` pendurado quando não há título.
-- **Antes/depois:** `npm test` 1102/201 → **1106/202**; `tsc --noEmit` limpo e
-  `vite build` ok nos dois lados. Zero mudança visual/comportamental — só
-  atributos de acessibilidade e wiring interno. Risco baixo.
+  - `Dialog`: cria um `titleId` estável (`useId`) exposto por contexto e detecta,
+    **em tempo de render** (varrendo a árvore de `children`), se há um
+    `<DialogTitle>` — usando o `id` próprio dele se houver, senão o `titleId` do
+    contexto. Precedência do nome: `ariaLabelledby` explícito → `ariaLabel`
+    explícito → título automático do `DialogTitle`. Props explícitas sempre
+    vencem o fio automático. Sem `DialogTitle`, nada é apontado — **nunca fica
+    pendurado** (dangling) para um id inexistente.
+  - `DialogTitle`: aplica no `<h2>` o `id` próprio do consumidor, se houver, senão
+    o `titleId` do contexto (o mesmo que o `Dialog` detectou e apontou).
+  - **Por que detecção no render e NÃO registro por efeito** (feedback do Codex):
+    o `Modal` move o foco para dentro do diálogo num efeito **passivo** que só
+    roda no commit de abertura e não re-dispara quando um rótulo chega depois.
+    Um registro por `useEffect`/`useLayoutEffect` commitaria o `aria-labelledby`
+    tarde demais — no instante em que o foco entra, o diálogo estaria sem nome e
+    o leitor de tela o anunciaria "sem título". Detectar no render deixa o rótulo
+    pronto já no primeiro commit, antes do foco.
+- **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — escrita **vermelha antes**,
+  **verde depois**. Cobre: nome automático via `DialogTitle`, precedência do
+  `aria-labelledby` explícito, `aria-label` explícito sem título, ausência de
+  `aria-labelledby` pendurado, e — capturando o `focusin` de abertura — que o
+  diálogo **já tem nome no instante em que o foco entra** (este falha com registro
+  por efeito e passa com detecção no render).
+- **Antes/depois:** `tsc --noEmit` limpo; `npm run lint` 277 warnings (< gate 400,
+  0 errors); `vite build` ok; `npm test` todas verdes (196 suítes / 1028 testes,
+  0 falhas). Zero mudança visual/comportamental — só atributos de acessibilidade.
+  Risco baixo. (Obs.: a contagem total de suítes/testes do `npm test` oscila
+  ~196↔202 entre execuções por flakiness pré-existente do jest/haste — não
+  regressão desta fatia; toda suíte que roda passa.)
 - **Próximo passo priorizado:** (1) **Segurança/deps:** planejar o major bump de
   `react-router` 6→7 (corrige o open redirect via backslash) como fatia dedicada
   com validação de build/rotas. (2) **A11y:** varrer `role="dialog"` montados à
