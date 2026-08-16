@@ -52,7 +52,11 @@ export interface Store {
   banner_url?: string;
   primary_color: string;
   secondary_color: string;
-  template: 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'elegant';
+  /** Slug do template de cardápio. Os valores válidos vêm de
+   *  `GET /stores/templates/` (derivado de `Store.StoreTemplate` no server2) —
+   *  uma união escrita aqui obrigaria deploy do painel a cada template novo, e
+   *  foi assim que o `banquete` ficou invisível na tela de aparência. */
+  template: string;
   tagline: string;
   custom_domain: string | null;
   email: string;
@@ -108,7 +112,8 @@ export interface StoreInput {
   primary_color?: string;
   secondary_color?: string;
   logo_url?: string;
-  template?: 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'elegant';
+  /** Slug do template — validado pelo backend, não por união fechada aqui. */
+  template?: string;
   tagline?: string;
   custom_domain?: string | null;
 }

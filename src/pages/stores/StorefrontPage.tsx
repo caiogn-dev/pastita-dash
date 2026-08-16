@@ -7,6 +7,7 @@ import { useStore } from '../../hooks';
 import { buildStorefrontUrl, buildStorefrontPreviewUrl } from '../../utils/storefrontUrl';
 import { Card, Button, PageShell, PhonePreview } from '../../components/ui';
 import { PhotoIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
+import { buscarTemplates, TEMPLATES_DE_EMERGENCIA, type TemplateDoCardapio } from './templatesDoCardapio';
 
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -23,16 +24,13 @@ function validateImageFile(file: File, maxBytes: number): string | null {
   return null;
 }
 
-type Template = 'fresh' | 'bold' | 'classic' | 'minimal' | 'dark' | 'elegant';
-
-const TEMPLATES: { id: Template; label: string; description: string; preview: string }[] = [
-  { id: 'fresh', label: 'Fresh', description: 'Claro, leve e visual. Ideal para saladas, bowls e comida saudável.', preview: '🥗' },
-  { id: 'bold', label: 'Bold', description: 'Promocional, forte e direto. Ideal para salgadinhos, pizza, burger e pastel.', preview: '🍔' },
-  { id: 'classic', label: 'Classic', description: 'Tradicional e editorial. Ideal para restaurantes, marmitas e cardápios clássicos.', preview: '🍱' },
-  { id: 'minimal', label: 'Minimal', description: 'Compacto e rápido. Ideal para cardápio estilo app de delivery.', preview: '⚡' },
-  { id: 'dark', label: 'Dark', description: 'Escuro e contrastado. Ideal para marcas noturnas, adegas e lanches premium.', preview: '🌙' },
-  { id: 'elegant', label: 'Elegant', description: 'Cards horizontais, tipografia serifada e fundo aconchegante. Ideal para confeitarias, doces e bolos.', preview: '🍰' },
-];
+/**
+ * O tipo é `string`, não uma união fechada: os templates vêm do backend
+ * (`GET /stores/templates/`), e uma união escrita aqui obrigaria deploy do
+ * painel a cada template novo — que foi exatamente como o `banquete` ficou
+ * invisível nesta tela.
+ */
+type Template = string;
 
 export const StorefrontPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
@@ -47,6 +45,9 @@ export const StorefrontPage: React.FC = () => {
 
   const [saving, setSaving] = useState(false);
   const [store, setStore] = useState<Store | null>(null);
+  // Os templates vêm do backend. Começa no fallback para a tela nunca abrir
+  // sem opção nenhuma — aparência vazia é pior que lista de emergência.
+  const [templates, setTemplates] = useState<TemplateDoCardapio[]>(TEMPLATES_DE_EMERGENCIA);
   const [form, setForm] = useState({
     template: 'fresh' as Template,
     primary_color: '#2D6A4F',
@@ -90,6 +91,8 @@ export const StorefrontPage: React.FC = () => {
   }, [effectiveStoreId]);
 
   useEffect(() => { loadStore(); }, [loadStore]);
+
+  useEffect(() => { buscarTemplates().then(setTemplates); }, []);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -286,7 +289,7 @@ export const StorefrontPage: React.FC = () => {
       <Card className="p-6 space-y-3">
         <h2 className="text-base font-semibold text-fg-token">Template</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {TEMPLATES.map(t => (
+          {templates.map(t => (
             <button
               key={t.id}
               onClick={() => setForm(f => ({ ...f, template: t.id }))}
