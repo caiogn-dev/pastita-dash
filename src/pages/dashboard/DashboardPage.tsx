@@ -224,7 +224,13 @@ export const DashboardPage: React.FC = () => {
   const [recentOrders, setRecentOrders]         = useState<StoreOrder[]>([]);
   const [pipelineCounts, setPipelineCounts]     = useState<Record<string, number>>({});
   const [projectHealth, setProjectHealth]       = useState<ProjectHealth | null>(null);
-  const [loading, setLoading]                   = useState(true);
+  // Três gates independentes: os KPIs (Pedidos/Receita/Aguardando + pipeline)
+  // saem SÓ do /stats e não devem esperar o overview (18 queries) nem a lista.
+  // Cada bloco pinta assim que a SUA fonte volta — antes o Promise.allSettled
+  // prendia tudo até o request mais lento dos três.
+  const [kpisLoading, setKpisLoading]           = useState(true);
+  const [ordersLoading, setOrdersLoading]       = useState(true);
+  const [overviewLoading, setOverviewLoading]   = useState(true);
   const [loadError, setLoadError]               = useState(false);
   const [healthLoading, setHealthLoading]       = useState(true);
   const [advancing, setAdvancing]               = useState<string | null>(null);
@@ -242,7 +248,9 @@ export const DashboardPage: React.FC = () => {
 
   const loadData = useCallback(async () => {
     if (!storeId) return;
-    setLoading(true);
+    setKpisLoading(true);
+    setOrdersLoading(true);
+    setOverviewLoading(true);
     setLoadError(false);
 
     // O card "Saúde do sistema" SÓ é renderizado p/ is_staff (admin). Pra dono de
@@ -259,73 +267,75 @@ export const DashboardPage: React.FC = () => {
       setHealthLoading(false);
     }
 
-    try {
-      const [ordersResp, statsResp, overviewResp] = await Promise.allSettled([
-        // Só os 10 recentes p/ a tabela — NÃO baixar a lista inteira (page_size
-        // default=500 trazia ~3MB numa loja cheia só p/ mostrar 10 + contar status).
-        getOrders({ store: storeId, page_size: 10, ordering: '-created_at' }),
-        getOrderStats(storeId),
-        dashboardService.getOverview({ store: storeId }),
-      ]);
+    // As 3 chamadas disparam juntas (paralelo), mas cada uma pinta o SEU bloco
+    // ao voltar — sem barreira única no fim. Só os 10 recentes p/ a tabela; o
+    // /stats agrega por status p/ qualquer volume; o overview traz sparkline +
+    // conversas (18 queries, o mais lento — por isso não pode segurar os KPIs).
+    const ordersP   = getOrders({ store: storeId, page_size: 10, ordering: '-created_at' });
+    const statsP    = getOrderStats(storeId);
+    const overviewP = dashboardService.getOverview({ store: storeId });
 
-      // allSettled nunca rejeita, então uma falha TOTAL (as 3 chamadas caíram)
-      // passaria despercebida: KPIs ficariam em 0 e a tabela mostraria "Nenhum
-      // pedido ainda" — indistinguível de uma loja realmente vazia. Detectamos e
-      // sinalizamos explicitamente para o dono da loja poder tentar de novo.
-      const allFailed = [ordersResp, statsResp, overviewResp].every((r) => r.status === 'rejected');
-      if (allFailed) {
-        setLoadError(true);
-        toast.error('Erro ao carregar dados');
-      }
-
-      let resolvedPendingCount = 0;
-
-      if (ordersResp.status === 'fulfilled') {
-        setRecentOrders(ordersResp.value.results.slice(0, 10));
-      }
-
-      if (statsResp.status === 'fulfilled' && statsResp.value) {
-        setOrdersToday(Number(statsResp.value.total_orders || 0));
-        setRevenueToday(Number(statsResp.value.today_revenue || 0));
-        setCmpHoje(statsResp.value.comparativo?.today);
-        // Pipeline vem do agregado por status (correto p/ qualquer volume,
-        // não limitado à 1ª página de pedidos como antes).
-        const byStatus = statsResp.value.by_status || {};
+    // ── KPIs + pipeline: pintam assim que o /stats resolve.
+    statsP
+      .then((stats) => {
+        if (!stats) return;
+        setOrdersToday(Number(stats.total_orders || 0));
+        setRevenueToday(Number(stats.today_revenue || 0));
+        setCmpHoje(stats.comparativo?.today);
+        const byStatus = stats.by_status || {};
         setPipelineCounts(byStatus);
-        resolvedPendingCount = Number(byStatus.pending || 0);
-        setPendingCount(resolvedPendingCount);
-      }
+        const pend = Number(byStatus.pending || 0);
+        setPendingCount(pend);
+        checkAndNotify(pend);
+      })
+      .catch(() => {})
+      .finally(() => setKpisLoading(false));
 
-      if (overviewResp.status === 'fulfilled') {
-        const overview = overviewResp.value;
+    // ── Tabela de pedidos recentes: skeleton próprio.
+    ordersP
+      .then((resp) => setRecentOrders(resp.results.slice(0, 10)))
+      .catch(() => {})
+      .finally(() => setOrdersLoading(false));
+
+    // ── Overview: conversas + sparkline (o card "Esperando resposta").
+    overviewP
+      .then((overview) => {
         const cv = overview?.conversations;
-        const ov = overview?.orders;
-        // waiting_reply e não by_status.open: o status de conversa nasce 'open'
-        // e nada nunca fecha, então `open` é o total histórico da loja. O card
-        // mostrava "208 conversas em aberto — cliente esperando resposta"
-        // quando havia 5. Fallback mantido só para backend antigo.
+        // waiting_reply e não by_status.open: o status nasce 'open' e nada
+        // nunca fecha, então `open` é o total histórico. Fallback p/ backend antigo.
         if (cv) setConversationsOpen(Number(cv.waiting_reply ?? cv.by_status?.open ?? cv.active ?? 0));
         const sk = (overview as { sparkline?: { revenue?: number[]; orders?: number[] } })?.sparkline;
         if (sk) setSparkline({ revenue: sk.revenue ?? [], orders: sk.orders ?? [] });
+      })
+      .catch(() => {})
+      .finally(() => setOverviewLoading(false));
+
+    // ── Fallback dos KPIs: o overview só assume Pedidos/Receita/Aguardando
+    // quando o /stats FALHA. Com stats OK, ele é a fonte (resolve primeiro,
+    // pinta antes) e o overview não sobrescreve. Ambos saem do mesmo banco.
+    Promise.allSettled([statsP, overviewP]).then(([s, o]) => {
+      if (s.status === 'rejected' && o.status === 'fulfilled') {
+        const ov = o.value?.orders;
         if (ov) {
-          resolvedPendingCount = Number(ov.by_status?.pending ?? 0);
-          setPendingCount(resolvedPendingCount);
-          if (!Number.isFinite(Number(statsResp.status === 'fulfilled' ? statsResp.value?.today_revenue : NaN))) {
-            setRevenueToday(Number(ov.revenue_today ?? 0));
-          }
-          if (!Number.isFinite(Number(statsResp.status === 'fulfilled' ? statsResp.value?.total_orders : NaN))) {
-            setOrdersToday(Number(ov.today ?? 0));
-          }
+          const pend = Number(ov.by_status?.pending ?? 0);
+          setPendingCount(pend);
+          setRevenueToday(Number(ov.revenue_today ?? 0));
+          setOrdersToday(Number(ov.today ?? 0));
+          checkAndNotify(pend);
         }
       }
+    });
 
-      checkAndNotify(resolvedPendingCount);
+    // ── Falha TOTAL (os 3 caíram): allSettled nunca rejeita, então uma queda
+    // geral passaria como "loja vazia" (KPIs 0 + "Nenhum pedido ainda"). Detecta
+    // e sinaliza p/ o dono poder tentar de novo.
+    Promise.allSettled([ordersP, statsP, overviewP]).then((rs) => {
+      if (rs.every((r) => r.status === 'rejected')) {
+        setLoadError(true);
+        toast.error('Erro ao carregar dados');
+      }
       setRefreshedAt(new Date());
-    } catch {
-      toast.error('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
+    });
   }, [storeId]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -381,7 +391,7 @@ export const DashboardPage: React.FC = () => {
           Fila de trabalho: cada linha diz o QUE está parado, QUANTO, e leva
           direto ao recorte. Sem linha nenhuma, a seção some — é o sinal de que
           não há nada esperando, e vale mais que um "tudo certo" decorativo. */}
-      {!loading && (
+      {!kpisLoading && (
         <InsightList
           titulo="Precisa de você"
           tom="alerta"
@@ -418,7 +428,7 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* ── Error banner (falha total no carregamento) ── */}
-      {loadError && !loading && (
+      {loadError && (
         <div
           role="alert"
           className="flex flex-wrap items-center gap-3 px-4 py-3.5 rounded-xl border
@@ -482,9 +492,9 @@ export const DashboardPage: React.FC = () => {
           label="Pedidos hoje"
           icone={<ShoppingBagIcon />}
           serie={sparkline.orders}
-          value={loading ? '—' : ordersToday}
+          value={kpisLoading ? '—' : ordersToday}
           sub={
-            !loading && ordersToday === 0
+            !kpisLoading && ordersToday === 0
               ? 'Nenhum ainda hoje'
               : 'Todos os pedidos criados hoje, inclusive cancelados.'
           }
@@ -494,11 +504,11 @@ export const DashboardPage: React.FC = () => {
           label="Receita hoje"
           icone={<BanknotesIcon />}
           serie={sparkline.revenue}
-          value={loading ? '—' : fmt(revenueToday)}
+          value={kpisLoading ? '—' : fmt(revenueToday)}
           tone="brand"
           sub="Pagos e não cancelados, pela data do pagamento. Sem pedido de teste."
           comparativo={
-            cmpHoje && !loading
+            cmpHoje && !kpisLoading
               ? { variacaoPct: cmpHoje.variacao_pct, rotulo: cmpHoje.rotulo }
               : undefined
           }
@@ -506,7 +516,7 @@ export const DashboardPage: React.FC = () => {
         <StatCard
           label="Aguardando"
           icone={<BellAlertIcon />}
-          value={loading ? '—' : pendingCount}
+          value={kpisLoading ? '—' : pendingCount}
           tone={pendingCount > 0 ? 'warning' : 'default'}
           sub={
             pendingCount > 0
@@ -518,7 +528,7 @@ export const DashboardPage: React.FC = () => {
         <StatCard
           label="Esperando resposta"
           icone={<ChatBubbleLeftRightIcon />}
-          value={loading ? '—' : conversationsOpen}
+          value={overviewLoading ? '—' : conversationsOpen}
           sub={
             conversationsOpen > 0
               ? 'Clientes que falaram por último e ainda não foram respondidos (48h).'
@@ -562,7 +572,7 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {loading ? (
+          {ordersLoading ? (
             <div className="flex justify-center items-center h-40"><Loading /></div>
           ) : recentOrders.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 text-fg-muted-token">
@@ -604,7 +614,7 @@ export const DashboardPage: React.FC = () => {
             <h2 className="text-sm font-semibold text-fg-token">Pipeline de pedidos</h2>
           </div>
           <div className="p-5 space-y-3">
-            {loading ? (
+            {kpisLoading ? (
               <div className="flex justify-center py-6"><Loading size="sm" /></div>
             ) : (
               PIPELINE.map(({ key, label, color }) => {

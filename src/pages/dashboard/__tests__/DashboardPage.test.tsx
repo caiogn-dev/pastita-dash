@@ -98,6 +98,28 @@ describe('DashboardPage — estado de erro no carregamento', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('pinta os KPIs assim que o /stats volta, SEM esperar overview nem a lista', async () => {
+    // Só o /stats resolve; overview e lista ficam pendentes para sempre.
+    // Antes, o Promise.allSettled prendia os 3 números até o mais lento dos três.
+    mockedApi.getOrderStats.mockResolvedValue({
+      total_orders: 7,
+      today_revenue: 123.45,
+      by_status: { pending: 2 },
+    } as never);
+    mockedApi.getOrders.mockReturnValue(new Promise(() => {}) as never);
+    mockedDash.getOverview.mockReturnValue(new Promise(() => {}) as never);
+
+    renderPage();
+
+    // Receita hoje já formatada e "Aguardando" já preenchidos, mesmo com os
+    // outros dois requests ainda pendentes.
+    await waitFor(() => expect(screen.getByText(/R\$\s?123,45/)).toBeInTheDocument());
+    expect(screen.getByText('7')).toBeInTheDocument();
+    // pending=2 aparece no card "Aguardando" E no pipeline "Pendentes" — os dois
+    // saem do /stats, então ambos já pintados sem overview/lista.
+    expect(screen.getAllByText('2').length).toBeGreaterThanOrEqual(2);
+  });
+
   it('o botão "Tentar novamente" refaz as chamadas de carregamento', async () => {
     mockedApi.getOrders.mockRejectedValue(new Error('rede'));
     mockedApi.getOrderStats.mockRejectedValue(new Error('rede'));
