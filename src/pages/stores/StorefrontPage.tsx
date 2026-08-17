@@ -32,6 +32,33 @@ function validateImageFile(file: File, maxBytes: number): string | null {
  */
 type Template = string;
 
+interface StorefrontForm {
+  template: Template;
+  primary_color: string;
+  secondary_color: string;
+  tagline: string;
+  custom_domain: string;
+}
+
+const DEFAULT_FORM: StorefrontForm = {
+  template: 'fresh',
+  primary_color: '#2D6A4F',
+  secondary_color: '#1B4332',
+  tagline: '',
+  custom_domain: '',
+};
+
+/** Espelha a loja persistida no formato do formulário. Fonte única usada tanto
+ *  na carga quanto no rollback do save — o rascunho nunca deve divergir do que
+ *  o backend realmente guardou. */
+const formFromStore = (data: Store): StorefrontForm => ({
+  template: (data.template as Template) || DEFAULT_FORM.template,
+  primary_color: data.primary_color || DEFAULT_FORM.primary_color,
+  secondary_color: data.secondary_color || DEFAULT_FORM.secondary_color,
+  tagline: data.tagline || DEFAULT_FORM.tagline,
+  custom_domain: data.custom_domain || DEFAULT_FORM.custom_domain,
+});
+
 export const StorefrontPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, stores } = useStore();
@@ -48,13 +75,7 @@ export const StorefrontPage: React.FC = () => {
   // Os templates vêm do backend. Começa no fallback para a tela nunca abrir
   // sem opção nenhuma — aparência vazia é pior que lista de emergência.
   const [templates, setTemplates] = useState<TemplateDoCardapio[]>(TEMPLATES_DE_EMERGENCIA);
-  const [form, setForm] = useState({
-    template: 'fresh' as Template,
-    primary_color: '#2D6A4F',
-    secondary_color: '#1B4332',
-    tagline: '',
-    custom_domain: '',
-  });
+  const [form, setForm] = useState<StorefrontForm>(DEFAULT_FORM);
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState('');
@@ -77,13 +98,7 @@ export const StorefrontPage: React.FC = () => {
     try {
       const data = await getStore(effectiveStoreId);
       setStore(data);
-      setForm({
-        template: (data.template as Template) || 'fresh',
-        primary_color: data.primary_color || '#2D6A4F',
-        secondary_color: data.secondary_color || '#1B4332',
-        tagline: data.tagline || '',
-        custom_domain: data.custom_domain || '',
-      });
+      setForm(formFromStore(data));
     } catch (err) {
       console.error('[StorefrontPage] loadStore:', err);
       toast.error(getErrorMessage(err) || 'Erro ao carregar configurações da loja');
@@ -160,6 +175,11 @@ export const StorefrontPage: React.FC = () => {
     } catch (err) {
       console.error('[StorefrontPage] handleSave:', err);
       toast.error(getErrorMessage(err) || 'Erro ao salvar. Tente novamente.');
+      // Rollback: o save FALHOU, então o backend não mudou. Sem isto o rascunho
+      // otimista (cartão de template destacado, cores, domínio) permanecia na
+      // tela dando a impressão de que salvou — a queixa era o cartão marcado
+      // num template que nunca foi persistido. Volta ao que a loja tem de fato.
+      if (store) setForm(formFromStore(store));
     } finally {
       setSaving(false);
     }
