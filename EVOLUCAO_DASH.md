@@ -3,6 +3,50 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-17)
+
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
+  transitivas de `react-router`/`react-router-dom` — fatia dedicada (mexe no
+  roteador, requer validação de build).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1028 testes / 195 suítes verdes** (era 1023/195; +5 desta fatia).
+
+### 2026-08-17 — Segurança: neutralização de injeção de fórmula nos exports CSV (CSV injection)
+- **Medido:** varredura de segurança a nível de código nos exports CSV dos
+  relatórios. `src/utils/csv.ts` (`toCsv`/`escapeCell`) — fonte única de **todos**
+  os CSVs do painel (`AnalyticsPage`: faturamento, produtos, estoque, clientes;
+  `reports/sections/shared.tsx`) — escapava `;`/`"`/`\n` corretamente, mas **não
+  neutralizava fórmulas**. Campos controlados pelo cliente final entram nesses
+  arquivos: nome do produto (`product_name`), **nome/telefone/e-mail do cliente**
+  (`top_customers`). Um valor como `=cmd|'/C calc'!A1`, `=HYPERLINK("http://…")`
+  ou `@SUM(...)` é interpretado como **fórmula** pelo Excel/LibreOffice/Sheets ao
+  abrir o CSV que o lojista baixa — execução de fórmula/exfiltração a partir de
+  dado de outro tenant (CSV/formula injection, OWASP).
+- **Mudado (`src/utils/csv.ts`, aditivo e mínimo):** em `escapeCell`, quando o
+  valor **de texto** começa com `=`, `+`, `-`, `@`, TAB (`\t`) ou CR (`\r`),
+  prefixa uma aspa simples (`'`) — mitigação recomendada pela OWASP, faz o Excel
+  tratar a célula como texto literal em vez de fórmula. Números tipados (inclui
+  **negativos**, ex.: `-5`) passam pelo ramo numérico e **não** são tocados. O
+  escape de `;`/`"`/`\n` continua igual (a aspa neutralizante fica dentro do
+  campo entre aspas quando necessário). Bônus: telefones `+55…` agora preservam
+  o `+` literal em vez de o Excel os tratar como número.
+- **Teste (TDD, vermelho→verde):** `src/utils/__tests__/csv.test.ts` ganhou 5
+  casos (escritos vermelhos antes: 3 falhando por falta de neutralização) —
+  prefixo em `=`/`+`/`-`/`@`; fórmula com `;` dentro (aspa dentro do campo entre
+  aspas); TAB/CR no início; **número negativo tipado não neutralizado**; texto
+  comum com `=` no meio intacto. Os 4 casos antigos seguem verdes (nenhum começa
+  com caractere perigoso).
+- **Antes/depois:** `npm test` 1023/195 → **1028/195**; `tsc --noEmit` limpo nos
+  dois lados. Zero mudança de comportamento visível fora de células com prefixo
+  de fórmula (dado malicioso ou telefone `+`); risco baixo, ganho de segurança
+  real entre tenants.
+- **Próximo passo priorizado:** (1) **Segurança:** planejar o major bump de
+  `react-router` 6→7 (open redirect) como fatia dedicada com validação de build.
+  (2) **A11y — dialog.tsx composto:** ligar `DialogTitle`↔`Dialog` via contexto
+  para nomear diálogos automaticamente. (3) Continuar a varredura de "zeros
+  enganosos" em seções de KPI derivadas de query (`ProductsPage` contadores,
+  seções de `reports/`).
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
