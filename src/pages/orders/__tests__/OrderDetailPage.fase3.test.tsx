@@ -83,6 +83,22 @@ describe('OrderDetailPage — Fase 3 (F2 banner)', () => {
   });
 });
 
+describe('OrderDetailPage — método digital (link de pagamento)', () => {
+  it('mostra "Link de pagamento", não "Delivery", para pedido digital', async () => {
+    mockGetOrder.mockResolvedValue({ ...baseOrder, delivery_method: 'digital' });
+    render(<OrderDetailPage />);
+    expect(await screen.findByText('Link de pagamento')).toBeInTheDocument();
+    expect(screen.queryByText('Delivery')).not.toBeInTheDocument();
+  });
+
+  it('mantém "Delivery" para pedido delivery', async () => {
+    mockGetOrder.mockResolvedValue({ ...baseOrder, delivery_method: 'delivery' });
+    render(<OrderDetailPage />);
+    expect(await screen.findByText('Delivery')).toBeInTheDocument();
+    expect(screen.queryByText('Link de pagamento')).not.toBeInTheDocument();
+  });
+});
+
 describe('OrderDetailPage — Fase 3 (F3 gerar cobrança PIX)', () => {
   it('gera cobrança com amount = amount_due e exibe pix copia-e-cola, QR e link', async () => {
     mockGetOrder.mockResolvedValue({ ...baseOrder, amount_paid: 20, amount_due: 30, is_fully_paid: false });

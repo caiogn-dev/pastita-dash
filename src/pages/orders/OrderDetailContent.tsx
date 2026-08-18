@@ -25,6 +25,7 @@ import {
   ChevronDownIcon,
   BellIcon,
   BellSlashIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -708,6 +709,13 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                       <HomeIcon className="h-4 w-4 text-[var(--brand)]" />
                       <span>Retirada no balcão</span>
                     </>
+                  ) : order.delivery_method === 'digital' ? (
+                    // Cobrança por link de pagamento não tem para onde entregar —
+                    // mostrar "Delivery" + caminhão era a confusão do dono.
+                    <>
+                      <LinkIcon className="h-4 w-4 text-[var(--brand)]" />
+                      <span>Link de pagamento</span>
+                    </>
                   ) : (
                     <>
                       <TruckIcon className="h-4 w-4 text-[var(--brand)]" />
@@ -916,8 +924,9 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               </div>
             )}
 
-            {/* Delivery address — always visible for delivery orders */}
-            {compactAddress && order.delivery_method !== 'pickup' && (
+            {/* Endereço de entrega — só para pedido de delivery de verdade.
+                'digital' (link de pagamento) e 'pickup' não têm entrega. */}
+            {compactAddress && order.delivery_method === 'delivery' && (
               <div className="rounded-xl border border-border-token bg-surface px-4 py-4 sm:px-5">
                 <p className="overline tracking-[0.24em] mb-2">Endereço de entrega</p>
                 <div className="flex items-start gap-2 text-sm">
