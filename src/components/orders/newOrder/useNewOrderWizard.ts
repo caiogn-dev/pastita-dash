@@ -6,6 +6,7 @@ import { getErrorMessage } from '../../../services/api';
 import type { Product } from '../../../services/products';
 import type { CustomerSearchResult, UserAddress, DiscountType, RouteQuote } from '../../../types/crm';
 import type { CartItem, PaymentMethod, Customer } from './types';
+import { parseCoords, type Coords } from './parseCoords';
 
 export interface UseNewOrderWizardOpts {
   storeSlug: string;
@@ -43,6 +44,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
   const [freeAddressText, setFreeAddressText] = useState('');
   const [routeQuote, setRouteQuote] = useState<RouteQuote | null>(null);
+  const [routeCoords, setRouteCoords] = useState<Coords | null>(null);
   const [calculatingRoute, setCalculatingRoute] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discountType, setDiscountType] = useState<DiscountType>('percent');
@@ -59,7 +61,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
 
   const reset = () => {
     setStep(0); setCustomer(null); setDeliveryMethod('delivery'); setSelectedAddress(null);
-    setFreeAddressText(''); setRouteQuote(null); setCart([]); setDiscountType('percent');
+    setFreeAddressText(''); setRouteQuote(null); setRouteCoords(null); setCart([]); setDiscountType('percent');
     setDiscountValue(''); setDiscountReason(''); setSurchargeValue(''); setSurchargeReason('');
     setPaymentMethod('pix'); setSubmitting(false);
     setEnableScheduling(false); setScheduledDate(''); setScheduledTime('');
@@ -71,14 +73,20 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
 
   const handleCalculateRoute = async (address: string) => {
     if (!address.trim() || !storeSlug) return;
+    // Se colaram um link do Maps / "lat,lng" (a localização que o cliente
+    // mandou no WhatsApp), calcula por coordenada — distância real, sem depender
+    // de geocodificar texto. Senão, geocodifica o endereço.
+    const coords = parseCoords(address);
     setCalculatingRoute(true);
     try {
-      const data = await ordersService.calculateDeliveryFee(storeSlug, address);
+      const data = await ordersService.calculateDeliveryFee(storeSlug, address, coords);
       setRouteQuote({ fee: data.fee, distance_km: data.distance_km, duration_minutes: data.duration_minutes });
+      setRouteCoords(coords);
     } catch (err) {
       console.error('[NewOrderWizard] handleCalculateRoute:', err);
-      toast.error(getErrorMessage(err) || 'Erro ao calcular rota');
+      toast.error(getErrorMessage(err) || 'Erro ao calcular a taxa de entrega');
       setRouteQuote(null);
+      setRouteCoords(null);
     } finally {
       setCalculatingRoute(false);
     }
@@ -101,7 +109,10 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
       }
       return true;
     }
-    if (step === 1) return deliveryMethod === 'pickup' || freeAddressText.trim().length > 0;
+    // Delivery só avança com a taxa JÁ calculada — foi exatamente isto que
+    // faltou no pedido da Ana Paula: endereço preenchido, "Calcular" não
+    // clicado, e o frete saiu 0. Sem cotação, não passa.
+    if (step === 1) return deliveryMethod === 'pickup' || (freeAddressText.trim().length > 0 && routeQuote !== null);
     if (step === 2) return cart.length > 0;
     return true;
   };
@@ -110,7 +121,13 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     if (!customer || cart.length === 0 || submitting) return;
     setSubmitting(true);
     try {
-      const deliveryAddress = deliveryMethod === 'delivery' ? freeAddressText.trim() : undefined;
+      // Com coords (pin do WhatsApp / link do Maps), manda endereço estruturado
+      // com lat/lng — o pedido fica geolocalizado, não um texto solto.
+      const deliveryAddress = deliveryMethod !== 'delivery'
+        ? undefined
+        : routeCoords
+          ? { lat: routeCoords.lat, lng: routeCoords.lng, raw_address: freeAddressText.trim() }
+          : freeAddressText.trim();
       const apiPaymentMethod: 'pix' | 'cash' | 'credit_card' | 'debit_card' =
         paymentMethod === 'fiado' ? 'cash' : (paymentMethod as 'pix' | 'cash' | 'credit_card');
       const isNewCustomer = customer.id === '';
@@ -167,10 +184,18 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     }
   };
 
+  // Editar o endereço invalida a cotação anterior: sem isto, dava para calcular
+  // no endereço A, trocar para o B e enviar o frete errado do A.
+  const updateAddress = (v: string) => {
+    setFreeAddressText(v);
+    setRouteQuote(null);
+    setRouteCoords(null);
+  };
+
   return {
     step, setStep, next, back, canProceed,
     customer, setCustomer, deliveryMethod, setDeliveryMethod, selectedAddress, setSelectedAddress,
-    freeAddressText, setFreeAddressText, routeQuote, calculatingRoute, handleCalculateRoute,
+    freeAddressText, setFreeAddressText: updateAddress, routeQuote, calculatingRoute, handleCalculateRoute,
     cart, addToCart, changeQty, removeFromCart,
     discountType, setDiscountType, discountValue, setDiscountValue, discountReason, setDiscountReason,
     surchargeValue, setSurchargeValue, surchargeReason, setSurchargeReason,

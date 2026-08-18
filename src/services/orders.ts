@@ -117,10 +117,15 @@ export const ordersService = {
     return normalizeOrder(response.data);
   },
 
-  calculateDeliveryFee: async (storeSlug: string, address: string): Promise<CalculatedDeliveryFee> => {
-    const response = await api.post<CalculatedDeliveryFee>(`/stores/${storeSlug}/delivery-fee/`, {
-      address,
-    });
+  calculateDeliveryFee: async (
+    storeSlug: string,
+    address: string,
+    coords?: { lat: number; lng: number } | null,
+  ): Promise<CalculatedDeliveryFee> => {
+    // Coordenadas (do pin do WhatsApp / link do Maps) calculam por distância
+    // real; sem elas, o backend geocodifica o texto. O endpoint aceita os dois.
+    const payload = coords ? { lat: coords.lat, lng: coords.lng } : { address };
+    const response = await api.post<CalculatedDeliveryFee>(`/stores/${storeSlug}/delivery-fee/`, payload);
     return {
       ...response.data,
       fee: toNumber(response.data.fee),

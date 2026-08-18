@@ -104,7 +104,7 @@ export function StepEntrega({
           {/* Endereço livre */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-2">
-              Ou digitar endereço
+              Endereço ou localização do cliente
             </label>
             <div className="flex gap-2">
               <input
@@ -114,7 +114,14 @@ export function StepEntrega({
                   setFreeAddressText(e.target.value);
                   setSelectedAddress(null);
                 }}
-                placeholder="Rua das Flores, 123, Palmas-TO"
+                onBlur={() => {
+                  // Auto-calcula ao sair do campo — sem depender de lembrar do
+                  // botão. Se colaram o link do Maps, calcula pelo pin.
+                  if (freeAddressText.trim() && !routeQuote && !calculatingRoute) {
+                    onCalculateRoute(freeAddressText.trim());
+                  }
+                }}
+                placeholder="Endereço, ou cole o link do Google Maps que o cliente enviou"
                 className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
               />
               <button
@@ -126,6 +133,9 @@ export function StepEntrega({
                 {calculatingRoute ? 'Calc...' : 'Calcular'}
               </button>
             </div>
+            <p className="mt-1.5 text-xs text-gray-400 dark:text-zinc-500">
+              Cole o link de localização do WhatsApp/Maps para calcular a taxa pelo pin exato.
+            </p>
           </div>
 
           {/* Resultado da rota */}
@@ -147,6 +157,14 @@ export function StepEntrega({
                 </p>
               )}
             </div>
+          )}
+
+          {/* Sem taxa calculada, "Avançar" fica travado — o pedido da Ana Paula
+              foi enviado com frete 0 justamente por não ter passado por aqui. */}
+          {!routeQuote && !calculatingRoute && freeAddressText.trim().length > 0 && (
+            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+              Calcule a taxa de entrega para continuar.
+            </p>
           )}
         </>
       )}

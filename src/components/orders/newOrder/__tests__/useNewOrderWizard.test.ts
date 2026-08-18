@@ -26,7 +26,7 @@ test('canProceed gates step 0 on customer + valid phone', () => {
 test('handleCalculateRoute stores the quote', async () => {
   const { result } = renderHook(() => useNewOrderWizard({ storeSlug: 'loja-1' }));
   await act(async () => { await result.current.handleCalculateRoute('Rua X, 100'); });
-  expect(calculateDeliveryFee).toHaveBeenCalledWith('loja-1', 'Rua X, 100');
+  expect(calculateDeliveryFee).toHaveBeenCalledWith('loja-1', 'Rua X, 100', null);
   expect(result.current.routeQuote).toEqual({ fee: 9, distance_km: 2.3, duration_minutes: 21 });
 });
 
@@ -47,4 +47,29 @@ test('handleSubmit sends slug + delivery_fee from the quote and calls onCreated'
     items: [{ product_id: 'p1', quantity: 1 }],
   }));
   await waitFor(() => expect(onCreated).toHaveBeenCalled());
+});
+
+test('delivery não avança do passo de entrega sem taxa calculada (bug Ana Paula)', async () => {
+  const { result } = renderHook(() => useNewOrderWizard({ storeSlug: 'loja-1' }));
+  act(() => { result.current.setStep(1); result.current.setFreeAddressText('Secretaria da segurança publica'); });
+  expect(result.current.canProceed()).toBe(false);
+  await act(async () => { await result.current.handleCalculateRoute('Secretaria da segurança publica'); });
+  expect(result.current.canProceed()).toBe(true);
+});
+
+test('link do Maps calcula por coordenadas e o pedido vai geolocalizado (Aline)', async () => {
+  const { result } = renderHook(() => useNewOrderWizard({ storeSlug: 'loja-1' }));
+  const link = 'https://www.google.com/maps/search/?api=1&query=-10.21659%2C-48.33439';
+  act(() => {
+    result.current.setCustomer({ id: 'c1', name: 'Aline', phone_number: '63999990000', email: '' } as never);
+    result.current.addToCart(PRODUCT);
+    result.current.setFreeAddressText(link);
+  });
+  await act(async () => { await result.current.handleCalculateRoute(link); });
+  expect(calculateDeliveryFee).toHaveBeenCalledWith('loja-1', link, { lat: -10.21659, lng: -48.33439 });
+  await act(async () => { await result.current.handleSubmit(); });
+  const calls = (createOrder as jest.Mock).mock.calls;
+  const payload = calls[calls.length - 1][0];
+  expect(payload.delivery_address).toEqual({ lat: -10.21659, lng: -48.33439, raw_address: link });
+  expect(payload.delivery_fee).toBe(9);
 });
