@@ -34,7 +34,7 @@ export function StepEntrega({
   setFreeAddressText: (v: string) => void;
   routeQuote: RouteQuote | null;
   calculatingRoute: boolean;
-  onCalculateRoute: (address: string) => void;
+  onCalculateRoute: (address: string, coords?: { lat: number; lng: number } | null) => void;
   onUseSharedLocation: () => void;
   customerHasPhone: boolean;
   enableScheduling: boolean;
@@ -50,7 +50,10 @@ export function StepEntrega({
     setSelectedAddress(addr);
     const full = `${addr.street}, ${addr.number} — ${addr.neighborhood}, ${addr.city}-${addr.state}`;
     setFreeAddressText(full);
-    onCalculateRoute(full);
+    // Endereço salvo com lat/lng calcula por coordenada (distância real), sem
+    // depender de geocodificar o texto montado.
+    const coords = addr.lat != null && addr.lng != null ? { lat: addr.lat, lng: addr.lng } : null;
+    onCalculateRoute(full, coords);
   };
 
   return (

@@ -21,7 +21,7 @@ export interface NewOrderWizard {
   deliveryMethod: 'delivery' | 'pickup'; setDeliveryMethod: (m: 'delivery' | 'pickup') => void;
   selectedAddress: UserAddress | null; setSelectedAddress: (a: UserAddress | null) => void;
   freeAddressText: string; setFreeAddressText: (v: string) => void;
-  routeQuote: RouteQuote | null; calculatingRoute: boolean; handleCalculateRoute: (address: string) => Promise<void>;
+  routeQuote: RouteQuote | null; calculatingRoute: boolean; handleCalculateRoute: (address: string, coords?: Coords | null) => Promise<void>;
   handleUseSharedLocation: () => Promise<void>; customerHasPhone: boolean;
   cart: CartItem[]; addToCart: (p: Product) => void; changeQty: (id: string, qty: number) => void; removeFromCart: (id: string) => void;
   discountType: DiscountType; setDiscountType: (v: DiscountType) => void;
@@ -72,12 +72,11 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
   const next = () => setStep((s) => Math.min(4, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
 
-  const handleCalculateRoute = async (address: string) => {
+  const handleCalculateRoute = async (address: string, coordsOverride?: Coords | null) => {
     if (!address.trim() || !storeSlug) return;
-    // Se colaram um link do Maps / "lat,lng" (a localização que o cliente
-    // mandou no WhatsApp), calcula por coordenada — distância real, sem depender
-    // de geocodificar texto. Senão, geocodifica o endereço.
-    const coords = parseCoords(address);
+    // Coords explícitas (endereço salvo com lat/lng) têm prioridade; senão tenta
+    // extrair de um link do Maps / "lat,lng" colado; senão geocodifica o texto.
+    const coords = coordsOverride ?? parseCoords(address);
     setCalculatingRoute(true);
     try {
       const data = await ordersService.calculateDeliveryFee(storeSlug, address, coords);
