@@ -46,6 +46,26 @@ describe('Dialog composto — nome acessível automático via DialogTitle', () =
     ).toBeInTheDocument();
   });
 
+  it('vincula o aria-labelledby ao id do heading no mesmo render (sem effect/round-trip)', () => {
+    // O vínculo precisa existir já no commit inicial: o Modal move o foco para
+    // dentro do painel ao abrir, e um aria-labelledby que só aparece depois de
+    // um effect + re-render deixaria o leitor de tela anunciar um diálogo sem
+    // nome. Aqui o id do heading e o aria-labelledby do diálogo são o mesmo id
+    // estável gerado pelo Dialog.
+    render(
+      <Dialog open onOpenChange={() => {}}>
+        <DialogContent>
+          <DialogTitle>Título estável</DialogTitle>
+        </DialogContent>
+      </Dialog>
+    );
+
+    const dialog = screen.getByRole('dialog');
+    const labelledby = dialog.getAttribute('aria-labelledby');
+    expect(labelledby).toBeTruthy();
+    expect(screen.getByText('Título estável').id).toBe(labelledby);
+  });
+
   it('usa ariaLabel quando não há DialogTitle', () => {
     render(
       <Dialog open onOpenChange={() => {}} ariaLabel="Diálogo sem título">

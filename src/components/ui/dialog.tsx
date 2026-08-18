@@ -1,15 +1,7 @@
 /**
  * Dialog Component - Alias for Modal with Dialog-like API
  */
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useState,
-} from 'react';
+import React, { createContext, useContext, useId } from 'react';
 import { Modal } from './modal';
 import { cn } from '../../utils/cn';
 
@@ -26,21 +18,18 @@ export interface DialogProps {
 }
 
 /**
- * Contexto que liga o `DialogTitle` ao `Dialog` que o contém: o título registra
- * seu id e o diálogo o usa como `aria-labelledby`, nomeando-se sozinho.
+ * Contexto que liga o `DialogTitle` ao `Dialog` que o contém: o Dialog gera um
+ * id estável e o DialogTitle renderiza seu heading com ele, para o diálogo se
+ * nomear sozinho. A ligação é feita de forma SÍNCRONA (no primeiro commit, sem
+ * effect nem round-trip de estado), garantindo que o `aria-labelledby` já esteja
+ * presente antes de o Modal mover o foco para dentro do painel.
  */
 interface DialogTitleContextValue {
-  /** Id padrão gerado pelo Dialog para o heading do título. */
+  /** Id estável gerado pelo Dialog para o heading do título. */
   defaultTitleId: string;
-  /** Registra o id do heading efetivamente usado. */
-  register: (id: string) => void;
-  /** Desfaz o registro ao desmontar o título. */
-  unregister: () => void;
 }
 
-const DialogTitleContext = createContext<DialogTitleContextValue | null>(
-  null
-);
+const DialogTitleContext = createContext<DialogTitleContextValue | null>(null);
 
 export const Dialog: React.FC<DialogProps> = ({
   open,
@@ -51,24 +40,13 @@ export const Dialog: React.FC<DialogProps> = ({
   ariaLabelledby,
 }) => {
   const defaultTitleId = useId();
-  const [registeredTitleId, setRegisteredTitleId] = useState<
-    string | null
-  >(null);
 
-  const register = useCallback(
-    (id: string) => setRegisteredTitleId(id),
-    []
-  );
-  const unregister = useCallback(() => setRegisteredTitleId(null), []);
-
-  const titleContext = useMemo<DialogTitleContextValue>(
-    () => ({ defaultTitleId, register, unregister }),
-    [defaultTitleId, register, unregister]
-  );
-
-  // Precedência do nome acessível: aria-labelledby explícito → DialogTitle
-  // registrado → aria-label (resolvido pelo Modal).
-  const resolvedLabelledby = ariaLabelledby ?? registeredTitleId ?? undefined;
+  // Precedência do nome acessível: aria-labelledby explícito → heading do
+  // DialogTitle (id estável, presente já no primeiro render) → aria-label
+  // (resolvido pelo Modal). Como o DialogTitle usa este mesmo id por padrão, o
+  // vínculo existe desde o commit inicial — não depende de effect.
+  const resolvedLabelledby =
+    ariaLabelledby ?? (ariaLabel ? undefined : defaultTitleId);
 
   return (
     <Modal
@@ -79,7 +57,7 @@ export const Dialog: React.FC<DialogProps> = ({
       ariaLabel={ariaLabel}
       ariaLabelledby={resolvedLabelledby}
     >
-      <DialogTitleContext.Provider value={titleContext}>
+      <DialogTitleContext.Provider value={{ defaultTitleId }}>
         {children}
       </DialogTitleContext.Provider>
     </Modal>
@@ -124,13 +102,9 @@ export const DialogTitle: React.FC<DialogTitleProps> = ({
   const ctx = useContext(DialogTitleContext);
   const generatedId = useId();
   // Id efetivo do heading: id explícito → id padrão do Dialog → fallback local.
+  // Sem effect: o Dialog já aponta seu aria-labelledby para `defaultTitleId`,
+  // então usar esse mesmo id aqui fecha o vínculo já no primeiro render.
   const resolvedId = id ?? ctx?.defaultTitleId ?? generatedId;
-
-  useEffect(() => {
-    if (!ctx) return;
-    ctx.register(resolvedId);
-    return () => ctx.unregister();
-  }, [ctx, resolvedId]);
 
   return (
     <h2

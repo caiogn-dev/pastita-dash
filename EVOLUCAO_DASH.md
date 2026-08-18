@@ -7,7 +7,7 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 - `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **1115 testes / 204 suítes verdes** (era 1112/203; +3/+1 desta fatia).
+- `npm test`: **1116 testes / 204 suítes verdes** (era 1112/203; +4/+1 desta fatia).
 - `npm run build` (tsc && vite build, igual à Vercel): **ok** (~15s).
 
 ## Histórico
@@ -23,12 +23,16 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   cobertos; o composto exigia fiar o id à mão.
 - **Mudado (componente ativo, mudança aditiva):**
   - `dialog.tsx`: novo `DialogTitleContext`. O `Dialog` gera um `defaultTitleId`
-    (via `useId`), provê o contexto e usa o id do título **registrado** como
-    `aria-labelledby` do `Modal`. Precedência: `ariaLabelledby` explícito →
-    `DialogTitle` registrado → `ariaLabel`.
-  - `DialogTitle`: lê o contexto, aplica o id resolvido (`id` explícito → id
-    padrão do `Dialog` → fallback local) ao `<h2>` e se registra/desregistra no
-    mount/unmount. Sem `Dialog` ao redor, continua um `<h2>` comum (nada quebra).
+    (via `useId`), provê o contexto e aponta o `aria-labelledby` do `Modal` para
+    ele **de forma síncrona** (no primeiro render). Precedência: `ariaLabelledby`
+    explícito → heading do `DialogTitle` → `ariaLabel`.
+  - `DialogTitle`: lê o contexto e renderiza o `<h2>` com o id resolvido (`id`
+    explícito → id padrão do `Dialog` → fallback local). Sem `Dialog` ao redor,
+    continua um `<h2>` comum (nada quebra).
+  - **Sem effect/round-trip** (revisão do Codex, P2): o vínculo é feito no commit
+    inicial, então o `aria-labelledby` já existe **antes** de o `Modal` mover o
+    foco para dentro do painel — evita a janela em que o leitor de tela anunciava
+    um diálogo sem nome logo ao abrir.
   - Import de `react` trocado para nomeado (`createContext`, `useId`, …): os usos
     anteriores de `React.*` eram só de tipo (apagados em runtime), então o default
     não resolvia os hooks agora usados de fato.
@@ -37,8 +41,9 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — escrita **vermelha antes**
   (o caso de auto-nomeação falhava; os casos de props explícitas já passavam)
   **verde depois**. Cobre: nome automático pelo `DialogTitle`, precedência do
-  `ariaLabelledby` explícito e fallback para `ariaLabel` sem título.
-- **Antes/depois:** `npm test` 1112/203 → **1115/204**; `tsc --noEmit` limpo e
+  `ariaLabelledby` explícito, o vínculo id↔`aria-labelledby` no mesmo render (sem
+  effect) e fallback para `ariaLabel` sem título.
+- **Antes/depois:** `npm test` 1112/203 → **1116/204**; `tsc --noEmit` limpo e
   `vite build` ok nos dois lados. Só atributos de acessibilidade adicionados,
   risco baixo.
 - **Próximo passo priorizado:** (1) **Segurança/deps:** planejar o major bump de
