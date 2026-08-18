@@ -12,6 +12,7 @@ import { whatsappTemplates, WhatsAppTemplate } from '../../data/whatsappTemplate
 import { getErrorMessage, ordersService, productsService, whatsappService } from '../../services';
 import { Product } from '../../services/products';
 import { Order } from '../../types';
+import { parseCoords, type Coords } from '../orders/newOrder/parseCoords';
 
 type Tab = 'templates' | 'tools';
 type ToolId = 'route' | 'catalog' | 'order' | null;
@@ -421,7 +422,7 @@ function TemplatesTab({
 
 // ─── Route Tool ──────────────────────────────────────────────────────────────
 
-function RouteTool({ storeSlug, onSendMessage }: { storeSlug?: string; onSendMessage: (text: string) => Promise<void> }) {
+function RouteTool({ storeSlug, conversation, onSendMessage }: { storeSlug?: string; conversation: ConversationRef; onSendMessage: (text: string) => Promise<void> }) {
   const [address, setAddress] = useState('');
   const [quote, setQuote] = useState<{ fee?: number; distance_km?: number | null; duration_minutes?: number | null; message?: string } | null>(null);
   const [calculating, setCalculating] = useState(false);
@@ -435,11 +436,29 @@ function RouteTool({ storeSlug, onSendMessage }: { storeSlug?: string; onSendMes
     if (!address.trim() || !storeSlug || calculating) return;
     setCalculating(true);
     try {
-      const data = await ordersService.calculateDeliveryFee(storeSlug, address.trim());
+      // Cola do link do Maps / "lat,lng" → calcula pelo pin (distância real).
+      const data = await ordersService.calculateDeliveryFee(storeSlug, address.trim(), parseCoords(address));
       setQuote(data);
     } catch (error) {
       toast.error(getErrorMessage(error));
       setQuote(null);
+    } finally {
+      setCalculating(false);
+    }
+  };
+
+  const usarLocalizacao = async () => {
+    if (!storeSlug || calculating) return;
+    setCalculating(true);
+    try {
+      const loc = await ordersService.getSharedLocation(storeSlug, { phone: onlyDigits(conversation.phone_number) });
+      if (!loc) { toast.error('Esse cliente não enviou localização no WhatsApp.'); return; }
+      const label = (loc.address || '').trim() || `Localização enviada (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})`;
+      setAddress(label);
+      const data = await ordersService.calculateDeliveryFee(storeSlug, label, { lat: loc.lat, lng: loc.lng });
+      setQuote(data);
+    } catch (error) {
+      toast.error(getErrorMessage(error) || 'Erro ao puxar a localização');
     } finally {
       setCalculating(false);
     }
@@ -465,11 +484,19 @@ function RouteTool({ storeSlug, onSendMessage }: { storeSlug?: string; onSendMes
   return (
     <div className="quick-tool-body">
       <label className="tool-label">Endereço de destino</label>
+      <button
+        type="button"
+        className="tp-btn tp-btn-secondary w-full"
+        onClick={() => void usarLocalizacao()}
+        disabled={calculating}
+      >
+        📍 {calculating ? 'Buscando...' : 'Usar localização enviada no WhatsApp'}
+      </button>
       <input
         className="tool-input"
         value={address}
         onChange={e => setAddress(e.target.value)}
-        placeholder="Ex: Rua das Flores, 123, Palmas-TO"
+        placeholder="Endereço, ou cole o link do Google Maps do cliente"
         onKeyDown={e => e.key === 'Enter' && void handleSend()}
       />
       {mapsUrl && (
@@ -687,6 +714,45 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
+  const [deliveryCoords, setDeliveryCoords] = useState<Coords | null>(null);
+  const [calculatingFee, setCalculatingFee] = useState(false);
+
+  // Calcula o frete pelo endereço (texto ou link do Maps colado) e guarda coords.
+  const calcularFrete = async (endereco: string, coords: Coords | null) => {
+    if (!storeSlug || !endereco.trim()) return;
+    setCalculatingFee(true);
+    try {
+      const data = await ordersService.calculateDeliveryFee(storeSlug, endereco.trim(), coords);
+      setDeliveryFee(data.fee ?? 0);
+      setDeliveryCoords(coords);
+    } catch (error) {
+      toast.error(getErrorMessage(error) || 'Erro ao calcular a taxa');
+      setDeliveryFee(null);
+      setDeliveryCoords(null);
+    } finally {
+      setCalculatingFee(false);
+    }
+  };
+
+  // Puxa a última localização que o cliente mandou no WhatsApp e calcula o frete.
+  const usarLocalizacao = async () => {
+    if (!storeSlug) return;
+    setCalculatingFee(true);
+    try {
+      const loc = await ordersService.getSharedLocation(storeSlug, { phone: onlyDigits(conversation.phone_number) });
+      if (!loc) { toast.error('Esse cliente não enviou localização no WhatsApp.'); return; }
+      const label = (loc.address || '').trim() || `Localização enviada (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})`;
+      setDeliveryAddress(label);
+      const data = await ordersService.calculateDeliveryFee(storeSlug, label, { lat: loc.lat, lng: loc.lng });
+      setDeliveryFee(data.fee ?? 0);
+      setDeliveryCoords({ lat: loc.lat, lng: loc.lng });
+    } catch (error) {
+      toast.error(getErrorMessage(error) || 'Erro ao puxar a localização');
+    } finally {
+      setCalculatingFee(false);
+    }
+  };
 
   useEffect(() => {
     setItems([{ name: '', qty: 1, price: '' }]);
@@ -761,6 +827,11 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
   const handleCreateOrder = async () => {
     const validItems = items.filter(item => item.product_id && item.qty > 0);
     if (!storeId || !validItems.length || creating) return;
+    // Delivery sem taxa calculada nasce com frete 0 — mesma dor do PDV. Bloqueia.
+    if (deliveryMethod === 'delivery' && deliveryFee === null) {
+      toast.error('Calcule a taxa de entrega antes de criar o pedido.');
+      return;
+    }
     setCreating(true);
     try {
       const order = await ordersService.createOrder({
@@ -770,7 +841,12 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
         // Sem email fabricado: o backend trata identidade interna sozinho e
         // email sintético vazaria depois como "email do cliente" (regra server2).
         delivery_method: deliveryMethod,
-        delivery_address: deliveryMethod === 'delivery' ? deliveryAddress : undefined,
+        delivery_address: deliveryMethod !== 'delivery'
+          ? undefined
+          : deliveryCoords
+            ? { lat: deliveryCoords.lat, lng: deliveryCoords.lng, raw_address: deliveryAddress.trim() }
+            : deliveryAddress,
+        delivery_fee: deliveryMethod === 'delivery' ? (deliveryFee ?? 0) : 0,
         payment_method: paymentMethod,
         items: validItems.map(item => ({ product_id: item.product_id!, quantity: item.qty })),
         notes,
@@ -781,6 +857,8 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
       setItems([{ name: '', qty: 1, price: '' }]);
       setNotes('');
       setDeliveryAddress('');
+      setDeliveryFee(null);
+      setDeliveryCoords(null);
       toast.success('Pedido criado');
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -877,12 +955,37 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
       {deliveryMethod === 'delivery' && (
         <div className="order-notes">
           <label className="tool-label">Endereço</label>
+          <button
+            type="button"
+            className="tp-btn tp-btn-secondary w-full"
+            onClick={() => void usarLocalizacao()}
+            disabled={calculatingFee}
+          >
+            📍 {calculatingFee ? 'Buscando...' : 'Usar localização enviada no WhatsApp'}
+          </button>
           <input
             className="tool-input"
             value={deliveryAddress}
-            onChange={e => setDeliveryAddress(e.target.value)}
-            placeholder="Endereço de entrega"
+            onChange={e => { setDeliveryAddress(e.target.value); setDeliveryFee(null); setDeliveryCoords(null); }}
+            onBlur={() => { if (deliveryAddress.trim() && deliveryFee === null && !calculatingFee) void calcularFrete(deliveryAddress, parseCoords(deliveryAddress)); }}
+            placeholder="Endereço, ou cole o link do Google Maps do cliente"
           />
+          <button
+            type="button"
+            className="tp-btn tp-btn-secondary w-full"
+            onClick={() => void calcularFrete(deliveryAddress, parseCoords(deliveryAddress))}
+            disabled={!deliveryAddress.trim() || calculatingFee}
+          >
+            {calculatingFee ? 'Calculando...' : 'Calcular taxa'}
+          </button>
+          {deliveryFee !== null ? (
+            <div className="tool-result">
+              <strong>{formatCurrency(deliveryFee)}</strong>
+              <span>Taxa de entrega calculada</span>
+            </div>
+          ) : deliveryAddress.trim() ? (
+            <p className="tool-hint" style={{ color: '#d97706' }}>Calcule a taxa antes de criar o pedido.</p>
+          ) : null}
         </div>
       )}
 
@@ -948,7 +1051,7 @@ function ToolsTab({ accountId, conversation, storeId, storeSlug, storeName, onSe
             </button>
 
             {isActive && tool.id === 'route' && (
-              <RouteTool storeSlug={storeSlug} onSendMessage={onSendMessage} />
+              <RouteTool storeSlug={storeSlug} conversation={conversation} onSendMessage={onSendMessage} />
             )}
             {isActive && tool.id === 'catalog' && (
               <CatalogTool

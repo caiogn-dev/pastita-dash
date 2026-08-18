@@ -16,6 +16,8 @@ export function StepEntrega({
   routeQuote,
   calculatingRoute,
   onCalculateRoute,
+  onUseSharedLocation,
+  customerHasPhone,
   enableScheduling,
   setEnableScheduling,
   scheduledDate,
@@ -33,6 +35,8 @@ export function StepEntrega({
   routeQuote: RouteQuote | null;
   calculatingRoute: boolean;
   onCalculateRoute: (address: string) => void;
+  onUseSharedLocation: () => void;
+  customerHasPhone: boolean;
   enableScheduling: boolean;
   setEnableScheduling: (v: boolean) => void;
   scheduledDate: string;
@@ -99,6 +103,17 @@ export function StepEntrega({
                 ))}
               </div>
             </div>
+          )}
+
+          {customerHasPhone && (
+            <button
+              type="button"
+              onClick={() => onUseSharedLocation()}
+              disabled={calculatingRoute}
+              className="w-full mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-primary-300 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-sm font-semibold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/40 disabled:opacity-50 transition-colors"
+            >
+              📍 {calculatingRoute ? 'Buscando...' : 'Usar localização enviada no WhatsApp'}
+            </button>
           )}
 
           {/* Endereço livre */}

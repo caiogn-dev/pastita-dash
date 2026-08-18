@@ -22,6 +22,7 @@ export interface NewOrderWizard {
   selectedAddress: UserAddress | null; setSelectedAddress: (a: UserAddress | null) => void;
   freeAddressText: string; setFreeAddressText: (v: string) => void;
   routeQuote: RouteQuote | null; calculatingRoute: boolean; handleCalculateRoute: (address: string) => Promise<void>;
+  handleUseSharedLocation: () => Promise<void>; customerHasPhone: boolean;
   cart: CartItem[]; addToCart: (p: Product) => void; changeQty: (id: string, qty: number) => void; removeFromCart: (id: string) => void;
   discountType: DiscountType; setDiscountType: (v: DiscountType) => void;
   discountValue: string; setDiscountValue: (v: string) => void; discountReason: string; setDiscountReason: (v: string) => void;
@@ -87,6 +88,30 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
       toast.error(getErrorMessage(err) || 'Erro ao calcular a taxa de entrega');
       setRouteQuote(null);
       setRouteCoords(null);
+    } finally {
+      setCalculatingRoute(false);
+    }
+  };
+
+  // Puxa a última localização que o cliente mandou no WhatsApp e calcula o
+  // frete pelo pin — sem redigitar. Usa o telefone do cliente selecionado.
+  const handleUseSharedLocation = async () => {
+    const phone = (customer?.phone_number_edited || customer?.phone_number || '').replace(/\D/g, '');
+    if (!phone || !storeSlug) return;
+    setCalculatingRoute(true);
+    try {
+      const loc = await ordersService.getSharedLocation(storeSlug, { phone });
+      if (!loc) {
+        toast.error('Esse cliente não enviou localização no WhatsApp.');
+        return;
+      }
+      const label = (loc.address || '').trim() || `Localização enviada (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})`;
+      setFreeAddressText(label);
+      const data = await ordersService.calculateDeliveryFee(storeSlug, label, { lat: loc.lat, lng: loc.lng });
+      setRouteQuote({ fee: data.fee, distance_km: data.distance_km, duration_minutes: data.duration_minutes });
+      setRouteCoords({ lat: loc.lat, lng: loc.lng });
+    } catch (err) {
+      toast.error(getErrorMessage(err) || 'Erro ao puxar a localização');
     } finally {
       setCalculatingRoute(false);
     }
@@ -196,6 +221,8 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     step, setStep, next, back, canProceed,
     customer, setCustomer, deliveryMethod, setDeliveryMethod, selectedAddress, setSelectedAddress,
     freeAddressText, setFreeAddressText: updateAddress, routeQuote, calculatingRoute, handleCalculateRoute,
+    handleUseSharedLocation,
+    customerHasPhone: Boolean((customer?.phone_number_edited || customer?.phone_number || '').replace(/\D/g, '')),
     cart, addToCart, changeQty, removeFromCart,
     discountType, setDiscountType, discountValue, setDiscountValue, discountReason, setDiscountReason,
     surchargeValue, setSurchargeValue, surchargeReason, setSurchargeReason,

@@ -138,6 +138,20 @@ export const ordersService = {
     };
   },
 
+  /** Última localização (pin) que o cliente enviou no WhatsApp — para reusar no
+   *  cálculo de rota / criação de pedido sem redigitar. Passe conversationId
+   *  (inbox) ou phone (PDV). Retorna null quando não há pin compartilhado. */
+  getSharedLocation: async (
+    storeSlug: string,
+    by: { conversationId?: string; phone?: string },
+  ): Promise<{ lat: number; lng: number; name?: string; address?: string } | null> => {
+    const params = by.conversationId ? { conversation: by.conversationId } : { phone: by.phone || '' };
+    const response = await api.get<{ location: { lat: number; lng: number; name?: string; address?: string } | null }>(
+      `/stores/${storeSlug}/shared-location/`, { params },
+    );
+    return response.data?.location ?? null;
+  },
+
   updateOrder: async (id: string, data: Partial<Order>, storeSlug?: string): Promise<Order> => {
     const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, data);
     return normalizeOrder(response.data);
