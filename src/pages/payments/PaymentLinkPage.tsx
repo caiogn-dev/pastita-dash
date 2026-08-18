@@ -156,6 +156,14 @@ export const PaymentLinkPage: React.FC = () => {
       toast.error('Informe um valor válido.');
       return;
     }
+    // Sem pedido anexado E sem descrição, o pedido que a cobrança gera nasce
+    // sem itens — só com o valor e a linha genérica "Cobrança por link de
+    // pagamento" (foi o que aconteceu na venda da Letícia). Exige um dos dois:
+    // anexar o pedido (traz os itens) ou dizer o que está cobrando.
+    if (!pedidoId && !description.trim()) {
+      toast.error('Anexe um pedido ou escreva uma descrição do que está cobrando — senão o pedido nasce sem itens, só com o valor.');
+      return;
+    }
     setGenerating(true);
     try {
       const { payment } = await paymentsService.createPaymentLink({
@@ -333,6 +341,12 @@ export const PaymentLinkPage: React.FC = () => {
             Informar os dados reais do cliente aumenta a taxa de aprovação do cartão.
           </p>
         </div>
+
+        {!pedidoId && !description.trim() && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Anexe um pedido ou escreva uma descrição — sem isso o pedido nasce sem itens, só com o valor.
+          </p>
+        )}
 
         <button
           type="submit"

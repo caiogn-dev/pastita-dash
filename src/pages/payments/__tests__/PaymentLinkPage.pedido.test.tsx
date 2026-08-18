@@ -93,6 +93,8 @@ describe('o avulso continua existindo', () => {
 
     await screen.findByRole('option', { name: /CE-123/ });
     await userEvent.type(screen.getByLabelText(/valor/i), '50');
+    // Sem pedido, a descrição é o que dá identidade — obrigatória agora.
+    await userEvent.type(screen.getByLabelText(/descrição/i), 'Sinal do evento');
     await userEvent.click(screen.getByRole('button', { name: /gerar/i }));
 
     await waitFor(() => expect(criarLink).toHaveBeenCalled());
