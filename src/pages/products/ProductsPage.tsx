@@ -217,6 +217,16 @@ export const ProductsPage: React.FC = () => {
                 }
               }
             }}
+            onRename={async (name) => {
+              if (g.id) {
+                try {
+                  await storesApi.updateCategory(g.id, { name });
+                  setCategories((cs) => cs.map((c) => (c.id === g.id ? { ...c, name } : c)));
+                } catch (e) {
+                  onError(e);
+                }
+              }
+            }}
             onAddItem={(catId) => setModalProduct({ category: catId })}
           />
         ))}

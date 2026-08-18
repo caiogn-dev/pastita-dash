@@ -76,3 +76,38 @@ describe('CategorySection', () => {
     expect(onAddItem).toHaveBeenCalledWith('a');
   });
 });
+
+describe('CategorySection — renomear categoria', () => {
+  const render1 = (onRename: (n: string) => void) =>
+    render(
+      <DndContext>
+        <CategorySection
+          group={group}
+          collapsed
+          rowHandlers={handlers}
+          onToggleCollapse={jest.fn()}
+          onTogglePause={jest.fn()}
+          onRename={onRename}
+          onAddItem={jest.fn()}
+        />
+      </DndContext>,
+    );
+
+  it('clicar no lápis abre o input e salvar chama onRename com o novo nome', () => {
+    const onRename = jest.fn();
+    render1(onRename);
+    fireEvent.click(screen.getByLabelText('Renomear categoria'));
+    const input = screen.getByLabelText('Nome da categoria') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Jantar' } });
+    fireEvent.click(screen.getByLabelText('Salvar nome'));
+    expect(onRename).toHaveBeenCalledWith('Jantar');
+  });
+
+  it('não chama onRename se o nome não mudou', () => {
+    const onRename = jest.fn();
+    render1(onRename);
+    fireEvent.click(screen.getByLabelText('Renomear categoria'));
+    fireEvent.click(screen.getByLabelText('Salvar nome'));
+    expect(onRename).not.toHaveBeenCalled();
+  });
+});
