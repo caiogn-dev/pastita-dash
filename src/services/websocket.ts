@@ -28,7 +28,7 @@ type EventHandler = (event: WebSocketEvent) => void;
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
-  private config: Required<WebSocketConfig>;
+  readonly config: Required<WebSocketConfig>;
   private subscribers: Map<string, Map<string, EventHandler>> = new Map();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private listeners: Map<string, Set<(...args: any[]) => void>> = new Map();
@@ -253,7 +253,20 @@ export class WebSocketClient {
 // Singleton instance
 let instance: WebSocketClient | null = null;
 
+/** Identidade do socket: mudou algum destes, o cliente antigo não serve mais. */
+function mesmaConexao(a: WebSocketConfig, b: WebSocketConfig): boolean {
+  return a.url === b.url && a.token === b.token && a.storeSlug === b.storeSlug;
+}
+
 export function createWebSocket(config?: WebSocketConfig): WebSocketClient {
+  if (config && instance && !mesmaConexao(instance.config, config)) {
+    // Trocou de loja ou o token foi renovado: devolver a instância antiga
+    // entregava um socket apontando para OUTRA loja (ou já morto), e o pedido
+    // novo nunca chegava — só depois de um F5. O inbox não sofria porque usa
+    // outro hook, o que fazia o defeito parecer "só nos pedidos".
+    instance.disconnect();
+    instance = null;
+  }
   if (!instance && config) {
     instance = new WebSocketClient(config);
   }

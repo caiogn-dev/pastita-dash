@@ -128,6 +128,18 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       ws.subscribe('order.payment_received', (event) => {
         applyEventOrRefresh(event as OrderRealtimeEvent);
       });
+
+      // O backend emite `order.paid` e `order.cancelled` (ver
+      // realtime_service.broadcast_order_event). Sem estes dois, PIX confirmado
+      // e pedido cancelado eram transmitidos e o painel ignorava — a linha só
+      // mudava de estado depois de um F5.
+      ws.subscribe('order.paid', (event) => {
+        applyEventOrRefresh(event as OrderRealtimeEvent);
+      });
+
+      ws.subscribe('order.cancelled', (event) => {
+        applyEventOrRefresh(event as OrderRealtimeEvent);
+      });
     };
 
     initWebSocket();
