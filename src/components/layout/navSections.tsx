@@ -111,7 +111,11 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       // Recuperadas: existiam no código e não tinham caminho nenhum no menu.
       { name: 'E-mails automáticos', href: '/marketing/automations',        icon: ArrowPathRoundedSquareIcon },
       { name: 'Modelos de mensagem', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-      { name: 'Assinantes',          href: '/marketing/subscribers',        icon: UsersIcon },
+      // 'Assinantes' (/marketing/subscribers) saiu do menu: o modelo Subscriber
+      // está em 0 e nada o alimenta. O público real de campanha vive em
+      // EmailRecipient (136) e StoreCustomer (100) — a tela ficaria vazia para
+      // sempre, não por falta de uso, mas por olhar a tabela errada. A rota
+      // segue de pé; volta ao menu quando apontar para o público de verdade.
     ],
   };
 
@@ -122,8 +126,13 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     items: [
       { name: 'Agentes de IA',        href: '/agents',               icon: CpuChipIcon, badge: 'Beta' },
       { name: 'Respostas automáticas', href: '/automation/companies', icon: BoltIcon },
-      { name: 'Fluxos do agente',     href: '/automation/flows',     icon: ShareIcon },
-      { name: 'Agendamentos',         href: '/automation/scheduled', icon: CalendarDaysIcon },
+      // 'Fluxos do agente' (/automation/flows) e 'Agendamentos'
+      // (/automation/scheduled) saíram do menu. Levantamento de 19/08 contra o
+      // banco de produção: AgentFlow 0, FlowSession 0, FlowExecutionLog 0,
+      // ScheduledMessage 0 — nunca executaram uma vez. O agente de IA não roda
+      // em produção (as 14 AgentConversation têm 0 mensagens cada), então
+      // "fluxo do agente" oferece configurar algo que não está ligado.
+      // As rotas continuam de pé; voltam ao menu quando houver o que mostrar.
       // Duas telas de log, uma delas permanentemente vazia: `AutomationLog`
       // (/automation/logs) só é escrito em evento de carrinho, e o caminho
       // real da mensagem não passa por lá. O `IntentLog` passou a registrar

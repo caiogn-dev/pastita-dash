@@ -60,8 +60,13 @@ describe('páginas recuperadas — existiam no código e não tinham caminho nen
 
   it.each([
     ['/marketing/automations', 'e-mails automáticos por evento'],
-    ['/marketing/subscribers', 'assinantes'],
-    ['/automation/flows', 'fluxos do agente'],
+    // '/marketing/subscribers' e '/automation/flows' foram REMOVIDOS desta
+    // lista em 19/08. Eles entraram aqui por um critério de superfície ("a
+    // página existe e não tem caminho no menu"), que estava certo na época.
+    // O critério novo é de conteúdo: medido contra o banco de produção, os
+    // dois nunca tiveram um registro sequer. Dar caminho de menu para tela
+    // que só sabe mostrar vazio é pior do que não ter caminho.
+    // Ver 'menu não promete tela que nunca teve dado', no fim do arquivo.
     ['/whatsapp/diagnostics', 'diagnóstico do webhook'],
     ['/whatsapp/debug', 'diagnóstico do chat'],
   ])('%s (%s) tem caminho no menu', (href) => {
@@ -112,4 +117,30 @@ it('nenhum link de conta no menu — eles vivem no menu do avatar', () => {
 it('não existe href duplicado — dois caminhos para a mesma tela ensinam duas vezes', () => {
   const hrefs = secoes().flatMap((s) => [s.href, ...s.items.map((i) => i.href)]).filter(Boolean);
   expect(new Set(hrefs).size).toBe(hrefs.length);
+});
+
+describe('menu não promete tela que nunca teve dado', () => {
+  /**
+   * Levantamento de 19/08, cruzando as 77 rotas com o banco de produção:
+   * AgentFlow 0, FlowSession 0, FlowExecutionLog 0, ScheduledMessage 0,
+   * Subscriber 0. O agente de IA nunca rodou em produção (as 14
+   * AgentConversation têm 0 mensagens cada), e "Assinantes" lista um modelo
+   * paralelo que nada alimenta — o dado real de campanha vive em
+   * EmailRecipient (136) e StoreCustomer (100).
+   *
+   * As ROTAS continuam de pé (link antigo não quebra); só saem do menu, para
+   * o painel parar de oferecer o que não entrega. Mesmo tratamento que
+   * /automation/logs já recebeu.
+   */
+  const semDado = ['/automation/flows', '/automation/scheduled', '/marketing/subscribers'];
+
+  it.each(semDado)('%s não aparece no menu', (href) => {
+    const todos = secoes().flatMap((s) => s.items.map((i) => i.href));
+    expect(todos).not.toContain(href);
+  });
+
+  it('Modelos de mensagem CONTINUA no menu — resolve o erro 131047 da janela de 24h', () => {
+    const todos = secoes().flatMap((s) => s.items.map((i) => i.href));
+    expect(todos).toContain('/marketing/whatsapp/templates');
+  });
 });
