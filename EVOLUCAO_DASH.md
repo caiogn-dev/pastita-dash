@@ -3,6 +3,56 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-19)
+
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high),
+  transitivas de `react-router`/deps de build — segue como fatia dedicada.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1029 testes / 195 suítes verdes** (base `origin/main` era
+  1023/195; +6 testes desta fatia, mesmas suítes).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~17s).
+- `npm run lint`: **0 errors** (warnings dentro do gate).
+
+### 2026-08-19 — A11y: navegação por teclado no menu `RowActions` (WAI-ARIA menu button)
+- **Medido:** `src/components/ui/RowActions.tsx` — o kebab de ações de linha,
+  usado em várias tabelas do painel — já declarava `role="menu"` +
+  `role="menuitem"` (prometendo ao leitor de tela navegação por seta), mas **não
+  implementava nenhuma interação de teclado do padrão ARIA Menu Button**: abrir o
+  menu não movia o foco para dentro dele, as setas não faziam nada, e o `Escape`
+  fechava sem devolver o foco ao gatilho. Quem navega por teclado abria o menu e
+  o foco ficava preso no gatilho — role prometido, comportamento não entregue
+  (viola WCAG 2.1.1 Keyboard e a expectativa do papel de menu).
+- **Mudado (só o componente compartilhado, sem mudança visual):**
+  - Ao **abrir**, o foco vai para o primeiro item ativo (`useEffect` no estado
+    `aberto`).
+  - **Roving tabindex**: só o item em foco fica tabbável (`tabIndex 0`); os demais
+    saem da ordem de Tab e são alcançados pelas setas.
+  - **↓/↑** navegam entre itens ativos com volta ao início/fim (wraparound),
+    **Home/End** vão ao primeiro/último, e ambos **pulam itens desabilitados**
+    (que sequer recebem foco).
+  - **Escape** e **acionar um item** fecham e devolvem o foco ao gatilho; **clique
+    fora** fecha sem roubar o foco (segue para onde o usuário clicou).
+  - No gatilho fechado, **↓/↑** abrem o menu já com o foco posicionado.
+  - Refatoração interna: os grupos "normais" e "destrutivas" viram uma única
+    lista ordenada (`ordenadas`) para que a divisória e a numeração dos índices
+    casem com a ordem visual — sem alterar o layout renderizado.
+- **Teste (TDD):** 6 casos novos em `RowActions.test.tsx`, escritos **vermelhos
+  antes** (6/6 falhando: foco não entrava no menu, setas inertes, Escape não
+  devolvia foco) **verdes depois**. Cobrem: foco no primeiro item ao abrir, ↓/↑
+  com wraparound, Home/End, pulo de item desabilitado, Escape→gatilho e
+  ativação→gatilho. Os 8 testes pré-existentes seguem verdes.
+- **Antes/depois:** `npm test` 1023/195 → **1029/195**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Risco baixo: comportamento de mouse e API
+  pública (`RowAction`/`RowActionsProps`) inalterados; só somei gestão de foco e
+  teclado.
+- **Próximo passo priorizado:** (1) **A11y — `linhaClicavel`:** a linha clicável
+  usa `<tr tabIndex=0>` sem `role`, mas depende de foco visível; auditar se todas
+  as tabelas que a usam também expõem a ação no `RowActions` (contrato do helper).
+  (2) **Segurança/deps:** planejar o major bump de `react-router` 6→7 (open
+  redirect) como fatia dedicada com validação de build. (3) **Perf:** varrer
+  `useMemo`/`useCallback` ausentes em listas grandes (Pedidos/Produtos) que
+  causem re-render por referência nova de handler.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
