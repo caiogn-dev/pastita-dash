@@ -31,7 +31,7 @@ import { messagePreviewText } from '../../utils/messagePreview';
 import { formatConversationTime, formatDayLabel, isSameDay } from '../../utils/chatTime';
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
-import { rolarParaOFim, estaNoFim } from './rolagemDoChat';
+import { rolarParaOFim, estaNoFim, grudarNoFim } from './rolagemDoChat';
 import { classesDoInbox } from './classesDoInbox';
 
 function ensureArray<T>(value: unknown): T[] {
@@ -538,6 +538,9 @@ const WhatsAppInboxPage: React.FC = () => {
   // infinito) não muda a última, logo não arrasta o usuário pro fim.
   const prevConversationIdRef = useRef<string | null>(null);
   const prevLastMessageIdRef = useRef<string | null>(null);
+  /** Solta o grude do fim: ao trocar de conversa e ao desmontar. */
+  const soltarGrudeRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => soltarGrudeRef.current?.(), []);
   useEffect(() => {
     if (!lastMessage) return;
     const conversationChanged = prevConversationIdRef.current !== selectedConversationId;
@@ -556,8 +559,12 @@ const WhatsAppInboxPage: React.FC = () => {
       // isso a conversa parava no meio (ou no topo, com histórico grande).
       const irAoFim = () => rolarParaOFim(messagesContainerRef.current);
       if (conversationChanged) {
-        irAoFim();
-        requestAnimationFrame(irAoFim);
+        // Ao ABRIR, um ajuste (ou dois quadros) não basta: as ~100 bolhas da
+        // primeira página são medidas ao longo de vários quadros e o
+        // scrollHeight continua crescendo depois. `grudarNoFim` acompanha o
+        // crescimento em vez de adivinhar quantos quadros esperar.
+        soltarGrudeRef.current?.();
+        soltarGrudeRef.current = grudarNoFim(messagesContainerRef.current);
       } else if (estaNoFim(messagesContainerRef.current, 240)) {
         // Mensagem nova só puxa quem já estava acompanhando o fim. Quem subiu
         // para ler histórico continua onde estava.
@@ -570,6 +577,9 @@ const WhatsAppInboxPage: React.FC = () => {
   const handleMessagesScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container || !selectedConversationId) return;
+    // Subiu para ler: solta o grude do fim imediatamente, senão o ajuste
+    // automático arrancaria o atendente de volta enquanto ele lê.
+    if (!estaNoFim(container, 240)) soltarGrudeRef.current?.();
     if (container.scrollTop < 80) {
       void loadOlderMessages(selectedConversationId);
     }
