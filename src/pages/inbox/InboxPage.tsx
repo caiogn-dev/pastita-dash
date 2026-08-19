@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loading } from '../../components/common';
-import { INBOX_TABS, resolveInboxTab } from './inboxTabs';
+import { INBOX_TABS, resolveInboxTab, rolagemDaAba } from './inboxTabs';
 
 // Conteúdo de cada aba reaproveita as páginas existentes (consolidação por rota;
 // a fusão real dos componentes vem depois).
@@ -39,14 +39,24 @@ const InboxPage: React.FC = () => {
           </button>
         ))}
       </div>
-      {/* overflow-y-auto: a rota /inbox cai no ramo fullscreen do MainLayout,
-          cujo container é `flex-1 overflow-hidden`. Nenhum ancestral rolava, e
-          `overflow: hidden` não é rolável pelo usuário — a aba "Todas" (página
-          de altura natural) era simplesmente cortada: do 6º card em diante nada
-          aparecia e a roda do mouse não fazia nada.
-          A aba WhatsApp não gera rolagem dupla porque seu container é
-          `height: 100%` com overflow próprio. */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      {/* Quem rola depende da aba — ver `rolagemDaAba`.
+
+          "Todas" é página de altura natural: sem rolagem em nenhum ancestral
+          ela ficava CORTADA (a rota /inbox cai no ramo fullscreen do
+          MainLayout, cujo container é `flex-1 overflow-hidden`, e overflow
+          hidden não é rolável pelo usuário). Por isso o wrapper rola nela.
+
+          WhatsApp é shell de altura fixa que rola por dentro. Com o wrapper
+          rolando, o chat inteiro — mensagens MAIS o campo de digitar — virava
+          conteúdo de uma página comprida: a lista de conversas saía da tela e
+          só dava para escrever depois de rolar até o fim. Nela o wrapper
+          precisa prender a altura. */}
+      <div
+        className={[
+          'min-h-0 flex-1',
+          rolagemDaAba(activeTab) === 'propria' ? 'overflow-hidden' : 'overflow-y-auto',
+        ].join(' ')}
+      >
         <Suspense fallback={<Loading />}>
           <Content />
         </Suspense>

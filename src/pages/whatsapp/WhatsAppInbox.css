@@ -1539,3 +1539,66 @@ select.item-name {
 .paleta-item span {
   color: var(--fg-muted-token, #6b7280);
 }
+
+/* ─── Tela estreita: uma coluna por vez ──────────────────────────────────────
+   `.conversations-panel` é `width: 320px; flex-shrink: 0` e o arquivo não tinha
+   NENHUM breakpoint de largura: num celular de 360px sobravam 40px para o chat.
+   O shell mobile não tem tela própria de inbox, então é esta página que chega
+   no celular.
+
+   Padrão do WhatsApp no celular: sem conversa escolhida, a lista ocupa a tela;
+   com conversa aberta, o chat ocupa a tela e a lista sai. A cadeia de altura
+   (min-height: 0) continua valendo — o que muda é só quem aparece.          */
+@media (max-width: 768px) {
+  .whatsapp-inbox .conversations-panel {
+    width: 100%;
+    flex-shrink: 1;
+    border-right: none;
+  }
+
+  .whatsapp-inbox .chat-panel {
+    display: none;
+  }
+
+  .whatsapp-inbox--conversa-aberta .conversations-panel {
+    display: none;
+  }
+
+  .whatsapp-inbox--conversa-aberta .chat-panel {
+    display: flex;
+    width: 100%;
+  }
+
+  /* Bolha de 65% fica estreita demais num telefone. */
+  .whatsapp-inbox .message-bubble,
+  .whatsapp-inbox .message-content {
+    max-width: 85%;
+  }
+}
+
+/* Botão de voltar do chat: só existe onde a lista sai da tela. */
+.chat-voltar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .whatsapp-inbox--conversa-aberta .chat-voltar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px é o alvo mínimo de toque — abaixo disso erra o dedo. */
+    width: 44px;
+    height: 44px;
+    margin-right: 0.25rem;
+    margin-left: -0.5rem;
+    border-radius: 9999px;
+    color: var(--text-primary, inherit);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .whatsapp-inbox--conversa-aberta .chat-voltar:active {
+    background: var(--surface-hover, rgba(0, 0, 0, 0.06));
+  }
+}

@@ -8,6 +8,7 @@ import { TrialBanner } from './TrialBanner';
 import { useIsMobileViewport } from '../../mobile/useIsMobileViewport';
 import { MobileShell } from '../../mobile/MobileShell';
 import { useAuthStore } from '../../stores/authStore';
+import { classeDeAltura } from './alturaDaCasca';
 
 /**
  * Casca do desktop: coluna de navegação à esquerda, barra de identidade em
@@ -17,9 +18,15 @@ import { useAuthStore } from '../../stores/authStore';
  * menu nunca sai de vista, que é o ponto de trocar a navbar horizontal por
  * ela.
  */
-const Casca: React.FC<{ children: React.ReactNode; comBanner?: boolean }> = ({
+const Casca: React.FC<{
+  children: React.ReactNode;
+  comBanner?: boolean;
+  /** Rota de tela cheia (inbox, KDS): prende a casca na viewport. Ver alturaDaCasca. */
+  alturaFixa?: boolean;
+}> = ({
   children,
   comBanner = true,
+  alturaFixa = false,
 }) => {
   const sections = useNavSections();
   const navigate = useNavigate();
@@ -40,7 +47,7 @@ const Casca: React.FC<{ children: React.ReactNode; comBanner?: boolean }> = ({
   }, []);
 
   return (
-    <div className="relative flex min-h-screen bg-bg-secondary text-fg-primary">
+    <div className={`relative flex ${classeDeAltura(alturaFixa)} bg-bg-secondary text-fg-primary`}>
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0"
@@ -101,8 +108,11 @@ export const MainLayout: React.FC = () => {
 
   if (isFullscreenRoute) {
     return (
-      <Casca>
-        <div className="flex-1 overflow-hidden">
+      // `alturaFixa`: sem teto de altura na raiz, `h-full`/`height: 100%` das
+      // camadas de baixo resolvem contra um pai que cresce — o chat empurrava
+      // a página e a coluna de conversas saía da tela.
+      <Casca alturaFixa>
+        <div className="min-h-0 flex-1 overflow-hidden">
           <Outlet />
         </div>
       </Casca>

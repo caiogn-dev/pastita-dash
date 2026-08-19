@@ -9,6 +9,7 @@ import {
   PaperAirplaneIcon,
   DocumentTextIcon,
   BoltIcon,
+  ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
 import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
 import { getErrorMessage } from '../../services';
@@ -31,6 +32,7 @@ import { formatConversationTime, formatDayLabel, isSameDay } from '../../utils/c
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
 import { rolarParaOFim, estaNoFim } from './rolagemDoChat';
+import { classesDoInbox } from './classesDoInbox';
 
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
@@ -601,7 +603,7 @@ const WhatsAppInboxPage: React.FC = () => {
   });
 
   return (
-    <div className="whatsapp-inbox">
+    <div className={classesDoInbox(Boolean(selectedConversationId))}>
       {ConfirmDialog}
       {/* Conversations List */}
       <div className="conversations-panel">
@@ -732,6 +734,17 @@ const WhatsAppInboxPage: React.FC = () => {
             {/* Chat Header */}
             <div className="chat-header">
               <div className="chat-info">
+                {/* Só no celular: com a conversa aberta a lista sai da tela
+                    (ver breakpoint em WhatsAppInbox.css), então sem isto o
+                    atendente fica preso na conversa sem caminho de volta. */}
+                <button
+                  type="button"
+                  className="chat-voltar"
+                  aria-label="Voltar para a lista de conversas"
+                  onClick={() => useChatStore.getState().setSelectedConversation(null)}
+                >
+                  <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
+                </button>
                 <ConversationAvatar conv={selectedConversation} size="sm" />
                 <div>
                   <h2>{selectedConversation.contact_name || formatPhone(selectedConversation.phone_number)}</h2>
