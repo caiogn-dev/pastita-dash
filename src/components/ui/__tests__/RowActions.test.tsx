@@ -196,6 +196,36 @@ describe('RowActions', () => {
       expect(screen.getByRole('menuitem', { name: 'Arquivar' })).toHaveFocus();
     });
 
+    it('seta para baixo no gatilho fechado abre com foco no primeiro item', () => {
+      render(
+        <RowActions
+          rotulo="Ações"
+          acoes={[
+            { rotulo: 'Editar', onClick: abrir },
+            { rotulo: 'Excluir', onClick: excluir, destrutiva: true },
+          ]}
+        />
+      );
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Ações' }), { key: 'ArrowDown' });
+      expect(screen.getByRole('menuitem', { name: 'Editar' })).toHaveFocus();
+    });
+
+    it('seta para cima no gatilho fechado abre com foco no último item', () => {
+      // Padrão menu button: ArrowUp num gatilho fechado abre o menu focando o
+      // ÚLTIMO item ativo, não o primeiro.
+      render(
+        <RowActions
+          rotulo="Ações"
+          acoes={[
+            { rotulo: 'Editar', onClick: abrir },
+            { rotulo: 'Excluir', onClick: excluir, destrutiva: true },
+          ]}
+        />
+      );
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Ações' }), { key: 'ArrowUp' });
+      expect(screen.getByRole('menuitem', { name: 'Excluir' })).toHaveFocus();
+    });
+
     it('Escape fecha e devolve o foco ao gatilho', () => {
       render(<RowActions rotulo="Ações" acoes={[{ rotulo: 'Editar', onClick: abrir }]} />);
       const gatilho = screen.getByRole('button', { name: 'Ações' });

@@ -43,6 +43,10 @@ export const RowActions: React.FC<RowActionsProps> = ({ rotulo, acoes, className
   const raiz = useRef<HTMLDivElement>(null);
   const gatilho = useRef<HTMLButtonElement>(null);
   const itens = useRef<(HTMLButtonElement | null)[]>([]);
+  // Quando o menu abre por ArrowUp no gatilho, o foco deve cair no ÚLTIMO item
+  // (não no primeiro), como manda o padrão de menu button. Este ref carrega essa
+  // intenção do handler do gatilho até o efeito de abertura.
+  const abrirNoUltimo = useRef(false);
 
   // Normais primeiro, destrutivas depois — a MESMA ordem visual do menu, para
   // que a navegação por seta e por índice case com o que se lê na tela.
@@ -86,7 +90,8 @@ export const RowActions: React.FC<RowActionsProps> = ({ rotulo, acoes, className
   // no gatilho e as setas não faziam nada, apesar do role="menu".
   useEffect(() => {
     if (!aberto) return;
-    const idx = primeiroAtivo();
+    const idx = abrirNoUltimo.current ? ultimoAtivo() : primeiroAtivo();
+    abrirNoUltimo.current = false;
     if (idx >= 0) {
       setFoco(idx);
       itens.current[idx]?.focus();
@@ -110,7 +115,6 @@ export const RowActions: React.FC<RowActionsProps> = ({ rotulo, acoes, className
       document.removeEventListener('keydown', aoTeclar);
       document.removeEventListener('mousedown', aoClicarFora);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto]);
 
   const aoTeclarNoMenu = (e: React.KeyboardEvent) => {
@@ -179,10 +183,12 @@ export const RowActions: React.FC<RowActionsProps> = ({ rotulo, acoes, className
           setAberto((v) => !v);
         }}
         onKeyDown={(e) => {
-          // Seta abre o menu já com o foco no item certo, sem exigir um clique.
+          // Seta abre o menu já com o foco no item certo, sem exigir um clique:
+          // ↓ cai no primeiro item, ↑ no último — o modelo do menu button.
           if (!aberto && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
             e.preventDefault();
             e.stopPropagation();
+            abrirNoUltimo.current = e.key === 'ArrowUp';
             setAberto(true);
           }
         }}

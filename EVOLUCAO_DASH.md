@@ -8,10 +8,12 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high),
   transitivas de `react-router`/deps de build — segue como fatia dedicada.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **1029 testes / 195 suítes verdes** (base `origin/main` era
-  1023/195; +6 testes desta fatia, mesmas suítes).
+- `npm test`: **1031 testes / 195 suítes verdes** (base `origin/main` era
+  1023/195; +8 testes desta fatia, mesmas suítes).
 - `npm run build` (tsc && vite build, igual à Vercel): **ok** (~17s).
-- `npm run lint`: **0 errors** (warnings dentro do gate).
+- `npm run lint`: **0 errors, 277 warnings** (gate 400). O CI usa
+  `--report-unused-disable-directives`, então diretiva `eslint-disable` que não
+  suprime nada vira **erro** e derruba o build — atenção ao adicioná-las.
 
 ### 2026-08-19 — A11y: navegação por teclado no menu `RowActions` (WAI-ARIA menu button)
 - **Medido:** `src/components/ui/RowActions.tsx` — o kebab de ações de linha,
@@ -32,16 +34,19 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
     (que sequer recebem foco).
   - **Escape** e **acionar um item** fecham e devolvem o foco ao gatilho; **clique
     fora** fecha sem roubar o foco (segue para onde o usuário clicou).
-  - No gatilho fechado, **↓/↑** abrem o menu já com o foco posicionado.
+  - No gatilho fechado, **↓** abre focando o **primeiro** item e **↑** abre
+    focando o **último** — exatamente o modelo do menu button (ajuste vindo de
+    revisão automática do Codex no PR).
   - Refatoração interna: os grupos "normais" e "destrutivas" viram uma única
     lista ordenada (`ordenadas`) para que a divisória e a numeração dos índices
     casem com a ordem visual — sem alterar o layout renderizado.
-- **Teste (TDD):** 6 casos novos em `RowActions.test.tsx`, escritos **vermelhos
-  antes** (6/6 falhando: foco não entrava no menu, setas inertes, Escape não
-  devolvia foco) **verdes depois**. Cobrem: foco no primeiro item ao abrir, ↓/↑
-  com wraparound, Home/End, pulo de item desabilitado, Escape→gatilho e
-  ativação→gatilho. Os 8 testes pré-existentes seguem verdes.
-- **Antes/depois:** `npm test` 1023/195 → **1029/195**; `tsc --noEmit` limpo e
+- **Teste (TDD):** 8 casos novos em `RowActions.test.tsx`, escritos **vermelhos
+  antes** (falhando: foco não entrava no menu, setas inertes, Escape não devolvia
+  foco) **verdes depois**. Cobrem: foco no primeiro item ao abrir, ↓/↑ com
+  wraparound, Home/End, pulo de item desabilitado, Escape→gatilho, ativação→
+  gatilho e abertura por ↓ (primeiro) / ↑ (último) no gatilho fechado. Os 8
+  testes pré-existentes seguem verdes.
+- **Antes/depois:** `npm test` 1023/195 → **1031/195**; `tsc --noEmit` limpo e
   `vite build` ok nos dois lados. Risco baixo: comportamento de mouse e API
   pública (`RowAction`/`RowActionsProps`) inalterados; só somei gestão de foco e
   teclado.
