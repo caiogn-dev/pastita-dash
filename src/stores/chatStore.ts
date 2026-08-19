@@ -82,6 +82,42 @@ const initialState = {
   wsConnected: false,
 };
 
+/**
+ * Quantas conversas mantêm mensagens em memória ao mesmo tempo.
+ *
+ * `messagesCache` nunca despejava nada: num turno o atendente abre dezenas de
+ * conversas e cada uma segurava até 100 mensagens por página carregada, para
+ * sempre. O painel ia ficando pesado ao longo do dia sem sintoma óbvio.
+ *
+ * Reabrir uma conversa despejada só refaz o fetch (100 mensagens, uma
+ * requisição) — barato e previsível. 8 cobre com folga o vaivém entre os
+ * atendimentos abertos de um mesmo momento.
+ */
+const MAX_CONVERSAS_EM_MEMORIA = 8;
+
+/** Insere a conversa como a MAIS recente e mantém só as N últimas.
+ *
+ * A recência é a ordem de inserção das chaves. `{...cache, [id]: v}` não serve:
+ * chave que já existe conserva a posição antiga, então reabrir uma conversa não
+ * a tornava recente e ela seria despejada mesmo estando em uso.
+ */
+function podarCache(
+  cache: Record<string, Message[]>,
+  atual: string,
+  messages: Message[]
+): Record<string, Message[]> {
+  const reordenado: Record<string, Message[]> = {};
+  for (const id of Object.keys(cache)) if (id !== atual) reordenado[id] = cache[id];
+  reordenado[atual] = messages;  // sempre por último = mais recente
+
+  const ids = Object.keys(reordenado);
+  if (ids.length <= MAX_CONVERSAS_EM_MEMORIA) return reordenado;
+
+  const podado: Record<string, Message[]> = {};
+  for (const id of ids.slice(ids.length - MAX_CONVERSAS_EM_MEMORIA)) podado[id] = reordenado[id];
+  return podado;
+}
+
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
@@ -156,10 +192,7 @@ export const useChatStore = create<ChatState>()(
       // Set messages for a conversation
       setMessages: (conversationId, messages) => {
         set((state) => ({
-          messagesCache: {
-            ...state.messagesCache,
-            [conversationId]: messages
-          }
+          messagesCache: podarCache(state.messagesCache, conversationId, messages)
         }));
       },
       

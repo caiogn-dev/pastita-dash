@@ -30,6 +30,7 @@ import { messagePreviewText } from '../../utils/messagePreview';
 import { formatConversationTime, formatDayLabel, isSameDay } from '../../utils/chatTime';
 import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
+import { rolarParaOFim, estaNoFim } from './rolagemDoChat';
 
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
@@ -542,7 +543,24 @@ const WhatsAppInboxPage: React.FC = () => {
     prevConversationIdRef.current = selectedConversationId;
     prevLastMessageIdRef.current = lastMessage.id;
     if (conversationChanged || lastChanged) {
-      messagesEndRef.current?.scrollIntoView({ behavior: conversationChanged ? 'auto' : 'smooth' });
+      // `scrollIntoView` rolava TODOS os ancestrais roláveis, não só a caixa de
+      // mensagens — e com o `block` padrão ('start') alinhava o marcador do FIM
+      // ao TOPO da viewport. Em conversa longa isso arrastava a página inteira:
+      // navbar e lista de conversas saíam da tela. Mexer no scrollTop do
+      // próprio container não tem como vazar para o pai.
+      //
+      // Em quadro seguinte: as bolhas ainda estão sendo pintadas quando o
+      // efeito roda, então o scrollHeight de agora é menor que o final — sem
+      // isso a conversa parava no meio (ou no topo, com histórico grande).
+      const irAoFim = () => rolarParaOFim(messagesContainerRef.current);
+      if (conversationChanged) {
+        irAoFim();
+        requestAnimationFrame(irAoFim);
+      } else if (estaNoFim(messagesContainerRef.current, 240)) {
+        // Mensagem nova só puxa quem já estava acompanhando o fim. Quem subiu
+        // para ler histórico continua onde estava.
+        requestAnimationFrame(irAoFim);
+      }
     }
   }, [lastMessage?.id, selectedConversationId]);
 

@@ -100,3 +100,54 @@ describe('chatStore', () => {
     });
   });
 });
+
+describe('teto do cache de mensagens', () => {
+  /**
+   * `messagesCache` é um objeto por conversa e nada nunca removia entrada.
+   * Num turno de trabalho o atendente abre dezenas de conversas; cada uma
+   * guardava até 100 mensagens por página carregada, para sempre. O painel ia
+   * ficando pesado ao longo do dia sem nenhum sintoma óbvio de causa.
+   *
+   * Guardamos apenas as conversas abertas mais recentemente. Reabrir uma
+   * conversa despejada só refaz o fetch — barato e previsível.
+   */
+  const msg = (id: string) => ({ id, content: id, created_at: '2026-08-19T10:00:00Z' } as never);
+
+  beforeEach(() => {
+    useChatStore.setState({ messagesCache: {} } as never);
+  });
+
+  it('guarda as conversas abertas recentemente', () => {
+    const s = useChatStore.getState();
+    s.setMessages('c1', [msg('m1')]);
+    s.setMessages('c2', [msg('m2')]);
+    const cache = useChatStore.getState().messagesCache;
+    expect(Object.keys(cache).sort()).toEqual(['c1', 'c2']);
+  });
+
+  it('despeja a conversa mais antiga ao passar do teto', () => {
+    const s = useChatStore.getState();
+    for (let i = 1; i <= 12; i += 1) s.setMessages(`c${i}`, [msg(`m${i}`)]);
+    const cache = useChatStore.getState().messagesCache;
+    expect(Object.keys(cache).length).toBeLessThanOrEqual(8);
+    expect(cache.c1).toBeUndefined();   // a primeira saiu
+    expect(cache.c12).toBeDefined();    // a última fica
+  });
+
+  it('reabrir uma conversa a torna recente de novo', () => {
+    const s = useChatStore.getState();
+    for (let i = 1; i <= 8; i += 1) s.setMessages(`c${i}`, [msg(`m${i}`)]);
+    s.setMessages('c1', [msg('m1b')]);      // c1 volta a ser a mais recente
+    s.setMessages('c9', [msg('m9')]);       // força um despejo
+    const cache = useChatStore.getState().messagesCache;
+    expect(cache.c1).toBeDefined();
+    expect(cache.c2).toBeUndefined();       // agora a mais antiga é c2
+  });
+
+  it('carregar histórico não despeja a conversa que está aberta', () => {
+    const s = useChatStore.getState();
+    for (let i = 1; i <= 8; i += 1) s.setMessages(`c${i}`, [msg(`m${i}`)]);
+    s.prependMessages('c8', [msg('antiga')]);
+    expect(useChatStore.getState().messagesCache.c8).toHaveLength(2);
+  });
+});
