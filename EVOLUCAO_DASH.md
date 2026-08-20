@@ -9,7 +9,7 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   (dev/build: `esbuild`/`vite` só via `--force` → `vite@8` major; `brace-expansion`,
   `js-yaml`, `nanoid` têm `audit fix` não-breaking) — avaliar em fatia dedicada.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **1160 testes / 210 suítes verdes** (era 1154/208; +6/+2 desta fatia).
+- `npm test`: **1161 testes / 210 suítes verdes** (era 1154/208; +7/+2 desta fatia).
 - `npm run build` (vite, igual à Vercel): **ok** (~18s).
 - `npm run lint`: gate em 400 warnings; **284 warnings** (0 errors).
 
@@ -42,7 +42,14 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
     alarmante (faturamento da Visão Geral), erro do overview **não** renderiza
     "R$ 0,00" e o retry refaz a query; com dados reais renderiza o valor sem
     estado de erro. Prova a ligação `error`/`onRetry` ↔ `useAnalyticsReport`.
-- **Antes/depois:** `npm test` 1154/208 → **1160/210**; `tsc --noEmit` limpo e
+- **Follow-up (revisão Codex P2):** na Visão Geral, o pulso "Hoje" sai de uma
+  query SEPARADA (`useDashboardStats`), não do `overview`. Overview OK + stats
+  falho voltava a pintar "R$ 0,00 · 0 pedidos" e o retry da seção só refazia o
+  overview. Corrigido: o bloco do pulso ganhou tratamento de erro próprio
+  (`ErrorNote` + retry que refaz `stats.refetch()`), sem derrubar o faturamento
+  do período que já veio. +1 teste (overview OK + stats falho → pulso mostra
+  erro/retry, não zeros; retry chama só `stats.refetch`).
+- **Antes/depois:** `npm test` 1154/208 → **1161/210**; `tsc --noEmit` limpo e
   `vite build` ok nos dois lados; sem novos warnings de lint nos arquivos tocados.
 - **Próximo passo priorizado:** (1) **DashboardPage** — falha só do `/stats`
   (sem cair os 3) ainda deixa os KPIs em 0 sem sinalizar (linhas 316-338, fiação

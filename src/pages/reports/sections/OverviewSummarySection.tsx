@@ -8,7 +8,7 @@ import { format, parseISO } from 'date-fns';
 import { Card } from '../../../components/ui';
 import type { DateRange } from '../../../services/reports';
 import { useAnalyticsReport, useDashboardStats } from '../../../hooks/queries/useReports';
-import { SectionCard, DeltaPill, Spinner, formatBRL } from './shared';
+import { SectionCard, DeltaPill, Spinner, ErrorNote, formatBRL } from './shared';
 
 interface OverviewReport {
   current: {
@@ -76,6 +76,14 @@ export const OverviewSummarySection: React.FC<{ range: DateRange; enabled: boole
           <p className="text-xs text-fg-muted-token mt-1">período anterior: {formatBRL(prev?.revenue ?? 0)}</p>
           {stats.isLoading ? (
             <Spinner />
+          ) : stats.isError ? (
+            // O pulso de hoje sai de uma query SEPARADA (useDashboardStats): se
+            // ela falha enquanto o overview resolve, não pode inventar
+            // "R$ 0,00 · 0 pedidos". Erro/retry próprios, sem derrubar o
+            // faturamento do período que já veio.
+            <div className="mt-4 pt-3 border-t border-border-token/60">
+              <ErrorNote text="Não foi possível carregar o resumo de hoje." onRetry={() => stats.refetch()} />
+            </div>
           ) : (
             <div className="mt-4 pt-3 border-t border-border-token/60 flex flex-wrap gap-x-4 gap-y-1 text-sm">
               <span className="text-fg-token">
