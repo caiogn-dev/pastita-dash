@@ -62,6 +62,8 @@ export const OverviewSummarySection: React.FC<{ range: DateRange; enabled: boole
           : undefined
       }
       loading={q.isLoading}
+      error={q.isError}
+      onRetry={() => q.refetch()}
     >
       <div className="grid grid-cols-[minmax(240px,1fr)_2fr] max-lg:grid-cols-1 gap-6">
         {/* Herói: faturamento do período + pulso de hoje */}
