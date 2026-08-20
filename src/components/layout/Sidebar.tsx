@@ -143,7 +143,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         // topo da PÁGINA, e a coluna precisa acompanhar a rolagem da janela.
         // A sombra é o que faz ela ler como camada de cima — sem ela o
         // conteúdo atrás encosta e as duas viram a mesma superfície.
-        espiada && 'z-40 shadow-2xl'
+        // z-50 e não z-40: a Navbar também é z-40 e vem DEPOIS no DOM
+        // (MainLayout renderiza Sidebar antes de Navbar). Com z-index empatado
+        // quem pinta por cima é o último — a coluna expandia e sumia atrás da
+        // navbar, dando a impressão de que o hover não funcionava. Só clicando
+        // a seta ela aparecia, porque aí o espaço entra no fluxo em vez de
+        // flutuar. Precisa ser MAIOR, não igual.
+        espiada && 'z-50 shadow-2xl'
       )}
       style={{ transitionTimingFunction: 'var(--mola)' }}
     >
