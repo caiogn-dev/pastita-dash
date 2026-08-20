@@ -10,6 +10,7 @@ import {
   buildBarcodeCatalogDoc, buildNutritionDoc, buildNutritionQrDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
   PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
 } from '../../utils/labelPrint';
+import { precoVigenteDoProduto } from '../../utils/precoVigente';
 
 const fmtMoney = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
@@ -211,7 +212,7 @@ const EtiquetasPage: React.FC = () => {
   const produtoLabel = (c: CatalogEntry, barcode?: string) => ({
     name: c.product.name,
     description: c.product.short_description || c.product.description || undefined,
-    price: fmtMoney(Number(c.product.price)),
+    price: fmtMoney(precoVigenteDoProduto(c.product)),
     barcode: barcode ?? c.product.barcode ?? undefined,
   });
 
@@ -328,7 +329,7 @@ const EtiquetasPage: React.FC = () => {
             category: product.category_name || undefined,
             sku: product.sku || undefined,
             barcode: product.barcode || undefined,
-            price: product.price ?? undefined,
+            price: precoVigenteDoProduto(product) ?? undefined,
           })),
       }));
     await printHtmlDocument(buildBarcodeCatalogDoc(storesForPdf, { compacto: catalogoCompacto }));
@@ -451,7 +452,7 @@ const EtiquetasPage: React.FC = () => {
                   <div className="font-medium truncate">{c.product.name}</div>
                   <div className="text-xs opacity-60">
                     {stores.length > 1 && `${c.storeName} · `}
-                    {fmtMoney(Number(c.product.price))}
+                    {fmtMoney(precoVigenteDoProduto(c.product))}
                     {c.product.barcode ? ` · ${c.product.barcode}` : ' · sem código (gera na impressão)'}
                   </div>
                 </div>

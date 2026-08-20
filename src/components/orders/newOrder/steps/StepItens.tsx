@@ -5,6 +5,7 @@ import { productsService } from '../../../../services/products';
 import type { Product } from '../../../../services/products';
 import type { CartItem } from '../types';
 import { fmt } from '../types';
+import { precoVigenteDoProduto } from '../../../../utils/precoVigente';
 
 /** Step 3 */
 export function StepItens({
@@ -49,7 +50,7 @@ export function StepItens({
   };
 
   const cartProductIds = new Set(cart.map((c) => c.product.id));
-  const subtotal = cart.reduce((s, c) => s + c.product.price * c.quantity, 0);
+  const subtotal = cart.reduce((s, c) => s + precoVigenteDoProduto(c.product) * c.quantity, 0);
 
   return (
     <div className="space-y-3">
@@ -90,7 +91,7 @@ export function StepItens({
               >
                 <span className="truncate font-medium">{product.name}</span>
                 <span className="flex-shrink-0 text-emerald-600 dark:text-emerald-400 font-semibold">
-                  {inCart ? 'Adicionado' : fmt(product.price)}
+                  {inCart ? 'Adicionado' : fmt(precoVigenteDoProduto(product))}
                 </span>
               </button>
             );
@@ -114,8 +115,8 @@ export function StepItens({
                   {item.product.name}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-zinc-400">
-                  {fmt(item.product.price)} × {item.quantity} ={' '}
-                  <strong>{fmt(item.product.price * item.quantity)}</strong>
+                  {fmt(precoVigenteDoProduto(item.product))} × {item.quantity} ={' '}
+                  <strong>{fmt(precoVigenteDoProduto(item.product) * item.quantity)}</strong>
                 </p>
               </div>
               {/* Qty controls */}

@@ -2,6 +2,7 @@ import React from 'react';
 import { PAYMENT_LABELS, fmt } from '../types';
 import type { CartItem, PaymentMethod } from '../types';
 import type { DiscountType, RouteQuote } from '../../../../types/crm';
+import { precoVigenteDoProduto } from '../../../../utils/precoVigente';
 
 /** Step 5 — resumo + forma de pagamento (o submit vive no rodapé do container) */
 export function StepConfirmar({
@@ -31,7 +32,7 @@ export function StepConfirmar({
   suppressNotifications: boolean;
   setSuppressNotifications: (v: boolean) => void;
 }) {
-  const subtotal = cart.reduce((s, c) => s + c.product.price * c.quantity, 0);
+  const subtotal = cart.reduce((s, c) => s + precoVigenteDoProduto(c.product) * c.quantity, 0);
   const deliveryFee = deliveryMethod === 'delivery' ? (routeQuote?.fee ?? 0) : 0;
   const surcharge = parseFloat(surchargeValue) || 0;
   const discountRaw = parseFloat(discountValue) || 0;
@@ -63,7 +64,7 @@ export function StepConfirmar({
               {item.quantity}× {item.product.name}
             </span>
             <span className="font-medium text-gray-900 dark:text-white">
-              {fmt(item.product.price * item.quantity)}
+              {fmt(precoVigenteDoProduto(item.product) * item.quantity)}
             </span>
           </div>
         ))}

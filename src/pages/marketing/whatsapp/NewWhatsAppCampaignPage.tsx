@@ -44,6 +44,7 @@ type SystemContact = {
   source?: 'conversation' | 'order' | 'subscriber' | 'session';
 };
 import logger from '../../../services/logger';
+import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 
 type TemplateVariable = {
   name: string;
@@ -640,7 +641,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               offer_products: selectedOfferProducts.map(product => ({
                 id: product.id,
                 name: product.name,
-                price: product.price,
+                price: precoVigenteDoProduto(product),
                 compare_at_price: product.compare_at_price,
               })),
               ...mediaContent,
@@ -1000,7 +1001,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                           const selectedIndex = selectedOfferProductIds.indexOf(product.id);
                           const isSelected = selectedIndex >= 0;
                           const compareAt = Number(product.compare_at_price || 0);
-                          const price = Number(product.price || 0);
+                          const price = precoVigenteDoProduto(product);
                           const hasDiscount = compareAt > price;
 
                           return (
@@ -1428,7 +1429,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         {selectedOfferProducts.map(product => (
                           <div key={product.id} className="flex items-center justify-between gap-3 text-sm">
                             <span className="text-fg-token">{product.name}</span>
-                            <span className="font-medium text-green-700">R$ {formatMoney(product.price)}</span>
+                            <span className="font-medium text-green-700">R$ {formatMoney(precoVigenteDoProduto(product))}</span>
                           </div>
                         ))}
                       </div>

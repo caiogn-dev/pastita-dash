@@ -7,6 +7,7 @@ import type { Product } from '../../../services/products';
 import type { CustomerSearchResult, UserAddress, DiscountType, RouteQuote } from '../../../types/crm';
 import type { CartItem, PaymentMethod, Customer } from './types';
 import { parseCoords, type Coords } from './parseCoords';
+import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 
 export interface UseNewOrderWizardOpts {
   storeSlug: string;
@@ -156,7 +157,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         paymentMethod === 'fiado' ? 'cash' : (paymentMethod as 'pix' | 'cash' | 'credit_card');
       const isNewCustomer = customer.id === '';
       const customerPhone = isNewCustomer ? (customer.phone_number_edited || customer.phone_number) : customer.phone_number;
-      const orderSubtotal = cart.reduce((s, c) => s + c.product.price * c.quantity, 0);
+      const orderSubtotal = cart.reduce((s, c) => s + precoVigenteDoProduto(c.product) * c.quantity, 0);
       const discountRaw = parseFloat(discountValue) || 0;
       const discountAmount = discountType === 'percent' ? Math.round(orderSubtotal * discountRaw) / 100 : discountRaw;
       const surchargeAmount = parseFloat(surchargeValue) || 0;

@@ -13,6 +13,7 @@ import { getErrorMessage, ordersService, productsService, whatsappService } from
 import { Product } from '../../services/products';
 import { Order } from '../../types';
 import { parseCoords, type Coords } from '../orders/newOrder/parseCoords';
+import { precoVigenteDoProduto } from '../../utils/precoVigente';
 
 type Tab = 'templates' | 'tools';
 type ToolId = 'route' | 'catalog' | 'order' | null;
@@ -584,7 +585,7 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
     if (list.length === 0) {
       return `📋 *${title}*\n\nNenhum produto ativo encontrado para esta loja.`;
     }
-    const lines = list.map(p => `• *${p.name}* — ${formatCurrency(p.price)}${p.description ? `\n  ${String(p.description).slice(0, 90)}` : ''}`);
+    const lines = list.map(p => `• *${p.name}* — ${formatCurrency(precoVigenteDoProduto(p))}${p.description ? `\n  ${String(p.description).slice(0, 90)}` : ''}`);
     return `📋 *${title}*\n\n${lines.join('\n')}\n\nResponda com o nome do item ou toque nas opções do cardápio para escolher.`;
   }, [storeId, storeName, visibleProducts]);
 
@@ -784,7 +785,7 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
       ...item,
       product_id: product.id,
       name: product.name,
-      price: String(product.price),
+      price: String(precoVigenteDoProduto(product)),
     } : item));
   };
 
@@ -906,7 +907,7 @@ function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
               <option value="">Selecionar produto real</option>
               {products.map(product => (
                 <option key={product.id} value={product.id}>
-                  {product.name} · {formatCurrency(product.price)}
+                  {product.name} · {formatCurrency(precoVigenteDoProduto(product))}
                 </option>
               ))}
             </select>

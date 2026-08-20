@@ -12,6 +12,7 @@
 import React from 'react';
 
 import { Modal, ModalBody, ModalHeader, SearchInput } from '../../components/ui';
+import { precoVigenteDoProduto } from '../../utils/precoVigente';
 
 /**
  * Só o que ESTE modal lê. Genérico no item para que a página passe o próprio
@@ -82,7 +83,7 @@ export function ModalVincularCodigo<T extends CandidatoDeVinculo>({
                 )}
               </span>
               <span className="shrink-0 text-sm text-fg-muted-token">
-                {formatarValor(Number(c.product.price))}
+                {formatarValor(precoVigenteDoProduto(c.product))}
                 {c.product.barcode ? ' · já tem código' : ''}
               </span>
             </button>
