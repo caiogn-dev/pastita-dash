@@ -26,6 +26,7 @@ import {
 } from '../../services/storesApi';
 import { ordersService } from '../../services/orders';
 import type { Order } from '../../types';
+import { copyToClipboard } from '../../utils/clipboard';
 
 const fmtMoney = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -390,10 +391,11 @@ const PdvBalcaoPage: React.FC = () => {
 
   const copyPix = async (code?: string) => {
     if (!code) return;
-    try {
-      await navigator.clipboard.writeText(code);
+    // Fallback importa mais aqui do que em qualquer outro lugar: é o código
+    // que o cliente vai pagar, no balcão, com ele esperando.
+    if (await copyToClipboard(code)) {
       toast.success('Código PIX copiado');
-    } catch {
+    } else {
       toast.error('Não consegui copiar — selecione o código manualmente');
     }
   };

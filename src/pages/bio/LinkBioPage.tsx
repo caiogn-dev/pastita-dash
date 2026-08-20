@@ -16,6 +16,8 @@ import {
   reorderBioLinks,
   getBioStats,
 } from '../../services/bioApi';
+import toast from 'react-hot-toast';
+import { copyToClipboard } from '../../utils/clipboard';
 
 interface BioLinksToggles {
   menu?: boolean;
@@ -161,7 +163,15 @@ const LinkBioPage: React.FC = () => {
 
   const handleCopy = async () => {
     if (!bioUrl) return;
-    await navigator.clipboard.writeText(bioUrl);
+    // `navigator.clipboard` não existe em contexto não-seguro e falha em
+    // parte dos navegadores; `copyToClipboard` tem fallback. E sem checar o
+    // retorno a tela dizia "copiado" mesmo quando nada foi para a área de
+    // transferência — o pior tipo de erro, o que se disfarça de sucesso.
+    const ok = await copyToClipboard(bioUrl);
+    if (!ok) {
+      toast.error('Não consegui copiar — selecione o link manualmente');
+      return;
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
