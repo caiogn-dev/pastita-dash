@@ -166,6 +166,39 @@ export const HistoricoPedidosPage: React.FC = () => {
 
   if (listaQuery.isLoading) return <PageLoading />;
 
+  // Falha ao carregar a lista SEM nenhum dado em cache: mostrar erro acionável
+  // em vez de cair no EmptyState "Nenhum pedido neste recorte", que leria como
+  // "você não vendeu nada" quando na verdade a requisição falhou (rede/500) —
+  // o mesmo engano de "zeros" já corrigido em Pagamentos e Clientes. Com dado
+  // em cache (falha só ao atualizar), `keepPreviousData` mantém a tabela.
+  if (listaQuery.isError && listaQuery.data === undefined) {
+    return (
+      <PageShell
+        trilha={[{ rotulo: 'Pedidos', href: `/stores/${storeQuery}/orders` }, { rotulo: 'Histórico' }]}
+        titulo="Histórico de pedidos"
+        descricao="Todos os pedidos do período."
+      >
+        <Card>
+          <EmptyState
+            icone={<ReceiptPercentIcon className="h-8 w-8 text-[var(--warning)]" />}
+            titulo="Não foi possível carregar o histórico"
+            descricao="Houve um erro ao buscar os pedidos deste período. Verifique a conexão e tente novamente."
+            acao={
+              <Button
+                onClick={() => {
+                  listaQuery.refetch();
+                  resumoQuery.refetch();
+                }}
+              >
+                Tentar novamente
+              </Button>
+            }
+          />
+        </Card>
+      </PageShell>
+    );
+  }
+
   const selectCls =
     'h-9 rounded-lg border border-border-token bg-surface px-3 text-sm text-fg-token outline-none focus:ring-2 focus:ring-brand';
 
@@ -274,7 +307,22 @@ export const HistoricoPedidosPage: React.FC = () => {
         </div>
       }
     >
-      {resumo && (
+      {resumoQuery.isError && resumoQuery.data === undefined ? (
+        /* Resumo falhou SEM cache: a lista pode ter vindo, mas os indicadores
+           não. Some-los em silêncio faria o operador ler "período sem resumo"
+           quando na verdade a requisição falhou — mesmo engano dos "zeros".
+           Mostra um aviso curto e acionável no lugar dos KPIs. */
+        <Card className="mb-5 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-fg-muted-token">
+              Não foi possível carregar os indicadores do período.
+            </p>
+            <Button variant="secondary" onClick={() => resumoQuery.refetch()}>
+              Tentar novamente
+            </Button>
+          </div>
+        </Card>
+      ) : resumo ? (
         <KpiGrid
           className="mb-5"
           itens={[
@@ -302,7 +350,7 @@ export const HistoricoPedidosPage: React.FC = () => {
             },
           ]}
         />
-      )}
+      ) : null}
 
       {resumo && resumo.por_pagamento.length > 0 && (
         <Card className="mb-5 p-4">
