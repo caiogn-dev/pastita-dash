@@ -11,6 +11,7 @@
 import React from 'react';
 
 import { SearchInput } from '../../components/ui';
+import { precoVigenteDoProduto } from '../../utils/precoVigente';
 
 /**
  * Só o que ESTE componente lê. Genérico no item para que a página passe o
@@ -20,7 +21,7 @@ import { SearchInput } from '../../components/ui';
  * espera.
  */
 export interface CandidatoDeProduto {
-  product: { id: string; name: string; price: number | string };
+  product: { id: string; name: string; price: number | string; preco_vigente?: number | string | null };
   storeName: string;
 }
 
@@ -67,7 +68,7 @@ export function BuscaManualDeProduto<T extends CandidatoDeProduto>({
                 )}
               </span>
               <span className="shrink-0 text-sm text-fg-muted-token">
-                {formatarValor(Number(c.product.price))}
+                {formatarValor(precoVigenteDoProduto(c.product))}
               </span>
             </button>
           </li>

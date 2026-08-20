@@ -21,9 +21,10 @@ import {
 } from '@heroicons/react/24/outline';
 
 import { Button } from '../../components/ui';
+import { precoVigenteDoProduto } from '../../utils/precoVigente';
 
 export interface ItemDaComanda {
-  product: { id: string; name: string; price: number | string };
+  product: { id: string; name: string; price: number | string; preco_vigente?: number | string | null };
   quantity: number;
 }
 
@@ -68,7 +69,7 @@ export const ComandaDoBalcao: React.FC<ComandaDoBalcaoProps> = ({
               </div>
               <div className="text-sm text-fg-muted-token">
                 {formatarValor(
-                  g.items.reduce((s, i) => s + Number(i.product.price) * i.quantity, 0),
+                  g.items.reduce((s, i) => s + precoVigenteDoProduto(i.product) * i.quantity, 0),
                 )}
               </div>
             </div>
@@ -80,7 +81,7 @@ export const ComandaDoBalcao: React.FC<ComandaDoBalcaoProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium text-fg-token">{i.product.name}</div>
                   <div className="text-sm text-fg-muted-token">
-                    {formatarValor(Number(i.product.price))} un.
+                    {formatarValor(precoVigenteDoProduto(i.product))} un.
                   </div>
                 </div>
 
@@ -105,7 +106,7 @@ export const ComandaDoBalcao: React.FC<ComandaDoBalcaoProps> = ({
                 </div>
 
                 <div className="w-24 text-right font-semibold tabular-nums">
-                  {formatarValor(Number(i.product.price) * i.quantity)}
+                  {formatarValor(precoVigenteDoProduto(i.product) * i.quantity)}
                 </div>
 
                 <Button

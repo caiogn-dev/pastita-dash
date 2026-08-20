@@ -275,6 +275,10 @@ export interface StoreProduct {
   promo_price?: number | null;
   /** 0=segunda … 6=domingo, igual a `datetime.weekday()` no backend. */
   promo_weekday?: number | null;
+  /** Preço que o cliente paga HOJE — o backend já aplicou a regra do dia.
+   *  Quem MOSTRA ou COBRA preço lê daqui, não de `price`. */
+  preco_vigente?: number | string | null;
+  em_promocao?: boolean;
   cost_price?: number;
   is_on_sale: boolean;
   discount_percentage: number;
@@ -325,6 +329,10 @@ export interface StoreProductInput {
   promo_price?: number | null;
   /** 0=segunda … 6=domingo, igual a `datetime.weekday()` no backend. */
   promo_weekday?: number | null;
+  /** Preço que o cliente paga HOJE — o backend já aplicou a regra do dia.
+   *  Quem MOSTRA ou COBRA preço lê daqui, não de `price`. */
+  preco_vigente?: number | string | null;
+  em_promocao?: boolean;
   cost_price?: number;
   track_stock?: boolean;
   stock_quantity?: number;

@@ -27,6 +27,7 @@ import {
 import { ordersService } from '../../services/orders';
 import type { Order } from '../../types';
 import { copyToClipboard } from '../../utils/clipboard';
+import { precoVigenteDoProduto } from '../../utils/precoVigente';
 
 const fmtMoney = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -262,7 +263,9 @@ const PdvBalcaoPage: React.FC = () => {
     setItems((prev) => prev.filter((i) => i.product.id !== productId));
   };
 
-  const total = items.reduce((s, i) => s + Number(i.product.price) * i.quantity, 0);
+  // Soma pelo preço VIGENTE: o PDV cobrava o valor de cadastro e ignorava a
+  // promoção do dia — vender no balcão mais caro que no cardápio.
+  const total = items.reduce((s, i) => s + precoVigenteDoProduto(i.product) * i.quantity, 0);
 
   /** Itens agrupados por loja, na ordem em que cada loja apareceu na comanda. */
   const groups = useMemo(() => {
