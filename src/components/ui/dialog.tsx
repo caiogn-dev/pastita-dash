@@ -4,8 +4,8 @@
 import React, {
   createContext,
   useContext,
-  useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useState,
 } from 'react';
@@ -122,7 +122,14 @@ export const DialogTitle: React.FC<DialogTitleProps> = ({
   // nesse caso não registramos e o Dialog não auto-nomeia por este heading.
   const usesContextId = !id && !!ctx;
 
-  useEffect(() => {
+  // Registro na FASE DE LAYOUT (não passiva): o `Modal` move o foco para dentro
+  // do painel num `useEffect` passivo (modal.tsx). Se registrássemos o título
+  // também num efeito passivo, o primeiro commit do `role="dialog"` sairia sem
+  // `aria-labelledby` e o foco entraria no diálogo ainda sem nome — leitores de
+  // tela anunciam o diálogo ao receber foco e podem não reanunciar quando o
+  // atributo chega depois. Com `useLayoutEffect`, o `setState` re-renderiza com
+  // o `aria-labelledby` ANTES do paint e antes do efeito passivo de foco.
+  useLayoutEffect(() => {
     if (!usesContextId || !ctx) return;
     ctx.registerTitle();
     return () => ctx.unregisterTitle();
