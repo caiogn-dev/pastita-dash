@@ -3,6 +3,51 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-21)
+
+- `npm ci`: ok. `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1167 testes / 212 suítes verdes** (era 1163/211; +4/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~16s).
+
+## Histórico
+
+### 2026-08-21 — A11y: `Dialog` composto se auto-nomeia pelo `DialogTitle` (WCAG 4.1.2)
+- **Medido:** este era o **próximo passo priorizado** registrado em 2026-08-06.
+  O caminho composto `ui/dialog.tsx` (`Dialog`/`DialogHeader`/`DialogTitle`)
+  renderiza o `role="dialog"` via `Modal`, mas o `Modal` só herda nome acessível
+  quando recebe `ariaLabel`/`ariaLabelledby`. Um consumidor que montava
+  `<Dialog><DialogTitle>…</DialogTitle></Dialog>` **sem passar essas props à mão**
+  ficava com um diálogo **sem nome acessível** — leitores de tela anunciavam só
+  "diálogo". O único consumidor real (`WhatsAppAuthDialog`, "Login com WhatsApp")
+  estava exatamente nesse buraco: `<Dialog>` + `<DialogTitle>` sem props de nome.
+- **Mudado (`ui/dialog.tsx`, aditivo e retrocompatível):**
+  - Novo `DialogContext` que o `Dialog` provê com um `titleId` estável (`useId`) e
+    callbacks `registerTitle`/`unregisterTitle`.
+  - `DialogTitle` aplica esse `titleId` ao seu `<h2>` e sinaliza presença via
+    efeito (register no mount, unregister no unmount). Se o consumidor passar um
+    `id` explícito, mantém o controle manual (não registra) — retrocompatível.
+  - `Dialog` só aponta `aria-labelledby` para o `titleId` **quando há um
+    `DialogTitle` montado** (contador > 0), nunca criando referência pendente.
+    Precedência: `ariaLabelledby` explícito → `DialogTitle` presente (auto) →
+    `ariaLabel` explícito → sem nome.
+  - Trocado o `import React from 'react'` por imports nomeados dos hooks
+    (`createContext`/`useContext`/`useEffect`/`useId`/`useMemo`/`useState`) porque
+    o projeto não usa `esModuleInterop` e `React.*` em runtime era `undefined`.
+- **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — escrita **vermelha antes**
+  (o caso de auto-nome falhava; os 3 de fallback já passavam) **verde depois**.
+  Cobre: auto-nome pelo `DialogTitle` sem props, `ariaLabel` explícito sem título,
+  precedência do `ariaLabelledby` explícito e a ausência de referência pendente
+  quando não há título nem props de nome.
+- **Antes/depois:** `npm test` 1163/211 → **1167/212**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. `WhatsAppAuthDialog` passou a se nomear sozinho
+  ("Login com WhatsApp"). Risco baixo: só atributos de acessibilidade, sem mudança
+  visual ou de comportamento.
+- **Próximo passo priorizado:** (1) **A11y:** varrer botões só-de-ícone sem
+  `aria-label` fora de `src/components` (páginas). (2) **Segurança/deps:** planejar
+  major bumps de `react-router` (open redirect) e `vite`/`esbuild` (dev-only),
+  cada um como fatia dedicada com validação de build.
+
+<!-- baseline antiga preservada abaixo -->
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
