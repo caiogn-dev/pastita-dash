@@ -3,17 +3,80 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-12)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok. `npm audit`: entrou em **8 vulnerabilidades** (3 moderate, 5 high);
+  após o `npm audit fix` sem `--force` desta fatia caiu para **4** (3 moderate,
+  1 high). O que **saiu** in-range: `postcss` 8.5.14 → **8.5.26** (2 advisories high
+  de path traversal no auto-load de source map, dev/build-only), dentro do range
+  `^8.4.32` já declarado — **não era major**. O que **fica** (exige major, fatia
+  dedicada com validação): `esbuild`/`vite` (moderate, só via `vite@8`) e
+  `react-router` 6.x (moderate: open redirect por barra invertida + injeção via
+  `deserializeErrors` na hidratação SSR — só corrige no `7.18+`; o `audit` anuncia
+  "fix available" mas o não-`--force` não atravessa o major, confirmado nesta
+  execução). A hidratação SSR não se aplica a este SPA client-side, o que reduz a
+  urgência do vetor do `react-router`.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test`: **963 testes / 190 suítes verdes** (era 961/189; +2/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~21s, com postcss 8.5.26).
+- `npm run lint`: gate em 400 warnings; **265 warnings** (0 errors).
 
 ## Histórico
+
+### 2026-08-12 — Segurança: `postcss` 8.5.14 → 8.5.26 (fix in-range, 2 highs a menos)
+- **Medido / corrigido de rota:** a nota de baseline anterior lumpava `postcss` junto
+  do `react-router` como "exige major bump". Errado — apontado em revisão do PR #163.
+  `postcss` está declarado como **`^8.4.32`** (devDependency direta) e o fix
+  (`8.5.23+`, resolvido para **8.5.26**) está **dentro do range**: é upgrade
+  in-range, não major. As 2 advisories high (path traversal no auto-load de source
+  map por `sourceMappingURL`, `GHSA-r28c-9q8g-f849` e `GHSA-fxqj-rqcc-2cmp`) são
+  dev/build-only, mas não custam nada para eliminar.
+- **Mudado:** `npm audit fix` sem `--force`. Só o **`package-lock.json`** mudou
+  (postcss e sua subárvore); `package.json` intacto (range `^8.4.32` preservado);
+  `react-router`/`vite`/`esbuild` **não** foram tocados (esses sim precisam de major).
+  `npm audit`: **8 → 4** vulnerabilidades.
+- **Zero-regressão:** `vite build` ok (~21s) e `npm test` 963/190 verdes com o novo
+  postcss — o bump é patch-level dentro do 8.5.x, usado por tailwind/autoprefixer/vite,
+  risco desprezível.
+- **Por que o dry-run parecia não mexer:** o resumo do `--dry-run` imprime o relatório
+  *antes* do fix; o `audit fix` de verdade aplica o in-range. A leitura anterior de
+  "continua 8" era do estado pré-fix, não do que o fix faria.
+
+### 2026-08-12 — Perf: `RecipeBuilder` deixa de fazer 2 GETs idênticos ao abrir o produto
+
+### 2026-08-12 — Perf: `RecipeBuilder` deixa de fazer 2 GETs idênticos ao abrir o produto
+- **Medido (a nível de código):** `src/pages/nutrition/RecipeBuilder.tsx` disparava,
+  no mesmo `useEffect([product])`, **duas chamadas idênticas** a
+  `GET /nutrition/recipes/?product=<id>&page_size=1` — a primeira preenchia o estado
+  da receita (linhas, porção, medida caseira), a segunda re-buscava a MESMA resposta
+  só para extrair `items` e resolver o `display_name` de cada ingrediente. Como o
+  `RecipeBuilder` é embutido dentro do produto (aba de nutrição), esse par disparava
+  a cada abertura de prato: um round-trip de rede redundante em caminho quente.
+- **Mudado (mudança puramente interna, comportamento idêntico):** fundidas as duas
+  chamadas em **uma só**. A resolução de nomes dos ingredientes agora encadeia a
+  partir da mesma resposta (`found?.items`), dentro do `.then` que já tratava a
+  receita. Os `catch` foram preservados (erro da receita → toast; erro por
+  ingrediente → `catch(()=>null)` item a item, sem rejeitar o `Promise.all`).
+- **Teste (TDD):** novo `src/pages/nutrition/__tests__/RecipeBuilder.test.tsx` —
+  escrito **vermelho antes** (contava 2 chamadas a `/nutrition/recipes/`) **verde
+  depois** (exatamente 1). Um segundo teste garante que os nomes dos ingredientes
+  continuam resolvidos (`/nutrition/ingredients/i1/` chamado; "Farinha" na tela),
+  provando que a dedupe não regrediu o recurso.
+- **Antes/depois:** `npm test` 961/189 → **963/190**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Requisições ao endpoint de receitas por abertura
+  de produto: **2 → 1**.
+- **Próximo passo priorizado:** (1) **A11y — `SeletorDeIngrediente`:** o typeahead de
+  ingredientes (`src/pages/nutrition/SeletorDeIngrediente.tsx`) é um combobox sem
+  roles ARIA (`role="combobox"/"listbox"/"option"`, `aria-expanded`,
+  `aria-activedescendant`) nem navegação por setas — só `aria-label` no input.
+  Dar semântica de combobox + navegação por teclado, com teste de regressão. (2)
+  **Segurança/deps (restante, exige major):** planejar `react-router` 6→7.18+
+  (open redirect) e `vite` 5→8 (esbuild dev-only), cada um como fatia dedicada com
+  validação de build/rota. `postcss` já resolvido in-range nesta execução. (3)
+  **Perf — varredura de duplicatas:** procurar outros `useEffect` com GETs
+  redundantes no mesmo endpoint.
+
+---
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
