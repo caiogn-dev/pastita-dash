@@ -335,8 +335,16 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
   return (
     <>
       <header
-        className="sticky top-0 z-40 border-b border-chrome-border text-chrome-fg backdrop-blur-xl"
+        // O recuo acompanha a coluna lateral espiada (ver larguraDaColuna).
+        // Aplicado AQUI, no próprio elemento sticky: envolvê-lo num div justo
+        // quebraria a fixação, porque sticky não gruda além do pai.
+        // `max-lg:!pl-0` porque no celular não existe coluna.
+        className="sticky top-0 z-40 border-b border-chrome-border text-chrome-fg backdrop-blur-xl transition-[padding] duration-300 max-lg:!pl-0"
         style={{
+          // Recuo que acompanha a coluna lateral espiada.
+          paddingLeft: 'var(--recuo-da-navbar, 0px)',
+          // Mesma curva da coluna: as duas leem como um movimento só.
+          transitionTimingFunction: 'var(--mola)',
           // Gradiente vertical sutil em vez de cor chapada: dá espessura à
           // barra sem sombra pesada, e funciona nos dois temas porque as duas
           // pontas são token.

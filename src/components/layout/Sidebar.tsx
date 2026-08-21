@@ -24,6 +24,7 @@ import { ChevronDownIcon, ChevronDoubleLeftIcon } from '@heroicons/react/24/outl
 
 import { cn } from '../../utils/cn';
 import { NavItem, NavSection } from './navSections';
+import { publicarRecuo } from './larguraDaColuna';
 
 export interface SidebarProps {
   sections: NavSection[];
@@ -107,6 +108,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   // Enquanto o ponteiro (ou o foco) está na coluna, ela mostra tudo.
   const estreita = recolhido && !espiando;
   const espiada = recolhido && espiando;
+
+  // A navbar acompanha a coluna. Publicado como variável CSS, e não como
+  // estado do React, porque hover não pode re-renderizar a árvore da página.
+  useEffect(() => {
+    publicarRecuo(espiada);
+    return () => publicarRecuo(false);
+  }, [espiada]);
 
   // 72px e não 64: com 64 o ícone de 20px ficava com 22px de folga de cada
   // lado, e o alvo de clique encostava na borda da tela. 72 dá respiro e
