@@ -24,7 +24,7 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
             ? `${d?.points.length} pedidos com localização exata — toque num círculo para ver cliente, pedido e valor`
             : undefined
         }
-        loading={q.isLoading}
+        loading={q.isLoading} error={q.isError} onRetry={() => q.refetch()}
       >
         {(d?.points?.length ?? 0) === 0 ? (
           <EmptyNote text="Nenhum pedido com coordenada exata no período (pedidos do bot e pins de WhatsApp alimentam o mapa)." />
@@ -40,7 +40,7 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
         <SectionCard
           title="Bairros que mais pedem"
           subtitle="Receita por bairro de entrega no período"
-          loading={q.isLoading}
+          loading={q.isLoading} error={q.isError} onRetry={() => q.refetch()}
           action={
             <ExportCsvButton
               rows={d?.neighborhoods ?? []}
@@ -66,7 +66,7 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
           )}
         </SectionCard>
         <div className="flex flex-col gap-6">
-          <SectionCard title="Distância de entrega" subtitle="Pedidos por anel de distância" loading={q.isLoading}>
+          <SectionCard title="Distância de entrega" subtitle="Pedidos por anel de distância" loading={q.isLoading} error={q.isError} onRetry={() => q.refetch()}>
             <RankedList
               medals={false}
               items={(d?.distance_bands ?? []).map((b) => ({
@@ -77,7 +77,7 @@ export const GeographySection: React.FC<{ range: DateRange; enabled: boolean }> 
               }))}
             />
           </SectionCard>
-          <SectionCard title="Zonas de entrega" loading={q.isLoading}>
+          <SectionCard title="Zonas de entrega" loading={q.isLoading} error={q.isError} onRetry={() => q.refetch()}>
             {(d?.zones?.length ?? 0) === 0 ? (
               <EmptyNote text="Sem zona registrada nos pedidos do período." />
             ) : (

@@ -38,10 +38,19 @@ export const SectionCard: React.FC<{
   title: string;
   subtitle?: string;
   loading?: boolean;
+  /**
+   * A query desta seção falhou. Sem isto, `data` fica `undefined` e a seção cai
+   * nos fallbacks `?? 0`, pintando "R$ 0,00"/listas vazias como se o período
+   * fosse vazio de verdade — a mesma "confusão de zeros" já corrigida em
+   * Pagamentos e Clientes. Com `error`, mostramos um aviso acionável no lugar.
+   */
+  error?: boolean;
+  /** refaz o fetch da(s) query(ies) da seção (ex.: `() => q.refetch()`). */
+  onRetry?: () => void;
   /** ação no canto do header (ex.: botão de export da seção). */
   action?: React.ReactNode;
   children: React.ReactNode;
-}> = ({ title, subtitle, loading, action, children }) => (
+}> = ({ title, subtitle, loading, error, onRetry, action, children }) => (
   <Card className="p-5">
     <div className="flex items-start justify-between gap-3 mb-4 pb-3 border-b border-border-token/60">
       <div>
@@ -50,12 +59,34 @@ export const SectionCard: React.FC<{
       </div>
       {action}
     </div>
-    {loading ? <Spinner /> : children}
+    {loading ? <Spinner /> : error ? <ErrorNote onRetry={onRetry} /> : children}
   </Card>
 );
 
 export const EmptyNote: React.FC<{ text?: string }> = ({ text = 'Sem dados no período.' }) => (
   <p className="text-sm text-fg-muted-token py-4">{text}</p>
+);
+
+/**
+ * Estado de erro de uma seção: comunica a falha em vez de silenciar em zeros e
+ * oferece um retry. Distingue "não carregou" de "período sem dados" (EmptyNote).
+ */
+export const ErrorNote: React.FC<{ text?: string; onRetry?: () => void }> = ({
+  text = 'Não foi possível carregar esta seção.',
+  onRetry,
+}) => (
+  <div className="flex flex-col items-start gap-2 py-4">
+    <p className="text-sm text-red-600 dark:text-red-400">{text}</p>
+    {onRetry && (
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-1.5 text-sm font-semibold text-fg-token hover:bg-surface-2 transition-colors"
+      >
+        Tentar novamente
+      </button>
+    )}
+  </div>
 );
 
 /** Pill de variação ▲/▼ — verde quando bom, vermelho quando ruim. */
