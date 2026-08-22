@@ -3,17 +3,67 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-14)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high) — o
+  runtime relevante é o open-redirect do `react-router` (fix só na v7, breaking);
+  o resto é tooling de build (`postcss`/`nanoid`/`brace-expansion`/`js-yaml`,
+  fix semver-compatível via `npm audit fix`) + `esbuild`/`vite` (só via `--force`).
+  Deixado para fatia dedicada de deps.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test`: **1030 testes / 197 suítes verdes** (era 1023/195; +7/+2 desta fatia).
+- `npm run build` (vite): **ok** (~15s).
+- `npm run lint`: gate em 400 warnings; **277 warnings** (0 errors).
 
 ## Histórico
+
+### 2026-08-14 — UX/Resiliência: estado de erro nas seções de relatório (fim do "sem dados" enganoso na falha)
+- **Medido:** as ~24 `SectionCard` das seções de analytics
+  (`src/pages/reports/sections/*`) tratavam só `isLoading` e dados vazios —
+  **nenhuma** tratava `q.isError`. Numa falha de rede/500, a query volta com
+  `data` indefinido e a seção caía no ramo "sem dados", dizendo ao operador
+  coisas como "Nenhum pedido com coordenada exata no período" ou zerando o
+  faturamento do herói da Visão Geral — número enganoso apresentado como fato.
+  O banner de erro da `AnalyticsPage` só cobre as 6 queries principais (stats,
+  revenue, products, stock, customers, orders), **não** as ~20 queries das
+  seções avançadas (geography, sla, cancellations, rfm, cohort, finance,
+  coupons, bot-funnel, reviews, heatmap, channels, abc, basket, menu-matrix,
+  store-score, overview, scheduling, cash-history, staff).
+- **Mudado (chassi compartilhado + fiação):**
+  - `sections/shared.tsx`: novo componente `SectionError` (ícone de alerta +
+    mensagem "Não foi possível carregar esta seção…" + botão "Tentar
+    novamente") e duas props opcionais na `SectionCard` (`error?: boolean`,
+    `onRetry?: () => void`). Precedência de render: `loading` → `error` →
+    conteúdo. Sem `error` a `SectionCard` se comporta exatamente como antes
+    (props opcionais, risco baixo).
+  - Fiação em **todas** as seções: cada `SectionCard` passou a receber
+    `error={<query>.isError}` e `onRetry={() => { void <query>.refetch(); }}`,
+    mapeando o cartão à sua query específica (inclusive nas seções multi-query:
+    Operações com 5 queries, Financeiro e Bot/Avaliações com 2 cada, ABC/Cesta
+    com 2).
+- **Teste (TDD):**
+  - `SectionCard.test.tsx` (novo, unitário): escrito **vermelho antes** — cobre
+    conteúdo normal, esconder conteúdo + `role="alert"` no erro, botão de retry
+    chamando `onRetry`, ausência do botão sem `onRetry`, e precedência de
+    `loading` sobre `error`.
+  - `GeographySection.error.test.tsx` (novo, integração): mocka
+    `useAnalyticsReport`/`useStore` e prova a fiação ponta a ponta — na falha
+    mostra os alertas + retry (chama `refetch`) e **não** o "sem dados"
+    enganoso; no sucesso vazio, mantém o estado vazio normal (sem falso alarme).
+- **Correção de revisão (Codex P2):** a `OverviewSummarySection` tem DUAS
+  queries — `overview` (herói do período) e `useDashboardStats` (strip "Hoje" +
+  alertas). A fiação inicial só cobriu a `overview`; se o `stats` falhasse com a
+  `overview` OK, o "Hoje" mostrava "R$ 0,00 · 0 pedidos" com os alertas
+  silenciosamente sumidos. Adicionado ramo `stats.isError` na subseção "Hoje"
+  (aviso + retry próprio), sem esconder o herói que carregou bem. Teste novo
+  `OverviewSummarySection.error.test.tsx`.
+- **Antes/depois:** `npm test` 1023/195 → **1032/198**; `npx tsc --noEmit`
+  limpo e `vite build` ok nos dois lados. Só produção alterada, aditiva.
+- **Próximo passo priorizado:** estender o mesmo padrão de erro+retry às
+  páginas fora de relatórios que ainda só tratam `isLoading` e podem exibir
+  zeros na falha (`src/pages/automation/*`, `IntentStatsPage`); ou abrir a
+  fatia dedicada de deps (`npm audit fix` não-force para o tooling de build:
+  `postcss`/`nanoid`/`brace-expansion`/`js-yaml`, validando build+suíte+tsc).
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um

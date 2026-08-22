@@ -38,7 +38,7 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
 
   return (
     <div className="flex flex-col gap-6">
-      <SectionCard title="Segmentos RFM" subtitle="Recência × frequência × valor (base inteira da loja)" loading={q.isLoading}>
+      <SectionCard title="Segmentos RFM" subtitle="Recência × frequência × valor (base inteira da loja)" loading={q.isLoading} error={q.isError} onRetry={() => { void q.refetch(); }}>
         <div className="grid grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           {segments.map((s) => (
             <StatCard
@@ -66,6 +66,8 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
         title="Cada cliente em números"
         subtitle="Pedidos, gasto, ticket e ritmo de compra individuais — a média da base está no card Cadência acima"
         loading={q.isLoading}
+        error={q.isError}
+        onRetry={() => { void q.refetch(); }}
         action={
           <ExportCsvButton
             rows={q.data?.customers ?? []}
@@ -107,6 +109,8 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
         title="Clientes para reengajar"
         subtitle="Sem pedir há 60+ dias, ordenados por valor histórico — um toque no WhatsApp resolve"
         loading={q.isLoading}
+        error={q.isError}
+        onRetry={() => { void q.refetch(); }}
         action={
           <ExportCsvButton
             rows={inactive}
@@ -172,6 +176,8 @@ export const CohortSection: React.FC<{ range: DateRange; enabled: boolean }> = (
       title="Retenção por safra"
       subtitle="% dos clientes do 1º pedido em cada mês que voltaram nos meses seguintes"
       loading={q.isLoading}
+      error={q.isError}
+      onRetry={() => { void q.refetch(); }}
     >
       {cohorts.length === 0 ? (
         <EmptyNote text="Ainda não há clientes suficientes para montar safras." />
@@ -227,7 +233,7 @@ export const FinanceSection: React.FC<{ range: DateRange; enabled: boolean }> = 
 
   return (
     <div className="flex flex-col gap-6">
-      <SectionCard title="Recebido × taxas" subtitle="Pagamentos aprovados no gateway (MercadoPago)" loading={fin.isLoading}>
+      <SectionCard title="Recebido × taxas" subtitle="Pagamentos aprovados no gateway (MercadoPago)" loading={fin.isLoading} error={fin.isError} onRetry={() => { void fin.refetch(); }}>
         <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           <StatCard label="Bruto" value={formatBRL(s?.gross ?? 0)} tone="brand" />
           <StatCard label="Taxas de gateway" value={formatBRL(s?.fees ?? 0)} tone="warning" />
@@ -266,6 +272,8 @@ export const FinanceSection: React.FC<{ range: DateRange; enabled: boolean }> = 
         title="Cupons"
         subtitle={coupons.data ? `${coupons.data.summary.coupon_usage_pct}% dos pedidos usaram cupom · ${formatBRL(coupons.data.summary.total_discount)} em descontos` : undefined}
         loading={coupons.isLoading}
+        error={coupons.isError}
+        onRetry={() => { void coupons.refetch(); }}
         action={
           <ExportCsvButton
             rows={coupons.data?.coupons ?? []}
@@ -318,7 +326,7 @@ export const BotReviewsSection: React.FC<{ range: DateRange; enabled: boolean }>
 
   return (
     <div className="flex flex-col gap-6">
-      <SectionCard title="Funil do bot" subtitle="Sessões de conversa → pedido no período" loading={bot.isLoading}>
+      <SectionCard title="Funil do bot" subtitle="Sessões de conversa → pedido no período" loading={bot.isLoading} error={bot.isError} onRetry={() => { void bot.refetch(); }}>
         <div className="grid grid-cols-3 max-sm:grid-cols-1 gap-4 mb-6">
           <StatCard label="Sessões" value={conv?.sessions ?? 0} />
           <StatCard label="Viraram pedido" value={conv?.with_order ?? 0} sub={`${conv?.rate ?? 0}% de conversão`} tone="brand" />
@@ -347,6 +355,8 @@ export const BotReviewsSection: React.FC<{ range: DateRange; enabled: boolean }>
         title="Avaliações"
         subtitle={rsum?.count ? `Nota média ${rsum.avg_rating?.toFixed(1)} ★ em ${rsum.count} avaliações` : undefined}
         loading={reviews.isLoading}
+        error={reviews.isError}
+        onRetry={() => { void reviews.refetch(); }}
         action={
           <ExportCsvButton
             rows={reviews.data?.by_product ?? []}
