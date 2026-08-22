@@ -5,13 +5,23 @@ export interface CsvColumn {
   label: string;
 }
 
+// Caracteres que o Excel/Sheets tratam como início de fórmula. Dados de cliente
+// (nome, telefone, e-mail, nome de produto) entram nesses CSVs; um valor como
+// `=cmd|...` ou `=HYPERLINK(...)` executaria ao abrir o arquivo (CSV injection).
+// Mitigação OWASP: prefixar aspa simples para o campo virar texto literal.
+const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+
 const escapeCell = (value: unknown): string => {
   if (value === null || value === undefined) return '';
   let str: string;
   if (typeof value === 'number') {
+    // Números (inclui negativos) vêm tipados: não são fórmula, não neutralizar.
     str = String(value).replace('.', ',');
   } else {
     str = String(value);
+    if (FORMULA_PREFIX.test(str)) {
+      str = `'${str}`;
+    }
   }
   if (/[;"\n]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
