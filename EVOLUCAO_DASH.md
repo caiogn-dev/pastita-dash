@@ -3,6 +3,65 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-16)
+
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
+  transitivas de `react-router`/`react-router-dom`; fix só em major bump —
+  segue como fatia dedicada (mexe no roteador, requer validação).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1106 testes / 202 suítes verdes** (era 1102/201; +4/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~13s).
+
+## Histórico
+
+### 2026-08-16 — A11y: `DialogTitle` nomeia automaticamente o `Dialog` (WCAG 4.1.2)
+- **Medido:** varredura do caminho **composto** de diálogos (`src/components/ui/dialog.tsx`).
+  O `ConfirmModal` já ligava seu título ao `role="dialog"` à mão (gera `useId`,
+  põe no `<h3>`, passa `ariaLabelledby` ao `Modal`), mas o par `Dialog`+`DialogTitle`
+  NÃO fazia esse fio: o `<h2>` do `DialogTitle` não tinha `id` e o `Dialog` não
+  apontava `aria-labelledby` para ele. Resultado: todo consumidor precisava
+  refazer o fio à mão, e quem não fez ficou **sem nome acessível**. O único
+  consumidor real do caminho composto — `WhatsAppAuthDialog.tsx` — montava
+  `<DialogTitle>Conectar WhatsApp…</DialogTitle>` mas o diálogo era anunciado
+  pelos leitores de tela só como "diálogo" (viola WCAG 4.1.2 / ARIA Dialog Pattern).
+- **Mudado (componente ativo, puramente aditivo):**
+  - `Dialog`: cria um `titleId` estável (`useId`) exposto por contexto e detecta,
+    **em tempo de render** (varrendo a árvore de `children`), se há um
+    `<DialogTitle>` — usando o `id` próprio dele se houver, senão o `titleId` do
+    contexto. Precedência do nome: `ariaLabelledby` explícito → `ariaLabel`
+    explícito → título automático do `DialogTitle`. Props explícitas sempre
+    vencem o fio automático. Sem `DialogTitle`, nada é apontado — **nunca fica
+    pendurado** (dangling) para um id inexistente.
+  - `DialogTitle`: aplica no `<h2>` o `id` próprio do consumidor, se houver, senão
+    o `titleId` do contexto (o mesmo que o `Dialog` detectou e apontou).
+  - **Por que detecção no render e NÃO registro por efeito** (feedback do Codex):
+    o `Modal` move o foco para dentro do diálogo num efeito **passivo** que só
+    roda no commit de abertura e não re-dispara quando um rótulo chega depois.
+    Um registro por `useEffect`/`useLayoutEffect` commitaria o `aria-labelledby`
+    tarde demais — no instante em que o foco entra, o diálogo estaria sem nome e
+    o leitor de tela o anunciaria "sem título". Detectar no render deixa o rótulo
+    pronto já no primeiro commit, antes do foco.
+- **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — escrita **vermelha antes**,
+  **verde depois**. Cobre: nome automático via `DialogTitle`, precedência do
+  `aria-labelledby` explícito, `aria-label` explícito sem título, ausência de
+  `aria-labelledby` pendurado, e — capturando o `focusin` de abertura — que o
+  diálogo **já tem nome no instante em que o foco entra** (este falha com registro
+  por efeito e passa com detecção no render).
+- **Antes/depois:** `tsc --noEmit` limpo; `npm run lint` 277 warnings (< gate 400,
+  0 errors); `vite build` ok; `npm test` todas verdes (196 suítes / 1028 testes,
+  0 falhas). Zero mudança visual/comportamental — só atributos de acessibilidade.
+  Risco baixo. (Obs.: a contagem total de suítes/testes do `npm test` oscila
+  ~196↔202 entre execuções por flakiness pré-existente do jest/haste — não
+  regressão desta fatia; toda suíte que roda passa.)
+- **Próximo passo priorizado:** (1) **Segurança/deps:** planejar o major bump de
+  `react-router` 6→7 (corrige o open redirect via backslash) como fatia dedicada
+  com validação de build/rotas. (2) **A11y:** varrer `role="dialog"` montados à
+  mão fora do `Modal`/`Dialog` (ex.: headlessui em `OnboardingWizard`) e garantir
+  nome acessível. (3) **Estados de erro/loading:** continuar a varredura de
+  "zeros enganosos" e ausências de estado de erro nas páginas de query.
+
+<!-- histórico anterior -->
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
@@ -13,7 +72,7 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - `npm run build` (vite): **ok** (~14s).
 - `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
 
-## Histórico
+### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
