@@ -17,6 +17,8 @@ export const useOrderPrint = () => {
     storeName?: string;
     storePhone?: string;
     storeAddress?: string;
+    /** URL da logo da loja — vira o selo no topo da comanda. */
+    storeLogo?: string;
     /** Comanda da cozinha: oculta preços, totais e pagamento. */
     hidePrices?: boolean;
   }) => {
@@ -149,7 +151,18 @@ export const useOrderPrint = () => {
 
     const storeName = options?.storeName || (pedido as unknown as { store_name?: string }).store_name || 'LOJA';
     const storePhone = options?.storePhone || '';
-    const storeAddress = options?.storeAddress || '';
+    const storeLogo = options?.storeLogo || '';
+
+    // Canal de origem: WhatsApp, PDV e site se comportam diferente quando dá
+    // problema, e quem atende lê isso na comanda.
+    const SOURCE_LABELS: Record<string, string> = {
+      whatsapp: 'WhatsApp', instagram: 'Instagram', pdv: 'PDV', balcao: 'balcao',
+      web: 'site', site: 'site', storefront: 'site', payment_link: 'link de pagamento',
+    };
+    const canalLabel = SOURCE_LABELS[(pedido as unknown as { source?: string }).source || ''] || '';
+
+    const unidades = (pedido.items || []).reduce((n, i) => n + Number(i.quantity || 1), 0)
+      + (pedido.combo_items || []).reduce((n, c) => n + Number(c.quantity || 1), 0);
     const formatIngredients = (ingredients: Array<{ name: string; role?: string; price?: number }>) => ingredients
       .map((ingredient) => {
         const role = ingredient.role ? `${ingredient.role}: ` : '';
@@ -157,7 +170,7 @@ export const useOrderPrint = () => {
         return `${role}${ingredient.name}${price}`;
       });
 
-    const renderDetailLines = (lines: string[], className = 'item-detail') => lines
+    const renderDetailLines = (lines: string[], className = 'det') => lines
       .map((line) => `<div class="${className}">${escapeHtml(line)}</div>`)
       .join('');
 
@@ -186,16 +199,15 @@ export const useOrderPrint = () => {
       ].filter((line): line is string => Boolean(line));
 
       return `
-        <div class="item-card">
-          <div class="item-row">
-            <div class="item-main">
-              <span class="item-qty">${item.quantity}x</span>
-              <span class="item-name">${escapeHtml(item.product_name)}</span>
-            </div>
-            ${hidePrices ? '' : `<div class="item-price">${formatMoney(itemTotal)}</div>`}
+        <div class="item">
+          <div class="item-head">
+            <span class="check">[ ]</span>
+            <span class="qty">${item.quantity}x</span>
+            <span class="nome-item">${escapeHtml(item.product_name)}</span>
+            ${hidePrices ? '' : `<span class="preco">${formatMoney(itemTotal)}</span>`}
           </div>
           ${detailLines.length ? renderDetailLines(detailLines) : ''}
-          ${itemNotes ? `<div class="item-note-box">OBS. ITEM: ${escapeHtml(itemNotes)}</div>` : ''}
+          ${itemNotes ? `<div class="obs-item">${escapeHtml(itemNotes)}</div>` : ''}
         </div>
       `;
     }).join('') || '';
@@ -206,17 +218,16 @@ export const useOrderPrint = () => {
         : [];
 
       return `
-        <div class="item-card combo-card">
-          <div class="item-row">
-            <div class="item-main">
-              <span class="item-qty">${combo.quantity}x</span>
-              <span class="item-name">${escapeHtml(combo.combo_name)}</span>
-            </div>
-            ${hidePrices ? '' : `<div class="item-price">${formatMoney(combo.subtotal)}</div>`}
+        <div class="item">
+          <div class="item-head">
+            <span class="check">[ ]</span>
+            <span class="qty">${combo.quantity}x</span>
+            <span class="nome-item">${escapeHtml(combo.combo_name)}</span>
+            ${hidePrices ? '' : `<span class="preco">${formatMoney(combo.subtotal)}</span>`}
           </div>
-          <div class="item-detail">COMBO</div>
+          <div class="det">[COMBO]</div>
           ${customizationLines.length ? renderDetailLines(customizationLines) : ''}
-          ${combo.notes ? `<div class="item-note-box">OBS. COMBO: ${escapeHtml(combo.notes)}</div>` : ''}
+          ${combo.notes ? `<div class="obs-item">${escapeHtml(combo.notes)}</div>` : ''}
         </div>
       `;
     }).join('') || '';
@@ -226,25 +237,22 @@ export const useOrderPrint = () => {
     const notes = (pedidoAny.customer_notes as string)
       || (pedidoAny.observacoes as string)
       || (pedidoAny.delivery_notes as string);
+    // Só imprime se existir — sem observação não sobra cabeçalho órfão.
     const notesHtml = notes ? `
-      <div class="notes-section">
-        <div class="notes-title">OBSERVACOES</div>
-        <div class="notes-text">${escapeHtml(notes)}</div>
-      </div>
+      <div class="band">OBSERVACAO DO CLIENTE</div>
+      <div class="nota">${escapeHtml(notes)}</div>
     ` : '';
 
     const internalNotes = typeof pedido.internal_notes === 'string' ? pedido.internal_notes : '';
     const deliveryInstructions = typeof pedido.delivery_instructions === 'string' ? pedido.delivery_instructions : '';
     const prepNotesHtml = [internalNotes, deliveryInstructions]
       .filter(Boolean)
-      .map((entry) => `<div class="notes-text">${escapeHtml(entry)}</div>`)
+      .map((entry) => `<div class="nota">${escapeHtml(entry)}</div>`)
       .join('');
 
     const kitchenNotesHtml = prepNotesHtml ? `
-      <div class="notes-section kitchen-notes">
-        <div class="notes-title">ATENCAO DA LOJA</div>
-        ${prepNotesHtml}
-      </div>
+      <div class="band">!! ATENCAO DA LOJA !!</div>
+      ${prepNotesHtml}
     ` : '';
 
     const addressLines = formatAddressLines();
@@ -259,7 +267,7 @@ export const useOrderPrint = () => {
         { digitado?: string; pin?: string } | undefined;
       if (!d?.digitado || !d?.pin) return '';
       return `
-        <div class="address-warning">
+        <div class="aviso">
           !! CONFERIR ENDERECO ANTES DE SAIR !!<br/>
           Cliente escreveu: ${escapeHtml(d.digitado)}<br/>
           Pin do mapa cai em: ${escapeHtml(d.pin)}
@@ -277,26 +285,14 @@ export const useOrderPrint = () => {
         <meta charset="UTF-8">
         <title>Pedido #${pedido.order_number}</title>
         <style>
-          @page {
-            size: 80mm auto;
-            margin: 3mm;
-          }
-          
+          @page { size: 80mm auto; margin: 3mm; }
+
           @media print {
-            html, body {
-              width: auto;
-              margin: 0;
-              padding: 0;
-              background: #fff;
-            }
+            html, body { width: auto; margin: 0; padding: 0; background: #fff; }
           }
-          
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
+
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+
           body {
             width: 72mm;
             max-width: 72mm;
@@ -304,434 +300,157 @@ export const useOrderPrint = () => {
             font-family: 'Courier New', 'Liberation Mono', monospace;
             font-size: 12px;
             line-height: 1.35;
-            padding: 0;
             color: #000;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
             text-rendering: optimizeLegibility;
             overflow-wrap: anywhere;
           }
-          
-          /* ===== HEADER ===== */
-          .header {
-            text-align: center;
-            padding-bottom: 8px;
-            margin-bottom: 8px;
-            border-bottom: 1px dashed #000;
-          }
-          
-          .store-name {
-            font-size: 18px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            line-height: 1.15;
-          }
-          
-          .store-info {
-            font-size: 10px;
-            font-weight: 700;
-            margin-top: 4px;
-            word-break: break-word;
-          }
-          
-          /* ===== ORDER NUMBER ===== */
-          .order-header {
+
+          /* Papel térmico não tem cinza nem cor: o único destaque que sobrevive
+             é preto sólido. Por isso as faixas — e por isso elas são raras.
+             Cada faixa responde à mesma pergunta: o que muda o que eu faço agora? */
+          .band {
             background: #000;
             color: #fff;
             text-align: center;
-            padding: 7px 4px;
-            margin: 8px 0;
-          }
-          
-          .order-number {
-            font-size: 18px;
             font-weight: 900;
-            letter-spacing: 1px;
-          }
-          
-          .order-date {
-            font-size: 10px;
-            font-weight: 600;
-            margin-top: 4px;
-          }
-          
-          .delivery-badge {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 800;
-            margin-top: 6px;
-            padding: 2px 6px;
-            background: #fff;
-            color: #000;
-            border: 1px solid #000;
-          }
-          
-          /* ===== SECTIONS ===== */
-          .section {
-            margin: 8px 0;
-            padding: 6px 0;
-            border-bottom: 1px dashed #000;
-          }
-          
-          .section-title {
+            text-transform: uppercase;
             font-size: 11px;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-            letter-spacing: 0.6px;
+            letter-spacing: .5px;
+            padding: 3px 4px;
+            margin: 7px 0;
           }
-          
-          /* ===== CUSTOMER ===== */
-          .customer-name {
-            font-size: 13px;
-            font-weight: 800;
+          .band.lg { font-size: 21px; letter-spacing: 1.5px; padding: 6px 4px; }
+
+          .logo {
+            display: block;
+            margin: 0 auto 3px;
+            width: 18mm;
+            height: auto;
+            /* aproxima o 1 bit da térmica: sem isso, meio-tom vira mancha */
+            filter: grayscale(1) contrast(2.4);
           }
-          
-          .customer-phone {
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 2px;
-          }
-          
-          .customer-address {
-            font-size: 10px;
-            font-weight: 600;
-            margin-top: 6px;
-            padding: 5px 6px;
-            border: 1px dashed #000;
-            word-break: break-word;
-          }
-          
-          .address-label {
-            font-weight: 900;
-            font-size: 9px;
-            text-transform: uppercase;
-            margin-bottom: 3px;
-          }
-          /* Comanda térmica é preto e branco: o destaque tem que ser borda e
-             peso, não cor. Sem isto o aviso vira mais uma linha no meio do
-             endereço e ninguém para para ler. */
-          .address-warning {
-            margin-top: 4px;
+          .store { text-align: center; font-weight: 900; text-transform: uppercase; font-size: 13px; }
+
+          .num { text-align: center; font-size: 27px; font-weight: 900; line-height: 1.05; letter-spacing: 1px; }
+          .ctx { text-align: center; font-size: 10px; font-weight: 700; margin-top: 2px; }
+
+          /* O que se lê de longe vai pro centro. A margem esquerda fica
+             reservada para uma coisa só: a lista de itens. */
+          .who { text-align: center; margin: 8px 0; }
+          .who .nome { font-size: 14px; font-weight: 900; text-transform: uppercase; }
+          .who .tel  { font-size: 12px; font-weight: 700; }
+          .who .end  { font-size: 11px; font-weight: 700; }
+
+          .aviso {
+            margin: 6px 0;
             padding: 4px;
             border: 2px solid #000;
             font-weight: 900;
             font-size: 10px;
             text-transform: uppercase;
             line-height: 1.35;
-          }
-          
-          /* ===== ITEMS ===== */
-          .items-list {
-            display: grid;
-            gap: 8px;
+            text-align: center;
           }
 
-          .item-card {
-            border: 1px solid #000;
-            padding: 6px;
-          }
-
-          .combo-card {
-            border-style: dashed;
-          }
-
-          .item-row {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 8px;
-          }
-
-          .item-main {
-            flex: 1;
-            min-width: 0;
-          }
-
-          .item-qty {
-            display: inline-block;
-            min-width: 28px;
-            font-weight: 900;
-            font-size: 14px;
-            vertical-align: top;
-          }
-          
-          .item-name {
-            display: inline;
-            font-weight: 900;
-            font-size: 13px;
-            line-height: 1.25;
-          }
-          
-          .item-price {
-            text-align: right;
-            font-weight: 900;
+          .nota {
+            text-align: center;
             font-size: 12px;
-            white-space: nowrap;
-          }
-
-          .item-detail {
-            margin-top: 4px;
-            padding-left: 28px;
-            font-size: 10px;
-            font-weight: 700;
-            line-height: 1.3;
-          }
-
-          .item-note-box {
-            margin-top: 5px;
-            padding: 4px 5px;
-            border: 1px dashed #000;
-            font-size: 10px;
             font-weight: 900;
-            line-height: 1.3;
-            background: #f7f7f7;
-          }
-          
-          /* ===== TOTALS ===== */
-          .totals-section {
-            margin: 8px 0;
-            padding: 6px 0;
-          }
-          
-          .total-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 2px 0;
-            font-size: 11px;
-            font-weight: 700;
-          }
-
-          .total-row span:first-child {
-            flex: 1;
-            min-width: 0;
-          }
-
-          .total-row span:last-child {
-            white-space: nowrap;
-          }
-          
-          .total-row.discount {
-            color: #000;
-          }
-          
-          .grand-total {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            margin-top: 6px;
-            padding-top: 6px;
-            border-top: 3px double #000;
-            font-size: 15px;
-            font-weight: 900;
-          }
-          
-          /* ===== PAYMENT ===== */
-          .payment-section {
-            padding: 7px 6px;
-            margin: 8px 0;
-            border: 1px solid #000;
-          }
-          
-          .payment-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 2px 0;
-          }
-
-          .payment-row span:first-child {
-            flex: 1;
-            min-width: 0;
-          }
-
-          .payment-row span:last-child {
-            text-align: right;
-            white-space: nowrap;
-          }
-          
-          .payment-status {
-            font-weight: 900;
-            font-size: 11px;
-          }
-          
-          /* ===== NOTES ===== */
-          .notes-section {
-            margin: 8px 0;
-            padding: 7px 6px;
-            border: 1px solid #000;
-          }
-          
-          .notes-title {
-            font-size: 10px;
-            font-weight: 900;
-            margin-bottom: 4px;
-          }
-          
-          .notes-text {
-            font-size: 10px;
-            font-weight: 700;
             line-height: 1.35;
             white-space: pre-wrap;
             word-break: break-word;
+            margin-bottom: 7px;
           }
 
-          .kitchen-notes {
-            border-width: 2px;
-          }
-
-          .meta-strip {
-            display: grid;
-            gap: 4px;
-            margin: 8px 0;
-          }
-
-          .meta-chip {
-            border: 1px solid #000;
-            padding: 4px 6px;
+          .item { margin: 0 0 8px; }
+          .item-head { display: flex; align-items: baseline; gap: 5px; }
+          .check { font-size: 13px; font-weight: 900; }
+          /* A quantidade é o dado que mais gera erro na cozinha, então é a
+             única coisa da linha que cresce. */
+          .qty { font-size: 19px; font-weight: 900; line-height: 1; }
+          .nome-item { font-size: 13px; font-weight: 900; line-height: 1.2; text-transform: uppercase; }
+          .preco { margin-left: auto; font-size: 12px; font-weight: 900; white-space: nowrap; }
+          .det { padding-left: 11mm; font-size: 10px; font-weight: 700; line-height: 1.35; }
+          .obs-item {
+            display: inline-block;
+            margin: 3px 0 0 11mm;
+            background: #000;
+            color: #fff;
+            padding: 2px 5px;
             font-size: 10px;
-            font-weight: 800;
+            font-weight: 900;
+            text-transform: uppercase;
           }
-          
-          /* ===== FOOTER ===== */
-          .footer {
+
+          .rule { border-top: 1px solid #000; margin: 8px 0 5px; }
+          .tot { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 700; padding: 1px 0; }
+          .tot span:first-child { flex: 1; min-width: 0; }
+          .tot span:last-child { white-space: nowrap; }
+          .total-final { text-align: center; font-size: 20px; font-weight: 900; margin: 7px 0; }
+
+          .pe {
             text-align: center;
+            font-size: 10px;
+            font-weight: 700;
             margin-top: 10px;
-            padding-top: 8px;
-            border-top: 1px dashed #000;
+            padding-top: 7px;
+            border-top: 1px solid #000;
           }
-          
-          .footer-thanks {
-            font-size: 11px;
-            font-weight: 800;
-            line-height: 1.3;
-          }
-          
-          .footer-divider {
-            font-size: 9px;
-            margin: 5px 0;
-            letter-spacing: 0;
-            white-space: nowrap;
-            overflow: hidden;
-          }
-          
-          .footer-time {
-            font-size: 9px;
-            font-weight: 600;
-          }
-          
-          /* ===== UTILITIES ===== */
-          .text-center { text-align: center; }
-          .text-right { text-align: right; }
-          .bold { font-weight: 900; }
         </style>
       </head>
       <body>
-        <!-- Header -->
-        <div class="header">
-          <div class="store-name">${storeName}</div>
-          ${storePhone ? `<div class="store-info">${storePhone}</div>` : ''}
-          ${storeAddress ? `<div class="store-info">${storeAddress}</div>` : ''}
-        </div>
+        <!-- Selo da loja: com várias lojas na mesma impressora, é a forma que
+             separa uma comanda da outra na bancada. Sem logo, sobra o nome. -->
+        ${storeLogo ? `<img class="logo" src="${escapeHtml(storeLogo)}" alt="">` : ''}
+        <div class="store">${escapeHtml(storeName)}</div>
 
-        <!-- Order Info -->
-        <div class="order-header">
-          <div class="order-number">PEDIDO #${pedido.order_number}</div>
-          <div class="order-date">${formatDate(pedido.created_at)}</div>
-          <div class="delivery-badge">${getDeliveryMethod()}</div>
-          ${hidePrices ? '<div class="delivery-badge">COMANDA · COZINHA</div>' : ''}
-        </div>
+        <!-- Faixa 1: o modo, que decide o fluxo inteiro -->
+        <div class="band lg">${getDeliveryMethod()}</div>
 
-        ${scheduledLabel ? `
-          <div class="meta-strip">
-            <div class="meta-chip">AGENDADO PARA: ${escapeHtml(scheduledLabel)}</div>
-          </div>
-        ` : ''}
+        <div class="num">#${escapeHtml(String(pedido.order_number ?? ''))}</div>
+        <div class="ctx">${formatDate(pedido.created_at)}${canalLabel ? ` &middot; via ${escapeHtml(canalLabel)}` : ''}</div>
+        ${hidePrices ? '<div class="ctx">VIA DA COZINHA</div>' : ''}
 
-        <!-- Customer Info -->
-        <div class="section">
-          <div class="section-title">CLIENTE</div>
-          <div class="customer-name">${escapeHtml(pedido.customer_name || (pedidoAny.cliente_nome as string) || '')}</div>
-          <div class="customer-phone">${escapeHtml(pedido.customer_phone || (pedidoAny.cliente_telefone as string) || '')}</div>
-          ${getDeliveryMethod() === 'RETIRADA' ? `
-            <div class="customer-address">
-              <div class="address-label">ENTREGA</div>
-              PEDIDO PARA RETIRADA
-            </div>
-          ` : addressLines.length ? `
-            <div class="customer-address">
-              <div class="address-label">ENDERECO DE ENTREGA</div>
-              ${addressLines.map((line) => `<div>${escapeHtml(line)}</div>`).join('')}
-              ${divergenciaHtml}
-            </div>
-          ` : ''}
+        <!-- Faixa 2: agendamento — quando existe, manda no papel -->
+        ${scheduledLabel ? `<div class="band">AGENDADO ${escapeHtml(scheduledLabel)}</div>` : ''}
+
+        <div class="who">
+          <div class="nome">${escapeHtml(pedido.customer_name || (pedidoAny.cliente_nome as string) || '')}</div>
+          <div class="tel">${escapeHtml(pedido.customer_phone || (pedidoAny.cliente_telefone as string) || '')}</div>
+          ${getDeliveryMethod() === 'RETIRADA'
+            ? '<div class="end">RETIRADA NO LOCAL</div>'
+            : addressLines.map((line) => `<div class="end">${escapeHtml(line)}</div>`).join('')}
         </div>
+        ${divergenciaHtml}
 
         ${kitchenNotesHtml}
         ${notesHtml}
 
-        <!-- Items -->
-        <div class="section">
-          <div class="section-title">ITENS DO PEDIDO</div>
-          <div class="items-list">
-            ${itemsHtml}
-            ${comboItemsHtml}
-          </div>
-        </div>
+        <!-- Faixa 3: a contagem é a soma das quantidades, não o número de
+             linhas — é o número que se confere contra a sacola fechada. -->
+        <div class="band">${unidades} ${unidades === 1 ? 'ITEM' : 'ITENS'}</div>
+        ${itemsHtml}
+        ${comboItemsHtml}
 
         ${hidePrices ? '' : `
-        <!-- Totals -->
-        <div class="totals-section">
-          <div class="total-row">
-            <span>Subtotal:</span>
-            <span>${formatMoney(subtotal)}</span>
-          </div>
-          ${deliveryFee > 0 ? `
-            <div class="total-row">
-              <span>Taxa de Entrega:</span>
-              <span>${formatMoney(deliveryFee)}</span>
-            </div>
-          ` : ''}
-          ${discount > 0 ? `
-            <div class="total-row discount">
-              <span>Desconto:</span>
-              <span>- ${formatMoney(discount)}</span>
-            </div>
-          ` : ''}
-          ${surcharge > 0 ? `
-            <div class="total-row">
-              <span>Acréscimo:</span>
-              <span>${formatMoney(surcharge)}</span>
-            </div>
-          ` : ''}
-          <div class="grand-total">
-            <span>TOTAL:</span>
-            <span>${formatMoney(total)}</span>
-          </div>
-        </div>
+        <div class="rule"></div>
+        <div class="tot"><span>Subtotal</span><span>${formatMoney(subtotal)}</span></div>
+        ${deliveryFee > 0 ? `<div class="tot"><span>Entrega</span><span>${formatMoney(deliveryFee)}</span></div>` : ''}
+        ${discount > 0 ? `<div class="tot"><span>Desconto</span><span>- ${formatMoney(discount)}</span></div>` : ''}
+        ${surcharge > 0 ? `<div class="tot"><span>Acrescimo</span><span>${formatMoney(surcharge)}</span></div>` : ''}
+        <div class="total-final">TOTAL ${formatMoney(total)}</div>
 
-        <!-- Payment Info -->
-        <div class="payment-section">
-          <div class="payment-row">
-            <span>Forma de Pagamento:</span>
-            <span>${getPaymentMethod()}</span>
-          </div>
-          <div class="payment-row">
-            <span>Status:</span>
-            <span class="payment-status">${getPaymentStatus()}</span>
-          </div>
-        </div>
+        <!-- Faixa 4: calma quando pago, grito quando não -->
+        <div class="band">${pedido.payment_status === 'paid'
+          ? `${getPaymentMethod()} - PAGO`
+          : `!! ${getPaymentStatus()} - ${getPaymentMethod()} !!`}</div>
         `}
 
-        <!-- Footer -->
-        <div class="footer">
-          <div class="footer-thanks">Obrigado pela preferencia!</div>
-          <div class="footer-divider">------------------------------------------</div>
-          <div class="footer-time">Impresso em ${new Date().toLocaleString('pt-BR')}</div>
+        <div class="pe">
+          ${escapeHtml(storeName)}${storePhone ? ` &middot; ${escapeHtml(storePhone)}` : ''}<br>
+          impresso ${new Date().toLocaleString('pt-BR')}
         </div>
       </body>
       </html>

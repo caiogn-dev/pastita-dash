@@ -352,6 +352,9 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
       storeAddress: store?.address && store?.city && store?.state
         ? `${store.address} - ${store.city}/${store.state}`
         : (store?.address || store?.city || store?.state || ''),
+      // O painel roda em https: logo servida em http é bloqueada como
+      // mixed-content e a comanda sai sem selo, em silêncio.
+      storeLogo: (store?.logo_url || store?.logo || '').replace(/^http:\/\//, 'https://'),
       hidePrices,
     });
     try {
