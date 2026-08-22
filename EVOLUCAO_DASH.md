@@ -8,7 +8,8 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high),
   transitivas — segue como fatia dedicada (bump de roteador/vite exige validação).
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **1172 testes / 213 suítes verdes** (era 1166/212; +6/+1 desta fatia).
+- `npm test`: **1175 testes / 213 suítes verdes** (era 1166/212; +9/+1 desta fatia,
+  incluindo os 3 casos dos ajustes da revisão do Codex).
 - `npm run build` (tsc && vite build, igual à Vercel): **ok** (~17s).
 - `npm run lint`: gate em 400 warnings; **284 warnings** restantes (0 errors).
 
@@ -35,10 +36,22 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   (6 casos) — escrito **vermelho antes** (os 6 falhando: balão sem o conteúdo),
   **verde depois**. Cobre reação (emoji + "Reagiu"), resposta de botão, contato
   (nome + telefone), cartão de pedido, mensagem de sistema e sticker como imagem.
-- **Antes/depois:** `npm test` 1166/212 → **1172/213**; `tsc --noEmit` limpo e
+- **Antes/depois:** `npm test` 1166/212 → **1175/213**; `tsc --noEmit` limpo e
   `vite build` ok nos dois lados; lint sem novos warnings nos arquivos tocados
   (os 6 warnings de `any` em `MessageBubble.tsx` são pré-existentes, em código
   não tocado).
+- **Revisão do Codex (2 × P2, corrigidos na mesma fatia):**
+  (a) **Texto duplicado (botão/sistema):** o preview do tipo especial já imprime
+  o texto e o bloco genérico repetia o mesmo `textBody`. Novo `previewEchoesText`
+  (button/system) suprime o bloco genérico nesses casos; `reaction`/`contacts`/
+  `order`/`sticker` seguem podendo exibir legenda (sem risco de balão vazio).
+  (b) **Reação removida:** o WhatsApp sinaliza remoção com emoji vazio; o
+  fallback `emoji || '👍'` mostrava um joinha + "Reagiu". Emoji vazio agora vira
+  "Reação removida". +3 testes; ambos os threads respondidos e resolvidos.
+- **CI:** o check `build` do GitHub Actions estava vermelho por **infra** (runner
+  caindo em ~3s sem logs, vermelho também na `main` e no PR #172), não pelo
+  código; a preview da Vercel deste commit fez deploy com sucesso (mesmo
+  `npm run build`). Documentado no PR.
 - **Próximo passo priorizado:** (1) **A11y — dialog.tsx composto:** ligar
   `DialogTitle`↔`Dialog` via contexto para nomear diálogos automaticamente.
   (2) **"Zeros enganosos":** continuar a varredura de KPIs derivados de query
