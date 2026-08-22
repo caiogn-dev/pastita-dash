@@ -1,9 +1,31 @@
 /**
  * Dialog Component - Alias for Modal with Dialog-like API
  */
-import React from 'react';
+import React, {
+  createContext,
+  useContext,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { Modal } from './modal';
 import { cn } from '../../utils/cn';
+
+/**
+ * Contexto que liga `DialogTitle` ao `Dialog` para nome acessível automático.
+ * O `Dialog` gera um id estável e o expõe aqui; o `DialogTitle` aplica esse id
+ * ao seu heading e sinaliza presença (register/unregister). Só quando há um
+ * `DialogTitle` montado é que o `Dialog` aponta `aria-labelledby` para o id —
+ * assim nunca criamos referência pendente para um heading inexistente.
+ */
+interface DialogContextValue {
+  titleId: string;
+  registerTitle: () => void;
+  unregisterTitle: () => void;
+}
+
+const DialogContext = createContext<DialogContextValue | null>(null);
 
 // Dialog is just an alias for Modal
 export interface DialogProps {
@@ -24,18 +46,41 @@ export const Dialog: React.FC<DialogProps> = ({
   className,
   ariaLabel,
   ariaLabelledby,
-}) => (
-  <Modal
-    open={open}
-    onClose={() => onOpenChange(false)}
-    className={className}
-    showCloseButton={false}
-    ariaLabel={ariaLabel}
-    ariaLabelledby={ariaLabelledby}
-  >
-    {children}
-  </Modal>
-);
+}) => {
+  const titleId = useId();
+  const [titleCount, setTitleCount] = useState(0);
+
+  const ctx = useMemo<DialogContextValue>(
+    () => ({
+      titleId,
+      registerTitle: () => setTitleCount((c) => c + 1),
+      unregisterTitle: () => setTitleCount((c) => c - 1),
+    }),
+    [titleId]
+  );
+
+  // Precedência do nome acessível: ariaLabelledby explícito → DialogTitle
+  // presente (auto) → ariaLabel explícito. Sem título e sem ariaLabel, o Modal
+  // fica sem nome (não inventamos uma referência pendente).
+  const hasTitle = titleCount > 0;
+  const resolvedLabelledby =
+    ariaLabelledby ?? (!ariaLabel && hasTitle ? titleId : undefined);
+
+  return (
+    <DialogContext.Provider value={ctx}>
+      <Modal
+        open={open}
+        onClose={() => onOpenChange(false)}
+        className={className}
+        showCloseButton={false}
+        ariaLabel={ariaLabel}
+        ariaLabelledby={resolvedLabelledby}
+      >
+        {children}
+      </Modal>
+    </DialogContext.Provider>
+  );
+};
 
 // DialogContent wraps ModalBody
 export interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -69,15 +114,37 @@ export interface DialogTitleProps extends React.HTMLAttributes<HTMLHeadingElemen
 export const DialogTitle: React.FC<DialogTitleProps> = ({
   children,
   className,
+  id,
   ...props
-}) => (
-  <h2
-    className={cn('text-lg font-semibold text-gray-900 dark:text-white', className)}
-    {...props}
-  >
-    {children}
-  </h2>
-);
+}) => {
+  const ctx = useContext(DialogContext);
+  // Um id explícito do consumidor mantém o controle manual (retrocompatível):
+  // nesse caso não registramos e o Dialog não auto-nomeia por este heading.
+  const usesContextId = !id && !!ctx;
+
+  // Registro na FASE DE LAYOUT (não passiva): o `Modal` move o foco para dentro
+  // do painel num `useEffect` passivo (modal.tsx). Se registrássemos o título
+  // também num efeito passivo, o primeiro commit do `role="dialog"` sairia sem
+  // `aria-labelledby` e o foco entraria no diálogo ainda sem nome — leitores de
+  // tela anunciam o diálogo ao receber foco e podem não reanunciar quando o
+  // atributo chega depois. Com `useLayoutEffect`, o `setState` re-renderiza com
+  // o `aria-labelledby` ANTES do paint e antes do efeito passivo de foco.
+  useLayoutEffect(() => {
+    if (!usesContextId || !ctx) return;
+    ctx.registerTitle();
+    return () => ctx.unregisterTitle();
+  }, [usesContextId, ctx]);
+
+  return (
+    <h2
+      id={id ?? (usesContextId ? ctx?.titleId : undefined)}
+      className={cn('text-lg font-semibold text-gray-900 dark:text-white', className)}
+      {...props}
+    >
+      {children}
+    </h2>
+  );
+};
 
 // DialogDescription
 export interface DialogDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
