@@ -201,8 +201,7 @@ export const useOrderPrint = () => {
       return `
         <div class="item">
           <div class="item-head">
-            <span class="check">[ ]</span>
-            <span class="qty">${item.quantity}x</span>
+            <span class="marca">[ ] <span class="qty">${item.quantity}x</span></span>
             <span class="nome-item">${escapeHtml(item.product_name)}</span>
             ${hidePrices ? '' : `<span class="preco">${formatMoney(itemTotal)}</span>`}
           </div>
@@ -220,8 +219,7 @@ export const useOrderPrint = () => {
       return `
         <div class="item">
           <div class="item-head">
-            <span class="check">[ ]</span>
-            <span class="qty">${combo.quantity}x</span>
+            <span class="marca">[ ] <span class="qty">${combo.quantity}x</span></span>
             <span class="nome-item">${escapeHtml(combo.combo_name)}</span>
             ${hidePrices ? '' : `<span class="preco">${formatMoney(combo.subtotal)}</span>`}
           </div>
@@ -365,17 +363,32 @@ export const useOrderPrint = () => {
           }
 
           .item { margin: 0 0 8px; }
-          .item-head { display: flex; align-items: baseline; gap: 5px; }
-          .check { font-size: 13px; font-weight: 900; }
-          /* A quantidade é o dado que mais gera erro na cozinha, então é a
-             única coisa da linha que cresce. */
-          .qty { font-size: 19px; font-weight: 900; line-height: 1; }
-          .nome-item { font-size: 13px; font-weight: 900; line-height: 1.2; text-transform: uppercase; }
-          .preco { margin-left: auto; font-size: 12px; font-weight: 900; white-space: nowrap; }
-          .det { padding-left: 11mm; font-size: 10px; font-weight: 700; line-height: 1.35; }
+          .item-head { display: flex; align-items: baseline; gap: 4px; }
+          /* Coluna fixa: sem largura travada o nome empurrava a quantidade e a
+             linha quebrava em lugar errado. Agora a continuação do nome cai
+             sempre embaixo do nome, nunca embaixo do [ ]. */
+          .marca {
+            flex: 0 0 14mm;
+            font-size: 12px;
+            font-weight: 900;
+            white-space: nowrap;
+          }
+          /* A quantidade é o dado que mais gera erro na cozinha, então cresce —
+             mas em altura, não em largura, senão come a linha do nome. */
+          .qty { font-size: 15px; font-weight: 900; }
+          .nome-item {
+            flex: 1;
+            min-width: 0;
+            font-size: 13px;
+            font-weight: 900;
+            line-height: 1.2;
+            text-transform: uppercase;
+          }
+          .preco { flex: 0 0 auto; font-size: 12px; font-weight: 900; white-space: nowrap; }
+          .det { padding-left: 14mm; font-size: 10px; font-weight: 700; line-height: 1.35; }
           .obs-item {
             display: inline-block;
-            margin: 3px 0 0 11mm;
+            margin: 3px 0 0 14mm;
             background: #000;
             color: #fff;
             padding: 2px 5px;
