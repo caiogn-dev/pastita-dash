@@ -598,6 +598,12 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
   const isInbound = direction === 'inbound';
   const hasMedia = mediaUrl && ['image', 'video', 'audio', 'document'].includes(messageType);
   const hasLocation = messageType === 'location';
+  // Tipos tratados por MediaPreview que não são mídia baixável nem location.
+  // Sem isto o balão só chamava MediaPreview para mídia/location e estes
+  // tipos caíam num balão vazio (só com o horário).
+  const hasSpecial = ['sticker', 'contacts', 'order', 'reaction', 'button', 'system'].includes(
+    messageType,
+  );
 
   return (
     <div
@@ -626,6 +632,18 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
           <MediaPreview
             type="location"
             content={content}
+          />
+        )}
+
+        {/* Tipos especiais: sticker, contatos, pedido, reação, botão, sistema */}
+        {hasSpecial && (
+          <MediaPreview
+            type={messageType}
+            url={mediaUrl}
+            mimeType={mimeType}
+            fileName={fileName}
+            content={content}
+            onClick={mediaUrl ? () => onMediaClick?.(mediaUrl, messageType, fileName) : undefined}
           />
         )}
 

@@ -3,7 +3,50 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-22)
+
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high),
+  transitivas — segue como fatia dedicada (bump de roteador/vite exige validação).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1172 testes / 213 suítes verdes** (era 1166/212; +6/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~17s).
+- `npm run lint`: gate em 400 warnings; **284 warnings** restantes (0 errors).
+
+## Histórico
+
+### 2026-08-22 — Chat: tipos especiais de mensagem deixavam o balão vazio
+- **Medido:** varredura do fluxo principal (inbox WhatsApp → `MessageBubble`, a
+  fonte única do balão do chat). O `MediaPreview` já sabia desenhar **sticker,
+  contatos, pedido, reação, botão e sistema**, mas o `MessageBubbleImpl` só
+  chamava o `MediaPreview` quando `hasMedia` (image/video/audio/document) ou
+  `hasLocation` era verdadeiro. Resultado: uma **reação**, uma **resposta de
+  botão**, um **contato compartilhado**, um **pedido do WhatsApp**, uma
+  **mensagem de sistema** ou um **sticker** caíam num balão **vazio** — só com o
+  horário — a menos que por acaso trouxessem `textBody`. Bug de UX no workflow
+  mais usado do painel.
+- **Mudado (`MessageBubble.tsx`, aditivo):** novo `hasSpecial` para os seis tipos
+  tratados pelo `MediaPreview` que não são mídia baixável nem location; quando é
+  um deles, o balão passa a renderizar o `MediaPreview` correspondente (repassando
+  `mediaUrl` só quando existe, para o sticker virar imagem e o clique de mídia
+  funcionar). Conjuntos disjuntos de `hasMedia`/`hasLocation` — sem risco de
+  render duplicado. Nenhuma mudança nos caminhos de mídia/location/interactive
+  já existentes.
+- **Teste (TDD, vermelho→verde):** novo `MessageBubble.tiposEspeciais.test.tsx`
+  (6 casos) — escrito **vermelho antes** (os 6 falhando: balão sem o conteúdo),
+  **verde depois**. Cobre reação (emoji + "Reagiu"), resposta de botão, contato
+  (nome + telefone), cartão de pedido, mensagem de sistema e sticker como imagem.
+- **Antes/depois:** `npm test` 1166/212 → **1172/213**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados; lint sem novos warnings nos arquivos tocados
+  (os 6 warnings de `any` em `MessageBubble.tsx` são pré-existentes, em código
+  não tocado).
+- **Próximo passo priorizado:** (1) **A11y — dialog.tsx composto:** ligar
+  `DialogTitle`↔`Dialog` via contexto para nomear diálogos automaticamente.
+  (2) **"Zeros enganosos":** continuar a varredura de KPIs derivados de query
+  sem estado de erro (`ProductsPage`, seções de `reports/`, `AnalyticsPage`).
+  (3) **Segurança/deps:** planejar bumps majores (`react-router` 6→7, `vite`)
+  como fatias dedicadas com validação de build.
+
+## Baseline anterior (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
   transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
