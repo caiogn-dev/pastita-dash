@@ -90,4 +90,46 @@ describe('MessageBubble — tipos especiais de mensagem', () => {
 
     expect(screen.getByRole('img')).toBeInTheDocument();
   });
+
+  it('não duplica o texto de um botão presente em content e textBody', () => {
+    render(
+      <MessageBubble
+        {...baseProps}
+        messageType="button"
+        content={JSON.stringify({ text: 'Confirmar pedido' })}
+        textBody="Confirmar pedido"
+      />
+    );
+
+    // O preview do botão já mostra o texto; o bloco genérico não pode repetir.
+    expect(screen.getAllByText(/Confirmar pedido/)).toHaveLength(1);
+  });
+
+  it('não duplica o texto de uma mensagem de sistema presente em content e textBody', () => {
+    const texto = 'Conversa transferida para atendente';
+    render(
+      <MessageBubble
+        {...baseProps}
+        messageType="system"
+        content={texto}
+        textBody={texto}
+      />
+    );
+
+    expect(screen.getAllByText(texto)).toHaveLength(1);
+  });
+
+  it('indica reação removida quando o emoji vem vazio, sem cair no 👍', () => {
+    render(
+      <MessageBubble
+        {...baseProps}
+        messageType="reaction"
+        content={JSON.stringify({ emoji: '' })}
+      />
+    );
+
+    expect(screen.getByText('Reação removida')).toBeInTheDocument();
+    expect(screen.queryByText('👍')).not.toBeInTheDocument();
+    expect(screen.queryByText('Reagiu')).not.toBeInTheDocument();
+  });
 });

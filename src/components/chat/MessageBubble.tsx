@@ -459,7 +459,17 @@ const MediaPreview: React.FC<{
   // Reação de emoji
   if (type === 'reaction') {
     const reactionData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
-    const emoji = (reactionData as any)?.emoji || '👍';
+    const rawEmoji = (reactionData as any)?.emoji;
+    // WhatsApp sinaliza remoção de reação com emoji vazio: não cair no 👍.
+    const removed = typeof rawEmoji === 'string' && rawEmoji.trim() === '';
+    if (removed) {
+      return (
+        <div className="flex items-center gap-2 py-1 px-2">
+          <span className="text-xs text-gray-400 dark:text-zinc-500 italic">Reação removida</span>
+        </div>
+      );
+    }
+    const emoji = rawEmoji || '👍';
     return (
       <div className="flex items-center gap-2 py-1 px-2">
         <span className="text-2xl">{emoji}</span>
@@ -604,6 +614,9 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
   const hasSpecial = ['sticker', 'contacts', 'order', 'reaction', 'button', 'system'].includes(
     messageType,
   );
+  // Tipos cujo preview já imprime o próprio texto (btnText/conteúdo do sistema):
+  // o bloco de texto genérico abaixo repetiria o mesmo textBody.
+  const previewEchoesText = messageType === 'button' || messageType === 'system';
 
   return (
     <div
@@ -647,8 +660,9 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
           />
         )}
 
-        {/* Texto (só mostra se não for caption de mídia já exibida via mediaUrl) */}
-        {textBody && !hasLocation && !(hasMedia && ['image', 'video', 'document'].includes(messageType)) && (
+        {/* Texto (só mostra se não for caption de mídia já exibida via mediaUrl
+            nem já impresso pelo preview de um tipo especial que ecoa texto) */}
+        {textBody && !hasLocation && !previewEchoesText && !(hasMedia && ['image', 'video', 'document'].includes(messageType)) && (
           <div className="px-3 py-2">
             <p className="text-sm whitespace-pre-wrap break-words">{textBody}</p>
           </div>
