@@ -3,6 +3,47 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-23)
+
+- `npm ci`: ok. `npx tsc --noEmit`: **limpo**. `npm run build` (vite): **ok** (~23s).
+- `npm test`: **1170 testes / 213 suítes verdes** (era 1166/212; +4/+1 desta fatia).
+
+## Histórico
+
+### 2026-08-23 — A11y: nome acessível automático no `Dialog` composto via `DialogTitle` (WCAG 4.1.2)
+- **Medido:** varredura dos consumidores do `Dialog` composto (`src/components/ui/dialog.tsx`).
+  O `Dialog` é alias do `Modal` **sem `title` embutido**, então dependia de cada
+  consumidor passar `ariaLabel`/`ariaLabelledby` à mão para o diálogo ter nome
+  acessível. O único consumidor real, `WhatsAppAuthDialog.tsx`, montava
+  `<Dialog>` + `<DialogHeader>` + `<DialogTitle>Login com WhatsApp</DialogTitle>`
+  **sem passar nenhum dos dois** → renderizava `role="dialog"` + `aria-modal`
+  **sem nome acessível**, anunciado só como "diálogo" pelos leitores de tela
+  (viola WCAG 4.1.2 — Name, Role, Value). Era exatamente o "próximo passo (1)"
+  registrado em 06/ago.
+- **Mudado (componente compartilhado, mudança aditiva):**
+  - `dialog.tsx`: novo contexto `DialogTitleIdContext`. O `Dialog` gera um id
+    (via `useId`), o publica no contexto e aponta o `aria-labelledby` do diálogo
+    para ele; o `DialogTitle` adota esse id no seu `<h2>`. Resultado: o título
+    nomeia o diálogo **automaticamente**, sem trabalho do consumidor.
+  - **Precedência preservada:** `ariaLabelledby` explícito → `ariaLabel` explícito
+    → auto-wire pelo `DialogTitle`. Quando o consumidor já nomeia o diálogo, o
+    auto-wire fica desligado (contexto `null`, não sobrescreve). Um `id` explícito
+    no `DialogTitle` também vence o contexto.
+  - Sem mudança visual nem de comportamento — só atributos de acessibilidade.
+- **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — a asserção principal
+  (nome via `DialogTitle`) escrita **vermelha antes** (o `getByRole('dialog',
+  { name })` não encontrava), **verde depois**. Cobre: auto-wire pelo título,
+  `ariaLabel` explícito sem título, precedência do `ariaLabelledby` explícito e
+  respeito ao `id` próprio do `DialogTitle`.
+- **Antes/depois:** `npm test` 1166/212 → **1170/213**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Risco baixo (atributos de a11y aditivos).
+- **Próximo passo priorizado:** (1) **Segurança/deps:** planejar o major bump de
+  `react-router` 6→7 (corrige open redirect) e `vite` 5→8 (esbuild/postcss
+  dev-only), cada um como fatia dedicada com validação de build. (2) **A11y:**
+  seguir a varredura de nomes acessíveis / foco / contraste em outros controles
+  de alto tráfego. (3) **UX/Resiliência:** continuar a caça a "zeros enganosos"
+  (KPIs sem estado de erro) nas páginas orientadas a query ainda não cobertas.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
