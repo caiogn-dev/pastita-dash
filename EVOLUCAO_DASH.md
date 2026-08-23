@@ -37,6 +37,14 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   respeito ao `id` próprio do `DialogTitle`.
 - **Antes/depois:** `npm test` 1166/212 → **1170/213**; `tsc --noEmit` limpo e
   `vite build` ok nos dois lados. Risco baixo (atributos de a11y aditivos).
+- **Correção pós-revisão (Codex, PR #174):** o auto-wire tinha uma armadilha —
+  `<DialogTitle id="custom">` SEM o consumidor duplicar em `Dialog.ariaLabelledby`
+  deixava o `<h2>` com `id="custom"` enquanto o `aria-labelledby` do diálogo
+  apontava para o id gerado no contexto (alvo inexistente → diálogo sem nome).
+  Ajustado para o padrão de **registro**: o `Dialog` publica um `fallbackId`, o
+  `DialogTitle` informa de volta (via `registerTitleId`) o id que de fato usou
+  (próprio ou fallback), e o `aria-labelledby` passa a apontar sempre para esse
+  heading. Novo teste de regressão cobrindo o caso (1170→**1171 testes**).
 - **Próximo passo priorizado:** (1) **Segurança/deps:** planejar o major bump de
   `react-router` 6→7 (corrige open redirect) e `vite` 5→8 (esbuild/postcss
   dev-only), cada um como fatia dedicada com validação de build. (2) **A11y:**

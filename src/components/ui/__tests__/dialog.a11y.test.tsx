@@ -74,4 +74,26 @@ describe('Dialog — nome acessível automático via DialogTitle', () => {
       screen.getByRole('dialog', { name: 'Título com id próprio' })
     ).toBeInTheDocument();
   });
+
+  // Regressão (revisão Codex no PR #174): id explícito no DialogTitle SEM o
+  // consumidor duplicar em Dialog.ariaLabelledby. Antes, o h2 ficava com o id
+  // "custom" enquanto o aria-labelledby do diálogo apontava para o id gerado no
+  // contexto — alvo inexistente → diálogo sem nome. O auto-wire precisa seguir o
+  // id que o título realmente usa.
+  it('nomeia o diálogo mesmo com id explícito no DialogTitle e sem ariaLabelledby', () => {
+    render(
+      <Dialog open onOpenChange={() => {}}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle id="titulo-custom">Título com id explícito</DialogTitle>
+          </DialogHeader>
+          <p>corpo</p>
+        </DialogContent>
+      </Dialog>
+    );
+
+    expect(
+      screen.getByRole('dialog', { name: 'Título com id explícito' })
+    ).toBeInTheDocument();
+  });
 });
