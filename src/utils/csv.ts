@@ -5,6 +5,15 @@ export interface CsvColumn {
   label: string;
 }
 
+// Gatilhos de CSV/formula injection: uma célula de TEXTO que começa com um
+// destes é executada como fórmula pelo Excel/LibreOffice/Sheets ao abrir o
+// arquivo (ex.: =HYPERLINK/cmd exfiltram dados na máquina do lojista). Como os
+// exports carregam dados controlados pelo cliente (nome, telefone, e-mail),
+// prefixamos "'" para forçar interpretação como texto — OWASP CSV Injection.
+// Não se aplica a números (produzidos por nós): um valor negativo precisa
+// continuar numérico no Excel.
+const FORMULA_TRIGGER = /^[=+\-@\t\r]/;
+
 const escapeCell = (value: unknown): string => {
   if (value === null || value === undefined) return '';
   let str: string;
@@ -12,6 +21,9 @@ const escapeCell = (value: unknown): string => {
     str = String(value).replace('.', ',');
   } else {
     str = String(value);
+    if (FORMULA_TRIGGER.test(str)) {
+      str = `'${str}`;
+    }
   }
   if (/[;"\n]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
