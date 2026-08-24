@@ -66,8 +66,20 @@ describe('toCsv', () => {
       expect(csv).toBe(`Nome\n"'=HYPERLINK(""http://evil.test"",""x"")"`);
     });
 
-    it('gatilho de tab/CR no início também é neutralizado', () => {
+    it('gatilho de tab no início também é neutralizado', () => {
       expect(toCsv([{ v: '\t=1+1' }], [{ key: 'v', label: 'V' }])).toBe("V\n'\t=1+1");
+    });
+
+    // Um CR "cru" fora de célula aspeada é separador de registro para vários
+    // leitores: 'CR=1+1 viraria uma linha "'" seguida de uma linha "=1+1"
+    // (fórmula executável), driblando o prefixo. Célula com CR precisa ser
+    // aspeada — dentro das aspas o CR é dado literal, não separador.
+    it('CR no início é prefixado E aspeado (não vira separador de registro)', () => {
+      expect(toCsv([{ v: '\r=1+1' }], [{ key: 'v', label: 'V' }])).toBe('V\n"\'\r=1+1"');
+    });
+
+    it('CR no meio do valor força aspeamento (mesmo sem gatilho inicial)', () => {
+      expect(toCsv([{ v: 'abc\r=1+1' }], [{ key: 'v', label: 'V' }])).toBe('V\n"abc\r=1+1"');
     });
 
     it('NÃO prefixa números negativos (mantém valor numérico no Excel)', () => {

@@ -25,7 +25,10 @@ const escapeCell = (value: unknown): string => {
       str = `'${str}`;
     }
   }
-  if (/[;"\n]/.test(str)) {
+  // CR entra no gatilho de aspeamento junto de LF: um CR "cru" fora de célula
+  // aspeada é separador de registro para vários leitores e reabriria a brecha
+  // de formula injection (o trecho após o CR viraria uma nova linha executável).
+  if (/[;"\n\r]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
   }
   return str;
