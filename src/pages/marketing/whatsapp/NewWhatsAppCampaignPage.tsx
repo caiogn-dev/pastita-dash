@@ -28,6 +28,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Modal, Input } from '../../../components/common';
+import { precoParaTemplate, variaveisDaOferta } from './variaveisDaOferta';
 import { getErrorMessage } from '../../../services';
 import whatsappService from '../../../services/whatsapp';
 import { campaignsService } from '../../../services/campaigns';
@@ -82,12 +83,7 @@ const extractTemplateVariables = (template?: MessageTemplate): TemplateVariable[
   return Array.from(found.values());
 };
 
-const buildOfferVariables = (offerProducts: StoreProduct[]) => ({
-  produto_1: offerProducts[0]?.name || '',
-  preco_1: formatMoney(offerProducts[0]?.price),
-  produto_2: offerProducts[1]?.name || '',
-  preco_2: formatMoney(offerProducts[1]?.price),
-});
+
 
 const buildTemplateComponents = (
   template: MessageTemplate | undefined,
@@ -610,7 +606,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       const templateComponents = formData.messageType === 'template'
         ? buildTemplateComponents(selectedTemplate, templateVariables, mediaPayload.media_url)
         : [];
-      const offerVariables = buildOfferVariables(selectedOfferProducts);
+      const offerVariables = variaveisDaOferta(selectedOfferProducts);
       const contactsWithVariables = formData.contacts.map(contact => ({
         ...contact,
         variables: formData.messageType === 'template'
@@ -1071,9 +1067,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         </p>
                         <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2 text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
                           <span>{'{{produto_1}}'}: {selectedOfferProducts[0]?.name || '-'}</span>
-                          <span>{'{{preco_1}}'}: {selectedOfferProducts[0] ? formatMoney(selectedOfferProducts[0].price) : '-'}</span>
+                          <span>{'{{preco_1}}'}: {selectedOfferProducts[0] ? precoParaTemplate(selectedOfferProducts[0].price) : '-'}</span>
                           <span>{'{{produto_2}}'}: {selectedOfferProducts[1]?.name || '-'}</span>
-                          <span>{'{{preco_2}}'}: {selectedOfferProducts[1] ? formatMoney(selectedOfferProducts[1].price) : '-'}</span>
+                          <span>{'{{preco_2}}'}: {selectedOfferProducts[1] ? precoParaTemplate(selectedOfferProducts[1].price) : '-'}</span>
                         </div>
                       </div>
                     )}
