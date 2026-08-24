@@ -26,6 +26,7 @@ import {
 import { useStore } from '../../hooks';
 import { ZonasDePrecoFixoCard } from './ZonasDePrecoFixoCard';
 import { FormulaDeEntregaCard } from './FormulaDeEntregaCard';
+import { FreteGratisCard } from './FreteGratisCard';
 import { getStore, updateStore } from '../../services/storesApi';
 
 const formatKm = (value?: number | string | null) => {
@@ -439,6 +440,20 @@ export const DeliveryZonesPage: React.FC = () => {
           key={storeId}
           metadataAtual={storeMetadata ?? {}}
           faixasAtivas={zones.filter((z) => z.is_active).length}
+          onSalvar={async (novoMetadata) => {
+            await updateStore(storeId, { metadata: novoMetadata });
+            setStoreMetadata(novoMetadata);
+          }}
+        />
+      )}
+
+      {/* A promoção vem logo abaixo do preço porque ela SOBRESCREVE o preço:
+          quem lê a fórmula precisa ver, na mesma rolagem, que existe um raio
+          onde ela não vale. */}
+      {storeId && (
+        <FreteGratisCard
+          key={storeId}
+          metadataAtual={storeMetadata ?? {}}
           onSalvar={async (novoMetadata) => {
             await updateStore(storeId, { metadata: novoMetadata });
             setStoreMetadata(novoMetadata);
