@@ -12,7 +12,7 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   bump (`vite`/roteador) — fatia dedicada com validação de build; nenhuma é
   runtime-exploitable no bundle de produção atual.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **1174 testes / 212 suítes verdes** (era 1166/212; +8 desta fatia).
+- `npm test`: **1176 testes / 212 suítes verdes** (era 1166/212; +10 desta fatia).
 - `npm run build` (tsc && vite build, igual à Vercel): **ok** (~16s).
 
 ## Histórico
@@ -42,7 +42,15 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   fórmula clássica `=HYPERLINK` (prefixo + aspeamento), o gatilho de tab/CR, e
   dois casos de regressão que **já passavam** e travam o comportamento seguro
   (número negativo permanece numérico; texto comum intacto).
-- **Antes/depois:** `npm test` 1166/212 → **1174/212**; `tsc --noEmit` limpo,
+- **Refino pós-review (Codex, P1):** o *quoting* só cobria `; " \n` (LF), não o
+  CR. Uma célula começando com CR era prefixada com `'` mas **não aspeada** — e
+  um CR "cru" fora de aspas é separador de registro para vários leitores, que
+  quebrariam `'\r=1+1` numa linha `'` seguida de uma linha `=1+1` executável,
+  driblando o prefixo (o mesmo valia para CR no meio do valor). Corrigido
+  incluindo `\r` no gatilho de aspeamento (`/[;"\n\r]/`, consistente com
+  RFC-4180): dentro das aspas o CR é dado literal, não separador. +2 testes
+  (CR no início e no meio), vermelho→verde.
+- **Antes/depois:** `npm test` 1166/212 → **1176/212**; `tsc --noEmit` limpo,
   `eslint` limpo nos arquivos tocados e `vite build` ok nos dois lados. Mudança
   cirúrgica numa única função utilitária compartilhada, risco baixo.
 - **Próximo passo priorizado:** (1) **Segurança/deps:** planejar o major bump de
