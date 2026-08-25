@@ -129,7 +129,7 @@ describe('anelDaPromo', () => {
   it('vira um círculo em metros, com a frase de rótulo', () => {
     expect(anelDaPromo({ ativo: true, ateKm: 4, pedidoMinimo: 55 })).toEqual({
       raioMetros: 4000,
-      rotulo: 'Frete grátis até 4 km em pedidos acima de R$ 55,00',
+      rotulo: 'Frete grátis até 4 km em pedidos acima de R$ 55,00 (≈ raio; a regra usa a rota)',
     });
   });
 

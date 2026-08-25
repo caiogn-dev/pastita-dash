@@ -67,7 +67,7 @@ export function problemasDaPromo(promo: PromoDeFrete, formula: FormulaDeEntrega)
   return problemas;
 }
 
-/** Quanto a loja deixa de cobrar por pedido, na borda do raio. */
+/** Quanto a loja deixa de cobrar por pedido, na borda da promoção. */
 export function custoPorPedidoNoRaio(
   formula: FormulaDeEntrega,
   ateKm: number | null,
@@ -110,6 +110,6 @@ export function anelDaPromo(promo: PromoDeFrete): AnelDaPromo | null {
     // Raio quebrado (2,5 km) é comum; arredondo em metros para não passar
     // float sujo ao Google.
     raioMetros: Math.round(promo.ateKm * 1000),
-    rotulo: textoDaPromo(promo),
+    rotulo: `${textoDaPromo(promo)} (≈ raio; a regra usa a rota)`,
   };
 }

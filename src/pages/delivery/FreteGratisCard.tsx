@@ -63,7 +63,7 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar }) =>
         <div>
           <h2 className="text-lg font-semibold text-fg-token">Frete grátis</h2>
           <p className="mt-1 text-sm text-fg-muted-token">
-            Uma promoção por raio, por cima do preço acima. Some quando você desligar.
+            Uma promoção por distância de rota, por cima do preço acima. Some quando você desligar.
           </p>
         </div>
         <label className="flex flex-none items-center gap-2 text-sm text-fg-token">
@@ -99,7 +99,7 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar }) =>
             <span className="text-sm text-fg-muted-token">km</span>
           </div>
           <p className="mt-1 text-xs text-fg-muted-token">
-            Quem estiver dentro desse raio não paga entrega.
+            Distância de ROTA — o caminho que o entregador faz, não linha reta. Quem estiver dentro dela não paga entrega.
           </p>
         </div>
 
@@ -149,7 +149,7 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar }) =>
           <p className="mt-1 text-sm font-medium text-fg-token">{frase}</p>
           {custo !== null && (
             <p className="mt-2 text-xs text-fg-muted-token">
-              Você deixa de cobrar até <strong>{reais(custo)}</strong> por pedido dentro do raio.
+              Você deixa de cobrar até <strong>{reais(custo)}</strong> por pedido dentro da promoção.
             </p>
           )}
         </div>

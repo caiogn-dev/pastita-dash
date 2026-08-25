@@ -361,7 +361,11 @@ export const DeliveryZonesPage: React.FC = () => {
                 {(circulosDoMapa.length > 0 || anelPromo) && (
                   <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
                     {/* A promoção encabeça a legenda: ela SOBRESCREVE o preço
-                        das faixas dentro do raio dela. */}
+                        das faixas dentro dela.
+
+                        O anel é um CÍRCULO e a regra é de ROTA — 3 km de rua
+                        cobrem menos chão que 3 km de reta. O rótulo diz isso
+                        em vez de o mapa prometer área que a cotação não honra. */}
                     {anelPromo && (
                       <li className="flex items-center gap-1.5 text-caption">
                         <span
