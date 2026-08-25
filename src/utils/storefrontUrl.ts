@@ -45,7 +45,13 @@ export const buildStorefrontUrl = (
 
   const base = customDomain
     ? `https://${stripProtocol(customDomain)}`
-    : metadataUrl || `${stripTrailingSlash(DEFAULT_STOREFRONT_BASE_URL)}/${slug}`;
+    : metadataUrl
+      // Dono costuma digitar o site sem esquema ("cesaladas.com.br"). Sem
+      // protocolo o navegador trata como caminho relativo e o link quebra
+      // (inclusive o de pagamento enviado ao cliente). Força `https://` como
+      // no ramo de custom_domain.
+      ? `https://${stripProtocol(metadataUrl)}`
+      : `${stripTrailingSlash(DEFAULT_STOREFRONT_BASE_URL)}/${slug}`;
 
   const normalizedBase = stripTrailingSlash(base);
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
