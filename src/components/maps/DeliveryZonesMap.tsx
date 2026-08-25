@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { DeliveryZone, StoreLocation } from '../../services/delivery';
 import { zonasParaCirculos } from './zonasParaCirculos';
+import { pontosDoCirculo } from './pontosDoCirculo';
 import { GOOGLE_MAPS_KEY, loadGoogleMaps } from './loadGoogleMaps';
 
 const DEFAULT_CENTER = { lat: -10.1853248, lng: -48.3037058 };
@@ -139,29 +140,38 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
       // faixas embaixo — com preenchimento, a área mais próxima da loja (a que
       // mais entrega) já acumulava três camadas e virava mancha.
       if (promo && promo.raioMetros > 0) {
-        const anel = new maps.Circle({
-          center: { lat, lng },
-          radius: promo.raioMetros,
+        // Anel desenhado ponto a ponto: `Circle` não tem `getPath()` (isso é
+        // `Polygon`), e a primeira versão pedia justamente isso — recebia
+        // `undefined`, caía num caminho vazio e não desenhava nada, sem erro.
+        const caminho = pontosDoCirculo({ lat, lng }, promo.raioMetros);
+
+        // Traço sólido por baixo garante que o anel EXISTA mesmo se os ícones
+        // do tracejado não renderizarem. Invisível-por-padrão foi o bug.
+        const anel = new maps.Polyline({
+          path: caminho,
           map,
           strokeColor: COR_DA_PROMO,
-          strokeOpacity: 0,
+          strokeOpacity: 0.35,
           strokeWeight: 3,
-          fillOpacity: 0,
           clickable: false,
           zIndex: 999,
         });
         objectsRef.current.push(anel);
 
-        // Tracejado de verdade: Circle não aceita `strokeDashArray`. O jeito
-        // suportado é opacidade 0 no traço + ícones repetidos sobre o caminho.
         const tracejado = new maps.Polyline({
-          path: anel.getPath ? anel.getPath().getArray() : [],
+          path: caminho,
           map,
           strokeOpacity: 0,
           icons: [{
-            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, strokeColor: COR_DA_PROMO, strokeWeight: 3, scale: 3 },
+            icon: {
+              path: 'M 0,-1 0,1',
+              strokeOpacity: 1,
+              strokeColor: COR_DA_PROMO,
+              strokeWeight: 4,
+              scale: 3,
+            },
             offset: '0',
-            repeat: '14px',
+            repeat: '16px',
           }],
           clickable: false,
           zIndex: 1000,
