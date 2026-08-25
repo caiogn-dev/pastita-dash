@@ -7,6 +7,7 @@
  * 2. Promoção com raio 0 ou desligada não pode virar "frete grátis" na vitrine.
  */
 import {
+  anelDaPromo,
   custoPorPedidoNoRaio,
   gravarPromo,
   lerPromo,
@@ -121,5 +122,27 @@ describe('textoDaPromo', () => {
 
   it('desligada não tem frase', () => {
     expect(textoDaPromo({ ativo: false, ateKm: 4, pedidoMinimo: 55 })).toBe('');
+  });
+});
+
+describe('anelDaPromo', () => {
+  it('vira um círculo em metros, com a frase de rótulo', () => {
+    expect(anelDaPromo({ ativo: true, ateKm: 4, pedidoMinimo: 55 })).toEqual({
+      raioMetros: 4000,
+      rotulo: 'Frete grátis até 4 km em pedidos acima de R$ 55,00',
+    });
+  });
+
+  it('aceita raio quebrado (2,5 km) sem virar float sujo em metros', () => {
+    expect(anelDaPromo({ ativo: true, ateKm: 2.5, pedidoMinimo: 0 })?.raioMetros).toBe(2500);
+  });
+
+  // Desenhar um círculo de raio 0 põe um PONTO em cima do pin da loja: o dono
+  // lê como "frete grátis em lugar nenhum" e mexe no cadastro certo achando
+  // que está errado.
+  it('desligada ou sem raio não desenha nada', () => {
+    expect(anelDaPromo({ ativo: false, ateKm: 4, pedidoMinimo: 55 })).toBeNull();
+    expect(anelDaPromo({ ativo: true, ateKm: 0, pedidoMinimo: 55 })).toBeNull();
+    expect(anelDaPromo({ ativo: true, ateKm: null, pedidoMinimo: 55 })).toBeNull();
   });
 });

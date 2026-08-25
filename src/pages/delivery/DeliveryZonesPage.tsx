@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
 import { Card, Button, Badge, StatCard, PageShell, RowActions, linhaClicavel } from '../../components/ui';
-import DeliveryZonesMap, { corDoAnel } from '../../components/maps/DeliveryZonesMap';
+import DeliveryZonesMap, { COR_DA_PROMO, corDoAnel } from '../../components/maps/DeliveryZonesMap';
 import { zonasParaCirculos } from '../../components/maps/zonasParaCirculos';
 import {
   deliveryService,
@@ -27,6 +27,7 @@ import { useStore } from '../../hooks';
 import { ZonasDePrecoFixoCard } from './ZonasDePrecoFixoCard';
 import { FormulaDeEntregaCard } from './FormulaDeEntregaCard';
 import { FreteGratisCard } from './FreteGratisCard';
+import { anelDaPromo, lerPromo } from './freteGratis';
 import { getStore, updateStore } from '../../services/storesApi';
 
 const formatKm = (value?: number | string | null) => {
@@ -104,6 +105,13 @@ export const DeliveryZonesPage: React.FC = () => {
   // Mesma fonte que o mapa usa para desenhar — legenda e desenho não podem
   // divergir, senão a cor da legenda aponta para o anel errado.
   const circulosDoMapa = useMemo(() => zonasParaCirculos(zones), [zones]);
+
+  // O anel da promoção sai do MESMO metadata que o card de frete grátis
+  // edita: salvar no card redesenha o mapa sem recarregar a tela.
+  const anelPromo = useMemo(
+    () => anelDaPromo(lerPromo(storeMetadata ?? {})),
+    [storeMetadata],
+  );
 
   /**
    * Cor do anel de uma faixa, para casar tabela e mapa.
@@ -344,14 +352,28 @@ export const DeliveryZonesPage: React.FC = () => {
                     Configurar frete é abstrato — você digita "12 km, R$ 20" sem
                     ver o que está vendendo. O desenho responde a pergunta que o
                     formulário não responde: até onde eu entrego? */}
-                <DeliveryZonesMap storeLocation={storeLocation} zones={zones} />
+                <DeliveryZonesMap storeLocation={storeLocation} zones={zones} promo={anelPromo} />
 
                 {/* Legenda ligando COR → faixa → taxa.
                     Sem ela o mapa é bonito e mudo: você vê seis anéis
                     coloridos e não sabe qual cobra quanto, então volta para a
                     tabela e o desenho não serviu para nada. */}
-                {circulosDoMapa.length > 0 && (
+                {(circulosDoMapa.length > 0 || anelPromo) && (
                   <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+                    {/* A promoção encabeça a legenda: ela SOBRESCREVE o preço
+                        das faixas dentro do raio dela. */}
+                    {anelPromo && (
+                      <li className="flex items-center gap-1.5 text-caption">
+                        <span
+                          aria-hidden
+                          className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-dashed"
+                          style={{ borderColor: COR_DA_PROMO }}
+                        />
+                        <span className="font-semibold" style={{ color: COR_DA_PROMO }}>
+                          {anelPromo.rotulo}
+                        </span>
+                      </li>
+                    )}
                     {circulosDoMapa.map((c, i) => {
                       const zona = zones.find((z) => String(z.id) === c.id);
                       return (

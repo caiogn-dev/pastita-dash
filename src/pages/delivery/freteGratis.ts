@@ -90,3 +90,26 @@ export function textoDaPromo(promo: PromoDeFrete): string {
   if (!promo.pedidoMinimo || promo.pedidoMinimo <= 0) return base;
   return `${base} em pedidos acima de ${reais(promo.pedidoMinimo)}`;
 }
+
+/** O anel da promoção no mapa. `null` quando não há área para desenhar. */
+export interface AnelDaPromo {
+  raioMetros: number;
+  rotulo: string;
+}
+
+/**
+ * Traduz a promoção no círculo que o mapa desenha.
+ *
+ * Devolve `null` — em vez de raio 0 — quando a promoção está desligada ou sem
+ * km: um círculo de raio zero vira um PONTO exatamente em cima do pin da loja,
+ * e o dono lê isso como "frete grátis em lugar nenhum".
+ */
+export function anelDaPromo(promo: PromoDeFrete): AnelDaPromo | null {
+  if (!promo.ativo || !promo.ateKm || promo.ateKm <= 0) return null;
+  return {
+    // Raio quebrado (2,5 km) é comum; arredondo em metros para não passar
+    // float sujo ao Google.
+    raioMetros: Math.round(promo.ateKm * 1000),
+    rotulo: textoDaPromo(promo),
+  };
+}

@@ -12,9 +12,18 @@ const COLORS = [
   { fill: 'rgba(255, 87, 34, 0.10)',  stroke: '#FF5722' },
 ];
 
+/**
+ * Verde e tracejado de propósito: a promoção NÃO é mais uma faixa de preço.
+ * Se ela entrasse na paleta das faixas, o dono contaria os anéis e acharia que
+ * cadastrou uma faixa a mais.
+ */
+export const COR_DA_PROMO = '#16A34A';
+
 export type DeliveryZonesMapProps = {
   storeLocation?: StoreLocation | null;
   zones?: DeliveryZone[];
+  /** Anel da promoção de frete grátis, se houver (ver `anelDaPromo`). */
+  promo?: { raioMetros: number; rotulo: string } | null;
   height?: string;
 };
 
@@ -24,6 +33,7 @@ export const corDoAnel = (index: number) => COLORS[index % COLORS.length].stroke
 const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
   storeLocation,
   zones = [],
+  promo = null,
   // 480px: com 360 os 17 km de raio viravam um retângulo baixo e largo onde
   // não se distinguem as faixas internas. Altura é o que falta, não largura.
   height = '480px',
@@ -124,18 +134,60 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
         objectsRef.current.push(circle);
       });
 
+      // A promoção vai por ÚLTIMO: é a informação que se quer ler por cima do
+      // resto. Tracejada e sem preenchimento para não somar opacidade com as
+      // faixas embaixo — com preenchimento, a área mais próxima da loja (a que
+      // mais entrega) já acumulava três camadas e virava mancha.
+      if (promo && promo.raioMetros > 0) {
+        const anel = new maps.Circle({
+          center: { lat, lng },
+          radius: promo.raioMetros,
+          map,
+          strokeColor: COR_DA_PROMO,
+          strokeOpacity: 0,
+          strokeWeight: 3,
+          fillOpacity: 0,
+          clickable: false,
+          zIndex: 999,
+        });
+        objectsRef.current.push(anel);
+
+        // Tracejado de verdade: Circle não aceita `strokeDashArray`. O jeito
+        // suportado é opacidade 0 no traço + ícones repetidos sobre o caminho.
+        const tracejado = new maps.Polyline({
+          path: anel.getPath ? anel.getPath().getArray() : [],
+          map,
+          strokeOpacity: 0,
+          icons: [{
+            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, strokeColor: COR_DA_PROMO, strokeWeight: 3, scale: 3 },
+            offset: '0',
+            repeat: '14px',
+          }],
+          clickable: false,
+          zIndex: 1000,
+        });
+        objectsRef.current.push(tracejado);
+      }
+
       map.setCenter({ lat, lng });
 
       // Enquadra a MAIOR faixa. Sem isto o mapa abre no zoom padrão e a área
       // de entrega ou não cabe na tela ou vira um ponto — em nenhum dos dois
       // casos você consegue julgar se o raio está certo.
-      const maior = circulos[0];
-      if (maior) {
-        const limites = new maps.Circle({ center: { lat, lng }, radius: maior.raioMetros });
+      // Enquadra o MAIOR entre faixas e promoção. Ignorar a promoção aqui
+      // cortaria o anel para fora da tela em loja cujo raio grátis passa da
+      // maior faixa desenhável — o dono veria a legenda citando 4 km e nenhum
+      // círculo verde no mapa.
+      const maiorRaio = Math.max(
+        circulos[0]?.raioMetros ?? 0,
+        promo?.raioMetros ?? 0,
+      );
+      if (maiorRaio > 0) {
+        const limites = new maps.Circle({ center: { lat, lng }, radius: maiorRaio });
         map.fitBounds(limites.getBounds());
       }
     }
-  }, [mapReady, storeLocation, zones]);
+  }, [mapReady, storeLocation, zones, promo?.raioMetros]);
 
   if (!GOOGLE_MAPS_KEY) {
     return (
