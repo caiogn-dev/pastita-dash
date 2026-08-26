@@ -37,9 +37,17 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   (promoção do dia manda `preco_vigente`; `preco_vigente` em string é
   respeitado; sem promo cai no `price` de cadastro) — escritos vermelhos antes,
   verdes depois. O guardrail `precoVigente.cobertura` volta ao verde.
+- **CI (lint):** o job `build` do CI roda `npm run lint`, que estava com **2
+  errors** de `no-irregular-whitespace` — NBSP literais nos regex de
+  `variaveisDaOferta.ts` e do seu teste (o tratamento intencional de NBSP do
+  `toLocaleString`). Pré-existentes, mas em arquivos que esta fatia toca e que
+  travavam o CI da PR. Troquei o NBSP literal pelo escape `\u00A0` (mesmo
+  comportamento em runtime; ESLint não acusa escape). Lint volta a 0 errors
+  (285 warnings, abaixo do gate de 400).
 - **Antes/depois:** `npm test` 1200 (1 falhando) → **1203/215 todos verdes**;
-  `tsc --noEmit` limpo e `vite build` ok nos dois lados. Só produção alterada,
-  comportamento corrigido para bater com o payload já enviado.
+  `tsc --noEmit` limpo, `vite build` ok e `npm run lint` 0 errors nos dois
+  lados. Só produção alterada, comportamento corrigido para bater com o payload
+  já enviado.
 - **Próximo passo priorizado:** (1) auditar outras telas que montam texto de
   campanha/catálogo enviado ao cliente pelo mesmo padrão de preço; (2)
   continuar a varredura de "zeros enganosos" em seções de KPI derivadas de
