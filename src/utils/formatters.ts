@@ -211,54 +211,71 @@ export function formatChatTime(date: string | Date | null | undefined): string {
 // ==================== Phone Formatting ====================
 
 /**
- * Format Brazilian phone number
+ * True quando o número é um telefone BRASILEIRO sem o DDI (DDD + assinante).
+ *
+ * A terceira posição é o que separa um celular brasileiro de um número
+ * estrangeiro completo do mesmo tamanho: `34647520824` (Espanha) e
+ * `15554044637` (EUA) também têm 11 dígitos, mas não têm o 9.
+ *
+ * Espelha `_parece_brasileiro_local` do backend (`apps/core/utils.py`) —
+ * mantenha as duas em sincronia.
+ */
+function pareceBrasileiroLocal(digits: string): boolean {
+  if (digits.length !== 10 && digits.length !== 11) return false;
+  const ddd = digits.slice(0, 2);
+  if (ddd < '11' || ddd > '99') return false;
+  if (digits.length === 11) return digits[2] === '9';
+  return '2345'.includes(digits[2]);
+}
+
+/**
+ * Format phone number for display.
  * Input: 5511999999999 → Output: +55 (11) 99999-9999
+ *
+ * Estrangeiro sai como `+34 647520824`, não `(34) 64752-0824`: exibir o DDI
+ * de outro país na máscara de DDD faz o atendente ligar para Uberlândia.
  */
 export function formatPhone(phone: string | null | undefined): string {
   if (!phone) return '-';
-  
-  // Remove non-digits
+
   const digits = phone.replace(/\D/g, '');
-  
+
   // Brazilian mobile with country code (13 digits)
   if (digits.length === 13 && digits.startsWith('55')) {
     return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`;
   }
-  
+
   // Brazilian landline with country code (12 digits)
   if (digits.length === 12 && digits.startsWith('55')) {
     return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 8)}-${digits.slice(8)}`;
   }
-  
-  // Brazilian mobile without country code (11 digits)
-  if (digits.length === 11) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+
+  if (pareceBrasileiroLocal(digits)) {
+    return digits.length === 11
+      ? `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+      : `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   }
-  
-  // Brazilian landline without country code (10 digits)
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+
+  // Estrangeiro: o DDI fica visível e nenhum grupo finge ser DDD.
+  if (digits.length >= 8 && digits.length <= 15) {
+    return `+${digits}`;
   }
-  
-  // Return original if can't format
+
   return phone;
 }
 
 /**
- * Format phone for WhatsApp link
+ * Format phone for WhatsApp link.
+ *
+ * A regra antiga era de tamanho ("sem 55 e até 11 dígitos → gruda 55"). Um
+ * celular espanhol completo tem 11 dígitos: o botão de WhatsApp do painel
+ * abria conversa com `5534647520824`, número que não existe.
  */
 export function formatPhoneForWhatsApp(phone: string | null | undefined): string {
   if (!phone) return '';
-  
-  // Remove non-digits
-  let digits = phone.replace(/\D/g, '');
-  
-  // Add country code if missing
-  if (!digits.startsWith('55') && digits.length <= 11) {
-    digits = '55' + digits;
-  }
-  
-  return digits;
+
+  const digits = phone.replace(/\D/g, '');
+  return pareceBrasileiroLocal(digits) ? '55' + digits : digits;
 }
 
 // ==================== Text Formatting ====================

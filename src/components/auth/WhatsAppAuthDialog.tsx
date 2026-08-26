@@ -1,3 +1,4 @@
+import { formatPhoneForWhatsApp } from '@/utils/formatters';
 /**
  * WhatsApp Authentication Component
  * 
@@ -95,8 +96,9 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
     setIsLoading(true);
     
     try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+      // DDI pela fonte única: `55${x}` grudava o Brasil em número estrangeiro
+      // e o código de verificação ia para um telefone que não existe.
+      const fullPhone = formatPhoneForWhatsApp(phone);
       
       const response = await api.post('/auth/whatsapp/send/', {
         phone_number: `+${fullPhone}`,
@@ -125,8 +127,9 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
     setIsLoading(true);
     
     try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+      // DDI pela fonte única: `55${x}` grudava o Brasil em número estrangeiro
+      // e o código de verificação ia para um telefone que não existe.
+      const fullPhone = formatPhoneForWhatsApp(phone);
       
       const response = await api.post('/auth/whatsapp/resend/', {
         phone_number: `+${fullPhone}`,
@@ -159,8 +162,9 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
     setIsLoading(true);
     
     try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+      // DDI pela fonte única: `55${x}` grudava o Brasil em número estrangeiro
+      // e o código de verificação ia para um telefone que não existe.
+      const fullPhone = formatPhoneForWhatsApp(phone);
       
       const response = await api.post('/auth/whatsapp/verify/', {
         phone_number: `+${fullPhone}`,
