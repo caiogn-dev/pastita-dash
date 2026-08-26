@@ -198,6 +198,11 @@ export const useOrderPrint = () => {
         ...ingredientLines,
       ].filter((line): line is string => Boolean(line));
 
+      // O que a cozinha MONTA, calculado no backend (`linhas_de_preparo`) e
+      // exposto em `prep` pelo serializer do pedido. "2x Mini Hambúrguer" não
+      // diz se são 2 unidades ou 2 embalagens de 50; a linha `>>` responde.
+      const prepLines = (Array.isArray(itemAny.prep) ? itemAny.prep : []) as string[];
+
       return `
         <div class="item">
           <div class="item-head">
@@ -206,6 +211,12 @@ export const useOrderPrint = () => {
             ${hidePrices ? '' : `<span class="preco">${formatMoney(itemTotal)}</span>`}
           </div>
           ${detailLines.length ? renderDetailLines(detailLines) : ''}
+          ${prepLines.map((linha) => {
+            // A linha do rendimento é o número que a cozinha usa para montar,
+            // então é a única do bloco em destaque.
+            const cls = linha.startsWith('>>') ? 'preparo-total' : 'preparo';
+            return `<div class="${cls}">${escapeHtml(linha)}</div>`;
+          }).join('')}
           ${itemNotes ? `<div class="obs-item">${escapeHtml(itemNotes)}</div>` : ''}
         </div>
       `;
@@ -386,6 +397,20 @@ export const useOrderPrint = () => {
           }
           .preco { flex: 0 0 auto; font-size: 12px; font-weight: 900; white-space: nowrap; }
           .det { padding-left: 14mm; font-size: 10px; font-weight: 700; line-height: 1.35; }
+          /* Preparo: o que a cozinha monta. A composicao e referencia; o
+             rendimento total e o numero que ela usa, entao cresce e fica
+             sublinhado — num papel termico so o contraste separa. */
+          .preparo { padding-left: 14mm; font-size: 10px; font-weight: 700; line-height: 1.35; }
+          .preparo-total {
+            padding-left: 14mm;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1.4;
+            letter-spacing: 0.02em;
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            margin: 2px 0 1px;
+          }
           .obs-item {
             display: inline-block;
             margin: 3px 0 0 14mm;
