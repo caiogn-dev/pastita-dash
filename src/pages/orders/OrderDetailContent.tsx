@@ -343,8 +343,10 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     { pix_code?: string; pix_qr_code?: string; ticket_url?: string } | null
   >(null);
 
-  // Imprime o pedido. hidePrices=true gera a comanda da cozinha (sem valores/pagamento).
-  const handlePrint = async (hidePrices = false) => {
+  // Imprime o pedido. hidePrices=true gera a comanda da cozinha (sem
+  // valores/pagamento); preparo=true gera a via de montagem, com o rendimento
+  // e a composição de cada item vindos do catálogo.
+  const handlePrint = async (hidePrices = false, preparo = false) => {
     if (!order) return;
     const printOpts = (target: Order | null | undefined) => ({
       storeName: store?.name || target?.store_name || order.store_name || 'Loja',
@@ -356,6 +358,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
       // mixed-content e a comanda sai sem selo, em silêncio.
       storeLogo: (store?.logo_url || store?.logo || '').replace(/^http:\/\//, 'https://'),
       hidePrices,
+      preparo,
     });
     try {
       const freshOrder = id ? await ordersService.getOrder(id) : order;
@@ -1132,6 +1135,17 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               >
                 <PrinterIcon className="h-4 w-4" />
                 Comanda cozinha (sem preços)
+              </button>
+
+              {/* Via de montagem: papel separado de propósito. A composição
+                  de uma Tábua de Frios são dez linhas — somada à comanda de
+                  entrega, ela afoga o que o entregador precisa ler. */}
+              <button
+                onClick={() => handlePrint(true, true)}
+                className="flex items-center justify-center gap-2 rounded border border-[var(--brand)]/30 px-4 py-3 text-sm font-medium text-[var(--brand)] transition hover:bg-[var(--brand)]/10"
+              >
+                <PrinterIcon className="h-4 w-4" />
+                Comanda de preparo (montagem)
               </button>
 
               <button

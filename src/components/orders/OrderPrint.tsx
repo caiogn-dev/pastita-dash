@@ -21,8 +21,19 @@ export const useOrderPrint = () => {
     storeLogo?: string;
     /** Comanda da cozinha: oculta preços, totais e pagamento. */
     hidePrices?: boolean;
+    /**
+     * Comanda de PREPARO: mostra o rendimento e a composição de cada item
+     * (`prep`), vindos do catálogo.
+     *
+     * É uma comanda à parte de propósito. A composição da Tábua de Frios são
+     * dez linhas; somada à comanda de entrega ela empurra o total para fora
+     * da bobina e afoga a informação que o entregador precisa. Quem monta e
+     * quem entrega leem papéis diferentes.
+     */
+    preparo?: boolean;
   }) => {
     const hidePrices = options?.hidePrices ?? false;
+    const preparo = options?.preparo ?? false;
     // Create a hidden iframe for printing
     if (!printFrameRef.current) {
       const iframe = document.createElement('iframe');
@@ -201,7 +212,9 @@ export const useOrderPrint = () => {
       // O que a cozinha MONTA, calculado no backend (`linhas_de_preparo`) e
       // exposto em `prep` pelo serializer do pedido. "2x Mini Hambúrguer" não
       // diz se são 2 unidades ou 2 embalagens de 50; a linha `>>` responde.
-      const prepLines = (Array.isArray(itemAny.prep) ? itemAny.prep : []) as string[];
+      const prepLines = preparo && Array.isArray(itemAny.prep)
+        ? (itemAny.prep as string[])
+        : [];
 
       return `
         <div class="item">
@@ -444,12 +457,16 @@ export const useOrderPrint = () => {
         ${storeLogo ? `<img class="logo" src="${escapeHtml(storeLogo)}" alt="">` : ''}
         <div class="store">${escapeHtml(storeName)}</div>
 
-        <!-- Faixa 1: o modo, que decide o fluxo inteiro -->
-        <div class="band lg">${getDeliveryMethod()}</div>
+        <!-- Faixa 1: o modo, que decide o fluxo inteiro.
+             Na comanda de preparo o modo de entrega é irrelevante — quem monta
+             não entrega. O que essa via precisa anunciar é o que ela É, para
+             ninguém confundir com a via do entregador. -->
+        <div class="band lg">${preparo ? 'PREPARO' : getDeliveryMethod()}</div>
 
         <div class="num">#${escapeHtml(String(pedido.order_number ?? ''))}</div>
         <div class="ctx">${formatDate(pedido.created_at)}${canalLabel ? ` &middot; via ${escapeHtml(canalLabel)}` : ''}</div>
-        ${hidePrices ? '<div class="ctx">VIA DA COZINHA</div>' : ''}
+        ${preparo ? '<div class="ctx">VIA DE MONTAGEM &middot; NAO E A VIA DO ENTREGADOR</div>'
+          : hidePrices ? '<div class="ctx">VIA DA COZINHA</div>' : ''}
 
         <!-- Faixa 2: agendamento — quando existe, manda no papel -->
         ${scheduledLabel ? `<div class="band">AGENDADO ${escapeHtml(scheduledLabel)}</div>` : ''}

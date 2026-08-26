@@ -73,32 +73,64 @@ const pedido = {
   combo_items: [],
 };
 
-describe('comanda do painel — preparo', () => {
+const PREPARO = { preparo: true, hidePrices: true };
+
+describe('comanda de PREPARO', () => {
   it('imprime o rendimento já multiplicado', () => {
-    expect(capturarComanda(pedido)).toContain('&gt;&gt; 100 UNIDADES (2 x 50)');
+    expect(capturarComanda(pedido, PREPARO)).toContain('&gt;&gt; 100 UNIDADES (2 x 50)');
   });
 
   it('imprime a composição do item, linha a linha', () => {
-    const html = capturarComanda(pedido);
+    const html = capturarComanda(pedido, PREPARO);
     expect(html).toContain('1 terrine gorgonzola');
     expect(html).toContain('1 terrine de frango');
     expect(html).toContain('1 kibe cru rcheado');
   });
 
   it('destaca o rendimento e não a composição', () => {
-    const html = capturarComanda(pedido);
+    const html = capturarComanda(pedido, PREPARO);
     expect(html).toContain('class="preparo-total"');
     expect(html).toContain('class="preparo"');
   });
 
+  it('se anuncia como via de montagem, para ninguém confundir com a do entregador', () => {
+    const html = capturarComanda(pedido, PREPARO);
+    expect(html).toContain('PREPARO');
+    expect(html).toContain('VIA DE MONTAGEM');
+  });
+
   it('item sem preparo não ganha bloco vazio', () => {
     const semPrep = { ...pedido, items: [{ ...pedido.items[0], prep: [] }] };
-    expect(capturarComanda(semPrep)).not.toContain('class="preparo-total"');
+    expect(capturarComanda(semPrep, PREPARO)).not.toContain('class="preparo-total"');
   });
 
   it('pedido antigo, sem o campo prep, não quebra a impressão', () => {
     const antigo = { ...pedido, items: [{ id: 'x', product_name: 'Salada', quantity: 1, unit_price: '30.00', total_price: 30 }] };
     // O maiúsculo vem do CSS (`text-transform`), não do HTML.
-    expect(capturarComanda(antigo)).toContain('Salada');
+    expect(capturarComanda(antigo, PREPARO)).toContain('Salada');
+  });
+});
+
+describe('as OUTRAS comandas não mudam', () => {
+  /**
+   * A composição de uma Tábua de Frios são dez linhas. Somada à comanda de
+   * entrega, ela empurra o papel para fora da bobina e afoga o endereço —
+   * que é a única coisa que o entregador precisa ler. Quem monta e quem
+   * entrega leem papéis diferentes.
+   */
+  it('a comanda completa não ganha preparo', () => {
+    const html = capturarComanda(pedido);
+    expect(html).not.toContain('class="preparo-total"');
+    expect(html).not.toContain('100 UNIDADES');
+  });
+
+  it('a comanda da cozinha (sem preços) também não', () => {
+    const html = capturarComanda(pedido, { hidePrices: true });
+    expect(html).not.toContain('class="preparo-total"');
+    expect(html).toContain('VIA DA COZINHA');
+  });
+
+  it('a comanda completa continua anunciando o modo de entrega', () => {
+    expect(capturarComanda(pedido)).not.toContain('VIA DE MONTAGEM');
   });
 });
