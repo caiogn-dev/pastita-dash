@@ -49,11 +49,23 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - **Antes/depois:** `npm test` 1166/212 → **1172/213**; `tsc --noEmit` limpo e
   `vite build` ok nos dois lados. Risco baixo: mudança de comportamento restrita
   ao valor do preço enviado (agora correto).
-- **Próximo passo priorizado:** (1) avaliar se a variável do template deve levar
-  "R$" (checar os templates aprovados na Meta antes — evitar "R$ R$"). (2)
-  Reconciliar o trabalho local não publicado com `origin/main` (8 commits) para
-  o loop parar de reencontrar defeitos já corrigidos localmente. (3) Deps: bump
-  major de `react-router` 6→7 (open redirect) como fatia dedicada.
+- **Revisão (Codex, P1) — preço de campanha AGENDADA que cruza o dia de
+  promoção:** as `variables`/`offer_products` são congeladas na criação; o
+  agendamento só manda o timestamp. Logo, campanha criada na quinta (promo) e
+  enviada na sexta manda o preço da quinta. O congelamento de `offer_products.
+  price` já existia (anterior a este PR); esta fatia só alinhou as variáveis do
+  template a ele. A correção certa é no **backend (server2)**: recomputar o
+  `preco_vigente` na DATA de envio (o backend tem os IDs, o `scheduled_at`, a
+  regra `promo_weekday` e o fuso da loja). Frontend contra `scheduledAt` é
+  arriscado — `datetime-local` sem fuso reintroduz o bug perto da meia-noite.
+  Deixado fora desta fatia (evitar widening + risco de fuso).
+- **Próximo passo priorizado:** (1) **server2:** resolver o preço da oferta na
+  data de envio para campanhas agendadas (ver revisão P1 acima). (2) avaliar se a
+  variável do template deve levar "R$" (checar os templates aprovados na Meta
+  antes — evitar "R$ R$"). (3) Reconciliar o trabalho local não publicado com
+  `origin/main` (8 commits) para o loop parar de reencontrar defeitos já
+  corrigidos localmente. (4) Deps: bump major de `react-router` 6→7 (open
+  redirect) como fatia dedicada.
 
 ## Baseline atual (2026-08-08)
 
