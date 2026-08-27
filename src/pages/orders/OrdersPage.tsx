@@ -258,7 +258,9 @@ const OrderCardBase: React.FC<CardProps> = ({
         <PaymentBadge status={order.payment_status} method={order.payment_method} />
         {order.items?.length > 0 && (
           <span className="text-badge text-fg-muted-token">
-            {order.items.length} item(ns)
+            {/* "1 item(ns)" denuncia a máquina no quadro que o dono olha o dia
+                inteiro. Mesma regra que já valia no detalhe do pedido. */}
+            {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
           </span>
         )}
       </div>

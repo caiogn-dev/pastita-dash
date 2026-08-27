@@ -448,7 +448,8 @@ const MediaPreview: React.FC<{
           <p className="text-sm font-medium text-gray-900 dark:text-white">Pedido WhatsApp</p>
           {(orderData as any)?.product_items?.length > 0 && (
             <p className="text-xs text-gray-500 dark:text-zinc-400">
-              {(orderData as any).product_items.length} item(s)
+              {(orderData as any).product_items.length}{' '}
+              {(orderData as any).product_items.length === 1 ? 'item' : 'itens'}
             </p>
           )}
         </div>

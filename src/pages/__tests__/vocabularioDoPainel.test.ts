@@ -24,6 +24,11 @@ const JARGAO = [
   'Intenções',
   'middleware',
   'webhook interno',
+  // Plural de máquina: quem escreve para gente decide entre "1 item" e
+  // "2 itens" em vez de empurrar os dois para o leitor.
+  'item(ns)',
+  'item(s)',
+  '(s)',
 ];
 
 const PASTA = path.join(__dirname, '..');
