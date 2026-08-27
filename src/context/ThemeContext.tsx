@@ -21,7 +21,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return stored;
       }
     }
-    return 'light';
+    // A marca e Dark Luxe e o login e carvao com ouro. Abrir o painel no claro
+    // fazia o lojista ver duas linguagens em dois cliques.
+    // O claro nao e malfeito — e contido de proposito: o ouro #C9A24B da 2,08:1
+    // sobre fundo claro e reprova em AA como texto, por isso existe o
+    // --brand-ink #846828. O efeito colateral correto e um ouro que quase nao
+    // aparece. No escuro o mesmo ouro da 10:1 e a marca pode se mostrar.
+    // Quem preferir claro troca no botao, e a escolha fica salva.
+    return 'dark';
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
