@@ -144,3 +144,34 @@ describe('plural de item', () => {
     expect(texto).not.toMatch(/1 itens/);
   });
 });
+
+// O alerta de "sem foto" olhava só `image` e `image_url`. O backend entrega a
+// foto em `main_image_url` — na Cê Saladas, 33 de 33 produtos. Resultado: o
+// painel gritava "42 itens no cardápio sem foto — 100% dos ativos" com o
+// cardápio inteiro ilustrado. Alarme falso, e o mais barulhento da tela.
+describe('foto: o campo que o backend realmente usa', () => {
+  const comFotoEm = (campo: string) => ({
+    id: 'p1', name: 'Produto', price: 10, is_active: true,
+    stock_quantity: 5, track_stock: true, [campo]: 'http://x/foto.png',
+  });
+
+  const alertaDeFoto = (produtos: unknown[]) =>
+    insightsDeCardapio(produtos as never[]).find((i) => i.chave === 'sem_foto');
+
+  it('reconhece main_image_url como foto', () => {
+    expect(alertaDeFoto([comFotoEm('main_image_url')])).toBeUndefined();
+  });
+
+  it('continua reconhecendo image e image_url', () => {
+    expect(alertaDeFoto([comFotoEm('image')])).toBeUndefined();
+    expect(alertaDeFoto([comFotoEm('image_url')])).toBeUndefined();
+  });
+
+  it('ainda acusa quem realmente não tem foto nenhuma', () => {
+    const semNada = {
+      id: 'p2', name: 'Sem foto', price: 10, is_active: true,
+      stock_quantity: 5, track_stock: true,
+    };
+    expect(alertaDeFoto([semNada])).toBeDefined();
+  });
+});

@@ -22,8 +22,13 @@ export interface ProdutoDoCardapio {
   track_stock?: boolean;
   stock_quantity?: number | null;
   low_stock_threshold?: number | null;
+  // O backend entrega a foto em `main_image_url`. Este tipo declarava só
+  // `image`/`image_url`, e por isso ninguem notou que o alerta de "sem foto"
+  // olhava campos que nunca vem preenchidos: ele acusava 100% do cardapio.
   image?: string | null;
   image_url?: string | null;
+  main_image?: string | null;
+  main_image_url?: string | null;
 }
 
 export interface InsightDeCardapio {
@@ -107,7 +112,12 @@ export function insightsDeCardapio(
 
   // 4. Sem foto: a decisão de compra passa pela imagem, e um card vazio no
   //    meio de vinte com foto lê como item indisponível.
-  const semFoto = ativos.filter((p) => !p.image && !p.image_url);
+  // O backend entrega a foto em `main_image_url` — na Cê Saladas, 33 de 33
+  // produtos. Olhando só `image`/`image_url` este alerta acusava 100% do
+  // cardápio sem foto com o cardápio inteiro ilustrado.
+  const semFoto = ativos.filter(
+    (p) => !p.image && !p.image_url && !p.main_image && !p.main_image_url,
+  );
   if (semFoto.length > 0) {
     insights.push({
       chave: 'sem_foto',

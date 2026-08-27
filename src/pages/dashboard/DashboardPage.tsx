@@ -607,11 +607,11 @@ export const DashboardPage: React.FC = () => {
           )}
         </Card>
 
-        {/* Pipeline — 1/3 */}
+        {/* Onde estao os pedidos — 1/3 */}
         <Card>
           <div className="flex items-center gap-2 px-5 py-4 border-b border-border-token">
             <TruckIcon className="h-4 w-4 text-indigo-400" />
-            <h2 className="text-sm font-semibold text-fg-token">Pipeline de pedidos</h2>
+            <h2 className="text-sm font-semibold text-fg-token">Onde estão seus pedidos</h2>
           </div>
           <div className="p-5 space-y-3">
             {kpisLoading ? (
@@ -814,7 +814,7 @@ export const DashboardPage: React.FC = () => {
                 </p>
               </div>
               <div className="p-4">
-                <p className="overline mb-2">Pipeline</p>
+                <p className="overline mb-2">Andamento</p>
                 <p className={`text-xl font-bold ${projectHealth.automation.pipeline.dropped > 0 ? 'text-red-600 dark:text-red-400' : 'text-fg-token'}`}>
                   {projectHealth.automation.pipeline.dropped}
                 </p>

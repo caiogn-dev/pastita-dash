@@ -276,7 +276,7 @@ export default function IngredientsPage() {
   return (
     <PageShell
       titulo="Ingredientes e TACO"
-      descricao="Valores por 100 g, com fonte explícita. Campo ausente não vira zero."
+      descricao="Valores nutricionais por 100 g, sempre com a fonte à vista. Quando um valor não é conhecido, ele fica em branco — nunca vira zero no rótulo."
       trilha={[{ rotulo: 'Produtos', href: `/stores/${storeId}/products` }, { rotulo: 'Ingredientes e TACO' }]}
       acoes={<Button onClick={() => abrir()}><PlusIcon className="h-5 w-5" />Novo ingrediente</Button>}
       filtros={filtros}

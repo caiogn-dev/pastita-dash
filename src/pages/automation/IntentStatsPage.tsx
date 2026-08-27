@@ -103,7 +103,7 @@ export const IntentStatsPage: React.FC = () => {
                 <span className="text-xs text-fg-muted-token font-medium uppercase tracking-wide">Total</span>
               </div>
               <div className="text-3xl font-bold text-fg-token">{totalIntents.toLocaleString()}</div>
-              <div className="text-sm text-fg-muted-token mt-0.5">Intenções detectadas</div>
+              <div className="text-sm text-fg-muted-token mt-0.5">Pedidos que o robô entendeu</div>
             </div>
 
             <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-5">
@@ -136,7 +136,7 @@ export const IntentStatsPage: React.FC = () => {
           {stats.top_intents && stats.top_intents.length > 0 && (
             <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 overflow-hidden">
               <div className="px-6 py-4 border-b border-border-token dark:border-zinc-800">
-                <h2 className="text-base font-semibold text-fg-token">Top Intenções</h2>
+                <h2 className="text-base font-semibold text-fg-token">O que os clientes mais pedem</h2>
                 <p className="text-sm text-fg-muted-token mt-0.5">
                   {format(subDays(new Date(), days), 'dd/MM/yyyy', { locale: ptBR })} — {format(new Date(), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>

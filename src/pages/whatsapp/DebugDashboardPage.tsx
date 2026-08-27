@@ -110,7 +110,7 @@ const DebugDashboardPage: React.FC = () => {
       <div className="debug-header">
         <div>
           <h1>🐛 Debug Dashboard</h1>
-          <p>Monitore conversas, mensagens, handlers e logs em tempo real</p>
+          <p>Veja o que o atendimento automático entendeu e o que respondeu, em tempo real</p>
         </div>
         <div className="header-actions">
           <label className="auto-refresh-toggle">
@@ -240,9 +240,9 @@ const DebugDashboardPage: React.FC = () => {
           </div>
         ) : activeTab === 'intents' ? (
           <div className="intents-section">
-            <h2>Detecção de Intenções Recentes</h2>
+            <h2>O que o atendimento automático entendeu</h2>
             {intentLogs.length === 0 ? (
-              <div className="empty-state">Nenhum log de intenção encontrado</div>
+              <div className="empty-state">Ainda não houve nenhuma conversa por aqui</div>
             ) : (
               <div className="logs-table">
                 <table>
@@ -296,9 +296,9 @@ const DebugDashboardPage: React.FC = () => {
           </div>
         ) : (
           <div className="automation-section">
-            <h2>Execução de Handlers Recentes</h2>
+            <h2>O que o atendimento automático respondeu</h2>
             {automationLogs.length === 0 ? (
-              <div className="empty-state">Nenhum log de handler encontrado</div>
+              <div className="empty-state">O atendimento automático ainda não respondeu ninguém</div>
             ) : (
               <div className="logs-table">
                 <table>
