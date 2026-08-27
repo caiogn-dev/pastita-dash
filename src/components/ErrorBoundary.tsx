@@ -49,18 +49,18 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+        <div className="min-h-screen flex items-center justify-center bg-bg-token p-4">
+          <div className="w-full max-w-md rounded-xl border border-border-token bg-surface-token p-8 shadow-[var(--elev-flutuante)]">
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
               <span className="text-2xl">⚠️</span>
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-              Something went wrong
+            <h1 className="mb-2 text-center font-brand text-2xl text-fg-token">
+              Algo deu errado
             </h1>
 
-            <p className="text-gray-600 text-center mb-4">
-              An unexpected error occurred.
+            <p className="mb-4 text-center text-fg-muted-token">
+              Tivemos um problema inesperado. Nada do seu trabalho foi perdido.
             </p>
 
             {this.state.error && (
@@ -73,10 +73,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
             {this.state.errorInfo && (
               <details className="mb-4">
-                <summary className="text-sm text-gray-600 cursor-pointer">
-                  Technical details
+                <summary className="cursor-pointer text-sm text-fg-muted-token">
+                  Detalhes técnicos
                 </summary>
-                <pre className="text-xs text-gray-600 mt-2 p-2 bg-gray-100 rounded overflow-auto max-h-32">
+                <pre className="mt-2 max-h-32 overflow-auto rounded bg-bg-token p-2 text-xs text-fg-muted-token">
                   {this.state.errorInfo.componentStack}
                 </pre>
               </details>
@@ -84,9 +84,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
             <button
               onClick={this.handleRetry}
-              className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700"
+              className="w-full rounded-lg bg-brand px-4 py-2 font-semibold text-on-brand hover:bg-brand-hover"
             >
-              Retry
+              Tentar de novo
             </button>
           </div>
         </div>

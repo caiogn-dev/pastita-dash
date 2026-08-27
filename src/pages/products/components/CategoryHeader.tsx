@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Pencil, Check, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal, Check, X } from 'lucide-react';
 import { StatusToggle } from './InlineToggle';
 import type { CategoryGroup } from '../hooks/useProductsGrouped';
 
@@ -9,9 +9,10 @@ interface Props {
   onToggleCollapse: () => void;
   onTogglePause: (active: boolean) => void;
   onRename?: (name: string) => void | Promise<void>;
+  onOpenMontador?: () => void;
   dragHandle?: React.ReactNode;
 }
-export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleCollapse, onTogglePause, onRename, dragHandle }) => {
+export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleCollapse, onTogglePause, onRename, onOpenMontador, dragHandle }) => {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(group.name);
   const [saving, setSaving] = useState(false);
@@ -60,6 +61,17 @@ export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleColl
         {group.id && onRename && (
           <button type="button" onClick={start} aria-label="Renomear categoria" className="text-fg-muted-token hover:text-fg-token">
             <Pencil size={14} />
+          </button>
+        )}
+        {group.id && onOpenMontador && (
+          <button
+            type="button"
+            onClick={onOpenMontador}
+            aria-label={`Configurar montador em ${group.name}`}
+            title="Usar no montador"
+            className="text-fg-muted-token hover:text-brand"
+          >
+            <SlidersHorizontal size={14} />
           </button>
         )}
       </div>

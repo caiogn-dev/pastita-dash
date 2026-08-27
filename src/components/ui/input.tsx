@@ -78,7 +78,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
         <div className="relative flex">
           {leftAddon && (
-            <span className="inline-flex items-center px-3 rounded-l border border-r-0 border-input bg-surface-2 text-fg-muted-token text-sm">
+            <span className="inline-flex items-center px-3 rounded-l border border-r-0 border-border-input bg-surface-2 text-fg-muted-token text-sm">
               {leftAddon}
             </span>
           )}
@@ -113,9 +113,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               className={cn(
                 // Base
                 'w-full bg-surface',
-                // border-input e nao border-token: o limite de um campo PRECISA ser
-                // percebido (WCAG 1.4.11, 3:1). A --border decorativa da 1,38:1.
-                'border border-input',
+                // border-border-input e nao border-token: o limite de um campo
+                // PRECISA ser percebido (WCAG 1.4.11, 3:1). A --border decorativa
+                // da 1,38:1.
+                // A classe e `border-border-input` porque a CHAVE de cor no
+                // tailwind.config chama-se `border-input` — pedir `border-input`
+                // nao gera nada e o campo caia no cinza padrao do Tailwind, ou
+                // seja: o contraste testado em contraste.test.ts nunca chegava
+                // a tela, em 55 arquivos que usam este componente.
+                'border border-border-input',
                 'text-fg-token placeholder-fg-muted-token',
                 'transition-all duration-200 ease-out',
 

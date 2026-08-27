@@ -19,6 +19,7 @@ import { useProducts } from '../../hooks/queries/useProducts';
 import { ProductsToolbar } from './components/ProductsToolbar';
 import { CategorySection } from './components/CategorySection';
 import { AddCategoryModal } from './components/AddCategoryModal';
+import { MontadorModal, type ConfigMontador } from './components/MontadorModal';
 import { ProductFormModal } from './ProductFormModal';
 
 export const ProductsPage: React.FC = () => {
@@ -29,6 +30,10 @@ export const ProductsPage: React.FC = () => {
   const productsQuery = useProducts(storeId ?? undefined);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<StoreCategory[]>([]);
+  // Configuracao do montador por categoria: antes era codigo cravado no
+  // storefront, agora e dado que o lojista edita aqui.
+  const [montadorCat, setMontadorCat] = useState<StoreCategory | null>(null);
+  const [salvandoMontador, setSalvandoMontador] = useState(false);
   const [productTypes, setProductTypes] = useState<StoreProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -207,6 +212,10 @@ export const ProductsPage: React.FC = () => {
                 return n;
               })
             }
+            onOpenMontador={() => {
+              const cat = categories.find((c) => c.id === g.id);
+              if (cat) setMontadorCat(cat);
+            }}
             onTogglePause={async (active) => {
               if (g.id) {
                 try {
@@ -238,6 +247,33 @@ export const ProductsPage: React.FC = () => {
         onClose={() => setAddCatOpen(false)}
         onCreate={handleCreateCategory}
       />
+      {montadorCat && (
+        <MontadorModal
+          isOpen
+          saving={salvandoMontador}
+          category={montadorCat}
+          onClose={() => setMontadorCat(null)}
+          onSave={async (config: ConfigMontador) => {
+            setSalvandoMontador(true);
+            try {
+              await storesApi.updateCategory(montadorCat.id, config as any);
+              setCategories((cs) =>
+                cs.map((c) => (c.id === montadorCat.id ? { ...c, ...config } : c)),
+              );
+              toast.success(
+                config.builder_step_order == null
+                  ? `${montadorCat.name} saiu do montador`
+                  : `${montadorCat.name} configurada no montador`,
+              );
+              setMontadorCat(null);
+            } catch {
+              toast.error('Não foi possível salvar a configuração do montador');
+            } finally {
+              setSalvandoMontador(false);
+            }
+          }}
+        />
+      )}
       {modalProduct !== undefined && (
         <ProductFormModal
           isOpen

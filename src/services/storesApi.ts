@@ -205,6 +205,14 @@ export interface StoreCategory {
   sort_order: number;
   is_active: boolean;
   products_count: number;
+  // Montador ("monte o seu"): quais passos a loja pede e como. Antes isso vivia
+  // cravado no codigo do storefront, com os quatro passos da Ce Saladas.
+  // `builder_step_order` vazio = a categoria nao participa do montador.
+  builder_step_order?: number | null;
+  builder_max_selections?: number;
+  builder_required?: boolean;
+  builder_included?: boolean;
+  builder_expand_variants?: boolean;
   created_at: string;
   updated_at: string;
 }
