@@ -109,3 +109,38 @@ describe('insightsDeCardapio', () => {
     r.forEach((i) => expect(i.recomendacao.trim()).not.toBe(''));
   });
 });
+
+// O plural de "item" em português é "itens" — cai o M. O código montava
+// `item` + `ns`, então o painel escrevia "42 itemns no cardápio sem foto" na
+// primeira coisa que o lojista lê ao abrir o cardápio. Quatro ocorrências.
+describe('plural de item', () => {
+  const produto = (over: Record<string, unknown> = {}) => ({
+    id: Math.random().toString(36).slice(2),
+    name: 'Produto',
+    price: 10,
+    is_active: true,
+    stock_quantity: 5,
+    track_stock: true,
+    main_image_url: 'http://x/f.png',
+    ...over,
+  });
+
+  it('escreve "itens", nunca "itemns"', () => {
+    const semFoto = Array.from({ length: 3 }, () => produto({ main_image_url: null }));
+    const semEstoque = Array.from({ length: 2 }, () => produto({ stock_quantity: 0 }));
+    const semPreco = Array.from({ length: 2 }, () => produto({ price: 0 }));
+    const acabando = Array.from({ length: 2 }, () => produto({ stock_quantity: 1 }));
+
+    const todos = [...semFoto, ...semEstoque, ...semPreco, ...acabando] as never[];
+    const texto = JSON.stringify(insightsDeCardapio(todos));
+
+    expect(texto).not.toMatch(/itemns/);
+  });
+
+  it('mantém o singular "item" quando é um só', () => {
+    const texto = JSON.stringify(
+      insightsDeCardapio([produto({ main_image_url: null })] as never[]),
+    );
+    expect(texto).not.toMatch(/1 itens/);
+  });
+});

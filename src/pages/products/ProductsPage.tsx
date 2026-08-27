@@ -252,6 +252,7 @@ export const ProductsPage: React.FC = () => {
           isOpen
           saving={salvandoMontador}
           category={montadorCat}
+          outrasCategorias={categories}
           onClose={() => setMontadorCat(null)}
           onSave={async (config: ConfigMontador) => {
             setSalvandoMontador(true);

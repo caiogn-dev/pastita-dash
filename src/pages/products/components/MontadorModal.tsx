@@ -14,6 +14,8 @@ interface Props {
   isOpen: boolean;
   saving?: boolean;
   category: StoreCategory;
+  /** As demais categorias da loja — para saber quais posições já estão tomadas. */
+  outrasCategorias?: StoreCategory[];
   onClose: () => void;
   onSave: (config: ConfigMontador) => void;
 }
@@ -26,7 +28,9 @@ interface Props {
  * fixos. Agora moram na categoria; sem esta tela o lojista dependeria de alguém
  * abrir um shell para mexer.
  */
-export const MontadorModal: React.FC<Props> = ({ isOpen, saving, category, onClose, onSave }) => {
+export const MontadorModal: React.FC<Props> = ({
+  isOpen, saving, category, outrasCategorias = [], onClose, onSave,
+}) => {
   const ehPasso = category.builder_step_order != null;
   const [ligado, setLigado] = useState(ehPasso);
   const [ordem, setOrdem] = useState(category.builder_step_order ?? 0);
@@ -40,8 +44,24 @@ export const MontadorModal: React.FC<Props> = ({ isOpen, saving, category, onClo
 
   if (!isOpen) return null;
 
+  // O backend tem constraint de posição única por loja (migration 0071). Sem
+  // saber das outras categorias, o modal deixava salvar e o lojista recebia só
+  // "Não foi possível salvar": o erro certo, tarde e sem o motivo.
+  const ocupadaPor = ligado
+    ? outrasCategorias.find(
+        (c) => c.id !== category.id && c.builder_step_order === Number(ordem),
+      )
+    : undefined;
+
   const salvar = () => {
     if (saving) return;
+    if (ocupadaPor) {
+      setErro(
+        `A posição ${Number(ordem) + 1} já é de "${ocupadaPor.name}". `
+        + 'Escolha outra ou mova aquela primeiro.',
+      );
+      return;
+    }
     if (ligado && (!Number.isFinite(maximo) || maximo < 1)) {
       setErro('O passo precisa aceitar pelo menos 1 item.');
       return;
@@ -125,7 +145,7 @@ export const MontadorModal: React.FC<Props> = ({ isOpen, saving, category, onClo
               {/* Sem passo na ordem 0 a loja não tem montador — mesma regra do
                   backend (migration 0073) e do storefront. Avisar aqui evita
                   uma configuração que simplesmente não aparece para o cliente. */}
-              {Number(ordem) !== 0 && (
+              {!ocupadaPor && Number(ordem) !== 0 && (
                 <p
                   role="status"
                   className="rounded-md border border-brand/30 bg-brand-soft px-3 py-2 text-[length:var(--text-caption)] text-fg-token"
@@ -212,7 +232,14 @@ export const MontadorModal: React.FC<Props> = ({ isOpen, saving, category, onClo
             </>
           )}
 
-          {erro && (
+          {ligado && ocupadaPor && (
+            <p role="alert" className="text-[length:var(--text-caption)] text-[var(--danger)]">
+              A posição {Number(ordem) + 1} já é de “{ocupadaPor.name}”. Escolha outra ou
+              mova aquela primeiro.
+            </p>
+          )}
+
+          {erro && !ocupadaPor && (
             <p role="alert" className="text-[length:var(--text-caption)] text-[var(--danger)]">
               {erro}
             </p>

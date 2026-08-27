@@ -119,3 +119,58 @@ describe('identidade visual', () => {
     expect(cru).toBeNull();
   });
 });
+
+describe('posição já ocupada', () => {
+  // O backend tem constraint de posição única por loja (migration 0071). Sem
+  // saber das outras categorias, o modal deixava salvar e o lojista recebia só
+  // "Não foi possível salvar" — o erro certo, na hora errada, sem o motivo.
+  const OUTRAS = [
+    categoria({ id: 'cat-base', name: 'Base', slug: 'base', builder_step_order: 0 }),
+    categoria({ id: 'cat-mol', name: 'Molhos', slug: 'molhos', builder_step_order: 3 }),
+  ];
+
+  const abrirCom = (over: Partial<StoreCategory>, onSave = jest.fn()) => {
+    render(
+      <MontadorModal
+        isOpen
+        category={categoria(over)}
+        outrasCategorias={OUTRAS}
+        onClose={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+    return onSave;
+  };
+
+  it('avisa qual categoria já está naquela posição', () => {
+    abrirCom({ builder_step_order: 0 });
+    expect(screen.getByRole('alert')).toHaveTextContent(/Base/);
+  });
+
+  it('não deixa salvar em cima de outra', () => {
+    const onSave = abrirCom({ builder_step_order: 0 });
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('posição livre salva normalmente', async () => {
+    const onSave = abrirCom({ builder_step_order: 1 });
+    await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+  });
+
+  it('a própria categoria não conta como conflito consigo mesma', async () => {
+    const onSave = jest.fn();
+    render(
+      <MontadorModal
+        isOpen
+        category={categoria({ id: 'cat-base', name: 'Base', builder_step_order: 0 })}
+        outrasCategorias={OUTRAS}
+        onClose={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+  });
+});

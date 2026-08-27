@@ -66,7 +66,7 @@ export function insightsDeCardapio(
     insights.push({
       chave: 'sem_estoque',
       direcao: 'baixa',
-      titulo: `${semEstoque.length} item${semEstoque.length > 1 ? 'ns' : ''} no cardápio sem estoque`,
+      titulo: `${semEstoque.length} ${semEstoque.length > 1 ? 'itens' : 'item'} no cardápio sem estoque`,
       valor: semEstoque.slice(0, 3).map((p) => p.name).join(', ') + (semEstoque.length > 3 ? '…' : ''),
       recomendacao: 'reponha ou pause — o cliente pede e você cancela depois',
       produtoId: semEstoque.length === 1 ? semEstoque[0].id : undefined,
@@ -84,7 +84,7 @@ export function insightsDeCardapio(
     insights.push({
       chave: 'estoque_baixo',
       direcao: 'baixa',
-      titulo: `${acabando.length} item${acabando.length > 1 ? 'ns' : ''} com estoque no fim`,
+      titulo: `${acabando.length} ${acabando.length > 1 ? 'itens' : 'item'} com estoque no fim`,
       valor: acabando.slice(0, 3).map((p) => p.name).join(', ') + (acabando.length > 3 ? '…' : ''),
       recomendacao: 'reponha hoje para não perder a venda de amanhã',
       produtoId: acabando.length === 1 ? acabando[0].id : undefined,
@@ -98,7 +98,7 @@ export function insightsDeCardapio(
     insights.push({
       chave: 'sem_preco',
       direcao: 'baixa',
-      titulo: `${semPreco.length} item${semPreco.length > 1 ? 'ns' : ''} ativo${semPreco.length > 1 ? 's' : ''} sem preço`,
+      titulo: `${semPreco.length} ${semPreco.length > 1 ? 'itens' : 'item'} ativo${semPreco.length > 1 ? 's' : ''} sem preço`,
       valor: semPreco.slice(0, 3).map((p) => p.name).join(', ') + (semPreco.length > 3 ? '…' : ''),
       recomendacao: 'defina o preço — no cardápio isso aparece como R$ 0,00',
       produtoId: semPreco.length === 1 ? semPreco[0].id : undefined,
@@ -112,7 +112,7 @@ export function insightsDeCardapio(
     insights.push({
       chave: 'sem_foto',
       direcao: 'estavel',
-      titulo: `${semFoto.length} item${semFoto.length > 1 ? 'ns' : ''} no cardápio sem foto`,
+      titulo: `${semFoto.length} ${semFoto.length > 1 ? 'itens' : 'item'} no cardápio sem foto`,
       valor: `${Math.round((semFoto.length / ativos.length) * 100)}% dos ativos`,
       recomendacao: 'item sem foto no meio de outros com foto parece indisponível',
       produtoId: semFoto.length === 1 ? semFoto[0].id : undefined,
