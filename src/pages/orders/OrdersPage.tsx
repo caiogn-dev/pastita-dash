@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import {
@@ -58,6 +58,7 @@ import type { Order } from '../../types';
 // Extraído para orderColumns.ts (fonte única — usado também pelo drill-down dos KPIs)
 
 import { COLUMNS, resolveFocusColumn } from './orderColumns';
+import { pedidosDaColuna, ENTREGUES_DE_HOJE } from './pedidosDoQuadro';
 import type { ColumnId } from './orderColumns';
 import { getStageStart, getAvgPrepMinutes } from './orderSla';
 import { proximaAcaoDoPedido } from './proximaAcao';
@@ -587,9 +588,10 @@ export const OrdersPage: React.FC = () => {
   const columnData = useMemo(() =>
     COLUMNS.filter(col => !focusColumn || col.id === focusColumn).map(col => ({
       ...col,
-      orders: effectiveOrders
-        .filter((o: StoreOrder) => !['cancelled'].includes(o.status) && (col.statuses as readonly string[]).includes(o.status))
-        .sort((a: StoreOrder, b: StoreOrder) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+      // "Entregue" mostra só o de hoje; o resto vive no Histórico. As colunas
+      // de trabalho em aberto continuam mostrando tudo — pedido parado de
+      // ontem é justamente o que precisa aparecer.
+      orders: pedidosDaColuna(effectiveOrders as StoreOrder[], col),
     })),
   [effectiveOrders, focusColumn]);
 
@@ -844,6 +846,19 @@ export const OrdersPage: React.FC = () => {
                           storeSlug={storeSlug || undefined}
                         />
                       ))
+                    )}
+
+                    {/* O quadro passou a mostrar só os entregues de HOJE. Sem
+                        dizer para onde foi o resto, some pedido aos olhos do
+                        dono — que é pior do que a pilha que havia antes. */}
+                    {col.id === ENTREGUES_DE_HOJE && (
+                      <Link
+                        to={`/stores/${storeSlug}/orders/historico`}
+                        className="mt-2 flex items-center justify-center gap-1.5 rounded border border-dashed border-border-token py-2.5 text-xs text-fg-muted-token hover:border-brand hover:text-brand"
+                      >
+                        <ClockIcon className="h-3.5 w-3.5" />
+                        Ver pedidos de outros dias
+                      </Link>
                     )}
                   </DroppableColumn>
                 </SortableContext>
