@@ -3,6 +3,58 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-27)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: **1172 testes / 213 suítes verdes** (era 1166/212; +6/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~17s).
+- Observação de ambiente: o checkout desta sessão veio 8 commits à frente de
+  `origin/main` (trabalho local não publicado: frete grátis, comanda de preparo,
+  refactor de campanha etc.). Para não empacotar trabalho alheio no PR, esta
+  fatia foi baseada em `origin/main` (produção real) e o mesmo defeito de preço
+  existe lá em forma inline — foi ele que consertei.
+
+## Histórico
+
+### 2026-08-27 — Correção: campanha de WhatsApp mandava o preço de CADASTRO, não o do dia
+- **Medido:** varredura das telas que MOSTRAM ou COBRAM preço. Em
+  `NewWhatsAppCampaignPage.tsx` (produção/`origin/main`), as variáveis do
+  template enviadas à Meta (`preco_1`/`preco_2`, via `buildOfferVariables`) e a
+  prévia do passo de revisão liam `product.price` — o valor de **CADASTRO** —
+  enquanto o restante da mesma tela (seleção, card de revisão e o
+  `offer_products` salvo) já lia `precoVigenteDoProduto(product)`, o preço do
+  dia (`preco_vigente`). Resultado: um produto em promoção de dia da semana
+  tinha o **valor cheio enviado POR ESCRITO ao cliente** no WhatsApp — a
+  campanha prometia um desconto que o balcão não honrava. É a classe de defeito
+  que o teste-sentinela `precoVigente.cobertura.test.ts` protege ("dói além da
+  tela").
+- **Mudado (fatia mínima, formato preservado):**
+  - Novo módulo puro `src/pages/marketing/whatsapp/ofertaDaCampanha.ts` com
+    `precoDaOferta` + `buildOfferVariables`, seguindo a convenção do repo
+    ("a aritmética no módulo, o desenho no componente", como `resumoDeCampanha`).
+    A fonte do preço passou de `product.price` para `precoVigenteDoProduto`.
+  - `NewWhatsAppCampaignPage.tsx`: passou a importar `buildOfferVariables` do
+    módulo e trocou as duas linhas da prévia de `formatMoney(...price)` para
+    `precoDaOferta(...)`. **Só a FONTE do preço mudou**; o formato do número
+    (`32,90`, sem "R$" — o símbolo mora no corpo do template aprovado na Meta) e
+    o caso sem produto (`0,00`) são idênticos aos de antes. Adicionar "R$" à
+    variável é outra decisão de produto (risco de "R$ R$" em templates que já o
+    têm) e ficou de fora desta fatia.
+- **Teste (TDD):** nova suíte `__tests__/ofertaDaCampanha.test.ts` — escrita
+  **vermelha antes** (módulo inexistente) **verde depois** (6/6). Cobre: preço
+  vigente sobrepõe o de cadastro, fallback ao cadastro sem promoção, `preco_vigente`
+  em string do backend, ausência de produto sem virar "NaN", e a montagem dos
+  quatro campos.
+- **Antes/depois:** `npm test` 1166/212 → **1172/213**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Risco baixo: mudança de comportamento restrita
+  ao valor do preço enviado (agora correto).
+- **Próximo passo priorizado:** (1) avaliar se a variável do template deve levar
+  "R$" (checar os templates aprovados na Meta antes — evitar "R$ R$"). (2)
+  Reconciliar o trabalho local não publicado com `origin/main` (8 commits) para
+  o loop parar de reencontrar defeitos já corrigidos localmente. (3) Deps: bump
+  major de `react-router` 6→7 (open redirect) como fatia dedicada.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas

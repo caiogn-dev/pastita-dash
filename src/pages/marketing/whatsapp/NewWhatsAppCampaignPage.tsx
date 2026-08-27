@@ -45,6 +45,7 @@ type SystemContact = {
 };
 import logger from '../../../services/logger';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
+import { buildOfferVariables, precoDaOferta } from './ofertaDaCampanha';
 
 type TemplateVariable = {
   name: string;
@@ -81,13 +82,6 @@ const extractTemplateVariables = (template?: MessageTemplate): TemplateVariable[
 
   return Array.from(found.values());
 };
-
-const buildOfferVariables = (offerProducts: StoreProduct[]) => ({
-  produto_1: offerProducts[0]?.name || '',
-  preco_1: formatMoney(offerProducts[0]?.price),
-  produto_2: offerProducts[1]?.name || '',
-  preco_2: formatMoney(offerProducts[1]?.price),
-});
 
 const buildTemplateComponents = (
   template: MessageTemplate | undefined,
@@ -1071,9 +1065,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         </p>
                         <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2 text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
                           <span>{'{{produto_1}}'}: {selectedOfferProducts[0]?.name || '-'}</span>
-                          <span>{'{{preco_1}}'}: {selectedOfferProducts[0] ? formatMoney(selectedOfferProducts[0].price) : '-'}</span>
+                          <span>{'{{preco_1}}'}: {selectedOfferProducts[0] ? precoDaOferta(selectedOfferProducts[0]) : '-'}</span>
                           <span>{'{{produto_2}}'}: {selectedOfferProducts[1]?.name || '-'}</span>
-                          <span>{'{{preco_2}}'}: {selectedOfferProducts[1] ? formatMoney(selectedOfferProducts[1].price) : '-'}</span>
+                          <span>{'{{preco_2}}'}: {selectedOfferProducts[1] ? precoDaOferta(selectedOfferProducts[1]) : '-'}</span>
                         </div>
                       </div>
                     )}
