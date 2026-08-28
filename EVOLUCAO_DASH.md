@@ -8,16 +8,51 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high),
   transitivas de `react-router`/`react-router-dom` — fatia dedicada.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test` na chegada: **2 suítes / 2 testes VERMELHOS pré-existentes**
-  (1256/1258 verdes). Não são regressão minha — dois *guard tests* pegando dois
-  bugs reais: (1) `pedidosDoQuadro` corrigido nesta fatia; (2) `precoVigente`
-  registrado como próximo passo (veja abaixo).
-- Após esta fatia: **1259/1260 verdes** (a única vermelha é a #2, próximo passo).
-- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~16s).
+- **A `main` chegou com CI VERMELHO** (runs #388/#389 `failure`): a suíte tinha
+  2 *guard tests* vermelhos pegando 2 bugs reais **e** o `lint` tinha 2 errors.
+  Nada podia mergear verde. Não é regressão desta fatia.
+- `npm test` na chegada: 1256/1258 (2 vermelhos). Após esta fatia: **1263/1263**.
+- `npm run lint`: 2 errors → **0 errors** (289 warnings, gate 400).
+- `npx tsc --noEmit` e `npm run build` (tsc && vite): **ok** nos dois lados (~15s).
+- **Resultado:** os 4 passos do CI (`build`, `lint`, `test`) voltam a passar —
+  `main` sai do vermelho.
 
 ## Histórico
 
-### 2026-08-28 — Correção: o "hoje" do quadro de pedidos é o do balcão, não o do servidor
+### 2026-08-28 — Restaurar o CI verde: 2 guard tests + 2 lint errors na `main`
+A `main` chegou com CI vermelho (nada mergeava). Esta fatia derruba os três
+bloqueios de uma vez, cada um com sua correção real. Detalhe abaixo.
+
+#### (b) `precoVigente` na campanha de WhatsApp — oferta saía com preço cheio
+- **Medido:** o guard `precoVigente.cobertura.test.ts` acusava
+  `variaveisDaOferta.ts` lendo `product.price` **cru**. Rastreado:
+  `NewWhatsAppCampaignPage.tsx` passava os produtos crus a `variaveisDaOferta`,
+  então `preco_1/preco_2` do template (e a prévia visível `:1069-1072`) saíam com
+  o **preço de cadastro**, enquanto `offer_products` no payload e o resumo já
+  usavam `precoVigenteDoProduto`. Num produto em promoção do dia
+  (`preco_vigente` < `price`), a oferta enviada ao cliente divergia do cardápio
+  e do próprio painel — bug voltado a dinheiro.
+- **Mudado:**
+  - Novo helper puro `produtosParaOferta(produtos)` em `variaveisDaOferta.ts`:
+    resolve o vigente (`precoVigenteDoProduto`) e devolve `{ name, price }` já
+    pronto — a mesma fonte de `offer_products`.
+  - `NewWhatsAppCampaignPage.tsx`: memo `produtosDaOferta` alimenta tanto o envio
+    (`variaveisDaOferta`) quanto a prévia; `ProdutoDaOferta.price` documentado
+    como valor **já resolvido**.
+  - `variaveisDaOferta.ts` entra na allowlist `PERMITIDOS` do guard (como
+    `labelPrint.ts`): `campo()` formata um preço já vigente, não o cru.
+- **Teste (TDD):** 3 casos novos em `variaveisDaOferta.test.ts` cobrindo
+  `produtosParaOferta` — vigente vence o cadastro; sem promo cai no cadastro;
+  alimenta `variaveisDaOferta` com o vigente. Vermelhos antes (helper não
+  existia), verdes depois.
+
+#### (c) 2 lint errors pré-existentes (`no-irregular-whitespace`)
+- `variaveisDaOferta.ts` e seu teste tinham um **NBSP literal** dentro de regex
+  (`/ /` para tirar o espaço não-quebrável do `toLocaleString`). O eslint
+  reprova NBSP em regex (`skipRegExps` off). Trocado pelo escape `\u00A0` —
+  comportamento idêntico, lint limpo. Era o que reprovava o passo `lint` do CI.
+
+#### (a) o "hoje" do quadro de pedidos é o do balcão, não o do servidor
 - **Medido:** a suíte chegou vermelha. `pedidosDoQuadro.test.ts` falhava em
   "não arrasta o que foi entregue ontem": a coluna de finalizados (`done`) só
   deve mostrar entregas de HOJE, mas mostrava as de ontem à noite. Causa raiz:
@@ -38,21 +73,15 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   operação, não o do servidor" (2 casos: 23h30 hoje-BR ainda é hoje mesmo já
   sendo amanhã em UTC; entregue ontem 22h não volta ao quadro). O caso "ontem à
   noite" nasceu **vermelho** com o código antigo, **verde** após a correção.
-- **Antes/depois:** `npm test` 1256/1258 (2 vermelhas) → **1259/1260** (só a #2
-  abaixo, pré-existente); `tsc --noEmit` limpo e `vite build` ok nos dois lados.
-- **Próximo passo priorizado (bug #2, guard test ainda vermelho):**
-  **`precoVigente` na campanha de WhatsApp.** `variaveisDaOferta.ts` monta
-  `preco_1/preco_2` do template lendo `product.price` **cru** (preço de
-  cadastro), enquanto o resto da mesma tela (`offer_products` no payload e a
-  prévia visível, `NewWhatsAppCampaignPage.tsx:637-640` e `:1428`) usa
-  `precoVigenteDoProduto`. Num produto em promoção por dia da semana
-  (`promo_price`/`preco_vigente`), a oferta enviada ao cliente sai com o preço
-  CHEIO — dado divergente e voltado a dinheiro. Fatia: (a) resolver o preço no
-  chamador antes de passar a `variaveisDaOferta` (e na prévia `:1070-1072`); (b)
-  o helper passa a receber preço já resolvido, como `labelPrint.ts` — então
-  entra na allowlist `PERMITIDOS` do guard `precoVigente.cobertura.test.ts`
-  (com comentário explicando, igual ao `labelPrint`). Auditar o formato de
-  `precoParaTemplate` (mantém o "R$") ao trocar a fonte do valor.
+
+- **Antes/depois desta fatia (a+b+c):** `npm test` 1256/1258 (2 vermelhas) →
+  **1263/1263**; `lint` 2 errors → **0**; `tsc --noEmit` limpo e `vite build`
+  ok nos dois lados.
+- **Próximo passo priorizado:** varredura de "zeros enganosos" nas seções de KPI
+  derivadas de query ainda não auditadas (`ProductsPage` contadores do topo,
+  seções de `reports/`, `AnalyticsPage`). E, em fatia dedicada com validação de
+  build, o major bump de `react-router` 6→7 (corrige o open redirect das 8
+  vulnerabilidades do `npm audit`).
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um

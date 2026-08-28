@@ -10,8 +10,16 @@
  * do template foi o que fez `ce_saladas_oferta_do_dia` ser aprovado dizendo
  * "Salmão Sublime — 52,90".
  */
+import { precoVigenteDoProduto, ComPrecoVigente } from '../../../utils/precoVigente';
+
 export interface ProdutoDaOferta {
   name?: string | null;
+  /**
+   * O preço JÁ RESOLVIDO (vigente), não o `price` de cadastro. Use
+   * `produtosParaOferta` para montar este objeto a partir do produto cru — a
+   * oferta enviada ao cliente não pode sair com o preço cheio num produto em
+   * promoção do dia.
+   */
   price?: number | string | null;
 }
 
@@ -21,7 +29,7 @@ export const precoParaTemplate = (valor?: number | string | null): string => {
   return `R$ ${seguro.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`.replace(/ /g, ' ');
+  })}`.replace(/\u00A0/g, ' ');
 };
 
 export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
@@ -40,3 +48,18 @@ export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
     preco_2: campo(1, 'preco'),
   };
 };
+
+/**
+ * Converte os produtos escolhidos em objetos de oferta com o preço VIGENTE já
+ * resolvido (promo do dia da semana), o mesmo valor que vai no payload e no
+ * resumo da campanha. Sem isso, a oferta enviada ao cliente sai com o `price`
+ * de cadastro cheio num produto em promoção — divergindo do que ele vê no
+ * cardápio e do que o painel mostra na prévia.
+ */
+export const produtosParaOferta = (
+  produtos: Array<ComPrecoVigente & { name?: string | null }>,
+): ProdutoDaOferta[] =>
+  produtos.map((produto) => ({
+    name: produto.name ?? '',
+    price: precoVigenteDoProduto(produto),
+  }));

@@ -28,7 +28,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Modal, Input } from '../../../components/common';
-import { precoParaTemplate, variaveisDaOferta } from './variaveisDaOferta';
+import { precoParaTemplate, variaveisDaOferta, produtosParaOferta } from './variaveisDaOferta';
 import { getErrorMessage } from '../../../services';
 import whatsappService from '../../../services/whatsapp';
 import { campaignsService } from '../../../services/campaigns';
@@ -285,6 +285,12 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       .map(id => products.find(product => product.id === id))
       .filter((product): product is StoreProduct => Boolean(product)),
     [products, selectedOfferProductIds]
+  );
+  // A oferta enviada e a prévia leem o preço VIGENTE (promo do dia resolvida),
+  // o mesmo valor de `offer_products` no payload — nunca o `price` de cadastro.
+  const produtosDaOferta = useMemo(
+    () => produtosParaOferta(selectedOfferProducts),
+    [selectedOfferProducts]
   );
   const templateVariables = useMemo(
     () => extractTemplateVariables(selectedTemplate),
@@ -606,7 +612,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       const templateComponents = formData.messageType === 'template'
         ? buildTemplateComponents(selectedTemplate, templateVariables, mediaPayload.media_url)
         : [];
-      const offerVariables = variaveisDaOferta(selectedOfferProducts);
+      const offerVariables = variaveisDaOferta(produtosDaOferta);
       const contactsWithVariables = formData.contacts.map(contact => ({
         ...contact,
         variables: formData.messageType === 'template'
@@ -1066,10 +1072,10 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                           Variáveis que serão enviadas
                         </p>
                         <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2 text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-                          <span>{'{{produto_1}}'}: {selectedOfferProducts[0]?.name || '-'}</span>
-                          <span>{'{{preco_1}}'}: {selectedOfferProducts[0] ? precoParaTemplate(selectedOfferProducts[0].price) : '-'}</span>
-                          <span>{'{{produto_2}}'}: {selectedOfferProducts[1]?.name || '-'}</span>
-                          <span>{'{{preco_2}}'}: {selectedOfferProducts[1] ? precoParaTemplate(selectedOfferProducts[1].price) : '-'}</span>
+                          <span>{'{{produto_1}}'}: {produtosDaOferta[0]?.name || '-'}</span>
+                          <span>{'{{preco_1}}'}: {produtosDaOferta[0] ? precoParaTemplate(produtosDaOferta[0].price) : '-'}</span>
+                          <span>{'{{produto_2}}'}: {produtosDaOferta[1]?.name || '-'}</span>
+                          <span>{'{{preco_2}}'}: {produtosDaOferta[1] ? precoParaTemplate(produtosDaOferta[1].price) : '-'}</span>
                         </div>
                       </div>
                     )}
