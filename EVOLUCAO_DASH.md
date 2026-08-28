@@ -3,17 +3,56 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-28)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high),
+  transitivas de `react-router`/`react-router-dom` — fatia dedicada.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test` na chegada: **2 suítes / 2 testes VERMELHOS pré-existentes**
+  (1256/1258 verdes). Não são regressão minha — dois *guard tests* pegando dois
+  bugs reais: (1) `pedidosDoQuadro` corrigido nesta fatia; (2) `precoVigente`
+  registrado como próximo passo (veja abaixo).
+- Após esta fatia: **1259/1260 verdes** (a única vermelha é a #2, próximo passo).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~16s).
 
 ## Histórico
+
+### 2026-08-28 — Correção: o "hoje" do quadro de pedidos é o do balcão, não o do servidor
+- **Medido:** a suíte chegou vermelha. `pedidosDoQuadro.test.ts` falhava em
+  "não arrasta o que foi entregue ontem": a coluna de finalizados (`done`) só
+  deve mostrar entregas de HOJE, mas mostrava as de ontem à noite. Causa raiz:
+  `mesmoDia()` comparava `getFullYear/Month/Date`, que rodam no **fuso do
+  processo**. A Vercel roda em **UTC**: um pedido entregue às 21h–23h59 no
+  Brasil (`-03:00`) já é o dia seguinte em UTC — e o inverso de madrugada — então
+  o corte do dia escorregava 3h e o pedido mudava de dia sozinho, sumindo ou
+  reaparecendo no kanban. Bug real em produção (só não aparecia rodando os
+  testes num ambiente `America/Sao_Paulo`, onde o fuso local coincide).
+- **Mudado (`pedidosDoQuadro.ts`, aditivo e retrocompatível):**
+  - Novo `FUSO_DA_OPERACAO = 'America/Sao_Paulo'` (produto pt-BR, `-03:00`).
+  - `diaDaOperacao(data, fuso)` deriva `"AAAA-MM-DD"` via
+    `Intl.DateTimeFormat('en-CA', { timeZone })` — estável para comparar por
+    igualdade, independente de onde o código roda.
+  - `pedidosDaColuna(...)` ganhou 4º parâmetro opcional `fuso` (default acima); o
+    único chamador (`OrdersPage.tsx:594`) passa 2 args e não muda.
+- **Teste (TDD):** estendido `pedidosDoQuadro.test.ts` com o bloco "o dia é o da
+  operação, não o do servidor" (2 casos: 23h30 hoje-BR ainda é hoje mesmo já
+  sendo amanhã em UTC; entregue ontem 22h não volta ao quadro). O caso "ontem à
+  noite" nasceu **vermelho** com o código antigo, **verde** após a correção.
+- **Antes/depois:** `npm test` 1256/1258 (2 vermelhas) → **1259/1260** (só a #2
+  abaixo, pré-existente); `tsc --noEmit` limpo e `vite build` ok nos dois lados.
+- **Próximo passo priorizado (bug #2, guard test ainda vermelho):**
+  **`precoVigente` na campanha de WhatsApp.** `variaveisDaOferta.ts` monta
+  `preco_1/preco_2` do template lendo `product.price` **cru** (preço de
+  cadastro), enquanto o resto da mesma tela (`offer_products` no payload e a
+  prévia visível, `NewWhatsAppCampaignPage.tsx:637-640` e `:1428`) usa
+  `precoVigenteDoProduto`. Num produto em promoção por dia da semana
+  (`promo_price`/`preco_vigente`), a oferta enviada ao cliente sai com o preço
+  CHEIO — dado divergente e voltado a dinheiro. Fatia: (a) resolver o preço no
+  chamador antes de passar a `variaveisDaOferta` (e na prévia `:1070-1072`); (b)
+  o helper passa a receber preço já resolvido, como `labelPrint.ts` — então
+  entra na allowlist `PERMITIDOS` do guard `precoVigente.cobertura.test.ts`
+  (com comentário explicando, igual ao `labelPrint`). Auditar o formato de
+  `precoParaTemplate` (mantém o "R$") ao trocar a fonte do valor.
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um

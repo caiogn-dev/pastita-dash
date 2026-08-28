@@ -110,3 +110,32 @@ describe('qual coluna é o passado', () => {
     expect(ENTREGUES_DE_HOJE).toBe('done');
   });
 });
+
+describe('o dia é o da operação, não o do servidor', () => {
+  // A Vercel roda em UTC. Se o "mesmo dia" for medido no fuso do servidor, um
+  // pedido entregue às 21h no Brasil (00h do dia seguinte em UTC) muda de dia
+  // sozinho e some — ou reaparece — no quadro. O corte tem que ser o do balcão
+  // (America/Sao_Paulo, -03:00), aconteça onde o código rodar.
+  const done = coluna('done', ['delivered', 'completed']);
+
+  it('23h30 de hoje no Brasil continua sendo hoje, mesmo já sendo amanhã em UTC', () => {
+    // 2026-08-27T23:30-03:00 = 2026-08-28T02:30Z. Em UTC seria "amanhã".
+    const agora = new Date('2026-08-27T23:59:00-03:00');
+    const itens = pedidosDaColuna(
+      [pedido('tarde', 'delivered', '2026-08-27T23:30:00-03:00')],
+      done, agora,
+    );
+    expect(itens.map((o) => o.id)).toEqual(['tarde']);
+  });
+
+  it('entregue ontem à noite não volta ao quadro por causa do UTC', () => {
+    // agora 2026-08-27T00:30-03:00 = 2026-08-27T03:30Z.
+    // ontem  2026-08-26T22:00-03:00 = 2026-08-27T01:00Z — MESMO dia em UTC.
+    const agora = new Date('2026-08-27T00:30:00-03:00');
+    const itens = pedidosDaColuna(
+      [pedido('ontem', 'delivered', '2026-08-26T22:00:00-03:00')],
+      done, agora,
+    );
+    expect(itens).toEqual([]);
+  });
+});
