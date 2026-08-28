@@ -3,6 +3,60 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-25)
+
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high) —
+  `brace-expansion`, `js-yaml`, `nanoid`, `postcss`, `esbuild`/`vite` são
+  dev/build-only; `react-router` 6.30.4 (open redirect via backslash, moderate)
+  só tem patch no **7.18.x** (fora do `^6`), então `npm audit fix` sem `--force`
+  NÃO toca no roteador. Bump major do `react-router`/`vite` fica como fatia
+  dedicada com validação de app (não verificável só por código).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1175 testes / 213 suítes verdes** (era 1166/212; +9/+1 desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~14s).
+- `npm run lint`: gate em 400 warnings; **284 warnings** (0 errors).
+
+## Histórico
+
+### 2026-08-25 — Correção: `buildStorefrontUrl` não forçava protocolo em URL de metadata
+- **Medido (a nível de código):** varredura de correção em funções puras sem
+  cobertura de teste. `src/utils/storefrontUrl.ts` tinha assimetria entre os dois
+  ramos de montagem do endereço público da loja: `custom_domain` era normalizado
+  com `stripProtocol()` e **explicitamente prefixado com `https://`**, mas o ramo
+  de `metadata` (chaves `website`/`site_url`/`public_url`/`storefront_url`/
+  `storefront_origin`) usava o valor **cru**. O `metadataString` só remove a barra
+  final — nunca mexe no protocolo. Dono costuma digitar o site sem esquema
+  ("cesaladas.com.br"), então `buildStorefrontUrl` devolvia a string sem protocolo.
+- **Impacto real (dois consumidores em produção):**
+  - `StorefrontPage.tsx` (`<a href={urlPublica}>` "Abrir cardápio" + o `<code>`
+    que imprime o endereço): href sem esquema vira **caminho relativo** →
+    `https://<painel>/cesaladas.com.br` (link quebrado).
+  - `PaymentsPage.tsx` (`${storefrontUrl}/pendente?token=...`): monta o **link de
+    pagamento enviado ao CLIENTE** → link malformado para quem vai pagar.
+- **Mudado (`storefrontUrl.ts`, 1 ramo):** o ramo de metadata passa a
+  `https://${stripProtocol(metadataUrl)}`, igual ao de `custom_domain` — força
+  `https://`, normaliza `http://→https://` e preserva path/host. Mudança mínima,
+  simétrica, sem novo caminho de código.
+- **Teste (TDD):** novo `buildStorefrontUrl.test.ts` — escrito **vermelho antes**
+  (4/9 falhando: metadata sem protocolo devolvia caminho relativo) **verde depois**
+  (9/9). Cobre: força https em metadata sem esquema, preserva https existente,
+  normaliza http→https, remove barra final, sempre absoluto, `custom_domain` segue
+  https, slug cai no domínio padrão, anexa path preservando a base, e null quando
+  falta domínio/metadata/slug. O `storefrontPreviewUrl.test.ts` existente segue verde.
+- **Antes/depois:** `npm test` 1166/212 → **1175/213**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados. Risco baixo: função pura, 1 ramo, comportamento
+  só melhora (URL absoluta em vez de relativa quebrada).
+- **Próximo passo priorizado:** (1) **Correção — `formatFileSize`** (`formatters.ts`
+  342-350): quebra em `bytes < 0` (`"NaN undefined"`) e `≥ 1 PB` (índice fora do
+  array `units` → `"x undefined"`); função sem cobertura, hoje sem chamadores
+  (valor latente), boa fatia de TDD quando entrar em uso. (2) **Correção —
+  `formatPhoneForWhatsApp`** (250-262): DDD 55 (Santa Maria/RS) é tratado como se
+  já tivesse código do país e não recebe o `55` — o link `wa.me` sai errado; hoje
+  sem chamadores. (3) **`truncate`** (269-273): saída maior que `maxLength` quando
+  `maxLength < 3` (slice negativo); sem chamadores. (4) **Segurança/deps:** bump
+  major de `react-router` 6→7 (open redirect) e `vite` 5→8 (esbuild dev-only),
+  cada um como fatia dedicada com validação de app.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
