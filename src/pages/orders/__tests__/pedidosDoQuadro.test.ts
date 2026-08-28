@@ -138,4 +138,21 @@ describe('o dia é o da operação, não o do servidor', () => {
     );
     expect(itens).toEqual([]);
   });
+
+  it('respeita o fuso da loja, não um fixo — mesma entrada, corte diferente', () => {
+    // Loja fora de São Paulo: o corte do dia tem que ser o dela.
+    // pedido 2026-08-27T23:00-03:00 = 2026-08-28T02:00Z
+    // agora  2026-08-28T01:00-03:00 = 2026-08-28T04:00Z
+    const agora = new Date('2026-08-28T01:00:00-03:00');
+    const entrada = [pedido('virada', 'delivered', '2026-08-27T23:00:00-03:00')];
+
+    // Em São Paulo (-03): pedido é dia 27, agora é dia 28 → fora.
+    expect(
+      pedidosDaColuna(entrada, done, agora, 'America/Sao_Paulo').map((o) => o.id),
+    ).toEqual([]);
+    // Numa loja em UTC: ambos caem no dia 28 → dentro.
+    expect(
+      pedidosDaColuna(entrada, done, agora, 'UTC').map((o) => o.id),
+    ).toEqual(['virada']);
+  });
 });

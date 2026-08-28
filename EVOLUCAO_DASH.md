@@ -11,7 +11,7 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - **A `main` chegou com CI VERMELHO** (runs #388/#389 `failure`): a suíte tinha
   2 *guard tests* vermelhos pegando 2 bugs reais **e** o `lint` tinha 2 errors.
   Nada podia mergear verde. Não é regressão desta fatia.
-- `npm test` na chegada: 1256/1258 (2 vermelhos). Após esta fatia: **1263/1263**.
+- `npm test` na chegada: 1256/1258 (2 vermelhos). Após esta fatia: **1264/1264**.
 - `npm run lint`: 2 errors → **0 errors** (289 warnings, gate 400).
 - `npx tsc --noEmit` e `npm run build` (tsc && vite): **ok** nos dois lados (~15s).
 - **Resultado:** os 4 passos do CI (`build`, `lint`, `test`) voltam a passar —
@@ -67,15 +67,19 @@ bloqueios de uma vez, cada um com sua correção real. Detalhe abaixo.
   - `diaDaOperacao(data, fuso)` deriva `"AAAA-MM-DD"` via
     `Intl.DateTimeFormat('en-CA', { timeZone })` — estável para comparar por
     igualdade, independente de onde o código roda.
-  - `pedidosDaColuna(...)` ganhou 4º parâmetro opcional `fuso` (default acima); o
-    único chamador (`OrdersPage.tsx:594`) passa 2 args e não muda.
+  - `pedidosDaColuna(...)` ganhou 4º parâmetro opcional `fuso` (default acima).
+  - `OrdersPage.tsx` passa `store?.timezone` do `useStore()` (revisão P1 do
+    Codex): loja fora de São Paulo vira o dia na hora dela; sem fuso
+    configurado, cai no default. Fecha o buraco multi-tenant e segue o
+    CLAUDE.md ("use a loja de `useStore()`, não constante fixa"). Teste novo
+    prova que a mesma entrada com fusos diferentes dá cortes diferentes.
 - **Teste (TDD):** estendido `pedidosDoQuadro.test.ts` com o bloco "o dia é o da
   operação, não o do servidor" (2 casos: 23h30 hoje-BR ainda é hoje mesmo já
   sendo amanhã em UTC; entregue ontem 22h não volta ao quadro). O caso "ontem à
   noite" nasceu **vermelho** com o código antigo, **verde** após a correção.
 
 - **Antes/depois desta fatia (a+b+c):** `npm test` 1256/1258 (2 vermelhas) →
-  **1263/1263**; `lint` 2 errors → **0**; `tsc --noEmit` limpo e `vite build`
+  **1264/1264**; `lint` 2 errors → **0**; `tsc --noEmit` limpo e `vite build`
   ok nos dois lados.
 - **Próximo passo priorizado:** varredura de "zeros enganosos" nas seções de KPI
   derivadas de query ainda não auditadas (`ProductsPage` contadores do topo,
