@@ -40,15 +40,14 @@ export default defineConfig({
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-ui': ['@headlessui/react', '@heroicons/react', 'lucide-react'],
-          // recharts só é alcançado por rotas lazy (BI, LinkBio); mantê-lo em
-          // vendor separado evita duplicá-lo entre elas.
-          'vendor-charts': ['recharts'],
           'vendor-utils': ['axios', 'date-fns', 'zustand'],
           // clsx/tailwind-merge PRECISAM de chunk próprio. São usados tanto pelo
-          // shell (eager) quanto pelo recharts; sem isto o Rollup os aloja dentro
-          // de vendor-charts, e o entry passa a importar os 375 KB de recharts só
-          // para alcançar a função de juntar classes CSS — era o que sobrava do
-          // preload depois de remover os chunks de feature.
+          // shell (eager) quanto pelos gráficos; sem isto o Rollup os alojava
+          // dentro de vendor-charts, e o entry passava a importar os 375 KB de
+          // recharts só para alcançar a função de juntar classes CSS.
+          // O recharts SAIU em 27/ago — os dois gráficos que o usavam
+          // (TimeSeriesChart, DonutChart) viraram SVG próprio. O chunk próprio
+          // fica: a separação continua correta e barata.
           'vendor-cn': ['clsx', 'tailwind-merge', 'class-variance-authority'],
         },
       },
