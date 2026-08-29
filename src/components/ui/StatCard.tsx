@@ -6,6 +6,7 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 import { Card } from './Card';
 import { Sparkline } from './Sparkline';
+import { useNumeroQueSobe } from '../../hooks/useNumeroQueSobe';
 
 export type StatCardTone = 'default' | 'brand' | 'warning' | 'success' | 'danger';
 
@@ -24,6 +25,14 @@ export interface StatCardComparativo {
 export interface StatCardProps {
   label: string;
   value: React.ReactNode;
+  /**
+   * Número CRU do indicador. Quando vem junto de `formatarValor`, o card anima
+   * a contagem até ele — "R$ 305,62" subindo de zero diz que o número é de
+   * HOJE e ainda está andando, coisa que o texto pronto não diz.
+   * API aditiva: sem os dois, `value` continua mandando.
+   */
+  valorAnimado?: number;
+  formatarValor?: (n: number) => string;
   sub?: string;
   tone?: StatCardTone;
   comparativo?: StatCardComparativo;
@@ -75,10 +84,20 @@ export const StatCard: React.FC<StatCardProps> = ({
   ajuda,
   icone,
   serie,
+  valorAnimado,
+  formatarValor,
   onClick,
   className,
 }) => {
   const clickable = typeof onClick === 'function';
+  // Só anima com os DOIS: número cru e formatador. Um sem o outro não sabe
+  // escrever o valor, e um card mudo seria pior que um card sem graça.
+  const contando = typeof valorAnimado === 'number' && typeof formatarValor === 'function';
+  const refDoValor = useNumeroQueSobe<HTMLSpanElement>(
+    contando ? valorAnimado : 0,
+    formatarValor ?? String,
+    contando ? undefined : 0,
+  );
   const pct = comparativo?.variacaoPct;
 
   /**
@@ -134,7 +153,7 @@ export const StatCard: React.FC<StatCardProps> = ({
               VALUE_TONE[tone]
             )}
           >
-            {value}
+            {contando ? <span ref={refDoValor} /> : value}
           </p>
         </div>
       </div>

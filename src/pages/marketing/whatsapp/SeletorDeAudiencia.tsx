@@ -33,13 +33,16 @@ import {
 
 interface Props {
   accountId?: string;
+  /** Slug da loja aberta no painel. Sem ela o backend usa as lojas da conta,
+   *  e produto/segmento passam a falar de outra loja. */
+  storeSlug?: string;
   /** Chamado com os contatos escolhidos quando o dono confirma. */
   onUsarAudiencia: (contatos: SystemContact[]) => void;
 }
 
 const VAZIO: FiltrosDeAudiencia = {};
 
-export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, onUsarAudiencia }) => {
+export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUsarAudiencia }) => {
   const [filtros, setFiltros] = useState<FiltrosDeAudiencia>(VAZIO);
   const [opcoes, setOpcoes] = useState<OpcoesDeAudiencia | null>(null);
   const [previa, setPrevia] = useState<RespostaDeAudiencia | null>(null);
@@ -51,10 +54,10 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, onUsarAudiencia
 
   useEffect(() => {
     campaignsService
-      .getOpcoesDeAudiencia()
+      .getOpcoesDeAudiencia({ store: storeSlug, account_id: accountId })
       .then(setOpcoes)
       .catch((e) => logger.error('Falha ao carregar opções de audiência', e));
-  }, []);
+  }, [storeSlug, accountId]);
 
   // Recarrega a prévia a cada mudança de filtro. O atraso existe porque o
   // dono arrasta o campo de valor: uma chamada por tecla digitada agregaria
@@ -68,7 +71,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, onUsarAudiencia
     const t = setTimeout(() => {
       setCarregando(true);
       campaignsService
-        .getSystemContacts({ account_id: accountId, limit: 500, ...filtros })
+        .getSystemContacts({ account_id: accountId, store: storeSlug, limit: 500, ...filtros })
         .then((r) => {
           if (!cancelado) setPrevia(r);
         })
@@ -84,7 +87,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, onUsarAudiencia
       cancelado = true;
       clearTimeout(t);
     };
-  }, [filtros, accountId, conflito]);
+  }, [filtros, accountId, storeSlug, conflito]);
 
   const alternar = useCallback(
     <K extends 'recencia' | 'frequencia' | 'bairros' | 'produtos'>(

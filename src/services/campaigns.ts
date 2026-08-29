@@ -269,6 +269,10 @@ export const campaignsService = {
 
   getSystemContacts: async (params?: {
     account_id?: string;
+    /** Slug da loja. SEM ele o backend cai nas lojas da conta — e o dono
+     *  enxerga doze lojas, então mandar sempre é o que mantém o segmento
+     *  falando da loja certa. */
+    store?: string;
     source?: 'all' | 'conversations' | 'orders' | 'subscribers' | 'sessions';
     limit?: number;
   } & FiltrosDeAudiencia): Promise<RespostaDeAudiencia> => {
@@ -300,8 +304,11 @@ export const campaignsService = {
     };
   },
 
-  getOpcoesDeAudiencia: async (): Promise<OpcoesDeAudiencia> => {
-    const response = await api.get('/campaigns/audiencia/opcoes/');
+  getOpcoesDeAudiencia: async (params?: {
+    store?: string;
+    account_id?: string;
+  }): Promise<OpcoesDeAudiencia> => {
+    const response = await api.get('/campaigns/audiencia/opcoes/', { params });
     const data = response.data ?? {};
     return {
       recencia: data.recencia ?? [],

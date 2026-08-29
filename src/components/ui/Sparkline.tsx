@@ -21,6 +21,7 @@
  */
 import React, { useId } from 'react';
 
+import { useTracoQueDesenha } from '../../hooks/useTracoQueDesenha';
 import { cn } from '../../utils/cn';
 
 export interface SparklineProps {
@@ -36,6 +37,9 @@ const LARGURA = 100;
 const ALTURA = 28;
 
 export const Sparkline: React.FC<SparklineProps> = ({ valores, rotulo, cor, className }) => {
+  // A linha chega desenhando, da esquerda para a direita — o mesmo sentido em
+  // que o leitor já pensa o tempo. Redesenha quando a série muda.
+  const refDaLinha = useTracoQueDesenha<SVGPathElement>([valores.join(',')]);
   const id = useId();
 
   // Menos de dois pontos não é uma linha, é um ponto — e ponto solto num card
@@ -76,6 +80,7 @@ export const Sparkline: React.FC<SparklineProps> = ({ valores, rotulo, cor, clas
 
       <path d={area} fill={`url(#grad-${id})`} />
       <path
+        ref={refDaLinha}
         d={linha}
         fill="none"
         stroke="currentColor"

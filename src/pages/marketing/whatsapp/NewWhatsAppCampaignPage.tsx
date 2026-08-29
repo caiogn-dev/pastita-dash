@@ -162,7 +162,7 @@ const STEPS: { id: Step; label: string; icon: React.ComponentType<{ className?: 
 
 export const NewWhatsAppCampaignPage: React.FC = () => {
   const navigate = useNavigate();
-  const { storeId, storeName } = useStore();
+  const { storeId, storeSlug, storeName } = useStore();
 
   // State
   const [currentStep, setCurrentStep] = useState<Step>('account');
@@ -1310,6 +1310,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                 deveria ser usado — digitar telefone um a um é a exceção. */}
             <SeletorDeAudiencia
               accountId={formData.accountId || undefined}
+              storeSlug={storeSlug || undefined}
               onUsarAudiencia={handleUsarAudiencia}
             />
 
