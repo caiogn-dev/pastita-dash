@@ -32,7 +32,7 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
   return (
     <div className="flex flex-col gap-6">
       {/* SLA por etapa */}
-      <SectionCard title="Tempo por etapa" subtitle="Média e p90 dos pedidos do período" loading={sla.isLoading}>
+      <SectionCard title="Tempo por etapa" subtitle="Média e p90 dos pedidos do período" loading={sla.isLoading} error={sla.isError} onRetry={() => sla.refetch()}>
         <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           {(sla.data?.stages ?? []).map((s) => (
             <StatCard
@@ -49,7 +49,7 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
       <SectionCard
         title="Cancelamentos"
         subtitle={cancel.data ? `${cancel.data.summary.rate}% dos pedidos · ${formatBRL(cancel.data.summary.lost_value)} perdidos` : undefined}
-        loading={cancel.isLoading}
+        loading={cancel.isLoading} error={cancel.isError} onRetry={() => cancel.refetch()}
       >
         {(cancel.data?.timeline?.length ?? 0) === 0 ? (
           <EmptyNote text="Nenhum cancelamento no período. 🎉" />
@@ -72,7 +72,7 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
         <SectionCard
           title="Pedidos agendados"
           subtitle={sched.data ? `${sched.data.total} agendados criados no período` : undefined}
-          loading={sched.isLoading}
+          loading={sched.isLoading} error={sched.isError} onRetry={() => sched.refetch()}
         >
           {(sched.data?.by_slot?.length ?? 0) === 0 ? (
             <EmptyNote text="Nenhum agendamento no período." />
@@ -89,7 +89,7 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
         </SectionCard>
 
         {/* Staff PDV */}
-        <SectionCard title="Produtividade PDV" subtitle="Pedidos lançados por operador" loading={staff.isLoading}>
+        <SectionCard title="Produtividade PDV" subtitle="Pedidos lançados por operador" loading={staff.isLoading} error={staff.isError} onRetry={() => staff.refetch()}>
           {(staff.data?.staff?.length ?? 0) === 0 ? (
             <EmptyNote text="Nenhum pedido lançado pelo PDV no período." />
           ) : (
@@ -109,7 +109,7 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
       <SectionCard
         title="Histórico de caixa"
         subtitle={cash.data ? `${cash.data.summary.count} fechamentos · quebra acumulada ${formatBRL(cash.data.summary.total_difference)}` : undefined}
-        loading={cash.isLoading}
+        loading={cash.isLoading} error={cash.isError} onRetry={() => cash.refetch()}
         action={
           <ExportCsvButton
             rows={cash.data?.sessions ?? []}

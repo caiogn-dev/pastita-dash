@@ -3,6 +3,61 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-20)
+
+- `npm ci`: ok. `npm audit`: vulnerabilidades transitivas remanescentes
+  (dev/build: `esbuild`/`vite` só via `--force` → `vite@8` major; `brace-expansion`,
+  `js-yaml`, `nanoid` têm `audit fix` não-breaking) — avaliar em fatia dedicada.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1161 testes / 210 suítes verdes** (era 1154/208; +7/+2 desta fatia).
+- `npm run build` (vite, igual à Vercel): **ok** (~18s).
+- `npm run lint`: gate em 400 warnings; **284 warnings** (0 errors).
+
+## Histórico
+
+### 2026-08-20 — UX/Integridade: estado de erro nas seções de relatório (fim dos "zeros enganosos")
+- **Medido:** varredura da superfície de KPI continuando a série Pagamentos
+  (24/07) → Clientes (03/08). Toda seção de `src/pages/reports/sections/*` é
+  montada sobre o `SectionCard` compartilhado (`shared.tsx`), que **só conhecia
+  `loading`** — nunca `error`. Numa falha de fetch (`useAnalyticsReport`), a query
+  devolvia `data: undefined` e cada seção caía nos fallbacks `?? 0` / `EmptyNote`,
+  pintando **"R$ 0,00"** de faturamento e listas vazias como se o período fosse
+  legitimamente vazio. Uma queda de rede/500 ficava **indistinguível** de "sem
+  vendas" — o defeito se repetia em ~24 cards de 6 arquivos (Financeiro, Visão
+  Geral, RFM, coortes, funil do bot, avaliações, SLA, geografia, score…).
+- **Mudado (aditivo, zero mudança de comportamento no caminho feliz):**
+  - `shared.tsx`: `SectionCard` ganhou props opcionais `error?: boolean` e
+    `onRetry?: () => void`. Precedência: `loading` (ainda buscando) → `error`
+    (aviso acionável) → conteúdo. Novo componente exportado `ErrorNote`
+    (simétrico ao `EmptyNote`): comunica a falha em vermelho + botão **"Tentar
+    novamente"**, distinguindo "não carregou" de "período sem dados".
+  - Call sites: cada `<SectionCard loading={X.isLoading}>` passou a espelhar
+    `error={X.isError} onRetry={() => X.refetch()}` (mapeamento 1:1 com a query
+    que já dirigia o `loading`), nos 6 arquivos de seção.
+- **Teste (TDD, vermelho→verde):**
+  - `shared.SectionCard.test.tsx` (4 casos): conteúdo sem loading/erro; erro
+    esconde o número enganoso e mostra retry que chama `onRetry`; erro sem
+    `onRetry` ainda avisa (sem botão); `loading` tem precedência sobre `error`.
+  - `OverviewSummarySection.error.test.tsx` (2 casos): no call site mais
+    alarmante (faturamento da Visão Geral), erro do overview **não** renderiza
+    "R$ 0,00" e o retry refaz a query; com dados reais renderiza o valor sem
+    estado de erro. Prova a ligação `error`/`onRetry` ↔ `useAnalyticsReport`.
+- **Follow-up (revisão Codex P2):** na Visão Geral, o pulso "Hoje" sai de uma
+  query SEPARADA (`useDashboardStats`), não do `overview`. Overview OK + stats
+  falho voltava a pintar "R$ 0,00 · 0 pedidos" e o retry da seção só refazia o
+  overview. Corrigido: o bloco do pulso ganhou tratamento de erro próprio
+  (`ErrorNote` + retry que refaz `stats.refetch()`), sem derrubar o faturamento
+  do período que já veio. +1 teste (overview OK + stats falho → pulso mostra
+  erro/retry, não zeros; retry chama só `stats.refetch`).
+- **Antes/depois:** `npm test` 1154/208 → **1161/210**; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados; sem novos warnings de lint nos arquivos tocados.
+- **Próximo passo priorizado:** (1) **DashboardPage** — falha só do `/stats`
+  (sem cair os 3) ainda deixa os KPIs em 0 sem sinalizar (linhas 316-338, fiação
+  imperativa via `Promise.allSettled`, não react-query — guarda mais delicada).
+  (2) **A11y** — `IntentStatsPage` tem `<select>` de período sem `aria-label`
+  (correção de uma linha). (3) **Deps** — planejar bump major de `vite` 5→8 como
+  fatia dedicada com validação de build.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
