@@ -184,6 +184,10 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   const totalEntregues = campaigns.reduce((a, c) => a + (c.messages_delivered ?? 0), 0);
   const totalLidas = campaigns.reduce((a, c) => a + (c.messages_read ?? 0), 0);
   const totalFalhas = campaigns.reduce((a, c) => a + (c.messages_failed ?? 0), 0);
+  // O custo do canal. Até 28/ago/2026 esta tela só somava o lado bom do
+  // disparo: oito pessoas já tinham apertado "Parar promoções" e não havia
+  // onde ver isso.
+  const totalSairam = campaigns.reduce((a, c) => a + (c.messages_opted_out ?? 0), 0);
   // `null` sem envio: "0%" acusaria um canal ruim que nem foi usado.
   const leituraMedia = totalEnviadas > 0 ? Math.round((totalLidas / totalEnviadas) * 100) : null;
 
@@ -296,6 +300,15 @@ export const WhatsAppCampaignsPage: React.FC = () => {
                 label: 'Falhas',
                 value: totalFalhas,
                 definicao: 'não chegaram: número inválido ou fora da janela de 24h',
+              },
+              {
+                label: 'Pediram para parar',
+                value: totalSairam,
+                // `danger` só quando existe: um cartão vermelho zerado
+                // treinaria o olho a ignorar justamente quando deixar de ser
+                // zero.
+                tone: totalSairam > 0 ? 'danger' : undefined,
+                definicao: 'apertaram "Parar promoções" — não recebem mais campanha, mas continuam recebendo aviso de pedido',
               },
             ]}
           />

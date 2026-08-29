@@ -122,3 +122,70 @@ describe('insightsDeCampanhas', () => {
     expect(itens.some((i) => i.chave === 'melhor')).toBe(false);
   });
 });
+
+/**
+ * Descadastro na tela: o custo que a campanha cobrou da base.
+ *
+ * Até 28/ago/2026 a lista mostrava só o lado bom do disparo. A campanha de
+ * 25/ago exibia "249 enviadas" como sucesso limpo — e naquele mesmo dia cinco
+ * pessoas apertaram "Parar promoções". O dono não tinha como saber.
+ */
+describe('descadastro (opt-out) no resumo', () => {
+  const base = {
+    status: 'completed' as const,
+    total_recipients: 250,
+    messages_sent: 249,
+    messages_delivered: 240,
+    messages_read: 120,
+    messages_failed: 1,
+  };
+
+  it('não mostra a métrica quando ninguém saiu', () => {
+    // Um "0 saíram" fixo treinaria o olho a ignorar o número justamente
+    // quando ele deixasse de ser zero.
+    const r = resumoDeCampanha({ ...base, messages_opted_out: 0 });
+    expect(r.metricas.find((m) => m.rotulo === 'Saíram')).toBeUndefined();
+  });
+
+  it('mostra quantos saíram e o peso sobre o enviado', () => {
+    const r = resumoDeCampanha({ ...base, messages_opted_out: 5 });
+    const saida = r.metricas.find((m) => m.rotulo === 'Saíram');
+    expect(saida?.valor).toBe('5');
+    expect(saida?.detalhe).toBe('2% do enviado');
+  });
+
+  it('trata descadastro sempre como perigo, mesmo sendo pouco', () => {
+    // Um pedido de saída não tem faixa "aceitável": é sempre alguém que a
+    // loja perdeu por escolha própria.
+    const r = resumoDeCampanha({ ...base, messages_opted_out: 1 });
+    expect(r.metricas.find((m) => m.rotulo === 'Saíram')?.tom).toBe('perigo');
+  });
+
+  it('campanha antiga sem o campo não quebra', () => {
+    // Registro gravado antes desta entrega não tem `messages_opted_out`.
+    const r = resumoDeCampanha(base);
+    expect(r.metricas.find((m) => m.rotulo === 'Saíram')).toBeUndefined();
+  });
+});
+
+describe('insight de desgaste da base', () => {
+  const campanha = (over: Record<string, unknown>) => ({
+    id: 'c1', name: 'Oferta do dia', status: 'completed',
+    total_recipients: 250, messages_sent: 249, messages_delivered: 240,
+    messages_read: 120, messages_failed: 0, messages_opted_out: 0,
+    ...over,
+  }) as never;
+
+  it('avisa quando a campanha custou descadastros', () => {
+    const itens = insightsDeCampanhas([campanha({ messages_opted_out: 5 })]);
+    const desgaste = itens.find((i) => i.chave === 'desgaste');
+    expect(desgaste).toBeDefined();
+    expect(desgaste?.valor).toContain('5');
+    expect(desgaste?.direcao).toBe('baixa');
+  });
+
+  it('fica calado quando ninguém saiu', () => {
+    const itens = insightsDeCampanhas([campanha({ messages_opted_out: 0 })]);
+    expect(itens.find((i) => i.chave === 'desgaste')).toBeUndefined();
+  });
+});

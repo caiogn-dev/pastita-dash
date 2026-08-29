@@ -45,6 +45,7 @@ type SystemContact = {
   source?: 'conversation' | 'order' | 'subscriber' | 'session';
 };
 import logger from '../../../services/logger';
+import { SeletorDeAudiencia } from './SeletorDeAudiencia';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 
 type TemplateVariable = {
@@ -405,6 +406,23 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     } finally {
       setLoadingSystemContacts(false);
     }
+  };
+
+  /** Substitui a lista pelos contatos do segmento escolhido.
+   *
+   *  SUBSTITUI em vez de somar: o dono escolheu um segmento, e acumular com o
+   *  segmento anterior produziria silenciosamente a união dos dois — que é o
+   *  "todos" de antes voltando pela porta dos fundos. */
+  const handleUsarAudiencia = (contatos: SystemContact[]) => {
+    setFormData(prev => ({
+      ...prev,
+      contacts: contatos.map(c => ({ phone: c.phone, name: c.name || '' })),
+    }));
+    toast.success(
+      contatos.length === 1
+        ? '1 contato no público da campanha'
+        : `${contatos.length} contatos no público da campanha`
+    );
   };
 
   const handleToggleSystemContact = (phone: string) => {
@@ -1287,11 +1305,19 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               </div>
             </Card>
 
+            {/* Segmentação: a escolha de QUEM recebe.
+                Vem antes de adicionar contato à mão porque é o caminho que
+                deveria ser usado — digitar telefone um a um é a exceção. */}
+            <SeletorDeAudiencia
+              accountId={formData.accountId || undefined}
+              onUsarAudiencia={handleUsarAudiencia}
+            />
+
             {/* Import Options */}
             <div className="flex flex-wrap gap-3">
               <Button variant="secondary" onClick={handleLoadSystemContacts}>
                 <UserGroupIcon className="w-5 h-5 mr-2" />
-                Carregar do Sistema
+                Escolher um a um
               </Button>
               
               <Button variant="secondary" onClick={() => setShowImportModal(true)}>

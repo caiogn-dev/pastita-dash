@@ -22,6 +22,9 @@ export interface Campaign {
   messages_delivered: number;
   messages_read: number;
   messages_failed: number;
+  /** Quantos pediram para sair por causa desta campanha. Ausente em registro
+   *  gravado antes de 28/ago/2026 — sempre leia com `?? 0`. */
+  messages_opted_out?: number;
   delivery_rate: number;
   read_rate: number;
   created_at: string;
@@ -59,6 +62,50 @@ export interface SystemContact {
   phone: string;
   name: string;
   source?: 'conversation' | 'order' | 'subscriber' | 'session';
+  /** Como o backend classifica a última compra. Ausente em resposta antiga. */
+  recencia?: Recencia;
+  frequencia?: Frequencia | null;
+  pedidos?: number;
+  ticket_medio?: number;
+  ultima_compra?: string | null;
+}
+
+export type Recencia = 'ativo' | 'em_risco' | 'inativo' | 'nunca_comprou';
+export type Frequencia = 'novo' | 'ocasional' | 'vip';
+
+/** Os filtros de audiência. Tudo opcional: vazio significa "todos". */
+export interface FiltrosDeAudiencia {
+  recencia?: Recencia[];
+  frequencia?: Frequencia[];
+  produtos?: string[];
+  bairros?: string[];
+  ticket_min?: number;
+  ticket_max?: number;
+}
+
+export interface ResumoDeSegmento {
+  valor: string;
+  rotulo: string;
+  total: number;
+}
+
+export interface RespostaDeAudiencia {
+  count: number;
+  /** Total que passou no filtro, ANTES do corte por `limit`. */
+  total: number;
+  total_sem_filtro: number;
+  excluidos_por_optout: number;
+  /** Frase em português dizendo quem vai receber. */
+  descricao: string;
+  resumo: { recencia: ResumoDeSegmento[]; frequencia: ResumoDeSegmento[] };
+  results: SystemContact[];
+}
+
+export interface OpcoesDeAudiencia {
+  recencia: { valor: Recencia; rotulo: string }[];
+  frequencia: { valor: Frequencia; rotulo: string }[];
+  bairros: { nome: string; clientes: number }[];
+  produtos: { id: string; nome: string }[];
 }
 
 export interface PaginatedResponse<T> {
@@ -224,9 +271,44 @@ export const campaignsService = {
     account_id?: string;
     source?: 'all' | 'conversations' | 'orders' | 'subscribers' | 'sessions';
     limit?: number;
-  }): Promise<{ count: number; results: SystemContact[] }> => {
-    const response = await api.get('/campaigns/system-contacts/', { params });
-    return response.data;
+  } & FiltrosDeAudiencia): Promise<RespostaDeAudiencia> => {
+    // Arrays viram lista separada por vírgula: o backend aceita os dois
+    // formatos, e um só valor por chave mantém a URL legível no log.
+    const query: Record<string, string | number> = {};
+    Object.entries(params ?? {}).forEach(([chave, valor]) => {
+      if (valor === undefined || valor === null || valor === '') return;
+      if (Array.isArray(valor)) {
+        if (valor.length) query[chave] = valor.join(',');
+        return;
+      }
+      query[chave] = valor as string | number;
+    });
+
+    const response = await api.get('/campaigns/system-contacts/', { params: query });
+    const data = response.data ?? {};
+
+    // Backend antigo devolve só `count` e `results`. Sem estes defaults a tela
+    // quebraria no primeiro `.length` de um campo que ainda não existe.
+    return {
+      count: data.count ?? 0,
+      total: data.total ?? data.count ?? 0,
+      total_sem_filtro: data.total_sem_filtro ?? data.count ?? 0,
+      excluidos_por_optout: data.excluidos_por_optout ?? 0,
+      descricao: data.descricao ?? 'Todos os contatos',
+      resumo: data.resumo ?? { recencia: [], frequencia: [] },
+      results: data.results ?? [],
+    };
+  },
+
+  getOpcoesDeAudiencia: async (): Promise<OpcoesDeAudiencia> => {
+    const response = await api.get('/campaigns/audiencia/opcoes/');
+    const data = response.data ?? {};
+    return {
+      recencia: data.recencia ?? [],
+      frequencia: data.frequencia ?? [],
+      bairros: data.bairros ?? [],
+      produtos: data.produtos ?? [],
+    };
   },
 };
 

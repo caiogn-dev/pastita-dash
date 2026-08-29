@@ -52,7 +52,10 @@ const LEITURA_BOA = 50;
 type Metricas = Pick<
   Campaign,
   'status' | 'total_recipients' | 'messages_sent' | 'messages_delivered' | 'messages_read' | 'messages_failed'
->;
+> & {
+  /** Opcional: campanha gravada antes de 28/ago/2026 não tem o campo. */
+  messages_opted_out?: number;
+};
 
 const pct = (parte: number, todo: number): number | null =>
   todo > 0 ? Math.round((parte / todo) * 100) : null;
@@ -88,6 +91,22 @@ export function resumoDeCampanha(c: Metricas): ResumoDeCampanha {
         tom: 'perigo',
       });
     }
+    // Só aparece quando alguém saiu. Um "0 saíram" fixo treinaria o olho a
+    // ignorar o número justamente quando ele deixasse de ser zero.
+    //
+    // Sempre `perigo`, sem faixa "aceitável": entrega baixa pode ser problema
+    // técnico, mas descadastro é sempre alguém que a loja perdeu por escolha
+    // própria — e que não volta com a próxima campanha.
+    const saidas = c.messages_opted_out ?? 0;
+    if (saidas > 0) {
+      const taxaSaida = pct(saidas, enviadas);
+      metricas.push({
+        rotulo: 'Saíram',
+        valor: String(saidas),
+        detalhe: taxaSaida === null ? undefined : `${taxaSaida}% do enviado`,
+        tom: 'perigo',
+      });
+    }
   }
 
   const chamada =
@@ -116,7 +135,7 @@ export function resumoDeCampanha(c: Metricas): ResumoDeCampanha {
 }
 
 export interface InsightDeCampanha {
-  chave: 'rascunho' | 'melhor' | 'entrega_baixa';
+  chave: 'rascunho' | 'melhor' | 'entrega_baixa' | 'desgaste';
   direcao: 'alta' | 'baixa' | 'estavel';
   titulo: string;
   valor: string;
@@ -161,7 +180,25 @@ export function insightsDeCampanhas(campanhas: Campaign[]): InsightDeCampanha[] 
     });
   }
 
-  // 3. O que funcionou, para repetir a fórmula — não para admirar.
+  // 3. O que a campanha custou em base. Vem ANTES do elogio de propósito: uma
+  //    campanha pode ser a mais lida E a que mais queimou gente, e nessa ordem
+  //    o dono lê o preço antes do troféu.
+  const maisDesgaste = campanhas
+    .map((c) => ({ c, saidas: (c as { messages_opted_out?: number }).messages_opted_out ?? 0 }))
+    .filter((x) => x.saidas > 0)
+    .sort((a, b) => b.saidas - a.saidas)[0];
+  if (maisDesgaste) {
+    const n = maisDesgaste.saidas;
+    itens.push({
+      chave: 'desgaste',
+      direcao: 'baixa',
+      titulo: `"${maisDesgaste.c.name}" custou base`,
+      valor: `${n} ${n === 1 ? 'pessoa pediu' : 'pessoas pediram'} para parar de receber`,
+      recomendacao: 'segmente melhor a próxima — promoção para quem não pediu queima lista',
+    });
+  }
+
+  // 4. O que funcionou, para repetir a fórmula — não para admirar.
   const melhor = comAmostra
     .map((c) => ({ c, taxa: resumoDeCampanha(c).taxaLeitura ?? 0 }))
     .filter((x) => x.taxa >= LEITURA_BOA)

@@ -37,7 +37,17 @@ jest.mock('../../../../services/campaigns', () => ({
   __esModule: true,
   campaignsService: {
     getContactLists: jest.fn().mockResolvedValue({ results: [] }),
-    getSystemContacts: jest.fn().mockResolvedValue({ results: [] }),
+    // O seletor de audiência consome a resposta inteira, não só `results`:
+    // sem os agregados a tela lê `undefined.length` e o card morre.
+    getSystemContacts: jest.fn().mockResolvedValue({
+      count: 0, total: 0, total_sem_filtro: 0, excluidos_por_optout: 0,
+      descricao: 'Todos os contatos',
+      resumo: { recencia: [], frequencia: [] },
+      results: [],
+    }),
+    getOpcoesDeAudiencia: jest.fn().mockResolvedValue({
+      recencia: [], frequencia: [], bairros: [], produtos: [],
+    }),
   },
 }));
 
