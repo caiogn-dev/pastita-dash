@@ -54,13 +54,15 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
         {(cancel.data?.timeline?.length ?? 0) === 0 ? (
           <EmptyNote text="Nenhum cancelamento no período. 🎉" />
         ) : (
+          /* Vermelho é semântico aqui — cancelamento é ruim — mas pelo token,
+             não em hex: assim acompanha claro e escuro. */
           <TimeSeriesChart
             data={cancel.data?.timeline ?? []}
             xKey="date"
             yKey="cancelled"
             label="Cancelados"
             type="bar"
-            color="#dc2626"
+            color="var(--danger)"
             height={220}
             xTickFormat={fmtDate}
           />

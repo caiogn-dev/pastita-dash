@@ -310,13 +310,17 @@ const AnalyticsPage: React.FC = () => {
             <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
+          /* Sem `color`: o padrão do componente é `var(--brand)`, o ouro da
+             marca. Aqui vinha "#166534" — o verde escuro que o docstring do
+             próprio TimeSeriesChart cita como o problema que ele veio resolver,
+             e que ficou para trás neste chamador. Altura 350 → 260: uma série
+             só não precisa de um terço da tela. */
           <TimeSeriesChart
             data={revenueReport?.data || []}
             xKey="period"
             yKey="total_revenue"
             label="Faturamento"
-            color="#166534"
-            height={350}
+            height={260}
             valueFormat={formatCurrency}
             yTickFormat={formatAxisCurrency}
             xTickFormat={(v) => axisTickLabel(v, groupBy)}
@@ -330,7 +334,7 @@ const AnalyticsPage: React.FC = () => {
         {/* Top Products */}
         <Card className="p-4">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-fg-token">Produtos Mais Vendidos</h2>
+            <h2 className="text-lg font-semibold text-fg-token">Produtos que mais faturam</h2>
             <Badge tone="neutral">Top 5</Badge>
           </div>
           {productsLoading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (

@@ -67,7 +67,11 @@ export const StoreScoreSection: React.FC<{ range: DateRange; enabled: boolean }>
               <span className="text-fg-muted-token font-normal"> · próximo nível a caminho</span>
             )}
           </p>
-          <div className="flex flex-col gap-2.5">
+          {/* Em coluna única, as 11 conquistas viram 11 linhas empilhadas numa
+              tela de 1656px de largura útil — a página fica alta e o lado
+              direito, vazio. Em duas ou três colunas a mesma informação ocupa
+              um terço da altura, sem esconder nada. */}
+          <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-3">
             {(showAll ? d?.checklist ?? [] : d?.next_up ?? []).map((item) => (
               <div key={item.key} className="flex items-start gap-2.5">
                 {item.done ? (
