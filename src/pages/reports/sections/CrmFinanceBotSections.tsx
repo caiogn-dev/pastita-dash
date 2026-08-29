@@ -2,7 +2,7 @@
  * Seções de clientes (RFM + inativos acionáveis), financeiro (taxas de
  * gateway + ROI de cupom) e bot/avaliações.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { StatCard, Badge } from '../../../components/ui';
 import type {
   RfmReport, FinanceReport, CouponsReport, BotFunnelReport, ReviewsReport, CohortReport, DateRange,
@@ -32,6 +32,7 @@ const SEGMENT_BADGE: Record<string, { label: string; tone: 'success' | 'warning'
 };
 
 export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
+  const [verTodosOsClientes, setVerTodosOsClientes] = useState(false);
   const q = useAnalyticsReport<RfmReport>('rfm', range, enabled);
   const segments = q.data?.segments ?? [];
   const inactive = q.data?.inactive ?? [];
@@ -62,6 +63,10 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
         </div>
       </SectionCard>
 
+      {/* Medido em produção: esta página tinha 3,28 telas de rolagem contra
+          1,48 a 1,71 das outras três de relatório. A causa era esta lista de
+          20 linhas. Dez respondem "quem são meus melhores"; as outras dez são
+          para quem foi procurar, e a base inteira já sai no CSV ao lado. */}
       <SectionCard
         title="Cada cliente em números"
         subtitle="Pedidos, gasto, ticket e ritmo de compra individuais — a média da base está no card Cadência acima"
@@ -83,7 +88,7 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
           <EmptyNote text="Nenhum cliente com pedido ainda." />
         ) : (
           <RankedList
-            items={(q.data?.customers ?? []).slice(0, 20).map((c) => {
+            items={(q.data?.customers ?? []).slice(0, verTodosOsClientes ? 20 : 10).map((c) => {
               const badge = SEGMENT_BADGE[c.segment];
               return {
                 label: c.name || c.phone || 'Cliente',
@@ -100,6 +105,17 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
               };
             })}
           />
+        )}
+        {(q.data?.customers?.length ?? 0) > 10 && (
+          <button
+            type="button"
+            onClick={() => setVerTodosOsClientes((v) => !v)}
+            className="mt-3 text-caption text-fg-muted-token hover:text-brand"
+          >
+            {verTodosOsClientes
+              ? 'Mostrar menos'
+              : `Ver os ${Math.min(20, q.data?.customers?.length ?? 0)} primeiros`}
+          </button>
         )}
       </SectionCard>
 
