@@ -47,6 +47,20 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   produção (navegador no fuso do Brasil) não aparece, mas a lógica é frágil e a
   guarda está vermelha. Fatia: comparar o "dia de operação" no fuso da loja
   (America/Sao_Paulo), não no fuso do ambiente.
+- **Follow-up (revisão Codex P1, backend) — oferta do dia AGENDADA:** uma
+  campanha agendada congela na criação o `preco_vigente` de hoje (tanto em
+  `offer_products[].price`, que já era assim antes deste PR, quanto agora nas
+  variáveis `preco_1`/`preco_2`). Se a promoção só vale hoje, o envio de amanhã
+  sai com preço expirado. Não dá para resolver no frontend (a regra de promoção
+  por dia é do backend). Corte: resolver a promoção **no despacho**, para a data
+  agendada, cobrindo os dois campos juntos — ou o painel mandar só `product.id`
+  no caso agendado e o backend preencher as variáveis no envio. Depende de
+  `server2`. Discutido na thread do PR #180.
+- **CI da `main` vermelha (bloqueia todo PR):** o job `build` roda
+  `build → lint → test`; o lint tem **2 erros `no-irregular-whitespace`** (NBSP
+  literais em regex de `precoParaTemplate` e seu teste) e o teste `pedidosDoQuadro`
+  falha em UTC. Ambos pré-existentes na `main`. Fatia dedicada: trocar os NBSP
+  por ` ` e corrigir a comparação de dia por fuso, deixando o `build` verde.
 
 ## Baseline atual (2026-08-08)
 
