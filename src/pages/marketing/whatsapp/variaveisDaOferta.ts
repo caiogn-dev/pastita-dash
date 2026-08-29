@@ -9,10 +9,18 @@
  * adivinhar o formato que o painel manda — deixar o símbolo por conta do corpo
  * do template foi o que fez `ce_saladas_oferta_do_dia` ser aprovado dizendo
  * "Salmão Sublime — 52,90".
+ *
+ * O valor é o PREÇO DO DIA (`preco_vigente`), não o `price` de cadastro: a
+ * campanha se chama "oferta do dia" e o preço vai POR ESCRITO ao cliente.
+ * Mandar o valor cheio numa promoção é o defeito que a guarda de preço vigente
+ * pega — a prévia ao lado já mostrava o vigente, só a variável enviada lia cru.
  */
+import { precoVigenteDoProduto } from '../../../utils/precoVigente';
+
 export interface ProdutoDaOferta {
   name?: string | null;
   price?: number | string | null;
+  preco_vigente?: number | string | null;
 }
 
 export const precoParaTemplate = (valor?: number | string | null): string => {
@@ -30,7 +38,11 @@ export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
   const campo = (i: number, chave: 'nome' | 'preco') => {
     const produto = produtos[i];
     if (!produto) return '';
-    return chave === 'nome' ? (produto.name || '') : precoParaTemplate(produto.price);
+    if (chave === 'nome') return produto.name || '';
+    const { price, preco_vigente } = produto;
+    return precoParaTemplate(
+      precoVigenteDoProduto({ price: price ?? 0, preco_vigente }),
+    );
   };
 
   return {
