@@ -35,7 +35,7 @@ describe('precoParaTemplate', () => {
 
   it('não usa espaço não-quebrável', () => {
     // o NBSP do toLocaleString sobrevive ao envio e aparece torto no WhatsApp
-    expect(precoParaTemplate(52.9)).not.toMatch(/ /);
+    expect(precoParaTemplate(52.9)).not.toMatch(/\u00A0/);
   });
 });
 
@@ -63,5 +63,24 @@ describe('variaveisDaOferta', () => {
     expect(variaveisDaOferta([])).toEqual({
       produto_1: '', preco_1: '', produto_2: '', preco_2: '',
     });
+  });
+
+  it('manda o preço VIGENTE, não o de cadastro', () => {
+    // A campanha escreve o preço no WhatsApp do cliente. Se o produto está em
+    // promoção do dia (`preco_vigente`), é ESSE valor que tem que ir na
+    // mensagem — mandar o `price` cheio anuncia um preço que o cliente não vai
+    // pagar no balcão. O mesmo valor que segue no payload `offer_products`.
+    const emPromocao = { name: 'Salmão Sublime', price: 52.9, preco_vigente: 32.9 };
+    expect(variaveisDaOferta([emPromocao]).preco_1).toBe('R$ 32,90');
+  });
+
+  it('preço vigente em string do backend também vale', () => {
+    const emPromocao = { name: 'Frango', price: '39.99', preco_vigente: '29.90' };
+    expect(variaveisDaOferta([emPromocao]).preco_1).toBe('R$ 29,90');
+  });
+
+  it('sem promoção do dia cai no preço de cadastro', () => {
+    const semPromo = { name: 'Salmão', price: 52.9, preco_vigente: null };
+    expect(variaveisDaOferta([semPromo]).preco_1).toBe('R$ 52,90');
   });
 });

@@ -3,17 +3,66 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-30)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
-- `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm ci`: ok. `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1316/1317 verdes** (era 1312/1314 com **2 falhas**). Esta fatia
+  corrigiu uma falha real (preço vigente na campanha) e adicionou 3 testes.
+  **Resta 1 falha pré-existente** (não é regressão desta fatia): ver backlog #1.
+- `npm run build` (vite): **ok** (~12s).
+- `npm run lint`: **0 errors** (era 2), 289 warnings. Os 2 errors eram
+  `no-irregular-whitespace` (NBSP literal no regex de `precoParaTemplate` e no seu
+  teste) — trocados por ` ` nesta fatia, comportamento idêntico.
+
+## Backlog priorizado (aberto)
+
+1. **[BUG, alto] Quadro de pedidos arrasta "entregue ontem" fora do fuso da loja.**
+   `src/pages/orders/pedidosDoQuadro.ts` decide "é de hoje?" com
+   `Date#getFullYear/Month/Date`, que leem o fuso do **runtime** (UTC na Vercel/CI),
+   não o da loja (America/Sao_Paulo, -03:00). Um pedido criado às 21:00 -03 (ontem
+   em SP) vira "hoje" em UTC e continua na coluna de finalizados. Teste
+   `pedidosDoQuadro.test.ts › não arrasta o que foi entregue ontem` já cobre e
+   **falha em ambiente UTC** (verde na máquina do autor, que roda em fuso BR). Fix:
+   comparar o dia no fuso da loja (Intl com `timeZone` fixo ou o fuso vindo da loja
+   selecionada), não no fuso local. Fatia dedicada — mexe na fronteira do dia.
+2. **[Segurança/deps] Major bump `react-router` 6→7** (open redirect via backslash,
+   moderate) e `vite` 5→8 (esbuild/postcss dev-only) — cada um como fatia com
+   validação de build.
+3. **[Lint] Reduzir os 289 warnings** (majoritariamente `no-explicit-any`) por área,
+   sem afrouxar o gate.
 
 ## Histórico
+
+### 2026-08-30 — Correção: campanha de WhatsApp anunciava o preço de CADASTRO, não o do dia
+- **Medido:** o teste-guarda `precoVigente.cobertura.test.ts` estava **vermelho**
+  no baseline, apontando `variaveisDaOferta.ts:33` lendo `produto.price` cru. A
+  campanha de oferta (`NewWhatsAppCampaignPage`) já mandava o preço vigente no
+  **payload** (`offer_products` usa `precoVigenteDoProduto`) e na prévia de valor,
+  mas as **variáveis do template** (`{{preco_1}}`/`{{preco_2}}`) e os dois spans de
+  prévia dessas variáveis liam `product.price`. Resultado: o texto que vai POR
+  ESCRITO no WhatsApp do cliente anunciava o preço cheio de um produto em promoção
+  do dia — o cliente lê R$ 52,90 e paga R$ 32,90 no balcão (ou vice-versa). É
+  exatamente o defeito que o guard descreve ("o catálogo enviado ao cliente pelo
+  WhatsApp manda o preço POR ESCRITO").
+- **Mudado:**
+  - `variaveisDaOferta.ts`: `preco_1/preco_2` passam por `precoVigenteDoProduto`
+    (usa `preco_vigente`, cai em `price` só sem promoção). `ProdutoDaOferta` ganhou
+    `preco_vigente`. Agora casa com o payload `offer_products`.
+  - `NewWhatsAppCampaignPage.tsx`: as duas prévias de `{{preco_N}}` também passam a
+    mostrar o preço vigente.
+  - `precoVigente.ts`: `ComPrecoVigente.price` afrouxado para `number|string|null`
+    opcional (o helper já era null-safe), para aceitar o `ProdutoDaOferta` direto
+    sem reler `produto.price` (o que reintroduziria o defeito no guard).
+- **Teste (TDD):** 3 casos novos em `variaveisDaOferta.test.ts`, escritos
+  **vermelhos antes**: produto em promoção manda o vigente (number e string) e sem
+  promoção cai no cadastro. Guard `precoVigente.cobertura` voltou ao **verde**.
+- **Bônus (mesmo arquivo):** os 2 lint errors `no-irregular-whitespace` (NBSP
+  literal no regex) viraram ` ` — comportamento idêntico, lint sem errors.
+- **Antes/depois:** `npm test` 1312/1314 (2 falhas) → **1316/1317 (1 falha
+  pré-existente)**; `tsc --noEmit` limpo e `vite build` ok; lint 2 errors → **0**.
+- **Próximo passo priorizado:** backlog #1 (fuso do quadro de pedidos).
+
+## Histórico anterior
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
