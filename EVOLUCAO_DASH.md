@@ -6,30 +6,30 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 ## Baseline atual (2026-08-30)
 
 - `npm ci`: ok. `npx tsc --noEmit`: **limpo**.
-- `npm test`: **1316/1317 verdes** (era 1312/1314 com **2 falhas**). Esta fatia
-  corrigiu uma falha real (preço vigente na campanha) e adicionou 3 testes.
-  **Resta 1 falha pré-existente** (não é regressão desta fatia): ver backlog #1.
+- `npm test`: **1319/1319 verdes** (era 1312/1314 com **2 falhas**). Esta fatia
+  zerou as 2 falhas (preço vigente na campanha + fronteira do dia do quadro de
+  pedidos) e adicionou 5 testes.
 - `npm run build` (vite): **ok** (~12s).
 - `npm run lint`: **0 errors** (era 2), 289 warnings. Os 2 errors eram
   `no-irregular-whitespace` (NBSP literal no regex de `precoParaTemplate` e no seu
   teste) — trocados por ` ` nesta fatia, comportamento idêntico.
 
+- **CI (`ci.yml`) estava vermelha na main**: `npm run lint` (2 errors) e `npm test`
+  (fronteira do dia sob UTC) reprovavam. Esta fatia deixa os três passos verdes
+  sob `TZ=UTC` — igual ao runner do GitHub Actions.
+
 ## Backlog priorizado (aberto)
 
-1. **[BUG, alto] Quadro de pedidos arrasta "entregue ontem" fora do fuso da loja.**
-   `src/pages/orders/pedidosDoQuadro.ts` decide "é de hoje?" com
-   `Date#getFullYear/Month/Date`, que leem o fuso do **runtime** (UTC na Vercel/CI),
-   não o da loja (America/Sao_Paulo, -03:00). Um pedido criado às 21:00 -03 (ontem
-   em SP) vira "hoje" em UTC e continua na coluna de finalizados. Teste
-   `pedidosDoQuadro.test.ts › não arrasta o que foi entregue ontem` já cobre e
-   **falha em ambiente UTC** (verde na máquina do autor, que roda em fuso BR). Fix:
-   comparar o dia no fuso da loja (Intl com `timeZone` fixo ou o fuso vindo da loja
-   selecionada), não no fuso local. Fatia dedicada — mexe na fronteira do dia.
-2. **[Segurança/deps] Major bump `react-router` 6→7** (open redirect via backslash,
+1. **[Segurança/deps] Major bump `react-router` 6→7** (open redirect via backslash,
    moderate) e `vite` 5→8 (esbuild/postcss dev-only) — cada um como fatia com
    validação de build.
-3. **[Lint] Reduzir os 289 warnings** (majoritariamente `no-explicit-any`) por área,
+2. **[Lint] Reduzir os 289 warnings** (majoritariamente `no-explicit-any`) por área,
    sem afrouxar o gate.
+3. **[Multi-tenant] Ligar o fuso real da loja ao quadro de pedidos.**
+   `pedidosDaColuna` já aceita `fusoDaLoja` (default `America/Sao_Paulo`), mas
+   `OrdersPage` ainda não o passa — `useStore()` só expõe `storeId/storeSlug`.
+   Quando o `timezone` da loja selecionada estiver à mão, encaminhar para acertar
+   lojas fora do fuso de Brasília.
 
 ## Histórico
 
@@ -58,9 +58,28 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   promoção cai no cadastro. Guard `precoVigente.cobertura` voltou ao **verde**.
 - **Bônus (mesmo arquivo):** os 2 lint errors `no-irregular-whitespace` (NBSP
   literal no regex) viraram ` ` — comportamento idêntico, lint sem errors.
-- **Antes/depois:** `npm test` 1312/1314 (2 falhas) → **1316/1317 (1 falha
-  pré-existente)**; `tsc --noEmit` limpo e `vite build` ok; lint 2 errors → **0**.
-- **Próximo passo priorizado:** backlog #1 (fuso do quadro de pedidos).
+- **Antes/depois:** `npm test` 1312/1314 (2 falhas) → **1316/1317**; `tsc --noEmit`
+  limpo e `vite build` ok; lint 2 errors → **0**.
+
+### 2026-08-30 — CI verde: fronteira do dia do quadro de pedidos no fuso da loja
+- **Medido:** a CI (`ci.yml`) do PR #181 reprovou no passo de testes. Repro local
+  com `TZ=UTC` (igual ao runner do GitHub Actions) mostrou `pedidosDoQuadro.test.ts
+  › não arrasta o que foi entregue ontem` **vermelho na main também** — falha de
+  base branch, não do diff de preço. `pedidosDaColuna` decidia "é de hoje?" com
+  `Date#getFullYear/Month/Date`, que leem o fuso do **runtime**; um pedido das
+  21:00 -03 (ontem em SP) já é 00:00 UTC → virava "hoje" e não saía da coluna de
+  finalizados. Em produção o navegador do operador roda em fuso BR e escondia o
+  bug; na Vercel/CI (UTC) ele aparece.
+- **Mudado:** `pedidosDaColuna` compara o **dia civil no fuso da loja** via
+  `Intl.DateTimeFormat('en-CA', { timeZone })`, estável em qualquer runtime. Novo
+  parâmetro opcional `fusoDaLoja` (default `America/Sao_Paulo`); a assinatura antiga
+  segue válida.
+- **Teste (TDD):** o teste que já falhava volta ao verde, mais 2 novos — fronteira
+  às 23h em SP e um fuso de loja diferente (Acre, -05:00) provando que o fuso da
+  loja é quem decide o dia.
+- **Antes/depois:** os três passos da CI (build, lint, test) passam sob `TZ=UTC`;
+  `npm test` **1319/1319**; `tsc --noEmit` limpo e `vite build` ok. Sem mudança de
+  comportamento em produção (navegador em fuso BR já dava o dia certo).
 
 ## Histórico anterior
 

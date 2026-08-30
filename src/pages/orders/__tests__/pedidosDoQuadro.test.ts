@@ -51,6 +51,33 @@ describe('coluna de finalizados', () => {
     );
     expect(itens.map((o) => o.id)).toEqual(['c']);
   });
+
+  it('a fronteira do dia é a da loja, não a do runtime (UTC na Vercel/CI)', () => {
+    // Pedido às 23h de 27/08 em SP ainda é 27/08 no balcão — mas em UTC já é
+    // 02h de 28/08. Comparar no fuso do runtime jogaria esse pedido fora do
+    // "hoje" da loja. AGORA (16h de 27/08 em SP) e o pedido são o mesmo dia civil.
+    const itens = pedidosDaColuna(
+      [pedido('quase-meia-noite', 'delivered', '2026-08-27T23:00:00-03:00')],
+      done, AGORA,
+    );
+    expect(itens.map((o) => o.id)).toEqual(['quase-meia-noite']);
+  });
+
+  it('respeita um fuso de loja diferente quando informado', () => {
+    // Loja no Acre (-05:00): 21h de 26/08 em SP é 19h de 26/08 no Acre — ontem
+    // nos dois. Já 01h de 27/08 (SP) é 23h de 26/08 no Acre — ainda ontem lá,
+    // mas hoje em SP. O fuso da loja é quem decide.
+    const itens = pedidosDaColuna(
+      [
+        pedido('acre-hoje', 'delivered', '2026-08-27T04:00:00-03:00'),   // 02h 27/08 no Acre
+        pedido('acre-ontem', 'delivered', '2026-08-27T01:00:00-03:00'),  // 23h 26/08 no Acre
+      ],
+      done,
+      new Date('2026-08-27T12:00:00-05:00'),
+      'America/Rio_Branco',
+    );
+    expect(itens.map((o) => o.id)).toEqual(['acre-hoje']);
+  });
 });
 
 describe('colunas de trabalho em aberto', () => {
