@@ -3,17 +3,56 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-26)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high),
+  transitivas — avaliar em fatia dedicada.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test`: **1203 testes / 215 suítes verdes** — havia **1 falha
+  pré-existente** (o guardrail `precoVigente.cobertura` acusando um infrator
+  real, ver fatia abaixo), agora verde; +3 testes novos desta fatia.
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~19s).
 
 ## Histórico
+
+### 2026-08-26 — Correção: campanha de WhatsApp anunciava preço de cadastro, não o do dia
+- **Medido:** o baseline vinha **vermelho** por 1 teste — o guardrail
+  `src/utils/__tests__/precoVigente.cobertura.test.ts`, que varre o código
+  atrás de quem lê `product.price` para MOSTRAR/COBRAR. Ele apontava um
+  infrator real: `pages/marketing/whatsapp/variaveisDaOferta.ts:33`. A campanha
+  de WhatsApp montava as variáveis `preco_1`/`preco_2` do template a partir do
+  `price` **de cadastro**, enquanto o payload `offer_products` (mesma tela, linha
+  640) já mandava o correto via `precoVigenteDoProduto`. Resultado: um produto
+  em promoção do dia (ex.: R$ 39,90 hoje, R$ 52,90 cheio) era **anunciado ao
+  cliente pelo valor cheio, POR ESCRITO** — exatamente o defeito que o guardrail
+  existe para pegar. A pré-visualização "Variáveis que serão enviadas"
+  (`NewWhatsAppCampaignPage.tsx:1070/1072`) repetia o mesmo `price` cru.
+- **Mudado:**
+  - `variaveisDaOferta.ts`: `ProdutoDaOferta` passa a estender `ComPrecoVigente`
+    e o preço sai por `precoVigenteDoProduto(produto)` (o que o cliente paga
+    HOJE), com fallback ao `price` quando não há `preco_vigente`.
+  - `NewWhatsAppCampaignPage.tsx`: a pré-visualização usa `precoVigenteDoProduto`,
+    então o que aparece na tela é o que é enviado.
+- **Teste (TDD, vermelho→verde):** +3 casos em `variaveisDaOferta.test.ts`
+  (promoção do dia manda `preco_vigente`; `preco_vigente` em string é
+  respeitado; sem promo cai no `price` de cadastro) — escritos vermelhos antes,
+  verdes depois. O guardrail `precoVigente.cobertura` volta ao verde.
+- **CI (lint):** o job `build` do CI roda `npm run lint`, que estava com **2
+  errors** de `no-irregular-whitespace` — NBSP literais nos regex de
+  `variaveisDaOferta.ts` e do seu teste (o tratamento intencional de NBSP do
+  `toLocaleString`). Pré-existentes, mas em arquivos que esta fatia toca e que
+  travavam o CI da PR. Troquei o NBSP literal pelo escape `\u00A0` (mesmo
+  comportamento em runtime; ESLint não acusa escape). Lint volta a 0 errors
+  (285 warnings, abaixo do gate de 400).
+- **Antes/depois:** `npm test` 1200 (1 falhando) → **1203/215 todos verdes**;
+  `tsc --noEmit` limpo, `vite build` ok e `npm run lint` 0 errors nos dois
+  lados. Só produção alterada, comportamento corrigido para bater com o payload
+  já enviado.
+- **Próximo passo priorizado:** (1) auditar outras telas que montam texto de
+  campanha/catálogo enviado ao cliente pelo mesmo padrão de preço; (2)
+  continuar a varredura de "zeros enganosos" em seções de KPI derivadas de
+  query (`ProductsPage`, `reports/`, `AnalyticsPage`); (3) planejar os major
+  bumps de deps (`react-router` 6→7, `vite`) como fatias dedicadas com validação.
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um

@@ -10,9 +10,10 @@
  * do template foi o que fez `ce_saladas_oferta_do_dia` ser aprovado dizendo
  * "Salmão Sublime — 52,90".
  */
-export interface ProdutoDaOferta {
+import { precoVigenteDoProduto, type ComPrecoVigente } from '../../../utils/precoVigente';
+
+export interface ProdutoDaOferta extends ComPrecoVigente {
   name?: string | null;
-  price?: number | string | null;
 }
 
 export const precoParaTemplate = (valor?: number | string | null): string => {
@@ -21,16 +22,22 @@ export const precoParaTemplate = (valor?: number | string | null): string => {
   return `R$ ${seguro.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`.replace(/ /g, ' ');
+  })}`.replace(/\u00A0/g, ' ');
 };
 
 export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
   // Produto ausente vira string vazia, não "R$ 0,00": um preço zerado seria
   // lido como oferta de graça pelo cliente.
+  //
+  // O preço vai pelo `preco_vigente` (o que o cliente paga HOJE), nunca pelo
+  // `price` de cadastro: a campanha manda o valor POR ESCRITO, e anunciar o
+  // cheio num produto em promoção do dia é o erro que o cliente percebe.
   const campo = (i: number, chave: 'nome' | 'preco') => {
     const produto = produtos[i];
     if (!produto) return '';
-    return chave === 'nome' ? (produto.name || '') : precoParaTemplate(produto.price);
+    return chave === 'nome'
+      ? (produto.name || '')
+      : precoParaTemplate(precoVigenteDoProduto(produto));
   };
 
   return {

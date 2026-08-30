@@ -35,7 +35,7 @@ describe('precoParaTemplate', () => {
 
   it('não usa espaço não-quebrável', () => {
     // o NBSP do toLocaleString sobrevive ao envio e aparece torto no WhatsApp
-    expect(precoParaTemplate(52.9)).not.toMatch(/ /);
+    expect(precoParaTemplate(52.9)).not.toMatch(/\u00A0/);
   });
 });
 
@@ -63,5 +63,24 @@ describe('variaveisDaOferta', () => {
     expect(variaveisDaOferta([])).toEqual({
       produto_1: '', preco_1: '', produto_2: '', preco_2: '',
     });
+  });
+});
+
+describe('variaveisDaOferta manda o preço que o cliente paga hoje', () => {
+  it('produto em promoção do dia envia preco_vigente, não o de cadastro', () => {
+    // Sem isso a campanha anuncia o cheio (R$ 52,90) num produto que hoje
+    // sai a R$ 39,90 — e o cliente lê o número mais caro POR ESCRITO.
+    const emPromo = { name: 'Salmão Sublime', price: 52.9, preco_vigente: 39.9 };
+    expect(variaveisDaOferta([emPromo]).preco_1).toBe('R$ 39,90');
+  });
+
+  it('preco_vigente em string do backend também é respeitado', () => {
+    const emPromo = { name: 'Frango', price: 39.99, preco_vigente: '32.99' };
+    expect(variaveisDaOferta([emPromo]).preco_1).toBe('R$ 32,99');
+  });
+
+  it('sem preço do dia cai no valor de cadastro', () => {
+    const semPromo = { name: 'Frango', price: 39.99, preco_vigente: null };
+    expect(variaveisDaOferta([semPromo]).preco_1).toBe('R$ 39,99');
   });
 });
