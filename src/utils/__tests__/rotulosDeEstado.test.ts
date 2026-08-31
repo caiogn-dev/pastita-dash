@@ -12,6 +12,7 @@
 import {
   STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
+  PAYMENT_METHOD_LABELS,
   PAYMENT_RECORD_STATUS_LABELS,
   PRINT_JOB_STATUS_LABELS,
   ACCOUNT_STATUS_LABELS,
@@ -70,5 +71,38 @@ describe('vocabulários dos outros domínios', () => {
     // pedido foi exatamente o que fez a tela mostrar "completed" cru.
     expect(PAYMENT_RECORD_STATUS_LABELS.completed).toBeTruthy();
     expect(PAYMENT_STATUS_LABELS.completed).toBeUndefined();
+  });
+});
+
+/**
+ * O MÉTODO de pagamento também chega cru — e chegava.
+ *
+ * A catraca acima nasceu para os STATUS e parou ali. O método ficou de fora, e
+ * em 31/08 o dono abriu um pedido pago no cartão e leu "other": o mapa tinha 5
+ * dos 8 métodos de `StorePayment.PaymentMethod`, e o fallback
+ * `|| order.payment_method` imprimia o slug do backend sem que nada quebrasse.
+ */
+const METODOS_DO_BACKEND = [
+  // StorePayment.PaymentMethod (server2/apps/stores/models/payment.py)
+  'credit_card', 'debit_card', 'pix', 'boleto', 'cash', 'bank_transfer',
+  'wallet', 'other',
+  // Dialetos que o campo texto-livre StoreOrder.payment_method carrega em
+  // produção e que o painel precisa saber ler enquanto existirem pedidos
+  // antigos no banco.
+  'card', 'link',
+];
+
+describe('rótulos de método de pagamento', () => {
+  it.each(METODOS_DO_BACKEND)('método %s tem rótulo em português', (m) => {
+    expect(PAYMENT_METHOD_LABELS[m]).toBeTruthy();
+    expect(PAYMENT_METHOD_LABELS[m]).not.toBe(m);
+  });
+
+  it('método desconhecido não vira string vazia na tela', () => {
+    // O componente faz `LABELS[m] || m || 'Não informado'`. Um rótulo vazio
+    // aqui deixaria o campo em branco, que é pior que o slug.
+    for (const rotulo of Object.values(PAYMENT_METHOD_LABELS)) {
+      expect(rotulo.trim().length).toBeGreaterThan(0);
+    }
   });
 });

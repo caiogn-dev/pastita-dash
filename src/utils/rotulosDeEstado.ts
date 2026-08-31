@@ -36,12 +36,30 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   cancelled: 'Cancelado',
 };
 
+/**
+ * COMO o cliente pagou. Precisa cobrir o vocabulário inteiro do backend.
+ *
+ * Tinha 5 dos 8 métodos de `StorePayment.PaymentMethod`, e o pedido pago no
+ * cartão pelo link aparecia como "other" — o fallback `|| order.payment_method`
+ * imprimia o slug cru sem nada quebrar. `rotulosDeEstado.test.ts` agora é a
+ * catraca também aqui.
+ *
+ * `other` e `link` são estados de TRANSIÇÃO, não métodos: a cobrança-link nasce
+ * assim porque só o Checkout Pro sabe o que o cliente vai escolher, e o método
+ * real é gravado de volta quando o gateway avisa. Por isso o rótulo diz o que
+ * está acontecendo em vez de fingir uma forma de pagamento que ninguém escolheu.
+ */
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   pix: 'PIX',
   credit_card: 'Cartão de crédito',
   debit_card: 'Cartão de débito',
   cash: 'Dinheiro',
   card: 'Cartão',
+  boleto: 'Boleto',
+  bank_transfer: 'Transferência bancária',
+  wallet: 'Carteira digital',
+  other: 'Link de pagamento',
+  link: 'Link de pagamento',
   nao_informado: 'Não informado',
 };
 
