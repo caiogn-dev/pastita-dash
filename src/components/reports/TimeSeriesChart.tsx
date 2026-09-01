@@ -58,6 +58,38 @@ const AREA_A = A - M.topo - M.baixo;
 /** Três marcas no eixo vertical: piso, meio e teto. Mais que isso vira grade. */
 const marcasDoEixoY = (max: number) => [0, max / 2, max];
 
+/**
+ * Quantos rótulos o eixo X aguenta sem virar ruído.
+ *
+ * 01/set/2026: com 28 dias o eixo da home mostrava `0… 0… 0… 1… 1… 2… 3…`.
+ * Cada rótulo recebia 21px e "04/08" precisa de 32px, então `.truncate` cortava
+ * tudo no primeiro dígito — e como todo dia do mês começa com 0, 1, 2 ou 3, o
+ * eixo inteiro virou uma fileira de zeros.
+ *
+ * O número é fixo de propósito: este componente não mede nada em JavaScript
+ * (foi medir que impedia o gráfico antigo de renderizar em teste), então o
+ * limite precisa caber também na largura do celular, não só na do desktop.
+ */
+const MAX_ROTULOS_X = 7;
+
+/**
+ * Índices dos pontos que ganham rótulo — sempre com o PRIMEIRO e o ÚLTIMO.
+ *
+ * São as pontas que dizem o período do gráfico; sem elas o eixo não situa
+ * ninguém. O miolo é distribuído por igual entre as duas.
+ */
+export const indicesDeRotulo = (total: number, maximo = MAX_ROTULOS_X): number[] => {
+  if (total <= 0) return [];
+  if (total <= maximo) return Array.from({ length: total }, (_, i) => i);
+  const quantidade = Math.max(2, maximo);
+  const passo = (total - 1) / (quantidade - 1);
+  const escolhidos = new Set<number>();
+  for (let i = 0; i < quantidade; i += 1) {
+    escolhidos.add(Math.round(i * passo));
+  }
+  return [...escolhidos].sort((a, b) => a - b);
+};
+
 export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
   data,
   xKey,
@@ -74,6 +106,10 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
   const gradienteId = useId().replace(/:/g, '');
   const [ativo, setAtivo] = useState<number | null>(null);
   const formatarEixo = yTickFormat ?? valueFormat;
+  const indicesVisiveis = useMemo(
+    () => new Set(indicesDeRotulo(data.length)),
+    [data.length],
+  );
 
   const pontos = useMemo(() => {
     const valores = data.map((d) => Number(d?.[yKey]) || 0);
@@ -237,18 +273,23 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
           ))}
         </div>
 
-        <div
-          className="absolute bottom-0 flex justify-between text-overline text-fg-muted-token"
-          style={{
-            left: `${(M.esq / L) * 100}%`,
-            right: `${(M.dir / L) * 100}%`,
-          }}
-        >
-          {pontos.map((p) => (
-            <span key={p.i} className="truncate">
-              {xTickFormat ? xTickFormat(p.rotulo) : p.rotulo}
-            </span>
-          ))}
+        {/* Rótulo ancorado no x do PRÓPRIO ponto, não distribuído por
+            `justify-between`: com itens de larguras diferentes o do meio não
+            ficava embaixo da sua barra — as pontas alinhavam e o miolo
+            escorregava. */}
+        <div className="absolute bottom-0 left-0 right-0 h-4">
+          {pontos
+            .filter((p) => indicesVisiveis.has(p.i))
+            .map((p) => (
+              <span
+                key={p.i}
+                data-tick-x
+                className="absolute -translate-x-1/2 whitespace-nowrap text-overline text-fg-muted-token"
+                style={{ left: `${(p.x / L) * 100}%` }}
+              >
+                {xTickFormat ? xTickFormat(p.rotulo) : p.rotulo}
+              </span>
+            ))}
         </div>
       </div>
 
