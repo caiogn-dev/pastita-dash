@@ -10,7 +10,6 @@ import toast from 'react-hot-toast';
 import { Card, Button } from '../../components/ui';
 import { paymentsService } from '../../services/payments';
 import logger from '../../services/logger';
-import { LogoMercadoPago } from './LogoMercadoPago';
 
 interface GatewayDaLoja {
   id: string;
@@ -177,7 +176,16 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
         'focus:ring-offset-surface disabled:opacity-60 disabled:cursor-not-allowed',
       ].join(' ')}
     >
-      <LogoMercadoPago className="w-9 h-7 shrink-0" />
+      {/* alt vazio de propósito: a marca é decorativa aqui — o texto do botão
+          já diz "Conectar conta do Mercado Pago", e repetir viraria ruído no
+          leitor de tela. width/height evitam o pulo de layout no primeiro paint. */}
+      <img
+        src="/mercado-pago.webp"
+        alt=""
+        width={184}
+        height={126}
+        className="w-9 h-auto shrink-0"
+      />
       <span>{conectando ? 'Abrindo o Mercado Pago...' : 'Conectar conta do Mercado Pago'}</span>
       {!conectando && (
         <ArrowTopRightOnSquareIcon className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
