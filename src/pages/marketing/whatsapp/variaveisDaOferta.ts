@@ -24,7 +24,7 @@ export const precoParaTemplate = (valor?: number | string | null): string => {
   return `R$ ${seguro.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`.replace(/ /g, ' ');
+  })}`.replace(/\u00A0/g, ' ');
 };
 
 export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
