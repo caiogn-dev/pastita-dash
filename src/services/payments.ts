@@ -233,4 +233,18 @@ export const paymentsService = {
     const response = await api.post<PaymentGateway>(`${GATEWAYS_URL}/${id}/set_default/`);
     return response.data;
   },
+
+  /**
+   * Onde mandar o lojista para autorizar a conta dele no Mercado Pago.
+   *
+   * O painel nunca troca o `code` por token: isso exige o Client Secret, que
+   * só existe no backend. Aqui só pegamos a URL e redirecionamos.
+   */
+  getMercadoPagoAuthUrl: async (storeId: string): Promise<string> => {
+    const response = await api.get<{ authorization_url: string }>(
+      `${GATEWAYS_URL}/oauth/autorizar/`,
+      { params: { store: storeId } },
+    );
+    return response.data.authorization_url;
+  },
 };
