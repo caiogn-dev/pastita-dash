@@ -29,6 +29,10 @@ const PERMITIDOS = [
   // cru: o `price` que chega aqui já é o valor resolvido. Nem todo
   // `product.price` é o defeito — este é o dado certo com o nome parecido.
   'utils/labelPrint.ts',
+  // O `campo()` formata um ProdutoDaOferta cujo `price` JÁ é o vigente: quem
+  // monta esse objeto é o próprio `produtosParaOferta` deste arquivo, chamando
+  // `precoVigenteDoProduto`. O `produto.price` aqui é o valor resolvido.
+  'pages/marketing/whatsapp/variaveisDaOferta.ts',
 ];
 
 const arquivos = (dir: string): string[] =>

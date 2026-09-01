@@ -3,17 +3,89 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-28)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high),
+  transitivas de `react-router`/`react-router-dom` — fatia dedicada.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- **A `main` chegou com CI VERMELHO** (runs #388/#389 `failure`): a suíte tinha
+  2 *guard tests* vermelhos pegando 2 bugs reais **e** o `lint` tinha 2 errors.
+  Nada podia mergear verde. Não é regressão desta fatia.
+- `npm test` na chegada: 1256/1258 (2 vermelhos). Após esta fatia: **1264/1264**.
+- `npm run lint`: 2 errors → **0 errors** (289 warnings, gate 400).
+- `npx tsc --noEmit` e `npm run build` (tsc && vite): **ok** nos dois lados (~15s).
+- **Resultado:** os 4 passos do CI (`build`, `lint`, `test`) voltam a passar —
+  `main` sai do vermelho.
 
 ## Histórico
+
+### 2026-08-28 — Restaurar o CI verde: 2 guard tests + 2 lint errors na `main`
+A `main` chegou com CI vermelho (nada mergeava). Esta fatia derruba os três
+bloqueios de uma vez, cada um com sua correção real. Detalhe abaixo.
+
+#### (b) `precoVigente` na campanha de WhatsApp — oferta saía com preço cheio
+- **Medido:** o guard `precoVigente.cobertura.test.ts` acusava
+  `variaveisDaOferta.ts` lendo `product.price` **cru**. Rastreado:
+  `NewWhatsAppCampaignPage.tsx` passava os produtos crus a `variaveisDaOferta`,
+  então `preco_1/preco_2` do template (e a prévia visível `:1069-1072`) saíam com
+  o **preço de cadastro**, enquanto `offer_products` no payload e o resumo já
+  usavam `precoVigenteDoProduto`. Num produto em promoção do dia
+  (`preco_vigente` < `price`), a oferta enviada ao cliente divergia do cardápio
+  e do próprio painel — bug voltado a dinheiro.
+- **Mudado:**
+  - Novo helper puro `produtosParaOferta(produtos)` em `variaveisDaOferta.ts`:
+    resolve o vigente (`precoVigenteDoProduto`) e devolve `{ name, price }` já
+    pronto — a mesma fonte de `offer_products`.
+  - `NewWhatsAppCampaignPage.tsx`: memo `produtosDaOferta` alimenta tanto o envio
+    (`variaveisDaOferta`) quanto a prévia; `ProdutoDaOferta.price` documentado
+    como valor **já resolvido**.
+  - `variaveisDaOferta.ts` entra na allowlist `PERMITIDOS` do guard (como
+    `labelPrint.ts`): `campo()` formata um preço já vigente, não o cru.
+- **Teste (TDD):** 3 casos novos em `variaveisDaOferta.test.ts` cobrindo
+  `produtosParaOferta` — vigente vence o cadastro; sem promo cai no cadastro;
+  alimenta `variaveisDaOferta` com o vigente. Vermelhos antes (helper não
+  existia), verdes depois.
+
+#### (c) 2 lint errors pré-existentes (`no-irregular-whitespace`)
+- `variaveisDaOferta.ts` e seu teste tinham um **NBSP literal** dentro de regex
+  (`/ /` para tirar o espaço não-quebrável do `toLocaleString`). O eslint
+  reprova NBSP em regex (`skipRegExps` off). Trocado pelo escape `\u00A0` —
+  comportamento idêntico, lint limpo. Era o que reprovava o passo `lint` do CI.
+
+#### (a) o "hoje" do quadro de pedidos é o do balcão, não o do servidor
+- **Medido:** a suíte chegou vermelha. `pedidosDoQuadro.test.ts` falhava em
+  "não arrasta o que foi entregue ontem": a coluna de finalizados (`done`) só
+  deve mostrar entregas de HOJE, mas mostrava as de ontem à noite. Causa raiz:
+  `mesmoDia()` comparava `getFullYear/Month/Date`, que rodam no **fuso do
+  processo**. A Vercel roda em **UTC**: um pedido entregue às 21h–23h59 no
+  Brasil (`-03:00`) já é o dia seguinte em UTC — e o inverso de madrugada — então
+  o corte do dia escorregava 3h e o pedido mudava de dia sozinho, sumindo ou
+  reaparecendo no kanban. Bug real em produção (só não aparecia rodando os
+  testes num ambiente `America/Sao_Paulo`, onde o fuso local coincide).
+- **Mudado (`pedidosDoQuadro.ts`, aditivo e retrocompatível):**
+  - Novo `FUSO_DA_OPERACAO = 'America/Sao_Paulo'` (produto pt-BR, `-03:00`).
+  - `diaDaOperacao(data, fuso)` deriva `"AAAA-MM-DD"` via
+    `Intl.DateTimeFormat('en-CA', { timeZone })` — estável para comparar por
+    igualdade, independente de onde o código roda.
+  - `pedidosDaColuna(...)` ganhou 4º parâmetro opcional `fuso` (default acima).
+  - `OrdersPage.tsx` passa `store?.timezone` do `useStore()` (revisão P1 do
+    Codex): loja fora de São Paulo vira o dia na hora dela; sem fuso
+    configurado, cai no default. Fecha o buraco multi-tenant e segue o
+    CLAUDE.md ("use a loja de `useStore()`, não constante fixa"). Teste novo
+    prova que a mesma entrada com fusos diferentes dá cortes diferentes.
+- **Teste (TDD):** estendido `pedidosDoQuadro.test.ts` com o bloco "o dia é o da
+  operação, não o do servidor" (2 casos: 23h30 hoje-BR ainda é hoje mesmo já
+  sendo amanhã em UTC; entregue ontem 22h não volta ao quadro). O caso "ontem à
+  noite" nasceu **vermelho** com o código antigo, **verde** após a correção.
+
+- **Antes/depois desta fatia (a+b+c):** `npm test` 1256/1258 (2 vermelhas) →
+  **1264/1264**; `lint` 2 errors → **0**; `tsc --noEmit` limpo e `vite build`
+  ok nos dois lados.
+- **Próximo passo priorizado:** varredura de "zeros enganosos" nas seções de KPI
+  derivadas de query ainda não auditadas (`ProductsPage` contadores do topo,
+  seções de `reports/`, `AnalyticsPage`). E, em fatia dedicada com validação de
+  build, o major bump de `react-router` 6→7 (corrige o open redirect das 8
+  vulnerabilidades do `npm audit`).
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um

@@ -10,7 +10,7 @@
  * envia, e um "R$" digitado no corpo viraria "R$ R$ 52,90" no dia em que
  * alguém consertar o painel.
  */
-import { precoParaTemplate, variaveisDaOferta } from '../variaveisDaOferta';
+import { precoParaTemplate, variaveisDaOferta, produtosParaOferta } from '../variaveisDaOferta';
 
 describe('precoParaTemplate', () => {
   it('inclui o símbolo da moeda', () => {
@@ -35,7 +35,7 @@ describe('precoParaTemplate', () => {
 
   it('não usa espaço não-quebrável', () => {
     // o NBSP do toLocaleString sobrevive ao envio e aparece torto no WhatsApp
-    expect(precoParaTemplate(52.9)).not.toMatch(/ /);
+    expect(precoParaTemplate(52.9)).not.toMatch(/\u00A0/);
   });
 });
 
@@ -63,5 +63,27 @@ describe('variaveisDaOferta', () => {
     expect(variaveisDaOferta([])).toEqual({
       produto_1: '', preco_1: '', produto_2: '', preco_2: '',
     });
+  });
+});
+
+describe('produtosParaOferta', () => {
+  it('usa o preço vigente, não o de cadastro', () => {
+    // promoção de quinta: cadastro R$ 39,99, vigente R$ 32,99
+    const emPromo = { name: 'Especial', price: 39.99, preco_vigente: 32.99 };
+    expect(produtosParaOferta([emPromo])).toEqual([
+      { name: 'Especial', price: 32.99 },
+    ]);
+  });
+
+  it('sem promoção cai no preço de cadastro', () => {
+    expect(produtosParaOferta([{ name: 'Salmão', price: 52.9 }])).toEqual([
+      { name: 'Salmão', price: 52.9 },
+    ]);
+  });
+
+  it('alimenta variaveisDaOferta com o preço vigente, não o cheio', () => {
+    // o bug: a oferta enviada ao cliente saía com R$ 39,99 no produto em promoção
+    const emPromo = { name: 'Especial', price: 39.99, preco_vigente: 32.99 };
+    expect(variaveisDaOferta(produtosParaOferta([emPromo])).preco_1).toBe('R$ 32,99');
   });
 });
