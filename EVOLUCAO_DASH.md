@@ -7,15 +7,21 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 - `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test` (Jest): **1326 verdes / 1327**. 1 falha **pré-existente** (não é
-  regressão desta fatia): `src/pages/orders/__tests__/pedidosDoQuadro.test.ts`
-  → "não arrasta o que foi entregue ontem". Causa: `mesmoDia()` em
-  `pedidosDoQuadro.ts` compara ano/mês/dia no fuso **local do runner**; o CI
-  roda em **UTC** e o teste fixa datas em `-03:00`, então "ontem 21:00 -03:00"
-  (= 00:00Z de hoje) cai no mesmo dia UTC e vaza para a coluna "Entregue". Em
-  navegador brasileiro (-03:00) passa; o defeito real é o corte do dia usar o
-  fuso do espectador em vez do fuso da loja. **Próximo passo priorizado.**
+- `npm test` (Jest): **1328 verdes / 1328** — suíte **toda verde** depois desta
+  execução (a `main` estava vermelha em DUAS falhas pré-existentes independentes,
+  ambas corrigidas aqui: o guard `precoVigente.cobertura` e o corte de dia por
+  fuso em `pedidosDoQuadro`).
+- `npm run lint`: **0 erros** / 289 warnings (gate em 400). A `main` tinha **2
+  erros** `no-irregular-whitespace` (NBSP literal em `variaveisDaOferta`), que
+  faziam a etapa de lint do CI falhar antes dos testes — corrigidos aqui.
 - `npm run build` (tsc && vite build, igual à Vercel): **ok** (~11s).
+
+> **Estado da `main` no início desta execução:** o CI estava vermelho por três
+> defeitos pré-existentes independentes — (1) guard do preço vigente, (2) 2
+> erros de lint por NBSP literal, (3) corte de dia no fuso do runner (UTC no
+> CI). Nenhum era regressão desta fatia; os três foram limpos para o CI poder
+> ficar verde. O corte de dia também saiu como fatia dedicada no PR #184 e foi
+> **portado** para cá (some quando qualquer um dos dois entrar na base).
 
 ## Histórico
 
@@ -44,12 +50,35 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   esperava R$ 44,90, recebia R$ 52,90) **verde depois**; o segundo garante o
   fallback ao preço de cadastro quando não há promoção. O guard
   `precoVigente.cobertura.test.ts` voltou ao **verde**.
-- **Antes/depois:** `npm test` 1323/1325 → **1326/1327** (guard vermelho→verde
-  + 2 casos novos); `tsc --noEmit` limpo e `vite build` ok nos dois lados. A
-  única falha restante é a pré-existente de fuso em `pedidosDoQuadro` (acima).
-- **Próximo passo priorizado:** corte de dia por fuso da loja em
-  `pedidosDoQuadro.ts` (`mesmoDia`), para "Entregue" não vazar em runner/browser
-  fora de -03:00 — resolve a última falha da suíte.
+- **Antes/depois:** `npm test` 1323/1325 → verde; guard vermelho→verde + 2
+  casos novos; `tsc --noEmit` limpo e `vite build` ok nos dois lados.
+
+### 2026-09-01 — Lint: NBSP literal virava erro `no-irregular-whitespace`
+- **Medido:** o CI roda `npm run lint` **antes** dos testes. `variaveisDaOferta.ts`
+  e seu teste tinham um espaço não-quebrável (U+00A0) **literal** dentro do regex
+  que troca o NBSP do `toLocaleString('pt-BR')` por espaço comum — 2 erros de
+  ESLint que derrubavam a etapa de lint na `main` inteira.
+- **Mudado:** NBSP literal → escape ` ` (mesmo caractere para o motor de
+  regex; comportamento idêntico, o teste "não usa espaço não-quebrável" segue
+  verde). Lint passou de 2 erros para **0**.
+
+### 2026-09-01 — Pedidos: corte do dia no fuso da loja, não no do espectador (PR #184, portado)
+- **Medido:** a coluna "Entregue" mostra só o dia de hoje, mas `mesmoDia()` em
+  `pedidosDoQuadro.ts` usava `getFullYear/getMonth/getDate` — o fuso **local de
+  quem roda o código**. No CI (UTC) e em qualquer navegador fora de -03:00, um
+  pedido entregue às 21h de ontem em São Paulo (= 00h UTC de hoje) vazava para
+  "hoje". Era a segunda falha vermelha pré-existente da suíte.
+- **Mudado:** `mesmoDia()` compara o dia em `America/Sao_Paulo` via
+  `toLocaleDateString('en-CA', { timeZone })` — determinístico onde quer que
+  rode. Teste novo fixa a regra na borda do dia (23h de hoje / 21h de ontem em
+  -03:00). Entregue também como fatia dedicada no **PR #184** e portado para o
+  #183 para o CI ficar verde já.
+- **Próximo passo priorizado:** (1) **A11y — `dialog.tsx` composto:** ligar
+  `DialogTitle`↔`Dialog` via contexto para nomear diálogos automaticamente.
+  (2) **Segurança/deps:** planejar os major bumps de `react-router` 6→7 e
+  `vite` 5→8, cada um como fatia dedicada com validação de build. (3)
+  **Idealmente** o fuso do corte de dia deveria vir da config da loja, não
+  fixo em São Paulo — hoje serve todo tenant brasileiro, mas fica registrado.
 
 ## Baseline atual (2026-08-08)
 
