@@ -244,7 +244,14 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
             <h3 className="text-xs uppercase tracking-wide text-fg-muted-token mb-2">
               Média por dia da semana
             </h3>
-            <RankBarList items={ranking} valueFormat={money} />
+            {/* `hideZero={false}`: aqui o zero É a informação.
+                O default do RankBarList some com item zerado — certo para "top
+                produtos", onde item que não vendeu só polui o ranking, e
+                exatamente errado para dia da semana. Em 01/set o alerta logo
+                acima dizia "o pior dia é domingo" e a lista escondia justamente
+                o domingo, que faturou R$ 0,00. O `tone: 'danger'` calculado
+                acima nunca chegava a renderizar: o item era filtrado antes. */}
+            <RankBarList items={ranking} valueFormat={money} hideZero={false} />
           </div>
         )}
       </div>
