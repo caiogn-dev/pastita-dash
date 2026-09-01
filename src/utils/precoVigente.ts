@@ -12,7 +12,7 @@
  * na frente do caixa.
  */
 export interface ComPrecoVigente {
-  price: number | string;
+  price?: number | string | null;
   preco_vigente?: number | string | null;
 }
 

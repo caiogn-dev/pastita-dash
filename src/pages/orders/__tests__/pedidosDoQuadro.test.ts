@@ -51,6 +51,34 @@ describe('coluna de finalizados', () => {
     );
     expect(itens.map((o) => o.id)).toEqual(['c']);
   });
+
+  it('o corte do dia é o da loja (-03:00), não o do espectador', () => {
+    // 23h de hoje em SP ainda é HOJE, mesmo já sendo 02h UTC de amanhã; e 21h
+    // de ontem em SP (00h UTC de hoje) é ONTEM. Se o corte usasse o fuso de
+    // quem roda o código (o CI roda em UTC), os dois cairiam invertidos.
+    const itens = pedidosDaColuna(
+      [
+        pedido('noite-de-hoje', 'delivered', '2026-08-27T23:00:00-03:00'),
+        pedido('noite-de-ontem', 'delivered', '2026-08-26T21:00:00-03:00'),
+      ],
+      done, AGORA,
+    );
+    expect(itens.map((o) => o.id)).toEqual(['noite-de-hoje']);
+  });
+
+  it('usa o fuso da loja quando informado (Manaus, UTC-4)', () => {
+    // 00:30 de hoje em São Paulo (-03:00) já é 23:30 de ONTEM em Manaus (-04:00).
+    // Loja de Manaus não pode ver esse pedido em "Entregue" de hoje.
+    const madrugada = pedido('madrugada', 'delivered', '2026-08-27T00:30:00-03:00');
+    expect(pedidosDaColuna([madrugada], done, AGORA).map((o) => o.id)).toEqual(['madrugada']);
+    expect(pedidosDaColuna([madrugada], done, AGORA, 'America/Manaus').map((o) => o.id)).toEqual([]);
+  });
+
+  it('fuso vazio ou inválido cai no padrão do Brasil sem quebrar', () => {
+    const hoje = pedido('hoje', 'delivered', '2026-08-27T12:00:00-03:00');
+    expect(pedidosDaColuna([hoje], done, AGORA, '').map((o) => o.id)).toEqual(['hoje']);
+    expect(pedidosDaColuna([hoje], done, AGORA, 'Fuso/Invalido').map((o) => o.id)).toEqual(['hoje']);
+  });
 });
 
 describe('colunas de trabalho em aberto', () => {

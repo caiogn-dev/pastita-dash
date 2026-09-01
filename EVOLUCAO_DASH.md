@@ -3,6 +3,100 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-01)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test` (Jest): **1330 verdes / 1330** — suíte **toda verde** depois desta
+  execução (a `main` estava vermelha em DUAS falhas pré-existentes independentes,
+  ambas corrigidas aqui: o guard `precoVigente.cobertura` e o corte de dia por
+  fuso em `pedidosDoQuadro`; +2 casos novos do fuso da loja).
+- `npm run lint`: **0 erros** / 289 warnings (gate em 400). A `main` tinha **2
+  erros** `no-irregular-whitespace` (NBSP literal em `variaveisDaOferta`), que
+  faziam a etapa de lint do CI falhar antes dos testes — corrigidos aqui.
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~11s).
+
+> **Estado da `main` no início desta execução:** o CI estava vermelho por três
+> defeitos pré-existentes independentes — (1) guard do preço vigente, (2) 2
+> erros de lint por NBSP literal, (3) corte de dia no fuso do runner (UTC no
+> CI). Nenhum era regressão desta fatia; como os três se entrelaçavam (cada um
+> mantinha o CI vermelho), foram limpos juntos neste PR para o CI poder ficar
+> verde, em commits separados e bem descritos.
+
+## Histórico
+
+### 2026-09-01 — Correção: campanha de WhatsApp enviava o preço de cadastro, não o do dia
+- **Medido:** o guard `precoVigente.cobertura.test.ts` estava **vermelho** —
+  acusava `pages/marketing/whatsapp/variaveisDaOferta.ts:33` lendo
+  `produto.price`. Não era falso positivo: `variaveisDaOferta()` monta as
+  variáveis `preco_1`/`preco_2` que o template do WhatsApp escreve **para o
+  cliente**, e lia o `price` de **cadastro** em vez do `preco_vigente` (a
+  promoção do dia da semana resolvida pelo backend). O envio (`offer_products`,
+  `NewWhatsAppCampaignPage.tsx:658`) já usava `precoVigenteDoProduto()`, então
+  a loja mandava a oferta **contradizendo a própria promoção**: metadado com o
+  preço do dia, texto visível com o preço cheio. O preview (`{{preco_1/2}}`)
+  tinha o mesmo defeito.
+- **Mudado (aditivo, sem mudar comportamento visual):**
+  - `variaveisDaOferta.ts`: `ProdutoDaOferta` ganhou `preco_vigente?`; `campo()`
+    passou a formatar `precoVigenteDoProduto(produto)` em vez de `produto.price`
+    — cai no `price` só quando não há promoção do dia (fallback do helper).
+  - `precoVigente.ts`: `ComPrecoVigente.price` afrouxado para
+    `number | string | null` opcional (o helper já trata ausência com `?? 0`),
+    para o tipo da oferta ser atribuível sem cast.
+  - `NewWhatsAppCampaignPage.tsx`: preview `{{preco_1}}`/`{{preco_2}}` agora usa
+    `precoVigenteDoProduto(...)`, alinhado ao envio.
+- **Teste (TDD):** dois casos novos em `variaveisDaOferta.test.ts` — escritos
+  **vermelho antes** ("manda o preço vigente do dia, não o de cadastro":
+  esperava R$ 44,90, recebia R$ 52,90) **verde depois**; o segundo garante o
+  fallback ao preço de cadastro quando não há promoção. O guard
+  `precoVigente.cobertura.test.ts` voltou ao **verde**.
+- **Antes/depois:** `npm test` 1323/1325 → verde; guard vermelho→verde + 2
+  casos novos; `tsc --noEmit` limpo e `vite build` ok nos dois lados.
+
+### 2026-09-01 — Lint: NBSP literal virava erro `no-irregular-whitespace`
+- **Medido:** o CI roda `npm run lint` **antes** dos testes. `variaveisDaOferta.ts`
+  e seu teste tinham um espaço não-quebrável (U+00A0) **literal** dentro do regex
+  que troca o NBSP do `toLocaleString('pt-BR')` por espaço comum — 2 erros de
+  ESLint que derrubavam a etapa de lint na `main` inteira.
+- **Mudado:** NBSP literal → escape ` ` (mesmo caractere para o motor de
+  regex; comportamento idêntico, o teste "não usa espaço não-quebrável" segue
+  verde). Lint passou de 2 erros para **0**.
+
+### 2026-09-01 — Pedidos: corte do dia no fuso da loja, não no do espectador
+- **Medido:** a coluna "Entregue" mostra só o dia de hoje, mas `mesmoDia()` em
+  `pedidosDoQuadro.ts` usava `getFullYear/getMonth/getDate` — o fuso **local de
+  quem roda o código**. No CI (UTC) e em qualquer navegador fora de -03:00, um
+  pedido entregue às 21h de ontem em São Paulo (= 00h UTC de hoje) vazava para
+  "hoje". Era a segunda falha vermelha pré-existente da suíte.
+- **Mudado:** `mesmoDia()` compara o dia via `toLocaleDateString('en-CA',
+  { timeZone })` — determinístico onde quer que rode. `pedidosDaColuna` recebe
+  o fuso da **loja selecionada** (`useStore().store.timezone`, repassado pela
+  `OrdersPage`), caindo em `America/Sao_Paulo` quando o fuso falta ou é
+  inválido (guarda try/catch contra `RangeError` do Intl) — respeita a regra
+  multi-tenant em vez de fixar SP. Testes novos: borda do dia em -03:00, loja de
+  Manaus (UTC-4) escondendo a madrugada de SP, e o fallback sem quebrar.
+- **Revisão do bot (Codex, P1) atendida:** apontou o fuso fixo; corrigido para
+  usar o da loja (acima).
+
+### 2026-09-01 — Aberto: campanha AGENDADA congela o preço do dia da criação (backend)
+- **Medido (revisão Codex P1 no #183):** a correção do preço vigente resolve
+  `preco_vigente` no momento em que a campanha é **criada** e o congela no
+  `contact_list` de cada destinatário. Para uma campanha **agendada** para outro
+  dia da semana (criada numa segunda de promoção, enviada numa terça sem), o
+  texto anunciaria o preço da segunda. Isso **já existia** no `offer_products`
+  antes desta fatia; a correção só alinhou o texto ao metadado (melhora o caso
+  imediato, que é a maioria, e não piora o agendado).
+- **Por que não foi corrigido aqui:** o preço do dia do envio só o **backend**
+  (`server2`) sabe resolver na hora do disparo — a regra de promoção por dia da
+  semana vive lá. Frontend não tem como adivinhar o `preco_vigente` de uma data
+  futura. Fica como fatia priorizada de backend: resolver preço no dispatch da
+  data agendada, não na criação.
+- **Próximo passo priorizado:** (1) **Backend/agendamento:** resolver
+  `preco_vigente` no disparo para a data agendada (acima). (2) **A11y —
+  `dialog.tsx` composto:** ligar `DialogTitle`↔`Dialog` via contexto. (3)
+  **Segurança/deps:** major bumps de `react-router` 6→7 e `vite` 5→8, cada um
+  como fatia dedicada com validação de build.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas

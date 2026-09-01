@@ -372,7 +372,7 @@ const EMPTY_ORDERS: StoreOrder[] = [];
 
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { storeId, storeSlug } = useStore();
+  const { storeId, storeSlug, store } = useStore();
   const [ConfirmDialog, confirm] = useConfirm();
   const storeQuery = storeSlug || storeId;
 
@@ -590,10 +590,11 @@ export const OrdersPage: React.FC = () => {
       ...col,
       // "Entregue" mostra só o de hoje; o resto vive no Histórico. As colunas
       // de trabalho em aberto continuam mostrando tudo — pedido parado de
-      // ontem é justamente o que precisa aparecer.
-      orders: pedidosDaColuna(effectiveOrders as StoreOrder[], col),
+      // ontem é justamente o que precisa aparecer. O corte de "hoje" usa o
+      // fuso da loja selecionada, não o do navegador de quem abre o quadro.
+      orders: pedidosDaColuna(effectiveOrders as StoreOrder[], col, new Date(), store?.timezone),
     })),
-  [effectiveOrders, focusColumn]);
+  [effectiveOrders, focusColumn, store?.timezone]);
 
   // Fila do modal: os pedidos da MESMA coluna do pedido aberto, na ordem do
   // board — habilita a navegação anterior/próximo dentro do OrderDetailModal.
