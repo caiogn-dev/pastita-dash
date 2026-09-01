@@ -25,10 +25,16 @@ interface ColunaDoQuadro {
   statuses: readonly string[];
 }
 
-const mesmoDia = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear()
-  && a.getMonth() === b.getMonth()
-  && a.getDate() === b.getDate();
+// O corte do dia é o da LOJA (fuso do Brasil), não o do espectador. Ler
+// getFullYear/getMonth/getDate usa o fuso local de quem roda o código: num
+// navegador fora de -03:00 — ou no CI, que roda em UTC — um pedido entregue
+// às 21h de ontem (00h UTC de hoje) vazava para a coluna "Entregue" de hoje.
+const FUSO_DA_LOJA = 'America/Sao_Paulo';
+
+const diaDaLoja = (d: Date): string =>
+  d.toLocaleDateString('en-CA', { timeZone: FUSO_DA_LOJA });
+
+const mesmoDia = (a: Date, b: Date) => diaDaLoja(a) === diaDaLoja(b);
 
 export function pedidosDaColuna<T extends PedidoDoQuadro>(
   pedidos: T[],

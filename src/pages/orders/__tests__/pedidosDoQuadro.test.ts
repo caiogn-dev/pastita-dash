@@ -51,6 +51,20 @@ describe('coluna de finalizados', () => {
     );
     expect(itens.map((o) => o.id)).toEqual(['c']);
   });
+
+  it('o corte do dia é o da loja (-03:00), não o do espectador', () => {
+    // 23h de hoje em SP ainda é HOJE, mesmo já sendo 02h UTC de amanhã; e 21h
+    // de ontem em SP (00h UTC de hoje) é ONTEM. Se o corte usasse o fuso de
+    // quem roda o código (o CI roda em UTC), os dois cairiam invertidos.
+    const itens = pedidosDaColuna(
+      [
+        pedido('noite-de-hoje', 'delivered', '2026-08-27T23:00:00-03:00'),
+        pedido('noite-de-ontem', 'delivered', '2026-08-26T21:00:00-03:00'),
+      ],
+      done, AGORA,
+    );
+    expect(itens.map((o) => o.id)).toEqual(['noite-de-hoje']);
+  });
 });
 
 describe('colunas de trabalho em aberto', () => {
