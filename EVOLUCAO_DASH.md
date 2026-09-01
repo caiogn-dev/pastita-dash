@@ -3,6 +3,54 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-01)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test` (Jest): **1326 verdes / 1327**. 1 falha **pré-existente** (não é
+  regressão desta fatia): `src/pages/orders/__tests__/pedidosDoQuadro.test.ts`
+  → "não arrasta o que foi entregue ontem". Causa: `mesmoDia()` em
+  `pedidosDoQuadro.ts` compara ano/mês/dia no fuso **local do runner**; o CI
+  roda em **UTC** e o teste fixa datas em `-03:00`, então "ontem 21:00 -03:00"
+  (= 00:00Z de hoje) cai no mesmo dia UTC e vaza para a coluna "Entregue". Em
+  navegador brasileiro (-03:00) passa; o defeito real é o corte do dia usar o
+  fuso do espectador em vez do fuso da loja. **Próximo passo priorizado.**
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~11s).
+
+## Histórico
+
+### 2026-09-01 — Correção: campanha de WhatsApp enviava o preço de cadastro, não o do dia
+- **Medido:** o guard `precoVigente.cobertura.test.ts` estava **vermelho** —
+  acusava `pages/marketing/whatsapp/variaveisDaOferta.ts:33` lendo
+  `produto.price`. Não era falso positivo: `variaveisDaOferta()` monta as
+  variáveis `preco_1`/`preco_2` que o template do WhatsApp escreve **para o
+  cliente**, e lia o `price` de **cadastro** em vez do `preco_vigente` (a
+  promoção do dia da semana resolvida pelo backend). O envio (`offer_products`,
+  `NewWhatsAppCampaignPage.tsx:658`) já usava `precoVigenteDoProduto()`, então
+  a loja mandava a oferta **contradizendo a própria promoção**: metadado com o
+  preço do dia, texto visível com o preço cheio. O preview (`{{preco_1/2}}`)
+  tinha o mesmo defeito.
+- **Mudado (aditivo, sem mudar comportamento visual):**
+  - `variaveisDaOferta.ts`: `ProdutoDaOferta` ganhou `preco_vigente?`; `campo()`
+    passou a formatar `precoVigenteDoProduto(produto)` em vez de `produto.price`
+    — cai no `price` só quando não há promoção do dia (fallback do helper).
+  - `precoVigente.ts`: `ComPrecoVigente.price` afrouxado para
+    `number | string | null` opcional (o helper já trata ausência com `?? 0`),
+    para o tipo da oferta ser atribuível sem cast.
+  - `NewWhatsAppCampaignPage.tsx`: preview `{{preco_1}}`/`{{preco_2}}` agora usa
+    `precoVigenteDoProduto(...)`, alinhado ao envio.
+- **Teste (TDD):** dois casos novos em `variaveisDaOferta.test.ts` — escritos
+  **vermelho antes** ("manda o preço vigente do dia, não o de cadastro":
+  esperava R$ 44,90, recebia R$ 52,90) **verde depois**; o segundo garante o
+  fallback ao preço de cadastro quando não há promoção. O guard
+  `precoVigente.cobertura.test.ts` voltou ao **verde**.
+- **Antes/depois:** `npm test` 1323/1325 → **1326/1327** (guard vermelho→verde
+  + 2 casos novos); `tsc --noEmit` limpo e `vite build` ok nos dois lados. A
+  única falha restante é a pré-existente de fuso em `pedidosDoQuadro` (acima).
+- **Próximo passo priorizado:** corte de dia por fuso da loja em
+  `pedidosDoQuadro.ts` (`mesmoDia`), para "Entregue" não vazar em runner/browser
+  fora de -03:00 — resolve a última falha da suíte.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
