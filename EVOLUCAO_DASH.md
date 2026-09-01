@@ -7,10 +7,10 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 - `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test` (Jest): **1328 verdes / 1328** — suíte **toda verde** depois desta
+- `npm test` (Jest): **1330 verdes / 1330** — suíte **toda verde** depois desta
   execução (a `main` estava vermelha em DUAS falhas pré-existentes independentes,
   ambas corrigidas aqui: o guard `precoVigente.cobertura` e o corte de dia por
-  fuso em `pedidosDoQuadro`).
+  fuso em `pedidosDoQuadro`; +2 casos novos do fuso da loja).
 - `npm run lint`: **0 erros** / 289 warnings (gate em 400). A `main` tinha **2
   erros** `no-irregular-whitespace` (NBSP literal em `variaveisDaOferta`), que
   faziam a etapa de lint do CI falhar antes dos testes — corrigidos aqui.
@@ -68,16 +68,34 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   quem roda o código**. No CI (UTC) e em qualquer navegador fora de -03:00, um
   pedido entregue às 21h de ontem em São Paulo (= 00h UTC de hoje) vazava para
   "hoje". Era a segunda falha vermelha pré-existente da suíte.
-- **Mudado:** `mesmoDia()` compara o dia em `America/Sao_Paulo` via
-  `toLocaleDateString('en-CA', { timeZone })` — determinístico onde quer que
-  rode. Teste novo fixa a regra na borda do dia (23h de hoje / 21h de ontem em
-  -03:00).
-- **Próximo passo priorizado:** (1) **A11y — `dialog.tsx` composto:** ligar
-  `DialogTitle`↔`Dialog` via contexto para nomear diálogos automaticamente.
-  (2) **Segurança/deps:** planejar os major bumps de `react-router` 6→7 e
-  `vite` 5→8, cada um como fatia dedicada com validação de build. (3)
-  **Idealmente** o fuso do corte de dia deveria vir da config da loja, não
-  fixo em São Paulo — hoje serve todo tenant brasileiro, mas fica registrado.
+- **Mudado:** `mesmoDia()` compara o dia via `toLocaleDateString('en-CA',
+  { timeZone })` — determinístico onde quer que rode. `pedidosDaColuna` recebe
+  o fuso da **loja selecionada** (`useStore().store.timezone`, repassado pela
+  `OrdersPage`), caindo em `America/Sao_Paulo` quando o fuso falta ou é
+  inválido (guarda try/catch contra `RangeError` do Intl) — respeita a regra
+  multi-tenant em vez de fixar SP. Testes novos: borda do dia em -03:00, loja de
+  Manaus (UTC-4) escondendo a madrugada de SP, e o fallback sem quebrar.
+- **Revisão do bot (Codex, P1) atendida:** apontou o fuso fixo; corrigido para
+  usar o da loja (acima).
+
+### 2026-09-01 — Aberto: campanha AGENDADA congela o preço do dia da criação (backend)
+- **Medido (revisão Codex P1 no #183):** a correção do preço vigente resolve
+  `preco_vigente` no momento em que a campanha é **criada** e o congela no
+  `contact_list` de cada destinatário. Para uma campanha **agendada** para outro
+  dia da semana (criada numa segunda de promoção, enviada numa terça sem), o
+  texto anunciaria o preço da segunda. Isso **já existia** no `offer_products`
+  antes desta fatia; a correção só alinhou o texto ao metadado (melhora o caso
+  imediato, que é a maioria, e não piora o agendado).
+- **Por que não foi corrigido aqui:** o preço do dia do envio só o **backend**
+  (`server2`) sabe resolver na hora do disparo — a regra de promoção por dia da
+  semana vive lá. Frontend não tem como adivinhar o `preco_vigente` de uma data
+  futura. Fica como fatia priorizada de backend: resolver preço no dispatch da
+  data agendada, não na criação.
+- **Próximo passo priorizado:** (1) **Backend/agendamento:** resolver
+  `preco_vigente` no disparo para a data agendada (acima). (2) **A11y —
+  `dialog.tsx` composto:** ligar `DialogTitle`↔`Dialog` via contexto. (3)
+  **Segurança/deps:** major bumps de `react-router` 6→7 e `vite` 5→8, cada um
+  como fatia dedicada com validação de build.
 
 ## Baseline atual (2026-08-08)
 
