@@ -19,9 +19,9 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 > **Estado da `main` no início desta execução:** o CI estava vermelho por três
 > defeitos pré-existentes independentes — (1) guard do preço vigente, (2) 2
 > erros de lint por NBSP literal, (3) corte de dia no fuso do runner (UTC no
-> CI). Nenhum era regressão desta fatia; os três foram limpos para o CI poder
-> ficar verde. O corte de dia também saiu como fatia dedicada no PR #184 e foi
-> **portado** para cá (some quando qualquer um dos dois entrar na base).
+> CI). Nenhum era regressão desta fatia; como os três se entrelaçavam (cada um
+> mantinha o CI vermelho), foram limpos juntos neste PR para o CI poder ficar
+> verde, em commits separados e bem descritos.
 
 ## Histórico
 
@@ -62,7 +62,7 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   regex; comportamento idêntico, o teste "não usa espaço não-quebrável" segue
   verde). Lint passou de 2 erros para **0**.
 
-### 2026-09-01 — Pedidos: corte do dia no fuso da loja, não no do espectador (PR #184, portado)
+### 2026-09-01 — Pedidos: corte do dia no fuso da loja, não no do espectador
 - **Medido:** a coluna "Entregue" mostra só o dia de hoje, mas `mesmoDia()` em
   `pedidosDoQuadro.ts` usava `getFullYear/getMonth/getDate` — o fuso **local de
   quem roda o código**. No CI (UTC) e em qualquer navegador fora de -03:00, um
@@ -71,8 +71,7 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - **Mudado:** `mesmoDia()` compara o dia em `America/Sao_Paulo` via
   `toLocaleDateString('en-CA', { timeZone })` — determinístico onde quer que
   rode. Teste novo fixa a regra na borda do dia (23h de hoje / 21h de ontem em
-  -03:00). Entregue também como fatia dedicada no **PR #184** e portado para o
-  #183 para o CI ficar verde já.
+  -03:00).
 - **Próximo passo priorizado:** (1) **A11y — `dialog.tsx` composto:** ligar
   `DialogTitle`↔`Dialog` via contexto para nomear diálogos automaticamente.
   (2) **Segurança/deps:** planejar os major bumps de `react-router` 6→7 e
