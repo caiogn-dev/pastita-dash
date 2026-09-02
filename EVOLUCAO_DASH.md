@@ -3,6 +3,65 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-08-29)
+
+- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high),
+  transitivas de `react-router`/`react-router-dom` — segue como fatia dedicada.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: entrou o loop com **2 suítes vermelhas pré-existentes** (2 testes,
+  1256/1258). Saiu **1259/1260, 1 falha** — esta fatia consertou uma das guardas
+  vermelhas e adicionou 2 testes. A falha restante é pré-existente e está
+  priorizada abaixo (não é regressão desta fatia).
+- `npm run build` (vite): **ok** (~14s).
+
+### 2026-08-29 — Preço vigente na variável enviada da "oferta do dia" (WhatsApp)
+- **Medido:** a guarda `precoVigente.cobertura.test.ts` estava **vermelha** no
+  `main` acusando `pages/marketing/whatsapp/variaveisDaOferta.ts` lendo
+  `produto.price` cru. Rastreado o defeito real: em
+  `NewWhatsAppCampaignPage.tsx`, `variaveisDaOferta(selectedOfferProducts)`
+  montava `preco_1`/`preco_2` — as variáveis que vão POR ESCRITO ao cliente pela
+  Meta — a partir do `price` de CADASTRO. A prévia visual ao lado ("produtos
+  selecionados", linha ~1428) e o payload `offer_products.price` já usavam
+  `precoVigenteDoProduto`; só a variável enviada lia o valor cheio. Numa campanha
+  chamada "oferta do dia", o cliente recebia por escrito o preço sem a promoção —
+  exatamente o defeito que a guarda de preço vigente existe para pegar.
+- **Mudado (produção):**
+  - `variaveisDaOferta.ts`: interface `ProdutoDaOferta` ganhou `preco_vigente`;
+    o cálculo do preço passou a resolver via `precoVigenteDoProduto` (desestrutura
+    `{ price, preco_vigente }` para não reintroduzir `produto.price`, que a própria
+    guarda pegaria). `price` sem promoção continua sendo o fallback correto.
+  - `NewWhatsAppCampaignPage.tsx`: a prévia "Variáveis que serão enviadas"
+    (`{{preco_1}}`/`{{preco_2}}`) passou a exibir `precoVigenteDoProduto`,
+    ficando idêntica ao que é de fato enviado.
+- **Teste (TDD):** 2 casos novos em `variaveisDaOferta.test.ts`, escritos
+  **vermelhos antes**: manda `preco_vigente` quando há promoção; cai no `price`
+  quando não há. A guarda `precoVigente.cobertura.test.ts` voltou ao **verde**.
+- **Antes/depois:** `npm test` 1256/1258 (2 falhas) → **1259/1260 (1 falha
+  pré-existente)**; `tsc --noEmit` limpo e `vite build` ok nos dois lados.
+  Mudança de baixo risco: mesmo helper de preço já usado no resto da página.
+- **Próximo passo priorizado:** **Bug pré-existente — quadro de pedidos, dia por
+  fuso.** `pedidosDaColuna` (`src/pages/orders/pedidosDoQuadro.ts`) usa `mesmoDia`
+  com as partes de data do fuso LOCAL do runtime. A guarda `pedidosDoQuadro.test.ts`
+  ("não arrasta o que foi entregue ontem") falha em UTC: um pedido entregue
+  `2026-08-26T21:00-03:00` vira `2026-08-27T00:00Z` e é contado como "hoje". Em
+  produção (navegador no fuso do Brasil) não aparece, mas a lógica é frágil e a
+  guarda está vermelha. Fatia: comparar o "dia de operação" no fuso da loja
+  (America/Sao_Paulo), não no fuso do ambiente.
+- **Follow-up (revisão Codex P1, backend) — oferta do dia AGENDADA:** uma
+  campanha agendada congela na criação o `preco_vigente` de hoje (tanto em
+  `offer_products[].price`, que já era assim antes deste PR, quanto agora nas
+  variáveis `preco_1`/`preco_2`). Se a promoção só vale hoje, o envio de amanhã
+  sai com preço expirado. Não dá para resolver no frontend (a regra de promoção
+  por dia é do backend). Corte: resolver a promoção **no despacho**, para a data
+  agendada, cobrindo os dois campos juntos — ou o painel mandar só `product.id`
+  no caso agendado e o backend preencher as variáveis no envio. Depende de
+  `server2`. Discutido na thread do PR #180.
+- **CI da `main` vermelha (bloqueia todo PR):** o job `build` roda
+  `build → lint → test`; o lint tem **2 erros `no-irregular-whitespace`** (NBSP
+  literais em regex de `precoParaTemplate` e seu teste) e o teste `pedidosDoQuadro`
+  falha em UTC. Ambos pré-existentes na `main`. Fatia dedicada: trocar os NBSP
+  por ` ` e corrigir a comparação de dia por fuso, deixando o `build` verde.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas

@@ -64,4 +64,19 @@ describe('variaveisDaOferta', () => {
       produto_1: '', preco_1: '', produto_2: '', preco_2: '',
     });
   });
+
+  it('manda o preço do dia (preco_vigente), não o de cadastro', () => {
+    // A campanha se chama "oferta do dia": o que vai POR ESCRITO ao cliente
+    // tem que ser o preço vigente resolvido pelo backend, não o `price` cheio.
+    // Cobrar o cheio numa oferta é o defeito que a guarda de preço vigente pega.
+    const emPromocao = { name: 'Salmão Sublime', price: 52.9, preco_vigente: 42.5 };
+    const v = variaveisDaOferta([emPromocao]);
+    expect(v.preco_1).toBe('R$ 42,50');
+  });
+
+  it('sem preco_vigente cai no price de cadastro', () => {
+    // Produto sem promoção do dia continua valendo pelo valor cadastrado.
+    const v = variaveisDaOferta([salmao]);
+    expect(v.preco_1).toBe('R$ 52,90');
+  });
 });
