@@ -66,6 +66,28 @@ const readPersistedStore = (): string | null => {
   }
 };
 
+const gravarSelecao = (storeId: string | null): void => {
+  try {
+    if (storeId) localStorage.setItem(SELECTED_STORE_KEY, storeId);
+    else localStorage.removeItem(SELECTED_STORE_KEY);
+  } catch { /* storage indisponível */ }
+};
+
+/**
+ * Reescreve o localStorage quando a normalização mudou o valor guardado.
+ *
+ * Sem isto o slug sobrevive ao reload: `selectedStoreId` nasce de
+ * readPersistedStore(), e um slug lá dentro reabre o painel na loja errada
+ * até a lista chegar.
+ */
+const persistirSelecao = <T extends { selectedStoreId: string }>(
+  next: T,
+  anterior: string | null,
+): T => {
+  if (next.selectedStoreId !== anterior) gravarSelecao(next.selectedStoreId);
+  return next;
+};
+
 export const useRootStore = create<RootStore>((set) => ({
   // Auth
   auth: {
@@ -81,25 +103,34 @@ export const useRootStore = create<RootStore>((set) => ({
   stores: [],
   setStores: (stores) =>
     set((state) => {
-      const valid = state.selectedStoreId
-        && stores.some((s) => s.id === state.selectedStoreId || s.slug === state.selectedStoreId);
-      if (valid || stores.length === 0) return { stores };
+      if (stores.length === 0) return { stores };
+      // A seleção pode ter chegado como SLUG: /stores/:storeId traz o slug e
+      // StoreDetailPage repassava esse valor direto. Aqui é o primeiro momento
+      // em que existe lista para traduzir, então traduzimos — o resto do app
+      // resolve a loja por `find(s => s.id === ...)` e um slug não casa.
+      const atual = state.selectedStoreId
+        && stores.find((s) => s.id === state.selectedStoreId || s.slug === state.selectedStoreId);
+      if (atual) return persistirSelecao({ stores, selectedStoreId: atual.id }, state.selectedStoreId);
       const persisted = readPersistedStore();
       const fromPersisted = persisted
         ? stores.find((s) => s.id === persisted || s.slug === persisted)
         : null;
-      return { stores, selectedStoreId: (fromPersisted || stores[0]).id };
+      return persistirSelecao(
+        { stores, selectedStoreId: (fromPersisted || stores[0]).id },
+        state.selectedStoreId,
+      );
     }),
 
   // Selected store (persistido entre reloads)
   selectedStoreId: readPersistedStore(),
-  setSelectedStore: (storeId) => {
-    try {
-      if (storeId) localStorage.setItem(SELECTED_STORE_KEY, storeId);
-      else localStorage.removeItem(SELECTED_STORE_KEY);
-    } catch { /* storage indisponível */ }
-    set({ selectedStoreId: storeId });
-  },
+  setSelectedStore: (storeId) =>
+    set((state) => {
+      // Normaliza slug -> uuid. Quem chama nem sempre tem o uuid na mão:
+      // StoreDetailPage passa o :storeId da rota, que é o slug.
+      const uuid = storeId ? resolveStoreKey(state.stores, storeId) : null;
+      gravarSelecao(uuid);
+      return { selectedStoreId: uuid };
+    }),
 
   // Orders
   //
