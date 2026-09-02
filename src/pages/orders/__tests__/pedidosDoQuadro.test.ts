@@ -51,6 +51,25 @@ describe('coluna de finalizados', () => {
     );
     expect(itens.map((o) => o.id)).toEqual(['c']);
   });
+
+  // O "dia" é o de Brasília, não o do fuso de quem abre o painel. O backend
+  // manda `created_at` com offset (…-03:00); um pedido entregue às 22h de
+  // Brasília ainda é HOJE, mesmo que em UTC já seja o dia seguinte. Se o corte
+  // fosse pelo fuso do navegador (ou do CI em UTC), o pedido das 22h sumiria
+  // do "Entregue" no meio da noite — justo no pico do delivery.
+  it('o corte de "hoje" é o dia de Brasília, não o fuso de quem olha', () => {
+    const agoraCedo = new Date('2026-08-27T09:00:00-03:00');
+    const itens = pedidosDaColuna(
+      [
+        pedido('noite', 'delivered', '2026-08-27T22:00:00-03:00'), // 01h UTC do 28
+        pedido('manha', 'delivered', '2026-08-27T00:30:00-03:00'), // 03h30 UTC do 27
+        pedido('ontemNoite', 'delivered', '2026-08-26T23:30:00-03:00'), // 02h30 UTC do 27
+      ],
+      done, agoraCedo,
+    );
+    // "noite" e "manha" são de 27/08 em Brasília; "ontemNoite" é de 26/08.
+    expect(itens.map((o) => o.id).sort()).toEqual(['manha', 'noite']);
+  });
 });
 
 describe('colunas de trabalho em aberto', () => {

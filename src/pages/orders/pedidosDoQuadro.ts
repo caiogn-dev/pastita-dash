@@ -25,10 +25,22 @@ interface ColunaDoQuadro {
   statuses: readonly string[];
 }
 
+// O "dia" do quadro é o de Brasília, não o fuso de quem abre o painel. O
+// backend manda `created_at` com offset; ler o dia pelo fuso do navegador
+// (ou do CI em UTC) empurra o pedido entregue das 21h em diante para o dia
+// SEGUINTE — some do "Entregue" no meio do pico do delivery. Ancorar em
+// America/Sao_Paulo mantém o corte estável seja onde for que o painel abra.
+const FUSO_DO_NEGOCIO = 'America/Sao_Paulo';
+
+const diaDoNegocio = new Intl.DateTimeFormat('en-CA', {
+  timeZone: FUSO_DO_NEGOCIO,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
 const mesmoDia = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear()
-  && a.getMonth() === b.getMonth()
-  && a.getDate() === b.getDate();
+  diaDoNegocio.format(a) === diaDoNegocio.format(b);
 
 export function pedidosDaColuna<T extends PedidoDoQuadro>(
   pedidos: T[],
