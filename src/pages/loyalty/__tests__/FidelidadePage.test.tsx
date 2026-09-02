@@ -13,7 +13,11 @@ jest.mock('../../../services/loyalty', () => ({
 jest.mock('../../../services/coupons', () => ({
   couponsService: { createCoupon: jest.fn() },
 }));
+jest.mock('../../../services/cashback', () => ({
+  cashbackService: { get: jest.fn() },
+}));
 
+import { cashbackService } from '../../../services/cashback';
 import { couponsService } from '../../../services/coupons';
 import { loyaltyService } from '../../../services/loyalty';
 import { getStores, updateStore, getCategories } from '../../../services/storesApi';
@@ -47,6 +51,23 @@ beforeEach(() => {
   (loyaltyService.getAccounts as jest.Mock).mockResolvedValue({
     count: 1,
     results: [{ user_id: 'u1', display_name: 'Ana', email: 'a@x.com', qualified_count: 7, redeemed_count: 0, progress: 7, available_rewards: 0, updated_at: '2026-07-28T00:00:00Z' }],
+  });
+  // Loja sem cashback ligado: a página abre no cartão de carimbo, que é o
+  // que o resto deste arquivo exercita.
+  (cashbackService.get as jest.Mock).mockResolvedValue({
+    enabled: false,
+    percent: '3',
+    referral_percent: '5',
+    expiry_days: 60,
+    resumo: {
+      saldo_em_circulacao: '0.00',
+      ja_resgatado: '0.00',
+      clientes_com_saldo: 0,
+      saldo_de_indicacao: '0.00',
+      vence_em_7_dias: '0.00',
+    },
+    count: 0,
+    results: [],
   });
 });
 
@@ -108,5 +129,82 @@ describe('FidelidadePage', () => {
     await waitFor(() => expect(couponsService.createCoupon).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'BEMVINDO10', first_order_only: true, is_featured: true, discount_type: 'percentage' })
     ));
+  });
+});
+
+/**
+ * Um programa OU outro.
+ *
+ * Cartão de carimbo e cashback ligados ao mesmo tempo empilham desconto sobre
+ * desconto sem ninguém decidir isso, e viram duas promessas diferentes para
+ * explicar ao mesmo cliente no WhatsApp.
+ */
+describe('FidelidadePage — escolha do programa', () => {
+  it('abre no cashback quando é ele que está ligado', async () => {
+    (cashbackService.get as jest.Mock).mockResolvedValue({
+      enabled: true,
+      percent: '3',
+      referral_percent: '5',
+      expiry_days: 60,
+      resumo: {
+        saldo_em_circulacao: '340.00',
+        ja_resgatado: '58.20',
+        clientes_com_saldo: 12,
+        saldo_de_indicacao: '25.00',
+        vence_em_7_dias: '90.00',
+      },
+      count: 1,
+      results: [
+        { phone: '5563999547790', saldo: '12.50', vence_em: '2026-09-05T00:00:00Z', dias_para_vencer: 3 },
+      ],
+    });
+    renderPage();
+    expect(await screen.findByText('Cashback ativo')).toBeInTheDocument();
+    // O número com prazo é o que manda agir — precisa estar na tela.
+    expect(await screen.findByText(/R\$\s*90,00/)).toBeInTheDocument();
+  });
+
+  it('mostra o telefone legível na fila de quem vence primeiro', async () => {
+    (cashbackService.get as jest.Mock).mockResolvedValue({
+      enabled: true,
+      percent: '3',
+      referral_percent: '5',
+      expiry_days: 60,
+      resumo: {
+        saldo_em_circulacao: '12.50', ja_resgatado: '0.00', clientes_com_saldo: 1,
+        saldo_de_indicacao: '0.00', vence_em_7_dias: '12.50',
+      },
+      count: 1,
+      results: [
+        { phone: '5563999547790', saldo: '12.50', vence_em: '2026-09-05T00:00:00Z', dias_para_vencer: 3 },
+      ],
+    });
+    renderPage();
+    expect(await screen.findByText('(63) 99954-7790')).toBeInTheDocument();
+    expect(screen.getByText('vence em 3 dias')).toBeInTheDocument();
+  });
+
+  it('ligar o cashback desliga o cartão de carimbo no mesmo salvar', async () => {
+    (cashbackService.get as jest.Mock).mockResolvedValue({
+      enabled: false, percent: '3', referral_percent: '5', expiry_days: 60,
+      resumo: {
+        saldo_em_circulacao: '0.00', ja_resgatado: '0.00', clientes_com_saldo: 0,
+        saldo_de_indicacao: '0.00', vence_em_7_dias: '0.00',
+      },
+      count: 0, results: [],
+    });
+    (updateStore as jest.Mock).mockResolvedValue(store);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('radio', { name: /Cashback/i }));
+    await userEvent.click(await screen.findByRole('checkbox', { name: /Cashback ativo/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Salvar cashback/i }));
+
+    await waitFor(() => expect(updateStore).toHaveBeenCalled());
+    const [, payload] = (updateStore as jest.Mock).mock.calls.at(-1)!;
+    expect(payload.metadata.cashback_enabled).toBe(true);
+    expect(payload.metadata.cashback_percent).toBe(3);
+    expect(payload.metadata.cashback_referral_percent).toBe(5);
+    expect(payload.metadata.loyalty_enabled).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Badge, Button, Card, Input, PageShell, KpiGrid, EmptyState,
+  Badge, Button, Card, Input, PageShell, KpiGrid, EmptyState, ChoiceCards,
 } from '../../components/ui';
 import {
   UserGroupIcon, GiftIcon, FireIcon, CheckBadgeIcon,
@@ -9,6 +9,8 @@ import {
 import { Loading } from '../../components/common';
 import { couponsService } from '../../services/coupons';
 import { loyaltyService, LoyaltyAccountRow, LoyaltyResumo } from '../../services/loyalty';
+import { cashbackService, CashbackResponse } from '../../services/cashback';
+import CashbackSection from './CashbackSection';
 import { getStores, updateStore, getCategories, Store, StoreCategory } from '../../services/storesApi';
 
 /**
@@ -44,6 +46,22 @@ const FidelidadePage: React.FC = () => {
   const [qualifyingCategoryIds, setQualifyingCategoryIds] = useState<string[]>([]);
   const [storeCategories, setStoreCategories] = useState<StoreCategory[]>([]);
   const [saving, setSaving] = useState(false);
+
+  /**
+   * Um programa OU outro, nunca os dois.
+   *
+   * Cartão de carimbo e cashback ligados juntos empilham desconto em cima de
+   * desconto sem ninguém perceber, e viram duas promessas diferentes para
+   * explicar ao mesmo cliente no WhatsApp. O dono escolhe qual roda.
+   */
+  const [programa, setPrograma] = useState<'carimbo' | 'cashback'>('carimbo');
+  const [cashback, setCashback] = useState<CashbackResponse | null>(null);
+  const [carregandoCashback, setCarregandoCashback] = useState(false);
+  const [cbLigado, setCbLigado] = useState(false);
+  const [cbPercent, setCbPercent] = useState('3');
+  const [cbIndicacao, setCbIndicacao] = useState('5');
+  const [cbValidade, setCbValidade] = useState('60');
+  const [salvandoCashback, setSalvandoCashback] = useState(false);
 
   const [pct, setPct] = useState('');
   const [creatingCoupon, setCreatingCoupon] = useState(false);
@@ -96,6 +114,64 @@ const FidelidadePage: React.FC = () => {
       .then((res) => setStoreCategories(res.results))
       .catch(() => setStoreCategories([]));
   }, [store?.id]);
+
+  // Estado do cashback: os números do painel e a config gravada na loja.
+  useEffect(() => {
+    if (!storeIdentifier) return;
+    let active = true;
+    setCarregandoCashback(true);
+    cashbackService
+      .get(storeIdentifier)
+      .then((res) => {
+        if (!active) return;
+        setCashback(res);
+        setCbLigado(res.enabled);
+        setCbPercent(String(res.percent ?? '3'));
+        setCbIndicacao(String(res.referral_percent ?? '5'));
+        setCbValidade(String(res.expiry_days ?? 60));
+        // A aba abre no programa que ESTÁ rodando, não no primeiro da lista:
+        // quem já ligou o cashback quer ver o cashback ao entrar.
+        if (res.enabled) setPrograma('cashback');
+      })
+      .catch(() => {
+        if (active) setCashback(null);
+      })
+      .finally(() => {
+        if (active) setCarregandoCashback(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [storeIdentifier]);
+
+  const handleSalvarCashback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!store) return;
+    setSalvandoCashback(true);
+    try {
+      const atual = (store.metadata as Record<string, unknown>) || {};
+      const updated = await updateStore(store.id, {
+        metadata: {
+          ...atual,
+          cashback_enabled: cbLigado,
+          cashback_percent: Number(cbPercent) || 0,
+          cashback_referral_percent: Number(cbIndicacao) || 0,
+          cashback_expiry_days: Number(cbValidade) || 60,
+          // Um programa OU outro: ligar o cashback desliga o cartão de
+          // carimbo no mesmo save, senão o cliente acumula os dois e o
+          // desconto empilha sem ninguém decidir isso.
+          ...(cbLigado ? { loyalty_enabled: false } : {}),
+        },
+      });
+      setStore(updated);
+      if (cbLigado) setEnabled(false);
+      if (storeIdentifier) {
+        setCashback(await cashbackService.get(storeIdentifier));
+      }
+    } finally {
+      setSalvandoCashback(false);
+    }
+  };
 
   const toggleQualifyingCategory = (id: string) => {
     setQualifyingCategoryIds((prev) =>
@@ -201,17 +277,55 @@ const FidelidadePage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Cardápio' }, { rotulo: 'Fidelidade' }]}
       titulo="Fidelidade & Cupons"
-      descricao="Cliente junta compras e ganha uma grátis. Quem volta pela recompensa volta mais vezes."
+      descricao="Dar motivo para o cliente voltar. Escolha o programa que combina com a sua margem."
       acoes={
-        <Badge tone={enabled ? 'success' : 'neutral'}>
-          {enabled ? 'Programa ativo' : 'Programa inativo'}
+        <Badge tone={enabled || cbLigado ? 'success' : 'neutral'}>
+          {enabled ? 'Cartão ativo' : cbLigado ? 'Cashback ativo' : 'Nenhum programa ativo'}
         </Badge>
       }
     >
+      {/* O dono escolhe UM. Dois programas ligados empilham desconto em cima
+          de desconto e viram duas promessas para explicar ao mesmo cliente. */}
+      <ChoiceCards<'carimbo' | 'cashback'>
+        rotulo="Qual programa roda na sua loja"
+        descricao="Só um fica ligado por vez. Ligar um desliga o outro no mesmo salvar."
+        valor={programa}
+        onChange={setPrograma}
+        opcoes={[
+          {
+            valor: 'carimbo',
+            titulo: 'Cartão de carimbo',
+            descricao: `Junta ${threshold || '10'} itens, ganha 1 grátis. A recompensa é grande e demora — puxa quem já é frequente.`,
+          },
+          {
+            valor: 'cashback',
+            titulo: 'Cashback',
+            descricao: 'Volta uma parte em saldo a cada pedido. Recompensa pequena e imediata — alcança quem comprou uma vez só.',
+          },
+        ]}
+      />
+
+      {programa === 'cashback' && (
+        <CashbackSection
+          dados={cashback}
+          carregando={carregandoCashback}
+          ligado={cbLigado}
+          onLigado={setCbLigado}
+          percent={cbPercent}
+          referralPercent={cbIndicacao}
+          expiryDays={cbValidade}
+          onPercent={setCbPercent}
+          onReferralPercent={setCbIndicacao}
+          onExpiryDays={setCbValidade}
+          onSalvar={handleSalvarCashback}
+          salvando={salvandoCashback}
+        />
+      )}
+
       {/* Desligado, a tela era um checkbox desmarcado dentro de um card
           cinza — não dizia o que o programa faz nem por que ligar, e ninguém
           liga o que não entende. Aqui ela vende antes de configurar. */}
-      {!enabled && (
+      {programa === 'carimbo' && !enabled && (
         <EmptyState
           variante="ativacao"
           estado="Programa inativo"
@@ -243,7 +357,7 @@ const FidelidadePage: React.FC = () => {
         />
       )}
 
-      {enabled && (
+      {programa === 'carimbo' && enabled && (
         <KpiGrid
           titulo="Como está o programa"
           itens={[
@@ -279,6 +393,7 @@ const FidelidadePage: React.FC = () => {
         />
       )}
 
+      {programa === 'carimbo' && (
       <Card title="Programa de fidelidade">
         <form className="space-y-4" onSubmit={handleSaveConfig}>
           {/* Era um checkbox nu escrito "Programa ativo". Um quadradinho não
@@ -342,6 +457,7 @@ const FidelidadePage: React.FC = () => {
           </Button>
         </form>
       </Card>
+      )}
 
       <Card title="Cupom de boas-vindas">
         <div className="space-y-4">
