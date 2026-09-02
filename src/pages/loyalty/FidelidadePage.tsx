@@ -484,6 +484,7 @@ const FidelidadePage: React.FC = () => {
         </div>
       </Card>
 
+      {programa === 'carimbo' && (
       <Card
         title="Quem está mais perto de ganhar"
         subtitle="Ordenado do mais perto de fechar o cartão para o mais longe — é essa a lista de quem vale mandar mensagem hoje."
@@ -589,6 +590,7 @@ const FidelidadePage: React.FC = () => {
           </div>
         )}
       </Card>
+      )}
     </PageShell>
   );
 };
