@@ -131,7 +131,16 @@ const FidelidadePage: React.FC = () => {
         setCbValidade(String(res.expiry_days ?? 60));
         // A aba abre no programa que ESTÁ rodando, não no primeiro da lista:
         // quem já ligou o cashback quer ver o cashback ao entrar.
-        if (res.enabled) setPrograma('cashback');
+        //
+        // Mas só quando o cashback é o ÚNICO ligado. Com os dois marcados no
+        // metadata (dado sujo de antes desta trava valer nos dois sentidos),
+        // abrir no cashback fazia a escolha do dono voltar sozinha ao
+        // recarregar: ele marcava fidelidade, salvava, e a tela devolvia
+        // cashback. Nesse empate o cartão de carimbo ganha, e o próximo
+        // salvar limpa a bagunça.
+        const carimboLigado =
+          ((store?.metadata as Record<string, unknown>) || {}).loyalty_enabled !== false;
+        if (res.enabled && !carimboLigado) setPrograma('cashback');
       })
       .catch(() => {
         if (active) setCashback(null);
@@ -142,6 +151,7 @@ const FidelidadePage: React.FC = () => {
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeIdentifier]);
 
   const handleSalvarCashback = async (e: React.FormEvent) => {
@@ -205,8 +215,14 @@ const FidelidadePage: React.FC = () => {
     };
   }, [storeIdentifier, accountsPage]);
 
-  const handleSaveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /**
+   * Grava o cartão de carimbo.
+   *
+   * `ligado` é passado explicitamente porque o botão "Ativar programa" precisa
+   * salvar já com true — o `setEnabled` do React só vale no próximo render, e
+   * confiar nele fazia o clique gravar o valor ANTIGO.
+   */
+  const salvarCarimbo = async (ligado: boolean) => {
     if (!store) return;
     setSaving(true);
     try {
@@ -214,15 +230,26 @@ const FidelidadePage: React.FC = () => {
       const updated = await updateStore(store.id, {
         metadata: {
           ...currentMetadata,
-          loyalty_enabled: enabled,
+          loyalty_enabled: ligado,
           loyalty_salads_required: Number(threshold),
           loyalty_qualifying_categories: qualifyingCategoryIds,
+          // Espelho do que o cashback já fazia. Sem isto os dois ficavam
+          // ligados no metadata: o cliente acumulava carimbo E saldo no mesmo
+          // pedido, e ao recarregar a tela voltava para o cashback.
+          ...(ligado ? { cashback_enabled: false } : {}),
         },
       });
       setStore(updated);
+      setEnabled(ligado);
+      if (ligado) setCbLigado(false);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await salvarCarimbo(enabled);
   };
 
   const handleCreateCoupon = async () => {
@@ -332,7 +359,7 @@ const FidelidadePage: React.FC = () => {
           titulo="Ative a fidelidade e transforme compra avulsa em hábito."
           descricao={`A cada ${threshold || '10'} itens comprados, o cliente ganha 1 grátis. O cartão anda sozinho a cada pedido pago — você não precisa marcar nada.`}
           acao={
-            <Button onClick={() => setEnabled(true)}>
+            <Button onClick={() => salvarCarimbo(true)} isLoading={saving}>
               Ativar programa
             </Button>
           }

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
@@ -140,7 +140,13 @@ describe('FidelidadePage', () => {
  * explicar ao mesmo cliente no WhatsApp.
  */
 describe('FidelidadePage — escolha do programa', () => {
+  // Cashback é o programa da loja: o cartão de carimbo está desligado. Os dois
+  // ligados ao mesmo tempo não são um estado válido — é o bug que esta suíte
+  // trava mais abaixo.
+  const lojaComCashback = { ...store, metadata: { ...store.metadata, loyalty_enabled: false } };
+
   it('abre no cashback quando é ele que está ligado', async () => {
+    (getStores as jest.Mock).mockResolvedValue(page([lojaComCashback]));
     (cashbackService.get as jest.Mock).mockResolvedValue({
       enabled: true,
       percent: '3',
@@ -159,12 +165,16 @@ describe('FidelidadePage — escolha do programa', () => {
       ],
     });
     renderPage();
-    expect(await screen.findByText('Cashback ativo')).toBeInTheDocument();
+    // Dois nós legítimos dizem "Cashback ativo": o selo do cabeçalho e o
+    // rótulo do interruptor da seção.
+    expect((await screen.findAllByText('Cashback ativo')).length).toBeGreaterThan(0);
+    expect(await screen.findByRole('radio', { name: /Cashback/i })).toBeChecked();
     // O número com prazo é o que manda agir — precisa estar na tela.
     expect(await screen.findByText(/R\$\s*90,00/)).toBeInTheDocument();
   });
 
   it('mostra o telefone legível na fila de quem vence primeiro', async () => {
+    (getStores as jest.Mock).mockResolvedValue(page([lojaComCashback]));
     (cashbackService.get as jest.Mock).mockResolvedValue({
       enabled: true,
       percent: '3',
@@ -206,5 +216,72 @@ describe('FidelidadePage — escolha do programa', () => {
     expect(payload.metadata.cashback_percent).toBe(3);
     expect(payload.metadata.cashback_referral_percent).toBe(5);
     expect(payload.metadata.loyalty_enabled).toBe(false);
+  });
+});
+
+describe('FidelidadePage — um programa desliga o outro (mão dupla)', () => {
+  const cashbackLigado = {
+    enabled: true, percent: '3', referral_percent: '5', expiry_days: 60,
+    resumo: {
+      saldo_em_circulacao: '0.00', ja_resgatado: '0.00', clientes_com_saldo: 0,
+      saldo_de_indicacao: '0.00', vence_em_7_dias: '0.00',
+    },
+    count: 0, results: [],
+  };
+
+  it('salvar o cartão de carimbo desliga o cashback no mesmo salvar', async () => {
+    // Sem isto os dois ficam ligados no metadata: o cliente ganha carimbo E
+    // saldo no mesmo pedido, e ao recarregar a tela volta para o cashback.
+    (updateStore as jest.Mock).mockResolvedValue(store);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: /^Salvar$/i }));
+
+    await waitFor(() => expect(updateStore).toHaveBeenCalled());
+    const [, payload] = (updateStore as jest.Mock).mock.calls.at(-1)!;
+    expect(payload.metadata.loyalty_enabled).toBe(true);
+    expect(payload.metadata.cashback_enabled).toBe(false);
+  });
+
+  it('desligar o carimbo não mexe no cashback', async () => {
+    (updateStore as jest.Mock).mockResolvedValue(store);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('checkbox', { name: /Programa ativo/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^Salvar$/i }));
+
+    await waitFor(() => expect(updateStore).toHaveBeenCalled());
+    const [, payload] = (updateStore as jest.Mock).mock.calls.at(-1)!;
+    expect(payload.metadata.loyalty_enabled).toBe(false);
+    expect(payload.metadata.cashback_enabled).toBeUndefined();
+  });
+
+  it('com os dois ligados no banco, abre no carimbo — não sequestra para o cashback', async () => {
+    // Dado sujo herdado: cashback ligado E loyalty ligado. A tela abria no
+    // cashback e o dono, que tinha acabado de ligar a fidelidade, via a
+    // escolha dele voltar sozinha.
+    const resposta = Promise.resolve(cashbackLigado);
+    (cashbackService.get as jest.Mock).mockReturnValue(resposta);
+    renderPage();
+    await screen.findByText('Ana');
+    // Garante que o efeito do cashback já resolveu antes de olhar o seletor.
+    await act(async () => { await resposta; });
+
+    expect(screen.getByRole('radio', { name: /Cartão de carimbo/i })).toBeChecked();
+  });
+
+  it('botão "Ativar programa" salva de verdade, não só marca na tela', async () => {
+    (getStores as jest.Mock).mockResolvedValue(
+      page([{ ...store, metadata: { ...store.metadata, loyalty_enabled: false } }])
+    );
+    (updateStore as jest.Mock).mockResolvedValue(store);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: /Ativar programa/i }));
+
+    await waitFor(() => expect(updateStore).toHaveBeenCalled());
+    const [, payload] = (updateStore as jest.Mock).mock.calls.at(-1)!;
+    expect(payload.metadata.loyalty_enabled).toBe(true);
+    expect(payload.metadata.cashback_enabled).toBe(false);
   });
 });
