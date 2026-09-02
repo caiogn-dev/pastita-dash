@@ -47,11 +47,19 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   um caso explícito ("o corte de 'hoje' é o dia de Brasília, não o fuso de quem
   olha") cobrindo pedidos das 22h e 00h30 de Brasília. Vermelho antes (2/2),
   verde depois (12/12 na suíte).
-- **Antes/depois:** suíte `pedidosDoQuadro` 10/12 → **12/12**; total do repo
+- **Multi-tenant (revisão do Codex, P1):** ancorar num fuso FIXO (São Paulo)
+  esconderia os pedidos de hoje de uma loja fora de Brasília — ex.: Manaus
+  (-04) às 23h30 já seria o dia seguinte em SP. A loja já expõe `timezone`
+  (`storesApi.ts:73`); `pedidosDaColuna` passou a receber `fusoDaLoja` e o
+  `OrdersPage` passa `store?.timezone` (via `useStore()`). Fuso ausente/ruim
+  cai em Brasília sem lançar (formatadores memoizados por fuso). Testes novos
+  cobrem o caso Manaus e o fallback.
+- **Antes/depois:** suíte `pedidosDoQuadro` 10/12 → **14/14**; total do repo
   passa a ter só a falha pré-existente do preço; `tsc --noEmit` limpo e
   `vite build` ok nos dois lados.
 - **Próximo passo priorizado:** item 1 do backlog acima (preço da campanha de
-  WhatsApp).
+  WhatsApp) — que também limpa os 2 errors de lint pré-existentes em
+  `variaveisDaOferta.ts` e deixaria o CI da base verde.
 
 ## Baseline atual (2026-08-08)
 

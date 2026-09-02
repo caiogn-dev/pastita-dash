@@ -70,6 +70,37 @@ describe('coluna de finalizados', () => {
     // "noite" e "manha" são de 27/08 em Brasília; "ontemNoite" é de 26/08.
     expect(itens.map((o) => o.id).sort()).toEqual(['manha', 'noite']);
   });
+
+  // Multi-tenant: cada loja tem seu fuso. Uma loja em Manaus (-04) às 23h30
+  // ainda está no MESMO dia; se o corte fosse fixo em São Paulo (-03), lá já
+  // seria o dia seguinte e os pedidos de hoje da loja sumiriam do "Entregue".
+  it('usa o fuso da loja, não um fixo (loja em Manaus não perde o dia)', () => {
+    const agoraManaus = new Date('2026-08-27T23:30:00-04:00'); // 03h30 UTC do 28
+    const pedidos = [
+      pedido('deHoje', 'delivered', '2026-08-27T20:00:00-04:00'), // 00h UTC do 28
+      pedido('deOntem', 'delivered', '2026-08-26T21:00:00-04:00'),
+    ];
+    // Com o fuso da loja (Manaus): "deHoje" é 27/08, aparece; "deOntem" não.
+    const comFusoDaLoja = pedidosDaColuna(pedidos, done, agoraManaus, 'America/Manaus');
+    expect(comFusoDaLoja.map((o) => o.id)).toEqual(['deHoje']);
+    // Prova de que o fuso importa: no fuso de São Paulo, "agora" já é 28/08 e
+    // "deHoje" (27/08 lá) cairia fora — some do quadro.
+    const comFusoDeSP = pedidosDaColuna(pedidos, done, agoraManaus, 'America/Sao_Paulo');
+    expect(comFusoDeSP.map((o) => o.id)).toEqual([]);
+  });
+
+  // Fuso ausente/ruim não pode derrubar o quadro: cai no de Brasília sem lançar.
+  it('sem fuso da loja usa Brasília; fuso inválido não quebra', () => {
+    const agora = new Date('2026-08-27T09:00:00-03:00');
+    const p = [pedido('a', 'delivered', '2026-08-27T22:00:00-03:00')];
+    expect(pedidosDaColuna(p, done, agora).map((o) => o.id)).toEqual(['a']);
+    expect(() =>
+      pedidosDaColuna(p, done, agora, 'Fuso/Inexistente'),
+    ).not.toThrow();
+    expect(
+      pedidosDaColuna(p, done, agora, 'Fuso/Inexistente').map((o) => o.id),
+    ).toEqual(['a']); // fallback = Brasília
+  });
 });
 
 describe('colunas de trabalho em aberto', () => {
