@@ -1,3 +1,11 @@
+// O painel roda no navegador do lojista, em horário de Brasília. Vários testes
+// de data escrevem horários em `-03:00` e cobram a regra de "dia" no fuso do
+// lojista (ex.: a coluna "Entregue" do quadro só mostra o de HOJE). Sem fixar o
+// fuso, o CI roda em UTC e "ontem 21:00 BRT" vira "hoje 00:00 UTC", quebrando
+// esses casos só na esteira. Fixar aqui faz o ambiente de teste espelhar a
+// produção — precisa vir antes de qualquer `new Date()`.
+process.env.TZ = process.env.TZ || 'America/Sao_Paulo';
+
 module.exports = {
   /**
    * Sem limite de workers o jest abria um por núcleo e a máquina passava mais

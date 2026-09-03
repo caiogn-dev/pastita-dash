@@ -7,21 +7,12 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 - `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo** (antes e depois).
-- `npm test`: **1349 verdes / 1 vermelho de 1350** (era 1346/2 no baseline).
-  - **Fatia desta execução** deixou verde o guarda `precoVigente.cobertura`
-    (era vermelho) e adicionou 2 testes → +3 verdes no total.
-  - **Pré-existente, NÃO é regressão minha:** `pedidosDoQuadro.test.ts ›
-    não arrasta o que foi entregue ontem` falha **por fuso horário**. O teste
-    escreve datas em `-03:00` (Brasil) mas o CI roda em **UTC** (`TZ` vazio);
-    `mesmoDia()` usa dia-do-calendário local, então o pedido de "ontem 21:00
-    BRT" vira "hoje 00:00 UTC" e entra na coluna. Em produção o navegador do
-    lojista está em BRT e a regra funciona; o defeito é do par teste↔`mesmoDia`
-    ser sensível a fuso. Ver próximo passo (1).
+- `npm test`: **1350/1350 verdes** (era 1346/2 vermelhos no baseline). A esteira
+  de CI (`.github/workflows/ci.yml`, job `build`) estava **vermelha na `main` há
+  vários commits** — o job roda `build && lint && test`, e três coisas o
+  derrubavam. Esta execução deixou a suíte e o job 100% verdes.
 - `npm run build` (`tsc && vite build`, igual à Vercel): **ok** (~13s).
-- `npm run lint`: **1 erro pré-existente** `no-irregular-whitespace` em
-  `variaveisDaOferta.ts` (o `.replace(/ /g,' ')` que troca NBSP — introduzido
-  no commit de 24/08, depois do último baseline registrado; não bloqueia a
-  Vercel, que só roda `tsc && vite build`). Ver próximo passo (2).
+- `npm run lint`: **0 erros**, 290 warnings (gate em 400).
 
 ## Histórico
 
@@ -57,19 +48,33 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   **vermelho antes** (promo devolvia R$52,90), **verde depois** (R$42,90); e o
   caso sem promoção continua caindo no `price`. O guarda `precoVigente.cobertura`
   voltou ao **verde**.
-- **Antes/depois:** `npm test` 1346/2 → **1349/1** (o 1 restante é o flake de
-  fuso, pré-existente). `tsc --noEmit` limpo e `vite build` ok nos dois lados.
-  Só a origem do preço mudou; formato e comportamento visual idênticos.
-- **Próximo passo priorizado:**
-  1. **Flake de fuso em `pedidosDoQuadro`:** tornar o teste/regra robustos a
-     `TZ`. Opções: fixar `TZ=America/Sao_Paulo` no jest (setup) — casa com o
-     lojista real; ou fazer `mesmoDia`/o teste operarem no fuso de exibição
-     explicitamente. Pequeno e seguro, deixa a suíte 100% verde no CI.
-  2. **Lint `no-irregular-whitespace` em `variaveisDaOferta.ts`:** trocar o NBSP
-     literal do `.replace` por ` ` (comportamento idêntico) para zerar o
-     único erro de lint.
-  3. **A11y — continuar varredura:** alvos pendentes (`NewWhatsAppCampaignPage`,
+- **Antes/depois (fatia de preço):** `npm test` 1346/2 -> 1349/1. `tsc` limpo e
+  `vite build` ok. So a origem do preco mudou; formato e visual identicos.
+
+- **Saude da CI (mesmo PR):** a investigacao do check `build` (que voltou
+  **vermelho** no PR) mostrou que a `main` ja estava vermelha ha varios commits.
+  O job `build` empacota `build && lint && test`, e tres defeitos pre-existentes
+  o derrubavam -- dois deles em arquivos que esta fatia ja tocava. Corrigidos
+  aqui para o PR (e a `main` no merge) ficarem verdes:
+  1. **Guarda de preco** (o proprio defeito acima): +1 verde.
+  2. **Flake de fuso** em `pedidosDoQuadro.test.ts`: o CI roda em UTC, os testes
+     de data escrevem `-03:00` e cobram a regra de "dia" no fuso do lojista.
+     Fixei `process.env.TZ = 'America/Sao_Paulo'` no `jest.config.cjs` (espelha
+     a producao -- o painel roda no navegador do lojista em BRT). **Rodei a
+     suite inteira:** 1350/1350, nenhum outro teste de data quebrou.
+  3. **Lint `no-irregular-whitespace`** (NBSP literal no `.replace`/`toMatch` de
+     `variaveisDaOferta`): troquei o caractere NBSP pelo escape `\u00A0` no
+     source e no teste -- comportamento identico, zera o erro de lint.
+- **Resultado final:** `build` ok, `lint` 0 erros, `npm test` **1350/1350**. A
+  esteira de CI volta ao verde.
+- **Proximo passo priorizado:**
+  1. **Manter a `main` verde:** com a CI agora passando, tratar qualquer novo
+     vermelho como bloqueio real (o historico mostra o time convivendo com
+     esteira vermelha -- perigoso).
+  2. **A11y -- continuar varredura:** alvos pendentes (`NewWhatsAppCampaignPage`,
      `InstagramInbox`, `ConnectionsPage`).
+  3. **Seguranca/deps:** triar `npm audit` (react-router 6->7, vite 5->8) em
+     fatia dedicada com validacao de build.
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 
