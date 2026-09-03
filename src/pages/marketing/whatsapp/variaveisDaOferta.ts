@@ -9,10 +9,17 @@
  * adivinhar o formato que o painel manda — deixar o símbolo por conta do corpo
  * do template foi o que fez `ce_saladas_oferta_do_dia` ser aprovado dizendo
  * "Salmão Sublime — 52,90".
+ *
+ * O valor é o preço VIGENTE (`preco_vigente`), não o de cadastro (`price`):
+ * a mensagem vai por escrito para o cliente e tem que casar com o que ele paga
+ * no balcão. É o mesmo número que segue no payload `offer_products`.
  */
+import { precoVigenteDoProduto } from '../../../utils/precoVigente';
+
 export interface ProdutoDaOferta {
   name?: string | null;
   price?: number | string | null;
+  preco_vigente?: number | string | null;
 }
 
 export const precoParaTemplate = (valor?: number | string | null): string => {
@@ -21,7 +28,7 @@ export const precoParaTemplate = (valor?: number | string | null): string => {
   return `R$ ${seguro.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`.replace(/ /g, ' ');
+  })}`.replace(/\u00A0/g, ' ');
 };
 
 export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
@@ -30,7 +37,8 @@ export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
   const campo = (i: number, chave: 'nome' | 'preco') => {
     const produto = produtos[i];
     if (!produto) return '';
-    return chave === 'nome' ? (produto.name || '') : precoParaTemplate(produto.price);
+    if (chave === 'nome') return produto.name || '';
+    return precoParaTemplate(precoVigenteDoProduto(produto));
   };
 
   return {

@@ -3,17 +3,85 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-30)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
-- `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm ci`: ok. `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1319/1319 verdes** (era 1312/1314 com **2 falhas**). Esta fatia
+  zerou as 2 falhas (preço vigente na campanha + fronteira do dia do quadro de
+  pedidos) e adicionou 5 testes.
+- `npm run build` (vite): **ok** (~12s).
+- `npm run lint`: **0 errors** (era 2), 289 warnings. Os 2 errors eram
+  `no-irregular-whitespace` (NBSP literal no regex de `precoParaTemplate` e no seu
+  teste) — trocados por ` ` nesta fatia, comportamento idêntico.
+
+- **CI (`ci.yml`) estava vermelha na main**: `npm run lint` (2 errors) e `npm test`
+  (fronteira do dia sob UTC) reprovavam. Esta fatia deixa os três passos verdes
+  sob `TZ=UTC` — igual ao runner do GitHub Actions.
+
+## Backlog priorizado (aberto)
+
+1. **[Segurança/deps] Major bump `react-router` 6→7** (open redirect via backslash,
+   moderate) e `vite` 5→8 (esbuild/postcss dev-only) — cada um como fatia com
+   validação de build.
+2. **[Lint] Reduzir os 289 warnings** (majoritariamente `no-explicit-any`) por área,
+   sem afrouxar o gate.
+3. **[Multi-tenant] Ligar o fuso real da loja ao quadro de pedidos.**
+   `pedidosDaColuna` já aceita `fusoDaLoja` (default `America/Sao_Paulo`), mas
+   `OrdersPage` ainda não o passa — `useStore()` só expõe `storeId/storeSlug`.
+   Quando o `timezone` da loja selecionada estiver à mão, encaminhar para acertar
+   lojas fora do fuso de Brasília.
 
 ## Histórico
+
+### 2026-08-30 — Correção: campanha de WhatsApp anunciava o preço de CADASTRO, não o do dia
+- **Medido:** o teste-guarda `precoVigente.cobertura.test.ts` estava **vermelho**
+  no baseline, apontando `variaveisDaOferta.ts:33` lendo `produto.price` cru. A
+  campanha de oferta (`NewWhatsAppCampaignPage`) já mandava o preço vigente no
+  **payload** (`offer_products` usa `precoVigenteDoProduto`) e na prévia de valor,
+  mas as **variáveis do template** (`{{preco_1}}`/`{{preco_2}}`) e os dois spans de
+  prévia dessas variáveis liam `product.price`. Resultado: o texto que vai POR
+  ESCRITO no WhatsApp do cliente anunciava o preço cheio de um produto em promoção
+  do dia — o cliente lê R$ 52,90 e paga R$ 32,90 no balcão (ou vice-versa). É
+  exatamente o defeito que o guard descreve ("o catálogo enviado ao cliente pelo
+  WhatsApp manda o preço POR ESCRITO").
+- **Mudado:**
+  - `variaveisDaOferta.ts`: `preco_1/preco_2` passam por `precoVigenteDoProduto`
+    (usa `preco_vigente`, cai em `price` só sem promoção). `ProdutoDaOferta` ganhou
+    `preco_vigente`. Agora casa com o payload `offer_products`.
+  - `NewWhatsAppCampaignPage.tsx`: as duas prévias de `{{preco_N}}` também passam a
+    mostrar o preço vigente.
+  - `precoVigente.ts`: `ComPrecoVigente.price` afrouxado para `number|string|null`
+    opcional (o helper já era null-safe), para aceitar o `ProdutoDaOferta` direto
+    sem reler `produto.price` (o que reintroduziria o defeito no guard).
+- **Teste (TDD):** 3 casos novos em `variaveisDaOferta.test.ts`, escritos
+  **vermelhos antes**: produto em promoção manda o vigente (number e string) e sem
+  promoção cai no cadastro. Guard `precoVigente.cobertura` voltou ao **verde**.
+- **Bônus (mesmo arquivo):** os 2 lint errors `no-irregular-whitespace` (NBSP
+  literal no regex) viraram ` ` — comportamento idêntico, lint sem errors.
+- **Antes/depois:** `npm test` 1312/1314 (2 falhas) → **1316/1317**; `tsc --noEmit`
+  limpo e `vite build` ok; lint 2 errors → **0**.
+
+### 2026-08-30 — CI verde: fronteira do dia do quadro de pedidos no fuso da loja
+- **Medido:** a CI (`ci.yml`) do PR #181 reprovou no passo de testes. Repro local
+  com `TZ=UTC` (igual ao runner do GitHub Actions) mostrou `pedidosDoQuadro.test.ts
+  › não arrasta o que foi entregue ontem` **vermelho na main também** — falha de
+  base branch, não do diff de preço. `pedidosDaColuna` decidia "é de hoje?" com
+  `Date#getFullYear/Month/Date`, que leem o fuso do **runtime**; um pedido das
+  21:00 -03 (ontem em SP) já é 00:00 UTC → virava "hoje" e não saía da coluna de
+  finalizados. Em produção o navegador do operador roda em fuso BR e escondia o
+  bug; na Vercel/CI (UTC) ele aparece.
+- **Mudado:** `pedidosDaColuna` compara o **dia civil no fuso da loja** via
+  `Intl.DateTimeFormat('en-CA', { timeZone })`, estável em qualquer runtime. Novo
+  parâmetro opcional `fusoDaLoja` (default `America/Sao_Paulo`); a assinatura antiga
+  segue válida.
+- **Teste (TDD):** o teste que já falhava volta ao verde, mais 2 novos — fronteira
+  às 23h em SP e um fuso de loja diferente (Acre, -05:00) provando que o fuso da
+  loja é quem decide o dia.
+- **Antes/depois:** os três passos da CI (build, lint, test) passam sob `TZ=UTC`;
+  `npm test` **1319/1319**; `tsc --noEmit` limpo e `vite build` ok. Sem mudança de
+  comportamento em produção (navegador em fuso BR já dava o dia certo).
+
+## Histórico anterior
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
