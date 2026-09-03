@@ -35,7 +35,7 @@ describe('precoParaTemplate', () => {
 
   it('não usa espaço não-quebrável', () => {
     // o NBSP do toLocaleString sobrevive ao envio e aparece torto no WhatsApp
-    expect(precoParaTemplate(52.9)).not.toMatch(/ /);
+    expect(precoParaTemplate(52.9)).not.toMatch(/\u00A0/);
   });
 });
 
@@ -62,6 +62,26 @@ describe('variaveisDaOferta', () => {
     // mandar "R$ 0,00" faria o cliente ler uma oferta de zero real
     expect(variaveisDaOferta([])).toEqual({
       produto_1: '', preco_1: '', produto_2: '', preco_2: '',
+    });
+  });
+
+  it('usa o preço vigente, não o de cadastro', () => {
+    // O `offer_products.price` enviado ao backend já vai com o `preco_vigente`
+    // (a promoção do dia). Se a VARIÁVEL do template mandasse o `price` cru, o
+    // cliente leria no corpo da mensagem um preço mais caro do que o que o
+    // painel diz cobrar — o mesmo defeito de "mostrar/cobrar com price" que
+    // este projeto já corrigiu no storefront e no PDV.
+    const emPromo = { name: 'Salmão Sublime', price: 52.9, preco_vigente: 42.9 };
+    expect(variaveisDaOferta([emPromo])).toMatchObject({
+      produto_1: 'Salmão Sublime',
+      preco_1: 'R$ 42,90',
+    });
+  });
+
+  it('sem promoção do dia, cai no preço de cadastro', () => {
+    const semPromo = { name: 'Especial Filé de Frango', price: 39.99, preco_vigente: null };
+    expect(variaveisDaOferta([semPromo])).toMatchObject({
+      preco_1: 'R$ 39,99',
     });
   });
 });

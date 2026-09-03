@@ -12,7 +12,9 @@
  * na frente do caixa.
  */
 export interface ComPrecoVigente {
-  price: number | string;
+  // Aceita ausente/nulo: quem chama pode ter só um esboço do produto (a oferta
+  // de campanha, por exemplo). O fallback já é `Number(price ?? 0)`.
+  price?: number | string | null;
   preco_vigente?: number | string | null;
 }
 

@@ -3,17 +3,80 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-09-03)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
-- `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: **1350/1350 verdes** (era 1346/2 vermelhos no baseline). A esteira
+  de CI (`.github/workflows/ci.yml`, job `build`) estava **vermelha na `main` há
+  vários commits** — o job roda `build && lint && test`, e três coisas o
+  derrubavam. Esta execução deixou a suíte e o job 100% verdes.
+- `npm run build` (`tsc && vite build`, igual à Vercel): **ok** (~13s).
+- `npm run lint`: **0 erros**, 290 warnings (gate em 400).
 
 ## Histórico
+
+### 2026-09-03 — Correção: campanha de WhatsApp mandava o preço de CADASTRO, não o do dia
+- **Medido:** o guarda `precoVigente.cobertura.test.ts` estava **vermelho** no
+  baseline apontando `variaveisDaOferta.ts` como nova tela lendo `product.price`
+  para MOSTRAR/COBRAR. Investigado: a página de nova campanha
+  (`NewWhatsAppCampaignPage.tsx`) tinha **dois caminhos divergentes** para o
+  mesmo preço da oferta:
+  - o payload real `offer_products.price` (linha ~658) já usava
+    `precoVigenteDoProduto(product)` — **certo** (promoção do dia);
+  - mas as **variáveis do template** `preco_1`/`preco_2` — o texto que o cliente
+    lê no corpo do WhatsApp — e o preview "Variáveis que serão enviadas" liam o
+    `product.price` **cru** (cadastro), via `variaveisDaOferta`/`precoParaTemplate`.
+  - Resultado: um produto em promoção (`price` R$52,90, `preco_vigente` R$42,90)
+    era anunciado por escrito a **R$52,90** e cobrado a **R$42,90** — o mesmo
+    defeito de "mostrar/cobrar com `price`" que o projeto já corrigira no
+    storefront e no PDV, agora vazando pela campanha.
+- **Mudado:**
+  - `variaveisDaOferta.ts`: passou a resolver o preço por
+    `precoVigenteDoProduto(produto)` (interface `ProdutoDaOferta` ganhou
+    `preco_vigente`). Agora a variável do template casa com o payload cobrado.
+  - `precoVigente.ts`: `ComPrecoVigente.price` afrouxado para
+    `number|string|null` opcional — a impl já fazia `Number(price ?? 0)`, então
+    é só ampliar o que a função ACEITA (nenhum outro chamador se apoia nele).
+    Isso permitiu passar o produto direto ao resolver, sem reintroduzir o token
+    `produto.price` que o guarda proíbe.
+  - `NewWhatsAppCampaignPage.tsx`: o preview agora reusa a saída de
+    `variaveisDaOferta` (memo `offerVariablesPreview`), garantindo que **preview
+    e envio nunca mais divirjam**. Import de `precoParaTemplate` (agora sem uso)
+    removido.
+- **Teste (TDD):** 2 casos novos em `variaveisDaOferta.test.ts` — escritos
+  **vermelho antes** (promo devolvia R$52,90), **verde depois** (R$42,90); e o
+  caso sem promoção continua caindo no `price`. O guarda `precoVigente.cobertura`
+  voltou ao **verde**.
+- **Antes/depois (fatia de preço):** `npm test` 1346/2 -> 1349/1. `tsc` limpo e
+  `vite build` ok. So a origem do preco mudou; formato e visual identicos.
+
+- **Saude da CI (mesmo PR):** a investigacao do check `build` (que voltou
+  **vermelho** no PR) mostrou que a `main` ja estava vermelha ha varios commits.
+  O job `build` empacota `build && lint && test`, e tres defeitos pre-existentes
+  o derrubavam -- dois deles em arquivos que esta fatia ja tocava. Corrigidos
+  aqui para o PR (e a `main` no merge) ficarem verdes:
+  1. **Guarda de preco** (o proprio defeito acima): +1 verde.
+  2. **Flake de fuso** em `pedidosDoQuadro.test.ts`: o CI roda em UTC, os testes
+     de data escrevem `-03:00` e cobram a regra de "dia" no fuso do lojista.
+     Fixei `process.env.TZ = 'America/Sao_Paulo'` no `jest.config.cjs` (espelha
+     a producao -- o painel roda no navegador do lojista em BRT). **Rodei a
+     suite inteira:** 1350/1350, nenhum outro teste de data quebrou.
+  3. **Lint `no-irregular-whitespace`** (NBSP literal no `.replace`/`toMatch` de
+     `variaveisDaOferta`): troquei o caractere NBSP pelo escape `\u00A0` no
+     source e no teste -- comportamento identico, zera o erro de lint.
+- **Resultado final:** `build` ok, `lint` 0 erros, `npm test` **1350/1350**. A
+  esteira de CI volta ao verde.
+- **Proximo passo priorizado:**
+  1. **Manter a `main` verde:** com a CI agora passando, tratar qualquer novo
+     vermelho como bloqueio real (o historico mostra o time convivendo com
+     esteira vermelha -- perigoso).
+  2. **A11y -- continuar varredura:** alvos pendentes (`NewWhatsAppCampaignPage`,
+     `InstagramInbox`, `ConnectionsPage`).
+  3. **Seguranca/deps:** triar `npm audit` (react-router 6->7, vite 5->8) em
+     fatia dedicada com validacao de build.
+
+### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
