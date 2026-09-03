@@ -10,9 +10,12 @@
  * do template foi o que fez `ce_saladas_oferta_do_dia` ser aprovado dizendo
  * "Salmão Sublime — 52,90".
  */
+import { precoVigenteDoProduto } from '../../../utils/precoVigente';
+
 export interface ProdutoDaOferta {
   name?: string | null;
   price?: number | string | null;
+  preco_vigente?: number | string | null;
 }
 
 export const precoParaTemplate = (valor?: number | string | null): string => {
@@ -30,7 +33,12 @@ export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
   const campo = (i: number, chave: 'nome' | 'preco') => {
     const produto = produtos[i];
     if (!produto) return '';
-    return chave === 'nome' ? (produto.name || '') : precoParaTemplate(produto.price);
+    // O preço da mensagem tem que ser o MESMO que o backend cobra: o
+    // `preco_vigente` (promoção do dia), não o `price` de cadastro. Senão o
+    // corpo do WhatsApp mostra um valor mais caro do que o que será cobrado.
+    return chave === 'nome'
+      ? (produto.name || '')
+      : precoParaTemplate(precoVigenteDoProduto(produto));
   };
 
   return {

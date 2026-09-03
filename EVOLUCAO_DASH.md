@@ -3,17 +3,75 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-09-03)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
-- `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: **1349 verdes / 1 vermelho de 1350** (era 1346/2 no baseline).
+  - **Fatia desta execução** deixou verde o guarda `precoVigente.cobertura`
+    (era vermelho) e adicionou 2 testes → +3 verdes no total.
+  - **Pré-existente, NÃO é regressão minha:** `pedidosDoQuadro.test.ts ›
+    não arrasta o que foi entregue ontem` falha **por fuso horário**. O teste
+    escreve datas em `-03:00` (Brasil) mas o CI roda em **UTC** (`TZ` vazio);
+    `mesmoDia()` usa dia-do-calendário local, então o pedido de "ontem 21:00
+    BRT" vira "hoje 00:00 UTC" e entra na coluna. Em produção o navegador do
+    lojista está em BRT e a regra funciona; o defeito é do par teste↔`mesmoDia`
+    ser sensível a fuso. Ver próximo passo (1).
+- `npm run build` (`tsc && vite build`, igual à Vercel): **ok** (~13s).
+- `npm run lint`: **1 erro pré-existente** `no-irregular-whitespace` em
+  `variaveisDaOferta.ts` (o `.replace(/ /g,' ')` que troca NBSP — introduzido
+  no commit de 24/08, depois do último baseline registrado; não bloqueia a
+  Vercel, que só roda `tsc && vite build`). Ver próximo passo (2).
 
 ## Histórico
+
+### 2026-09-03 — Correção: campanha de WhatsApp mandava o preço de CADASTRO, não o do dia
+- **Medido:** o guarda `precoVigente.cobertura.test.ts` estava **vermelho** no
+  baseline apontando `variaveisDaOferta.ts` como nova tela lendo `product.price`
+  para MOSTRAR/COBRAR. Investigado: a página de nova campanha
+  (`NewWhatsAppCampaignPage.tsx`) tinha **dois caminhos divergentes** para o
+  mesmo preço da oferta:
+  - o payload real `offer_products.price` (linha ~658) já usava
+    `precoVigenteDoProduto(product)` — **certo** (promoção do dia);
+  - mas as **variáveis do template** `preco_1`/`preco_2` — o texto que o cliente
+    lê no corpo do WhatsApp — e o preview "Variáveis que serão enviadas" liam o
+    `product.price` **cru** (cadastro), via `variaveisDaOferta`/`precoParaTemplate`.
+  - Resultado: um produto em promoção (`price` R$52,90, `preco_vigente` R$42,90)
+    era anunciado por escrito a **R$52,90** e cobrado a **R$42,90** — o mesmo
+    defeito de "mostrar/cobrar com `price`" que o projeto já corrigira no
+    storefront e no PDV, agora vazando pela campanha.
+- **Mudado:**
+  - `variaveisDaOferta.ts`: passou a resolver o preço por
+    `precoVigenteDoProduto(produto)` (interface `ProdutoDaOferta` ganhou
+    `preco_vigente`). Agora a variável do template casa com o payload cobrado.
+  - `precoVigente.ts`: `ComPrecoVigente.price` afrouxado para
+    `number|string|null` opcional — a impl já fazia `Number(price ?? 0)`, então
+    é só ampliar o que a função ACEITA (nenhum outro chamador se apoia nele).
+    Isso permitiu passar o produto direto ao resolver, sem reintroduzir o token
+    `produto.price` que o guarda proíbe.
+  - `NewWhatsAppCampaignPage.tsx`: o preview agora reusa a saída de
+    `variaveisDaOferta` (memo `offerVariablesPreview`), garantindo que **preview
+    e envio nunca mais divirjam**. Import de `precoParaTemplate` (agora sem uso)
+    removido.
+- **Teste (TDD):** 2 casos novos em `variaveisDaOferta.test.ts` — escritos
+  **vermelho antes** (promo devolvia R$52,90), **verde depois** (R$42,90); e o
+  caso sem promoção continua caindo no `price`. O guarda `precoVigente.cobertura`
+  voltou ao **verde**.
+- **Antes/depois:** `npm test` 1346/2 → **1349/1** (o 1 restante é o flake de
+  fuso, pré-existente). `tsc --noEmit` limpo e `vite build` ok nos dois lados.
+  Só a origem do preço mudou; formato e comportamento visual idênticos.
+- **Próximo passo priorizado:**
+  1. **Flake de fuso em `pedidosDoQuadro`:** tornar o teste/regra robustos a
+     `TZ`. Opções: fixar `TZ=America/Sao_Paulo` no jest (setup) — casa com o
+     lojista real; ou fazer `mesmoDia`/o teste operarem no fuso de exibição
+     explicitamente. Pequeno e seguro, deixa a suíte 100% verde no CI.
+  2. **Lint `no-irregular-whitespace` em `variaveisDaOferta.ts`:** trocar o NBSP
+     literal do `.replace` por ` ` (comportamento idêntico) para zerar o
+     único erro de lint.
+  3. **A11y — continuar varredura:** alvos pendentes (`NewWhatsAppCampaignPage`,
+     `InstagramInbox`, `ConnectionsPage`).
+
+### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
