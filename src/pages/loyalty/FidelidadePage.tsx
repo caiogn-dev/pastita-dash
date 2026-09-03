@@ -346,6 +346,13 @@ const FidelidadePage: React.FC = () => {
           onExpiryDays={setCbValidade}
           onSalvar={handleSalvarCashback}
           salvando={salvandoCashback}
+          storeSlug={String(storeIdentifier || '')}
+          onAjustou={async () => {
+            // Recarrega depois do crédito manual: sem isto o dono credita e a
+            // tela continua mostrando o saldo antigo, o que leva a creditar
+            // duas vezes achando que a primeira não pegou.
+            if (storeIdentifier) setCashback(await cashbackService.get(storeIdentifier));
+          }}
         />
       )}
 

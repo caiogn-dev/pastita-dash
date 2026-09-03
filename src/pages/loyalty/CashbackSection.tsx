@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge, Button, Card, Input, KpiGrid, EmptyState } from '../../components/ui';
 import {
   BanknotesIcon, ClockIcon, UserGroupIcon, ShareIcon, ReceiptPercentIcon,
 } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../utils/formatters';
 import type { CashbackResponse } from '../../services/cashback';
+import { cashbackService } from '../../services/cashback';
 
 /**
  * Cashback no painel.
@@ -49,12 +50,47 @@ interface Props {
   salvando: boolean;
   ligado: boolean;
   onLigado: (v: boolean) => void;
+  storeSlug: string;
+  onAjustou?: () => void;
 }
 
 export const CashbackSection: React.FC<Props> = ({
   dados, carregando, percent, referralPercent, expiryDays,
   onPercent, onReferralPercent, onExpiryDays, onSalvar, salvando, ligado, onLigado,
+  storeSlug, onAjustou,
 }) => {
+  // Crédito manual: cortesia, reparação, brinde. Antes disto só existia pelo
+  // shell de produção, que é como se perde dinheiro sem rastro.
+  const [ajustePara, setAjustePara] = useState<string | null>(null);
+  const [ajusteValor, setAjusteValor] = useState('');
+  const [ajusteMotivo, setAjusteMotivo] = useState('');
+  const [ajustando, setAjustando] = useState(false);
+  const [erroAjuste, setErroAjuste] = useState('');
+
+  const creditar = async () => {
+    setErroAjuste('');
+    if (!ajustePara) return;
+    // O motivo é obrigatório no backend; barrar aqui evita a ida à rede e
+    // deixa a razão explícita para quem está creditando.
+    if (!ajusteMotivo.trim()) {
+      setErroAjuste('Diga o motivo — o crédito fica registrado com ele.');
+      return;
+    }
+    setAjustando(true);
+    try {
+      await cashbackService.ajustar(storeSlug, {
+        phone: ajustePara,
+        valor: ajusteValor.replace(',', '.'),
+        motivo: ajusteMotivo.trim(),
+      });
+      setAjustePara(null);
+      onAjustou?.();
+    } catch (e: any) {
+      setErroAjuste(e?.response?.data?.error || 'Não foi possível creditar agora.');
+    } finally {
+      setAjustando(false);
+    }
+  };
   const resumo = dados?.resumo;
   const venceEm7 = num(resumo?.vence_em_7_dias);
   const fila = dados?.results ?? [];
@@ -94,9 +130,18 @@ export const CashbackSection: React.FC<Props> = ({
               tone: venceEm7 > 0 ? 'warning' : 'default',
             },
             {
-              label: 'Veio de indicação',
-              value: formatCurrency(num(resumo?.saldo_de_indicacao)),
-              definicao: 'Saldo que clientes e parceiros ganharam por trazer gente.',
+              // A separação que evita o dono achar que "deve" o que já
+              // recebeu: pacote de carteira é dinheiro no caixa, cashback é
+              // custo de marketing. Somados viram um passivo inventado.
+              label: 'Comprado (carteira)',
+              value: formatCurrency(num(resumo?.saldo_pago_pelo_cliente)),
+              definicao: 'Saldo que o cliente JÁ pagou. Não é custo — esse dinheiro entrou.',
+              icone: <BanknotesIcon />,
+            },
+            {
+              label: 'Concedido pela loja',
+              value: formatCurrency(num(resumo?.saldo_concedido_pela_loja)),
+              definicao: 'Cashback, indicação e brindes: isto sim a loja ainda vai pagar.',
               icone: <ShareIcon />,
             },
           ]}
@@ -196,12 +241,71 @@ export const CashbackSection: React.FC<Props> = ({
                         : `vence em ${c.dias_para_vencer} dia${c.dias_para_vencer > 1 ? 's' : ''}`}
                     </span>
                   </span>
-                  <Badge tone={c.dias_para_vencer <= 7 ? 'warning' : 'neutral'}>
-                    {formatCurrency(num(c.saldo))}
-                  </Badge>
+                  <span className="flex shrink-0 items-center gap-2">
+                    {num(c.cupons_entrega) > 0 && (
+                      <Badge tone="neutral">
+                        {c.cupons_entrega} entrega{c.cupons_entrega > 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                    {num(c.saldo_carteira) > 0 && (
+                      // Distingue o comprado do concedido na própria linha: são
+                      // dinheiros diferentes e só um deles a loja ainda deve.
+                      <Badge tone="success">
+                        carteira {formatCurrency(num(c.saldo_carteira))}
+                      </Badge>
+                    )}
+                    <Badge tone={c.dias_para_vencer <= 7 ? 'warning' : 'neutral'}>
+                      {formatCurrency(num(c.saldo))}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setAjustePara(c.phone); setAjusteValor(''); setAjusteMotivo(''); }}
+                    >
+                      + saldo
+                    </Button>
+                  </span>
                 </li>
               ))}
             </ul>
+          )}
+
+          {ajustePara && (
+            <div className="mt-4 space-y-3 rounded border border-border-token bg-surface-2 p-3">
+              <p className="text-body font-semibold text-fg-token">
+                Creditar saldo para {telefoneLegivel(ajustePara)}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  label="Valor (R$)"
+                  inputMode="decimal"
+                  value={ajusteValor}
+                  onChange={(e) => setAjusteValor(e.target.value)}
+                  placeholder="50,00"
+                />
+                <Input
+                  label="Motivo"
+                  value={ajusteMotivo}
+                  onChange={(e) => setAjusteMotivo(e.target.value)}
+                  placeholder="Pedido atrasado, cortesia"
+                />
+              </div>
+              {erroAjuste && (
+                <p role="alert" className="text-caption text-danger-token">{erroAjuste}</p>
+              )}
+              <p className="text-caption text-fg-muted-token">
+                O crédito entra como cortesia da loja e o cliente usa sem precisar
+                confirmar o número — diferente do saldo comprado.
+              </p>
+              <div className="flex gap-2">
+                <Button onClick={creditar} disabled={ajustando}>
+                  {ajustando ? 'Creditando…' : 'Creditar'}
+                </Button>
+                <Button variant="ghost" onClick={() => setAjustePara(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
           )}
         </Card>
       )}

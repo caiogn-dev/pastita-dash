@@ -10,13 +10,31 @@ export interface CashbackResumo {
   saldo_de_indicacao: string;
   /** O único número com prazo — e por isso o único que manda agir hoje. */
   vence_em_7_dias: string;
+  /**
+   * Saldo que o cliente JÁ PAGOU (pacotes da carteira). Não é custo: esse
+   * dinheiro entrou no caixa. Somar com o concedido produz um "quanto eu devo"
+   * inflado, que é o erro que esta separação existe para evitar.
+   */
+  saldo_pago_pelo_cliente: string;
+  /** Cashback e brindes: isto sim é custo de marketing ainda não pago. */
+  saldo_concedido_pela_loja: string;
+  por_origem: Record<string, string>;
 }
 
 export interface CashbackClienteRow {
   phone: string;
   saldo: string;
+  /** Parte comprada do saldo — a única que exige telefone comprovado para gastar. */
+  saldo_carteira: string;
+  cupons_entrega: number;
   vence_em: string;
   dias_para_vencer: number;
+}
+
+export interface AjusteDeSaldo {
+  phone: string;
+  valor: string;
+  motivo: string;
 }
 
 export interface CashbackResponse {
@@ -32,6 +50,17 @@ export interface CashbackResponse {
 class CashbackService {
   async get(storeSlug: string, page = 1): Promise<CashbackResponse> {
     const { data } = await api.get(`/stores/${storeSlug}/cashback/`, { params: { page } });
+    return data;
+  }
+
+  /**
+   * Crédito manual: cortesia, reparação, brinde.
+   *
+   * `motivo` é obrigatório no backend de propósito — crédito sem justificativa
+   * é o buraco por onde some dinheiro em qualquer programa de fidelidade.
+   */
+  async ajustar(storeSlug: string, ajuste: AjusteDeSaldo) {
+    const { data } = await api.post(`/stores/${storeSlug}/cashback/ajustar/`, ajuste);
     return data;
   }
 }
