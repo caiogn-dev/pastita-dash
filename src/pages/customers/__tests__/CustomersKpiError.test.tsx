@@ -16,6 +16,12 @@ jest.mock('../../../hooks', () => ({
   useStore: () => ({ storeId: 'loja-1', storeSlug: 'loja-1' }),
   useDebounce: (v: unknown) => v,
 }));
+jest.mock('../../../hooks/queries/useReports', () => ({
+  // O relatório de RFM alimenta um selo na ficha; estes testes são sobre o
+  // estado de erro dos KPIs. Sem o mock, o `useQuery` real exigiria um
+  // QueryClientProvider aqui só por causa de um dado de apoio.
+  useAnalyticsReport: () => ({ data: undefined, isLoading: false }),
+}));
 jest.mock('../../../utils/avatar', () => ({ getAvatarColor: () => '#888', getInitials: () => 'MS' }));
 jest.mock('react-router-dom', () => ({
   useSearchParams: () => [new URLSearchParams(), jest.fn()],

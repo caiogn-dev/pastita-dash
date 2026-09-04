@@ -10,6 +10,7 @@ import type {
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { Link } from 'react-router-dom';
 import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel } from './shared';
+import { urlDeClienteBuscado } from '../../customers/buscaPelaUrl';
 
 // ─── Clientes (RFM + inativos) ───────────────────────────────────────────────
 
@@ -92,6 +93,11 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
               const badge = SEGMENT_BADGE[c.segment];
               return {
                 label: c.name || c.phone || 'Cliente',
+                // A linha vira caminho: este relatório é o único lugar que
+                // sabe QUEM está em risco, e até agora ele parava na
+                // constatação. Levar até a ficha é o que transforma o número
+                // em ação — sem isso o dono decorava o nome e procurava na mão.
+                href: urlDeClienteBuscado(c) ?? undefined,
                 badge: badge ? <Badge tone={badge.tone}>{badge.label}</Badge> : undefined,
                 sub: [
                   `${c.total_orders} pedido${c.total_orders > 1 ? 's' : ''}`,

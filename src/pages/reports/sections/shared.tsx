@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { Card } from '../../../components/ui';
 import { toCsv, downloadCsv } from '../../../utils/csv';
+import { Link } from 'react-router-dom';
 
 export const formatBRL = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -87,6 +88,18 @@ export interface RankedItem {
   badge?: React.ReactNode;
   /** ações à direita (links/botões). */
   actions?: React.ReactNode;
+  /**
+   * Para onde a linha leva, quando existe destino.
+   *
+   * Só o RÓTULO vira link — não a linha inteira. A linha carrega badge, barra
+   * e valor; envolver tudo num `<a>` faria o leitor de tela anunciar o card
+   * inteiro como um nome de link e engoliria os elementos interativos que já
+   * moram em `actions`.
+   *
+   * Ranking sem destino (produto, bairro) continua texto: virar link
+   * prometeria uma ficha que não existe.
+   */
+  href?: string;
   /** barra em tom de alerta (ex.: nota baixa). */
   danger?: boolean;
 }
@@ -129,9 +142,19 @@ export const RankedList: React.FC<{
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="truncate text-sm font-medium text-fg-token" title={item.label}>
-                  {item.label}
-                </span>
+                {item.href ? (
+                  <Link
+                    to={item.href}
+                    className="truncate text-sm font-medium text-fg-token hover:text-brand hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 rounded"
+                    title={item.label}
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span className="truncate text-sm font-medium text-fg-token" title={item.label}>
+                    {item.label}
+                  </span>
+                )}
                 {item.badge}
               </div>
               {item.sub && <p className="text-xs text-fg-muted-token truncate">{item.sub}</p>}

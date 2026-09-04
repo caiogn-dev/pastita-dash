@@ -9,6 +9,7 @@ import {
   EnvelopeIcon,
   ShoppingBagIcon,
   CheckBadgeIcon,
+  SparklesIcon,
   NoSymbolIcon,
   UserGroupIcon,
   XMarkIcon,
@@ -37,10 +38,34 @@ import { useCustomerStats } from '../../hooks/queries/useCustomerStats';
 import { useCustomerOrders } from '../../hooks/queries/useCustomerOrders';
 import { getAvatarColor, getInitials } from '../../utils/avatar';
 import { publicEmail } from '../../utils/internalEmail';
+import { buscaInicialDaUrl } from './buscaPelaUrl';
+import { segmentoPorTelefone } from './segmentoDoCliente';
+import { useAnalyticsReport } from '../../hooks/queries/useReports';
+import type { RfmReport, DateRange } from '../../services/reports';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 30;
+
+/**
+ * Janela do relatório de RFM usada na ficha: 90 dias.
+ *
+ * O segmento precisa de HISTÓRIA. Com 30 dias, todo cliente que não pediu no
+ * mês vira "perdido" — inclusive quem compra a cada 45, que é ritmo normal
+ * numa saladeria. 90d é o maior preset abaixo de um ano e dá margem para
+ * distinguir "sumiu" de "ainda não voltou".
+ */
+const PERIODO_DO_SEGMENTO: DateRange = { period: '90d' };
+
+/** O que cada segmento significa em uma linha — o rótulo sozinho não age. */
+const SEGMENTO_NA_FICHA: Record<string, { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral'; dica: string }> = {
+  campeoes:   { label: 'Campeão',  tone: 'success', dica: 'compra muito e recente' },
+  leais:      { label: 'Leal',     tone: 'success', dica: 'volta sempre' },
+  novos:      { label: 'Novo',     tone: 'neutral', dica: 'primeira compra recente' },
+  em_risco:   { label: 'Em risco', tone: 'warning', dica: 'comprava e parou' },
+  perdidos:   { label: 'Perdido',  tone: 'danger',  dica: 'sumiu faz tempo' },
+  sem_pedido: { label: 'Sem pedido', tone: 'neutral', dica: 'cadastrado, nunca comprou' },
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -204,9 +229,16 @@ interface CustomerDrawerProps {
   customer: StoreCustomer | null;
   onClose: () => void;
   onEdit?: (customer: StoreCustomer) => void;
+  /**
+   * Segmento RFM (campeão, em risco, perdido…), resolvido pelo pai.
+   *
+   * Opcional: sem ele a ficha só não mostra o selo. Nenhuma tela deve deixar
+   * de abrir porque um relatório de apoio não respondeu.
+   */
+  segmento?: string | null;
 }
 
-export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEdit }) => {
+export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEdit, segmento = null }) => {
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
   const navigate = useNavigate();
@@ -214,6 +246,13 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
   // Pedidos filtrados server-side por telefone (?customer=<phone>) — sem baixar 200.
   const customerPhone = customer?.phone || customer?.whatsapp || '';
   const ordersQuery = useCustomerOrders(storeQuery, customerPhone);
+
+  // O segmento chega PRONTO do pai, não buscado aqui.
+  //
+  // Buscar o relatório de RFM dentro do drawer significaria uma consulta por
+  // ficha aberta para exibir um selo — e obrigaria todo teste que monta o
+  // drawer isolado a carregar um QueryClient só por causa disso. O pai já
+  // busca uma vez para a página inteira.
   const orders = ordersQuery.data?.results ?? [];
   const loadingOrders = ordersQuery.isLoading && ordersQuery.fetchStatus !== 'idle';
 
@@ -308,6 +347,19 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
                   <CalendarDaysIcon className="h-4 w-4 text-fg-muted-token shrink-0" />
                   <span className="text-sm text-fg-token">
                     Último pedido {formatDistanceToNow(new Date(customer.last_order_at), { locale: ptBR, addSuffix: true })}
+                  </span>
+                </div>
+              )}
+              {segmento && SEGMENTO_NA_FICHA[segmento] && (
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <SparklesIcon className="h-4 w-4 text-fg-muted-token shrink-0" />
+                  <span className="flex items-center gap-2 text-sm text-fg-token">
+                    <Badge tone={SEGMENTO_NA_FICHA[segmento].tone}>
+                      {SEGMENTO_NA_FICHA[segmento].label}
+                    </Badge>
+                    <span className="text-fg-muted-token">
+                      {SEGMENTO_NA_FICHA[segmento].dica}
+                    </span>
                   </span>
                 </div>
               )}
@@ -495,13 +547,31 @@ export const CustomersPage: React.FC = () => {
     });
   };
 
-  const [search, setSearch] = useState('');
+  // A busca nasce da URL: é o que faz o link do relatório ("Fulana, em risco")
+  // chegar aqui JÁ filtrado. Sem isso o link cai na lista inteira e a pessoa
+  // apontada some no meio da base — o dono procura na mão de novo, que é
+  // exatamente o trabalho que o link deveria ter eliminado.
+  //
+  // De quebra, o filtro passa a sobreviver ao F5 e a ser compartilhável.
+  const [search, setSearch] = useState(() => buscaInicialDaUrl(searchParams));
   const debouncedSearch = useDebounce(search.trim(), 400);
+
+  // Espelha o termo na URL depois do debounce — não a cada tecla, senão o
+  // histórico do navegador vira uma entrada por letra digitada.
+  useEffect(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (debouncedSearch) next.set('busca', debouncedSearch);
+      else next.delete('busca');
+      return next;
+    }, { replace: true });
+  }, [debouncedSearch, setSearchParams]);
 
   const storeQuery = storeSlug || storeId;
 
   // Lista paginada + busca server-side (count/results vêm do backend).
   const customersQuery = useCustomers(storeQuery, debouncedSearch, page, PAGE_SIZE);
+
   const customers = customersQuery.data?.results ?? [];
   const totalCount = customersQuery.data?.count ?? 0;
 
@@ -540,6 +610,15 @@ export const CustomersPage: React.FC = () => {
 
   const navigate = useNavigate();
   const [selectedCustomer, setSelectedCustomer] = useState<StoreCustomer | null>(null);
+  // RFM buscado UMA vez para a página, e só quando existe ficha aberta: é o
+  // único lugar que usa o segmento, e a lista não deve pagar a consulta.
+  const rfm = useAnalyticsReport<RfmReport>(
+    'rfm', PERIODO_DO_SEGMENTO, Boolean(selectedCustomer),
+  );
+  const segmentoDoSelecionado = segmentoPorTelefone(
+    rfm.data?.customers ?? [],
+    selectedCustomer?.phone || selectedCustomer?.whatsapp || '',
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<StoreCustomer | null>(null);
 
@@ -783,6 +862,7 @@ export const CustomersPage: React.FC = () => {
       customer={selectedCustomer}
       onClose={() => setSelectedCustomer(null)}
       onEdit={(c) => { setEditingCustomer(c); setFormOpen(true); }}
+      segmento={segmentoDoSelecionado}
     />
     {formOpen && (
       <CustomerFormDrawer
