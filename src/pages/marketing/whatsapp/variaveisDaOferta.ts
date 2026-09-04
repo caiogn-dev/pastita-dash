@@ -12,8 +12,28 @@
  */
 export interface ProdutoDaOferta {
   name?: string | null;
+  /** Valor de CADASTRO. Não é necessariamente o que a loja cobra hoje. */
   price?: number | string | null;
+  /**
+   * O que a loja cobra AGORA — o backend já resolveu `promo_price` +
+   * `promo_weekday` aqui. É este que a campanha anuncia.
+   */
+  preco_vigente?: number | string | null;
 }
+
+/**
+ * O preço que o cliente VAI PAGAR, não o de tabela.
+ *
+ * Em 04/09 a campanha saiu com "Tilápia Suprema — R$ 46,99" num dia em que a
+ * loja cobrava o promocional. Anunciar caro afasta quem abriria a mensagem;
+ * anunciar barato e cobrar caro é pior — é a mesma promessa-na-tela +
+ * cobrança-diferente que custou dinheiro no cupom BEMVINDO10.
+ *
+ * `?? price` mantém compatibilidade: nem toda listagem do painel traz o campo.
+ */
+const precoQueSeraCobrado = (produto: ProdutoDaOferta) => (
+  produto.preco_vigente ?? produto.price
+);
 
 export const precoParaTemplate = (valor?: number | string | null): string => {
   const numero = Number(valor ?? 0);
@@ -30,7 +50,7 @@ export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
   const campo = (i: number, chave: 'nome' | 'preco') => {
     const produto = produtos[i];
     if (!produto) return '';
-    return chave === 'nome' ? (produto.name || '') : precoParaTemplate(produto.price);
+    return chave === 'nome' ? (produto.name || '') : precoParaTemplate(precoQueSeraCobrado(produto));
   };
 
   return {

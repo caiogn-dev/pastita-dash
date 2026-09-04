@@ -65,3 +65,36 @@ describe('variaveisDaOferta', () => {
     });
   });
 });
+
+describe('preço da campanha x preço que a loja cobra', () => {
+  /**
+   * A campanha anuncia o preço que o cliente VAI PAGAR, e não o de tabela.
+   *
+   * Em 04/09 o dono montou uma campanha e viu "Tilápia Suprema — R$ 46,99"
+   * num dia em que a loja cobrava o promocional. Anunciar caro afasta quem
+   * abriria a mensagem; anunciar barato e cobrar caro é pior ainda — é a
+   * mesma promessa-na-tela + cobrança-diferente que já custou dinheiro aqui
+   * no cupom BEMVINDO10.
+   *
+   * `preco_vigente` é o campo em que o backend já resolve a promoção do dia
+   * (`promo_price` + `promo_weekday`); `price` é só o valor de cadastro.
+   */
+  it('usa o preço VIGENTE quando o produto está em promoção', () => {
+    expect(
+      variaveisDaOferta([{ name: 'Queridinha', price: 36.99, preco_vigente: 28.99 }]),
+    ).toMatchObject({ produto_1: 'Queridinha', preco_1: 'R$ 28,99' });
+  });
+
+  it('cai no preço de tabela quando não há promoção hoje', () => {
+    expect(
+      variaveisDaOferta([{ name: 'Basic Lombo', price: 40.99, preco_vigente: 40.99 }]),
+    ).toMatchObject({ preco_1: 'R$ 40,99' });
+  });
+
+  it('produto sem `preco_vigente` continua funcionando', () => {
+    // Compatibilidade: nem toda listagem do painel traz o campo.
+    expect(
+      variaveisDaOferta([{ name: 'Tilápia Suprema', price: 46.99 }]),
+    ).toMatchObject({ preco_1: 'R$ 46,99' });
+  });
+});

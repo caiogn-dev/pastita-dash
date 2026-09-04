@@ -1085,9 +1085,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         </p>
                         <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2 text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
                           <span>{'{{produto_1}}'}: {selectedOfferProducts[0]?.name || '-'}</span>
-                          <span>{'{{preco_1}}'}: {selectedOfferProducts[0] ? precoParaTemplate(selectedOfferProducts[0].price) : '-'}</span>
+                          <span>{'{{preco_1}}'}: {selectedOfferProducts[0] ? precoParaTemplate(selectedOfferProducts[0].preco_vigente ?? selectedOfferProducts[0].price) : '-'}</span>
                           <span>{'{{produto_2}}'}: {selectedOfferProducts[1]?.name || '-'}</span>
-                          <span>{'{{preco_2}}'}: {selectedOfferProducts[1] ? precoParaTemplate(selectedOfferProducts[1].price) : '-'}</span>
+                          <span>{'{{preco_2}}'}: {selectedOfferProducts[1] ? precoParaTemplate(selectedOfferProducts[1].preco_vigente ?? selectedOfferProducts[1].price) : '-'}</span>
                         </div>
                       </div>
                     )}
