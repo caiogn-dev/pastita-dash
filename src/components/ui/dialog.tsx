@@ -1,9 +1,16 @@
 /**
  * Dialog Component - Alias for Modal with Dialog-like API
  */
-import React, { createContext, useContext, useEffect, useId, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useState } from 'react';
 import { Modal } from './modal';
 import { cn } from '../../utils/cn';
+
+// O `DialogTitle` precisa registrar seu id ANTES do `Modal` mover o foco para
+// dentro do diálogo (o foco do Modal roda num passive effect). Um layout effect
+// aplica o `aria-labelledby` de forma síncrona antes dos passive effects, então
+// o foco inicial já cai num diálogo nomeado. Cai para `useEffect` no servidor
+// (sem DOM) para não emitir o warning de useLayoutEffect em SSR.
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 /**
  * Liga `DialogTitle` ↔ `Dialog`: o `DialogTitle` registra o id do seu heading
@@ -110,7 +117,9 @@ export const DialogTitle: React.FC<DialogTitleProps> = ({
 
   // Enquanto montado, informa ao Dialog o id que nomeia o diálogo; ao
   // desmontar, retira o registro para o Dialog não apontar para um id órfão.
-  useEffect(() => {
+  // Layout effect (não passive) para o nome já estar aplicado quando o Modal
+  // move o foco para o diálogo na abertura.
+  useIsomorphicLayoutEffect(() => {
     if (!ctx) return;
     ctx.setLabelledbyId(titleId);
     return () => ctx.setLabelledbyId(undefined);

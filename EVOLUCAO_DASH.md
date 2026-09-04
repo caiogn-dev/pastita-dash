@@ -53,6 +53,13 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - **Antes/depois:** suíte nova +4/+1; `tsc --noEmit` limpo e `vite build` ok nos
   dois lados; lint 0 nos arquivos tocados. Zero mudança visual/comportamental —
   só atributos de acessibilidade.
+- **Revisão (Codex P1) atendida:** o registro do `DialogTitle` era um passive
+  `useEffect`, que aplicava o `aria-labelledby` só *depois* do `Modal` mover o
+  foco para o diálogo na abertura (o foco do Modal também é passive effect) —
+  janela em que o foco caía num diálogo ainda sem nome. Trocado para **layout
+  effect** (via `useIsomorphicLayoutEffect`, com fallback `useEffect` em SSR):
+  o nome é aplicado de forma síncrona antes dos passive effects, então o foco
+  inicial já encontra o diálogo nomeado.
 - **Próximo passo priorizado:** (1) **Dívida `product.price`:** o guard
   `precoVigente.cobertura` acusa 3 telas lendo `product.price` direto; migrar
   para o preço vigente (fatia dedicada, corrige um teste vermelho pré-existente).
