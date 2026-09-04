@@ -13,7 +13,60 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - `npm run build` (vite): **ok** (~14s).
 - `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
 
+## Baseline atual (2026-09-04)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1350 testes verdes / 232 suítes** + **2 falhas PRÉ-EXISTENTES**
+  (não são regressão desta fatia — confirmado com `git stash` do meu diff, elas
+  quebram igual na árvore limpa):
+  - `src/utils/__tests__/precoVigente.cobertura.test.ts` — guard de código que
+    varre a fonte por `product.price`; achou 3 infratores (esperava 0). Dívida
+    pré-existente (telas ainda lendo `product.price` em vez do preço vigente).
+  - `src/pages/orders/__tests__/pedidosDoQuadro.test.ts` — teste relativo a data
+    ("não arrasta o que foi entregue ontem") sensível ao dia corrente.
+  - Esta fatia adicionou **+4 testes / +1 suíte** (`dialog.a11y.test.tsx`).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~18s).
+
 ## Histórico
+
+### 2026-09-04 — A11y: `Dialog` composto herda nome do `DialogTitle` (WCAG 4.1.2)
+- **Medido:** o próximo passo priorizado de 2026-08-06 (nomear automaticamente
+  os diálogos compostos via `DialogTitle`) seguia aberto. O único consumidor
+  real de `ui/dialog.tsx` com `Dialog` + `DialogTitle` — `WhatsAppAuthDialog.tsx`
+  ("Login com WhatsApp") — renderizava `role="dialog"` + `aria-modal` **sem nome
+  acessível**: não passava `ariaLabel`/`ariaLabelledby` e o `DialogTitle` não se
+  ligava ao diálogo. Leitores de tela anunciavam só "diálogo".
+- **Mudado (`ui/dialog.tsx`, aditivo):** novo `DialogTitleContext`. O `Dialog`
+  gera um `titleId` (via `useId`) e o provê pelo contexto; guarda em estado o id
+  do heading que um `DialogTitle` filho registrar. O `DialogTitle` usa o id do
+  contexto (ou o `id` próprio do consumidor, se houver), o aplica no `<h2>` e o
+  registra no `Dialog` enquanto montado (limpando ao desmontar, para não deixar
+  `aria-labelledby` órfão). Precedência: `ariaLabelledby` explícito → id do
+  `DialogTitle` registrado → `ariaLabel`. Sem título de qualquer tipo, o diálogo
+  fica sem nome e **sem** `aria-labelledby` apontando para id inexistente.
+  `WhatsAppAuthDialog` passou a ser nomeado sem mudar uma linha do consumidor.
+- **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — o caso central (nome via
+  `DialogTitle`) escrito **vermelho antes, verde depois**. Cobre: nome herdado
+  do `DialogTitle`, precedência do `ariaLabelledby` explícito, `ariaLabel` sem
+  título, e a ausência de `aria-labelledby` órfão quando não há título.
+- **Antes/depois:** suíte nova +4/+1; `tsc --noEmit` limpo e `vite build` ok nos
+  dois lados; lint 0 nos arquivos tocados. Zero mudança visual/comportamental —
+  só atributos de acessibilidade.
+- **Revisão (Codex P1) atendida:** o registro do `DialogTitle` era um passive
+  `useEffect`, que aplicava o `aria-labelledby` só *depois* do `Modal` mover o
+  foco para o diálogo na abertura (o foco do Modal também é passive effect) —
+  janela em que o foco caía num diálogo ainda sem nome. Trocado para **layout
+  effect** (via `useIsomorphicLayoutEffect`, com fallback `useEffect` em SSR):
+  o nome é aplicado de forma síncrona antes dos passive effects, então o foco
+  inicial já encontra o diálogo nomeado.
+- **Próximo passo priorizado:** (1) **Dívida `product.price`:** o guard
+  `precoVigente.cobertura` acusa 3 telas lendo `product.price` direto; migrar
+  para o preço vigente (fatia dedicada, corrige um teste vermelho pré-existente).
+  (2) **A11y — `OnboardingWizard`:** usa o `Dialog` do headlessui com
+  `Dialog.Panel` sem `Dialog.Title`; verificar nome acessível. (3) **Segurança/
+  deps:** major bump de `react-router` 6→7 (open redirect) como fatia com
+  validação de build.
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
