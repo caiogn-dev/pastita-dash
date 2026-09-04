@@ -184,8 +184,16 @@ const AppContent: React.FC = () => {
         </ProtectedRoute>
       }>
         <Route index element={<PageBoundary><DashboardPage /></PageBoundary>} />
-        <Route path="accounts" element={<PageBoundary><AccountsPage /></PageBoundary>} />
-        <Route path="accounts/new" element={<PageBoundary><AccountFormPage /></PageBoundary>} />
+        {/* A LISTA de contas era duplicata exata de /connections: as duas
+            chamavam `whatsappService.getAccounts`, e a Conexões já fazia mais
+            (multi-plataforma, QR Code, CRUD completo). A única coisa que só a
+            antiga tinha — sincronizar modelos — foi movida para lá.
+            A rota vira redirect para não quebrar link salvo.
+            `accounts/:id` CONTINUA: a tela de detalhe não é duplicata, é o
+            aprofundamento (perfil do negócio, estatísticas, modelos, rotação
+            de token) e agora é alcançada a partir da Conexões. */}
+        <Route path="accounts" element={<Navigate to="/connections" replace />} />
+        <Route path="accounts/new" element={<Navigate to="/connections" replace />} />
         <Route path="accounts/:id" element={<PageBoundary><AccountDetailPage /></PageBoundary>} />
         <Route path="accounts/:id/edit" element={<PageBoundary><AccountFormPage /></PageBoundary>} />
         {/* Inbox unificado — rotas antigas redirecionam para a aba correspondente */}

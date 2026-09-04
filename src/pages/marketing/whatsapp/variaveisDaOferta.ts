@@ -10,6 +10,19 @@
  * do template foi o que fez `ce_saladas_oferta_do_dia` ser aprovado dizendo
  * "Salmão Sublime — 52,90".
  */
+import { precoVigenteDoProduto } from '../../../utils/precoVigente';
+
+/**
+ * A campanha anuncia o preço que o cliente VAI PAGAR, não o de tabela.
+ *
+ * Em 04/09 ela saiu com "Tilápia Suprema — R$ 46,99" num dia em que a loja
+ * cobrava R$ 31,99. Anunciar caro afasta quem abriria a mensagem pelo preço;
+ * anunciar barato e cobrar caro seria pior — é a mesma promessa-na-tela +
+ * cobrança-diferente que custou dinheiro no cupom BEMVINDO10.
+ *
+ * `precoVigenteDoProduto` é o helper canônico (e o único lugar autorizado a
+ * ler `price` como fallback, o que a peneira `precoVigente.cobertura` cobra).
+ */
 export interface ProdutoDaOferta {
   name?: string | null;
   /** Valor de CADASTRO. Não é necessariamente o que a loja cobra hoje. */
@@ -21,19 +34,6 @@ export interface ProdutoDaOferta {
   preco_vigente?: number | string | null;
 }
 
-/**
- * O preço que o cliente VAI PAGAR, não o de tabela.
- *
- * Em 04/09 a campanha saiu com "Tilápia Suprema — R$ 46,99" num dia em que a
- * loja cobrava o promocional. Anunciar caro afasta quem abriria a mensagem;
- * anunciar barato e cobrar caro é pior — é a mesma promessa-na-tela +
- * cobrança-diferente que custou dinheiro no cupom BEMVINDO10.
- *
- * `?? price` mantém compatibilidade: nem toda listagem do painel traz o campo.
- */
-const precoQueSeraCobrado = (produto: ProdutoDaOferta) => (
-  produto.preco_vigente ?? produto.price
-);
 
 export const precoParaTemplate = (valor?: number | string | null): string => {
   const numero = Number(valor ?? 0);
@@ -50,7 +50,7 @@ export const variaveisDaOferta = (produtos: ProdutoDaOferta[]) => {
   const campo = (i: number, chave: 'nome' | 'preco') => {
     const produto = produtos[i];
     if (!produto) return '';
-    return chave === 'nome' ? (produto.name || '') : precoParaTemplate(precoQueSeraCobrado(produto));
+    return chave === 'nome' ? (produto.name || '') : precoParaTemplate(precoVigenteDoProduto(produto as never));
   };
 
   return {

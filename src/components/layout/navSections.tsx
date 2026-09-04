@@ -126,6 +126,12 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     items: [
       { name: 'Agentes de IA',        href: '/agents',               icon: CpuChipIcon, badge: 'Beta' },
       { name: 'Respostas automáticas', href: '/automation/companies', icon: BoltIcon },
+      // Recuperada: 166 AutoMessage em produção e nenhum caminho no menu — ao
+      // contrário de flows/scheduled/logs (zerados), esta tela tem conteúdo
+      // real. 'Respostas automáticas' configura QUANDO o bot fala;
+      // 'Mensagens automáticas' é O QUE ele diz. São telas complementares, e
+      // faltava a segunda.
+      { name: 'Mensagens automáticas', href: '/automation/messages', icon: ChatBubbleLeftRightIcon },
       // 'Fluxos do agente' (/automation/flows) e 'Agendamentos'
       // (/automation/scheduled) saíram do menu. Levantamento de 19/08 contra o
       // banco de produção: AgentFlow 0, FlowSession 0, FlowExecutionLog 0,

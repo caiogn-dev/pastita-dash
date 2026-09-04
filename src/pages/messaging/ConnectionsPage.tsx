@@ -2,15 +2,17 @@
  * ConnectionsPage - Conexões de mensagens (sem Chakra UI)
  */
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useConfirm } from '../../hooks';
 import {
   PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon,
   CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
-  LinkIcon, QrCodeIcon, XMarkIcon,
+  LinkIcon, QrCodeIcon, XMarkIcon, ArrowPathIcon, ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Badge } from '../../components/common';
 import * as whatsappService from '../../services/whatsapp';
+import { getErrorMessage } from '../../services';
 import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsAppButton';
 import { messengerService } from '../../services/messenger';
 import { instagramAccountService } from '../../services/instagram';
@@ -297,6 +299,23 @@ export default function ConnectionsPage() {
     } finally { setSubmitting(false); }
   };
 
+  /**
+   * Sincronizar modelos de mensagem com a Meta.
+   *
+   * Era a ÚNICA coisa que `/accounts` fazia e esta tela não — em todo o
+   * resto ela já era superset (multi-plataforma, QR Code, CRUD completo).
+   * Trazer a ação para cá é o que permitiu apagar a tela duplicada em vez de
+   * manter duas listas da mesma conta de WhatsApp, cada uma sabendo metade.
+   */
+  const handleSyncTemplates = async (conn: Connection) => {
+    try {
+      const result = await whatsappService.syncTemplates(conn.id);
+      toast.success((result as any)?.data?.message || 'Modelos sincronizados!');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
   const handleDelete = async (conn: Connection) => {
     const confirmed = await confirm({
       title: 'Excluir conexão',
@@ -498,6 +517,28 @@ export default function ConnectionsPage() {
                 ) : (
                   <button onClick={() => openDialog(conn.platform, conn)} title="Editar" className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors">
                     <PencilIcon className="w-4 h-4" />
+                  </button>
+                )}
+                {conn.platform === 'whatsapp' && (
+                  /* Aprofundamento: perfil do negócio na Meta, estatísticas de
+                     mensagens, modelos e rotação de token. Essa tela existia e
+                     só era alcançada pela lista duplicada que acabou de sair —
+                     sem este link ela viraria órfã de verdade. */
+                  <Link
+                    to={`/accounts/${conn.id}`}
+                    title="Detalhes da conta (modelos, estatísticas, token)"
+                    className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors"
+                  >
+                    <ChartBarIcon className="w-4 h-4" />
+                  </Link>
+                )}
+                {conn.platform === 'whatsapp' && (
+                  <button
+                    onClick={() => handleSyncTemplates(conn)}
+                    title="Sincronizar modelos com a Meta"
+                    className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors"
+                  >
+                    <ArrowPathIcon className="w-4 h-4" />
                   </button>
                 )}
                 <button onClick={() => handleDelete(conn)} title="Excluir" className="p-1.5 rounded hover:bg-bg-hover text-red-500 transition-colors">

@@ -2,7 +2,7 @@ import React, { Fragment, useState, useRef, useEffect, useCallback } from 'react
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  ArrowRightOnRectangleIcon, BuildingStorefrontIcon, DevicePhoneMobileIcon,
+  ArrowRightOnRectangleIcon, BuildingStorefrontIcon,
   LinkIcon, Cog6ToothIcon, SparklesIcon, CreditCardIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
@@ -17,8 +17,10 @@ export interface AccountLink {
 
 export const ACCOUNT_LINKS: AccountLink[] = [
   { name: 'Todas as Lojas',  href: '/stores',      icon: BuildingStorefrontIcon },
-  { name: 'Contas WhatsApp', href: '/accounts',    icon: DevicePhoneMobileIcon, sectionHeader: 'Integrações' },
-  { name: 'Conexões',        href: '/connections', icon: LinkIcon },
+  // 'Contas WhatsApp' (/accounts) saiu: era a MESMA lista de 'Conexões', e as
+  // duas chamavam `whatsappService.getAccounts`. Dois caminhos para a mesma
+  // tela ensinam o operador duas vezes e nenhuma delas por inteiro.
+  { name: 'Conexões',        href: '/connections', icon: LinkIcon, sectionHeader: 'Integrações' },
   { name: 'Preferências',    href: '/settings',    icon: Cog6ToothIcon, sectionHeader: 'Conta' },
   { name: 'Plano',           href: '/plano',       icon: SparklesIcon },
   { name: 'Assinatura',      href: '/assinatura',  icon: CreditCardIcon },
