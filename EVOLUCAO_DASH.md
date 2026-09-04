@@ -3,17 +3,56 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-08-31)
 
-- `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
-  transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
-  disponível — avaliar em fatia dedicada (mexe no roteador, requer validação).
+- `npm ci`: ok.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **708 testes / 158 suítes verdes** (era 705/157; +3/+1 desta fatia).
-- `npm run build` (vite): **ok** (~14s).
-- `npm run lint`: gate em 400 warnings; **255 warnings** restantes (0 errors).
+- `npm test`: **1316 testes / 230 suítes verdes** + **2 suítes vermelhas
+  PRÉ-EXISTENTES** (não desta fatia): `src/pages/orders/__tests__/pedidosDoQuadro.test.ts`
+  e `src/utils/__tests__/precoVigente.cobertura.test.ts` (guarda de arquitetura
+  que acusa telas lendo `product.price`). Antes desta fatia: 1312/229 verdes +
+  as mesmas 2 vermelhas → **+4 testes / +1 suíte**, zero regressão.
+- `npm run build` (tsc && vite build, igual à Vercel): **ok**.
 
 ## Histórico
+
+### 2026-08-31 — A11y: `Dialog` composto se nomeia sozinho pelo `DialogTitle` (WCAG 4.1.2)
+- **Medido:** varredura do caminho composto de diálogos. O `Dialog` de
+  `src/components/ui/dialog.tsx` monta o cabeçalho com `<DialogTitle>`, mas
+  repassava ao `Modal` só o `ariaLabelledby` que o consumidor passasse **à mão** —
+  e nenhum passava. `WhatsAppAuthDialog.tsx` (login por WhatsApp, tela de auth) é
+  o consumidor real: renderiza `<DialogTitle>Login com WhatsApp</DialogTitle>`
+  mas o `role="dialog"`/`aria-modal` saía **sem `aria-labelledby` nem
+  `aria-label`** → leitores de tela anunciavam só "diálogo". Era exatamente o
+  item (1) do próximo-passo de 06/ago.
+- **Mudado (`dialog.tsx`, puramente aditivo):**
+  - Novo `DialogContext` ligando `DialogTitle` ↔ `Dialog`. O `Dialog` gera um id
+    (via `useId`) e mantém em estado o id do heading **detectado** por um
+    `DialogTitle` filho; só aponta `aria-labelledby` quando há título de fato
+    (nunca referencia id inexistente).
+  - `DialogTitle` dentro de um `Dialog` adota o id do contexto (ou o `id` próprio,
+    se informado) e se registra via `useLayoutEffect` — antes da pintura, sem
+    piscar. Fora de um `Dialog`, segue como heading comum.
+  - Precedência mantida: `ariaLabelledby` explícito → `DialogTitle` detectado →
+    `ariaLabel`. `WhatsAppAuthDialog` passou a ter nome acessível **sem tocar no
+    arquivo dele**.
+  - Import trocado para nomeado (`createContext`, `useId`, `useState`, `useMemo`,
+    `useContext`, `useLayoutEffect`) — o transform do Jest não expõe `React.*` em
+    runtime (mesmo padrão do `modal.tsx`).
+- **Teste (TDD):** nova suíte `dialog.a11y.test.tsx` — escrita **vermelha (4/4)
+  antes, verde depois**. Cobre: nome automático via `DialogTitle` sem props;
+  `ariaLabelledby` explícito no `Dialog` precede o título; `ariaLabel` quando não
+  há título; e `id` próprio no `DialogTitle` respeitado. Tudo via
+  `getByRole('dialog', { name })`, que resolve o nome acessível de verdade.
+- **Antes/depois:** `npm test` 1312/229 → **1316/230** (+4/+1); tsc limpo e
+  `vite build` ok nos dois lados. As 2 suítes vermelhas são pré-existentes.
+- **Próximo passo priorizado:** (1) **A11y:** varrer os demais consumidores de
+  `Modal` no caminho composto (sem `title` embutido) que ainda não se nomeiam —
+  ex.: modais montados com `ModalHeader`/`<h2>` sem `ariaLabelledby`. (2)
+  **Segurança/deps:** major bump de `react-router` 6→7 (open redirect) como fatia
+  dedicada com validação de build. (3) **Baseline vermelha:** investigar as 2
+  suítes de guarda (`pedidosDoQuadro`, `precoVigente.cobertura`) — decidir se são
+  regressão real de produto a corrigir ou guarda desatualizada.
 
 ### 2026-08-08 — A11y: nome acessível no `Switch` compartilhado (WCAG 4.1.2)
 - **Medido:** o `Switch` de `src/components/common/Switch.tsx` renderiza um
