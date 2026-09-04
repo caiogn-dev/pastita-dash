@@ -14,7 +14,14 @@ jest.mock('../../../services/coupons', () => ({
   couponsService: { createCoupon: jest.fn() },
 }));
 jest.mock('../../../services/cashback', () => ({
-  cashbackService: { get: jest.fn() },
+  cashbackService: {
+    get: jest.fn(),
+    // A aba de cashback carrega as indicações junto. Sem o mock a página
+    // estoura no render e leva a suíte inteira, escondendo o que se testa aqui.
+    indicacoes: jest.fn().mockResolvedValue({
+      indicacoes: [], por_indicador: [], referral_percent: '5',
+    }),
+  },
 }));
 
 import { cashbackService } from '../../../services/cashback';

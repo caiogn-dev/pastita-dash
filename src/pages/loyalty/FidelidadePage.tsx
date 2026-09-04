@@ -11,6 +11,7 @@ import { couponsService } from '../../services/coupons';
 import { loyaltyService, LoyaltyAccountRow, LoyaltyResumo } from '../../services/loyalty';
 import { cashbackService, CashbackResponse } from '../../services/cashback';
 import CashbackSection from './CashbackSection';
+import { IndicacoesCard } from './IndicacoesCard';
 import { getStores, updateStore, getCategories, Store, StoreCategory } from '../../services/storesApi';
 
 /**
@@ -354,6 +355,13 @@ const FidelidadePage: React.FC = () => {
             if (storeIdentifier) setCashback(await cashbackService.get(storeIdentifier));
           }}
         />
+      )}
+
+      {/* Quem veio por quem. Fica logo abaixo da configuração de cashback
+          porque é o RESULTADO do "volta por indicação (%)" que o dono acabou
+          de ajustar ali em cima — a regra e o efeito dela na mesma tela. */}
+      {programa === 'cashback' && storeIdentifier && (
+        <IndicacoesCard storeSlug={String(storeIdentifier)} />
       )}
 
       {/* Desligado, a tela era um checkbox desmarcado dentro de um card

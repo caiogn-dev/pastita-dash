@@ -1,4 +1,5 @@
 import api from './api';
+import type { IndicacaoRow, IndicadorAgregado } from '../pages/loyalty/indicacoes';
 
 /** Agregado do banco inteiro — nunca somar as linhas da página para obter isto. */
 export interface CashbackResumo {
@@ -47,7 +48,25 @@ export interface CashbackResponse {
   results: CashbackClienteRow[];
 }
 
+export interface IndicacoesResponse {
+  indicacoes: IndicacaoRow[];
+  por_indicador: IndicadorAgregado[];
+  referral_percent: string;
+}
+
 class CashbackService {
+  /**
+   * Quem veio por quem.
+   *
+   * Separado do resumo de cashback de propósito: o resumo responde "quanto o
+   * programa me custa" e carrega em toda abertura da tela. Isto responde "a
+   * quem eu agradeço", e só interessa quando o dono abre a aba.
+   */
+  async indicacoes(storeSlug: string): Promise<IndicacoesResponse> {
+    const { data } = await api.get(`/stores/${storeSlug}/indicacoes/`);
+    return data;
+  }
+
   async get(storeSlug: string, page = 1): Promise<CashbackResponse> {
     const { data } = await api.get(`/stores/${storeSlug}/cashback/`, { params: { page } });
     return data;

@@ -6,6 +6,7 @@ import {
 import { formatCurrency } from '../../utils/formatters';
 import type { CashbackResponse } from '../../services/cashback';
 import { cashbackService } from '../../services/cashback';
+import { telefoneLegivel } from './indicacoes';
 
 /**
  * Cashback no painel.
@@ -29,13 +30,6 @@ import { cashbackService } from '../../services/cashback';
 /** O backend manda Decimal como string para não perder centavo no JSON. */
 const num = (v: string | number | undefined) => Number(v ?? 0);
 
-/** Telefone em E.164 sem '+' vira legível: 5563999547790 → (63) 99954-7790 */
-function telefoneLegivel(e164: string): string {
-  const d = (e164 || '').replace(/\D/g, '').replace(/^55/, '');
-  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  return e164;
-}
 
 interface Props {
   dados: CashbackResponse | null;
