@@ -11,6 +11,7 @@ import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { Link } from 'react-router-dom';
 import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel } from './shared';
 import { urlDeClienteBuscado } from '../../customers/buscaPelaUrl';
+import { useStore } from '../../../hooks/useStore';
 
 // ─── Clientes (RFM + inativos) ───────────────────────────────────────────────
 
@@ -34,6 +35,10 @@ const SEGMENT_BADGE: Record<string, { label: string; tone: 'success' | 'warning'
 
 export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
   const [verTodosOsClientes, setVerTodosOsClientes] = useState(false);
+  // A rota da ficha é `/stores/:storeId/customers` — sem a loja no caminho o
+  // link do relatório dá 404, que foi o que aconteceu em produção.
+  const { store } = useStore();
+  const storeKey = store?.slug || store?.id || '';
   const q = useAnalyticsReport<RfmReport>('rfm', range, enabled);
   const segments = q.data?.segments ?? [];
   const inactive = q.data?.inactive ?? [];
@@ -97,7 +102,7 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
                 // sabe QUEM está em risco, e até agora ele parava na
                 // constatação. Levar até a ficha é o que transforma o número
                 // em ação — sem isso o dono decorava o nome e procurava na mão.
-                href: urlDeClienteBuscado(c) ?? undefined,
+                href: urlDeClienteBuscado(c, storeKey) ?? undefined,
                 badge: badge ? <Badge tone={badge.tone}>{badge.label}</Badge> : undefined,
                 sub: [
                   `${c.total_orders} pedido${c.total_orders > 1 ? 's' : ''}`,

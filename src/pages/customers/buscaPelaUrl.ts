@@ -25,11 +25,20 @@ export const buscaInicialDaUrl = (params: URLSearchParams): string =>
  *
  * Devolve `null` quando não há por onde buscar: link que cai numa lista
  * inteira é pior que link nenhum, porque promete precisão e entrega ruído.
+ *
+ * A LOJA É OBRIGATÓRIA NO CAMINHO. A rota é `/stores/:storeId/customers`, e a
+ * primeira versão disto montava `/customers?busca=...` — que é 404. O relatório
+ * apontava a cliente em risco, o dono clicava e caía numa página de erro: pior
+ * que o problema original, porque agora a ponte existe e está quebrada.
+ * Devolver `null` sem loja é a mesma regra do termo vazio — não prometer um
+ * caminho que não leva a lugar nenhum.
  */
 export const urlDeClienteBuscado = (
   cliente: { phone?: string | null; name?: string | null },
+  storeKey?: string | null,
 ): string | null => {
   const termo = (cliente.phone || '').trim() || (cliente.name || '').trim();
-  if (!termo) return null;
-  return `/customers?${new URLSearchParams({ busca: termo }).toString()}`;
+  const loja = (storeKey || '').trim();
+  if (!termo || !loja) return null;
+  return `/stores/${loja}/customers?${new URLSearchParams({ busca: termo }).toString()}`;
 };
