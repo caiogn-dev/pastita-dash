@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import logger from '../../services/logger';
+import { formatCurrency } from '../../utils/formatters';
 import {
   PlusIcon,
   PencilIcon,
@@ -64,6 +65,8 @@ export const CouponsPage: React.FC = () => {
     usage_limit: null,
     usage_limit_per_user: null,
     first_order_only: false,
+    parceiro_phone: '',
+    parceiro_percent: '',
     applicable_categories: [],
     is_active: true,
     valid_from: new Date().toISOString().split('T')[0],
@@ -161,6 +164,8 @@ export const CouponsPage: React.FC = () => {
         usage_limit: coupon.usage_limit,
         usage_limit_per_user: coupon.usage_limit_per_user ?? null,
         first_order_only: coupon.first_order_only ?? false,
+        parceiro_phone: coupon.parceiro_phone ?? '',
+        parceiro_percent: coupon.parceiro_percent ?? '',
         applicable_categories: coupon.applicable_categories ?? [],
         is_active: coupon.is_active,
         valid_from: coupon.valid_from.split('T')[0],
@@ -754,6 +759,56 @@ export const CouponsPage: React.FC = () => {
             <label htmlFor="first_order_only" className="ml-2 block text-sm text-fg-token">
               Só primeira compra do cliente
             </label>
+          </div>
+
+          {/* Parceria. Fica junto porque é uma propriedade DO CUPOM, e separar
+              numa aba esconderia o que o dono precisa conferir na hora de
+              criar: quem ganha, e quanto. Vazio = cupom comum da loja. */}
+          <div className="rounded border border-border-token bg-surface-2 p-3">
+            <p className="text-sm font-semibold text-fg-token">Parceria (opcional)</p>
+            <p className="mt-0.5 text-caption text-fg-muted-token">
+              Vincule alguém que divulga este cupom — uma academia, um
+              influenciador, um vizinho. A cada venda com o código, essa pessoa
+              ganha saldo na loja.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+              <div>
+                <label className="block text-sm font-medium text-fg-token mb-1">
+                  Celular do parceiro
+                </label>
+                <Input
+                  value={formData.parceiro_phone ?? ''}
+                  onChange={(e) => setFormData({ ...formData, parceiro_phone: e.target.value })}
+                  placeholder="(63) 99999-0000"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-fg-token mb-1">
+                  Comissão dele (%)
+                </label>
+                <Input
+                  type="number"
+                  value={formData.parceiro_percent ?? ''}
+                  onChange={(e) => setFormData({ ...formData, parceiro_percent: e.target.value })}
+                  min="0"
+                  max="100"
+                  placeholder="Taxa padrão da loja"
+                />
+              </div>
+            </div>
+            {/* O exemplo em dinheiro é o ponto: "3%" é abstrato, "R$ 2,16 num
+                pedido de R$ 72" é a decisão que o dono está tomando. */}
+            {formData.parceiro_phone && (
+              <p className="mt-2 text-caption text-fg-muted-token">
+                Num pedido de R$ 72 com este cupom, o parceiro ganha{' '}
+                <strong className="text-fg-token">
+                  {formatCurrency(72 * (Number(formData.parceiro_percent) || 0) / 100)}
+                </strong>
+                {!formData.parceiro_percent && ' — usando a taxa padrão da loja'}.
+                A comissão sai do valor da comida, sem a entrega e já com o
+                desconto do cupom aplicado.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -13,6 +13,10 @@ export interface Coupon {
   max_discount: number | null;
   usage_limit: number | null;
   usage_limit_per_user: number | null;
+  /** Parceria: quem divulga o cupom e recebe comissão de cada venda dele. */
+  parceiro_phone: string;
+  /** % da venda para o parceiro. Vazio = a taxa de indicação da loja. */
+  parceiro_percent: string;
   used_count: number;
   is_active: boolean;
   is_valid_now: boolean;
@@ -36,6 +40,10 @@ export interface CreateCoupon {
   max_discount?: number | null;
   usage_limit?: number | null;
   usage_limit_per_user?: number | null;
+  /** Parceria: quem divulga o cupom e recebe comissão de cada venda dele. */
+  parceiro_phone?: string;
+  /** % da venda para o parceiro. Vazio = a taxa de indicação da loja. */
+  parceiro_percent?: string;
   first_order_only?: boolean;
   applicable_categories?: string[];
   is_active?: boolean;
@@ -54,6 +62,10 @@ export interface UpdateCoupon {
   max_discount?: number | null;
   usage_limit?: number | null;
   usage_limit_per_user?: number | null;
+  /** Parceria: quem divulga o cupom e recebe comissão de cada venda dele. */
+  parceiro_phone?: string;
+  /** % da venda para o parceiro. Vazio = a taxa de indicação da loja. */
+  parceiro_percent?: string;
   first_order_only?: boolean;
   applicable_categories?: string[];
   is_active?: boolean;
