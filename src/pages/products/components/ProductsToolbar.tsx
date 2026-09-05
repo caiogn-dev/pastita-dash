@@ -2,15 +2,13 @@ import React from 'react';
 import { ArrowUpDown, Plus, Search } from 'lucide-react';
 import type { StoreCategory } from '../../../services/storesApi';
 
+/** Só FILTRO: o que muda a lista que você vê, não o que existe. */
 interface Props {
   search: string;
   onSearch: (v: string) => void;
   categoryFilter: string;
   categories: StoreCategory[];
   onCategoryFilter: (v: string) => void;
-  reorderMode?: boolean;
-  onReorderCategories: () => void;
-  onAddCategory: () => void;
 }
 export const ProductsToolbar: React.FC<Props> = ({
   search,
@@ -18,11 +16,8 @@ export const ProductsToolbar: React.FC<Props> = ({
   categoryFilter,
   categories,
   onCategoryFilter,
-  reorderMode,
-  onReorderCategories,
-  onAddCategory,
 }) => (
-  <div className="mb-4 flex flex-wrap items-center gap-2">
+  <div className="flex flex-wrap items-center gap-2">
     <div className="relative flex-1 min-w-[200px]">
       <Search
         size={16}
@@ -47,6 +42,26 @@ export const ProductsToolbar: React.FC<Props> = ({
         </option>
       ))}
     </select>
+  </div>
+);
+
+/**
+ * As AÇÕES do cardápio, separadas do filtro.
+ *
+ * Estavam na mesma barra: buscar, filtrar, ordenar e adicionar categoria lado
+ * a lado, quatro controles de dois tipos diferentes com o mesmo peso visual.
+ * Filtro muda o que você VÊ; ação muda o que EXISTE — e misturar os dois faz
+ * o dono clicar em "adicionar categoria" procurando um filtro.
+ *
+ * O chassi da página tem lugar para cada um (`filtros` e `acoes`), e é ele que
+ * dá a mesma posição em todas as telas.
+ */
+export const AcoesDoCardapio: React.FC<{
+  reorderMode: boolean;
+  onReorderCategories: () => void;
+  onAddCategory: () => void;
+}> = ({ reorderMode, onReorderCategories, onAddCategory }) => (
+  <div className="flex flex-wrap items-center gap-2">
     <button
       className={`flex items-center gap-1 rounded px-3 py-2 ${reorderMode ? 'bg-emerald-600 text-white' : 'bg-primary-token text-white'}`}
       onClick={onReorderCategories}

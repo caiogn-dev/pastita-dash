@@ -16,11 +16,12 @@ import { groupProducts } from './hooks/useProductsGrouped';
 import { useInlineProductMutations } from './hooks/useInlineProductMutations';
 import { useProductReorder } from './hooks/useProductReorder';
 import { useProducts } from '../../hooks/queries/useProducts';
-import { ProductsToolbar } from './components/ProductsToolbar';
+import { AcoesDoCardapio, ProductsToolbar } from './components/ProductsToolbar';
 import { CategorySection } from './components/CategorySection';
 import { AddCategoryModal } from './components/AddCategoryModal';
 import { MontadorModal, type ConfigMontador } from './components/MontadorModal';
 import { ProductFormModal } from './ProductFormModal';
+import { PageShell } from '../../components/ui';
 
 export const ProductsPage: React.FC = () => {
   const { storeId } = useStore();
@@ -158,7 +159,26 @@ export const ProductsPage: React.FC = () => {
   if (initialLoading) return <div>Carregando…</div>;
 
   return (
-    <div className="p-4">
+    <PageShell
+      titulo="Cardápio"
+      descricao="O que a loja vende, na ordem em que o cliente vê."
+      acoes={
+        <AcoesDoCardapio
+          reorderMode={reorderMode}
+          onReorderCategories={() => setReorderMode((v) => !v)}
+          onAddCategory={() => setAddCatOpen(true)}
+        />
+      }
+      filtros={
+        <ProductsToolbar
+          search={search}
+          onSearch={setSearch}
+          categoryFilter={categoryFilter}
+          categories={categories}
+          onCategoryFilter={setCategoryFilter}
+        />
+      }
+    >
       {/* Diagnóstico antes da lista.
           203 linhas de produto respondem "o que eu vendo"; nenhuma responde
           "o que eu faço com o cardápio esta semana". Item sem estoque, sem
@@ -186,16 +206,6 @@ export const ProductsPage: React.FC = () => {
         }))}
       />
 
-      <ProductsToolbar
-        search={search}
-        onSearch={setSearch}
-        categoryFilter={categoryFilter}
-        categories={categories}
-        onCategoryFilter={setCategoryFilter}
-        reorderMode={reorderMode}
-        onReorderCategories={() => setReorderMode((v) => !v)}
-        onAddCategory={() => setAddCatOpen(true)}
-      />
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <SortableContext items={categoryIds} strategy={verticalListSortingStrategy}>
         {groups.map((g) => (
@@ -287,6 +297,6 @@ export const ProductsPage: React.FC = () => {
           onSaved={load}
         />
       )}
-    </div>
+    </PageShell>
   );
 };
