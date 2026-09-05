@@ -304,6 +304,26 @@ export const campaignsService = {
     };
   },
 
+  /**
+   * Quantos clientes recebem a campanha DE GRAÇA no horário escolhido.
+   *
+   * `em` é o que decide o horário do disparo: a janela de 24h encolhe com o
+   * tempo, e quem falou com a loja há 20 horas está dentro agora e fora daqui
+   * a cinco. Sem `em`, responde "agora".
+   */
+  getJanelaDaAudiencia: async (params?: {
+    store?: string;
+    em?: string;
+  }): Promise<{ dentro: number; fora: number; janela_horas: number }> => {
+    const response = await api.get('/campaigns/audiencia/janela/', { params });
+    const d = response.data ?? {};
+    return {
+      dentro: Number(d.dentro ?? 0),
+      fora: Number(d.fora ?? 0),
+      janela_horas: Number(d.janela_horas ?? 24),
+    };
+  },
+
   getOpcoesDeAudiencia: async (params?: {
     store?: string;
     account_id?: string;

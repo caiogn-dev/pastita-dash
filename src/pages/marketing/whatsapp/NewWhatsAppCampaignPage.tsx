@@ -46,6 +46,7 @@ type SystemContact = {
 };
 import logger from '../../../services/logger';
 import { SeletorDeAudiencia } from './SeletorDeAudiencia';
+import { avisoDaJanela, horarioParaConsulta, type ResumoDaJanela } from './janelaDe24h';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 
 type TemplateVariable = {
@@ -172,6 +173,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [contactLists, setContactLists] = useState<Array<{ id: string; name: string; contact_count: number; contacts: ContactInput[] }>>([]);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [janela, setJanela] = useState<ResumoDaJanela | null>(null);
+
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSystemContactsModal, setShowSystemContactsModal] = useState(false);
   const [csvContent, setCsvContent] = useState('');
@@ -201,6 +204,21 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     scheduledAt: '',
     messagesPerMinute: 60,
   });
+  // A conta é refeita a cada mudança de horário: a janela encolhe com o tempo,
+  // e quem falou com a loja há 20h está dentro agora e fora daqui a cinco.
+  // Só consulta com o modal aberto — é a única tela onde o número decide algo.
+  useEffect(() => {
+    if (!showScheduleModal) return undefined;
+    let vivo = true;
+    campaignsService
+      .getJanelaDaAudiencia({
+        store: storeSlug || undefined,
+        em: horarioParaConsulta(formData.scheduledAt),
+      })
+      .then((r) => { if (vivo) setJanela(r); })
+      .catch(() => { if (vivo) setJanela(null); });
+    return () => { vivo = false; };
+  }, [showScheduleModal, formData.scheduledAt, storeSlug]);
 
   // =============================================================================
   // DATA LOADING
@@ -1590,6 +1608,14 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               min={new Date().toISOString().slice(0, 16)}
               className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white"
             />
+            {/* Quantos recebem de graça NESTE horário. Sem o número o dono
+                agenda no escuro: "manda às 20h" pode ser 10 pessoas ou 2, e
+                ele só descobre depois que a campanha rodou. */}
+            {janela && (
+              <p className="mt-2 text-caption text-fg-muted-token">
+                {avisoDaJanela(janela)}
+              </p>
+            )}
           </div>
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={() => setShowScheduleModal(false)}>
