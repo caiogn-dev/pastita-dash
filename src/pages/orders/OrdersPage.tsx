@@ -39,7 +39,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
-import { Button, Card } from '../../components/ui';
+import { Button, Card, PageShell } from '../../components/ui';
 import {
   getOrders,
   updateOrderStatus,
@@ -708,92 +708,103 @@ export const OrdersPage: React.FC = () => {
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex min-h-screen flex-col gap-3 bg-canvas px-2 py-2 text-fg-token sm:px-3 sm:py-3">
-
-        {/* Header */}
-        <Card className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-3 py-2">
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-fg-token">Pedidos</h1>
-            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-              wsConnected
-                ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                : 'bg-surface-2 text-fg-muted-token'
-            }`}>
-              {wsConnected ? <SignalIcon className="h-3 w-3" /> : <SignalSlashIcon className="h-3 w-3" />}
-              {wsConnected ? 'Ao vivo' : 'Offline'}
-            </span>
-            {lastSync && (
-              <span className="text-xs text-fg-muted-token hidden sm:block">
-                {format(lastSync, 'HH:mm:ss', { locale: ptBR })}
-              </span>
-            )}
-            {avgPrepMinutes !== null && (
-              <span
-                className="hidden md:inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                title="Tempo médio entre confirmação e pronto (pedidos carregados)"
-              >
-                Preparo médio: {avgPrepMinutes}min
-              </span>
-            )}
-            {focusColumn && (
-              <button
-                type="button"
-                onClick={clearFocus}
-                className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300"
-                title="Limpar filtro"
-              >
-                Filtrando: {COLUMNS.find((c) => c.id === focusColumn)?.label}
-                <span aria-hidden="true">×</span>
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {/* O kanban só mostra a operação de agora. Quem chega aqui
-                procurando um pedido de semana passada precisava saber que a
-                outra tela existe. */}
-            {storeQuery && (
+      <div className="flex min-h-screen flex-col bg-canvas px-2 py-2 text-fg-token sm:px-3 sm:py-3">
+        <PageShell
+          variante="quadro"
+          titulo="Pedidos"
+          trilha={[
+            ...(storeQuery ? [{ rotulo: 'Loja', href: `/stores/${storeQuery}` }] : []),
+            { rotulo: 'Pedidos' },
+          ]}
+          acoes={
+            <>
+              {/* O kanban só mostra a operação de agora. Quem chega aqui
+                  procurando um pedido de semana passada precisava saber que a
+                  outra tela existe. */}
+              {storeQuery && (
+                <Button
+                  variant="outline"
+                  className="py-1.5"
+                  onClick={() => navigate(`/stores/${storeQuery}/orders/historico`)}
+                  leftIcon={<ClockIcon className="h-4 w-4" />}
+                >
+                  Histórico
+                </Button>
+              )}
+              {storeQuery && (
+                <a
+                  href={`/stores/${storeQuery}/kds`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Abrir tela de cozinha em nova aba"
+                >
+                  <Button variant="outline" className="py-1.5">
+                    Modo Cozinha (KDS)
+                  </Button>
+                </a>
+              )}
+              {storeQuery && (
+                <Button
+                  onClick={() => setIsNewOrderOpen(true)}
+                  className="py-1.5"
+                  leftIcon={<ShoppingCartIcon className="h-4 w-4" />}
+                  title="Atalho: tecla N"
+                >
+                  Novo pedido (N)
+                </Button>
+              )}
               <Button
                 variant="outline"
+                onClick={() => loadOrders(true)}
                 className="py-1.5"
-                onClick={() => navigate(`/stores/${storeQuery}/orders/historico`)}
-                leftIcon={<ClockIcon className="h-4 w-4" />}
+                leftIcon={<ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />}
               >
-                Histórico
+                Atualizar
               </Button>
-            )}
-            {storeQuery && (
-              <a
-                href={`/stores/${storeQuery}/kds`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Abrir tela de cozinha em nova aba"
+            </>
+          }
+          filtros={
+            // O ESTADO DO QUADRO, na faixa que o chassi reserva para o que é
+            // sobre os dados: a conexão ao vivo, o último sinal, o preparo
+            // médio e o filtro de coluna ativo.
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                  wsConnected
+                    ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-surface-2 text-fg-muted-token'
+                }`}
               >
-                <Button variant="outline" className="py-1.5">
-                  Modo Cozinha (KDS)
-                </Button>
-              </a>
-            )}
-            {/* PDV Drawer button */}
-            {storeQuery && (
-              <Button
-                onClick={() => setIsNewOrderOpen(true)}
-                className="py-1.5"
-                leftIcon={<ShoppingCartIcon className="h-4 w-4" />}
-                title="Atalho: tecla N"
-              >
-                Novo Pedido (N)
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              onClick={() => loadOrders(true)}
-              className="py-1.5"
-              leftIcon={<ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />}
-            >
-              Atualizar
-            </Button>
-          </div>
-        </Card>
+                {wsConnected ? <SignalIcon className="h-3 w-3" /> : <SignalSlashIcon className="h-3 w-3" />}
+                {wsConnected ? 'Ao vivo' : 'Offline'}
+              </span>
+              {lastSync && (
+                <span className="text-xs text-fg-muted-token hidden sm:block">
+                  {format(lastSync, 'HH:mm:ss', { locale: ptBR })}
+                </span>
+              )}
+              {avgPrepMinutes !== null && (
+                <span
+                  className="hidden md:inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                  title="Tempo médio entre confirmação e pronto (pedidos carregados)"
+                >
+                  Preparo médio: {avgPrepMinutes}min
+                </span>
+              )}
+              {focusColumn && (
+                <button
+                  type="button"
+                  onClick={clearFocus}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300"
+                  title="Limpar filtro"
+                >
+                  Filtrando: {COLUMNS.find((c) => c.id === focusColumn)?.label}
+                  <span aria-hidden="true">×</span>
+                </button>
+              )}
+            </div>
+          }
+        >
 
         {/* Kanban columns — <xl: scroll horizontal (kanban-standard); xl+: 5 colunas na grade.
             Altura das colunas vem do flex-1 do container (não há Navbar nesta rota dedicada). */}
@@ -866,6 +877,7 @@ export const OrdersPage: React.FC = () => {
             );
           })}
         </div>
+        </PageShell>
       </div>
 
       {/* Drag overlay */}

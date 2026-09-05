@@ -20,6 +20,21 @@
  * PÁGINA; filtros ficam na faixa própria porque são sobre os DADOS. Misturar
  * os dois é o que faz o usuário clicar em "Exportar" achando que exporta o
  * filtro atual quando não exporta.
+ *
+ * DUAS DENSIDADES, UMA IDENTIDADE
+ *
+ * `documento` (padrão) é a página que se lê de cima para baixo: cardápio,
+ * cupons, relatórios.
+ *
+ * `quadro` é a superfície que o dono deixa aberta o dia inteiro — Pedidos, KDS,
+ * PDV. Elas ficaram de fora da padronização porque o cabeçalho de documento
+ * comeria a altura do quadro, que é o que importa com o restaurante cheio; e
+ * aí cada uma inventou o próprio topo (o de Pedidos é minúsculo, em caixa alta
+ * com `tracking-[0.24em]`, e não parece nenhum outro título do painel).
+ *
+ * O que muda entre as duas é a DENSIDADE, não a identidade: mesmo título,
+ * mesma trilha, ações no mesmo canto. O quadro só encolhe o título, dispensa a
+ * descrição e entrega ao conteúdo a altura que sobra.
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -42,6 +57,11 @@ export interface PageShellProps {
   acoes?: React.ReactNode;
   /** Chips de período, buscas, toggles de escopo. */
   filtros?: React.ReactNode;
+  /**
+   * `documento` (padrão) para páginas que se lê; `quadro` para superfícies de
+   * trabalho que ocupam a tela — Pedidos, KDS, PDV.
+   */
+  variante?: 'documento' | 'quadro';
   children: React.ReactNode;
   className?: string;
 }
@@ -54,14 +74,25 @@ export const PageShell: React.FC<PageShellProps> = ({
   filtros,
   children,
   className,
+  variante = 'documento',
 }) => {
   const temTrilha = Boolean(trilha && trilha.length > 0);
+  const quadro = variante === 'quadro';
 
   return (
     // Sem padding externo: quem espaça é o <main> da casca. Duplicar aqui
     // dobraria a margem nas páginas que já usam o shell.
-    <div className={cn('flex flex-col gap-5', className)}>
-      <header className="flex flex-col gap-3">
+    <div
+      className={cn(
+        'flex flex-col',
+        // O quadro precisa saber até onde pode crescer: sem `h-full` e
+        // `min-h-0`, as colunas do kanban ficam com a altura do conteúdo e
+        // aparece rolagem dupla, com o rodapé da coluna fora da tela.
+        quadro ? 'h-full min-h-0 gap-3' : 'gap-5',
+        className,
+      )}
+    >
+      <header className={cn('flex flex-col', quadro ? 'gap-2' : 'gap-3')}>
         {temTrilha && (
           <nav aria-label="Trilha de navegação">
             <ol className="flex flex-wrap items-center gap-1.5 text-caption text-fg-muted-token">
@@ -93,10 +124,17 @@ export const PageShell: React.FC<PageShellProps> = ({
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-fg-token sm:text-3xl">
+            <h1
+              className={cn(
+                'font-bold tracking-tight text-fg-token',
+                quadro ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl',
+              )}
+            >
               {titulo}
             </h1>
-            {descricao && (
+            {/* No quadro a descrição não entra: quem trabalha ali já sabe o que
+                a tela faz, e a frase empurra as colunas para baixo. */}
+            {descricao && !quadro && (
               <p className="mt-1 max-w-2xl text-body text-fg-muted-token">{descricao}</p>
             )}
           </div>
@@ -108,7 +146,9 @@ export const PageShell: React.FC<PageShellProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-3">{filtros}</div>
       )}
 
-      <div className="flex flex-col gap-5">{children}</div>
+      <div className={cn('flex flex-col', quadro ? 'min-h-0 flex-1 gap-3' : 'gap-5')}>
+        {children}
+      </div>
     </div>
   );
 };
