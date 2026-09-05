@@ -51,6 +51,23 @@ describe('coluna de finalizados', () => {
     );
     expect(itens.map((o) => o.id)).toEqual(['c']);
   });
+
+  it('classifica pelo dia da loja, não pelo do relógio da máquina (UTC)', () => {
+    // Entregue às 23:30 do dia 27 no Brasil = 02:30 do dia 28 em UTC. Pelo dia
+    // civil da loja (o único que o operador reconhece) isso é "de hoje"; quem
+    // comparasse pelo fuso UTC do servidor/CI o jogaria para amanhã e sumiria
+    // com ele. O inverso do bug antigo, e a mesma causa: comparar pelo fuso
+    // errado.
+    const agoraNoite = new Date('2026-08-27T20:00:00-03:00');
+    const itens = pedidosDaColuna(
+      [
+        pedido('quaseMeiaNoite', 'delivered', '2026-08-27T23:30:00-03:00'),
+        pedido('madrugadaDeHoje', 'delivered', '2026-08-27T00:30:00-03:00'),
+      ],
+      done, agoraNoite,
+    );
+    expect(itens.map((o) => o.id).sort()).toEqual(['madrugadaDeHoje', 'quaseMeiaNoite']);
+  });
 });
 
 describe('colunas de trabalho em aberto', () => {
