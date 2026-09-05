@@ -40,6 +40,17 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - **Antes/depois:** `npm test` 1375/236 (**1 vermelho**) → **1377/237 verdes**;
   `tsc --noEmit` limpo e `vite build` ok nos dois lados. Só a lógica de filtro
   do quadro mudou; sem mudança de UI.
+- **Desbloqueio de CI embutido (base vermelha por 2 motivos):** o job `build`
+  do GitHub Actions roda `build → lint → test`. Além do teste do quadro, a
+  `main` já estava vermelha no passo de **lint** por 2 erros
+  `no-irregular-whitespace`: `src/pages/marketing/whatsapp/variaveisDaOferta.ts`
+  e seu teste tinham um **NBSP (U+00A0) literal** dentro do regex que remove o
+  espaço não-quebrável do `toLocaleString('pt-BR')`. Como nenhum dos dois
+  consertos sozinho deixa o CI verde (o de fuso passa no teste mas trava no lint;
+  o de lint passa no lint mas trava no teste), portei o conserto mínimo de lint
+  (troca o caractere literal pelo escape ` `, mesmo comportamento) para cá
+  — é o único caminho para um PR de CI verde. Vira no-op quando a `main` já
+  carregar essa linha.
 - **Próximo passo priorizado:** (1) **Fuso por loja:** threadar `store.timezone`
   do `useStore()`/`storesApi` até `pedidosDaColuna(effectiveOrders, col, undefined, fuso)`
   em `OrdersPage`, removendo o default hardcoded para tenants fora de São Paulo —
