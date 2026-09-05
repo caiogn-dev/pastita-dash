@@ -20,7 +20,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, StatCard } from '../../../components/ui';
+import { Card, Button, StatCard, PageShell } from '../../../components/ui';
 import { Modal, Loading } from '../../../components/common';
 import ComboList from '../../../components/Combos/ComboList';
 import { useStore } from '../../../hooks';
@@ -133,24 +133,24 @@ export const ComboListPage: React.FC = () => {
   if (loading && combos.length === 0) return <Loading />;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-fg-token">Combos</h1>
-          <p className="text-fg-muted-token">
-            {storeName ? `Combos de ${storeName}` : 'Gerencie combos e kits de produtos'}
-          </p>
-        </div>
+    <PageShell
+      titulo="Combos"
+      descricao="Kits com preço fechado — o jeito de subir o ticket sem parecer mais caro."
+      acoes={
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={loadData} title="Atualizar">
             <ArrowPathIcon className="w-5 h-5" />
           </Button>
-          <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />} onClick={() => navigate(`/stores/${storeSlug}/combos/new`)}>
-            Novo Combo
+          <Button
+            variant="primary"
+            leftIcon={<PlusIcon className="w-5 h-5" />}
+            onClick={() => navigate(`/stores/${storeSlug}/combos/new`)}
+          >
+            Novo combo
           </Button>
         </div>
-      </div>
+      }
+    >
 
       {/* Stats */}
       {combos.length > 0 && (
@@ -211,7 +211,7 @@ export const ComboListPage: React.FC = () => {
           </div>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 

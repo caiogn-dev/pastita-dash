@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { BanknotesIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, ArrowUpTrayIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Card, Button } from '../../components/ui';
+import { Card, Button, PageShell } from '../../components/ui';
 import { Loading } from '../../components/common';
 import {
   CashSession,
@@ -97,16 +97,11 @@ const CashPage: React.FC = () => {
   if (loading) return <div className="p-6"><Loading /></div>;
 
   return (
-    <div className="p-6 flex flex-col gap-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold text-fg-token flex items-center gap-2">
-          <BanknotesIcon className="w-7 h-7" />
-          Caixa
-        </h1>
-        <p className="text-sm text-fg-muted-token mt-0.5">
-          Abertura, sangria/reforço e fechamento com conferência.
-        </p>
-      </div>
+    <PageShell
+      titulo="Caixa"
+      descricao="Abertura, sangria e reforço, e o fechamento com conferência do que entrou."
+      className="max-w-3xl"
+    >
 
       {/* Resultado do último fechamento */}
       {closedResult && (
@@ -285,7 +280,7 @@ const CashPage: React.FC = () => {
           </Card>
         </>
       )}
-    </div>
+    </PageShell>
   );
 };
 

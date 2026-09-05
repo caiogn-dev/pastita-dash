@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import logger from '../../services/logger';
 import { formatCurrency } from '../../utils/formatters';
+import { PageShell } from '../../components/ui';
 import {
   PlusIcon,
   PencilIcon,
@@ -261,18 +262,16 @@ export const CouponsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-fg-token">Cupons de Desconto</h1>
-          <p className="text-sm md:text-base text-fg-muted-token">Gerencie os cupons de desconto da loja</p>
-        </div>
+    <PageShell
+      titulo="Cupons"
+      descricao="Desconto que você controla: quem pode usar, quantas vezes e até quando."
+      acoes={
         <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto">
           <PlusIcon className="w-5 h-5 mr-2" />
-          Novo Cupom
+          Novo cupom
         </Button>
-      </div>
+      }
+    >
 
       {/* Diagnóstico antes da tabela.
           Quatro números e uma lista não dizem o que fazer: "21 cupons ativos"
@@ -883,7 +882,7 @@ export const CouponsPage: React.FC = () => {
           </div>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 
