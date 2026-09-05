@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Badge, Button, Card, Input, KpiGrid, EmptyState } from '../../components/ui';
+import { Badge, Button, Card, Input, KpiGrid, EmptyState, RankedList } from '../../components/ui';
 import {
   BanknotesIcon, ClockIcon, UserGroupIcon, ShareIcon, ReceiptPercentIcon,
 } from '@heroicons/react/24/outline';
@@ -7,6 +7,7 @@ import { formatCurrency } from '../../utils/formatters';
 import type { CashbackResponse } from '../../services/cashback';
 import { cashbackService } from '../../services/cashback';
 import { telefoneLegivel } from './indicacoes';
+import { urlDeClienteBuscado } from '../customers/buscaPelaUrl';
 
 /**
  * Cashback no painel.
@@ -222,24 +223,35 @@ export const CashbackSection: React.FC<Props> = ({
               descricao="Os créditos aparecem aqui assim que o primeiro pedido for pago com o cashback ligado."
             />
           ) : (
-            <ul className="divide-y divide-border-token">
-              {fila.map((c) => (
-                <li key={c.phone} className="flex items-center justify-between gap-3 py-2.5">
-                  <span className="min-w-0">
-                    <span className="block truncate text-body text-fg-token">
-                      {telefoneLegivel(c.phone)}
-                    </span>
-                    <span className="text-caption text-fg-muted-token">
-                      {c.dias_para_vencer === 0
-                        ? 'vence hoje'
-                        : `vence em ${c.dias_para_vencer} dia${c.dias_para_vencer > 1 ? 's' : ''}`}
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    {num(c.cupons_entrega) > 0 && (
-                      <Badge tone="neutral">
-                        {c.cupons_entrega} entrega{c.cupons_entrega > 1 ? 's' : ''}
-                      </Badge>
+            <RankedList
+              medals={false}
+              items={fila.map((c) => ({
+                // O NOME, não o telefone. A pergunta desta lista é "a quem eu
+                // falo hoje antes do saldo vencer", e ela não se responde com
+                // um número — o dono tinha que abrir outra página e procurar
+                // cada um. Sem nome no cadastro, o telefone legível assume.
+                label: c.nome || telefoneLegivel(c.phone),
+                // O prazo POR EXTENSO, não "3d": este é o número que manda
+                // agir hoje, e abreviação num aviso de urgência custa a
+                // leitura que ele existe para provocar.
+                sub: [
+                  c.nome ? telefoneLegivel(c.phone) : null,
+                  c.dias_para_vencer === 0
+                    ? 'vence hoje'
+                    : `vence em ${c.dias_para_vencer} dia${c.dias_para_vencer > 1 ? 's' : ''}`,
+                ].filter(Boolean).join(' · '),
+                // A barra mede o VENCIMENTO, não o saldo: quem está prestes a
+                // perder é quem responde a mensagem de hoje, e a lista já vem
+                // ordenada por isso do backend.
+                value: Math.max(1, 30 - c.dias_para_vencer),
+                valueLabel: formatCurrency(num(c.saldo)),
+                href: urlDeClienteBuscado({ phone: c.phone, name: c.nome }, storeSlug) ?? undefined,
+                badge: (
+                  <span className="flex items-center gap-1.5">
+                    {c.dias_para_vencer <= 7 && (
+                      // Selo só quando é urgente: um badge em toda linha vira
+                      // ruído e deixa de marcar o que precisa de ação.
+                      <Badge tone="warning">urgente</Badge>
                     )}
                     {num(c.saldo_carteira) > 0 && (
                       // Distingue o comprado do concedido na própria linha: são
@@ -248,20 +260,24 @@ export const CashbackSection: React.FC<Props> = ({
                         carteira {formatCurrency(num(c.saldo_carteira))}
                       </Badge>
                     )}
-                    <Badge tone={c.dias_para_vencer <= 7 ? 'warning' : 'neutral'}>
-                      {formatCurrency(num(c.saldo))}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => { setAjustePara(c.phone); setAjusteValor(''); setAjusteMotivo(''); }}
-                    >
-                      + saldo
-                    </Button>
+                    {num(c.cupons_entrega) > 0 && (
+                      <Badge tone="neutral">
+                        {c.cupons_entrega} entrega{c.cupons_entrega > 1 ? 's' : ''}
+                      </Badge>
+                    )}
                   </span>
-                </li>
-              ))}
-            </ul>
+                ),
+                actions: (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setAjustePara(c.phone); setAjusteValor(''); setAjusteMotivo(''); }}
+                  >
+                    + saldo
+                  </Button>
+                ),
+              }))}
+            />
           )}
 
           {ajustePara && (

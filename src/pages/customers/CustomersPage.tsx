@@ -42,6 +42,10 @@ import { buscaInicialDaUrl } from './buscaPelaUrl';
 import { segmentoPorTelefone } from './segmentoDoCliente';
 import { useAnalyticsReport } from '../../hooks/queries/useReports';
 import type { RfmReport, DateRange } from '../../services/reports';
+import { useOrderDetailModal } from '../../hooks/useOrderDetailModal';
+import { useSaldoDoCliente } from '../../hooks/queries/useSaldoDoCliente';
+import type { CashbackClienteRow } from '../../services/cashback';
+import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -236,9 +240,20 @@ interface CustomerDrawerProps {
    * de abrir porque um relatório de apoio não respondeu.
    */
   segmento?: string | null;
+  /**
+   * Saldo de cashback, buscado pelo PAI.
+   *
+   * Mesma regra do `segmento`: buscar aqui dentro faria uma consulta por ficha
+   * aberta e obrigaria todo teste que monta o drawer isolado a carregar um
+   * QueryClient só por causa disso — o arquivo já avisava e eu quebrei a regra
+   * uma vez (05/09).
+   */
+  saldo?: CashbackClienteRow | null;
 }
 
-export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEdit, segmento = null }) => {
+export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
+  customer, onClose, onEdit, segmento = null, saldo = null,
+}) => {
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
   const navigate = useNavigate();
@@ -254,12 +269,32 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
   // drawer isolado a carregar um QueryClient só por causa disso. O pai já
   // busca uma vez para a página inteira.
   const orders = ordersQuery.data?.results ?? [];
+  // Mesma convenção do kanban: o detalhe do pedido é um modal em `?pedido=`.
+  const { openOrder } = useOrderDetailModal();
+
   const loadingOrders = ordersQuery.isLoading && ordersQuery.fetchStatus !== 'idle';
 
-  const avgTicket = useMemo(() => {
-    if (!customer || !customer.total_orders) return 0;
-    return Number(customer.total_spent) / customer.total_orders;
-  }, [customer]);
+  /**
+   * Os indicadores saem dos MESMOS pedidos que a tabela abaixo mostra.
+   *
+   * Vinham de `total_orders`/`total_spent`, contadores gravados no cadastro
+   * que ninguém mantém: a ficha do Vinicius dizia "0 pedidos, R$ 0,00" com o
+   * pedido de R$ 36,99 listado logo abaixo, na mesma tela (04/09). Duas
+   * fontes discordando na mesma janela é pior que não ter o número — quem lê
+   * não sabe em qual acreditar.
+   *
+   * Cancelado não conta como venda; o histórico continua listando tudo,
+   * porque lá o assunto é o que aconteceu, não o que a loja faturou.
+   */
+  const resumoDosPedidos = useMemo(() => {
+    const pagos = orders.filter((o) => o.status !== 'cancelled');
+    const gasto = pagos.reduce((t, o) => t + Number(o.total || 0), 0);
+    return {
+      pedidos: pagos.length,
+      gasto,
+      ticket: pagos.length ? gasto / pagos.length : 0,
+    };
+  }, [orders]);
 
   const whatsappNumber = customer?.whatsapp || customer?.phone || '';
   const cleanPhone = whatsappNumber.replace(/\D/g, '');
@@ -310,16 +345,16 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
           <div className="px-4 py-3 text-center">
             <p className="overline mb-1">Gasto total</p>
             <p className="text-lg font-bold text-brand-ink">
-              R$ {formatMoney(customer.total_spent)}
+              R$ {formatMoney(resumoDosPedidos.gasto)}
             </p>
           </div>
           <div className="px-4 py-3 text-center">
             <p className="overline mb-1">Pedidos</p>
-            <p className="text-lg font-bold text-fg-token">{customer.total_orders ?? 0}</p>
+            <p className="text-lg font-bold text-fg-token">{resumoDosPedidos.pedidos}</p>
           </div>
           <div className="px-4 py-3 text-center">
             <p className="overline mb-1">Ticket médio</p>
-            <p className="text-lg font-bold text-fg-token">R$ {formatMoney(avgTicket)}</p>
+            <p className="text-lg font-bold text-fg-token">R$ {formatMoney(resumoDosPedidos.ticket)}</p>
           </div>
         </div>
 
@@ -376,6 +411,41 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
             </div>
           </div>
 
+          {/* Cashback — só aparece para quem tem. Um bloco "R$ 0,00" em toda
+              ficha empurraria o histórico para baixo sem dizer nada. */}
+          {saldo && Number(saldo.saldo) > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
+                Cashback
+              </p>
+              <div className="rounded border border-border-token px-4 py-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-lg font-bold text-brand-ink">
+                    R$ {formatMoney(saldo.saldo)}
+                  </span>
+                  <span className="text-xs text-fg-muted-token">
+                    {saldo.dias_para_vencer === 0
+                      ? 'vence hoje'
+                      : `vence em ${saldo.dias_para_vencer} dia${saldo.dias_para_vencer > 1 ? 's' : ''}`}
+                  </span>
+                </div>
+                {(Number(saldo.saldo_carteira) > 0 || saldo.cupons_entrega > 0) && (
+                  <p className="mt-1.5 text-xs text-fg-muted-token">
+                    {Number(saldo.saldo_carteira) > 0 && (
+                      // O comprado separado do concedido: são dinheiros
+                      // diferentes e só um deles a loja ainda deve.
+                      <>R$ {formatMoney(saldo.saldo_carteira)} são de carteira comprada</>
+                    )}
+                    {Number(saldo.saldo_carteira) > 0 && saldo.cupons_entrega > 0 && ' · '}
+                    {saldo.cupons_entrega > 0 && (
+                      <>{saldo.cupons_entrega} entrega{saldo.cupons_entrega > 1 ? 's' : ''} grátis</>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Order history */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
@@ -408,7 +478,17 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
                   </thead>
                   <tbody className="divide-y divide-border-token">
                     {orders.slice(0, 15).map(order => (
-                      <tr key={order.id} className="hover:bg-surface-2 transition-colors">
+                      // Abre o MESMO modal de detalhe do kanban (`?pedido=<id>`):
+                      // o dono clicava na linha esperando ver itens e frete e
+                      // não acontecia nada. `linhaClicavel` mantém o acesso por
+                      // teclado, que uma linha com onClick solto perderia.
+                      <tr
+                        key={order.id}
+                        {...linhaClicavel(
+                          () => openOrder(String(order.id)),
+                          `Abrir pedido ${order.order_number}`,
+                        )}
+                      >
                         <td className="px-4 py-2.5 font-mono text-xs font-semibold text-fg-token">
                           #{order.order_number}
                         </td>
@@ -615,6 +695,13 @@ export const CustomersPage: React.FC = () => {
   const rfm = useAnalyticsReport<RfmReport>(
     'rfm', PERIODO_DO_SEGMENTO, Boolean(selectedCustomer),
   );
+  // O cashback vinha só na tela de Fidelidade: para saber o saldo de alguém o
+  // dono saía da ficha, abria outra página e procurava o telefone na lista.
+  const saldoDoSelecionado = useSaldoDoCliente(
+    storeSlug ?? storeId,
+    selectedCustomer?.whatsapp || selectedCustomer?.phone || null,
+  ).data ?? null;
+
   const segmentoDoSelecionado = segmentoPorTelefone(
     rfm.data?.customers ?? [],
     selectedCustomer?.phone || selectedCustomer?.whatsapp || '',
@@ -863,6 +950,7 @@ export const CustomersPage: React.FC = () => {
       onClose={() => setSelectedCustomer(null)}
       onEdit={(c) => { setEditingCustomer(c); setFormOpen(true); }}
       segmento={segmentoDoSelecionado}
+      saldo={saldoDoSelecionado}
     />
     {formOpen && (
       <CustomerFormDrawer
@@ -876,6 +964,11 @@ export const CustomersPage: React.FC = () => {
         }}
       />
     )}
+
+    {/* O MESMO modal do kanban. A linha do histórico na ficha abre por
+        `?pedido=<id>`; sem renderizar o modal aqui, o clique só mexeria na
+        URL e nada apareceria. */}
+    <OrderDetailModal />
     </>
   );
 };

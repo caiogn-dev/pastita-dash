@@ -26,6 +26,11 @@ jest.mock('../../../hooks/queries/useCustomerStats', () => ({
 jest.mock('../../../hooks/queries/useCustomerOrders', () => ({
   useCustomerOrders: () => ({ data: null, isLoading: false, fetchStatus: 'idle' }),
 }));
+jest.mock('../../../hooks/queries/useSaldoDoCliente', () => ({
+  // O saldo alimenta um bloco de apoio na ficha. Mesma razão do RFM abaixo:
+  // sem o mock, o `useQuery` real exigiria um QueryClientProvider aqui.
+  useSaldoDoCliente: () => ({ data: null }),
+}));
 jest.mock('../../../hooks/queries/useReports', () => ({
   // O relatório de RFM alimenta um selo na ficha; estes testes são sobre o
   // estado de erro dos KPIs. Sem o mock, o `useQuery` real exigiria um

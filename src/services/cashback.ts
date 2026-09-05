@@ -24,6 +24,8 @@ export interface CashbackResumo {
 
 export interface CashbackClienteRow {
   phone: string;
+  /** Nome do pedido mais recente. Vazio para quem tem saldo e nunca comprou. */
+  nome: string;
   saldo: string;
   /** Parte comprada do saldo — a única que exige telefone comprovado para gastar. */
   saldo_carteira: string;
@@ -70,6 +72,18 @@ class CashbackService {
   async get(storeSlug: string, page = 1): Promise<CashbackResponse> {
     const { data } = await api.get(`/stores/${storeSlug}/cashback/`, { params: { page } });
     return data;
+  }
+
+  /**
+   * O saldo de UMA pessoa — o mesmo endpoint, com recorte.
+   *
+   * Não usa o endpoint público de saldo: ele esconde a parte comprada de quem
+   * não comprovou o número, que é a regra certa para a cliente e errada para
+   * o dono, que precisa ver o que ela tem.
+   */
+  async saldoDoCliente(storeSlug: string, phone: string): Promise<CashbackClienteRow | null> {
+    const { data } = await api.get(`/stores/${storeSlug}/cashback/`, { params: { phone } });
+    return (data?.results ?? [])[0] ?? null;
   }
 
   /**

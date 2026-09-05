@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Card, EmptyState } from '../../components/ui';
+import { Card, EmptyState, RankedList, type RankedItem } from '../../components/ui';
 import { ShareIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../utils/formatters';
 import { cashbackService } from '../../services/cashback';
+import { urlDeClienteBuscado } from '../customers/buscaPelaUrl';
 import {
   ordenarIndicadores, rotuloDoAmigo, rotuloDoIndicador, telefoneLegivel,
   type IndicacaoRow, type IndicadorAgregado,
@@ -17,17 +18,20 @@ import {
  * seus divulgadores, e não percebe um mesmo telefone "indicando" trinta
  * desconhecidos.
  *
- * DUAS LEITURAS, e a ordem responde à pergunta certa:
+ * A LISTA É `RankedList`, o formato canônico do painel para "pessoas com um
+ * valor". A primeira versão desta tela desenhou a própria lista à mão, e o
+ * dono cobriu: "você está criando vários blocos ao invés de reutilizar o que
+ * já existe". Ele estava certo — o componente já fazia medalha, barra
+ * proporcional, sublinha e link no rótulo, e melhor.
  *
- *   1. POR QUEM INDICOU, no topo. É a lista de a quem ligar e agradecer, e a
- *      única que revela padrão — quem traz gente toda semana, e quem traz
- *      gente demais rápido demais.
- *   2. As indicações uma a uma, embaixo, para conferir um caso específico.
+ * ORDEM POR QUANTAS PESSOAS TROUXE, não por quanto custou: a pergunta é "quem
+ * são meus divulgadores", e ordenar por dinheiro colocaria na frente quem
+ * trouxe um ticket alto uma vez em vez de quem traz gente toda semana.
  *
  * O VAZIO É O ESTADO MAIS PROVÁVEL por enquanto, e por isso não é um "nada
  * aqui": ele explica que a indicação é rastreada pelo link que o cliente pega
- * na carteira. Um vazio mudo faria o dono achar que o programa está quebrado
- * quando ele só não começou.
+ * na carteira. Um vazio mudo faria o dono achar que o programa quebrou quando
+ * ele só não começou.
  */
 export const IndicacoesCard: React.FC<{ storeSlug: string }> = ({ storeSlug }) => {
   const [linhas, setLinhas] = useState<IndicacaoRow[]>([]);
@@ -68,65 +72,39 @@ export const IndicacoesCard: React.FC<{ storeSlug: string }> = ({ storeSlug }) =
     );
   }
 
+  // Quem trouxe gente: a barra mede PESSOAS, e o valor à direita mostra o que
+  // a loja pagou por elas. Duas grandezas na mesma linha, cada uma no seu
+  // lugar — a barra responde "quem divulga", o número responde "quanto custa".
+  const divulgadores: RankedItem[] = porIndicador.map((i) => ({
+    label: rotuloDoIndicador(i),
+    sub: i.nome ? telefoneLegivel(i.phone) : undefined,
+    value: i.total_indicados,
+    valueLabel: `${i.total_indicados} ${i.total_indicados === 1 ? 'pessoa' : 'pessoas'}`,
+    href: urlDeClienteBuscado({ phone: i.phone, name: i.nome }, storeSlug) ?? undefined,
+  }));
+
+  // Cada indicação: o valor é o dinheiro creditado, que é o que o dono confere
+  // quando quer entender uma linha específica.
+  const cada: RankedItem[] = linhas.map((r) => ({
+    label: `${rotuloDoIndicador({ phone: r.indicador_phone, nome: r.indicador_nome })} → ${rotuloDoAmigo(r)}`,
+    sub: `${r.pedido}${r.pedido_total ? ` · pedido de ${formatCurrency(Number(r.pedido_total))}` : ''}`,
+    value: Number(r.valor),
+    valueLabel: formatCurrency(Number(r.valor)),
+    href: urlDeClienteBuscado(
+      { phone: r.indicador_phone, name: r.indicador_nome }, storeSlug,
+    ) ?? undefined,
+  }));
+
   return (
     <Card title="Indicações">
       <div className="space-y-6">
         <div>
           <h3 className="mb-2 text-body font-semibold text-fg-token">Quem mais trouxe gente</h3>
-          <ul className="divide-y divide-border-token">
-            {porIndicador.map((i) => (
-              <li key={i.phone} className="flex items-center justify-between gap-4 py-2.5">
-                <span className="min-w-0">
-                  <span className="block truncate text-body text-fg-token">
-                    {rotuloDoIndicador(i)}
-                  </span>
-                  {i.nome && (
-                    <span className="block text-caption text-fg-muted-token">
-                      {telefoneLegivel(i.phone)}
-                    </span>
-                  )}
-                </span>
-                <span className="shrink-0 text-right">
-                  <span className="block text-body font-semibold text-fg-token">
-                    {i.total_indicados} {i.total_indicados === 1 ? 'pessoa' : 'pessoas'}
-                  </span>
-                  <span className="block text-caption text-fg-muted-token">
-                    {formatCurrency(Number(i.total_creditado))} creditados
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          <RankedList items={divulgadores} />
         </div>
-
         <div>
           <h3 className="mb-2 text-body font-semibold text-fg-token">Cada indicação</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-body">
-              <thead className="text-caption text-fg-muted-token">
-                <tr>
-                  <th className="py-2 pr-4 font-medium">Quem indicou</th>
-                  <th className="py-2 pr-4 font-medium">Quem veio</th>
-                  <th className="py-2 pr-4 font-medium">Pedido</th>
-                  <th className="py-2 text-right font-medium">Creditado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-token">
-                {linhas.map((r) => (
-                  <tr key={r.id}>
-                    <td className="py-2.5 pr-4 text-fg-token">
-                      {rotuloDoIndicador({ phone: r.indicador_phone, nome: r.indicador_nome })}
-                    </td>
-                    <td className="py-2.5 pr-4 text-fg-token">{rotuloDoAmigo(r)}</td>
-                    <td className="py-2.5 pr-4 text-fg-muted-token">{r.pedido}</td>
-                    <td className="py-2.5 text-right font-medium text-fg-token">
-                      {formatCurrency(Number(r.valor))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <RankedList items={cada} medals={false} />
         </div>
       </div>
     </Card>

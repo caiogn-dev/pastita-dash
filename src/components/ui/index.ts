@@ -43,3 +43,7 @@ export { FormStepper } from './FormStepper';
 export type { FormStepperProps, PassoDeFormulario } from './FormStepper';
 export { Sparkline } from './Sparkline';
 export type { SparklineProps } from './Sparkline';
+
+// Lista ranqueada — o formato canônico de 'pessoas/coisas com um valor':
+// rótulo (link quando há destino), sublinha, barra proporcional e valor.
+export { RankedList, EmptyNote, type RankedItem } from './RankedList';
