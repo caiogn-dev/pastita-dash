@@ -3,7 +3,64 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-09-05)
+
+- `npm ci`: ok. `npm audit`: **10 vulnerabilidades** (1 low, 3 moderate, 6 high),
+  transitivas de `react-router`/dev-build (`vite`/`esbuild`); só via `--force`
+  (major bump) — segue como fatia dedicada.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1377 testes / 237 suítes verdes** (era 1375/236 + **1 vermelho
+  pré-existente**; a fatia corrigiu o vermelho e somou +1 teste).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~18s).
+
+## Histórico
+
+### 2026-09-05 — Bug: coluna "Entregue" do quadro classificava "hoje" pelo fuso da máquina, não da loja
+- **Medido:** a suíte chegou **vermelha** em `pedidosDoQuadro.test.ts` ("não
+  arrasta o que foi entregue ontem"). Causa raiz: `mesmoDia()` em
+  `src/pages/orders/pedidosDoQuadro.ts` comparava o dia via `getFullYear/Month/Date`
+  — ou seja, o **dia-calendário do relógio local da máquina** que roda o código.
+  O CI/container roda em **UTC**; um pedido entregue às 21h de ontem no Brasil
+  (`2026-08-26T21:00-03:00` = `2026-08-27T00:00Z`) caía como "entregue hoje" e
+  poluía a coluna de finalizados. Não é só artefato de teste: qualquer operador
+  cujo dispositivo/host não esteja no fuso do Brasil (ou build/SSR em UTC) veria
+  pedidos da madrugada anterior vazarem para o quadro de hoje. `OrdersPage.tsx`
+  chama `pedidosDaColuna` sem passar `agora`, então usava `new Date()` + fuso local.
+- **Mudado (`pedidosDoQuadro.ts`):** `mesmoDia` passa a comparar a
+  **data-calendário no fuso da loja** via `Intl.DateTimeFormat('en-CA', { timeZone })`
+  (YYYY-MM-DD). Novo `FUSO_DA_LOJA = 'America/Sao_Paulo'` (alinhado ao precedente
+  de `ScheduledMessagesPage` e ao campo `timezone` da loja) e novo parâmetro
+  opcional `fuso` em `pedidosDaColuna`, para futura passagem do fuso por loja.
+  `OrdersPage` não muda: herda o default correto.
+- **Teste (TDD, vermelho→verde):** o caso pré-existente "ontem" voltou a passar
+  e adicionei um caso pontual — entrega às 23:30 (Brasil) que já é o dia seguinte
+  em UTC deve contar como "de hoje" — provando que a classificação segue o dia
+  civil da loja, **não** o de UTC nem o do runner. Vermelho antes (2/12 falhando),
+  verde depois (12/12).
+- **Antes/depois:** `npm test` 1375/236 (**1 vermelho**) → **1377/237 verdes**;
+  `tsc --noEmit` limpo e `vite build` ok nos dois lados. Só a lógica de filtro
+  do quadro mudou; sem mudança de UI.
+- **Desbloqueio de CI embutido (base vermelha por 2 motivos):** o job `build`
+  do GitHub Actions roda `build → lint → test`. Além do teste do quadro, a
+  `main` já estava vermelha no passo de **lint** por 2 erros
+  `no-irregular-whitespace`: `src/pages/marketing/whatsapp/variaveisDaOferta.ts`
+  e seu teste tinham um **NBSP (U+00A0) literal** dentro do regex que remove o
+  espaço não-quebrável do `toLocaleString('pt-BR')`. Como nenhum dos dois
+  consertos sozinho deixa o CI verde (o de fuso passa no teste mas trava no lint;
+  o de lint passa no lint mas trava no teste), portei o conserto mínimo de lint
+  (troca o caractere literal pelo escape ` `, mesmo comportamento) para cá
+  — é o único caminho para um PR de CI verde. Vira no-op quando a `main` já
+  carregar essa linha.
+- **Próximo passo priorizado:** (1) **Fuso por loja:** threadar `store.timezone`
+  do `useStore()`/`storesApi` até `pedidosDaColuna(effectiveOrders, col, undefined, fuso)`
+  em `OrdersPage`, removendo o default hardcoded para tenants fora de São Paulo —
+  auditar de onde o `timezone` da loja selecionada está disponível na página.
+  (2) **Varredura de outros usos de dia-calendário local** (`getDate()`/`toLocaleDateString`
+  sem `timeZone`) em relatórios e agendamentos, que sofrem do mesmo viés de fuso.
+  (3) **Deps:** planejar o major bump de `react-router` 6→7 e `vite` 5→8 como
+  fatias dedicadas com validação de build.
+
+## Baseline anterior (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
   transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
