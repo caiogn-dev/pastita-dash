@@ -3,8 +3,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ArrowPathIcon,
   MagnifyingGlassIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   PhoneIcon,
   EnvelopeIcon,
   ShoppingBagIcon,
@@ -25,8 +23,8 @@ import toast from 'react-hot-toast';
 // erro dos KPIs que o bot trouxe. Nenhum substitui o outro.
 import { PageLoading, EmptyState } from '../../components/common';
 import {
-  Card, Button, Badge, RowActions, linhaClicavel,
-  PageShell, KpiGrid, InsightList,
+  Card, Button, Badge, RowActions,
+  PageShell, KpiGrid, InsightList, Tabela,
 } from '../../components/ui';
 import { insightsDeClientes } from './insightsDeClientes';
 import { rotuloDeDias, rotuloDePerfil, type TomDeCrm } from './rotulosDeCrm';
@@ -466,48 +464,51 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                 <p className="text-sm text-fg-muted-token">Nenhum pedido encontrado</p>
               </div>
             ) : (
-              <div className="rounded border border-border-token overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-surface-2 border-b border-border-token">
-                      <th className="overline px-4 py-2.5 text-left">Pedido</th>
-                      <th className="overline px-4 py-2.5 text-left hidden sm:table-cell">Data</th>
-                      <th className="overline px-4 py-2.5 text-left">Status</th>
-                      <th className="overline px-4 py-2.5 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-token">
-                    {orders.slice(0, 15).map(order => (
-                      // Abre o MESMO modal de detalhe do kanban (`?pedido=<id>`):
-                      // o dono clicava na linha esperando ver itens e frete e
-                      // não acontecia nada. `linhaClicavel` mantém o acesso por
-                      // teclado, que uma linha com onClick solto perderia.
-                      <tr
-                        key={order.id}
-                        {...linhaClicavel(
-                          () => openOrder(String(order.id)),
-                          `Abrir pedido ${order.order_number}`,
-                        )}
+              <Tabela<(typeof orders)[number]>
+                itens={orders.slice(0, 15)}
+                chave={(o) => String(o.id)}
+                rotuloDaLinha={(o) => `Abrir pedido ${o.order_number}`}
+                // Abre o MESMO modal de detalhe do kanban (`?pedido=<id>`): o
+                // dono clicava na linha esperando ver itens e frete e não
+                // acontecia nada.
+                onAbrir={(o) => openOrder(String(o.id))}
+                colunas={[
+                  {
+                    chave: 'numero',
+                    cabecalho: 'Pedido',
+                    render: (o) => (
+                      <span className="font-mono text-xs font-semibold">#{o.order_number}</span>
+                    ),
+                  },
+                  {
+                    chave: 'data',
+                    cabecalho: 'Data',
+                    classe: 'max-sm:hidden',
+                    render: (o) => (
+                      <span className="text-xs text-fg-muted-token">{formatDate(o.created_at)}</span>
+                    ),
+                  },
+                  {
+                    chave: 'status',
+                    cabecalho: 'Status',
+                    render: (o) => (
+                      <span
+                        className={`text-badge rounded px-2 py-0.5 font-semibold ${
+                          STATUS_COLOR[o.status] ?? 'bg-surface-2 text-fg-muted-token'
+                        }`}
                       >
-                        <td className="px-4 py-2.5 font-mono text-xs font-semibold text-fg-token">
-                          #{order.order_number}
-                        </td>
-                        <td className="px-4 py-2.5 text-xs text-fg-muted-token hidden sm:table-cell">
-                          {formatDate(order.created_at)}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className={`text-badge font-semibold px-2 py-0.5 rounded ${STATUS_COLOR[order.status] ?? 'bg-surface-2 text-fg-muted-token'}`}>
-                            {STATUS_LABEL[order.status] ?? order.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-sm font-bold text-fg-token">
-                          R$ {formatMoney(order.total)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        {STATUS_LABEL[o.status] ?? o.status}
+                      </span>
+                    ),
+                  },
+                  {
+                    chave: 'total',
+                    cabecalho: 'Total',
+                    alinhamento: 'direita',
+                    render: (o) => <span className="font-bold">R$ {formatMoney(o.total)}</span>,
+                  },
+                ]}
+              />
             )}
           </div>
 
@@ -553,62 +554,6 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const Pagination: React.FC<{
-  page: number; total: number; pageSize: number; onChange: (p: number) => void;
-}> = ({ page, total, pageSize, onChange }) => {
-  const totalPages = Math.ceil(total / pageSize);
-  if (totalPages <= 1) return null;
-
-  const pages: (number | '...')[] = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (page > 3) pages.push('...');
-    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
-    if (page < totalPages - 2) pages.push('...');
-    pages.push(totalPages);
-  }
-
-  return (
-    <div className="flex items-center justify-between px-5 py-3 border-t border-border-token">
-      <span className="text-xs text-fg-muted-token">
-        {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} de {total}
-      </span>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onChange(page - 1)}
-          disabled={page === 1}
-          className="p-1.5 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronLeftIcon className="h-4 w-4" />
-        </button>
-        {pages.map((p, i) =>
-          p === '...' ? (
-            <span key={`e-${i}`} className="px-2 text-fg-muted-token text-sm">…</span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => onChange(p as number)}
-              className={`min-w-[2rem] h-8 rounded text-sm font-medium transition-colors ${
-                p === page ? 'bg-brand text-white' : 'text-fg-muted-token hover:text-fg-token hover:bg-surface-2'
-              }`}
-            >
-              {p}
-            </button>
-          )
-        )}
-        <button
-          onClick={() => onChange(page + 1)}
-          disabled={page === Math.ceil(total / pageSize)}
-          className="p-1.5 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronRightIcon className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
-  );
-};
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -792,155 +737,180 @@ export const CustomersPage: React.FC = () => {
         />
       )}
 
-      {/* ── Table ── */}
-      <Card className="overflow-hidden">
-        {customers.length === 0 ? (
-          <div className="py-16 text-center">
-            <UserGroupIcon className="h-8 w-8 mx-auto mb-3 text-fg-muted-token" />
-            <p className="text-fg-muted-token text-sm">Nenhum cliente encontrado.</p>
-          </div>
-        ) : (
-          <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-token bg-surface-2">
-                  <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest">Cliente</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden md:table-cell">Contato</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden lg:table-cell">Pedidos</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden lg:table-cell">Gasto total</th>
-                  {/* "Último pedido" virou "Sem comprar": a data crua obriga
-                      cada linha a uma subtração mental, e é a distância — não
-                      a data — que decide quem recebe mensagem hoje. */}
-                  <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden xl:table-cell">Sem comprar</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden lg:table-cell">Perfil</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-fg-muted-token uppercase tracking-widest">Status</th>
-                  <th className="px-2 py-3"><span className="sr-only">Ações</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-token">
-                {customers.map((customer) => {
-                  const avatarBg = getAvatarColor(customer.user_name || customer.user_email || '');
-                  const avatarInitials = getInitials(customer.user_name, customer.whatsapp || customer.phone);
-                  // Preferimos os campos derivados dos pedidos: os contadores
-                  // gravados por signal divergiram em 12 dos 78 clientes da Cê
-                  // Saladas. `??` e não `||` — zero real é resposta válida.
-                  const gasto = customer.gasto_real ?? Number(customer.total_spent ?? 0);
-                  const pedidos = customer.pedidos_reais ?? customer.total_orders ?? 0;
-                  const ltv = Number(gasto);
-                  const dias = rotuloDeDias(customer.dias_sem_comprar);
-                  const perfil = rotuloDePerfil(customer.perfil);
-                  return (
-                  <tr
-                    key={customer.id}
-                    {...linhaClicavel(
-                      () => setSelectedCustomer(customer),
-                      `Abrir ${customer.user_name || 'cliente'}`
-                    )}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: avatarBg }}>
-                          {avatarInitials}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-fg-token">{customer.user_name || '—'}</p>
-                          <p className="text-xs text-fg-muted-token">{publicEmail(customer.user_email) || ''}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <div className="space-y-1">
-                        {(customer.phone || customer.whatsapp) && (
-                          <div className="flex items-center gap-1.5 text-xs text-fg-muted-token">
-                            <PhoneIcon className="h-3 w-3 shrink-0" />
-                            {customer.whatsapp || customer.phone}
-                          </div>
-                        )}
-                        {publicEmail(customer.user_email) && (
-                          <div className="flex items-center gap-1.5 text-xs text-fg-muted-token">
-                            <EnvelopeIcon className="h-3 w-3 shrink-0" />
-                            {publicEmail(customer.user_email)}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center hidden lg:table-cell">
-                      <Badge tone="neutral" className="gap-1.5">
-                        <ShoppingBagIcon className="h-3 w-3" />
-                        {pedidos}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right hidden lg:table-cell">
-                      {ltv > 500 ? (
-                        <Badge tone="success">R$ {ltv.toFixed(2)}</Badge>
-                      ) : (
-                        <span className="font-bold text-fg-token">
-                          R$ {formatMoney(gasto)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
-                      <span className={`text-xs font-semibold ${TOM_CRM[dias.tom]}`} title={formatDate(customer.last_order_at)}>
-                        {dias.texto}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center hidden lg:table-cell">
-                      {/* O corte no `title`: "VIP" sem régua é magia, e quem
-                          atende precisa saber explicar por que aquele cliente
-                          é VIP. */}
-                      <Badge tone={customer.perfil === 'vip' ? 'success' : 'neutral'} title={perfil.definicao}>
-                        {perfil.texto}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {customer.is_active ? (
-                        <Badge tone="success" className="gap-1">
-                          <CheckBadgeIcon className="h-3 w-3" />
-                          Ativo
-                        </Badge>
-                      ) : (
-                        <Badge tone="neutral" className="gap-1">
-                          <NoSymbolIcon className="h-3 w-3" />
-                          Inativo
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-2 py-3 text-right">
-                      {/* As três coisas que se faz com um cliente sem precisar
-                          abrir o detalhe. Falar no WhatsApp era o caso mais
-                          frequente e exigia abrir a gaveta, copiar o número e
-                          ir para o inbox — três telas para uma mensagem. */}
-                      <RowActions
-                        rotulo={`Ações de ${customer.user_name || 'cliente'}`}
-                        acoes={[
-                          {
-                            rotulo: 'Ver detalhes',
-                            onClick: () => setSelectedCustomer(customer),
-                          },
-                          {
-                            rotulo: 'Editar',
-                            onClick: () => { setEditingCustomer(customer); setFormOpen(true); },
-                          },
-                          {
-                            rotulo: 'Falar no WhatsApp',
-                            desabilitada: !(customer.whatsapp || customer.phone),
-                            onClick: () => {
-                              const tel = (customer.whatsapp || customer.phone || '').replace(/\D/g, '');
-                              navigate(`/inbox/whatsapp?search=${tel}`);
-                            },
-                          },
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <Pagination page={page} total={totalCount} pageSize={PAGE_SIZE} onChange={setPage} />
-          </>
-        )}
-      </Card>
+      <Tabela<(typeof customers)[number]>
+        itens={customers}
+        chave={(c) => String(c.id)}
+        rotuloDaLinha={(c) => `Abrir ${c.user_name || 'cliente'}`}
+        onAbrir={setSelectedCustomer}
+        carregando={customersQuery.isFetching}
+        vazio={{
+          titulo: 'Nenhum cliente encontrado',
+          icone: <UserGroupIcon className="h-8 w-8" />,
+        }}
+        paginacao={{
+          pagina: page,
+          porPagina: PAGE_SIZE,
+          total: totalCount,
+          onPagina: setPage,
+          rotulo: 'clientes',
+        }}
+        colunas={[
+          {
+            chave: 'cliente',
+            cabecalho: 'Cliente',
+            render: (c) => (
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                  style={{ backgroundColor: getAvatarColor(c.user_name || c.user_email || '') }}
+                >
+                  {getInitials(c.user_name, c.whatsapp || c.phone)}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-fg-token">{c.user_name || '—'}</p>
+                  <p className="truncate text-xs text-fg-muted-token">
+                    {publicEmail(c.user_email) || ''}
+                  </p>
+                </div>
+              </div>
+            ),
+          },
+          {
+            chave: 'contato',
+            cabecalho: 'Contato',
+            classe: 'max-md:hidden',
+            render: (c) => (
+              <div className="flex flex-col gap-1">
+                {(c.phone || c.whatsapp) && (
+                  <div className="flex items-center gap-1.5 text-xs text-fg-muted-token">
+                    <PhoneIcon className="h-3 w-3 shrink-0" />
+                    {c.whatsapp || c.phone}
+                  </div>
+                )}
+                {publicEmail(c.user_email) && (
+                  <div className="flex items-center gap-1.5 text-xs text-fg-muted-token">
+                    <EnvelopeIcon className="h-3 w-3 shrink-0" />
+                    {publicEmail(c.user_email)}
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            chave: 'pedidos',
+            cabecalho: 'Pedidos',
+            alinhamento: 'centro',
+            classe: 'max-lg:hidden',
+            render: (c) => (
+              <Badge tone="neutral" className="gap-1.5">
+                <ShoppingBagIcon className="h-3 w-3" />
+                {/* Campos derivados dos pedidos: os contadores gravados por
+                    signal divergiram em 12 dos 78 clientes da Cê Saladas.
+                    `??` e não `||` — zero real é resposta válida. */}
+                {c.pedidos_reais ?? c.total_orders ?? 0}
+              </Badge>
+            ),
+          },
+          {
+            chave: 'gasto',
+            cabecalho: 'Gasto total',
+            alinhamento: 'direita',
+            classe: 'max-lg:hidden',
+            render: (c) => {
+              const gasto = c.gasto_real ?? Number(c.total_spent ?? 0);
+              return Number(gasto) > 500 ? (
+                <Badge tone="success">R$ {Number(gasto).toFixed(2)}</Badge>
+              ) : (
+                <span className="font-bold text-fg-token">R$ {formatMoney(gasto)}</span>
+              );
+            },
+          },
+          {
+            // "Último pedido" virou "Sem comprar": a data crua obriga cada
+            // linha a uma subtração mental, e é a distância — não a data —
+            // que decide quem recebe mensagem hoje.
+            chave: 'sem_comprar',
+            cabecalho: 'Sem comprar',
+            classe: 'max-xl:hidden',
+            render: (c) => {
+              const dias = rotuloDeDias(c.dias_sem_comprar);
+              return (
+                <span
+                  className={`text-xs font-semibold ${TOM_CRM[dias.tom]}`}
+                  title={formatDate(c.last_order_at)}
+                >
+                  {dias.texto}
+                </span>
+              );
+            },
+          },
+          {
+            chave: 'perfil',
+            cabecalho: 'Perfil',
+            alinhamento: 'centro',
+            classe: 'max-lg:hidden',
+            render: (c) => {
+              const perfil = rotuloDePerfil(c.perfil);
+              // A régua no `title`: "VIP" sem critério é magia, e quem atende
+              // precisa saber explicar por que aquele cliente é VIP.
+              return (
+                <Badge tone={c.perfil === 'vip' ? 'success' : 'neutral'} title={perfil.definicao}>
+                  {perfil.texto}
+                </Badge>
+              );
+            },
+          },
+          {
+            chave: 'status',
+            cabecalho: 'Status',
+            alinhamento: 'centro',
+            render: (c) =>
+              c.is_active ? (
+                <Badge tone="success" className="gap-1">
+                  <CheckBadgeIcon className="h-3 w-3" />
+                  Ativo
+                </Badge>
+              ) : (
+                <Badge tone="neutral" className="gap-1">
+                  <NoSymbolIcon className="h-3 w-3" />
+                  Inativo
+                </Badge>
+              ),
+          },
+          {
+            chave: 'acoes',
+            cabecalho: 'Ações',
+            alinhamento: 'direita',
+            render: (c) => (
+              // As três coisas que se faz com um cliente sem abrir o detalhe.
+              // Falar no WhatsApp era o caso mais frequente e exigia abrir a
+              // gaveta, copiar o número e ir para o inbox — três telas para
+              // uma mensagem.
+              <RowActions
+                rotulo={`Ações de ${c.user_name || 'cliente'}`}
+                acoes={[
+                  { rotulo: 'Ver detalhes', onClick: () => setSelectedCustomer(c) },
+                  {
+                    rotulo: 'Editar',
+                    onClick: () => {
+                      setEditingCustomer(c);
+                      setFormOpen(true);
+                    },
+                  },
+                  {
+                    rotulo: 'Falar no WhatsApp',
+                    desabilitada: !(c.whatsapp || c.phone),
+                    onClick: () =>
+                      navigate(
+                        `/inbox/whatsapp?search=${(c.whatsapp || c.phone || '').replace(/\D/g, '')}`,
+                      ),
+                  },
+                ]}
+              />
+            ),
+          },
+        ]}
+      />
 
     </PageShell>
 

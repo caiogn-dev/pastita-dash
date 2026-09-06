@@ -60,6 +60,36 @@ describe('paginador', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('mostra as páginas numeradas — pular para a 7 não pode custar 6 cliques', () => {
+    // Esta parte veio do paginador local que Clientes tinha escrito à mão. Ao
+    // consolidar, o comportamento melhor é que sobrevive: só "Anterior" e
+    // "Próxima" obrigava a clicar seis vezes para ver a última página.
+    const onPagina = jest.fn();
+    render(<Paginacao pagina={1} porPagina={10} total={70} onPagina={onPagina} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Página 7' }));
+    expect(onPagina).toHaveBeenCalledWith(7);
+  });
+
+  it('a página atual é anunciada como atual, não só pintada', () => {
+    render(<Paginacao pagina={3} porPagina={10} total={70} onPagina={jest.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Página 3' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('com muitas páginas, resume com reticências em vez de virar uma régua', () => {
+    render(<Paginacao pagina={10} porPagina={10} total={500} onPagina={jest.fn()} />);
+
+    // 50 páginas não cabem: mostra as pontas, a vizinhança, e elide o resto.
+    expect(screen.getByRole('button', { name: 'Página 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Página 50' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Página 25' })).toBeNull();
+    expect(screen.getAllByText('…').length).toBeGreaterThan(0);
+  });
+
   it('aceita um rótulo próprio do que está sendo contado', () => {
     render(<Paginacao pagina={1} porPagina={20} total={7} onPagina={jest.fn()} rotulo="cupons" />);
 

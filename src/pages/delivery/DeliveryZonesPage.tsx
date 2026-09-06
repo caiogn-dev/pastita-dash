@@ -12,7 +12,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
-import { Card, Button, Badge, StatCard, PageShell, RowActions, linhaClicavel } from '../../components/ui';
+import { Card, Button, Badge, StatCard, PageShell, RowActions, Tabela } from '../../components/ui';
 import DeliveryZonesMap, { COR_DA_PROMO, corDoAnel } from '../../components/maps/DeliveryZonesMap';
 import { zonasParaCirculos } from '../../components/maps/zonasParaCirculos';
 import {
@@ -541,192 +541,122 @@ export const DeliveryZonesPage: React.FC = () => {
       </Card>
 
       {/* Zones Table */}
-      <Card>
-        {/* Mobile Cards View */}
-        <div className="block md:hidden divide-y divide-border-token">
-          {zones.map((zone) => (
-            <div key={zone.id} className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MapPinIcon className="w-5 h-5 text-fg-muted-token" />
-                  <span className="font-medium text-fg-token">{zone.name}</span>
-                </div>
-                <button
-                  onClick={() => handleToggleActive(zone)}
-                  className="focus:outline-none"
-                >
-                  <Badge tone={zone.is_active ? 'success' : 'danger'}>
-                    {zone.is_active ? 'Ativa' : 'Inativa'}
-                  </Badge>
-                </button>
+      <Tabela<DeliveryZone>
+        itens={zones}
+        chave={(z) => String(z.id)}
+        rotuloDaLinha={(z) => `Editar faixa ${z.name}`}
+        onAbrir={(z) => handleOpenModal(z)}
+        carregando={loading}
+        vazio={{
+          titulo: 'Nenhuma faixa cadastrada',
+          descricao: 'Cadastre faixas de quilometragem para o frete ser calculado sozinho.',
+          icone: <MapPinIcon className="h-12 w-12" />,
+          acao: (
+            <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
+              Nova faixa
+            </Button>
+          ),
+        }}
+        colunas={[
+          {
+            chave: 'nome',
+            cabecalho: 'Faixa',
+            render: (z) => (
+              <div className="flex items-center gap-2">
+                {/* A bolinha usa a MESMA cor do anel no mapa. Sem isso o
+                    desenho e a lista são dois objetos soltos: você vê seis
+                    anéis em cima e seis linhas embaixo, e precisa contar de
+                    fora para dentro para casar os dois. */}
+                <span
+                  aria-hidden
+                  className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
+                  style={corDaFaixa(z.id)}
+                />
+                <span className="font-medium text-fg-token">{z.name}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-fg-muted-token">Distância:</span>
-                  <span className="ml-1 font-mono text-fg-token">
-                    {zone.distance_label
-                      ? zone.distance_label
-                      : zone.min_km !== null && zone.min_km !== undefined
-                        ? `${formatKm(zone.min_km)} - ${zone.max_km !== null && zone.max_km !== undefined ? formatKm(zone.max_km) : '?'} km`
-                        : '—'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-fg-muted-token">Prazo:</span>
-                  <span className="ml-1 text-fg-token">
-                    {zone.estimated_days} {zone.estimated_days === 1 ? 'dia útil' : 'dias úteis'}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-semibold text-brand-ink">
-                  R$ {formatMoney(zone.delivery_fee)}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleOpenModal(zone)}
-                    className="p-2 text-fg-muted-token hover:text-brand-ink hover:bg-surface-2 rounded"
-                    aria-label={`Editar faixa ${zone.name}`}
-                    title={`Editar faixa ${zone.name}`}
-                  >
-                    <PencilIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeletingZone(zone);
+            ),
+          },
+          {
+            chave: 'distancia',
+            cabecalho: 'Distância',
+            render: (z) => (
+              <span className="font-mono text-sm">
+                {z.distance_label
+                  ? z.distance_label
+                  : z.min_km !== null && z.min_km !== undefined
+                    ? `${formatKm(z.min_km)} - ${
+                        z.max_km !== null && z.max_km !== undefined ? formatKm(z.max_km) : '?'
+                      } km`
+                    : '—'}
+              </span>
+            ),
+          },
+          {
+            chave: 'frete',
+            cabecalho: 'Frete',
+            render: (z) => (
+              <span className="text-base font-semibold text-brand-ink">
+                R$ {formatMoney(z.delivery_fee)}
+              </span>
+            ),
+          },
+          {
+            chave: 'prazo',
+            cabecalho: 'Prazo',
+            render: (z) =>
+              `${z.estimated_days} ${z.estimated_days === 1 ? 'dia útil' : 'dias úteis'}`,
+          },
+          {
+            chave: 'status',
+            cabecalho: 'Status',
+            render: (z) => (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleActive(z);
+                }}
+                aria-label={`${z.is_active ? 'Desativar' : 'Ativar'} faixa ${z.name}`}
+                className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {/* 'Inativa' era vermelho, a mesma cor de "excluir" e de erro.
+                    Faixa desligada não é falha — é escolha sua. Vermelho ali
+                    gasta o sinal que deveria alarmar. */}
+                <Badge tone={z.is_active ? 'success' : 'neutral'}>
+                  {z.is_active ? 'Ativa' : 'Inativa'}
+                </Badge>
+              </button>
+            ),
+          },
+          {
+            chave: 'acoes',
+            cabecalho: 'Ações',
+            alinhamento: 'direita',
+            render: (z) => (
+              <RowActions
+                rotulo={`Ações da faixa ${z.name}`}
+                acoes={[
+                  {
+                    rotulo: 'Editar',
+                    icone: <PencilIcon className="h-4 w-4" />,
+                    onClick: () => handleOpenModal(z),
+                  },
+                  { rotulo: z.is_active ? 'Desativar' : 'Ativar', onClick: () => handleToggleActive(z) },
+                  {
+                    rotulo: 'Excluir',
+                    icone: <TrashIcon className="h-4 w-4" />,
+                    destrutiva: true,
+                    onClick: () => {
+                      setDeletingZone(z);
                       setIsDeleteModalOpen(true);
-                    }}
-                    className="p-2 text-[var(--danger)] hover:bg-red-50 rounded"
-                    aria-label={`Excluir faixa ${zone.name}`}
-                    title={`Excluir faixa ${zone.name}`}
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop Table View */}
-        <div className="block max-md:hidden overflow-x-auto">
-          <table className="min-w-full divide-y divide-border-token">
-            <thead className="bg-surface-2">
-              <tr>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Faixa
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Distância (KM)
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Valor
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Prazo
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-surface divide-y divide-border-token">
-              {zones.map((zone) => (
-                <tr
-                  key={zone.id}
-                  {...linhaClicavel(() => handleOpenModal(zone), `Editar faixa ${zone.name}`)}
-                >
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {/* A bolinha usa a MESMA cor do anel no mapa. Sem isso o
-                          desenho e a tabela são dois objetos soltos: você vê
-                          seis anéis em cima e seis linhas embaixo, e precisa
-                          contar de fora para dentro para casar os dois. */}
-                      <span
-                        aria-hidden
-                        className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
-                        style={corDaFaixa(zone.id)}
-                      />
-                      <span className="font-medium text-fg-token">{zone.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <span className="font-mono text-sm text-fg-token">
-                      {zone.distance_label
-                        ? zone.distance_label
-                        : zone.min_km !== null && zone.min_km !== undefined
-                          ? `${formatKm(zone.min_km)} - ${zone.max_km !== null && zone.max_km !== undefined ? formatKm(zone.max_km) : '?'} km`
-                          : '—'}
-                    </span>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <span className="text-base font-semibold text-brand-ink">
-                      R$ {formatMoney(zone.delivery_fee)}
-                    </span>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
-                    {zone.estimated_days} {zone.estimated_days === 1 ? 'dia útil' : 'dias úteis'}
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleToggleActive(zone); }}
-                      aria-label={`${zone.is_active ? 'Desativar' : 'Ativar'} faixa ${zone.name}`}
-                      className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                    >
-                      {/* 'Inativa' era vermelho, mesma cor de "excluir" e de
-                          erro. Faixa desligada não é falha — é escolha sua.
-                          Vermelho ali gasta o sinal que deveria alarmar. */}
-                      <Badge tone={zone.is_active ? 'success' : 'neutral'}>
-                        {zone.is_active ? 'Ativa' : 'Inativa'}
-                      </Badge>
-                    </button>
-                  </td>
-                  <td className="px-2 py-4 text-right">
-                    <RowActions
-                      rotulo={`Ações da faixa ${zone.name}`}
-                      acoes={[
-                        {
-                          rotulo: 'Editar',
-                          icone: <PencilIcon className="h-4 w-4" />,
-                          onClick: () => handleOpenModal(zone),
-                        },
-                        {
-                          rotulo: zone.is_active ? 'Desativar' : 'Ativar',
-                          onClick: () => handleToggleActive(zone),
-                        },
-                        {
-                          rotulo: 'Excluir',
-                          icone: <TrashIcon className="h-4 w-4" />,
-                          destrutiva: true,
-                          onClick: () => { setDeletingZone(zone); setIsDeleteModalOpen(true); },
-                        },
-                      ]}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {zones.length === 0 && (
-          <div className="text-center py-12 px-4">
-            <MapPinIcon className="mx-auto h-12 w-12 text-fg-muted-token" />
-            <h3 className="mt-2 text-sm font-medium text-fg-token">Nenhuma faixa encontrada</h3>
-            <p className="mt-1 text-sm text-fg-muted-token">
-              Cadastre faixas de quilometragem para calcular o frete.
-            </p>
-            <div className="mt-6 flex justify-center">
-              <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
-                Nova Faixa
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
+                    },
+                  },
+                ]}
+              />
+            ),
+          },
+        ]}
+      />
 
       {/* Create/Edit Modal */}
       <Modal

@@ -14,7 +14,12 @@ export interface ColunaDaTabela<T> {
   alinhamento?: 'esquerda' | 'direita' | 'centro';
   /** Não entra no cartão do celular — coluna de contexto, não de decisão. */
   soNoDesktop?: boolean;
-  larguraClasse?: string;
+  /**
+   * Classes aplicadas ao `th` E ao `td` da coluna. É onde mora a largura e o
+   * corte por faixa intermediária (`max-lg:hidden`): o cartão resolve o
+   * celular, mas entre o celular e o monitor ainda há tablet.
+   */
+  classe?: string;
 }
 
 export interface TabelaProps<T> {
@@ -114,7 +119,7 @@ export function Tabela<T>({
                   className={cn(
                     'px-4 py-3 text-xs font-semibold uppercase tracking-wide text-fg-muted-token',
                     ALINHA[coluna.alinhamento ?? 'esquerda'],
-                    coluna.larguraClasse,
+                    coluna.classe,
                   )}
                 >
                   {coluna.cabecalho}
@@ -136,6 +141,7 @@ export function Tabela<T>({
                     className={cn(
                       'px-4 py-3 text-sm text-fg-token',
                       ALINHA[coluna.alinhamento ?? 'esquerda'],
+                      coluna.classe,
                     )}
                   >
                     {coluna.render(item)}

@@ -21,7 +21,7 @@ import * as path from 'path';
 const PASTA = path.join(__dirname, '..');
 
 /** Quantas páginas ainda desenham `<thead>` por conta própria. */
-const TETO = 15;
+const TETO = 13;
 
 const arquivos = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {

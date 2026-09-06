@@ -80,22 +80,23 @@ describe('DeliveryZonesPage — acessibilidade dos botões de ação', () => {
   it('nomeia toda porta de entrada de ação com o nome da faixa', async () => {
     renderPage();
 
-    // Card mobile e linha desktop renderizam ambos no jsdom, com formas
-    // diferentes: no card as ações são botões diretos; na linha moram num
-    // kebab, para não gastar largura de tabela nem deixar "excluir" colado em
-    // "editar". A garantia que não muda: toda entrada diz de QUAL faixa.
-    const editar = await screen.findAllByRole('button', { name: /Editar faixa Centro/i });
-    const excluir = await screen.findAllByRole('button', { name: /Excluir faixa Centro/i });
+    // Esta página escrevia a lista DUAS VEZES no mesmo arquivo — cartões para
+    // o celular, tabela para o desktop — e as duas divergiam na ação: no
+    // cartão, lápis e lixeira nus e colados; na linha, um kebab. Hoje as duas
+    // apresentações saem da MESMA definição de coluna, então a ação é uma só.
+    // O jsdom não aplica CSS e por isso as duas aparecem; no navegador,
+    // `md:hidden` esconde a que não é da vez, do olho e do leitor de tela.
     const kebab = await screen.findAllByRole('button', { name: /Ações da faixa Centro/i });
+    expect(kebab).toHaveLength(2);
 
-    expect(editar).toHaveLength(1);
-    expect(excluir).toHaveLength(1);
-    expect(kebab).toHaveLength(1);
+    // E a lixeira não fica mais solta na superfície do cartão, exatamente
+    // onde o polegar cai ao rolar a lista.
+    expect(screen.queryByRole('button', { name: /Excluir faixa Centro/i })).toBeNull();
   });
 
   it('o menu da linha nomeia a faixa, e não só a ação', async () => {
     renderPage();
-    fireEvent.click(await screen.findByRole('button', { name: /Ações da faixa Centro/i }));
+    fireEvent.click((await screen.findAllByRole('button', { name: /Ações da faixa Centro/i }))[0]);
 
     const menu = screen.getByRole('menu', { name: /Ações da faixa Centro/i });
     expect(within(menu).getByRole('menuitem', { name: 'Editar' })).toBeInTheDocument();

@@ -117,6 +117,23 @@ describe('tabela do painel', () => {
     expect(screen.getByText(/1–20 de 35/)).toBeInTheDocument();
   });
 
+  it('a classe da coluna vale no cabeçalho E na célula', () => {
+    // Sem isso, esconder uma coluna no tablet significa repetir a classe em
+    // dois lugares — e foi assim que Clientes acabou com o cabeçalho "Gasto
+    // total" visível numa faixa em que a célula já tinha sumido.
+    render(
+      <Tabela<Cupom>
+        itens={CUPONS}
+        colunas={[{ chave: 'valor', cabecalho: 'Desconto', classe: 'max-lg:hidden', render: (c) => c.valor }]}
+        chave={(c) => c.id}
+        rotuloDaLinha={(c) => c.code}
+      />,
+    );
+
+    expect(screen.getByRole('columnheader', { name: 'Desconto' }).className).toMatch(/max-lg:hidden/);
+    expect(screen.getAllByRole('cell')[0].className).toMatch(/max-lg:hidden/);
+  });
+
   it('coluna pode declarar que some no celular', () => {
     // Nem toda coluna cabe num cartão; "criado em" é ruído no telefone.
     const { container } = render(
