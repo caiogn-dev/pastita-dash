@@ -116,7 +116,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
             value={phone}
             onChange={e => setPhone(formatPhone(e.target.value))}
             placeholder="(11) 99999-0000"
-            className="w-full px-3 py-2.5 rounded-lg border border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-primary,#fff)] dark:bg-[var(--dark-bg-primary,#0D0907)] text-[var(--fg-primary)] dark:text-[var(--dark-text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2.5 rounded-lg border border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-primary,#fff)] dark:bg-[var(--dark-bg-primary,#0D0907)] text-[var(--fg-primary)] dark:text-[var(--dark-text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-brand"
           />
           {phone && !isPhoneValid && (
             <p className="text-xs text-red-500 mt-1">Mínimo 10 dígitos</p>
@@ -138,7 +138,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                 setSelectedTemplate(t);
                 setVariables({});
               }}
-              className="w-full px-3 py-2.5 rounded-lg border border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-primary,#fff)] dark:bg-[var(--dark-bg-primary,#0D0907)] text-[var(--fg-primary)] dark:text-[var(--dark-text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-primary,#fff)] dark:bg-[var(--dark-bg-primary,#0D0907)] text-[var(--fg-primary)] dark:text-[var(--dark-text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value="">Selecione um template...</option>
               {templates.map(t => (
@@ -160,7 +160,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                 value={variables[v] || ''}
                 onChange={e => setVariables(prev => ({ ...prev, [v]: e.target.value }))}
                 placeholder={`Variável ${v}`}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-primary,#fff)] dark:bg-[var(--dark-bg-primary,#0D0907)] text-[var(--fg-primary)] dark:text-[var(--dark-text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-primary,#fff)] dark:bg-[var(--dark-bg-primary,#0D0907)] text-[var(--fg-primary)] dark:text-[var(--dark-text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
             ))}
           </div>

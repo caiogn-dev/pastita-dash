@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { Card } from '../../../components/ui';
 import { toCsv, downloadCsv } from '../../../utils/csv';
+import { Loading } from '../../../components/common';
 
 // A lista ranqueada mudou de casa para `components/ui` — é o formato
 // canônico de 'pessoas com um valor' e era invisível enterrada aqui.
@@ -34,7 +35,7 @@ export const deliveryLabel = (v: unknown) => DELIVERY_LABELS[String(v)] || Strin
 
 export const Spinner: React.FC = () => (
   <div className="flex justify-center py-12">
-    <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+    <Loading size="md" />
   </div>
 );
 

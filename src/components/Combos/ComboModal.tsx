@@ -213,7 +213,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                               checked={isSelected}
                               onChange={() => handleToggleVariant(groupId, variantId, canSelect)}
                               disabled={!canSelect}
-                              className="w-4 h-4 rounded border-gray-300 dark:border-border-token text-brand-600 focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-4 h-4 rounded border-gray-300 dark:border-border-token text-brand-600 focus:ring-2 focus:ring-brand disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900 dark:text-white">

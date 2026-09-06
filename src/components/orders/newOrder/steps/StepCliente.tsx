@@ -54,7 +54,7 @@ export function StepCliente({
             value={customer.phone_number_edited || ''}
             onChange={(e) => handlePhoneChange(e.target.value)}
             placeholder="(11) 99999-9999"
-            className="w-full px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            className="w-full px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
       )}

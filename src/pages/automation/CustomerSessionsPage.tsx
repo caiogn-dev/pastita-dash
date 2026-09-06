@@ -143,7 +143,7 @@ const CustomerSessionsPage: React.FC = () => {
                   setFilters({ ...filters, company_id: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               >
                 <option value="">Todas</option>
                 {companies.map((company) => (
@@ -161,7 +161,7 @@ const CustomerSessionsPage: React.FC = () => {
                   setFilters({ ...filters, status: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               >
                 <option value="">Todos</option>
                 {Object.entries(sessionStatusLabels).map(([value, label]) => (
@@ -183,7 +183,7 @@ const CustomerSessionsPage: React.FC = () => {
                     setPage(1);
                   }}
                   placeholder="Buscar por telefone"
-                  className="block w-full pl-10 rounded-md border-border-token dark:border-zinc-700 focus:border-green-500 focus:ring-green-500"
+                  className="block w-full pl-10 rounded-md border-border-token dark:border-zinc-700 focus:ring-brand"
                 />
               </div>
             </div>

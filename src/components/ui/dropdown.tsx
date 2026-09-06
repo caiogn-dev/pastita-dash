@@ -225,7 +225,7 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
         'bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700',
         'rounded-lg shadow-sm',
         'hover:bg-gray-50 dark:hover:bg-zinc-700',
-        'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+        'focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2',
         'transition-all duration-150',
         className
       )}

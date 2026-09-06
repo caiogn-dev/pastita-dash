@@ -159,7 +159,7 @@ const AutomationLogsPage: React.FC = () => {
                   setFilters({ ...filters, company_id: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               >
                 <option value="">Todas</option>
                 {companies.map((company) => (
@@ -177,7 +177,7 @@ const AutomationLogsPage: React.FC = () => {
                   setFilters({ ...filters, action_type: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               >
                 <option value="">Todos</option>
                 {Object.entries(actionTypeLabels).map(([value, label]) => (
@@ -193,7 +193,7 @@ const AutomationLogsPage: React.FC = () => {
                   setFilters({ ...filters, is_error: e.target.value });
                   setPage(1);
                 }}
-                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               >
                 <option value="">Todos</option>
                 <option value="false">Sucesso</option>
@@ -210,7 +210,7 @@ const AutomationLogsPage: React.FC = () => {
                   setPage(1);
                 }}
                 placeholder="Buscar por telefone"
-                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               />
             </div>
             <div className="flex items-end">

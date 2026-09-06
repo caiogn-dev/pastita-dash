@@ -339,7 +339,7 @@ export const ConversationsPage: React.FC = () => {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Buscar por nome, identificador ou trecho da ultima mensagem"
-              className="w-full rounded-xl border border-border-primary bg-bg-subtle py-2 pl-9 pr-3 text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full rounded-xl border border-border-primary bg-bg-subtle py-2 pl-9 pr-3 text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 

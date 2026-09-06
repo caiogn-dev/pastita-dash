@@ -1014,7 +1014,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                       </div>
                     ) : loadingProducts ? (
                       <div className="flex items-center justify-center py-8">
-                        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+                        <Loading size="md" />
                       </div>
                     ) : products.length === 0 ? (
                       <div className="text-center py-8 text-fg-muted-token">
@@ -1191,7 +1191,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, textContent: e.target.value }))}
                     placeholder="Digite sua mensagem aqui..."
                     rows={6}
-                    className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white"
+                    className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white"
                   />
                   <p className="text-xs text-fg-muted-token mt-2">
                     Use {"{{nome}}"} para personalizar com o nome do contato
@@ -1559,19 +1559,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                 </Button>
                 <Button
                   onClick={() => handleSendCampaign(false)}
-                  disabled={sending || !canProceed()}
+                  disabled={!canProceed()}
+                  isLoading={sending}
+                  leftIcon={<PaperAirplaneIcon className="w-5 h-5" />}
                 >
-                  {sending ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <PaperAirplaneIcon className="w-5 h-5 mr-2" />
-                      Enviar Agora
-                    </>
-                  )}
+                  {sending ? 'Enviando…' : 'Enviar agora'}
                 </Button>
               </>
             ) : (
@@ -1599,7 +1591,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
               value={formData.scheduledAt}
               onChange={(e) => setFormData(prev => ({ ...prev, scheduledAt: e.target.value }))}
               min={new Date().toISOString().slice(0, 16)}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white"
             />
             {/* Quantos recebem de graça NESTE horário. Sem o número o dono
                 agenda no escuro: "manda às 20h" pode ser 10 pessoas ou 2, e
@@ -1636,7 +1628,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             onChange={(e) => setCsvContent(e.target.value)}
             placeholder="5511999999999,João Silva&#10;5511888888888,Maria Santos"
             rows={8}
-            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white font-mono text-sm"
+            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white font-mono text-sm"
           />
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={() => setShowImportModal(false)}>
@@ -1662,7 +1654,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           
           {loadingSystemContacts ? (
             <div className="flex items-center justify-center py-8">
-              <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+              <Loading size="md" />
             </div>
           ) : systemContacts.length === 0 ? (
             <div className="text-center py-8 text-fg-muted-token">
@@ -1678,7 +1670,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                     type="checkbox"
                     checked={selectedSystemContacts.size === systemContacts.length}
                     onChange={handleSelectAllSystemContacts}
-                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                    className="w-4 h-4 text-green-600 rounded focus:ring-brand"
                   />
                   <span className="font-medium text-fg-token">
                     Selecionar todos ({systemContacts.length})
@@ -1700,7 +1692,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                       type="checkbox"
                       checked={selectedSystemContacts.has(contact.phone)}
                       onChange={() => handleToggleSystemContact(contact.phone)}
-                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                      className="w-4 h-4 text-green-600 rounded focus:ring-brand"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-fg-token truncate">

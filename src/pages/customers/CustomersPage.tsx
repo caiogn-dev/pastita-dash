@@ -44,6 +44,7 @@ import { useSaldoDoCliente } from '../../hooks/queries/useSaldoDoCliente';
 import type { CashbackClienteRow } from '../../services/cashback';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { formatCurrency } from '../../utils/formatters';
+import { Loading } from '../../components/common';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -451,7 +452,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
               </div>
             ) : loadingOrders ? (
               <div className="flex justify-center py-8">
-                <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                <Loading size="sm" />
               </div>
             ) : orders.length === 0 ? (
               <div className="text-center py-8 rounded border border-dashed border-border-token">

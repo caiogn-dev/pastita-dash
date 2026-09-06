@@ -10,6 +10,7 @@ import { Button, Badge } from '../../components/common';
 import { messengerService, MessengerAccount } from '../../services/messenger';
 import { useConfirm } from '../../hooks';
 import { PageShell, SearchInput, Modal, ModalFooter } from '../../components/ui';
+import { Loading } from '../../components/common';
 
 export default function MessengerAccounts() {
   const [ConfirmDialog, confirm] = useConfirm();
@@ -105,7 +106,7 @@ export default function MessengerAccounts() {
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <Loading size="lg" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-bg-card border border-border-primary rounded-xl p-16 text-center">

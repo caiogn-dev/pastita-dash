@@ -18,11 +18,15 @@
  * Este teste trava o número. Só conta o que aparenta ser diálogo — sobreposição
  * de tela cheia com z-index — para não pegar `sticky`/`absolute` legítimos.
  *
- * Sobra UM, de propósito: `NewOrderDrawer` é gaveta lateral, não diálogo
- * centralizado, e o `Modal` do painel não faz gaveta. Ele já tem
- * `role="dialog"`, `aria-modal`, Esc e trava de rolagem escritos à mão — foi
- * feito com cuidado, não por descuido. Se um dia a gaveta virar variante do
- * `Modal`, este teto vai a zero.
+ * Sobram DOIS, de propósito:
+ *
+ *  - `NewOrderDrawer` é gaveta lateral, não diálogo centralizado, e o `Modal`
+ *    do painel não faz gaveta. Ele já tem `role="dialog"`, `aria-modal`, Esc e
+ *    trava de rolagem escritos à mão — foi feito com cuidado, não por
+ *    descuido.
+ *  - `FullPageLoading` cobre a tela na ENTRADA do painel. Não é diálogo: é uma
+ *    espera com `role="status"`, e dar-lhe trava de foco prenderia o teclado
+ *    numa tela sem nada para focar.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -30,7 +34,7 @@ import * as path from 'path';
 const RAIZ = path.join(__dirname, '..', '..');
 
 /** Quantos arquivos ainda montam a sobreposição do zero. */
-const TETO = 1;
+const TETO = 2;
 
 const arquivos = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {

@@ -385,7 +385,7 @@ const AutoMessagesPage: React.FC = () => {
                 <select
                   value={formData.event_type}
                   onChange={(e) => setFormData({ ...formData, event_type: e.target.value as AutoMessageEventType })}
-                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:ring-brand"
                 >
                   {Object.entries(eventTypeLabels).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
@@ -401,7 +401,7 @@ const AutoMessagesPage: React.FC = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:ring-brand"
                 />
               </div>
             </div>
@@ -415,7 +415,7 @@ const AutoMessagesPage: React.FC = () => {
                 value={formData.message_text}
                 onChange={(e) => setFormData({ ...formData, message_text: e.target.value })}
                 required
-                className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:ring-brand"
               />
               <div className="mt-2">
                 <p className="text-xs text-fg-muted-token mb-1">Variáveis disponíveis:</p>
@@ -445,7 +445,7 @@ const AutoMessagesPage: React.FC = () => {
                   min="0"
                   value={formData.delay_seconds}
                   onChange={(e) => setFormData({ ...formData, delay_seconds: parseInt(e.target.value) })}
-                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:ring-brand"
                 />
               </div>
               <div>
@@ -457,7 +457,7 @@ const AutoMessagesPage: React.FC = () => {
                   min="1"
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
-                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500"
+                  className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:ring-brand"
                 />
               </div>
               <div className="flex items-end">
@@ -466,7 +466,7 @@ const AutoMessagesPage: React.FC = () => {
                     type="checkbox"
                     checked={formData.is_active}
                     onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-green-500 border-border-token rounded"
+                    className="h-4 w-4 text-green-600 dark:text-green-400 focus:ring-brand border-border-token rounded"
                   />
                   <span className="ml-2 text-sm text-fg-token">Ativo</span>
                 </label>
@@ -496,14 +496,14 @@ const AutoMessagesPage: React.FC = () => {
                     placeholder="ID"
                     value={btn.id}
                     onChange={(e) => updateButton(index, 'id', e.target.value)}
-                    className="w-32 rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
+                    className="w-32 rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:ring-brand text-sm"
                   />
                   <input
                     type="text"
                     placeholder="Título do botão"
                     value={btn.title}
                     onChange={(e) => updateButton(index, 'title', e.target.value)}
-                    className="flex-1 rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
+                    className="flex-1 rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:ring-brand text-sm"
                   />
                   <button
                     type="button"

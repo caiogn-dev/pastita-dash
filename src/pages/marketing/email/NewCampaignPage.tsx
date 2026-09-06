@@ -526,7 +526,7 @@ export const NewCampaignPage: React.FC = () => {
                       type="text"
                       value={campaignData.name}
                       onChange={e => setCampaignData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
                       placeholder="Ex: Promoção de Natal"
                     />
                   </div>
@@ -538,7 +538,7 @@ export const NewCampaignPage: React.FC = () => {
                       type="text"
                       value={campaignData.subject}
                       onChange={e => setCampaignData(prev => ({ ...prev, subject: e.target.value }))}
-                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
                       placeholder="Ex: 🎁 Presente especial para você!"
                     />
                   </div>
@@ -550,7 +550,7 @@ export const NewCampaignPage: React.FC = () => {
                       type="text"
                       value={campaignData.from_name}
                       onChange={e => setCampaignData(prev => ({ ...prev, from_name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
                       placeholder="Ex: Nome da loja"
                     />
                   </div>
@@ -607,7 +607,7 @@ export const NewCampaignPage: React.FC = () => {
                             type="text"
                             value={campaignData.variables[variable] || ''}
                             onChange={e => handleVariableChange(variable, e.target.value)}
-                            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
                             placeholder={`Ex: ${variable === 'coupon_code' ? 'DESCONTO10' : variable === 'discount_value' ? '10%' : variable === 'expiry_date' ? '31/12/2026' : ''}`}
                           />
                         </div>
@@ -727,7 +727,7 @@ export const NewCampaignPage: React.FC = () => {
                           minOrders: e.target.value ? parseInt(e.target.value) : null,
                         },
                       }))}
-                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
                       placeholder="Ex: 1"
                     />
                   </div>
@@ -746,7 +746,7 @@ export const NewCampaignPage: React.FC = () => {
                           hasOrdered: e.target.value === '' ? null : e.target.value === 'true',
                         },
                       }))}
-                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
                     >
                       <option value="">Todos</option>
                       <option value="true">Já compraram</option>
@@ -785,7 +785,7 @@ export const NewCampaignPage: React.FC = () => {
                     type="text"
                     value={subscriberSearch}
                     onChange={e => setSubscriberSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full pl-10 pr-4 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
                     placeholder="Buscar por email ou nome..."
                   />
                 </div>
@@ -806,7 +806,7 @@ export const NewCampaignPage: React.FC = () => {
                           type="checkbox"
                           checked={campaignData.selectedSubscribers.includes(subscriber.id)}
                           onChange={() => handleToggleSubscriber(subscriber.id)}
-                          className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                          className="w-4 h-4 text-primary-600 rounded focus:ring-brand"
                         />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-fg-token truncate">{subscriber.email}</p>
@@ -916,20 +916,11 @@ export const NewCampaignPage: React.FC = () => {
           {currentStep === 'review' ? (
             <Button
               onClick={handleSendCampaign}
-              disabled={sending || audienceCount === 0}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={audienceCount === 0}
+              isLoading={sending}
+              leftIcon={<PaperAirplaneIcon className="w-5 h-5" />}
             >
-              {sending ? (
-                <>
-                  <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <PaperAirplaneIcon className="w-5 h-5 mr-2" />
-                  Enviar para {audienceCount} contatos
-                </>
-              )}
+              {sending ? 'Enviando…' : `Enviar para ${audienceCount} contatos`}
             </Button>
           ) : (
             <Button onClick={goToNextStep} disabled={!canProceed()}>

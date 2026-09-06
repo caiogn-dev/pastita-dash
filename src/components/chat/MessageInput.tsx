@@ -19,6 +19,7 @@ import {
   FilmIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { Loading } from '../../components/common';
 
 // WhatsApp upload limits
 const WA_LIMITS: Record<string, number> = {
@@ -338,7 +339,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           `}
         >
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <Loading size="sm" rotulo="Enviando mensagem" className="text-on-brand" />
           ) : (
             <PaperAirplaneIcon className="w-5 h-5" />
           )}

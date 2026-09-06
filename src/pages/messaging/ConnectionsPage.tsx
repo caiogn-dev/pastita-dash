@@ -19,6 +19,7 @@ import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
 import { Toggle } from './Toggle';
 import { PageShell, SearchInput, Modal, ModalFooter, KpiGrid } from '../../components/ui';
+import { Loading } from '../../components/common';
 
 // ─── Platform config ──────────────────────────────────────────────────────────
 
@@ -416,7 +417,7 @@ export default function ConnectionsPage() {
       {/* Content */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
-          <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <Loading size="lg" />
           <p className="text-fg-muted">Carregando conexões...</p>
         </div>
       ) : filtered.length === 0 ? (
@@ -587,7 +588,7 @@ export default function ConnectionsPage() {
                   onChange={(e) => setFormData({ ...formData, [f.name]: e.target.value })}
                   placeholder={f.placeholder}
                   disabled={!!(editingConnection && f.name === 'page_id')}
-                  className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
+                  className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
                 />
                 {f.name.includes('token') && <p className="text-xs text-fg-muted mt-1">O token não será exibido novamente por segurança</p>}
               </div>
@@ -623,7 +624,7 @@ export default function ConnectionsPage() {
               />
             </div>
           ) : (
-            <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+            <Loading size="lg" />
           )}
           <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 text-sm text-blue-700 dark:text-blue-300">
             <span>Abra o WhatsApp → Configurações → Dispositivos Conectados → Conectar um dispositivo</span>

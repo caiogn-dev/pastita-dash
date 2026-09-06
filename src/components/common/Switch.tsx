@@ -50,7 +50,7 @@ export const Switch: React.FC<SwitchProps> = ({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+        'relative inline-flex items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2',
         checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600',
         disabled && 'opacity-50 cursor-not-allowed',
         sizeClasses[size],

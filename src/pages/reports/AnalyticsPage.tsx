@@ -41,6 +41,7 @@ import { LockClosedIcon } from '@heroicons/react/24/outline';
 import { useAnalyticsReport } from '../../hooks/queries/useReports';
 import type { HeatmapReport } from '../../services/reports';
 import { matrizDeProdutos, QUADRANTES, type Quadrante, type ProdutoClassificado } from './matrizDeProdutos';
+import { Loading } from '../../components/common';
 
 // 403 plan_upgrade_required nos endpoints de analytics → aba mostra o convite
 // de upgrade em vez de seções vazias.
@@ -304,7 +305,7 @@ const AnalyticsPage: React.FC = () => {
         </div>
         {revenueLoading ? (
           <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+            <Loading size="md" />
           </div>
         ) : (
           /* Sem `color`: o padrão do componente é `var(--brand)`, o ouro da
@@ -334,7 +335,7 @@ const AnalyticsPage: React.FC = () => {
             <h2 className="text-lg font-semibold text-fg-token">Produtos que mais faturam</h2>
             <Badge tone="neutral">Top 5</Badge>
           </div>
-          {productsLoading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
+          {productsLoading ? <Loading size="md" /> : (
             <RankedList
               items={(productsReport?.top_products || []).slice(0, 5).map((p) => ({
                 label: p.product_name,
@@ -349,7 +350,7 @@ const AnalyticsPage: React.FC = () => {
         {/* Customer Stats */}
         <Card className="p-4">
           <h2 className="text-lg font-semibold text-fg-token mb-4">Clientes</h2>
-          {customersLoading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
+          {customersLoading ? <Loading size="md" /> : (
             <div className="flex flex-col gap-4">
               <KpiGrid
                 itens={[
@@ -435,7 +436,7 @@ const AnalyticsPage: React.FC = () => {
           </div>
           {revenueLoading ? (
             <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+              <Loading size="md" />
             </div>
           ) : (
             <TimeSeriesChart
@@ -456,7 +457,7 @@ const AnalyticsPage: React.FC = () => {
           <h2 className="text-lg font-semibold text-fg-token mb-4">Pedidos por dia</h2>
           {ordersLoading ? (
             <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+              <Loading size="md" />
             </div>
           ) : (
             <TimeSeriesChart
@@ -475,7 +476,7 @@ const AnalyticsPage: React.FC = () => {
         <Card className="p-4">
           <h2 className="text-lg font-semibold text-fg-token mb-4">Distribuição por status</h2>
           {ordersLoading ? (
-            <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+            <Loading size="md" />
           ) : (
             <RankedList items={statusItems} medals={false} />
           )}
@@ -496,7 +497,7 @@ const AnalyticsPage: React.FC = () => {
       <Card className="p-4">
         <h2 className="text-lg font-semibold text-fg-token mb-4">Produtos com Estoque Baixo</h2>
         {stockLoading ? (
-          <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+          <Loading size="md" />
         ) : stockReport?.low_stock_products.length === 0 ? (
           <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
             <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
@@ -603,7 +604,7 @@ const AnalyticsPage: React.FC = () => {
           <Badge tone="neutral">{productsReport?.top_products.length || 0} produtos</Badge>
         </div>
         {productsLoading ? (
-          <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+          <Loading size="md" />
         ) : (
           <RankedList
             items={(productsReport?.top_products || []).map((p) => ({

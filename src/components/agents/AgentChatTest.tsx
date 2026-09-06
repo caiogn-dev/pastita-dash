@@ -396,7 +396,7 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
               "bg-white dark:bg-zinc-800",
               "text-zinc-900 dark:text-white placeholder-zinc-400",
               "border-zinc-200 dark:border-zinc-700",
-              "focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              "focus:ring-2 focus:ring-brand focus:border-transparent",
               "disabled:opacity-50"
             )}
           />

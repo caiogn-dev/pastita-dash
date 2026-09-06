@@ -140,7 +140,7 @@ export function StepEntrega({
                   }
                 }}
                 placeholder="Endereço, ou cole o link do Google Maps que o cliente enviou"
-                className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand"
               />
               <button
                 type="button"
@@ -200,7 +200,7 @@ export function StepEntrega({
             type="checkbox"
             checked={enableScheduling}
             onChange={(e) => setEnableScheduling(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-brand"
           />
           <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">📅 Agendar pedido</span>
         </label>
@@ -215,7 +215,7 @@ export function StepEntrega({
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>

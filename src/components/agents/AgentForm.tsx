@@ -205,7 +205,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   "text-zinc-900 dark:text-white placeholder-zinc-400",
                   errors.name
                     ? "border-red-300 dark:border-red-600 focus:ring-red-500"
-                    : "border-zinc-200 dark:border-zinc-700 focus:ring-primary-500"
+                    : "border-zinc-200 dark:border-zinc-700 focus:ring-brand"
                 )}
               />
               {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
@@ -225,7 +225,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   "w-full px-4 py-2.5 rounded-lg border transition-colors resize-none",
                   "bg-white dark:bg-zinc-800",
                   "text-zinc-900 dark:text-white placeholder-zinc-400",
-                  "border-zinc-200 dark:border-zinc-700 focus:ring-primary-500"
+                  "border-zinc-200 dark:border-zinc-700 focus:ring-brand"
                 )}
               />
             </div>
@@ -242,7 +242,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
                   "bg-white dark:bg-zinc-800",
                   "text-zinc-900 dark:text-white",
-                  "border-zinc-200 dark:border-zinc-700 focus:ring-primary-500"
+                  "border-zinc-200 dark:border-zinc-700 focus:ring-brand"
                 )}
               >
                 <option value="draft">Rascunho</option>
@@ -297,7 +297,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
                   "bg-white dark:bg-zinc-800",
                   "text-zinc-900 dark:text-white",
-                  "border-zinc-200 dark:border-zinc-700 focus:ring-primary-500"
+                  "border-zinc-200 dark:border-zinc-700 focus:ring-brand"
                 )}
               >
                 {currentProvider.models.map(model => (
@@ -564,7 +564,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                             : (formData.accounts || []).filter(id => id !== account.id);
                           handleChange('accounts', newAccounts);
                         }}
-                        className="w-4 h-4 rounded border-zinc-300 text-primary-600 focus:ring-primary-500"
+                        className="w-4 h-4 rounded border-zinc-300 text-primary-600 focus:ring-brand"
                       />
                       <div className="flex-1">
                         <div className="font-medium text-zinc-900 dark:text-white">

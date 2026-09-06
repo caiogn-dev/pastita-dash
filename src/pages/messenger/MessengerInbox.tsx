@@ -19,7 +19,7 @@ import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
 import '../whatsapp/WhatsAppInbox.css';
 
 const inputCls =
-  'w-full rounded-xl border border-border-primary bg-bg-card px-3 py-2 text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500';
+  'w-full rounded-xl border border-border-primary bg-bg-card px-3 py-2 text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand';
 
 export default function MessengerInbox() {
   const [searchParams, setSearchParams] = useSearchParams();

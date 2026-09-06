@@ -682,7 +682,7 @@ export const CouponsPage: React.FC = () => {
               id="first_order_only"
               checked={formData.first_order_only ?? false}
               onChange={(e) => setFormData({ ...formData, first_order_only: e.target.checked })}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-border-token dark:border-zinc-700 rounded"
+              className="h-4 w-4 text-primary-600 focus:ring-brand border-border-token dark:border-zinc-700 rounded"
             />
             <label htmlFor="first_order_only" className="ml-2 block text-sm text-fg-token">
               Só primeira compra do cliente
@@ -768,7 +768,7 @@ export const CouponsPage: React.FC = () => {
               id="is_active"
               checked={formData.is_active}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-border-token dark:border-zinc-700 rounded"
+              className="h-4 w-4 text-primary-600 focus:ring-brand border-border-token dark:border-zinc-700 rounded"
             />
             <label htmlFor="is_active" className="ml-2 block text-sm text-fg-token">
               Cupom ativo

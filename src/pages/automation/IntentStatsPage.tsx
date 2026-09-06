@@ -9,6 +9,7 @@ import {
 import { intentService, intentTypeLabels } from '../../services';
 import type { IntentStats, IntentType } from '../../types';
 import { PageShell, RankedList } from '../../components/ui';
+import { Loading } from '../../components/common';
 
 
 export const IntentStatsPage: React.FC = () => {
@@ -54,7 +55,7 @@ export const IntentStatsPage: React.FC = () => {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <Loading size="md" />
         </div>
       )}
 

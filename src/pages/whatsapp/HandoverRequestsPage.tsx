@@ -9,6 +9,7 @@ import { ArrowPathIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline
 import { Badge, BadgeVariant, Button } from '../../components/common';
 import { handoverService, HandoverRequest } from '../../services/handover';
 import { PageShell } from '../../components/ui';
+import { Loading } from '../../components/common';
 
 const PRIORITY_VARIANT: Record<HandoverRequest['priority'], BadgeVariant> = {
   low: 'gray', medium: 'info', high: 'warning', urgent: 'danger',
@@ -77,7 +78,7 @@ export const HandoverRequestsPage: React.FC = () => {
 
       {isLoading && requests.length === 0 ? (
         <div className="flex justify-center py-12">
-          <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+          <Loading size="lg" rotulo="Carregando pedidos de atendimento" />
         </div>
       ) : (
         <div className="flex flex-col gap-6">

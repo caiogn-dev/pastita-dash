@@ -470,7 +470,7 @@ export const SubscribersPage: React.FC = () => {
               type="email"
               value={newSubscriber.email}
               onChange={(event) => setNewSubscriber((prev) => ({ ...prev, email: event.target.value }))}
-              className="w-full rounded-lg border border-border-token px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+              className="w-full rounded-lg border border-border-token px-3 py-2 focus:ring-2 focus:ring-brand dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="cliente@exemplo.com"
             />
           </div>
@@ -480,7 +480,7 @@ export const SubscribersPage: React.FC = () => {
               type="text"
               value={newSubscriber.name}
               onChange={(event) => setNewSubscriber((prev) => ({ ...prev, name: event.target.value }))}
-              className="w-full rounded-lg border border-border-token px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+              className="w-full rounded-lg border border-border-token px-3 py-2 focus:ring-2 focus:ring-brand dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="Nome do cliente"
             />
           </div>
@@ -490,7 +490,7 @@ export const SubscribersPage: React.FC = () => {
               type="tel"
               value={newSubscriber.phone}
               onChange={(event) => setNewSubscriber((prev) => ({ ...prev, phone: event.target.value }))}
-              className="w-full rounded-lg border border-border-token px-3 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+              className="w-full rounded-lg border border-border-token px-3 py-2 focus:ring-2 focus:ring-brand dark:border-[var(--dark-border,#2a2a2a)]"
               placeholder="(11) 99999-9999"
             />
           </div>
@@ -513,7 +513,7 @@ export const SubscribersPage: React.FC = () => {
           <textarea
             value={importText}
             onChange={(event) => setImportText(event.target.value)}
-            className="h-48 w-full rounded-lg border border-border-token px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
+            className="h-48 w-full rounded-lg border border-border-token px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-brand dark:border-[var(--dark-border,#2a2a2a)]"
             placeholder={`joao@email.com,João Silva,11999999999\nmaria@email.com,Maria Santos\npedro@email.com`}
           />
           <div className="flex justify-end gap-2 pt-4">

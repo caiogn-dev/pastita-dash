@@ -266,7 +266,7 @@ export const AgentFlowsPage: React.FC = () => {
               rows={2}
               value={formData.description}
               onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}
-              className="w-full rounded-lg border border-border-token dark:border-zinc-700 bg-surface dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full rounded-lg border border-border-token dark:border-zinc-700 bg-surface dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-brand focus:border-transparent"
             />
           </div>
           <div>
@@ -277,7 +277,7 @@ export const AgentFlowsPage: React.FC = () => {
               rows={8}
               value={formData.flow_json}
               onChange={e => setFormData(p => ({ ...p, flow_json: e.target.value }))}
-              className="w-full rounded-lg border border-border-token dark:border-zinc-700 bg-surface dark:bg-zinc-900 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full rounded-lg border border-border-token dark:border-zinc-700 bg-surface dark:bg-zinc-900 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand focus:border-transparent"
               placeholder='{"nodes": [], "edges": []}'
             />
             <p className="text-xs text-fg-muted-token mt-1">JSON de definição do fluxo</p>

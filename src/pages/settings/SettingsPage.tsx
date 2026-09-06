@@ -37,7 +37,7 @@ const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled = false, la
       disabled={disabled}
       aria-label={label}
     />
-    <div className="w-11 h-6 bg-surface-2 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-border-token after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+    <div className="w-11 h-6 bg-surface-2 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand/40 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-border-token after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
   </label>
 );
 

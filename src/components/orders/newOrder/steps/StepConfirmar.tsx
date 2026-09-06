@@ -130,7 +130,7 @@ export function StepConfirmar({
           type="checkbox"
           checked={suppressNotifications}
           onChange={(e) => setSuppressNotifications(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-brand"
         />
         <span>
           <span className="block text-sm font-semibold text-gray-900 dark:text-white">

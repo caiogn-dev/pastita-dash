@@ -175,7 +175,7 @@ export const AccountFormPage: React.FC = () => {
               <select
                 value={formData.default_agent}
                 onChange={(e) => setFormData({ ...formData, default_agent: e.target.value })}
-                className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent text-sm"
               >
                 <option value="">Nenhum</option>
                 {agents.map((agent) => (
@@ -193,7 +193,7 @@ export const AccountFormPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.auto_response_enabled}
                 onChange={(e) => setFormData({ ...formData, auto_response_enabled: e.target.checked })}
-                className="rounded border-border-token text-blue-600 focus:ring-blue-500"
+                className="rounded border-border-token text-blue-600 focus:ring-brand"
               />
               <span className="text-sm text-fg-token">Resposta automática ativada</span>
             </label>
@@ -203,7 +203,7 @@ export const AccountFormPage: React.FC = () => {
                 type="checkbox"
                 checked={formData.human_handoff_enabled}
                 onChange={(e) => setFormData({ ...formData, human_handoff_enabled: e.target.checked })}
-                className="rounded border-border-token text-blue-600 focus:ring-blue-500"
+                className="rounded border-border-token text-blue-600 focus:ring-brand"
               />
               <span className="text-sm text-fg-token">Transferência para humano ativada</span>
             </label>

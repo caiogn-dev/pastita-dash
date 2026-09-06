@@ -109,7 +109,7 @@ const VariantLimitRow: React.FC<VariantLimitRowProps> = ({ limit, onUpdate }) =>
           min="1"
           value={limit.max_selections}
           onChange={e => onUpdate(limit._key, { max_selections: parseInt(e.target.value) || 1 })}
-          className="w-16 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="w-16 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand"
         />
       </td>
       <td className="px-3 py-2">
@@ -120,7 +120,7 @@ const VariantLimitRow: React.FC<VariantLimitRowProps> = ({ limit, onUpdate }) =>
           placeholder="Sem override"
           value={limit.price_override ?? ''}
           onChange={e => onUpdate(limit._key, { price_override: e.target.value ? parseFloat(e.target.value) : undefined })}
-          className="w-24 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="w-24 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand"
         />
       </td>
     </tr>
@@ -187,7 +187,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                   value={group.title}
                   onChange={e => onUpdate(group._key, { title: e.target.value })}
                   placeholder="Ex: Escolha suas 5 saladas"
-                  className="w-full text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
             ) : (
@@ -198,7 +198,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                 <select
                   value={group.product_id}
                   onChange={e => onUpdate(group._key, { product_id: e.target.value })}
-                  className="w-full text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="">Selecionar produto...</option>
                   {products.map(p => (
@@ -425,7 +425,7 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
                     min="1"
                     value={opt!.max_selections}
                     onChange={e => patch(product.id, { max_selections: parseInt(e.target.value) || 1 })}
-                    className="w-14 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-14 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                   <input
                     type="number"
@@ -434,7 +434,7 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
                     placeholder="R$ override"
                     value={opt!.price_override ?? ''}
                     onChange={e => patch(product.id, { price_override: e.target.value ? parseFloat(e.target.value) : undefined })}
-                    className="w-24 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-24 text-sm rounded-md border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               )}
@@ -730,7 +730,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
               onChange={e => set('description', e.target.value)}
               rows={3}
               placeholder="Descreva o combo para o cliente..."
-              className="w-full rounded-lg border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-border-token bg-white dark:bg-surface text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand resize-none"
             />
           </div>
           <StringListField
@@ -791,7 +791,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
                 set('metadata', meta);
               }}
               placeholder="Vazio = o combo não credita selo"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-border-token dark:bg-surface dark:text-white"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand dark:border-border-token dark:bg-surface dark:text-white"
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-fg-muted-token">
               Quantos selos o cliente ganha por combo comprado — normalmente o número

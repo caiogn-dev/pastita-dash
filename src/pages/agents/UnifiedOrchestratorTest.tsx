@@ -449,7 +449,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
                 "bg-surface-2",
                 "text-fg-token placeholder-zinc-400",
                 "border-border-token",
-                "focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+                "focus:ring-2 focus:ring-brand focus:border-transparent",
                 "disabled:opacity-50"
               )}
             />

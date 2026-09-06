@@ -1,31 +1,36 @@
 /**
  * ESPECIFICAÇÃO — o anel de foco é UM, e é o da marca.
  *
- * O painel tinha três anéis de foco convivendo: `focus:ring-brand` (o certo),
- * `focus:ring-primary-500` e `focus:ring-indigo-500`. Não é gosto: quem navega
- * por teclado percorre uma barra de filtros e vê o realce mudar de cor de um
- * campo para o outro, o que faz o indicador de foco parecer um efeito da
- * página em vez de "você está AQUI".
+ * O painel tinha CINCO anéis de foco convivendo: `ring-brand`, `ring-brand-500`,
+ * `ring-primary-500`, `ring-indigo-500`, `ring-green-500` e `ring-blue-500`.
+ * Com os valores na mão, a diferença deixa de ser gosto:
  *
- * `primary-500` e `indigo-500` também não são cores da paleta — vieram de um
- * exemplo de Tailwind colado. Num painel carvão-e-ouro, um anel índigo é de
- * outro produto.
+ *   ring-brand        var(--brand)         #C9A24B claro / #DEBE79 escuro
+ *   ring-brand-500    var(--brand-primary) → var(--primary-500) → #C7492E
+ *   ring-primary-500  var(--primary-500)                          #C7492E
  *
- * Este teste trava o número: cada campo migrado para `Select`/`SearchInput`
- * baixa o teto, e nenhum anel novo entra fora da marca.
+ * Ou seja: o ouro da identidade, que ACOMPANHA o tema, contra o terracota do
+ * storefront, que não acompanha — e que num tenant é a cor da loja, então o
+ * anel de foco do painel mudava conforme a loja selecionada. Quem navega por
+ * teclado percorria uma barra de filtros e via o realce trocar de cor entre um
+ * campo e o outro; o indicador de foco vira efeito da página em vez de
+ * "você está AQUI".
+ *
+ * Índigo, azul e verde nem existem na paleta — vieram de exemplos de Tailwind
+ * colados. Num painel carvão-e-ouro, um anel índigo é de outro produto.
+ *
+ * O `focus:border-*` que acompanhava alguns deles saiu junto: o anel já marca
+ * o foco, e a borda colorida por baixo era mais uma cor para divergir.
+ *
+ * Hoje o número é ZERO e só pode continuar zero.
  */
 import * as fs from 'fs';
 import * as path from 'path';
 
 const SRC = path.join(__dirname, '..');
 
-/**
- * Arquivos que ainda pintam anel de foco fora da marca.
- *
- * Eram 32 antes do `Select` e do `SearchInput` comuns. Cada campo migrado
- * baixa este número; ele só pode descer.
- */
-const TETO = 26;
+/** Eram 32 arquivos. Hoje é zero, e zero é o teto. */
+const TETO = 0;
 
 const arquivos = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -35,14 +40,14 @@ const arquivos = (dir: string): string[] =>
   });
 
 describe('spec: anel de foco', () => {
-  it(`no máximo ${TETO} arquivos usam anel fora da marca`, () => {
+  it(`nenhum arquivo usa anel de foco fora da marca`, () => {
     const fora = arquivos(SRC)
       .filter((f) => {
         const fonte = fs
           .readFileSync(f, 'utf8')
           .replace(/\/\*[\s\S]*?\*\//g, '')
           .replace(/^\s*\/\/.*$/gm, '');
-        return /focus:ring-(indigo|primary|blue|green|purple)-\d/.test(fonte);
+        return /focus:(ring|border)-(brand|indigo|primary|blue|green|purple)-\d/.test(fonte);
       })
       .map((f) => path.relative(SRC, f))
       .sort();

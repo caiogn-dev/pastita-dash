@@ -367,7 +367,7 @@ const CreateStoreModal: React.FC<CreateStoreModalProps> = ({ isOpen, onClose, on
           <select
             value={formData.store_type}
             onChange={e => setFormData(prev => ({ ...prev, store_type: e.target.value }))}
-            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
           >
             <option value="food">🍕 Alimentação</option>
             <option value="retail">🛍️ Varejo</option>
@@ -383,7 +383,7 @@ const CreateStoreModal: React.FC<CreateStoreModalProps> = ({ isOpen, onClose, on
             value={formData.description}
             onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
             rows={3}
-            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
           />
         </div>
 

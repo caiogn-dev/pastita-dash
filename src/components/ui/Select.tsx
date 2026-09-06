@@ -76,8 +76,8 @@ export const Select: React.FC<SelectProps> = ({
           // `bg-surface` e não `bg-transparent`: transparente herda o fundo de
           // onde estiver, e a lista nativa fica sem contraste garantido.
           'bg-surface',
-          // O anel é o da MARCA. Havia `focus:ring-indigo-500` e
-          // `focus:ring-primary-500` na mesma tela que o resto usava brand:
+          // O anel é o da MARCA. Havia `focus:ring-brand` e
+          // `focus:ring-brand` na mesma tela que o resto usava brand:
           // quem navega por teclado via a cor do foco mudar entre campos.
           'focus:outline-none focus:ring-2 focus:ring-brand',
           erro ? 'border-[var(--danger)]' : 'border-border-token',

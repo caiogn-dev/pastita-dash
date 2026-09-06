@@ -394,7 +394,7 @@ export default function AutomationsPage() {
               type="text"
               value={formData.name}
               onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
               placeholder="Ex: Email de confirmação de pedido"
             />
           </div>
@@ -406,7 +406,7 @@ export default function AutomationsPage() {
             <select
               value={formData.trigger_type}
               onChange={e => setFormData(prev => ({ ...prev, trigger_type: e.target.value }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
             >
               <option value="">Selecione um gatilho...</option>
               {triggerTypes.map(type => (
@@ -425,7 +425,7 @@ export default function AutomationsPage() {
               type="text"
               value={formData.subject}
               onChange={e => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
               placeholder="Ex: Seu pedido #{{order_number}} foi confirmado!"
             />
           </div>
@@ -454,7 +454,7 @@ export default function AutomationsPage() {
             <textarea
               value={formData.html_content}
               onChange={e => setFormData(prev => ({ ...prev, html_content: e.target.value }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500 font-mono text-sm"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand font-mono text-sm"
               rows={8}
               placeholder="<html>...</html>"
             />
@@ -472,7 +472,7 @@ export default function AutomationsPage() {
               min="0"
               value={formData.delay_minutes}
               onChange={e => setFormData(prev => ({ ...prev, delay_minutes: parseInt(e.target.value) || 0 }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
             />
             <p className="text-xs text-fg-muted-token mt-1">
               0 = envio imediato. Use delay para emails como "solicitar avaliação" (ex: 1440 = 24h)
@@ -485,7 +485,7 @@ export default function AutomationsPage() {
               id="is_active"
               checked={formData.is_active}
               onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-              className="rounded border-border-token text-primary-600 focus:ring-primary-500"
+              className="rounded border-border-token text-primary-600 focus:ring-brand"
             />
             <label htmlFor="is_active" className="text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
               Ativar automação imediatamente
@@ -533,7 +533,7 @@ export default function AutomationsPage() {
               type="email"
               value={testEmail}
               onChange={e => setTestEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
               placeholder="seu@email.com"
             />
           </div>
