@@ -24,7 +24,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, Loading } from '../../components/common';
-import { PageShell } from '../../components/ui';
+import { PageShell, KpiGrid } from '../../components/ui';
 import { useStore, useConfirm } from '../../hooks';
 import { 
   automationsApi, 
@@ -235,59 +235,41 @@ export default function AutomationsPage() {
       }
     >
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary-100 rounded-lg">
-              <BoltIcon className="w-6 h-6 text-primary-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-fg-token">{automations.length}</p>
-              <p className="text-sm text-fg-muted-token">Total</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
-              <PlayIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-fg-token">
-                {automations.filter(a => a.is_active).length}
-              </p>
-              <p className="text-sm text-fg-muted-token">Ativas</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-              <EnvelopeIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-fg-token">
-                {automations.reduce((sum, a) => sum + a.total_sent, 0)}
-              </p>
-              <p className="text-sm text-fg-muted-token">Emails Enviados</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
-              <CheckCircleIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-fg-token">
-                {automations.reduce((sum, a) => sum + a.total_opened, 0)}
-              </p>
-              <p className="text-sm text-fg-muted-token">Abertos</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiGrid
+        itens={[
+          {
+            label: 'Automações',
+            value: automations.length,
+            definicao: 'Todas as regras de e-mail automático, ligadas ou não.',
+            icone: <BoltIcon />,
+          },
+          {
+            label: 'Ativas',
+            value: automations.filter((a) => a.is_active).length,
+            definicao: 'As que estão de fato disparando quando o gatilho acontece.',
+            tone: 'success',
+            icone: <PlayIcon />,
+          },
+          {
+            label: 'E-mails enviados',
+            value: automations.reduce((sum, a) => sum + a.total_sent, 0),
+            definicao: 'Total já disparado por estas automações, desde sempre.',
+            icone: <EnvelopeIcon />,
+          },
+          {
+            label: 'Abertos',
+            value: automations.reduce((sum, a) => sum + a.total_opened, 0),
+            // A taxa é o que decide se vale continuar; o número absoluto
+            // sozinho não diz nada sem o denominador ao lado.
+            definicao:
+              automations.reduce((sum, a) => sum + a.total_sent, 0) > 0
+                ? `Abriram o e-mail — ${Math.round((automations.reduce((sum, a) => sum + a.total_opened, 0) / automations.reduce((sum, a) => sum + a.total_sent, 0)) * 100)}% dos enviados.`
+                : 'Quantos abriram o e-mail.',
+            tone: 'brand',
+            icone: <CheckCircleIcon />,
+          },
+        ]}
+      />
 
       {/* Automations List */}
       {automations.length === 0 ? (

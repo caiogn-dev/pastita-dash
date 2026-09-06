@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Card, Modal, Loading } from '../../components/common';
-import { PageShell, Tabela, RowActions, Badge, SearchInput } from '../../components/ui';
+import { PageShell, Tabela, RowActions, Badge, SearchInput, KpiGrid } from '../../components/ui';
 import { useStore } from '../../hooks';
 import { marketingService, Subscriber } from '../../services/marketingService';
 import { useRootStore } from '../../stores/rootStore';
@@ -275,69 +275,46 @@ export const SubscribersPage: React.FC = () => {
       }
     >
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/40">
-              <UserGroupIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-fg-token">{stats.total}</p>
-              <p className="text-sm text-fg-muted-token">Total na base</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/40">
-              <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-fg-token">{stats.active}</p>
-              <p className="text-sm text-fg-muted-token">Ativos</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/40">
-              <ShoppingBagIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-fg-token">{stats.withOrders}</p>
-              <p className="text-sm text-fg-muted-token">Já compraram</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-yellow-100 p-2 dark:bg-yellow-900/40">
-              <XCircleIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-fg-token">{stats.unsubscribed}</p>
-              <p className="text-sm text-fg-muted-token">Descadastrados</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-emerald-100 p-2 dark:bg-emerald-900/40">
-              <EnvelopeIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-fg-token">
-                R$ {revenueFromBase.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <p className="text-sm text-fg-muted-token">Receita identificada</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiGrid
+        itens={[
+          {
+            label: 'Total na base',
+            value: stats.total,
+            definicao: 'Todo mundo com contato salvo, tenha comprado ou não.',
+            icone: <UserGroupIcon />,
+          },
+          {
+            label: 'Ativos',
+            value: stats.active,
+            definicao: 'Aceitam receber mensagem. São estes que entram numa campanha.',
+            tone: 'success',
+            icone: <CheckCircleIcon />,
+          },
+          {
+            label: 'Já compraram',
+            value: stats.withOrders,
+            definicao: 'Têm pelo menos um pedido pago. A lista mais barata que existe.',
+            icone: <ShoppingBagIcon />,
+          },
+          {
+            label: 'Descadastrados',
+            value: stats.unsubscribed,
+            definicao: 'Pediram para não receber. Ficam de fora de toda campanha.',
+            tone: 'warning',
+            icone: <XCircleIcon />,
+          },
+          {
+            label: 'Receita identificada',
+            value: `R$ ${revenueFromBase.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`,
+            definicao: 'Soma dos pedidos pagos de quem está nesta base.',
+            tone: 'brand',
+            icone: <EnvelopeIcon />,
+          },
+        ]}
+      />
 
       <Card className="p-4">
         <div className="flex flex-col gap-4 md:flex-row">

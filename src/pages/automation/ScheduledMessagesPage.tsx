@@ -21,7 +21,7 @@ import {
   ScheduledMessageStats,
   WhatsAppAccount,
 } from '../../types';
-import { PageShell, Tabela, RowActions } from '../../components/ui';
+import { PageShell, Tabela, RowActions, KpiGrid } from '../../components/ui';
 
 const statusVariants: Record<string, 'gray' | 'info' | 'success' | 'danger' | 'warning'> = {
   pending: 'info',
@@ -169,38 +169,55 @@ export default function ScheduledMessagesPage() {
       }
     >
 
-      {/* Stats */}
+      {/* Eram SETE quadrados numa grade de sete colunas, cada um com o seu
+          `text-2xl font-bold` numa cor crua diferente — blue, green, red,
+          indigo, emerald. Sete números do mesmo tamanho, lado a lado, não têm
+          hierarquia: o olho lê os sete para achar o que interessa. O KpiGrid
+          usa quatro colunas e o `tone` da paleta do painel. */}
       {stats && (
-        <div className="grid grid-cols-7 max-lg:grid-cols-4 max-md:grid-cols-2 gap-4">
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.total}</p>
-            <p className="text-sm text-fg-muted-token">Total</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.pending}</p>
-            <p className="text-sm text-fg-muted-token">Pendentes</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.sent}</p>
-            <p className="text-sm text-fg-muted-token">Enviadas</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.failed}</p>
-            <p className="text-sm text-fg-muted-token">Falhas</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-fg-muted-token">{stats.cancelled}</p>
-            <p className="text-sm text-fg-muted-token">Canceladas</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-indigo-600">{stats.scheduled_today}</p>
-            <p className="text-sm text-fg-muted-token">Agendadas Hoje</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-emerald-600">{stats.sent_today}</p>
-            <p className="text-sm text-fg-muted-token">Enviadas Hoje</p>
-          </Card>
-        </div>
+        <KpiGrid
+          itens={[
+            {
+              label: 'Total',
+              value: stats.total,
+              definicao: 'Todas as mensagens agendadas, em qualquer estado.',
+            },
+            {
+              label: 'Pendentes',
+              value: stats.pending,
+              definicao: 'Ainda vão sair, na hora marcada.',
+              tone: 'brand',
+            },
+            {
+              label: 'Enviadas',
+              value: stats.sent,
+              definicao: 'Já saíram para o WhatsApp do cliente.',
+              tone: 'success',
+            },
+            {
+              label: 'Falhas',
+              value: stats.failed,
+              definicao: 'Não saíram. Vale reagendar — o motivo aparece na linha.',
+              tone: (stats.failed ?? 0) > 0 ? 'danger' : 'default',
+            },
+            {
+              label: 'Canceladas',
+              value: stats.cancelled,
+              definicao: 'Você cancelou antes da hora de sair.',
+            },
+            {
+              label: 'Agendadas hoje',
+              value: stats.scheduled_today,
+              definicao: 'Criadas hoje, independentemente de quando vão sair.',
+            },
+            {
+              label: 'Enviadas hoje',
+              value: stats.sent_today,
+              definicao: 'Saíram hoje.',
+              tone: 'success',
+            },
+          ]}
+        />
       )}
 
       {/* Filters */}

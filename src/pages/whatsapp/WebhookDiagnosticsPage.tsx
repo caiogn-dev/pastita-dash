@@ -19,7 +19,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge } from '../../components/common';
 import api from '@/services/api';
 import logger from '@/services/logger';
-import { PageShell } from '../../components/ui';
+import { PageShell, KpiGrid } from '../../components/ui';
 
 interface DiagnosticsData {
   status: string;
@@ -238,53 +238,36 @@ export const WebhookDiagnosticsPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <SignalIcon className="w-8 h-8 text-blue-500" />
-            <div>
-              <p className="text-2xl font-bold text-fg-token">
-                {stats.webhook_events?.last_hour ?? 0}
-              </p>
-              <p className="text-sm text-fg-muted-token">Webhooks (última hora)</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <ChatBubbleLeftRightIcon className="w-8 h-8 text-green-500" />
-            <div>
-              <p className="text-2xl font-bold text-fg-token">
-                {stats.messages?.inbound_last_hour ?? 0}
-              </p>
-              <p className="text-sm text-fg-muted-token">Mensagens (última hora)</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <ClockIcon className="w-8 h-8 text-yellow-500" />
-            <div>
-              <p className="text-2xl font-bold text-fg-token">
-                {stats.webhook_events?.pending ?? 0}
-              </p>
-              <p className="text-sm text-fg-muted-token">Eventos pendentes</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <XCircleIcon className="w-8 h-8 text-red-500" />
-            <div>
-              <p className="text-2xl font-bold text-fg-token">
-                {stats.webhook_events?.failed ?? 0}
-              </p>
-              <p className="text-sm text-fg-muted-token">Eventos com falha</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiGrid
+        itens={[
+          {
+            label: 'Webhooks na última hora',
+            value: stats.webhook_events?.last_hour ?? 0,
+            definicao: 'Avisos que a Meta mandou para o Cardapidex na última hora.',
+            icone: <SignalIcon />,
+          },
+          {
+            label: 'Mensagens na última hora',
+            value: stats.messages?.inbound_last_hour ?? 0,
+            definicao: 'Mensagens de cliente que chegaram na última hora.',
+            icone: <ChatBubbleLeftRightIcon />,
+          },
+          {
+            label: 'Eventos na fila',
+            value: stats.webhook_events?.pending ?? 0,
+            definicao: 'Chegaram e ainda não foram processados. Fila crescendo é sinal ruim.',
+            tone: (stats.webhook_events?.pending ?? 0) > 0 ? 'warning' : 'default',
+            icone: <ClockIcon />,
+          },
+          {
+            label: 'Eventos com falha',
+            value: stats.webhook_events?.failed ?? 0,
+            definicao: 'Chegaram e deram erro no processamento — mensagem que o cliente mandou e ninguém viu.',
+            tone: (stats.webhook_events?.failed ?? 0) > 0 ? 'danger' : 'default',
+            icone: <XCircleIcon />,
+          },
+        ]}
+      />
 
       {/* Accounts */}
       <Card className="p-6">

@@ -24,7 +24,7 @@ import { Card, Button, Modal, Loading } from '../../../components/common';
 import { useStore, useConfirm } from '../../../hooks';
 import api from '@/services/api';
 import { EMAIL_RECIPIENT_STATUS_LABELS } from '../../../utils/rotulosDeEstado';
-import { PageShell, Tabela, Badge } from '../../../components/ui';
+import { PageShell, Tabela, Badge, KpiGrid } from '../../../components/ui';
 
 interface EmailCampaign {
   id: string;
@@ -316,31 +316,37 @@ export const CampaignsListPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Summary */}
-            <div className="grid grid-cols-4 gap-4 p-4 bg-surface-2 rounded-lg">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-fg-token">{recipients.length}</p>
-                <p className="text-xs text-fg-muted-token">Total</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">
-                  {recipients.filter(r => r.status === 'sent' || r.status === 'delivered' || r.status === 'opened' || r.status === 'clicked').length}
-                </p>
-                <p className="text-xs text-fg-muted-token">Enviados</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">
-                  {recipients.filter(r => r.status === 'opened' || r.status === 'clicked').length}
-                </p>
-                <p className="text-xs text-fg-muted-token">Abertos</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-red-600">
-                  {recipients.filter(r => r.status === 'failed' || r.status === 'bounced').length}
-                </p>
-                <p className="text-xs text-fg-muted-token">Falhas</p>
-              </div>
-            </div>
+            <KpiGrid
+              itens={[
+                {
+                  label: 'Destinatários',
+                  value: recipients.length,
+                  definicao: 'Quantos entraram nesta campanha.',
+                },
+                {
+                  label: 'Entregues',
+                  value: recipients.filter((r) =>
+                    ['sent', 'delivered', 'opened', 'clicked'].includes(r.status),
+                  ).length,
+                  definicao: 'Saíram e chegaram na caixa de entrada.',
+                  tone: 'success',
+                },
+                {
+                  label: 'Abertos',
+                  value: recipients.filter((r) => ['opened', 'clicked'].includes(r.status)).length,
+                  definicao: 'Abriram o e-mail. É este número que diz se o assunto funcionou.',
+                  tone: 'brand',
+                },
+                {
+                  label: 'Falhas',
+                  value: recipients.filter((r) => ['failed', 'bounced'].includes(r.status)).length,
+                  definicao: 'Não chegaram — endereço inválido ou recusado pelo servidor.',
+                  tone: recipients.some((r) => ['failed', 'bounced'].includes(r.status))
+                    ? 'danger'
+                    : 'default',
+                },
+              ]}
+            />
 
             <div className="max-h-96 overflow-y-auto">
               <Tabela<(typeof recipients)[number]>

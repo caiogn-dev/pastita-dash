@@ -16,7 +16,7 @@ import { agentFlowService, AgentFlow } from '../../services/automation';
 import { useStore, useConfirm } from '../../hooks';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { PageShell } from '../../components/ui';
+import { PageShell, KpiGrid } from '../../components/ui';
 
 export const AgentFlowsPage: React.FC = () => {
   const { storeId } = useStore();
@@ -139,31 +139,37 @@ export const AgentFlowsPage: React.FC = () => {
       }
     >
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4">
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{flows.length}</p>
-          <p className="text-sm text-fg-muted-token">Total</p>
-        </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-bold text-green-600">{flows.filter(f => f.is_active).length}</p>
-          <p className="text-sm text-fg-muted-token">Ativos</p>
-        </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-bold text-blue-600">
-            {flows.reduce((acc, f) => acc + (f.total_executions || 0), 0)}
-          </p>
-          <p className="text-sm text-fg-muted-token">Execuções</p>
-        </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-bold text-purple-600">
-            {flows.filter(f => f.is_default).length > 0
-              ? `${Math.round((flows.filter(f => f.is_default)[0]?.success_rate || 0) * 100)}%`
-              : '—'}
-          </p>
-          <p className="text-sm text-fg-muted-token">Taxa de Sucesso</p>
-        </Card>
-      </div>
+      <KpiGrid
+        itens={[
+          {
+            label: 'Fluxos',
+            value: flows.length,
+            definicao: 'Todos os passo a passo cadastrados, ligados ou não.',
+          },
+          {
+            label: 'Ativos',
+            value: flows.filter((f) => f.is_active).length,
+            definicao: 'Os que o robô realmente usa quando o cliente escreve.',
+            tone: 'success',
+          },
+          {
+            label: 'Execuções',
+            value: flows.reduce((acc, f) => acc + (f.total_executions || 0), 0),
+            definicao: 'Quantas vezes um fluxo rodou, somando todos, desde sempre.',
+          },
+          {
+            label: 'Taxa de acerto',
+            value:
+              flows.filter((f) => f.is_default).length > 0
+                ? `${Math.round((flows.filter((f) => f.is_default)[0]?.success_rate || 0) * 100)}%`
+                : '—',
+            // O número é só do fluxo padrão, e a tela não dizia isso: quem
+            // lesse "Taxa de Sucesso" acharia que era a média de todos.
+            definicao: 'Do fluxo padrão: quantas conversas ele levou até o fim.',
+            tone: 'brand',
+          },
+        ]}
+      />
 
       {/* Flows List */}
       {flows.length === 0 ? (

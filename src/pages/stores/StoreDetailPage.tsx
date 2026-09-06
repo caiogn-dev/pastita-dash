@@ -28,7 +28,7 @@ import { Card, Button, Badge, Loading, Modal } from '../../components/common';
 import storesApi, { Store, StoreStats } from '../../services/storesApi';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
-import { PageShell } from '../../components/ui';
+import { PageShell, KpiGrid } from '../../components/ui';
 
 type TabId = 'overview' | 'products' | 'combos' | 'orders' | 'coupons' | 'delivery' | 'settings' | 'storefront';
 
@@ -167,40 +167,39 @@ export const StoreDetailPage: React.FC = () => {
       }
     >
 
-      {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4 mb-6">
-          <Card className="p-4">
-            <p className="text-sm text-fg-muted-token">Receita Total</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              R$ {stats.revenue.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-            <p className="text-xs text-fg-muted-token">
-              Hoje: R$ {stats.revenue.today.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-sm text-fg-muted-token">Pedidos</p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.orders.total}</p>
-            <p className="text-xs text-fg-muted-token">
-              Hoje: {stats.orders.today}
-            </p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-sm text-fg-muted-token">Produtos</p>
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.products.total}</p>
-            <p className="text-xs text-fg-muted-token">
-              Ativos: {stats.products.active}
-            </p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-sm text-fg-muted-token">Clientes</p>
-            <p className="text-2xl font-bold text-orange-600">{stats.customers.total}</p>
-            <p className="text-xs text-fg-muted-token">
-              Total cadastrados
-            </p>
-          </Card>
-        </div>
+        <KpiGrid
+          itens={[
+            {
+              label: 'Receita total',
+              value: `R$ ${stats.revenue.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+              // O "Hoje: R$ …" vivia numa terceira linha do cartão, do mesmo
+              // tamanho do resto. A definição é onde ele pertence: é o recorte
+              // do número, não outro indicador.
+              definicao: `Tudo que já entrou nesta loja. Hoje: R$ ${stats.revenue.today.toLocaleString(
+                'pt-BR',
+                { minimumFractionDigits: 2 },
+              )}.`,
+              tone: 'success',
+            },
+            {
+              label: 'Pedidos',
+              value: stats.orders.total,
+              definicao: `Pedidos feitos desde sempre. Hoje: ${stats.orders.today}.`,
+              tone: 'brand',
+            },
+            {
+              label: 'Produtos',
+              value: stats.products.total,
+              definicao: `Itens no cardápio. Aparecendo para o cliente: ${stats.products.active}.`,
+            },
+            {
+              label: 'Clientes',
+              value: stats.customers.total,
+              definicao: 'Pessoas com cadastro nesta loja.',
+            },
+          ]}
+        />
       )}
 
       {/* Tabs */}

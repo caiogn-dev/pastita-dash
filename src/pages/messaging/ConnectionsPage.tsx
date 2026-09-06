@@ -18,7 +18,7 @@ import { messengerService } from '../../services/messenger';
 import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
 import { Toggle } from './Toggle';
-import { PageShell, SearchInput, Modal, ModalFooter } from '../../components/ui';
+import { PageShell, SearchInput, Modal, ModalFooter, KpiGrid } from '../../components/ui';
 
 // ─── Platform config ──────────────────────────────────────────────────────────
 
@@ -378,23 +378,22 @@ export default function ConnectionsPage() {
       }
     >
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        {[
-          { icon: '📱', label: 'WhatsApp', count: connections.filter(c => c.platform === 'whatsapp').length },
-          { icon: <CheckCircleIcon className="w-6 h-6" />, label: 'Ativas', count: connections.filter(c => c.is_active).length, iconClass: 'text-green-600 bg-green-100 dark:bg-green-900/30' },
-        ].map((s, i) => (
-          <div key={i} className="bg-bg-card border border-border-primary rounded-xl p-4 flex items-center gap-3">
-            <div className={`p-2.5 rounded-xl text-2xl ${(s as any).iconClass || 'bg-bg-secondary'}`}>
-              {typeof s.icon === 'string' ? s.icon : s.icon}
-            </div>
-            <div>
-              <p className="text-sm text-fg-muted">{s.label}</p>
-              <p className="text-2xl font-bold text-fg-primary">{s.count}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <KpiGrid
+        itens={[
+          {
+            label: 'WhatsApp',
+            value: connections.filter((c) => c.platform === 'whatsapp').length,
+            definicao: 'Números de WhatsApp conectados a esta conta.',
+          },
+          {
+            label: 'Ativas',
+            value: connections.filter((c) => c.is_active).length,
+            definicao: 'Conexões funcionando — é por elas que a mensagem entra e sai.',
+            tone: 'success',
+            icone: <CheckCircleIcon />,
+          },
+        ]}
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-border-primary mb-6">

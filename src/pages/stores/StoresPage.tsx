@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge, Modal, Input } from '../../components/common';
 import logger from '../../services/logger';
 import storesApi, { Store as StoreType, StoreInput, StoreStats } from '../../services/storesApi';
-import { PageShell } from '../../components/ui';
+import { PageShell, KpiGrid } from '../../components/ui';
 
 const StoresPage: React.FC = () => {
   const navigate = useNavigate();
@@ -110,59 +110,40 @@ const StoresPage: React.FC = () => {
       }
     >
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4 mb-6">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-              <Store className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm text-fg-muted-token">Total de Lojas</p>
-              <p className="text-2xl font-bold">{stores.length}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
-              <Package className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-sm text-fg-muted-token">Total de Produtos</p>
-              <p className="text-2xl font-bold">
-                {stores.reduce((acc, s) => acc + s.products_count, 0)}
-              </p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
-              <ShoppingCart className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <p className="text-sm text-fg-muted-token">Total de Pedidos</p>
-              <p className="text-2xl font-bold">
-                {stores.reduce((acc, s) => acc + s.orders_count, 0)}
-              </p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Zap className="w-6 h-6 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-fg-muted-token">Integrações Ativas</p>
-              <p className="text-2xl font-bold">
-                {stores.reduce((acc, s) => acc + s.integrations_count, 0)}
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
+      {/* Quatro números que eram quatro `Card` escritos à mão, cada um com o
+          seu `text-2xl font-bold` e o seu chip de cor crua (blue-100,
+          green-100, purple-100, orange-100 — nenhuma delas existe na paleta do
+          painel). O `KpiGrid` dá o mesmo peso em toda tela e ainda EXIGE a
+          definição do indicador: "Integrações ativas" sem dizer o que conta
+          como integração é um número que ninguém sabe conferir. */}
+      <KpiGrid
+        itens={[
+          {
+            label: 'Lojas',
+            value: stores.length,
+            definicao: 'Todas as lojas da sua conta, ativas ou não.',
+            icone: <Store />,
+          },
+          {
+            label: 'Produtos',
+            value: stores.reduce((acc, s) => acc + s.products_count, 0),
+            definicao: 'Itens cadastrados somando todas as lojas.',
+            icone: <Package />,
+          },
+          {
+            label: 'Pedidos',
+            value: stores.reduce((acc, s) => acc + s.orders_count, 0),
+            definicao: 'Pedidos já feitos somando todas as lojas, desde sempre.',
+            icone: <ShoppingCart />,
+          },
+          {
+            label: 'Integrações ativas',
+            value: stores.reduce((acc, s) => acc + s.integrations_count, 0),
+            definicao: 'Canais e serviços conectados: WhatsApp, pagamento, entrega.',
+            icone: <Zap />,
+          },
+        ]}
+      />
 
       {/* Stores Grid */}
       {stores.length === 0 ? (
