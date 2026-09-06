@@ -18,7 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Badge, Button, Loading } from '../../components/common';
-import { Card, StatCard, PageShell, InsightList } from '../../components/ui';
+import { Card, StatCard, PageShell, InsightList, Tabela } from '../../components/ui';
 import OnboardingChecklist from '../../components/onboarding/OnboardingChecklist';
 import OnboardingWizard from '../../components/onboarding/wizard/OnboardingWizard';
 import { buildWizardSteps } from '../../components/onboarding/wizard/buildWizardSteps';
@@ -94,68 +94,6 @@ const healthLabel: Record<string, string> = {
 // ─────────────────────────────────────────────────────────────────────────────
 // Order row with inline advance action
 // ─────────────────────────────────────────────────────────────────────────────
-
-interface OrderRowProps {
-  order: StoreOrder;
-  advancing: string | null;
-  onAdvance: (id: string, next: string) => Promise<void>;
-  onOpen: (id: string) => void;
-}
-
-const OrderRow: React.FC<OrderRowProps> = ({ order, advancing, onAdvance, onOpen }) => {
-  const action = NEXT_ACTION[order.status];
-
-  return (
-    <tr
-      className="border-b border-border-token dark:border-zinc-800 hover:bg-surface-2 dark:hover:bg-zinc-900/50
-                 transition-colors cursor-pointer"
-      onClick={() => onOpen(order.id)}
-    >
-      <td className="px-4 py-3 whitespace-nowrap">
-        <p className="text-sm font-mono font-semibold text-fg-token">
-          #{order.order_number}
-        </p>
-        <p className="text-xs text-fg-muted-token mt-0.5">
-          {new Date(order.created_at).toLocaleString('pt-BR', {
-            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-          })}
-        </p>
-      </td>
-      <td className="px-4 py-3 hidden md:table-cell">
-        <p className="text-sm font-medium text-fg-token">{order.customer_name || '—'}</p>
-        {order.customer_phone && (
-          <p className="text-xs text-fg-muted-token">{order.customer_phone}</p>
-        )}
-      </td>
-      <td className="px-4 py-3">
-        <Badge variant={STATUS_BADGE[order.status] ?? 'gray'}>
-          {/* Nosso mapa PRIMEIRO, `status_display` como reserva. O rótulo do
-              backend também está em português agora, mas quem manda no texto
-              da tela é a tela: um pedido antigo em cache, uma resposta de
-              outra versão da API ou um status novo ainda sem tradução lá não
-              podem devolver "Delivered" para o dono da loja. */}
-          {STATUS_LABELS[order.status] ?? order.status_display ?? order.status}
-        </Badge>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <p className="text-sm font-semibold text-fg-token">{fmt(order.total)}</p>
-      </td>
-      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-        {action && (
-          <button
-            onClick={() => onAdvance(order.id, action.next)}
-            disabled={advancing === order.id}
-            className="text-xs px-3 py-1.5 rounded bg-brand hover:bg-brand-hover
-                       disabled:opacity-50 text-white font-medium transition-colors whitespace-nowrap"
-          >
-            {advancing === order.id ? '…' : action.label}
-          </button>
-        )}
-      </td>
-    </tr>
-  );
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard
 // ─────────────────────────────────────────────────────────────────────────────
@@ -571,39 +509,99 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {ordersLoading ? (
-            <div className="flex justify-center items-center h-40"><Loading /></div>
-          ) : recentOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-fg-muted-token">
-              <ShoppingCartIcon className="h-8 w-8 mb-2 opacity-40" />
-              <p className="text-sm">Nenhum pedido ainda</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-surface-2 dark:bg-zinc-900/50 border-b border-border-token dark:border-zinc-800">
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-fg-muted-token">Pedido</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-fg-muted-token hidden md:table-cell">Cliente</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-fg-muted-token">Status</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-fg-muted-token">Total</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-fg-muted-token">Ação rápida</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentOrders.map((order) => (
-                    <OrderRow
-                      key={order.id}
-                      order={order}
-                      advancing={advancing}
-                      onAdvance={handleAdvance}
-                      onOpen={openOrder}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <Tabela<(typeof recentOrders)[number]>
+            itens={recentOrders}
+            chave={(o) => String(o.id)}
+            rotuloDaLinha={(o) => `Abrir pedido ${o.order_number}`}
+            onAbrir={(o) => openOrder(o.id)}
+            carregando={ordersLoading}
+            vazio={{
+              titulo: 'Nenhum pedido ainda',
+              icone: <ShoppingCartIcon className="h-8 w-8" />,
+            }}
+            colunas={[
+              {
+                chave: 'pedido',
+                cabecalho: 'Pedido',
+                render: (o) => (
+                  <>
+                    <p className="font-mono text-sm font-semibold text-fg-token">
+                      #{o.order_number}
+                    </p>
+                    <p className="mt-0.5 text-xs text-fg-muted-token">
+                      {new Date(o.created_at).toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </>
+                ),
+              },
+              {
+                chave: 'cliente',
+                cabecalho: 'Cliente',
+                classe: 'max-md:hidden',
+                render: (o) => (
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-fg-token">
+                      {o.customer_name || '—'}
+                    </p>
+                    {o.customer_phone && (
+                      <p className="text-xs text-fg-muted-token">{o.customer_phone}</p>
+                    )}
+                  </div>
+                ),
+              },
+              {
+                chave: 'status',
+                cabecalho: 'Status',
+                render: (o) => (
+                  <Badge variant={STATUS_BADGE[o.status] ?? 'gray'}>
+                    {/* Nosso mapa PRIMEIRO, `status_display` como reserva. O
+                        rótulo do backend também está em português agora, mas
+                        quem manda no texto da tela é a tela: um pedido antigo
+                        em cache, uma resposta de outra versão da API ou um
+                        status novo ainda sem tradução lá não podem devolver
+                        "Delivered" para o dono da loja. */}
+                    {STATUS_LABELS[o.status] ?? o.status_display ?? o.status}
+                  </Badge>
+                ),
+              },
+              {
+                chave: 'total',
+                cabecalho: 'Total',
+                alinhamento: 'direita',
+                render: (o) => (
+                  <span className="text-sm font-semibold text-fg-token">{fmt(o.total)}</span>
+                ),
+              },
+              {
+                chave: 'acao',
+                cabecalho: 'Ação rápida',
+                alinhamento: 'direita',
+                render: (o) => {
+                  const action = NEXT_ACTION[o.status];
+                  if (!action) return null;
+                  return (
+                    <Button
+                      size="xs"
+                      // A linha abre o pedido; avançar o status daqui não pode
+                      // arrastar o dono para o modal junto.
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAdvance(o.id, action.next);
+                      }}
+                      isLoading={advancing === o.id}
+                    >
+                      {action.label}
+                    </Button>
+                  );
+                },
+              },
+            ]}
+          />
         </Card>
 
         {/* Onde estao os pedidos — 1/3 */}

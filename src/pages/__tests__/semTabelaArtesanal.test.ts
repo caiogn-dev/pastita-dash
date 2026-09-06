@@ -12,8 +12,13 @@
  * Componente que não combina com o tema não é reaproveitado — é contornado.
  * Ele foi apagado.
  *
- * Este teste não exige que TUDO já esteja convertido: exige que o número não
- * suba. Cada conversão baixa o teto; nenhuma tabela nova entra à mão.
+ * Este teste não exige que TUDO esteja convertido: exige que o número não
+ * suba. Cada conversão baixou o teto; hoje ele está em 1.
+ *
+ * O que sobra é a matriz de COORTES do relatório de CRM, e ela fica: não é uma
+ * lista de registros, é um mapa de calor — uma coluna por mês desde a safra,
+ * cada célula pintada por `color-mix` na intensidade da retenção. `Tabela`
+ * desenha lista, e forçá-la aqui deixaria o relatório pior, não melhor.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -21,7 +26,7 @@ import * as path from 'path';
 const PASTA = path.join(__dirname, '..');
 
 /** Quantas páginas ainda desenham `<thead>` por conta própria. */
-const TETO = 7;
+const TETO = 1;
 
 const arquivos = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {

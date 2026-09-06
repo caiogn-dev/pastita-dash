@@ -19,7 +19,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge } from '../../components/common';
 import api from '@/services/api';
 import logger from '@/services/logger';
-import { PageShell, KpiGrid } from '../../components/ui';
+import { PageShell, KpiGrid, Tabela } from '../../components/ui';
 
 interface DiagnosticsData {
   status: string;
@@ -274,40 +274,39 @@ export const WebhookDiagnosticsPage: React.FC = () => {
         <h3 className="text-lg font-semibold text-fg-token mb-4">
           Contas WhatsApp
         </h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Nome</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Telefone</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Phone Number ID</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Status</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Ativo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
-              {accounts.map((account) => (
-                <tr key={account.id}>
-                  <td className="px-4 py-2 text-sm text-fg-token">{account.name}</td>
-                  <td className="px-4 py-2 text-sm text-fg-muted-token">{account.phone_number}</td>
-                  <td className="px-4 py-2 text-sm font-mono text-fg-muted-token">{account.phone_number_id}</td>
-                  <td className="px-4 py-2">
-                    <Badge variant={account.status === 'active' ? 'success' : 'warning'}>
-                      {account.status}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2">
-                    {account.is_active ? (
-                      <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <XCircleIcon className="w-5 h-5 text-red-500" />
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Tabela<(typeof accounts)[number]>
+          itens={accounts}
+          chave={(a) => String(a.id)}
+          rotuloDaLinha={(a) => `Conta ${a.name}`}
+          vazio={{ titulo: 'Nenhuma conta de WhatsApp conectada' }}
+          colunas={[
+            { chave: 'nome', cabecalho: 'Nome', render: (a) => a.name },
+            { chave: 'telefone', cabecalho: 'Telefone', render: (a) => a.phone_number },
+            {
+              chave: 'id',
+              cabecalho: 'ID do número',
+              classe: 'max-lg:hidden',
+              render: (a) => <span className="font-mono text-xs">{a.phone_number_id}</span>,
+            },
+            {
+              chave: 'status',
+              cabecalho: 'Status',
+              render: (a) => (
+                <Badge variant={a.status === 'active' ? 'success' : 'warning'}>{a.status}</Badge>
+              ),
+            },
+            {
+              chave: 'ativo',
+              cabecalho: 'Ativo',
+              render: (a) =>
+                a.is_active ? (
+                  <CheckCircleIcon className="h-5 w-5 text-[var(--success)]" />
+                ) : (
+                  <XCircleIcon className="h-5 w-5 text-[var(--danger)]" />
+                ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Actions */}
@@ -371,41 +370,49 @@ export const WebhookDiagnosticsPage: React.FC = () => {
         <h3 className="text-lg font-semibold text-fg-token mb-4">
           Eventos Recentes (últimos 20)
         </h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Tipo</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Status</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Data</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Erro</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
-              {recent_events.map((event) => (
-                <tr key={event.id}>
-                  <td className="px-4 py-2 text-sm text-fg-token">{event.event_type}</td>
-                  <td className="px-4 py-2">
-                    <Badge variant={
-                      event.processing_status === 'completed' ? 'success' :
-                      event.processing_status === 'failed' ? 'danger' :
-                      event.processing_status === 'pending' ? 'warning' :
-                      'info'
-                    }>
-                      {event.processing_status}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2 text-sm text-fg-muted-token">
-                    {new Date(event.created_at).toLocaleString('pt-BR')}
-                  </td>
-                  <td className="px-4 py-2 text-sm text-red-600 dark:text-red-400 max-w-xs truncate">
-                    {event.error_message || '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Tabela<(typeof recent_events)[number]>
+          itens={recent_events}
+          chave={(e) => String(e.id)}
+          rotuloDaLinha={(e) => `Evento ${e.event_type}`}
+          vazio={{ titulo: 'Nenhum evento recente' }}
+          colunas={[
+            { chave: 'tipo', cabecalho: 'Tipo', render: (e) => e.event_type },
+            {
+              chave: 'status',
+              cabecalho: 'Status',
+              render: (e) => (
+                <Badge
+                  variant={
+                    e.processing_status === 'completed'
+                      ? 'success'
+                      : e.processing_status === 'failed'
+                        ? 'danger'
+                        : e.processing_status === 'pending'
+                          ? 'warning'
+                          : 'info'
+                  }
+                >
+                  {e.processing_status}
+                </Badge>
+              ),
+            },
+            {
+              chave: 'quando',
+              cabecalho: 'Data',
+              render: (e) => new Date(e.created_at).toLocaleString('pt-BR'),
+            },
+            {
+              chave: 'erro',
+              cabecalho: 'Erro',
+              classe: 'max-lg:hidden',
+              render: (e) => (
+                <span className="block max-w-xs truncate text-[var(--danger)]">
+                  {e.error_message || '—'}
+                </span>
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Recent Messages */}
@@ -413,39 +420,28 @@ export const WebhookDiagnosticsPage: React.FC = () => {
         <h3 className="text-lg font-semibold text-fg-token mb-4">
           Mensagens Recebidas (últimas 10)
         </h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">De</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Tipo</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Mensagem</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-fg-muted-token uppercase">Data</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-[var(--dark-border,#2a2a2a)]">
-              {recent_inbound_messages.map((msg) => (
-                <tr key={msg.id}>
-                  <td className="px-4 py-2 text-sm text-fg-token">{msg.from_number}</td>
-                  <td className="px-4 py-2 text-sm text-fg-muted-token">{msg.message_type}</td>
-                  <td className="px-4 py-2 text-sm text-fg-muted-token max-w-xs truncate">
-                    {msg.text_body || '-'}
-                  </td>
-                  <td className="px-4 py-2 text-sm text-fg-muted-token">
-                    {new Date(msg.created_at).toLocaleString('pt-BR')}
-                  </td>
-                </tr>
-              ))}
-              {recent_inbound_messages.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-fg-muted-token">
-                    Nenhuma mensagem recebida recentemente
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Tabela<(typeof recent_inbound_messages)[number]>
+          itens={recent_inbound_messages}
+          chave={(m) => String(m.id)}
+          rotuloDaLinha={(m) => `Mensagem de ${m.from_number}`}
+          vazio={{ titulo: 'Nenhuma mensagem recebida recentemente' }}
+          colunas={[
+            { chave: 'de', cabecalho: 'De', render: (m) => m.from_number },
+            { chave: 'tipo', cabecalho: 'Tipo', classe: 'max-lg:hidden', render: (m) => m.message_type },
+            {
+              chave: 'texto',
+              cabecalho: 'Mensagem',
+              render: (m) => (
+                <span className="block max-w-xs truncate">{m.text_body || '—'}</span>
+              ),
+            },
+            {
+              chave: 'quando',
+              cabecalho: 'Data',
+              render: (m) => new Date(m.created_at).toLocaleString('pt-BR'),
+            },
+          ]}
+        />
       </Card>
 
       {/* Server Info */}

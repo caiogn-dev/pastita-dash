@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Card, Button, StatusBadge, Modal, Input, PageLoading } from '../../components/common';
-import { StatCard, PageShell } from '../../components/ui';
+import { StatCard, PageShell, Tabela } from '../../components/ui';
 import { whatsappService, getErrorMessage } from '../../services';
 import { WhatsAppAccount, MessageTemplate } from '../../types';
 
@@ -291,50 +291,29 @@ export const AccountDetailPage: React.FC = () => {
 
         {/* Templates */}
         <Card title={`Templates de Mensagem (${templates.length})`}>
-          {templates.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted-token uppercase">
-                      Nome
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted-token uppercase">
-                      Idioma
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted-token uppercase">
-                      Categoria
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted-token uppercase">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {templates.map((template) => (
-                    <tr key={template.id}>
-                      <td className="px-4 py-3 text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-                        {template.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-fg-muted-token">
-                        {template.language}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-fg-muted-token">
-                        {template.category}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={template.status} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-fg-muted-token text-center py-8">
-              Nenhum template encontrado. Clique em "Sincronizar Templates" para importar.
-            </p>
-          )}
+          <Tabela<(typeof templates)[number]>
+            itens={templates}
+            chave={(t) => String(t.id)}
+            rotuloDaLinha={(t) => `Template ${t.name}`}
+            vazio={{
+              titulo: 'Nenhum template importado',
+              descricao: 'Use "Sincronizar templates" para trazer os que já estão aprovados na Meta.',
+            }}
+            colunas={[
+              {
+                chave: 'nome',
+                cabecalho: 'Nome',
+                render: (t) => <span className="font-medium">{t.name}</span>,
+              },
+              { chave: 'idioma', cabecalho: 'Idioma', classe: 'max-lg:hidden', render: (t) => t.language },
+              { chave: 'categoria', cabecalho: 'Categoria', render: (t) => t.category },
+              {
+                chave: 'status',
+                cabecalho: 'Status',
+                render: (t) => <StatusBadge status={t.status} />,
+              },
+            ]}
+          />
         </Card>
 
       {/* Rotate Token Modal */}

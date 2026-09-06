@@ -10,7 +10,8 @@ import type {
   SlaReport, CancellationsReport, SchedulingReport, CashHistoryReport, StaffReport, DateRange,
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
-import { SectionCard, EmptyNote, MiniTable, RankedList, ExportCsvButton, formatBRL } from './shared';
+import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL } from './shared';
+import { Tabela } from '../../../components/ui';
 
 const STAGE_LABELS: Record<string, string> = {
   confirmacao: 'Até confirmar',
@@ -124,25 +125,53 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
           />
         }
       >
-        {(cash.data?.sessions?.length ?? 0) === 0 ? (
-          <EmptyNote text="Nenhum caixa fechado no período." />
-        ) : (
-          <MiniTable
-            headers={[
-              { label: 'Abertura' }, { label: 'Operador' },
-              { label: 'Esperado', align: 'right' }, { label: 'Contado', align: 'right' }, { label: 'Quebra', align: 'right' },
-            ]}
-            rows={(cash.data?.sessions ?? []).map((s) => [
-              fmtDate(s.opened_at),
-              s.closed_by || s.opened_by || '—',
-              s.expected_amount != null ? formatBRL(s.expected_amount) : '—',
-              s.counted_amount != null ? formatBRL(s.counted_amount) : '—',
-              <span key="d" className={s.difference != null && s.difference < 0 ? 'text-red-500 font-semibold' : ''}>
-                {s.difference != null ? formatBRL(s.difference) : '—'}
-              </span>,
-            ])}
-          />
-        )}
+        <Tabela<NonNullable<typeof cash.data>['sessions'][number]>
+          itens={cash.data?.sessions ?? []}
+          chave={(s) => String(s.id ?? s.opened_at)}
+          rotuloDaLinha={(s) => `Caixa de ${fmtDate(s.opened_at)}`}
+          vazio={{ titulo: 'Nenhum caixa fechado no período' }}
+          colunas={[
+            { chave: 'abertura', cabecalho: 'Abertura', render: (s) => fmtDate(s.opened_at) },
+            {
+              chave: 'operador',
+              cabecalho: 'Operador',
+              render: (s) => s.closed_by || s.opened_by || '—',
+            },
+            {
+              chave: 'esperado',
+              cabecalho: 'Esperado',
+              alinhamento: 'direita',
+              classe: 'tabular-nums',
+              render: (s) => (s.expected_amount != null ? formatBRL(s.expected_amount) : '—'),
+            },
+            {
+              chave: 'contado',
+              cabecalho: 'Contado',
+              alinhamento: 'direita',
+              classe: 'tabular-nums',
+              render: (s) => (s.counted_amount != null ? formatBRL(s.counted_amount) : '—'),
+            },
+            {
+              chave: 'quebra',
+              cabecalho: 'Quebra',
+              alinhamento: 'direita',
+              classe: 'tabular-nums',
+              render: (s) => (
+                // Vermelho só na quebra NEGATIVA: sobra no caixa não é erro do
+                // mesmo tipo que falta, e pintar as duas iguais gasta o sinal.
+                <span
+                  className={
+                    s.difference != null && s.difference < 0
+                      ? 'font-semibold text-[var(--danger)]'
+                      : ''
+                  }
+                >
+                  {s.difference != null ? formatBRL(s.difference) : '—'}
+                </span>
+              ),
+            },
+          ]}
+        />
       </SectionCard>
     </div>
   );

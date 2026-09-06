@@ -17,6 +17,7 @@ import { intentService } from '../../services/intents';
 import { automationLogService } from '../../services/automation';
 import toast from 'react-hot-toast';
 import type { Conversation, Message, IntentLog, AutomationLog } from '../../types';
+import { Tabela } from '../../components/ui';
 import './DebugDashboard.css';
 
 // Note: DebugDashboardPage uses CSS classes from DebugDashboard.css
@@ -241,112 +242,117 @@ const DebugDashboardPage: React.FC = () => {
         ) : activeTab === 'intents' ? (
           <div className="intents-section">
             <h2>O que o atendimento automático entendeu</h2>
-            {intentLogs.length === 0 ? (
-              <div className="empty-state">Ainda não houve nenhuma conversa por aqui</div>
-            ) : (
-              <div className="logs-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Hora</th>
-                      <th>Telefone</th>
-                      <th>Mensagem</th>
-                      <th>Intenção</th>
-                      <th>Método</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {intentLogs.map((log) => (
-                      <tr key={log.id}>
-                        <td>
-                          <span className="time">
-                            {format(new Date(log.created_at), 'HH:mm:ss', { locale: ptBR })}
-                          </span>
-                        </td>
-                        <td>
-                          <code>{log.phone_number}</code>
-                        </td>
-                        <td className="message-cell">
-                          <span title={log.message_text}>{log.message_text?.substring(0, 40)}</span>
-                        </td>
-                        <td>
-                          <span className="intent-badge">{log.intent_type}</span>
-                        </td>
-                        <td>
-                          <span className={`method-badge ${log.method}`}>
-                            {log.method === 'llm' ? 'IA' : 'Regex'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="status-indicator">
-                            {log.confidence && log.confidence > 0.8 ? (
-                              <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <ExclamationTriangleIcon className="w-4 h-4 text-yellow-500" />
-                            )}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <Tabela<(typeof intentLogs)[number]>
+              itens={intentLogs}
+              chave={(x) => String(x.id)}
+              rotuloDaLinha={(x) => `Mensagem de ${x.phone_number}`}
+              vazio={{ titulo: 'Ainda não houve nenhuma conversa por aqui' }}
+              colunas={[
+                {
+                  chave: 'hora',
+                  cabecalho: 'Hora',
+                  render: (x) => (
+                    <span className="time">
+                      {format(new Date(x.created_at), 'HH:mm:ss', { locale: ptBR })}
+                    </span>
+                  ),
+                },
+                {
+                  chave: 'telefone',
+                  cabecalho: 'Telefone',
+                  render: (x) => <code>{x.phone_number}</code>,
+                },
+                {
+                  chave: 'mensagem',
+                  cabecalho: 'Mensagem',
+                  render: (x) => (
+                    <span className="block max-w-xs truncate" title={x.message_text}>
+                      {x.message_text}
+                    </span>
+                  ),
+                },
+                {
+                  chave: 'intencao',
+                  cabecalho: 'Entendeu como',
+                  render: (x) => <span className="intent-badge">{x.intent_type}</span>,
+                },
+                {
+                  chave: 'metodo',
+                  cabecalho: 'Método',
+                  classe: 'max-lg:hidden',
+                  render: (x) => (
+                    <span className={`method-badge ${x.method}`}>
+                      {x.method === 'llm' ? 'IA' : 'Regex'}
+                    </span>
+                  ),
+                },
+                {
+                  chave: 'confianca',
+                  cabecalho: 'Confiança',
+                  render: (x) =>
+                    x.confidence && x.confidence > 0.8 ? (
+                      <CheckCircleIcon className="h-4 w-4 text-[var(--success)]" />
+                    ) : (
+                      <ExclamationTriangleIcon className="h-4 w-4 text-[var(--warning)]" />
+                    ),
+                },
+              ]}
+            />
           </div>
         ) : (
           <div className="automation-section">
             <h2>O que o atendimento automático respondeu</h2>
-            {automationLogs.length === 0 ? (
-              <div className="empty-state">O atendimento automático ainda não respondeu ninguém</div>
-            ) : (
-              <div className="logs-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Hora</th>
-                      <th>Ação</th>
-                      <th>Detalhes</th>
-                      <th>Status</th>
-                      <th>Resultado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {automationLogs.map((log) => (
-                      <tr key={log.id} className={log.is_error ? 'error-row' : ''}>
-                        <td>
-                          <span className="time">
-                            {format(new Date(log.created_at), 'HH:mm:ss', { locale: ptBR })}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="action-badge">{log.action_type}</span>
-                        </td>
-                        <td className="details-cell">
-                          <code>{log.phone_number}</code>
-                        </td>
-                        <td>
-                          {log.is_error ? (
-                            <XCircleIcon className="w-4 h-4 text-red-500" />
-                          ) : (
-                            <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                          )}
-                        </td>
-                        <td className="result-cell">
-                          {log.is_error && log.error_message ? (
-                            <span className="error-text" title={log.error_message}>
-                              {log.error_message.substring(0, 50)}
-                            </span>
-                          ) : (
-                            <span className="success-text">OK</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <Tabela<(typeof automationLogs)[number]>
+              itens={automationLogs}
+              chave={(x) => String(x.id)}
+              rotuloDaLinha={(x) => `Ação ${x.action_type} às ${format(new Date(x.created_at), 'HH:mm:ss', { locale: ptBR })}`}
+              classeDaLinha={(x) => (x.is_error ? 'error-row' : '')}
+              vazio={{ titulo: 'O atendimento automático ainda não respondeu ninguém' }}
+              colunas={[
+                {
+                  chave: 'hora',
+                  cabecalho: 'Hora',
+                  render: (x) => (
+                    <span className="time">
+                      {format(new Date(x.created_at), 'HH:mm:ss', { locale: ptBR })}
+                    </span>
+                  ),
+                },
+                {
+                  chave: 'acao',
+                  cabecalho: 'Ação',
+                  render: (x) => <span className="action-badge">{x.action_type}</span>,
+                },
+                {
+                  chave: 'telefone',
+                  cabecalho: 'Telefone',
+                  render: (x) => <code>{x.phone_number}</code>,
+                },
+                {
+                  chave: 'status',
+                  cabecalho: 'Status',
+                  render: (x) =>
+                    x.is_error ? (
+                      <XCircleIcon className="h-4 w-4 text-[var(--danger)]" />
+                    ) : (
+                      <CheckCircleIcon className="h-4 w-4 text-[var(--success)]" />
+                    ),
+                },
+                {
+                  chave: 'resultado',
+                  cabecalho: 'Resultado',
+                  classe: 'max-lg:hidden',
+                  render: (x) =>
+                    x.is_error && x.error_message ? (
+                      <span className="error-text" title={x.error_message}>
+                        {x.error_message.substring(0, 50)}
+                      </span>
+                    ) : (
+                      <span className="success-text">OK</span>
+                    ),
+                },
+              ]}
+            />
           </div>
         )}
       </div>

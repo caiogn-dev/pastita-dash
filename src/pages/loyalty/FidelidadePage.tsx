@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Badge, Button, Card, Input, PageShell, KpiGrid, EmptyState, ChoiceCards,
+  Badge, Button, Card, Input, PageShell, KpiGrid, EmptyState, ChoiceCards, Tabela,
 } from '../../components/ui';
 import {
   UserGroupIcon, GiftIcon, FireIcon, CheckBadgeIcon,
@@ -547,81 +547,88 @@ const FidelidadePage: React.FC = () => {
             }
           />
         ) : (
-          <div className="space-y-3">
-            <table className="w-full text-body">
-              <thead>
-                <tr className="border-b border-border-token text-left">
-                  <th className="overline py-2">Cliente</th>
-                  <th className="overline py-2">Progresso</th>
-                  <th className="overline py-2 text-right">Falta</th>
-                  <th className="overline py-2 text-right">Resgates</th>
-                  <th className="overline py-2 text-right">Grátis disponíveis</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accounts.map((account) => (
-                  <tr
-                    key={account.user_id}
-                    className="border-t border-border-token text-fg-token transition-colors hover:bg-surface-2"
-                  >
-                    <td className="py-2.5">
+          <div className="flex flex-col gap-3">
+            <Tabela<(typeof accounts)[number]>
+              itens={accounts}
+              chave={(a) => String(a.user_id)}
+              rotuloDaLinha={(a) => a.display_name}
+              colunas={[
+                {
+                  chave: 'cliente',
+                  cabecalho: 'Cliente',
+                  render: (a) => (
+                    <div className="min-w-0">
                       {/* Nome e e-mail eram duas colunas. O e-mail sozinho não
                           responde nenhuma pergunta desta tela — vira metadado
                           sob o nome e devolve uma coluna para o que importa. */}
-                      <p className="font-semibold">{account.display_name}</p>
-                      <p className="text-caption text-fg-muted-token">{account.email}</p>
-                    </td>
-                    <td className="py-2">
-                      {/* "7/10" obriga a fazer a conta de cabeça, linha por
-                          linha. A barra responde "quem está quase lá?" de
-                          relance — que é a única pergunta que se faz aqui. */}
-                      <div className="flex items-center gap-2">
+                      <p className="truncate font-semibold">{a.display_name}</p>
+                      <p className="truncate text-caption text-fg-muted-token">{a.email}</p>
+                    </div>
+                  ),
+                },
+                {
+                  chave: 'progresso',
+                  cabecalho: 'Progresso',
+                  render: (a) => (
+                    // "7/10" obriga a fazer a conta de cabeça, linha por linha.
+                    // A barra responde "quem está quase lá?" de relance — que é
+                    // a única pergunta que se faz aqui.
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-1.5 w-20 overflow-hidden rounded-pill bg-surface-2"
+                        role="progressbar"
+                        aria-valuenow={a.progress}
+                        aria-valuemin={0}
+                        aria-valuemax={Number(threshold) || 10}
+                        aria-label={`${a.progress} de ${threshold} itens`}
+                      >
                         <span
-                          className="h-1.5 w-20 overflow-hidden rounded-pill bg-surface-2"
-                          role="progressbar"
-                          aria-valuenow={account.progress}
-                          aria-valuemin={0}
-                          aria-valuemax={Number(threshold) || 10}
-                          aria-label={`${account.progress} de ${threshold} itens`}
-                        >
-                          <span
-                            className="block h-full rounded-pill bg-brand"
-                            style={{
-                              width: `${Math.min(100, (account.progress / (Number(threshold) || 10)) * 100)}%`,
-                            }}
-                          />
-                        </span>
-                        <span className="text-caption tabular-nums text-fg-muted-token">
-                          {account.progress}/{threshold}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 text-right">
-                      {/* Destaque só em quem está a 1: é o corte que vira ação.
-                          Pintar todas as faixas de cor tiraria o sinal do
-                          número que realmente pede um empurrão hoje. */}
-                      {account.falta === 1 ? (
-                        <Badge tone="success">falta 1</Badge>
-                      ) : (
-                        <span className="tabular-nums text-fg-muted-token">
-                          {account.falta}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 text-right tabular-nums text-fg-muted-token">
-                      {account.redeemed_count}
-                    </td>
-                    <td className="py-2.5 text-right">
-                      {account.available_rewards > 0 ? (
-                        <Badge tone="success">{account.available_rewards}</Badge>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          className="block h-full rounded-pill bg-brand"
+                          style={{
+                            width: `${Math.min(100, (a.progress / (Number(threshold) || 10)) * 100)}%`,
+                          }}
+                        />
+                      </span>
+                      <span className="text-caption tabular-nums text-fg-muted-token">
+                        {a.progress}/{threshold}
+                      </span>
+                    </div>
+                  ),
+                },
+                {
+                  chave: 'falta',
+                  cabecalho: 'Falta',
+                  alinhamento: 'direita',
+                  render: (a) =>
+                    // Destaque só em quem está a 1: é o corte que vira ação.
+                    // Pintar todas as faixas tiraria o sinal do número que
+                    // realmente pede um empurrão hoje.
+                    a.falta === 1 ? (
+                      <Badge tone="success">falta 1</Badge>
+                    ) : (
+                      <span className="tabular-nums text-fg-muted-token">{a.falta}</span>
+                    ),
+                },
+                {
+                  chave: 'resgates',
+                  cabecalho: 'Resgates',
+                  alinhamento: 'direita',
+                  classe: 'tabular-nums max-lg:hidden',
+                  render: (a) => a.redeemed_count,
+                },
+                {
+                  chave: 'gratis',
+                  cabecalho: 'Grátis disponíveis',
+                  alinhamento: 'direita',
+                  render: (a) =>
+                    a.available_rewards > 0 ? (
+                      <Badge tone="success">{a.available_rewards}</Badge>
+                    ) : (
+                      '—'
+                    ),
+                },
+              ]}
+            />
             {accountsCount > accounts.length && (
               <Button
                 variant="outline"
