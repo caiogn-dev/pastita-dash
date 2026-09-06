@@ -6,13 +6,12 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  MagnifyingGlassIcon,
   MapPinIcon,
   Cog6ToothIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
-import { Card, Button, Badge, StatCard, PageShell, RowActions, Tabela } from '../../components/ui';
+import { Card, Button, Badge, StatCard, PageShell, RowActions, Tabela, SearchInput } from '../../components/ui';
 import DeliveryZonesMap, { COR_DA_PROMO, corDoAnel } from '../../components/maps/DeliveryZonesMap';
 import { zonasParaCirculos } from '../../components/maps/zonasParaCirculos';
 import {
@@ -517,16 +516,11 @@ export const DeliveryZonesPage: React.FC = () => {
       <Card className="p-3 md:p-4">
         <div className="flex flex-row max-sm:flex-col gap-3 md:gap-4">
           <div className="flex-1">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-fg-muted-token z-10" />
-              <Input
-                type="text"
-                placeholder="Buscar por nome..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+            <SearchInput
+              placeholder="Buscar por nome…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
           <select
             value={filterActive === undefined ? '' : String(filterActive)}

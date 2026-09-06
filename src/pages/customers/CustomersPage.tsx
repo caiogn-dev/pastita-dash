@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ArrowPathIcon,
-  MagnifyingGlassIcon,
   PhoneIcon,
   EnvelopeIcon,
   ShoppingBagIcon,
@@ -24,7 +23,7 @@ import toast from 'react-hot-toast';
 import { PageLoading, EmptyState } from '../../components/common';
 import {
   Card, Button, Badge, RowActions,
-  PageShell, KpiGrid, InsightList, Tabela,
+  PageShell, KpiGrid, InsightList, Tabela, SearchInput,
 } from '../../components/ui';
 import { insightsDeClientes } from './insightsDeClientes';
 import { rotuloDeDias, rotuloDePerfil, type TomDeCrm } from './rotulosDeCrm';
@@ -677,16 +676,15 @@ export const CustomersPage: React.FC = () => {
         </div>
       }
       filtros={
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-muted-token" />
-          <input
-            type="text"
-            placeholder="Buscar por nome, email ou telefone…"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); if (page !== 1) setPage(1); }}
-            className="w-72 max-sm:w-full bg-surface border border-border-token text-fg-token placeholder-fg-muted-token rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand transition-colors"
-          />
-        </div>
+        <SearchInput
+          className="w-72 max-sm:w-full"
+          placeholder="Buscar por nome, e-mail ou telefone…"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            if (page !== 1) setPage(1);
+          }}
+        />
       }
     >
 

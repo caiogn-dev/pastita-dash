@@ -8,13 +8,12 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  MagnifyingGlassIcon,
   TagIcon,
   AdjustmentsHorizontalIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import { StatCard, RowActions, FormStepper, InsightList, Tabela } from '../../components/ui';
+import { StatCard, RowActions, FormStepper, InsightList, Tabela, SearchInput } from '../../components/ui';
 import { insightsDeCupons } from './insightsDeCupons';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
 import { getCategories, StoreCategory } from '../../services/storesApi';
@@ -322,16 +321,11 @@ export const CouponsPage: React.FC = () => {
       <Card className="p-3 md:p-4">
         <div className="flex flex-row max-sm:flex-col gap-3 md:gap-4">
           <div className="flex-1">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-fg-muted-token" />
-              <Input
-                type="text"
-                placeholder="Buscar por código..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+            <SearchInput
+              placeholder="Buscar por código…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
           <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3">
             <select

@@ -196,22 +196,38 @@ export interface SearchInputProps extends Omit<InputProps, 'leftIcon'> {
 }
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
-  ({ className, onSearch, loading, ...props }, ref) => {
-    const [value, setValue] = useState('');
+  ({ className, onSearch, loading, value, onChange, ...props }, ref) => {
+    // Controlado quando o chamador manda `value`; sozinho quando não manda.
+    //
+    // A versão anterior guardava o texto num useState interno e ignorava o
+    // `value` de fora. Toda lista do painel quer a busca filtrando enquanto
+    // se digita, com o texto vivendo no estado da PÁGINA — porque ele também
+    // vai para a URL, para o debounce e para a chamada da API. Um campo que
+    // não deixa o chamador ser dono do valor não serve para esse caso, e foi
+    // por isso que oito telas redesenharam a lupa com um input atrás.
+    const [interno, setInterno] = useState('');
+    const controlado = value !== undefined;
+    const texto = controlado ? String(value) : interno;
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter' && onSearch) {
-        onSearch(value);
-      }
+    const mudar = (novoTexto: string) => {
+      if (!controlado) setInterno(novoTexto);
+      onChange?.({
+        target: { value: novoTexto },
+      } as React.ChangeEvent<HTMLInputElement>);
     };
 
     return (
       <Input
         ref={ref}
         type="search"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
+        value={texto}
+        onChange={(e) => mudar(e.target.value)}
+        onKeyDown={(e) => {
+          // `texto`, não o estado interno: com o campo controlado, o estado
+          // interno fica sempre vazio e o Enter buscava por nada.
+          if (e.key === 'Enter') onSearch?.(texto);
+          props.onKeyDown?.(e);
+        }}
         leftIcon={
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -223,10 +239,12 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-          ) : value ? (
+          ) : texto ? (
             <button
               type="button"
-              onClick={() => setValue('')}
+              // Sem nome acessível, o X era um botão anônimo no meio da tela.
+              aria-label="Limpar busca"
+              onClick={() => mudar('')}
               className="cursor-pointer hover:text-fg-token"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -11,7 +11,7 @@ import {
   // ClockIcon em três e TagIcon em dois: com o mesmo desenho repetido o
   // operador para de usar o ícone para se localizar e lê tudo de novo.
   ClipboardDocumentListIcon, PrinterIcon, BanknotesIcon, FireIcon, CubeIcon,
-  TicketIcon, GlobeAltIcon, ChartBarIcon, ShareIcon,
+  TicketIcon, GlobeAltIcon, ChartBarIcon,
   UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
   ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';

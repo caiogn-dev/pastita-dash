@@ -27,13 +27,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   ArrowDownTrayIcon,
-  MagnifyingGlassIcon,
   ReceiptPercentIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { Card, Badge, Button, PageShell, KpiGrid, EmptyState, Tabela } from '../../components/ui';
+import { Card, Badge, Button, PageShell, KpiGrid, EmptyState, Tabela, SearchInput } from '../../components/ui';
 import { PageLoading } from '../../components/common';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { useStore, useDebounce } from '../../hooks';
@@ -234,17 +233,16 @@ export const HistoricoPedidosPage: React.FC = () => {
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-muted-token" />
-              <input
-                type="text"
-                aria-label="Buscar pedido"
-                placeholder="Número do pedido, nome ou telefone…"
-                value={busca}
-                onChange={(e) => { setBusca(e.target.value); mudar('busca', e.target.value); }}
-                className="h-9 w-80 max-sm:w-full rounded-lg border border-border-token bg-surface pl-9 pr-3 text-sm text-fg-token placeholder-fg-muted-token outline-none focus:ring-2 focus:ring-brand"
-              />
-            </div>
+            <SearchInput
+              className="w-80 max-sm:w-full"
+              aria-label="Buscar pedido"
+              placeholder="Número do pedido, nome ou telefone…"
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                mudar('busca', e.target.value);
+              }}
+            />
 
             <select aria-label="Status" className={selectCls} value={status} onChange={(e) => mudar('status', e.target.value)}>
               <option value="">Todos os status</option>

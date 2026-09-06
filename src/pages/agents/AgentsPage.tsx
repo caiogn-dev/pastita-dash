@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   PlusIcon,
-  MagnifyingGlassIcon,
   FunnelIcon,
   CpuChipIcon,
   ArrowPathIcon,
@@ -16,7 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { cn } from '../../utils/cn';
-import { PageShell, KpiGrid } from '../../components/ui';
+import { PageShell, KpiGrid, SearchInput } from '../../components/ui';
 import { AgentCard } from '../../components/agents';
 import agentsService, { Agent, PROVIDER_CONFIGS } from '../../services/agents';
 import type { AgentProvider } from '../../services/agents';
@@ -161,22 +160,12 @@ export const AgentsPage: React.FC = () => {
       {/* Search & Filters */}
       <div className="flex flex-row max-sm:flex-col gap-4 mb-6">
         {/* Search */}
-        <div className="relative flex-1">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Buscar agentes..."
-            className={cn(
-              "w-full pl-10 pr-4 py-2.5 rounded-lg border",
-              "bg-surface",
-              "text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] placeholder-zinc-400",
-              "border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)]",
-              "focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            )}
-          />
-        </div>
+        <SearchInput
+          className="flex-1"
+          placeholder="Buscar agentes…"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
 
         {/* Filters Toggle */}
         <button

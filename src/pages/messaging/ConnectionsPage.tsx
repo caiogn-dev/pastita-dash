@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useConfirm } from '../../hooks';
 import {
-  PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon,
+  PlusIcon, PencilIcon, TrashIcon,
   CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
   LinkIcon, QrCodeIcon, XMarkIcon, ArrowPathIcon, ChartBarIcon,
 } from '@heroicons/react/24/outline';
@@ -18,7 +18,7 @@ import { messengerService } from '../../services/messenger';
 import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
 import { Toggle } from './Toggle';
-import { PageShell } from '../../components/ui';
+import { PageShell, SearchInput } from '../../components/ui';
 
 // ─── Platform config ──────────────────────────────────────────────────────────
 
@@ -388,15 +388,13 @@ export default function ConnectionsPage() {
       titulo="Conexões de mensagens"
       acoes={<Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-5 h-5" />}>Nova Conexão</Button>}
       filtros={
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-              <input
-                className="pl-9 pr-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500 w-64"
-                placeholder="Buscar conexões..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+            <SearchInput
+              className="w-64"
+              aria-label="Buscar conexões"
+              placeholder="Buscar conexões…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
       }
     >
 

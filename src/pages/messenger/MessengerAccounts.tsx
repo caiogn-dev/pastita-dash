@@ -5,12 +5,12 @@ import React, { useState, useEffect } from 'react';
 import {
   PlusIcon, PencilIcon, TrashIcon, ArrowPathIcon,
   CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
-  MagnifyingGlassIcon, XMarkIcon,
+ XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { Button, Badge } from '../../components/common';
 import { messengerService, MessengerAccount } from '../../services/messenger';
 import { useConfirm } from '../../hooks';
-import { PageShell } from '../../components/ui';
+import { PageShell, SearchInput } from '../../components/ui';
 
 export default function MessengerAccounts() {
   const [ConfirmDialog, confirm] = useConfirm();
@@ -85,16 +85,13 @@ export default function MessengerAccounts() {
       titulo="Contas do Messenger"
       acoes={<Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-4 h-4" />}>Adicionar Conta</Button>}
       filtros={
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-            <input
-              aria-label="Buscar contas"
-              className="pl-9 pr-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500 w-56"
-              placeholder="Buscar contas..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <SearchInput
+            className="w-56"
+            aria-label="Buscar contas"
+            placeholder="Buscar contas…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
       }
     >
 

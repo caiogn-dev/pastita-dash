@@ -5,7 +5,6 @@ import {
   ArrowUpTrayIcon,
   CheckCircleIcon,
   EnvelopeIcon,
-  MagnifyingGlassIcon,
   PlusIcon,
   ShoppingBagIcon,
   UserGroupIcon,
@@ -13,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Card, Modal, Loading } from '../../components/common';
-import { PageShell, Tabela, RowActions, Badge } from '../../components/ui';
+import { PageShell, Tabela, RowActions, Badge, SearchInput } from '../../components/ui';
 import { useStore } from '../../hooks';
 import { marketingService, Subscriber } from '../../services/marketingService';
 import { useRootStore } from '../../stores/rootStore';
@@ -343,13 +342,11 @@ export const SubscribersPage: React.FC = () => {
       <Card className="p-4">
         <div className="flex flex-col gap-4 md:flex-row">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-fg-muted-token" />
-            <input
-              type="text"
+            <SearchInput
+              aria-label="Buscar cliente"
+              placeholder="Buscar por e-mail, nome ou telefone…"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-lg border border-border-token py-2 pl-10 pr-4 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
-              placeholder="Buscar por e-mail, nome ou telefone..."
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <select

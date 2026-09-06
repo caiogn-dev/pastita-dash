@@ -54,7 +54,10 @@ describe('MessengerAccounts — acessibilidade dos controles icon-only', () => {
     render(<MessengerAccounts />);
     await waitFor(() => expect(screen.getByText('Loja Oficial FB')).toBeInTheDocument());
 
-    expect(screen.getByRole('textbox', { name: /buscar contas/i })).toBeInTheDocument();
+    // `searchbox` e não `textbox`: o campo comum é `type="search"`, e essa é
+    // a diferença que faz o leitor de tela anunciar "campo de busca" em vez de
+    // "campo de texto". A busca desenhada à mão aqui era um input comum.
+    expect(screen.getByRole('searchbox', { name: /buscar contas/i })).toBeInTheDocument();
   });
 
   it('expõe nome acessível no botão de fechar o modal', async () => {
