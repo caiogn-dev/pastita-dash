@@ -3,8 +3,36 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## ⚠️ BLOQUEIO DE INFRA (2026-09-06): CI do GitHub Actions nunca roda (sem runner)
+
+**Achado que precisa do dono — não é corrigível por código.** O job `build` do
+CI (`.github/workflows/ci.yml`) aparece **vermelho em TODO commit** (main e PRs),
+mas a causa **não é o código**: nenhum runner é alocado. Evidência via API:
+
+- **0 execuções bem-sucedidas em 447** (`status=success` → `total_count: 0`).
+- Toda run dura **2–4 s** e termina em `failure` com **`runner_id: 0`** e
+  **nenhum step** (nem `npm ci` chega a rodar). Ex.: runs #447, #446, #445 (main),
+  #444, #443 … #433 — todas iguais.
+- Local, com paridade ao CI (Node 22): `npm run build` ok, `npm run lint`
+  **0 errors**, `npm test` **1435/1435**. O código passa; o runner é que não sobe.
+
+**Causa provável:** limite de gasto / billing do GitHub Actions esgotado (ou
+Actions desabilitado) na conta `caiogn-dev`. Runner `ubuntu-latest` (hospedado
+pela GitHub) exige minutos/billing ativos em repo privado.
+
+**Ação do dono (fora do código):** GitHub → Settings → Billing → **Actions**
+(spending limit / método de pagamento), e Settings → Actions (habilitado). Deploy
+de produção **não** depende disso — a Vercel builda por conta própria e os previews
+saíram **Ready**. Enquanto o billing não voltar, o check `build` seguirá vermelho
+em qualquer PR, independentemente do diff.
+
+> Nota: o loop de evolução não consegue usar o CI como portão. Até o billing
+> voltar, a verificação é local (build+lint+test) + preview da Vercel.
+
 ## Baseline atual (2026-09-06)
 
+- **CI do GitHub Actions:** vermelho por falta de runner (ver bloqueio acima),
+  não por código. Local passa em paridade.
 - `npm ci`: ok. `npm audit`: **10 vulnerabilidades** (1 low, 3 moderate, 6 high),
   transitivas (dev/build e `react-router`); bumps majores seguem como fatia
   dedicada com validação de build.
