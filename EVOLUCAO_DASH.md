@@ -3,6 +3,64 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-02)
+
+- `npm ci`: ok. `npm audit`: **10 vulnerabilidades** (1 low, 3 moderate, 6 high),
+  transitivas — seguem como fatia dedicada de bump major com validação de build.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1258 verdes / 224 suítes**; **1 falha PRÉ-EXISTENTE** em
+  `precoVigente.cobertura.test.ts` (campanha de WhatsApp lê `product.price` cru
+  em `variaveisDaOferta.ts:33` em vez do `preco_vigente`) — registrada abaixo,
+  NÃO é regressão desta fatia; é o próximo item de maior valor.
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~17s).
+- Nota de ambiente: o `node_modules` do runner perdeu `recharts` no meio da
+  execução (disco ok); `npm ci` restaurou. Não afeta o código.
+
+### Backlog priorizado (aberto)
+
+1. **Preço em campanha de WhatsApp lê `product.price` cru** (ALTO valor —
+   manda preço POR ESCRITO ao cliente): `pages/marketing/whatsapp/variaveisDaOferta.ts:33`
+   usa `produto.price` (valor de CADASTRO) em vez do `preco_vigente` do dia.
+   O teste-guarda `precoVigente.cobertura.test.ts` já falha vermelho. Fix
+   envolve o chamador da campanha resolver `preco_vigente` antes de montar a
+   oferta. Próxima fatia.
+2. **Deps / segurança**: bump major de `react-router` 6→7 e `vite` — fatia
+   dedicada com validação de build.
+
+## 2026-09-02 — Pedidos: coluna "Entregue" corta o dia pelo fuso de Brasília
+
+- **Medido (nível de código):** `pedidosDaColuna` (`src/pages/orders/pedidosDoQuadro.ts`)
+  filtra a coluna de finalizados por "mesmo dia que agora". O `mesmoDia` usava
+  `getFullYear/getMonth/getDate`, que leem o dia no fuso **ambiente** (do
+  navegador — ou do CI em UTC). O backend manda `created_at` com offset
+  (`…-03:00`); um pedido entregue às 21h+ de Brasília vira o dia SEGUINTE em
+  UTC e some do "Entregue" no meio do pico do delivery. O teste
+  `pedidosDoQuadro.test.ts` ("não arrasta o que foi entregue ontem") já estava
+  **vermelho no CI** (`ubuntu-latest` roda em UTC) — bug latente também em
+  produção para qualquer navegador fora do fuso do Brasil.
+- **Mudado (1 arquivo de produção):** `mesmoDia` passou a comparar o dia
+  renderizado em `America/Sao_Paulo` via `Intl.DateTimeFormat('en-CA', …)`.
+  Para um navegador já em horário de Brasília o resultado é **idêntico** ao de
+  antes — zero regressão para o operador; corrige a fragilidade de fuso e deixa
+  o CI verde.
+- **Teste (TDD):** o teste pré-existente virou o "vermelho antes"; adicionei
+  um caso explícito ("o corte de 'hoje' é o dia de Brasília, não o fuso de quem
+  olha") cobrindo pedidos das 22h e 00h30 de Brasília. Vermelho antes (2/2),
+  verde depois (12/12 na suíte).
+- **Multi-tenant (revisão do Codex, P1):** ancorar num fuso FIXO (São Paulo)
+  esconderia os pedidos de hoje de uma loja fora de Brasília — ex.: Manaus
+  (-04) às 23h30 já seria o dia seguinte em SP. A loja já expõe `timezone`
+  (`storesApi.ts:73`); `pedidosDaColuna` passou a receber `fusoDaLoja` e o
+  `OrdersPage` passa `store?.timezone` (via `useStore()`). Fuso ausente/ruim
+  cai em Brasília sem lançar (formatadores memoizados por fuso). Testes novos
+  cobrem o caso Manaus e o fallback.
+- **Antes/depois:** suíte `pedidosDoQuadro` 10/12 → **14/14**; total do repo
+  passa a ter só a falha pré-existente do preço; `tsc --noEmit` limpo e
+  `vite build` ok nos dois lados.
+- **Próximo passo priorizado:** item 1 do backlog acima (preço da campanha de
+  WhatsApp) — que também limpa os 2 errors de lint pré-existentes em
+  `variaveisDaOferta.ts` e deixaria o CI da base verde.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
