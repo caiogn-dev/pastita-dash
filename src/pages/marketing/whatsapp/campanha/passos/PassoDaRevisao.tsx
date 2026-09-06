@@ -98,7 +98,7 @@ export const PassoDaRevisao: React.FC<Props> = ({
                       {selectedOfferProducts.map(product => (
                         <div key={product.id} className="flex items-center justify-between gap-3 text-sm">
                           <span className="text-fg-token">{product.name}</span>
-                          <span className="font-medium text-green-700">{formatCurrency(precoVigenteDoProduto(product))}</span>
+                          <span className="font-medium text-[var(--success)]">{formatCurrency(precoVigenteDoProduto(product))}</span>
                         </div>
                       ))}
                     </div>
@@ -160,9 +160,11 @@ export const PassoDaRevisao: React.FC<Props> = ({
             </div>
           </Card>
 
-          {/* Warning */}
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+          {/* O aviso que evita bloqueio da conta. Tokens e não `yellow-*`
+              cru: no escuro o par cru precisa ser escrito à mão e, quando
+              alguém esquece a metade, o texto some no fundo. */}
+          <div className="rounded-lg border border-[var(--warning)]/30 bg-[var(--warning-soft)] p-4">
+            <p className="text-sm text-warning-token">
               ⚠️ <strong>Atenção:</strong> Certifique-se de que todos os contatos consentiram em receber mensagens. 
               O envio de spam pode resultar em bloqueio da sua conta WhatsApp Business.
             </p>
