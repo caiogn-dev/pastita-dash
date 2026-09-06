@@ -76,21 +76,21 @@ describe('CouponsPage — acessibilidade dos botões de ação', () => {
     mockedService.getStats.mockResolvedValue({} as never);
   });
 
-  it('nomeia os botões de editar e excluir com o código do cupom (mobile e desktop)', async () => {
+  it('celular e desktop oferecem a MESMA ação, com o cupom no nome', async () => {
     renderPage();
 
-    // Card mobile + linha desktop renderizam ambos no jsdom, mas com formas
-    // diferentes: no card as ações são botões diretos; na linha elas moram num
-    // kebab, para não gastar largura de tabela nem deixar o "excluir" colado no
-    // "editar". O que NÃO muda é a garantia: toda porta de entrada de ação diz
-    // de qual cupom se trata.
-    const editar = await screen.findAllByRole('button', { name: /Editar cupom TESTE10/i });
-    const excluir = await screen.findAllByRole('button', { name: /Excluir cupom TESTE10/i });
+    // Antes eram duas listas escritas à mão no mesmo arquivo, e elas divergiam
+    // na ação: no cartão do celular, dois ícones nus (lápis e lixeira) coladinhos
+    // — a lixeira exatamente onde o polegar cai ao rolar; na linha do desktop,
+    // um kebab. Hoje as duas apresentações saem da mesma definição de coluna,
+    // então a ação é uma só. O jsdom não aplica CSS, então as duas aparecem;
+    // no navegador, `md:hidden` esconde a que não é da vez, do olho e do
+    // leitor de tela.
     const kebab = await screen.findAllByRole('button', { name: /Ações do cupom TESTE10/i });
+    expect(kebab).toHaveLength(2);
 
-    expect(editar).toHaveLength(1);
-    expect(excluir).toHaveLength(1);
-    expect(kebab).toHaveLength(1);
+    // E o destrutivo não fica mais solto na superfície do cartão.
+    expect(screen.queryByRole('button', { name: /Excluir cupom TESTE10/i })).toBeNull();
   });
 
   it('o menu de ações da linha nomeia o cupom, e não só a ação', async () => {
@@ -98,7 +98,7 @@ describe('CouponsPage — acessibilidade dos botões de ação', () => {
     // porque o MENU carrega o código — senão o leitor de tela anuncia
     // "Editar" sem dizer de quê, que é o mesmo defeito dos ícones nus.
     renderPage();
-    const kebab = await screen.findByRole('button', { name: /Ações do cupom TESTE10/i });
+    const kebab = (await screen.findAllByRole('button', { name: /Ações do cupom TESTE10/i }))[0];
     fireEvent.click(kebab);
 
     const menu = screen.getByRole('menu', { name: /Ações do cupom TESTE10/i });

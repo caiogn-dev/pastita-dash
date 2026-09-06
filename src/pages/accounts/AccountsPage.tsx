@@ -6,20 +6,19 @@ import { useNavigate } from 'react-router-dom';
 import {
   PlusIcon,
   ArrowPathIcon,
-  EllipsisVerticalIcon,
   TrashIcon,
   PowerIcon,
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Badge, Modal } from '../../components/common';
+import { Button, Badge, Modal } from '../../components/common';
 import { whatsappService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { WhatsAppAccount } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ACCOUNT_STATUS_LABELS } from '../../utils/rotulosDeEstado';
-import { PageShell } from '../../components/ui';
+import { PageShell, Tabela, RowActions } from '../../components/ui';
 
 const STATUS_VARIANT: Record<string, string> = {
   active: 'success',
@@ -32,21 +31,12 @@ export const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
   const { accounts, setAccounts, setLoading, isLoading, updateAccount, removeAccount } = useAccountStore();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<WhatsAppAccount | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadAccounts();
   }, []);
-
-  // Close action menu when clicking outside
-  useEffect(() => {
-    if (!actionMenuId) return;
-    const handler = () => setActionMenuId(null);
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
-  }, [actionMenuId]);
 
   const loadAccounts = async () => {
     setLoading(true);
@@ -71,7 +61,6 @@ export const AccountsPage: React.FC = () => {
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
-    setActionMenuId(null);
   };
 
   const handleSyncTemplates = async (account: WhatsAppAccount) => {
@@ -81,7 +70,6 @@ export const AccountsPage: React.FC = () => {
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
-    setActionMenuId(null);
   };
 
   const handleDelete = async () => {
@@ -109,127 +97,113 @@ export const AccountsPage: React.FC = () => {
       }
     >
 
-        {/* Table */}
-        <Card noPadding>
-          {isLoading ? (
-            <div className="p-4 flex flex-col gap-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-14 animate-pulse bg-surface-2 dark:bg-gray-700 rounded-lg" />
-              ))}
-            </div>
-          ) : accounts.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-fg-muted">Nenhuma conta cadastrada</p>
-              <Button
-                className="mt-4"
-                onClick={() => navigate('/accounts/new')}
-                leftIcon={<PlusIcon className="w-4 h-4" />}
+      <Tabela<WhatsAppAccount>
+        itens={accounts}
+        chave={(c) => c.id}
+        rotuloDaLinha={(c) => `Abrir conta ${c.name}`}
+        onAbrir={(c) => navigate(`/accounts/${c.id}`)}
+        carregando={isLoading}
+        vazio={{
+          titulo: 'Nenhuma conta cadastrada',
+          descricao: 'Conecte um número de WhatsApp para o robô poder atender.',
+          acao: (
+            <Button leftIcon={<PlusIcon className="w-5 h-5" />} onClick={() => navigate('/accounts/new')}>
+              Nova Conta
+            </Button>
+          ),
+        }}
+        colunas={[
+          {
+            chave: 'nome',
+            cabecalho: 'Nome',
+            render: (c) => (
+              <div className="min-w-0">
+                <p className="font-medium text-fg-token">{c.name}</p>
+                <p className="text-xs text-fg-muted-token">
+                  {c.display_phone_number || c.phone_number}
+                </p>
+              </div>
+            ),
+          },
+          {
+            chave: 'phone_id',
+            cabecalho: 'ID do número',
+            soNoDesktop: true,
+            render: (c) => (
+              <span className="font-mono text-xs text-fg-muted-token">{c.phone_number_id}</span>
+            ),
+          },
+          {
+            chave: 'status',
+            cabecalho: 'Status',
+            render: (c) => (
+              <Badge variant={STATUS_VARIANT[c.status] as never}>
+                {ACCOUNT_STATUS_LABELS[c.status] ?? c.status}
+              </Badge>
+            ),
+          },
+          {
+            chave: 'auto',
+            cabecalho: 'Resposta automática',
+            render: (c) => (
+              <span
+                className={
+                  c.auto_response_enabled
+                    ? 'text-sm text-[var(--success)]'
+                    : 'text-sm text-fg-muted-token'
+                }
               >
-                Adicionar Conta
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border-primary text-left">
-                    <th className="px-4 py-3 text-fg-muted font-medium">Nome</th>
-                    <th className="px-4 py-3 text-fg-muted font-medium">Phone ID</th>
-                    <th className="px-4 py-3 text-fg-muted font-medium">Status</th>
-                    <th className="px-4 py-3 text-fg-muted font-medium">Auto Resposta</th>
-                    <th className="px-4 py-3 text-fg-muted font-medium">Criado em</th>
-                    <th className="px-4 py-3 text-fg-muted font-medium w-20">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {accounts.map((account) => (
-                    <tr
-                      key={account.id}
-                      className="border-b border-border-primary hover:bg-bg-hover cursor-pointer transition-colors"
-                      onClick={() => navigate(`/accounts/${account.id}`)}
-                    >
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium text-fg-primary">{account.name}</p>
-                          <p className="text-xs text-fg-muted">{account.display_phone_number || account.phone_number}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-xs text-fg-muted">{account.phone_number_id}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={STATUS_VARIANT[account.status] as any}>
-                          {ACCOUNT_STATUS_LABELS[account.status] ?? account.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={account.auto_response_enabled ? 'text-green-600 dark:text-green-400 text-sm' : 'text-fg-muted text-sm'}>
-                          {account.auto_response_enabled ? 'Ativada' : 'Desativada'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-fg-muted">
-                        {format(new Date(account.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                      </td>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                        <div className="relative">
-                          <button
-                            className="p-1.5 rounded hover:bg-bg-hover transition-colors"
-                            aria-label="Ações"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActionMenuId(actionMenuId === account.id ? null : account.id);
-                            }}
-                          >
-                            <EllipsisVerticalIcon className="w-5 h-5 text-fg-muted" />
-                          </button>
-                          {actionMenuId === account.id && (
-                            <div
-                              className="absolute right-0 top-8 z-50 bg-bg-card border border-border-primary rounded-lg shadow-lg py-1 min-w-[180px]"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-bg-hover text-fg-primary"
-                                onClick={() => handleToggleStatus(account)}
-                              >
-                                <PowerIcon className="w-4 h-4" />
-                                {account.status === 'active' ? 'Desativar' : 'Ativar'}
-                              </button>
-                              <button
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-bg-hover text-fg-primary"
-                                onClick={() => handleSyncTemplates(account)}
-                              >
-                                <ArrowPathIcon className="w-4 h-4" />
-                                Sincronizar Templates
-                              </button>
-                              <button
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-bg-hover text-fg-primary"
-                                onClick={() => { navigate(`/accounts/${account.id}`); setActionMenuId(null); }}
-                              >
-                                <ChartBarIcon className="w-4 h-4" />
-                                Ver Detalhes
-                              </button>
-                              <button
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-bg-hover text-red-600 dark:text-red-400"
-                                onClick={() => {
-                                  setSelectedAccount(account);
-                                  setIsDeleteOpen(true);
-                                  setActionMenuId(null);
-                                }}
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                                Excluir
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+                {c.auto_response_enabled ? 'Ativada' : 'Desativada'}
+              </span>
+            ),
+          },
+          {
+            chave: 'criado',
+            cabecalho: 'Criado em',
+            soNoDesktop: true,
+            render: (c) => format(new Date(c.created_at), 'dd/MM/yyyy', { locale: ptBR }),
+          },
+          {
+            chave: 'acoes',
+            cabecalho: 'Ações',
+            alinhamento: 'direita',
+            render: (c) => (
+              // Esta página desenhava o próprio menu kebab — o terceiro do
+              // painel, com o próprio z-index, o próprio fechar-ao-clicar-fora
+              // (que não tinha) e o próprio vermelho do destrutivo.
+              <RowActions
+                rotulo={`Ações da conta ${c.name}`}
+                acoes={[
+                  {
+                    rotulo: c.status === 'active' ? 'Desativar' : 'Ativar',
+                    icone: <PowerIcon className="w-4 h-4" />,
+                    onClick: () => handleToggleStatus(c),
+                  },
+                  {
+                    rotulo: 'Sincronizar templates',
+                    icone: <ArrowPathIcon className="w-4 h-4" />,
+                    onClick: () => handleSyncTemplates(c),
+                  },
+                  {
+                    rotulo: 'Ver detalhes',
+                    icone: <ChartBarIcon className="w-4 h-4" />,
+                    onClick: () => navigate(`/accounts/${c.id}`),
+                  },
+                  {
+                    rotulo: 'Excluir',
+                    icone: <TrashIcon className="w-4 h-4" />,
+                    destrutiva: true,
+                    onClick: () => {
+                      setSelectedAccount(c);
+                      setIsDeleteOpen(true);
+                    },
+                  },
+                ]}
+              />
+            ),
+          },
+        ]}
+      />
 
       {/* Delete Modal */}
       <Modal

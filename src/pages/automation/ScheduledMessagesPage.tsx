@@ -21,7 +21,7 @@ import {
   ScheduledMessageStats,
   WhatsAppAccount,
 } from '../../types';
-import { PageShell } from '../../components/ui';
+import { PageShell, Tabela, RowActions } from '../../components/ui';
 
 const statusVariants: Record<string, 'gray' | 'info' | 'success' | 'danger' | 'warning'> = {
   pending: 'info',
@@ -235,108 +235,88 @@ export default function ScheduledMessagesPage() {
         </div>
       </Card>
 
-      {/* Messages List */}
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-surface-2 dark:bg-black">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Destinatário
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Tipo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Agendado Para
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Conta
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-surface dark:bg-zinc-900 divide-y divide-gray-200">
-              {messages.map((message) => (
-                <tr key={message.id} className="hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <p className="font-medium text-fg-token">{message.to_number}</p>
-                      {message.contact_name && (
-                        <p className="text-sm text-fg-muted-token">{message.contact_name}</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-fg-token">
-                      {messageTypeLabels[message.message_type] || message.message_type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-fg-token">
-                      <CalendarIcon className="h-4 w-4 mr-1 text-fg-muted-token" />
-                      {message.scheduled_at ? format(parseISO(message.scheduled_at), "dd/MM/yyyy 'às' HH:mm", {
-                        locale: ptBR,
-                      }) : '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={statusVariants[message.status]}>
-                      {message.status_display}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
-                    {message.account_name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
-                      {message.status === 'pending' && (
-                        <>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => openRescheduleModal(message)}
-                          >
-                            <ClockIcon className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => handleCancel(message.id)}
-                          >
-                            <XMarkIcon className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                      {message.status === 'failed' && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => openRescheduleModal(message)}
-                        >
+      <Tabela<ScheduledMessage>
+        itens={messages}
+        chave={(m) => m.id}
+        rotuloDaLinha={(m) => `Mensagem para ${m.to_number}`}
+        carregando={loading}
+        vazio={{
+          titulo: 'Nenhuma mensagem agendada',
+          descricao: 'Agende uma mensagem para ela sair sozinha na hora marcada.',
+          icone: <ClockIcon className="h-12 w-12" />,
+        }}
+        colunas={[
+          {
+            chave: 'destinatario',
+            cabecalho: 'Destinatário',
+            render: (m) => (
+              <div className="min-w-0">
+                <p className="font-medium text-fg-token">{m.to_number}</p>
+                {m.contact_name && (
+                  <p className="text-sm text-fg-muted-token">{m.contact_name}</p>
+                )}
+              </div>
+            ),
+          },
+          {
+            chave: 'tipo',
+            cabecalho: 'Tipo',
+            render: (m) => messageTypeLabels[m.message_type] || m.message_type,
+          },
+          {
+            chave: 'quando',
+            cabecalho: 'Agendado para',
+            render: (m) => (
+              <div className="flex items-center gap-1 text-sm text-fg-token">
+                <CalendarIcon className="h-4 w-4 text-fg-muted-token" />
+                {m.scheduled_at
+                  ? format(parseISO(m.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                  : '—'}
+              </div>
+            ),
+          },
+          {
+            chave: 'status',
+            cabecalho: 'Status',
+            render: (m) => <Badge variant={statusVariants[m.status]}>{m.status_display}</Badge>,
+          },
+          { chave: 'conta', cabecalho: 'Conta', soNoDesktop: true, render: (m) => m.account_name },
+          {
+            chave: 'acoes',
+            cabecalho: 'Ações',
+            alinhamento: 'direita',
+            render: (m) =>
+              // Eram três botões de ícone nu — relógio, X e seta circular — e
+              // qual deles aparecia dependia do status. Ninguém adivinha que a
+              // seta circular quer dizer "reagendar".
+              m.status === 'pending' || m.status === 'failed' ? (
+                <RowActions
+                  rotulo={`Ações da mensagem para ${m.to_number}`}
+                  acoes={[
+                    {
+                      rotulo: m.status === 'failed' ? 'Tentar de novo' : 'Reagendar',
+                      icone:
+                        m.status === 'failed' ? (
                           <ArrowPathIcon className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {messages.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-fg-muted-token">
-                    Nenhuma mensagem agendada encontrada
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                        ) : (
+                          <ClockIcon className="h-4 w-4" />
+                        ),
+                      onClick: () => openRescheduleModal(m),
+                    },
+                    ...(m.status === 'pending'
+                      ? [{
+                          rotulo: 'Cancelar envio',
+                          icone: <XMarkIcon className="h-4 w-4" />,
+                          destrutiva: true,
+                          onClick: () => handleCancel(m.id),
+                        }]
+                      : []),
+                  ]}
+                />
+              ) : null,
+          },
+        ]}
+      />
 
       {/* Create Modal */}
       <Modal

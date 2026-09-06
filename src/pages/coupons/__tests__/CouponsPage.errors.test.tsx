@@ -64,7 +64,7 @@ describe('CouponsPage — feedback de erro', () => {
     mockedService.createCoupon.mockRejectedValue(new Error('code: cupom duplicado'));
     renderPage();
 
-    const newButtons = await screen.findAllByText('Novo Cupom');
+    const newButtons = await screen.findAllByText('Novo cupom');
     fireEvent.click(newButtons[0]);
 
     fireEvent.change(screen.getByPlaceholderText('Ex: DESCONTO10'), {
@@ -93,7 +93,7 @@ describe('CouponsPage — feedback de erro', () => {
     // Descobrir isso no último passo obriga a voltar depois de já ter
     // preenchido tudo o mais.
     renderPage();
-    fireEvent.click((await screen.findAllByText('Novo Cupom'))[0]);
+    fireEvent.click((await screen.findAllByText('Novo cupom'))[0]);
 
     fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
 

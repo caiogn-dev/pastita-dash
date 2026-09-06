@@ -13,9 +13,8 @@ import {
   companyProfileService,
 } from '../../services/automation';
 import { AutomationLog, CompanyProfile, AutomationLogStats } from '../../types';
-import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
-import { PageShell } from '../../components/ui';
+import { PageShell, Tabela } from '../../components/ui';
 
 const actionTypeLabels: Record<string, string> = {
   message_received: 'Mensagem Recebida',
@@ -36,6 +35,8 @@ const actionTypeColors: Record<string, string> = {
   notification_sent: 'bg-cyan-100 text-cyan-800',
   error: 'bg-red-100 text-red-800',
 };
+
+const POR_PAGINA = 50;
 
 const AutomationLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<AutomationLog[]>([]);
@@ -78,7 +79,7 @@ const AutomationLogsPage: React.FC = () => {
       setLoading(true);
       const params = {
         page,
-        page_size: 50,
+        page_size: POR_PAGINA,
         ...(filters.company_id && { company_id: filters.company_id }),
         ...(filters.action_type && { action_type: filters.action_type }),
         ...(filters.is_error && { is_error: filters.is_error === 'true' }),
@@ -227,132 +228,59 @@ const AutomationLogsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Logs Table */}
-      <div className="bg-surface dark:bg-zinc-900 shadow rounded-lg overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : logs.length === 0 ? (
-          <div className="text-center py-12">
-            <DocumentTextIcon className="mx-auto h-12 w-12 text-fg-muted-token" />
-            <h3 className="mt-2 text-sm font-medium text-fg-token">Nenhum log encontrado</h3>
-            <p className="mt-1 text-sm text-fg-muted-token">
-              Os logs aparecerão aqui conforme as automações são executadas.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-surface-2 dark:bg-black">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Data/Hora
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Empresa
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Ação
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Telefone
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Descrição
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-surface dark:bg-zinc-900 divide-y divide-gray-200">
-                {logs.map((log) => (
-                  <tr
-                    key={log.id}
-                    className="hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black cursor-pointer"
-                    onClick={() => setSelectedLog(log)}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
-                      {formatDate(log.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-token">
-                      {log.company_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        actionTypeColors[log.action_type || ''] || 'bg-surface-2 text-fg-token'
-                      }`}>
-                        {actionTypeLabels[log.action_type || ''] || log.action_type || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
-                      {log.phone_number || '-'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-fg-muted-token max-w-xs truncate">
-                      {log.description}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {log.is_error ? (
-                        <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />
-                      ) : (
-                        <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalCount > 50 && (
-          <div className="bg-surface dark:bg-zinc-900 px-4 py-3 flex items-center justify-between border-t border-border-token dark:border-zinc-800 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
+      <Tabela<AutomationLog>
+        itens={logs}
+        chave={(x) => x.id}
+        rotuloDaLinha={(x) => `Abrir registro de ${formatDate(x.created_at)}`}
+        onAbrir={setSelectedLog}
+        carregando={loading}
+        vazio={{
+          titulo: 'Nenhum registro',
+          descricao: 'Os registros aparecem aqui conforme o robô trabalha.',
+          icone: <DocumentTextIcon className="h-12 w-12" />,
+        }}
+        paginacao={{
+          pagina: page,
+          porPagina: POR_PAGINA,
+          total: totalCount,
+          onPagina: setPage,
+          rotulo: 'registros',
+        }}
+        colunas={[
+          { chave: 'quando', cabecalho: 'Data/hora', render: (x) => formatDate(x.created_at) },
+          { chave: 'empresa', cabecalho: 'Empresa', soNoDesktop: true, render: (x) => x.company_name },
+          {
+            chave: 'acao',
+            cabecalho: 'Ação',
+            render: (x) => (
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  actionTypeColors[x.action_type || ''] || 'bg-surface-2 text-fg-token'
+                }`}
               >
-                Anterior
-              </button>
-              <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={page * 50 >= totalCount}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
-              >
-                Próximo
-              </button>
-            </div>
-            <div className="flex max-sm:hidden-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-fg-token">
-                  Mostrando <span className="font-medium">{(page - 1) * 50 + 1}</span> a{' '}
-                  <span className="font-medium">{Math.min(page * 50, totalCount)}</span> de{' '}
-                  <span className="font-medium">{totalCount}</span> resultados
-                </p>
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
-                >
-                  Anterior
-                </button>
-                <button
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page * 50 >= totalCount}
-                  className="relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
-                >
-                  Próximo
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+                {actionTypeLabels[x.action_type || ''] || x.action_type || '—'}
+              </span>
+            ),
+          },
+          { chave: 'telefone', cabecalho: 'Telefone', render: (x) => x.phone_number || '—' },
+          {
+            chave: 'descricao',
+            cabecalho: 'Descrição',
+            soNoDesktop: true,
+            render: (x) => <span className="block max-w-xs truncate">{x.description}</span>,
+          },
+          {
+            chave: 'status',
+            cabecalho: 'Status',
+            render: (x) =>
+              x.is_error ? (
+                <ExclamationTriangleIcon className="h-5 w-5 text-[var(--danger)]" />
+              ) : (
+                <CheckCircleIcon className="h-5 w-5 text-[var(--success)]" />
+              ),
+          },
+        ]}
+      />
 
       {/* Log Detail Modal */}
       {selectedLog && (

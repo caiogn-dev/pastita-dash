@@ -14,7 +14,7 @@ import {
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import { StatCard, RowActions, linhaClicavel, FormStepper, InsightList, Paginacao } from '../../components/ui';
+import { StatCard, RowActions, FormStepper, InsightList, Tabela } from '../../components/ui';
 import { insightsDeCupons } from './insightsDeCupons';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
 import { getCategories, StoreCategory } from '../../services/storesApi';
@@ -356,218 +356,131 @@ export const CouponsPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Coupons List */}
-      <Card>
-        {/* Mobile Cards View */}
-        <div className="block md:hidden divide-y divide-gray-200">
-          {coupons.map((coupon) => (
-            <div key={coupon.id} className="p-4 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <TagIcon className="w-5 h-5 text-fg-muted-token shrink-0" />
-                  <div>
-                    <p className="font-mono font-bold text-fg-token">{coupon.code}</p>
-                    {coupon.description && (
-                      <p className="text-xs text-fg-muted-token">{coupon.description}</p>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleToggleActive(coupon)}
-                  className="focus:outline-none shrink-0"
-                >
-                  <Badge variant={coupon.is_active && coupon.is_valid_now ? 'success' : 'danger'}>
-                    {coupon.is_active ? (coupon.is_valid_now ? 'Ativo' : 'Expirado') : 'Inativo'}
-                  </Badge>
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-fg-muted-token">Desconto:</span>
-                  <Badge variant={coupon.discount_type === 'percentage' ? 'info' : 'success'} className="ml-1">
-                    {formatDiscount(coupon)}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="text-fg-muted-token">Uso:</span>
-                  <span className="ml-1 text-fg-token">
-                    {coupon.used_count}{coupon.usage_limit && ` / ${coupon.usage_limit}`}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-fg-muted-token">Mín:</span>
-                  <span className="ml-1 text-fg-token">
-                    {Number(coupon.min_purchase || 0) > 0 ? `R$ ${formatMoney(coupon.min_purchase)}` : '-'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-fg-muted-token">Até:</span>
-                  <span className="ml-1 text-fg-token">{formatDate(coupon.valid_until)}</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-1 pt-2 border-t border-border-token">
-                <button
-                  onClick={() => handleOpenModal(coupon)}
-                  className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
-                  aria-label={`Editar cupom ${coupon.code}`}
-                  title={`Editar cupom ${coupon.code}`}
-                >
-                  <PencilIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => {
-                    setDeletingCoupon(coupon);
-                    setIsDeleteModalOpen(true);
-                  }}
-                  className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
-                  aria-label={`Excluir cupom ${coupon.code}`}
-                  title={`Excluir cupom ${coupon.code}`}
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop Table View */}
-        <div className="block max-md:hidden overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-surface-2 dark:bg-black">
-              <tr>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Código
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Desconto
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Mín. Compra
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Uso
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Validade
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-surface dark:bg-zinc-900 divide-y divide-gray-200">
-              {coupons.map((coupon) => (
-                <tr
-                  key={coupon.id}
-                  {...linhaClicavel(
-                    () => handleOpenModal(coupon),
-                    `Abrir cupom ${coupon.code}`
+      {/* Uma definição de coluna, duas apresentações: tabela no desktop,
+          cartão no celular. Antes eram duas listas escritas à mão no mesmo
+          arquivo — e elas JÁ divergiam: o cartão mostrava "Mín." e a tabela
+          "Mín. Compra", o cartão tinha dois ícones nus e a tabela um kebab. */}
+      <Tabela<Coupon>
+        itens={coupons}
+        chave={(c) => c.id}
+        rotuloDaLinha={(c) => `Abrir cupom ${c.code}`}
+        onAbrir={(c) => handleOpenModal(c)}
+        carregando={loading}
+        vazio={{
+          titulo: 'Nenhum cupom encontrado',
+          descricao: 'Comece criando um cupom de desconto.',
+          icone: <TagIcon className="h-12 w-12" />,
+          acao: (
+            <Button onClick={() => handleOpenModal()}>
+              <PlusIcon className="w-5 h-5 mr-2" />
+              Novo cupom
+            </Button>
+          ),
+        }}
+        paginacao={{ pagina: page, porPagina: POR_PAGINA, total, onPagina: setPage, rotulo: 'cupons' }}
+        colunas={[
+          {
+            chave: 'code',
+            cabecalho: 'Código',
+            render: (c) => (
+              <div className="flex items-center gap-2">
+                <TagIcon className="w-5 h-5 shrink-0 text-fg-muted-token" />
+                <div className="min-w-0">
+                  <div className="font-mono font-bold text-fg-token">{c.code}</div>
+                  {c.description && (
+                    <div className="truncate text-sm text-fg-muted-token">{c.description}</div>
                   )}
-                >
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <TagIcon className="w-5 h-5 text-fg-muted-token mr-2" />
-                      <div>
-                        <div className="font-mono font-bold text-fg-token">{coupon.code}</div>
-                        {coupon.description && (
-                          <div className="text-sm text-fg-muted-token max-w-[200px] truncate">{coupon.description}</div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <Badge variant={coupon.discount_type === 'percentage' ? 'info' : 'success'}>
-                      {formatDiscount(coupon)}
-                    </Badge>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
-                    {Number(coupon.min_purchase || 0) > 0 ? `R$ ${formatMoney(coupon.min_purchase)}` : '-'}
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
-                    {coupon.used_count}
-                    {coupon.usage_limit && ` / ${coupon.usage_limit}`}
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
-                    <div>{formatDate(coupon.valid_from)}</div>
-                    <div className="text-xs text-fg-muted-token">até {formatDate(coupon.valid_until)}</div>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={(e) => {
-                        // A linha abre a edição; alternar o status aqui não
-                        // pode arrastar o usuário para o modal junto.
-                        e.stopPropagation();
-                        handleToggleActive(coupon);
-                      }}
-                      className="focus:outline-none"
-                    >
-                      <Badge variant={coupon.is_active && coupon.is_valid_now ? 'success' : 'danger'}>
-                        {coupon.is_active ? (coupon.is_valid_now ? 'Ativo' : 'Expirado') : 'Inativo'}
-                      </Badge>
-                    </button>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-right">
-                    {/* Um kebab no lugar de dois ícones nus: "Excluir" em texto
-                        deixa de ser adivinhação de pictograma, e o destrutivo
-                        sai de perto do dedo — antes ele ficava colado no lápis,
-                        exatamente onde a mão cai ao rolar a lista no celular. */}
-                    <RowActions
-                      rotulo={`Ações do cupom ${coupon.code}`}
-                      acoes={[
-                        {
-                          rotulo: 'Editar',
-                          icone: <PencilIcon className="h-4 w-4" />,
-                          onClick: () => handleOpenModal(coupon),
-                        },
-                        {
-                          rotulo: coupon.is_active ? 'Desativar' : 'Ativar',
-                          onClick: () => handleToggleActive(coupon),
-                        },
-                        {
-                          rotulo: 'Excluir',
-                          icone: <TrashIcon className="h-4 w-4" />,
-                          destrutiva: true,
-                          onClick: () => {
-                            setDeletingCoupon(coupon);
-                            setIsDeleteModalOpen(true);
-                          },
-                        },
-                      ]}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {coupons.length === 0 && (
-          <div className="text-center py-12 px-4">
-            <TagIcon className="mx-auto h-12 w-12 text-fg-muted-token" />
-            <h3 className="mt-2 text-sm font-medium text-fg-token">Nenhum cupom encontrado</h3>
-            <p className="mt-1 text-sm text-fg-muted-token">
-              Comece criando um novo cupom de desconto.
-            </p>
-            <div className="mt-6">
-              <Button onClick={() => handleOpenModal()}>
-                <PlusIcon className="w-5 h-5 mr-2" />
-                Novo Cupom
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      <Paginacao
-        pagina={page}
-        porPagina={POR_PAGINA}
-        total={total}
-        onPagina={setPage}
-        rotulo="cupons"
+                </div>
+              </div>
+            ),
+          },
+          {
+            chave: 'desconto',
+            cabecalho: 'Desconto',
+            render: (c) => (
+              <Badge variant={c.discount_type === 'percentage' ? 'info' : 'success'}>
+                {formatDiscount(c)}
+              </Badge>
+            ),
+          },
+          {
+            chave: 'minimo',
+            cabecalho: 'Mín. compra',
+            render: (c) =>
+              Number(c.min_purchase || 0) > 0 ? `R$ ${formatMoney(c.min_purchase)}` : '—',
+          },
+          {
+            chave: 'uso',
+            cabecalho: 'Uso',
+            render: (c) => `${c.used_count}${c.usage_limit ? ` / ${c.usage_limit}` : ''}`,
+          },
+          {
+            chave: 'validade',
+            cabecalho: 'Validade',
+            soNoDesktop: true,
+            render: (c) => (
+              <>
+                <div>{formatDate(c.valid_from)}</div>
+                <div className="text-xs text-fg-muted-token">até {formatDate(c.valid_until)}</div>
+              </>
+            ),
+          },
+          {
+            chave: 'status',
+            cabecalho: 'Status',
+            render: (c) => (
+              <button
+                type="button"
+                // A linha abre a edição; alternar o status aqui não pode
+                // arrastar o usuário para o modal junto.
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleActive(c);
+                }}
+                className="focus:outline-none"
+              >
+                <Badge variant={c.is_active && c.is_valid_now ? 'success' : 'danger'}>
+                  {c.is_active ? (c.is_valid_now ? 'Ativo' : 'Expirado') : 'Inativo'}
+                </Badge>
+              </button>
+            ),
+          },
+          {
+            chave: 'acoes',
+            cabecalho: 'Ações',
+            alinhamento: 'direita',
+            render: (c) => (
+              // Um kebab no lugar de ícones nus: "Excluir" em texto deixa de
+              // ser adivinhação de pictograma, e o destrutivo sai de perto do
+              // dedo — antes ficava colado no lápis, onde a mão cai ao rolar.
+              <RowActions
+                rotulo={`Ações do cupom ${c.code}`}
+                acoes={[
+                  {
+                    rotulo: 'Editar',
+                    icone: <PencilIcon className="h-4 w-4" />,
+                    onClick: () => handleOpenModal(c),
+                  },
+                  {
+                    rotulo: c.is_active ? 'Desativar' : 'Ativar',
+                    onClick: () => handleToggleActive(c),
+                  },
+                  {
+                    rotulo: 'Excluir',
+                    icone: <TrashIcon className="h-4 w-4" />,
+                    destrutiva: true,
+                    onClick: () => {
+                      setDeletingCoupon(c);
+                      setIsDeleteModalOpen(true);
+                    },
+                  },
+                ]}
+              />
+            ),
+          },
+        ]}
       />
+
 
       {/* Create/Edit Modal */}
       <Modal

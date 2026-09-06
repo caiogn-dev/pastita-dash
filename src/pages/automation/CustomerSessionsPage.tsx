@@ -7,8 +7,6 @@ import {
   TruckIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
-  EyeIcon,
-  BellIcon,
 } from '@heroicons/react/24/outline';
 import {
   customerSessionService,
@@ -16,9 +14,8 @@ import {
   sessionStatusLabels,
 } from '../../services/automation';
 import { CustomerSession, CompanyProfile, SessionStatus } from '../../types';
-import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
-import { PageShell } from '../../components/ui';
+import { PageShell, Tabela, RowActions } from '../../components/ui';
 
 const statusColors: Record<SessionStatus, string> = {
   active: 'bg-blue-100 text-blue-800',
@@ -31,6 +28,8 @@ const statusColors: Record<SessionStatus, string> = {
   completed: 'bg-surface-2 text-fg-token',
   expired: 'bg-surface-2 text-fg-muted-token',
 };
+
+const POR_PAGINA = 20;
 
 const CustomerSessionsPage: React.FC = () => {
   const [sessions, setSessions] = useState<CustomerSession[]>([]);
@@ -68,7 +67,7 @@ const CustomerSessionsPage: React.FC = () => {
   const loadSessions = async () => {
     try {
       setLoading(true);
-      const params: Record<string, string | number> = { page, page_size: 20 };
+      const params: Record<string, string | number> = { page, page_size: POR_PAGINA };
       if (filters.company_id) params.company_id = filters.company_id;
       if (filters.status) params.status = filters.status;
       if (filters.phone_number) params.phone_number = filters.phone_number;
@@ -209,173 +208,106 @@ const CustomerSessionsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Sessions Table */}
-      <div className="bg-surface dark:bg-zinc-900 shadow rounded-lg overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="text-center py-12">
-            <UserGroupIcon className="mx-auto h-12 w-12 text-fg-muted-token" />
-            <h3 className="mt-2 text-sm font-medium text-fg-token">Nenhuma sessão encontrada</h3>
-            <p className="mt-1 text-sm text-fg-muted-token">
-              As sessões aparecerão aqui quando clientes interagirem com o site.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-surface-2 dark:bg-black">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Cliente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Empresa
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Carrinho
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Última Atividade
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-fg-muted-token uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-surface dark:bg-zinc-900 divide-y divide-gray-200">
-                {sessions.map((session) => (
-                  <tr key={session.id} className="hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-surface-2 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                          {getStatusIcon(session.status)}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-fg-token">
-                            {session.customer_name || 'Cliente'}
-                          </div>
-                          <div className="text-sm text-fg-muted-token">
-                            {session.phone_number}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-fg-token">{session.company_name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        statusColors[session.status]
-                      }`}>
-                        {sessionStatusLabels[session.status] || session.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {(session.cart_items_count || 0) > 0 ? (
-                        <div>
-                          <div className="text-sm font-medium text-fg-token">
-                            {formatCurrency(session.cart_total || 0)}
-                          </div>
-                          <div className="text-sm text-fg-muted-token">
-                            {session.cart_items_count} {(session.cart_items_count || 0) === 1 ? 'item' : 'itens'}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-fg-muted-token">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-muted-token">
-                      {session.last_activity_at ? formatDate(session.last_activity_at) : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => setSelectedSession(session)}
-                          className="text-fg-muted-token hover:text-fg-muted-token"
-                          title="Ver detalhes"
-                        >
-                          <EyeIcon className="h-5 w-5" />
-                        </button>
-                        {session.status === 'cart_abandoned' && (
-                          <button
-                            onClick={() => handleSendNotification(session.id, 'cart_abandoned')}
-                            className="text-yellow-500 hover:text-yellow-700 dark:text-yellow-300"
-                            title="Enviar lembrete de carrinho"
-                          >
-                            <BellIcon className="h-5 w-5" />
-                          </button>
-                        )}
-                        {session.status === 'payment_pending' && (
-                          <button
-                            onClick={() => handleSendNotification(session.id, 'pix_reminder')}
-                            className="text-orange-500 hover:text-orange-700"
-                            title="Enviar lembrete de PIX"
-                          >
-                            <BellIcon className="h-5 w-5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalCount > 20 && (
-          <div className="bg-surface dark:bg-zinc-900 px-4 py-3 flex items-center justify-between border-t border-border-token dark:border-zinc-800 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={page * 20 >= totalCount}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
-              >
-                Próximo
-              </button>
-            </div>
-            <div className="flex max-sm:hidden-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-fg-token">
-                  Mostrando <span className="font-medium">{(page - 1) * 20 + 1}</span> a{' '}
-                  <span className="font-medium">{Math.min(page * 20, totalCount)}</span> de{' '}
-                  <span className="font-medium">{totalCount}</span> resultados
-                </p>
+      <Tabela<CustomerSession>
+        itens={sessions}
+        chave={(s) => s.id}
+        rotuloDaLinha={(s) => `Ver ${s.customer_name || 'cliente'} ${s.phone_number}`}
+        onAbrir={setSelectedSession}
+        carregando={loading}
+        vazio={{
+          titulo: 'Ninguém no meio de um pedido agora',
+          descricao: 'Assim que um cliente começar a montar o carrinho, ele aparece aqui.',
+          icone: <UserGroupIcon className="h-12 w-12" />,
+        }}
+        paginacao={{
+          pagina: page,
+          porPagina: POR_PAGINA,
+          total: totalCount,
+          onPagina: setPage,
+          rotulo: 'sessões',
+        }}
+        colunas={[
+          {
+            chave: 'cliente',
+            cabecalho: 'Cliente',
+            render: (s) => (
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-2">
+                  {getStatusIcon(s.status)}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-fg-token">
+                    {s.customer_name || 'Cliente'}
+                  </div>
+                  <div className="text-sm text-fg-muted-token">{s.phone_number}</div>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
-                >
-                  Anterior
-                </button>
-                <button
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page * 20 >= totalCount}
-                  className="relative inline-flex items-center px-4 py-2 border border-border-token dark:border-zinc-700 text-sm font-medium rounded-md text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black disabled:opacity-50"
-                >
-                  Próximo
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+            ),
+          },
+          { chave: 'empresa', cabecalho: 'Empresa', soNoDesktop: true, render: (s) => s.company_name },
+          {
+            chave: 'status',
+            cabecalho: 'Status',
+            render: (s) => (
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[s.status]}`}
+              >
+                {sessionStatusLabels[s.status] || s.status}
+              </span>
+            ),
+          },
+          {
+            chave: 'carrinho',
+            cabecalho: 'Carrinho',
+            render: (s) =>
+              (s.cart_items_count || 0) > 0 ? (
+                <div>
+                  <div className="text-sm font-medium text-fg-token">
+                    {formatCurrency(s.cart_total || 0)}
+                  </div>
+                  <div className="text-sm text-fg-muted-token">
+                    {s.cart_items_count} {(s.cart_items_count || 0) === 1 ? 'item' : 'itens'}
+                  </div>
+                </div>
+              ) : (
+                <span className="text-sm text-fg-muted-token">—</span>
+              ),
+          },
+          {
+            chave: 'atividade',
+            cabecalho: 'Última atividade',
+            render: (s) => (s.last_activity_at ? formatDate(s.last_activity_at) : '—'),
+          },
+          {
+            chave: 'acoes',
+            cabecalho: 'Ações',
+            alinhamento: 'direita',
+            render: (s) => (
+              // Eram dois sinos de cores diferentes — amarelo para carrinho,
+              // laranja para PIX — e um olho. Três pictogramas sem rótulo,
+              // sendo que só um deles aparece de cada vez.
+              <RowActions
+                rotulo={`Ações de ${s.customer_name || s.phone_number}`}
+                acoes={[
+                  { rotulo: 'Ver detalhes', onClick: () => setSelectedSession(s) },
+                  ...(s.status === 'cart_abandoned'
+                    ? [{
+                        rotulo: 'Lembrar do carrinho',
+                        onClick: () => handleSendNotification(s.id, 'cart_abandoned'),
+                      }]
+                    : []),
+                  ...(s.status === 'payment_pending'
+                    ? [{
+                        rotulo: 'Lembrar do PIX',
+                        onClick: () => handleSendNotification(s.id, 'pix_reminder'),
+                      }]
+                    : []),
+                ]}
+              />
+            ),
+          },
+        ]}
+      />
 
       {/* Session Detail Modal */}
       {selectedSession && (
