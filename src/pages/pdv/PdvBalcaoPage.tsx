@@ -1,15 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  QrCodeIcon,
-  TrashIcon,
-  PlusIcon,
-  MinusIcon,
-  CheckCircleIcon,
-  ClipboardDocumentIcon,
-  BuildingStorefrontIcon,
-  UserIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, Modal, ModalHeader, ModalBody, SearchInput, PageShell } from '../../components/ui';

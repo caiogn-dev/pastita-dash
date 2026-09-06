@@ -3,7 +3,7 @@ import {
   HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon,
   ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
   BoltIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
-  MegaphoneIcon, DocumentTextIcon, DocumentChartBarIcon, EnvelopeIcon,
+  MegaphoneIcon, DocumentTextIcon, EnvelopeIcon,
   ClockIcon, PresentationChartLineIcon, SparklesIcon, RectangleGroupIcon,
   QrCodeIcon, GiftIcon, LinkIcon, TrophyIcon,
   BeakerIcon,
@@ -11,7 +11,7 @@ import {
   // ClockIcon em três e TagIcon em dois: com o mesmo desenho repetido o
   // operador para de usar o ícone para se localizar e lê tudo de novo.
   ClipboardDocumentListIcon, PrinterIcon, BanknotesIcon, FireIcon, CubeIcon,
-  TicketIcon, GlobeAltIcon, ChartBarIcon, CalendarDaysIcon, ShareIcon,
+  TicketIcon, GlobeAltIcon, ChartBarIcon, ShareIcon,
   UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
   ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';

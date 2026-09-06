@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { AgentForm } from '../../components/agents';
 import agentsService, { CreateAgentData } from '../../services/agents';
 import { whatsappService } from '../../services';

@@ -7,7 +7,6 @@ import {
   DocumentTextIcon,
   MapPinIcon,
   TruckIcon,
-  CurrencyDollarIcon,
   ClockIcon,
   ChartBarIcon,
   StarIcon,

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeftIcon,
   ArrowPathIcon,
   KeyIcon,
 } from '@heroicons/react/24/outline';

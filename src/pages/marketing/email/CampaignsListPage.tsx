@@ -24,7 +24,7 @@ import { Card, Button, Modal, Loading } from '../../../components/common';
 import { useStore, useConfirm } from '../../../hooks';
 import api from '@/services/api';
 import { EMAIL_RECIPIENT_STATUS_LABELS } from '../../../utils/rotulosDeEstado';
-import { PageShell } from '../../../components/ui';
+import { PageShell, Tabela, Badge } from '../../../components/ui';
 
 interface EmailCampaign {
   id: string;
@@ -342,43 +342,53 @@ export const CampaignsListPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Recipients List */}
             <div className="max-h-96 overflow-y-auto">
-              <table className="w-full">
-                <thead className="bg-surface-2 sticky top-0">
-                  <tr>
-                    <th className="text-left text-xs font-medium text-fg-muted-token px-4 py-2">Email</th>
-                    <th className="text-left text-xs font-medium text-fg-muted-token px-4 py-2">Nome</th>
-                    <th className="text-left text-xs font-medium text-fg-muted-token px-4 py-2">Status</th>
-                    <th className="text-left text-xs font-medium text-fg-muted-token px-4 py-2">Enviado em</th>
-                    <th className="text-left text-xs font-medium text-fg-muted-token px-4 py-2">Erro</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {recipients.map((recipient) => (
-                    <tr key={recipient.id} className="hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]">
-                      <td className="px-4 py-2 text-sm text-fg-token">{recipient.email}</td>
-                      <td className="px-4 py-2 text-sm text-fg-muted-token">{recipient.name || '-'}</td>
-                      <td className="px-4 py-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          recipient.status === 'sent' || recipient.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                          recipient.status === 'opened' || recipient.status === 'clicked' ? 'bg-blue-100 text-blue-700' :
-                          recipient.status === 'failed' || recipient.status === 'bounced' ? 'bg-red-100 text-red-700' :
-                          'bg-surface-2 text-fg-token'
-                        }`}>
-                          {EMAIL_RECIPIENT_STATUS_LABELS[recipient.status] ?? recipient.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-sm text-fg-muted-token">
-                        {recipient.sent_at ? format(new Date(recipient.sent_at), "dd/MM HH:mm") : '-'}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-red-500 max-w-xs truncate" title={recipient.error_message || ''}>
-                        {recipient.error_message || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Tabela<(typeof recipients)[number]>
+                itens={recipients}
+                chave={(r) => String(r.id)}
+                rotuloDaLinha={(r) => r.email}
+                colunas={[
+                  { chave: 'email', cabecalho: 'E-mail', render: (r) => r.email },
+                  { chave: 'nome', cabecalho: 'Nome', classe: 'max-lg:hidden', render: (r) => r.name || '—' },
+                  {
+                    chave: 'status',
+                    cabecalho: 'Status',
+                    render: (r) => (
+                      <Badge
+                        tone={
+                          r.status === 'sent' || r.status === 'delivered'
+                            ? 'success'
+                            : r.status === 'opened' || r.status === 'clicked'
+                              ? 'info'
+                              : r.status === 'failed' || r.status === 'bounced'
+                                ? 'danger'
+                                : 'neutral'
+                        }
+                      >
+                        {EMAIL_RECIPIENT_STATUS_LABELS[r.status] ?? r.status}
+                      </Badge>
+                    ),
+                  },
+                  {
+                    chave: 'enviado',
+                    cabecalho: 'Enviado em',
+                    render: (r) => (r.sent_at ? format(new Date(r.sent_at), 'dd/MM HH:mm') : '—'),
+                  },
+                  {
+                    chave: 'erro',
+                    cabecalho: 'Erro',
+                    classe: 'max-lg:hidden',
+                    render: (r) => (
+                      <span
+                        className="block max-w-xs truncate text-[var(--danger)]"
+                        title={r.error_message || ''}
+                      >
+                        {r.error_message || '—'}
+                      </span>
+                    ),
+                  },
+                ]}
+              />
             </div>
           </div>
         )}

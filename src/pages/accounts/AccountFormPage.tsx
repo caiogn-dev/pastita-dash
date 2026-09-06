@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import logger from '../../services/logger';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Card, Button, Input, PageLoading } from '../../components/common';
 import { PageShell } from '../../components/ui';

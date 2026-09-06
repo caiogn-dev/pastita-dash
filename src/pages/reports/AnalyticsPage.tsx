@@ -5,11 +5,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowDownTrayIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  StarIcon,
 } from '@heroicons/react/24/outline';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

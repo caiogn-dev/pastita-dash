@@ -39,7 +39,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
-import { Button, Card, PageShell } from '../../components/ui';
+import { Button, PageShell } from '../../components/ui';
 import {
   getOrders,
   updateOrderStatus,

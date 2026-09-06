@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { AgentChatTest } from '../../components/agents';
 import agentsService, { AgentDetail } from '../../services/agents';
 import { useStore } from '../../hooks';

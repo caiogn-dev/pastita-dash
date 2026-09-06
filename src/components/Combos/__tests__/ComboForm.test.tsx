@@ -15,7 +15,7 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { Toaster } from 'react-hot-toast';
 import { ComboForm } from '../ComboForm';
-import type { ComboGroupDraft, VariantLimitDraft } from '../ComboForm';
+import type { VariantLimitDraft } from '../ComboForm';
 import type { StoreCombo, StoreProduct } from '../../../services/storesApi';
 
 // ─────────────────────────────────────────────────────────────────────────────

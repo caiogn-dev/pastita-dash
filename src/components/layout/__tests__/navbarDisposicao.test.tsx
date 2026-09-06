@@ -15,7 +15,7 @@
  * "onde mexo no meu perfil?" olhando para o outro. Sem essa divisão, cada
  * pergunta obriga a varrer a barra inteira.
  */
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { ordemDaNavbar, GRUPOS_DA_NAVBAR } from '../ordemDaNavbar';

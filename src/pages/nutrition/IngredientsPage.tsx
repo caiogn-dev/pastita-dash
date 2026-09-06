@@ -25,10 +25,9 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage, normalizePaginatedResponse } from '../../services/api';
 import { adotarIngrediente } from '../../services/nutrition';
 import { getStores } from '../../services/storesApi';
-import { Badge, Button, Card, Modal, PageShell, SearchInput } from '../../components/ui';
+import { Badge, Button, Modal, PageShell, SearchInput, Tabela, RowActions } from '../../components/ui';
 import { Loading } from '../../components/common';
 import RecipeBuilder from './RecipeBuilder';
-import RevisaoDeAlergenicos from './RevisaoDeAlergenicos';
 import { useConfirm } from '../../hooks/useConfirm';
 
 type NutrientKey =
@@ -303,80 +302,80 @@ export default function IngredientsPage() {
           </p>
         )}
 
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-2 text-fg-muted-token">
-                <tr>
-                  <th className="p-3 text-left">Ingrediente</th>
-                  <th className="p-3 text-left">Fonte</th>
-                  <th className="p-3 text-left">Alergênicos</th>
-                  {nutrients.map(n => (
-                    <th key={n.key} className="whitespace-nowrap p-3 text-right">
-                      {n.label}
-                      <span className="block text-xs font-normal opacity-60">{n.unit}/100g</span>
-                    </th>
-                  ))}
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {visible.length === 0 && (
-                  <tr>
-                    <td colSpan={nutrients.length + 4} className="p-8 text-center text-fg-muted-token">
-                      {search || category
-                        ? 'Nenhum ingrediente com esse filtro.'
-                        : 'Nada aqui ainda.'}
-                    </td>
-                  </tr>
-                )}
-                {visible.map(i => (
-                  <tr key={i.id} className="border-t border-border-token hover:bg-surface/5">
-                    <td className="p-3">
-                      <button
-                        className="text-left font-medium text-fg-token hover:underline"
-                        onClick={() => abrir(i)}
-                      >
-                        {i.display_name}
-                      </button>
-                      <div className="text-xs text-fg-muted-token">{i.category || 'Sem categoria'}</div>
-                    </td>
-                    <td className="p-3 text-xs uppercase text-fg-muted-token">{i.source}</td>
-                    <td className="p-3 text-xs">
-                      {i.allergens?.length
-                        ? <span className="text-[var(--danger)]">{i.allergens.join(', ')}</span>
-                        : i.allergens_reviewed
-                          ? <span className="text-fg-muted-token">sem alergênico</span>
-                          // Cobrar revisão só faz sentido no que é da loja: o
-                          // oficial ninguém pode revisar sem adotar antes.
-                          : i.store
-                            ? <Badge tone="warning">não revisado</Badge>
-                            : <span className="text-fg-muted-token">—</span>}
-                    </td>
-                    {nutrients.map(n => (
-                      <td key={n.key} className="p-3 text-right tabular-nums">
-                        {i[n.key] == null ? '—' : String(i[n.key])}
-                      </td>
-                    ))}
-                    <td className="p-3">
-                      {i.store
-                        ? (
-                          <button
-                            aria-label={`Excluir ${i.display_name}`}
-                            onClick={() => remove(i)}
-                            className="p-2 text-fg-muted-token transition hover:text-[var(--danger)]"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        )
-                        : <span className="px-2 text-xs text-fg-muted-token">oficial</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <Tabela<(typeof visible)[number]>
+          itens={visible}
+          chave={(i) => String(i.id)}
+          rotuloDaLinha={(i) => `Abrir ${i.display_name}`}
+          onAbrir={abrir}
+          vazio={{
+            titulo: search || category ? 'Nenhum ingrediente com esse filtro' : 'Nada aqui ainda',
+          }}
+          colunas={[
+            {
+              chave: 'ingrediente',
+              cabecalho: 'Ingrediente',
+              render: (i) => (
+                <div className="min-w-0">
+                  <span className="font-medium text-fg-token">{i.display_name}</span>
+                  <div className="text-xs text-fg-muted-token">{i.category || 'Sem categoria'}</div>
+                </div>
+              ),
+            },
+            {
+              chave: 'fonte',
+              cabecalho: 'Fonte',
+              classe: 'max-lg:hidden',
+              render: (i) => <span className="text-xs uppercase text-fg-muted-token">{i.source}</span>,
+            },
+            {
+              chave: 'alergenicos',
+              cabecalho: 'Alergênicos',
+              render: (i) =>
+                i.allergens?.length ? (
+                  <span className="text-xs text-[var(--danger)]">{i.allergens.join(', ')}</span>
+                ) : i.allergens_reviewed ? (
+                  <span className="text-xs text-fg-muted-token">sem alergênico</span>
+                ) : // Cobrar revisão só faz sentido no que é da loja: o
+                // oficial ninguém pode revisar sem adotar antes.
+                i.store ? (
+                  <Badge tone="warning">não revisado</Badge>
+                ) : (
+                  <span className="text-fg-muted-token">—</span>
+                ),
+            },
+            ...nutrients.map((n) => ({
+              chave: n.key,
+              cabecalho: `${n.label} (${n.unit}/100g)`,
+              alinhamento: 'direita' as const,
+              classe: 'tabular-nums max-xl:hidden',
+              // Em branco quando não se sabe. Virar zero aqui é mentira no
+              // rótulo — e rótulo errado é multa da ANVISA.
+              render: (i: (typeof visible)[number]) =>
+                i[n.key] == null ? '—' : String(i[n.key]),
+            })),
+            {
+              chave: 'acoes',
+              cabecalho: 'Ações',
+              alinhamento: 'direita',
+              render: (i) =>
+                i.store ? (
+                  <RowActions
+                    rotulo={`Ações de ${i.display_name}`}
+                    acoes={[
+                      {
+                        rotulo: 'Excluir',
+                        icone: <TrashIcon className="h-4 w-4" />,
+                        destrutiva: true,
+                        onClick: () => remove(i),
+                      },
+                    ]}
+                  />
+                ) : (
+                  <span className="px-2 text-xs text-fg-muted-token">oficial</span>
+                ),
+            },
+          ]}
+        />
       </div>
 
       <Modal

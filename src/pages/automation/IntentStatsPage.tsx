@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  ArrowPathIcon,
   ChartBarIcon,
   BoltIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { intentService, intentTypeLabels } from '../../services';
 import type { IntentStats, IntentType } from '../../types';
-import { PageShell } from '../../components/ui';
+import { PageShell, RankedList } from '../../components/ui';
 
 
 export const IntentStatsPage: React.FC = () => {
@@ -107,55 +106,23 @@ export const IntentStatsPage: React.FC = () => {
                   {format(subDays(new Date(), days), 'dd/MM/yyyy', { locale: ptBR })} — {format(new Date(), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
-                  <thead>
-                    <tr className="bg-surface-2 dark:bg-zinc-800/50">
-                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wide">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wide">Intenção</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-fg-muted-token uppercase tracking-wide">Quantidade</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-fg-muted-token uppercase tracking-wide">Percentual</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted-token uppercase tracking-wide">Distribuição</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-zinc-800">
-                    {stats.top_intents.map((item, idx) => {
-                      const intent = (item.intent_type || item.intent) as IntentType;
-                      const pct = totalIntents > 0 ? (item.count / totalIntents) * 100 : 0;
-                      return (
-                        <tr key={intent} className="hover:bg-surface-2 dark:hover:bg-zinc-800/50 transition-colors">
-                          <td className="px-6 py-4 text-sm text-fg-muted-token">{idx + 1}</td>
-                          <td className="px-6 py-4">
-                            <span className="text-sm font-medium text-fg-token">
-                              {intentTypeLabels[intent] || intent}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <span className="text-sm font-semibold text-fg-token">{item.count.toLocaleString()}</span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              pct >= 30 ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300' :
-                              pct >= 10 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' :
-                              'bg-surface-2 text-fg-token dark:bg-zinc-700 dark:text-zinc-300'
-                            }`}>
-                              {pct.toFixed(1)}%
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="w-full bg-surface-2 dark:bg-zinc-700 rounded-full h-2 max-w-[200px]">
-                              <div
-                                className="bg-indigo-500 h-2 rounded-full transition-all"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {/* Isto nunca foi uma tabela: é um ranking com barra, e o
+                  painel já tem um — o mesmo que desenha os mais vendidos e os
+                  bairros que mais compram. A versão à mão aqui pintava
+                  `indigo-500` cru, uma cor que não existe em nenhuma outra
+                  tela. */}
+              <RankedList
+                items={stats.top_intents.map((item) => {
+                  const intent = (item.intent_type || item.intent) as IntentType;
+                  const pct = totalIntents > 0 ? (item.count / totalIntents) * 100 : 0;
+                  return {
+                    label: intentTypeLabels[intent] || intent,
+                    value: item.count,
+                    valueLabel: item.count.toLocaleString('pt-BR'),
+                    sub: `${pct.toFixed(1)}% das mensagens`,
+                  };
+                })}
+              />
             </div>
           )}
 

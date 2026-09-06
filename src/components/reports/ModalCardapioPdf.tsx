@@ -10,7 +10,7 @@
  * A escolha fica no localStorage por loja: quem monta o cardápio uma vez não
  * repete o trabalho todo mês.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Modal, Button } from '../common';
 import * as storesApi from '../../services/storesApi';

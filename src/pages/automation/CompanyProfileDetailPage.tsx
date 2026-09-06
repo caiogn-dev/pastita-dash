@@ -2,7 +2,6 @@ import { copyToClipboard } from '../../utils/clipboard';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  ArrowLeftIcon,
   ClipboardDocumentIcon,
   CpuChipIcon,
   EyeIcon,

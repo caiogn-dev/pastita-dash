@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowDownTrayIcon, PrinterIcon, TagIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, SearchInput } from '../../components/ui';
 import { Loading } from '../../components/common';

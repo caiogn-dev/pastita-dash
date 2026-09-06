@@ -35,7 +35,6 @@ import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import NotaFiscalPedido from './NotaFiscalPedido';
 import { Order, Payment, OrderComboItem, ComboSelectedItem } from '../../types';
-import { AvisoEnderecoDivergente } from '../../components/orders/AvisoEnderecoDivergente';
 
 // Linhas de seleção de combo (ex.: "Escolha sua salada: 1x Tilápia Suprema")
 // a partir do snapshot salvo no pedido (display_data.groups ou selected_variants_data).

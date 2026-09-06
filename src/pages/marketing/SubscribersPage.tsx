@@ -8,13 +8,12 @@ import {
   MagnifyingGlassIcon,
   PlusIcon,
   ShoppingBagIcon,
-  TrashIcon,
   UserGroupIcon,
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Card, Modal, Loading } from '../../components/common';
-import { PageShell } from '../../components/ui';
+import { PageShell, Tabela, RowActions, Badge } from '../../components/ui';
 import { useStore } from '../../hooks';
 import { marketingService, Subscriber } from '../../services/marketingService';
 import { useRootStore } from '../../stores/rootStore';
@@ -386,87 +385,106 @@ export const SubscribersPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b bg-surface-2">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Cliente</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Tags</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Compras</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-fg-muted-token">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredSubscribers.map((subscriber) => (
-                  <tr key={subscriber.id} className="hover:bg-surface-2 dark:hover:bg-zinc-700/60">
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-fg-token">{subscriber.name || subscriber.email}</p>
-                        <p className="text-sm text-fg-muted-token">{subscriber.email}</p>
-                        {subscriber.phone && (
-                          <p className="text-sm text-fg-muted-token">{subscriber.phone}</p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                        subscriber.status === 'active'
-                          ? 'bg-green-100 text-green-700'
-                          : subscriber.status === 'unsubscribed'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-red-100 text-red-700'
-                      }`}>
-                        {subscriber.status === 'active' ? 'Ativo' : subscriber.status === 'unsubscribed' ? 'Descadastrado' : 'Bounced'}
+          <Tabela<(typeof filteredSubscribers)[number]>
+            itens={filteredSubscribers}
+            chave={(s) => String(s.id)}
+            rotuloDaLinha={(s) => `Cliente ${s.name || s.email}`}
+            colunas={[
+              {
+                chave: 'cliente',
+                cabecalho: 'Cliente',
+                render: (s) => (
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-fg-token">{s.name || s.email}</p>
+                    <p className="truncate text-sm text-fg-muted-token">{s.email}</p>
+                    {s.phone && <p className="text-sm text-fg-muted-token">{s.phone}</p>}
+                  </div>
+                ),
+              },
+              {
+                chave: 'status',
+                cabecalho: 'Status',
+                render: (s) => (
+                  <Badge
+                    tone={
+                      s.status === 'active'
+                        ? 'success'
+                        : s.status === 'unsubscribed'
+                          ? 'warning'
+                          : 'danger'
+                    }
+                  >
+                    {s.status === 'active'
+                      ? 'Ativo'
+                      : s.status === 'unsubscribed'
+                        ? 'Descadastrado'
+                        : 'E-mail inválido'}
+                  </Badge>
+                ),
+              },
+              {
+                chave: 'tags',
+                cabecalho: 'Tags',
+                classe: 'max-lg:hidden',
+                render: (s) => (
+                  <div className="flex flex-wrap gap-1">
+                    {s.tags?.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded bg-surface-2 px-2 py-0.5 text-xs text-fg-muted-token"
+                      >
+                        {tag}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {subscriber.tags?.slice(0, 3).map((tag) => (
-                          <span key={tag} className="rounded bg-surface-2 px-2 py-0.5 text-xs text-fg-muted-token dark:bg-[var(--dark-bg-hover,#161616)] dark:text-[var(--dark-text-primary,#FAF9F7)]">
-                            {tag}
-                          </span>
-                        ))}
-                        {subscriber.tags && subscriber.tags.length > 3 && (
-                          <span className="text-xs text-fg-muted-token">+{subscriber.tags.length - 3}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="space-y-1">
-                        <span className="block text-fg-token">{subscriber.total_orders || 0} pedidos</span>
-                        {subscriber.total_spent > 0 && (
-                          <span className="text-sm text-fg-muted-token">
-                            R$ {Number(subscriber.total_spent).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => navigate('/marketing/email/new')}
-                          className="rounded p-1.5 text-fg-muted-token hover:bg-primary-50 hover:text-primary-600"
-                          title="Iniciar campanha de e-mail"
-                        >
-                          <EnvelopeIcon className="h-5 w-5" />
-                        </button>
-                        {subscriber.status === 'active' && (
-                          <button
-                            onClick={() => handleUnsubscribe(subscriber)}
-                            className="rounded p-1.5 text-fg-muted-token hover:bg-red-50 hover:text-red-600"
-                            title="Marcar como descadastrado"
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    ))}
+                    {s.tags && s.tags.length > 3 && (
+                      <span className="text-xs text-fg-muted-token">+{s.tags.length - 3}</span>
+                    )}
+                  </div>
+                ),
+              },
+              {
+                chave: 'compras',
+                cabecalho: 'Compras',
+                render: (s) => (
+                  <div>
+                    <span className="block text-fg-token">{s.total_orders || 0} pedidos</span>
+                    {s.total_spent > 0 && (
+                      <span className="text-sm text-fg-muted-token">
+                        R$ {Number(s.total_spent).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                ),
+              },
+              {
+                chave: 'acoes',
+                cabecalho: 'Ações',
+                alinhamento: 'direita',
+                render: (s) => (
+                  // Eram um envelope e uma lixeira nus, e a lixeira NÃO apaga
+                  // o cliente: marca como descadastrado. Ícone de lixo para
+                  // uma ação que não é exclusão é a pior das adivinhações.
+                  <RowActions
+                    rotulo={`Ações de ${s.name || s.email}`}
+                    acoes={[
+                      {
+                        rotulo: 'Criar campanha de e-mail',
+                        icone: <EnvelopeIcon className="h-4 w-4" />,
+                        onClick: () => navigate('/marketing/email/new'),
+                      },
+                      ...(s.status === 'active'
+                        ? [{
+                            rotulo: 'Marcar como descadastrado',
+                            destrutiva: true,
+                            onClick: () => handleUnsubscribe(s),
+                          }]
+                        : []),
+                    ]}
+                  />
+                ),
+              },
+            ]}
+          />
         )}
       </Card>
 
