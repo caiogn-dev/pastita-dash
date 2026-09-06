@@ -12,7 +12,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Modal, ModalHeader, ModalBody, SearchInput } from '../../components/ui';
+import { Card, Button, Modal, ModalHeader, ModalBody, SearchInput, PageShell } from '../../components/ui';
 import { ModalCobrancaPix } from './ModalCobrancaPix';
 import { ComandaDoBalcao } from './ComandaDoBalcao';
 import { ModalVincularCodigo } from './ModalVincularCodigo';
@@ -428,22 +428,25 @@ const PdvBalcaoPage: React.FC = () => {
   if (loading) return <Loading />;
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4 md:space-y-5">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold flex items-center gap-2">
-            <QrCodeIcon className="w-6 h-6" /> PDV Balcão
-          </h1>
-          <p className="text-sm opacity-70">
-            Bipe um produto com o leitor — não precisa clicar em nada antes.
-            {storeCount > 1 && ` Reconhece produtos das suas ${storeCount} lojas.`}
-          </p>
-        </div>
+    <PageShell
+      variante="quadro"
+      className="max-w-5xl mx-auto"
+      titulo="PDV Balcão"
+      acoes={
+        // O TOTAL é a ação da tela: é o número que o operador lê em voz alta
+        // para o cliente. Fica no canto das ações, no mesmo lugar de sempre.
         <div className="text-right">
           <div className="text-sm opacity-70">{items.reduce((s, i) => s + i.quantity, 0)} itens</div>
           <div className="text-3xl font-bold tabular-nums" data-testid="pdv-total">{fmtMoney(total)}</div>
         </div>
-      </div>
+      }
+      filtros={
+        <p className="text-sm opacity-70">
+          Bipe um produto com o leitor — não precisa clicar em nada antes.
+          {storeCount > 1 && ` Reconhece produtos das suas ${storeCount} lojas.`}
+        </p>
+      }
+    >
 
       <Card className="p-4 sm:p-5">
         <BuscaManualDeProduto
@@ -583,7 +586,7 @@ const PdvBalcaoPage: React.FC = () => {
         onCopiar={copyPix}
         formatarValor={fmtMoney}
       />
-    </div>
+    </PageShell>
   );
 };
 

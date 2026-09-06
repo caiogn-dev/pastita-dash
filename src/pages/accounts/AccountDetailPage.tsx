@@ -8,8 +8,8 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Card, Button, StatusBadge, Modal, Input, PageLoading, PageTitle } from '../../components/common';
-import { StatCard } from '../../components/ui';
+import { Card, Button, StatusBadge, Modal, Input, PageLoading } from '../../components/common';
+import { StatCard, PageShell } from '../../components/ui';
 import { whatsappService, getErrorMessage } from '../../services';
 import { WhatsAppAccount, MessageTemplate } from '../../types';
 
@@ -126,28 +126,24 @@ export const AccountDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <PageTitle
-        title={account.name}
-        subtitle={account.display_phone_number || account.phone_number}
-        actions={
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              leftIcon={<ArrowLeftIcon className="w-5 h-5" />}
-              onClick={() => navigate('/accounts')}
-            >
-              Voltar
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => navigate(`/accounts/${account.id}/edit`)}
-            >
-              Editar
-            </Button>
-          </div>
-        }
-      />
+    <PageShell
+      titulo={account.name}
+      descricao={account.display_phone_number || account.phone_number}
+      trilha={[
+        { rotulo: 'Conexões', href: '/accounts' },
+        { rotulo: account.name },
+      ]}
+      acoes={
+        // "Voltar" saiu: a trilha acima já leva a Conexões, e um botão que
+        // repete o caminho da trilha ensina duas navegações para o mesmo lugar.
+        <Button
+          variant="secondary"
+          onClick={() => navigate(`/accounts/${account.id}/edit`)}
+        >
+          Editar
+        </Button>
+      }
+    >
 
         {/* Status and Actions */}
         <Card className="p-4">
@@ -372,6 +368,6 @@ export const AccountDetailPage: React.FC = () => {
           </div>
         </form>
       </Modal>
-    </div>
+    </PageShell>
   );
 };

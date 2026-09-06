@@ -34,7 +34,6 @@ export type { BadgeVariant, BadgeProps } from './Badge';
 export { Modal, ConfirmModal } from './Modal';
 export { Table, Pagination } from './Table';
 export { Loading, PageLoading, FullPageLoading } from './Loading';
-export { PageTitle } from './PageTitle';
 export { 
   StatusFilter, 
   OrderStatusFilter, 

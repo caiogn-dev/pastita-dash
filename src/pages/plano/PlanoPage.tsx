@@ -17,9 +17,10 @@ import {
   ClockIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
-import { PageTitle, Button, Card, SkeletonCard, EmptyState } from '../../components/common';
+import { Button, Card, SkeletonCard, EmptyState } from '../../components/common';
 import { useStore } from '../../hooks/useStore';
 import { formatCurrency } from '../../utils/formatters';
+import { PageShell } from '../../components/ui';
 import {
   getPlans,
   subscribe,
@@ -220,11 +221,11 @@ export const PlanoPage: React.FC = () => {
   const hasCurrentPlan = Boolean(currentPlan);
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageTitle
-        title="Planos e assinatura"
-        subtitle="Tudo incluso, 0% de comissão, com bot + IA. Escolha o plano ideal para a sua loja."
-      />
+    <PageShell
+      className="mx-auto max-w-5xl"
+      titulo="Planos e assinatura"
+      descricao="Tudo incluso e 0% de comissão sobre as suas vendas."
+    >
 
       {/* Faixa de status atual: plano atual + trial */}
       <Card className="mb-6 flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -290,7 +291,7 @@ export const PlanoPage: React.FC = () => {
         </Link>
         .
       </p>
-    </div>
+    </PageShell>
   );
 };
 

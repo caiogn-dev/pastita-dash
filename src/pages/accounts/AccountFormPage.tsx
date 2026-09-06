@@ -3,7 +3,8 @@ import logger from '../../services/logger';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Input, PageLoading, PageTitle } from '../../components/common';
+import { Card, Button, Input, PageLoading } from '../../components/common';
+import { PageShell } from '../../components/ui';
 import { whatsappService, agentsService, getErrorMessage } from '../../services';
 import { useAccountStore } from '../../stores/accountStore';
 import { Agent } from '../../services/agents';
@@ -98,19 +99,13 @@ export const AccountFormPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <PageTitle
-          title={isEditing ? 'Editar Conta' : 'Nova Conta'}
-        />
-        <Link
-          to="/accounts"
-          className="inline-flex items-center gap-2 text-sm text-fg-muted-token hover:text-fg-token"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Voltar
-        </Link>
-      </div>
+    <PageShell
+      titulo={isEditing ? 'Editar conexão' : 'Nova conexão'}
+      trilha={[
+        { rotulo: 'Conexões', href: '/accounts' },
+        { rotulo: isEditing ? 'Editar' : 'Nova' },
+      ]}
+    >
 
       <Card className="p-4">
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -232,6 +227,6 @@ export const AccountFormPage: React.FC = () => {
           </div>
         </form>
       </Card>
-    </div>
+    </PageShell>
   );
 };

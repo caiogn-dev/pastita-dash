@@ -126,7 +126,11 @@ export const PageShell: React.FC<PageShellProps> = ({
           <div className="min-w-0">
             <h1
               className={cn(
-                'font-bold tracking-tight text-fg-token',
+                // `font-display` é o Cinzel da identidade do painel. O chassi
+                // não o usava, e o `PageTitle` — o cabeçalho paralelo que seis
+                // páginas usavam — usava: padronizar sem isto TIRAVA a marca
+                // das telas convertidas, deixando-as mais genéricas que antes.
+                'font-display font-bold tracking-tight text-fg-token',
                 quadro ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl',
               )}
             >

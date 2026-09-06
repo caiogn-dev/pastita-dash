@@ -29,7 +29,6 @@ import {
   Pagination,
   PageLoading,
   StatusFilter,
-  PageTitle,
   EmptyState,
 } from '../../components/common';
 import { PageShell } from '../../components/ui';

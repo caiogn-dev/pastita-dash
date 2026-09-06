@@ -11,10 +11,11 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 
-import { Button, Modal, PageLoading, PageTitle, Textarea } from '../../components/common';
+import { Button, Modal, PageLoading, Textarea } from '../../components/common';
 import { conversationsService, getErrorMessage } from '../../services';
 import { getAvatarColor, getInitials } from '../../utils/avatar';
 import type { Conversation, ConversationNote, Message, UniversalConversation } from '../../types';
+import { PageShell } from '../../components/ui';
 
 type PlatformFilter = 'all' | 'whatsapp' | 'instagram' | 'messenger';
 type WhatsAppAction = 'markAsRead' | 'switchToHuman' | 'switchToAuto' | 'resolve' | 'close' | 'reopen';
@@ -297,17 +298,16 @@ export const ConversationsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <PageTitle
-        title="Conversas"
-        subtitle="Atividade geral centralizada por conversa, ordenada pela última mensagem."
-        actions={
-          <Button variant="secondary" onClick={() => void loadConversations(false)}>
-            <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-        }
-      />
+    <PageShell
+      titulo="Conversas"
+      descricao="Toda a atividade por conversa, da mais recente para a mais antiga."
+      acoes={
+        <Button variant="secondary" onClick={() => void loadConversations(false)}>
+          <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
+      }
+    >
 
       <section className="grid gap-4 md:grid-cols-4">
         <div className="rounded-2xl border border-border-primary bg-bg-card p-4">
@@ -672,6 +672,6 @@ export const ConversationsPage: React.FC = () => {
           </div>
         )}
       </Modal>
-    </div>
+    </PageShell>
   );
 };

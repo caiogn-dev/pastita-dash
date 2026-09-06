@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Card, Button, Input, Loading, PageTitle } from '../../components/common';
+import { Card, Button, Input, Loading } from '../../components/common';
 import { authService, getErrorMessage, notificationsService } from '../../services';
 import type { NotificationPreference } from '../../services/notifications';
 import { useAuthStore } from '../../stores/authStore';
+import { PageShell } from '../../components/ui';
 
 type NotificationSection = {
   id: string;
@@ -211,8 +212,10 @@ export const SettingsPage: React.FC = () => {
   ];
 
   return (
-    <div className="p-6 space-y-6">
-      <PageTitle title="Configurações" subtitle="Gerencie suas preferências e segurança" />
+    <PageShell
+      titulo="Configurações"
+      descricao="Sua conta, sua senha e as preferências deste painel."
+    >
 
       {/* User Info */}
       <Card title="Informações do Usuário">
@@ -337,6 +340,6 @@ export const SettingsPage: React.FC = () => {
         )}
       </Card>
 
-    </div>
+    </PageShell>
   );
 };
