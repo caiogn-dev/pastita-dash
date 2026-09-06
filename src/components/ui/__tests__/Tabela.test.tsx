@@ -117,6 +117,20 @@ describe('tabela do painel', () => {
     expect(screen.getByText(/1–20 de 35/)).toBeInTheDocument();
   });
 
+  it('a linha aceita tonalidade própria SEM perder o clicável', () => {
+    // Histórico esmaece a linha do pedido cancelado. Sem este ponto de
+    // extensão, a página mantém a própria `<tr>` só por causa disso — e foi
+    // por detalhes assim que 20 tabelas nasceram à mão.
+    montar({
+      onAbrir: jest.fn(),
+      classeDaLinha: (c) => (c.code === 'INDICA10' ? 'opacity-50' : ''),
+    });
+
+    const cancelada = screen.getByRole('row', { name: 'Abrir cupom INDICA10' });
+    expect(cancelada.className).toMatch(/opacity-50/);
+    expect(cancelada.className).toMatch(/cursor-pointer/);
+  });
+
   it('a classe da coluna vale no cabeçalho E na célula', () => {
     // Sem isso, esconder uma coluna no tablet significa repetir a classe em
     // dois lugares — e foi assim que Clientes acabou com o cabeçalho "Gasto

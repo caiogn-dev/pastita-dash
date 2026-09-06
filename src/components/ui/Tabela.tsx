@@ -30,6 +30,11 @@ export interface TabelaProps<T> {
   rotuloDaLinha: (item: T) => string;
   /** Presente = a linha inteira abre o item. Ausente = a linha é só leitura. */
   onAbrir?: (item: T) => void;
+  /**
+   * Classe por LINHA — o cancelado esmaecido, o atrasado marcado. Sem isso a
+   * página precisa manter a própria `<tr>` só por causa de uma tonalidade.
+   */
+  classeDaLinha?: (item: T) => string;
   carregando?: boolean;
   vazio?: { titulo: string; descricao?: string; icone?: React.ReactNode; acao?: React.ReactNode };
   paginacao?: Omit<PaginacaoProps, 'className'>;
@@ -55,6 +60,7 @@ export function Tabela<T>({
   chave,
   rotuloDaLinha,
   onAbrir,
+  classeDaLinha,
   carregando = false,
   vazio,
   paginacao,
@@ -92,6 +98,7 @@ export function Tabela<T>({
               className={cn(
                 'rounded-xl border border-border-token bg-surface p-4',
                 onAbrir && (abrir as { className?: string }).className,
+                classeDaLinha?.(item),
               )}
             >
               <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
@@ -134,6 +141,10 @@ export function Tabela<T>({
                 {...(onAbrir
                   ? linhaClicavel(() => onAbrir(item), rotuloDaLinha(item))
                   : { 'aria-label': rotuloDaLinha(item) })}
+                className={cn(
+                  onAbrir && linhaClicavel(() => {}, '').className,
+                  classeDaLinha?.(item),
+                )}
               >
                 {colunas.map((coluna) => (
                   <td

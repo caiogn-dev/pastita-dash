@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, Button, Badge } from '../../components/ui';
-import { Modal, Loading } from '../../components/common';
+import { Modal } from '../../components/common';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useStore } from '../../hooks/useStore';
 import { PRINT_JOB_STATUS_LABELS } from '../../utils/rotulosDeEstado';
@@ -30,7 +30,7 @@ import {
   listPrintJobs,
   requeuePrintJob,
 } from '../../services/printing';
-import { PageShell } from '../../components/ui';
+import { PageShell, Tabela, RowActions } from '../../components/ui';
 
 const JOB_STATUS_TONE: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
   completed: 'success',
@@ -208,158 +208,188 @@ const PrintSettingsPage: React.FC = () => {
       {/* Agentes */}
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-fg-token mb-4">Agentes (computadores com impressora)</h2>
-        {loading && agents.length === 0 ? (
-          <Loading />
-        ) : agents.length === 0 ? (
-          <div className="text-center py-8">
-            <PrinterIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
-            <p className="font-medium text-fg-token">Nenhum agente configurado</p>
-            <p className="text-sm text-fg-muted-token mt-1 max-w-md mx-auto">
-              Instale o print-agent no computador do caixa (Windows + impressora térmica),
-              crie um agente aqui e cole a chave no <code>config/agent.json</code>.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-token text-left">
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Agente</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Estação</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Impressora</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Status</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Último contato</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {agents.map((agent) => (
-                  <tr key={agent.id} className="border-b border-border-token last:border-0">
-                    <td className="py-2.5 px-2">
-                      <p className="font-medium text-fg-token">{agent.name}</p>
-                      <p className="text-xs text-fg-muted-token">{agent.host_name || agent.platform}</p>
-                    </td>
-                    <td className="py-2.5 px-2">
-                      <Badge tone={agent.station === 'balcao' ? 'warning' : 'neutral'}>
-                        {STATION_LABELS[agent.station] || agent.station}
-                      </Badge>
-                    </td>
-                    <td className="py-2.5 px-2">
-                      {(agent.available_printers?.length ?? 0) > 0 ? (
-                        <select
-                          value={agent.printer_name || ''}
-                          onChange={(e) => handleSelectPrinter(agent, e.target.value)}
-                          className="text-sm border border-border-token rounded px-2 py-1.5 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand max-w-[220px]"
-                          title="Impressoras detectadas no computador do agent"
-                        >
-                          {!agent.printer_name && <option value="">Escolha a impressora…</option>}
-                          {agent.printer_name && !agent.available_printers!.includes(agent.printer_name) && (
-                            <option value={agent.printer_name}>{agent.printer_name} (não detectada)</option>
-                          )}
-                          {agent.available_printers!.map((name) => (
-                            <option key={name} value={name}>{name}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="text-fg-token" title="Conecte o agent para detectar as impressoras automaticamente">
-                          {agent.printer_name || '—'}
-                          <span className="block text-badge text-fg-muted-token">aguardando detecção…</span>
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-2">
-                      {agent.is_online ? (
-                        <Badge tone="success" className="gap-1">
-                          <SignalIcon className="w-3.5 h-3.5" /> Online
-                        </Badge>
-                      ) : (
-                        <Badge tone="danger" className="gap-1">
-                          <SignalSlashIcon className="w-3.5 h-3.5" /> Offline
-                        </Badge>
-                      )}
-                      {agent.last_error && (
-                        <p className="text-xs text-[var(--danger)] mt-0.5 max-w-[200px] truncate" title={agent.last_error}>
-                          {agent.last_error}
-                        </p>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-2 text-fg-muted-token">{fmtDate(agent.last_seen_at)}</td>
-                    <td className="py-2.5 px-2">
-                      <div className="flex justify-end gap-1">
-                        <button
-                          onClick={() => handleRotateKey(agent)}
-                          className="p-1.5 rounded hover:bg-surface-2"
-                          title="Gerar nova chave (a atual para de funcionar)"
-                        >
-                          <KeyIcon className="w-4 h-4 text-fg-muted-token" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(agent)}
-                          className="p-1.5 rounded hover:bg-red-50"
-                          title="Remover agente"
-                        >
-                          <TrashIcon className="w-4 h-4 text-[var(--danger)]" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <Tabela<(typeof agents)[number]>
+          itens={agents}
+          chave={(a) => String(a.id)}
+          rotuloDaLinha={(a) => `Agente ${a.name}`}
+          carregando={loading}
+          vazio={{
+            titulo: 'Nenhum agente configurado',
+            descricao:
+              'Instale o print-agent no computador do caixa (Windows + impressora térmica), crie um agente aqui e cole a chave no config/agent.json.',
+            icone: <PrinterIcon className="h-12 w-12" />,
+          }}
+          colunas={[
+            {
+              chave: 'agente',
+              cabecalho: 'Agente',
+              render: (a) => (
+                <div className="min-w-0">
+                  <p className="font-medium text-fg-token">{a.name}</p>
+                  <p className="text-xs text-fg-muted-token">{a.host_name || a.platform}</p>
+                </div>
+              ),
+            },
+            {
+              chave: 'estacao',
+              cabecalho: 'Estação',
+              render: (a) => (
+                <Badge tone={a.station === 'balcao' ? 'warning' : 'neutral'}>
+                  {STATION_LABELS[a.station] || a.station}
+                </Badge>
+              ),
+            },
+            {
+              chave: 'impressora',
+              cabecalho: 'Impressora',
+              render: (a) =>
+                (a.available_printers?.length ?? 0) > 0 ? (
+                  <select
+                    value={a.printer_name || ''}
+                    onChange={(e) => handleSelectPrinter(a, e.target.value)}
+                    className="max-w-[220px] rounded border border-border-token bg-surface px-2 py-1.5 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
+                    title="Impressoras detectadas no computador do agente"
+                  >
+                    {!a.printer_name && <option value="">Escolha a impressora…</option>}
+                    {a.printer_name && !a.available_printers!.includes(a.printer_name) && (
+                      <option value={a.printer_name}>{a.printer_name} (não detectada)</option>
+                    )}
+                    {a.available_printers!.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span title="Conecte o agente para detectar as impressoras automaticamente">
+                    {a.printer_name || '—'}
+                    <span className="block text-badge text-fg-muted-token">
+                      aguardando detecção…
+                    </span>
+                  </span>
+                ),
+            },
+            {
+              chave: 'status',
+              cabecalho: 'Status',
+              render: (a) => (
+                <>
+                  {a.is_online ? (
+                    <Badge tone="success" className="gap-1">
+                      <SignalIcon className="h-3.5 w-3.5" /> Online
+                    </Badge>
+                  ) : (
+                    <Badge tone="danger" className="gap-1">
+                      <SignalSlashIcon className="h-3.5 w-3.5" /> Offline
+                    </Badge>
+                  )}
+                  {a.last_error && (
+                    <p
+                      className="mt-0.5 max-w-[200px] truncate text-xs text-[var(--danger)]"
+                      title={a.last_error}
+                    >
+                      {a.last_error}
+                    </p>
+                  )}
+                </>
+              ),
+            },
+            {
+              chave: 'contato',
+              cabecalho: 'Último contato',
+              classe: 'max-lg:hidden',
+              render: (a) => fmtDate(a.last_seen_at),
+            },
+            {
+              chave: 'acoes',
+              cabecalho: 'Ações',
+              alinhamento: 'direita',
+              render: (a) => (
+                // Eram uma chave e uma lixeira nuas. "Gerar nova chave" invalida
+                // a atual e para a impressão do caixa até alguém colar a nova —
+                // um pictograma não avisa isso.
+                <RowActions
+                  rotulo={`Ações do agente ${a.name}`}
+                  acoes={[
+                    {
+                      rotulo: 'Gerar nova chave',
+                      icone: <KeyIcon className="h-4 w-4" />,
+                      onClick: () => handleRotateKey(a),
+                    },
+                    {
+                      rotulo: 'Remover agente',
+                      icone: <TrashIcon className="h-4 w-4" />,
+                      destrutiva: true,
+                      onClick: () => handleDelete(a),
+                    },
+                  ]}
+                />
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Fila de jobs */}
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-fg-token mb-4">Últimas impressões</h2>
-        {loading && jobs.length === 0 ? (
-          <Loading />
-        ) : jobs.length === 0 ? (
-          <p className="text-sm text-fg-muted-token py-4 text-center">Nenhum job de impressão ainda. Eles aparecem aqui quando entra pedido.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-token text-left">
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Pedido</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Template</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Status</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Criado</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium">Impresso</th>
-                  <th className="pb-2 px-2 text-fg-muted-token font-medium text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((job) => (
-                  <tr key={job.id} className="border-b border-border-token last:border-0">
-                    <td className="py-2 px-2 font-medium text-fg-token">{job.order_number || job.title || '—'}</td>
-                    <td className="py-2 px-2 text-fg-muted-token">{job.template}</td>
-                    <td className="py-2 px-2">
-                      <Badge tone={JOB_STATUS_TONE[job.status] || 'neutral'}>
-                        {PRINT_JOB_STATUS_LABELS[job.status] ?? job.status}
-                      </Badge>
-                      {job.last_error && (
-                        <p className="text-xs text-[var(--danger)] mt-0.5 max-w-[180px] truncate" title={job.last_error}>
-                          {job.last_error}
-                        </p>
-                      )}
-                    </td>
-                    <td className="py-2 px-2 text-fg-muted-token">{fmtDate(job.created_at)}</td>
-                    <td className="py-2 px-2 text-fg-muted-token">{fmtDate(job.printed_at)}</td>
-                    <td className="py-2 px-2">
-                      <div className="flex justify-end">
-                        <Button variant="ghost" onClick={() => handleRequeue(job)}>
-                          Reimprimir
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <Tabela<(typeof jobs)[number]>
+          itens={jobs}
+          chave={(j) => String(j.id)}
+          rotuloDaLinha={(j) => `Impressão ${j.order_number || j.title || j.id}`}
+          carregando={loading}
+          vazio={{
+            titulo: 'Nenhuma impressão ainda',
+            descricao: 'As comandas aparecem aqui quando entra pedido.',
+            icone: <PrinterIcon className="h-12 w-12" />,
+          }}
+          colunas={[
+            {
+              chave: 'pedido',
+              cabecalho: 'Pedido',
+              render: (j) => (
+                <span className="font-medium">{j.order_number || j.title || '—'}</span>
+              ),
+            },
+            { chave: 'template', cabecalho: 'Comanda', classe: 'max-lg:hidden', render: (j) => j.template },
+            {
+              chave: 'status',
+              cabecalho: 'Status',
+              render: (j) => (
+                <>
+                  <Badge tone={JOB_STATUS_TONE[j.status] || 'neutral'}>
+                    {PRINT_JOB_STATUS_LABELS[j.status] ?? j.status}
+                  </Badge>
+                  {j.last_error && (
+                    <p
+                      className="mt-0.5 max-w-[180px] truncate text-xs text-[var(--danger)]"
+                      title={j.last_error}
+                    >
+                      {j.last_error}
+                    </p>
+                  )}
+                </>
+              ),
+            },
+            { chave: 'criado', cabecalho: 'Criado', render: (j) => fmtDate(j.created_at) },
+            {
+              chave: 'impresso',
+              cabecalho: 'Impresso',
+              classe: 'max-lg:hidden',
+              render: (j) => fmtDate(j.printed_at),
+            },
+            {
+              chave: 'acoes',
+              cabecalho: 'Ações',
+              alinhamento: 'direita',
+              render: (j) => (
+                <Button variant="ghost" onClick={() => handleRequeue(j)}>
+                  Reimprimir
+                </Button>
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Modal de criação */}

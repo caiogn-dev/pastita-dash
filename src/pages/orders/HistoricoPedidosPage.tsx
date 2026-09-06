@@ -28,14 +28,12 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   ArrowDownTrayIcon,
   MagnifyingGlassIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   ReceiptPercentIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { Card, Badge, Button, PageShell, KpiGrid, EmptyState, linhaClicavel } from '../../components/ui';
+import { Card, Badge, Button, PageShell, KpiGrid, EmptyState, Tabela } from '../../components/ui';
 import { PageLoading } from '../../components/common';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { useStore, useDebounce } from '../../hooks';
@@ -137,7 +135,6 @@ export const HistoricoPedidosPage: React.FC = () => {
 
   const pedidos = listaQuery.data?.results ?? [];
   const total = listaQuery.data?.count ?? 0;
-  const totalPaginas = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const resumo = resumoQuery.data;
   const invertida = janelaInvertida(janela);
 
@@ -365,101 +362,103 @@ export const HistoricoPedidosPage: React.FC = () => {
           />
           )
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border-token bg-surface-2">
-                    <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest">Data</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest">Pedido</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest">Cliente</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden lg:table-cell">Itens</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden xl:table-cell">Canal</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest hidden md:table-cell">Pagamento</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-fg-muted-token uppercase tracking-widest">Status</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-fg-muted-token uppercase tracking-widest">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-token">
-                  {pedidos.map((p) => {
-                    const qtdItens = (p.items?.length ?? 0) + (p.combo_items?.length ?? 0);
-                    const cancelado = p.status === 'cancelled';
-                    return (
-                      <tr
-                        key={p.id}
-                        {...linhaClicavel(() => abrirPedido(p), `Abrir pedido ${p.order_number}`)}
-                        className={`${linhaClicavel(() => {}, '').className} ${tonalidadeDaLinha(p.status)}`}
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap text-fg-muted-token">
-                          {format(new Date(p.created_at), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
-                        </td>
-                        <td className="px-4 py-3 font-mono text-xs font-semibold text-fg-token">
-                          #{p.order_number}
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-fg-token">{p.customer_name || '—'}</p>
-                          <p className="text-xs text-fg-muted-token">{p.customer_phone}</p>
-                        </td>
-                        <td className="px-4 py-3 text-center hidden lg:table-cell text-fg-muted-token">
-                          {qtdItens}
-                        </td>
-                        <td className="px-4 py-3 hidden xl:table-cell text-fg-muted-token">
-                          {CANAL_LABEL[p.source ?? ''] ?? p.source ?? '—'}
-                        </td>
-                        <td className="px-4 py-3 hidden md:table-cell text-fg-muted-token">
-                          {PAGAMENTO_LABEL[p.payment_method] ?? p.payment_method ?? '—'}
-                          {p.payment_status === 'paid' ? '' : ' (não pago)'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge tone={cancelado ? 'danger' : p.status === 'delivered' ? 'success' : 'neutral'}>
-                            {STATUS_LABEL[p.status] ?? p.status}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold text-fg-token whitespace-nowrap">
-                          {/* Riscado quando cancelado: o valor existiu e não
-                              virou dinheiro — esconder faria a linha parecer
-                              uma venda a menos, e mostrar normal infla a soma
-                              que o olho faz. */}
-                          <span className={cancelado ? 'line-through text-fg-muted-token' : ''}>
-                            R$ {dinheiro(p.total)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex items-center justify-between px-5 py-3 border-t border-border-token">
-              <span className="text-xs text-fg-muted-token">
-                {Math.min((pagina - 1) * PAGE_SIZE + 1, total)}–{Math.min(pagina * PAGE_SIZE, total)} de {total}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label="Página anterior"
-                  onClick={() => mudar('pagina', String(pagina - 1))}
-                  disabled={pagina <= 1}
-                  className="p-1.5 rounded-lg text-fg-muted-token hover:text-fg-token hover:bg-surface-2 disabled:opacity-30"
-                >
-                  <ChevronLeftIcon className="h-4 w-4" />
-                </button>
-                <span className="text-xs text-fg-muted-token">
-                  {pagina} de {totalPaginas}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Próxima página"
-                  onClick={() => mudar('pagina', String(pagina + 1))}
-                  disabled={pagina >= totalPaginas}
-                  className="p-1.5 rounded-lg text-fg-muted-token hover:text-fg-token hover:bg-surface-2 disabled:opacity-30"
-                >
-                  <ChevronRightIcon className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </>
+          <Tabela<(typeof pedidos)[number]>
+            itens={pedidos}
+            chave={(p) => String(p.id)}
+            rotuloDaLinha={(p) => `Abrir pedido ${p.order_number}`}
+            onAbrir={abrirPedido}
+            classeDaLinha={(p) => tonalidadeDaLinha(p.status)}
+            paginacao={{
+              pagina,
+              porPagina: PAGE_SIZE,
+              total,
+              onPagina: (n) => mudar('pagina', String(n)),
+              rotulo: 'pedidos',
+            }}
+            colunas={[
+              {
+                chave: 'data',
+                cabecalho: 'Data',
+                render: (p) =>
+                  format(new Date(p.created_at), "dd/MM/yy 'às' HH:mm", { locale: ptBR }),
+              },
+              {
+                chave: 'numero',
+                cabecalho: 'Pedido',
+                render: (p) => (
+                  <span className="font-mono text-xs font-semibold">#{p.order_number}</span>
+                ),
+              },
+              {
+                chave: 'cliente',
+                cabecalho: 'Cliente',
+                render: (p) => (
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-fg-token">{p.customer_name || '—'}</p>
+                    <p className="text-xs text-fg-muted-token">{p.customer_phone}</p>
+                  </div>
+                ),
+              },
+              {
+                chave: 'itens',
+                cabecalho: 'Itens',
+                alinhamento: 'centro',
+                classe: 'max-lg:hidden',
+                render: (p) => (p.items?.length ?? 0) + (p.combo_items?.length ?? 0),
+              },
+              {
+                chave: 'canal',
+                cabecalho: 'Canal',
+                classe: 'max-xl:hidden',
+                render: (p) => CANAL_LABEL[p.source ?? ''] ?? p.source ?? '—',
+              },
+              {
+                chave: 'pagamento',
+                cabecalho: 'Pagamento',
+                classe: 'max-md:hidden',
+                render: (p) =>
+                  `${PAGAMENTO_LABEL[p.payment_method] ?? p.payment_method ?? '—'}${
+                    p.payment_status === 'paid' ? '' : ' (não pago)'
+                  }`,
+              },
+              {
+                chave: 'status',
+                cabecalho: 'Status',
+                render: (p) => (
+                  <Badge
+                    tone={
+                      p.status === 'cancelled'
+                        ? 'danger'
+                        : p.status === 'delivered'
+                          ? 'success'
+                          : 'neutral'
+                    }
+                  >
+                    {STATUS_LABEL[p.status] ?? p.status}
+                  </Badge>
+                ),
+              },
+              {
+                chave: 'total',
+                cabecalho: 'Total',
+                alinhamento: 'direita',
+                render: (p) => (
+                  // Riscado quando cancelado: o valor existiu e não virou
+                  // dinheiro — esconder faria a linha parecer uma venda a
+                  // menos, e mostrar normal infla a soma que o olho faz.
+                  <span
+                    className={
+                      p.status === 'cancelled'
+                        ? 'font-bold text-fg-muted-token line-through'
+                        : 'font-bold'
+                    }
+                  >
+                    R$ {dinheiro(p.total)}
+                  </span>
+                ),
+              },
+            ]}
+          />
         )}
       </Card>
 
