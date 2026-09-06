@@ -13,8 +13,37 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   verdes / 247 suítes**. A falha pré-existente era `pedidosDoQuadro.test.ts`
   (corrigida nesta fatia, ver abaixo); +2 testes novos desta fatia.
 - `npm run build` (tsc && vite build, igual à Vercel): **ok** (~12s).
+- `npm run lint`: **antes 2 errors** (`no-irregular-whitespace`, PRÉ-EXISTENTES em
+  `variaveisDaOferta.ts` + seu teste) → **depois 0 errors / 273 warnings** (gate 400).
+  Corrigido nesta fatia (ver abaixo). O passo `lint` do job `build` do CI falhava
+  aqui, ou seja, o CI da `main` estava vermelho para **todo** PR.
 
 ## Histórico
+
+### 2026-09-06 — CI: `no-irregular-whitespace` derrubava o job `build` da main inteira
+- **Medido:** ao dirigir o PR #189 ao verde, o job `build` do CI (`.github/workflows/ci.yml`:
+  `build → lint → test`) falhava. Duas causas pré-existentes na `main`, nenhuma do
+  diff do #189: (a) o teste de fuso do quadro (corrigido no #189, abaixo) e (b)
+  **2 errors de `no-irregular-whitespace`** em `src/pages/marketing/whatsapp/variaveisDaOferta.ts:44`
+  e no seu teste `:38`. O passo `lint` roda antes do `test`, então esses 2 errors
+  já barravam o pipeline (o `test` nem chegava a rodar) — o CI da `main` estava
+  vermelho para qualquer PR.
+- **Causa:** ambos os arquivos usam um NBSP (U+00A0) **literal** dentro de uma
+  regex — proposital: `toLocaleString('pt-BR')` insere NBSP no dinheiro ("R$ 5,00")
+  e o código normaliza para espaço comum com `.replace(/<NBSP>/g, ' ')`; o teste
+  garante que o NBSP não sobrevive. Só que o caractere NBSP cru no fonte dispara a
+  regra `no-irregular-whitespace`.
+- **Mudado (comportamento idêntico):** trocado o NBSP **literal** pelo escape
+  ` ` na regex (`/ /g` e `/ /`) nos dois arquivos. A regex casa
+  exatamente o mesmo caractere — zero mudança de runtime — mas some o caractere
+  irregular do fonte. Fix portado para o #189 (per drive-to-green: sem ele o #189
+  não fica verde, já que o `lint` do CI é o mesmo para o repo todo).
+- **Verificação:** teste afetado `variaveisDaOferta.test.ts` **12/12 verde** antes
+  e depois (comportamento preservado); `npm run lint` **2 errors → 0 errors**;
+  `tsc` limpo e `vite build` ok.
+- **Próximo passo priorizado:** varrer o repo por outros NBSP/whitespace irregular
+  cru em fonte e, se recorrente, considerar `no-irregular-whitespace` com
+  `skipTemplates`/`skipRegExps` no eslintrc para evitar reincidência.
 
 ### 2026-09-06 — Correção: "entregue hoje" usava o fuso do runtime (baseline vermelho)
 - **Medido:** o baseline estava **vermelho** — `src/pages/orders/__tests__/pedidosDoQuadro.test.ts`
