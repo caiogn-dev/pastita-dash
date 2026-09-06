@@ -52,7 +52,7 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
     loadGoogleMaps()
       .then(() => {
         if (!active || !mapContainerRef.current || mapRef.current) return;
-        const maps = (window as any).google.maps;
+        const maps = window.google!.maps;
         const center = storeLocation?.latitude && storeLocation?.longitude
           ? { lat: Number(storeLocation.latitude), lng: Number(storeLocation.longitude) }
           : DEFAULT_CENTER;
@@ -90,7 +90,7 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
 
-    const maps = (window as any).google.maps;
+    const maps = window.google!.maps;
     const map = mapRef.current;
 
     objectsRef.current.forEach((obj) => {

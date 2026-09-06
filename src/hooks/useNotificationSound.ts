@@ -31,7 +31,7 @@ export const useNotificationSound = (options: NotificationSoundOptions = {}) => 
     }
 
     try {
-      audioCtx.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioCtx.current = new (window.AudioContext || window.webkitAudioContext!)();
       setIsInitialized(true);
       return audioCtx.current;
     } catch (e) {

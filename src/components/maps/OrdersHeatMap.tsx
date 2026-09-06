@@ -63,7 +63,7 @@ export const OrdersHeatMap: React.FC<{
       .then(() => {
         if (!active || !containerRef.current || mapRef.current) return;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const maps = (window as any).google.maps;
+        const maps = window.google!.maps;
         mapRef.current = new maps.Map(containerRef.current, {
           center: DEFAULT_CENTER,
           zoom: 12,
@@ -84,7 +84,7 @@ export const OrdersHeatMap: React.FC<{
   useEffect(() => {
     if (!ready || !mapRef.current) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const maps = (window as any).google.maps;
+    const maps = window.google!.maps;
     const map = mapRef.current;
 
     circlesRef.current.forEach((c) => { try { c.setMap(null); } catch { /* ignore */ } });

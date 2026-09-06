@@ -27,11 +27,11 @@ export function useInlineProductMutations({ products, setProducts, onError }: Ar
 
   const setStatus = useCallback((id: string, active: boolean) =>
     run(id, { status: active ? 'active' : 'inactive' } as Partial<Product>,
-      () => storesApi.updateProduct(id, { status: active ? 'active' : 'inactive' } as any)), [run]);
+      () => storesApi.updateProduct(id, { status: active ? 'active' : 'inactive' })), [run]);
 
   const setFeatured = useCallback((id: string, featured: boolean) =>
     run(id, { featured } as Partial<Product>,
-      () => storesApi.updateProduct(id, { featured } as any)), [run]);
+      () => storesApi.updateProduct(id, { featured })), [run]);
 
   const setStock = useCallback((id: string, qty: number) => {
     // Reverte igual ao run() acima. Sem isto o patch otimista ficava na tela

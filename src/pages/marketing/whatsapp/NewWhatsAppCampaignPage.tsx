@@ -53,21 +53,27 @@ import { formatCurrency } from '../../../utils/formatters';
 import {
   componentesDoTemplate,
   variaveisDoTemplate,
-  type VariavelDoTemplate,
 } from './campanha/componentesDoTemplate';
+import { contatosDoCsv } from './campanha/contatosDoCsv';
+import {
+  PASSOS,
+  podeAvancar,
+  passoAnterior,
+  proximoPasso,
+  type PassoDaCampanha,
+  type TipoDeMensagem,
+} from './campanha/passosDaCampanha';
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
-type Step = 'account' | 'message' | 'recipients' | 'review';
-type MessageType = 'template' | 'text';
 
 interface CampaignFormData {
   name: string;
   description: string;
   accountId: string;
-  messageType: MessageType;
+  messageType: TipoDeMensagem;
   templateId: string;
   templateName: string;
   templateLanguage: string;
@@ -84,12 +90,20 @@ interface CampaignFormData {
 // CONSTANTS
 // =============================================================================
 
-const STEPS: { id: Step; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'account', label: 'Conta', icon: DevicePhoneMobileIcon },
-  { id: 'message', label: 'Mensagem', icon: ChatBubbleLeftRightIcon },
-  { id: 'recipients', label: 'Destinatários', icon: UserGroupIcon },
-  { id: 'review', label: 'Enviar', icon: PaperAirplaneIcon },
-];
+/**
+ * A ORDEM e os rótulos vivem em `campanha/passosDaCampanha`, junto das regras
+ * de avanço — duas listas separadas divergem, e aqui divergir significa o
+ * indicador de progresso apontar um passo e a validação cobrar outro.
+ * O ícone é só apresentação, então mora aqui.
+ */
+const ICONE_DO_PASSO: Record<PassoDaCampanha, React.ComponentType<{ className?: string }>> = {
+  account: DevicePhoneMobileIcon,
+  message: ChatBubbleLeftRightIcon,
+  recipients: UserGroupIcon,
+  review: PaperAirplaneIcon,
+};
+
+const STEPS = PASSOS.map((passo) => ({ ...passo, icon: ICONE_DO_PASSO[passo.id] }));
 
 // =============================================================================
 // COMPONENT
@@ -100,7 +114,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   const { storeId, storeSlug, storeName } = useStore();
 
   // State
-  const [currentStep, setCurrentStep] = useState<Step>('account');
+  const [currentStep, setCurrentStep] = useState<PassoDaCampanha>('account');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
@@ -457,49 +471,31 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       return;
     }
 
-    try {
-      const lines = csvContent.trim().split('\n');
-      const newContacts: ContactInput[] = [];
+    // A dedupla é contra as DUAS coisas: a lista já montada e o próprio
+    // arquivo. A segunda faltava — export de sistema de pedido traz o cliente
+    // uma vez por compra, e a pessoa recebia a promoção repetida.
+    const { contatos, repetidos, invalidos } = contatosDoCsv(csvContent, formData.contacts);
 
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        // Skip header if present
-        if (i === 0 && (line.toLowerCase().includes('phone') || line.toLowerCase().includes('telefone'))) {
-          continue;
-        }
-
-        const parts = line.split(/[,;\t]/);
-        const phone = parts[0]?.replace(/\D/g, '');
-        const name = parts[1]?.trim() || '';
-
-        if (phone && phone.length >= 10) {
-          newContacts.push({ phone, name });
-        }
-      }
-
-      if (newContacts.length === 0) {
-        toast.error('Nenhum contato válido encontrado');
-        return;
-      }
-
-      // Merge with existing, avoiding duplicates
-      const existingPhones = new Set(formData.contacts.map(c => c.phone));
-      const uniqueNew = newContacts.filter(c => !existingPhones.has(c.phone));
-
-      setFormData(prev => ({
-        ...prev,
-        contacts: [...prev.contacts, ...uniqueNew],
-      }));
-
-      toast.success(`${uniqueNew.length} contatos importados`);
-      setShowImportModal(false);
-      setCsvContent('');
-    } catch (error) {
-      logger.error('CSV import error', error);
-      toast.error('Erro ao processar CSV');
+    if (contatos.length === 0) {
+      toast.error('Nenhum contato novo no que foi colado');
+      return;
     }
+
+    setFormData(prev => ({ ...prev, contacts: [...prev.contacts, ...contatos] }));
+
+    // O que foi DESCARTADO também é notícia: sem isso o dono cola 300 linhas,
+    // vê "120 contatos" e não sabe o que houve com as outras 180.
+    const sobras = [
+      repetidos ? `${repetidos} repetido${repetidos > 1 ? 's' : ''}` : '',
+      invalidos ? `${invalidos} sem telefone válido` : '',
+    ].filter(Boolean);
+
+    toast.success(
+      `${contatos.length} contato${contatos.length > 1 ? 's' : ''} importado${contatos.length > 1 ? 's' : ''}` +
+        (sobras.length ? ` · ${sobras.join(', ')}` : ''),
+    );
+    setShowImportModal(false);
+    setCsvContent('');
   };
 
   const handleLoadContactList = async (listId: string) => {
@@ -646,40 +642,24 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   // NAVIGATION
   // =============================================================================
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 'account':
-        return !!formData.accountId;
-      case 'message':
-        if (formData.messageType === 'template') {
-          if (!formData.templateId) return false;
-          if (needsOfferProducts && selectedOfferProducts.length < 2) return false;
-          if (needsHeaderImage && !selectedMediaFile && !formData.mediaUrl) return false;
-          return true;
-        }
-        return !!formData.textContent.trim() || !!selectedMediaFile || !!formData.mediaUrl;
-      case 'recipients':
-        return formData.contacts.length > 0;
-      case 'review':
-        return true;
-      default:
-        return false;
-    }
-  };
+  // As regras de "posso avançar?" vivem em `campanha/passosDaCampanha`, com
+  // spec. Cada uma existe porque deixar passar faz a Meta recusar o disparo.
+  const canProceed = () =>
+    podeAvancar(currentStep, {
+      temConta: Boolean(formData.accountId),
+      tipo: formData.messageType,
+      temTemplate: Boolean(formData.templateId),
+      precisaDeProdutosDaOferta: needsOfferProducts,
+      produtosEscolhidos: selectedOfferProducts.length,
+      precisaDeImagemNoCabecalho: needsHeaderImage,
+      temImagem: Boolean(selectedMediaFile) || Boolean(formData.mediaUrl),
+      texto: formData.textContent,
+      quantidadeDeContatos: formData.contacts.length,
+    });
 
-  const goToNextStep = () => {
-    const currentIndex = STEPS.findIndex(s => s.id === currentStep);
-    if (currentIndex < STEPS.length - 1) {
-      setCurrentStep(STEPS[currentIndex + 1].id);
-    }
-  };
+  const goToNextStep = () => setCurrentStep(proximoPasso(currentStep));
 
-  const goToPrevStep = () => {
-    const currentIndex = STEPS.findIndex(s => s.id === currentStep);
-    if (currentIndex > 0) {
-      setCurrentStep(STEPS[currentIndex - 1].id);
-    }
-  };
+  const goToPrevStep = () => setCurrentStep(passoAnterior(currentStep));
 
   // =============================================================================
   // RENDER
@@ -772,7 +752,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Step: Account Selection */}
+        {/* Passo: Account Selection */}
         {currentStep === 'account' && (
           <div className="space-y-6">
             <div>
@@ -825,7 +805,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           </div>
         )}
 
-        {/* Step: Message Configuration */}
+        {/* Passo: Message Configuration */}
         {currentStep === 'message' && (
           <div className="space-y-6">
             <div>
@@ -1223,7 +1203,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           </div>
         )}
 
-        {/* Step: Recipients */}
+        {/* Passo: Recipients */}
         {currentStep === 'recipients' && (
           <div className="space-y-6">
             <div>
@@ -1348,7 +1328,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           </div>
         )}
 
-        {/* Step: Review */}
+        {/* Passo: Review */}
         {currentStep === 'review' && (
           <div className="space-y-6">
             <div>

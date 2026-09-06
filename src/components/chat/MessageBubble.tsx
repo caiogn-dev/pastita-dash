@@ -28,6 +28,7 @@ import {
   MusicalNoteIcon,
 } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckIconSolid } from '@heroicons/react/24/solid';
+import { comoObjeto, listaDe, numeroDe, textoDe } from './conteudoDaMensagem';
 
 const renderText = (value: unknown): string => {
   if (value === null || value === undefined) return '';
@@ -371,10 +372,13 @@ const MediaPreview: React.FC<{
           }
         })()
       : content;
-    const location = (raw as any)?.location ?? raw;
-    const lat = location?.latitude;
-    const lng = location?.longitude;
-    const name = location?.name || location?.address || 'Localização enviada';
+    // A localização vem ora embrulhada em `location`, ora na raiz.
+    const objeto = comoObjeto(raw);
+    const local = comoObjeto(objeto.location ?? raw);
+    const lat = numeroDe(local, 'latitude');
+    const lng = numeroDe(local, 'longitude');
+    const endereco = textoDe(local, 'address');
+    const name = textoDe(local, 'name') ?? endereco ?? 'Localização enviada';
     const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null;
     return (
       <a
@@ -391,14 +395,16 @@ const MediaPreview: React.FC<{
           <p className="text-sm font-medium text-gray-900 dark:text-white">
             {name}
           </p>
-          {location?.address && location.address !== name && (
+          {/* `location` sem declarar local cai no `window.location` do
+              navegador — o TypeScript só apontou isso quando o `as any` saiu. */}
+          {endereco && endereco !== name && (
             <p className="text-xs text-gray-600 dark:text-zinc-300 mt-0.5 break-words">
-              {location.address}
+              {endereco}
             </p>
           )}
           {lat && lng && (
             <p className="text-xs text-gray-500 dark:text-zinc-400">
-              {Number(lat).toFixed(6)}, {Number(lng).toFixed(6)}
+              {lat.toFixed(6)}, {lng.toFixed(6)}
             </p>
           )}
           <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Abrir no Maps</p>
@@ -438,7 +444,7 @@ const MediaPreview: React.FC<{
 
   // Pedido/Compra
   if (type === 'order') {
-    const orderData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
+    const itensDoPedido = listaDe(comoObjeto(content), 'product_items');
     return (
       <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg mb-2 max-w-[280px]">
         <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -446,10 +452,9 @@ const MediaPreview: React.FC<{
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 dark:text-white">Pedido WhatsApp</p>
-          {(orderData as any)?.product_items?.length > 0 && (
+          {itensDoPedido.length > 0 && (
             <p className="text-xs text-gray-500 dark:text-zinc-400">
-              {(orderData as any).product_items.length}{' '}
-              {(orderData as any).product_items.length === 1 ? 'item' : 'itens'}
+              {itensDoPedido.length} {itensDoPedido.length === 1 ? 'item' : 'itens'}
             </p>
           )}
         </div>
@@ -459,8 +464,7 @@ const MediaPreview: React.FC<{
 
   // Reação de emoji
   if (type === 'reaction') {
-    const reactionData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
-    const emoji = (reactionData as any)?.emoji || '👍';
+    const emoji = textoDe(comoObjeto(content), 'emoji') ?? '👍';
     return (
       <div className="flex items-center gap-2 py-1 px-2">
         <span className="text-2xl">{emoji}</span>
@@ -471,8 +475,7 @@ const MediaPreview: React.FC<{
 
   // Botão de resposta
   if (type === 'button') {
-    const btnData = typeof content === 'string' ? (() => { try { return JSON.parse(content); } catch { return {}; } })() : (content || {});
-    const btnText = (btnData as any)?.text || (btnData as any)?.title || renderText(content);
+    const btnText = textoDe(comoObjeto(content), 'text', 'title') ?? renderText(content);
     return (
       <div className="flex items-center gap-2 mb-1">
         <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
