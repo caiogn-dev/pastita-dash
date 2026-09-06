@@ -14,9 +14,9 @@ import { classeDeAltura } from './alturaDaCasca';
  * Casca do desktop: coluna de navegação à esquerda, barra de identidade em
  * cima, conteúdo no resto.
  *
- * A coluna é `sticky h-screen` e o conteúdo rola por conta própria — assim o
- * menu nunca sai de vista, que é o ponto de trocar a navbar horizontal por
- * ela.
+ * É uma APP SHELL: a janela não rola, o conteúdo rola por dentro. A coluna
+ * fica de pé porque está FORA da área que rola — não porque acertou um
+ * `sticky`. Ver `alturaDaCasca.ts` para o defeito que isto corrigiu.
  */
 const Casca: React.FC<{
   children: React.ReactNode;
@@ -56,10 +56,14 @@ const Casca: React.FC<{
             'radial-gradient(circle at top right, rgba(201, 162, 75, 0.08), transparent 55%)',
         }}
       />
-      <div className="max-lg:hidden">
+      {/* `h-full`: a coluna ocupa a casca inteira. Ela NÃO cresce com o
+          conteúdo — quem rola é o conteúdo, ao lado. */}
+      <div className="h-full max-lg:hidden">
         <Sidebar sections={sections} />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* `min-h-0`: sem isto o filho que rola herda `min-height: auto` do
+          flex e cresce em vez de rolar — a casca inteira transborda. */}
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
         <Navbar semNavegacaoDesktop onAbrirBusca={() => setPaletaAberta(true)} />
         {comBanner && <TrialBanner />}
         {children}

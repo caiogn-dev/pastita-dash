@@ -50,70 +50,11 @@ import { avisoDaJanela, horarioParaConsulta, type ResumoDaJanela } from './janel
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 import { formatCurrency } from '../../../utils/formatters';
 
-type TemplateVariable = {
-  name: string;
-  source: 'body' | 'header' | 'button';
-};
-
-const extractTemplateVariables = (template?: MessageTemplate): TemplateVariable[] => {
-  if (!template?.components) return [];
-  const found = new Map<string, TemplateVariable>();
-
-  template.components.forEach((component: any) => {
-    const type = String(component?.type || '').toUpperCase();
-    const source: TemplateVariable['source'] =
-      type === 'HEADER' ? 'header' : type === 'BUTTONS' ? 'button' : 'body';
-    const text = String(component?.text || '');
-    for (const match of text.matchAll(/{{\s*([a-zA-Z0-9_]+)\s*}}/g)) {
-      found.set(match[1], { name: match[1], source });
-    }
-    const namedParams = component?.example?.body_text_named_params || [];
-    namedParams.forEach((param: any) => {
-      if (param?.param_name) {
-        found.set(param.param_name, { name: param.param_name, source });
-      }
-    });
-  });
-
-  return Array.from(found.values());
-};
-
-
-
-const buildTemplateComponents = (
-  template: MessageTemplate | undefined,
-  variables: TemplateVariable[],
-  imageUrl?: string
-) => {
-  const components: Array<Record<string, unknown>> = [];
-
-  const hasImageHeader = template?.components?.some((component: any) =>
-    String(component?.type || '').toUpperCase() === 'HEADER' &&
-    String(component?.format || '').toUpperCase() === 'IMAGE'
-  );
-
-  if (hasImageHeader && imageUrl) {
-    components.push({
-      type: 'header',
-      parameters: [{ type: 'image', image: { link: imageUrl } }],
-    });
-  }
-
-  const bodyVariables = variables.filter(variable => variable.source === 'body');
-  if (bodyVariables.length > 0) {
-    components.push({
-      type: 'body',
-      parameters: bodyVariables.map(variable => ({
-        type: 'text',
-        ...( /^\d+$/.test(variable.name) ? {} : { parameter_name: variable.name }),
-        variable: variable.name,
-        text: '',
-      })),
-    });
-  }
-
-  return components;
-};
+import {
+  componentesDoTemplate,
+  variaveisDoTemplate,
+  type VariavelDoTemplate,
+} from './campanha/componentesDoTemplate';
 
 // =============================================================================
 // TYPES
@@ -299,11 +240,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     [products, selectedOfferProductIds]
   );
   const templateVariables = useMemo(
-    () => extractTemplateVariables(selectedTemplate),
+    () => variaveisDoTemplate(selectedTemplate),
     [selectedTemplate]
   );
   const needsOfferProducts = useMemo(
-    () => templateVariables.some(variable => ['produto_1', 'preco_1', 'produto_2', 'preco_2'].includes(variable.name)),
+    () => templateVariables.some(variable => ['produto_1', 'preco_1', 'produto_2', 'preco_2'].includes(variable.nome)),
     [templateVariables]
   );
   const needsHeaderImage = useMemo(
@@ -633,7 +574,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         : {};
 
       const templateComponents = formData.messageType === 'template'
-        ? buildTemplateComponents(selectedTemplate, templateVariables, mediaPayload.media_url)
+        ? componentesDoTemplate(selectedTemplate, templateVariables, mediaPayload.media_url)
         : [];
       const offerVariables = variaveisDaOferta(selectedOfferProducts);
       const contactsWithVariables = formData.contacts.map(contact => ({

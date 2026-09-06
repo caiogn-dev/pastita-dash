@@ -1,19 +1,22 @@
 /**
  * Altura da casca do painel.
  *
- * A raiz era `min-h-screen` para TODA rota. Isso está certo para página comum:
- * ela cresce com o conteúdo e a janela rola. Mas quebra as rotas de tela cheia
- * (inbox, KDS), que são shells tipo WhatsApp Web: elas precisam ocupar
- * exatamente a viewport e rolar por dentro.
+ * O painel é uma APP SHELL: a janela NÃO rola, o conteúdo rola por dentro.
+ * A coluna de navegação e a barra de identidade ficam de pé porque estão fora
+ * da área que rola — não porque acertaram um `sticky`.
  *
- * Com `min-h-screen`, nenhuma altura percentual abaixo tem teto — `h-full` e
- * `height: 100%` resolvem contra um pai que pode crescer. O resultado é o chat
- * empurrando a página inteira: a coluna de conversas sai da tela e só dá para
- * escrever depois de rolar até o fim. Nenhum `overflow-hidden` mais abaixo
- * resolve, porque o problema é a falta de teto lá em cima.
+ * Antes, só as rotas de tela cheia (inbox, KDS) eram presas na viewport, e a
+ * página comum deixava a janela rolar. O preço disso, medido no navegador na
+ * página de Fidelidade: a coluna de navegação sumia depois de 695px de
+ * rolagem, porque o `sticky` dela só valia enquanto o pai — de 695px — estava
+ * em vista, e a página tinha 4490px.
  *
  * `dvh` e não `vh`: no celular a barra do navegador entra e sai, e `100vh`
- * ignora isso — o composer ficava escondido atrás dela.
+ * ignora isso — o composer do chat ficava escondido atrás dela.
+ *
+ * O parâmetro continua existindo porque as rotas de tela cheia também pedem
+ * `min-h-0` nas camadas internas; hoje o valor é o mesmo para as duas, e o
+ * teste garante que continue sendo.
  */
-export const classeDeAltura = (alturaFixa: boolean): string =>
-  alturaFixa ? 'h-[100dvh] overflow-hidden' : 'min-h-screen';
+export const classeDeAltura = (_alturaFixa: boolean): string =>
+  'h-[100dvh] overflow-hidden';

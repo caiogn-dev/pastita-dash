@@ -128,7 +128,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
     // de mouse — a tela inteira tremendo por um gesto que não pediu nada. Aqui
     // a coluna expandida flutua POR CIMA e devolve o espaço intacto ao sair.
     <div
-      className={cn('relative shrink-0', recolhido ? 'w-[72px]' : 'w-64', className)}
+      // `h-full`: o invólucro acompanha a casca. Ele tinha a altura do
+      // CONTEÚDO (695px) enquanto a página tinha 4490 — e `sticky` só gruda
+      // enquanto o pai está em vista, então a navegação sumia ao rolar.
+      className={cn('relative h-full shrink-0', recolhido ? 'w-[72px]' : 'w-64', className)}
       onMouseEnter={() => setEspiando(true)}
       onMouseLeave={() => setEspiando(false)}
       // Quem navega por Tab não tem ponteiro: sem isto o teclado ficaria preso
@@ -141,7 +144,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
     <nav
       aria-label="Navegação principal"
       className={cn(
-        'sticky top-0 flex h-screen flex-col border-r border-border-token bg-surface',
+        // `h-full` e não `h-screen`: dentro da app shell a coluna preenche a
+        // casca, que já é a viewport. `h-screen` ignoraria uma casca menor.
+        'flex h-full flex-col border-r border-border-token bg-surface',
         // A largura anima com a MESMA curva elástica do indicador ativo:
         // recolher e expandir é movimento de matéria, não corte de frame.
         'transition-[width] duration-300',
