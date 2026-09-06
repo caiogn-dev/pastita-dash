@@ -9,8 +9,7 @@ import { toCsv, downloadCsv } from '../../../utils/csv';
 // Reexportada para os relatórios seguirem importando do mesmo lugar.
 export { EmptyNote, RankedList, type RankedItem } from '../../../components/ui/RankedList';
 
-export const formatBRL = (v: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+export { formatCurrency as formatBRL } from '../../../utils/formatters';
 
 // Rótulos pt-BR dos valores crus que a API devolve (payment_method,
 // delivery_method etc.). Sempre passar por aqui antes de exibir.

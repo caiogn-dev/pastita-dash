@@ -19,6 +19,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { crmApi } from '../../services/crmApi';
 import type { CustomerProfile, CustomerSearchResult } from '../../types/crm';
+import { formatCurrency } from '../../utils/formatters';
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -32,8 +33,6 @@ interface CustomerPanelProps {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const fmt = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const ORDER_STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   pending:          { label: 'Recebido',       cls: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
@@ -175,7 +174,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
               {profile.total_orders > 0 && (
                 <div className="flex items-center gap-2 flex-wrap justify-center">
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                    {fmt(profile.total_spent)} gastos
+                    {formatCurrency(profile.total_spent)} gastos
                   </span>
                   <span className="text-xs text-gray-400 dark:text-zinc-500">
                     · {profile.total_orders} pedido(s)
@@ -240,7 +239,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                     {activeOrderStatus.label}
                   </span>
                   <span className="text-sm font-bold text-gray-900 dark:text-white">
-                    {fmt(profile.active_order.total)}
+                    {formatCurrency(profile.active_order.total)}
                   </span>
                 </div>
               </div>

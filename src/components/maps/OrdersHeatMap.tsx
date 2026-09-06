@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { GOOGLE_MAPS_KEY, loadGoogleMaps } from './loadGoogleMaps';
+import { formatCurrency } from '../../utils/formatters';
 
 export interface HeatPoint {
   lat: number;
@@ -21,7 +22,7 @@ const escapeHtml = (v: string) =>
   v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const pointInfoHtml = (p: HeatPoint, orderUrlBase?: string) => {
-  const total = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.total);
+  const total = formatCurrency(p.total);
   const date = p.created_at
     ? new Date(p.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
     : '';

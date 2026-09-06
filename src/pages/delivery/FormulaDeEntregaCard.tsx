@@ -20,6 +20,7 @@ import {
   problemasDaFormula,
   type FormulaDeEntrega,
 } from './precoDaEntrega';
+import { formatCurrency } from '../../utils/formatters';
 
 /** Chaves reais em `store.metadata` — o backend lê exatamente estas. */
 const CHAVES = {
@@ -72,7 +73,6 @@ export function gravarFormula(
   };
 }
 
-const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 interface CampoProps {
   id: string;
@@ -221,7 +221,7 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
               <li key={km} className="flex items-baseline justify-between gap-3 text-sm">
                 <span className="text-fg-muted-token">{km} km</span>
                 <span className="font-semibold tabular-nums text-fg-token">
-                  {resultado.tipo === 'cobrado' ? fmt(resultado.valor) : 'Não entrega'}
+                  {resultado.tipo === 'cobrado' ? formatCurrency(resultado.valor) : 'Não entrega'}
                 </span>
               </li>
             ))}
@@ -230,7 +230,7 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
             Atende até <strong>{formula.raioMaximoKm} km</strong>
             {(() => {
               const noLimite = precoParaDistancia(formula, formula.raioMaximoKm);
-              return noLimite.tipo === 'cobrado' ? `, por ${fmt(noLimite.valor)}.` : '.';
+              return noLimite.tipo === 'cobrado' ? `, por ${formatCurrency(noLimite.valor)}.` : '.';
             })()}
           </p>
         </div>

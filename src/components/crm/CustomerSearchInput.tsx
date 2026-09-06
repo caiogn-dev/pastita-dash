@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { MagnifyingGlassIcon, XMarkIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 import { useCustomerSearch } from '../../hooks/useCustomerSearch';
 import type { CustomerSearchResult } from '../../types/crm';
+import { formatCurrency } from '../../utils/formatters';
 
 interface CustomerSearchInputProps {
   storeSlug: string;
@@ -11,8 +12,6 @@ interface CustomerSearchInputProps {
   selectedCustomer?: CustomerSearchResult | null;
 }
 
-const fmt = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
   storeSlug,
@@ -60,7 +59,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
           <p className="text-xs text-gray-500 dark:text-zinc-400">
             {selectedCustomer.phone_number}
             {selectedCustomer.total_orders > 0 && (
-              <> · {selectedCustomer.total_orders} pedido(s) · {fmt(selectedCustomer.total_spent)}</>
+              <> · {selectedCustomer.total_orders} pedido(s) · {formatCurrency(selectedCustomer.total_spent)}</>
             )}
           </p>
         </div>
@@ -166,7 +165,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
                 {/* Spent */}
                 {customer.total_spent > 0 && (
                   <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
-                    {fmt(customer.total_spent)}
+                    {formatCurrency(customer.total_spent)}
                   </span>
                 )}
               </button>

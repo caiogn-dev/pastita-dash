@@ -20,9 +20,8 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { StoreCombo } from '../../services/storesApi';
 import { Badge } from '../ui';
+import { formatCurrency } from '../../utils/formatters';
 
-const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const fmt = (v: number | string) => CURRENCY.format(Number(v));
 
 export interface ComboListProps {
   combos: StoreCombo[];
@@ -149,9 +148,9 @@ export const ComboList: React.FC<ComboListProps> = ({
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div>
-                      <p className="font-semibold text-fg-token">{fmt(combo.price)}</p>
+                      <p className="font-semibold text-fg-token">{formatCurrency(combo.price)}</p>
                       {combo.compare_at_price && Number(combo.compare_at_price) > combo.price && (
-                        <p className="text-xs text-fg-muted-token line-through">{fmt(combo.compare_at_price)}</p>
+                        <p className="text-xs text-fg-muted-token line-through">{formatCurrency(combo.compare_at_price)}</p>
                       )}
                     </div>
                   </td>

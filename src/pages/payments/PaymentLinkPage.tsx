@@ -23,6 +23,7 @@ import { useStore } from '../../hooks';
 import { ordersService } from '../../services';
 import type { Order } from '../../types';
 import { PageShell } from '../../components/ui';
+import { formatCurrency } from '../../utils/formatters';
 
 interface GeneratedLink {
   payment_url?: string;
@@ -42,8 +43,6 @@ interface Cobranca {
   paid_at?: string | null;
 }
 
-const formatMoney = (value: number | undefined | null) =>
-  `R$ ${(value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
 const formatDate = (iso?: string | null) => {
   if (!iso) return '';
@@ -356,7 +355,7 @@ export const PaymentLinkPage: React.FC = () => {
       {generated && (
         <section className="mt-6 space-y-4 rounded-2xl border border-border-token bg-surface p-5">
           <h2 className="text-base font-semibold text-fg-token">
-            Link gerado {generated.amount != null ? `— ${formatMoney(Number(generated.amount))}` : ''}
+            Link gerado {generated.amount != null ? `— ${formatCurrency(Number(generated.amount))}` : ''}
           </h2>
 
           {generated.payment_url && (
@@ -430,7 +429,7 @@ export const PaymentLinkPage: React.FC = () => {
                 >
                   <div className="min-w-40 flex-1">
                     <p className="text-sm font-semibold text-fg-token">
-                      {formatMoney(Number(c.amount))}
+                      {formatCurrency(Number(c.amount))}
                       {c.description ? (
                         <span className="ml-2 font-normal text-fg-muted-token">{c.description}</span>
                       ) : null}

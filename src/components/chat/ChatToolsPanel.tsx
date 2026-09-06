@@ -14,6 +14,7 @@ import { Product } from '../../services/products';
 import { Order } from '../../types';
 import { parseCoords, type Coords } from '../orders/newOrder/parseCoords';
 import { precoVigenteDoProduto } from '../../utils/precoVigente';
+import { formatCurrency } from '../../utils/formatters';
 
 type Tab = 'templates' | 'tools';
 type ToolId = 'route' | 'catalog' | 'order' | null;
@@ -55,10 +56,6 @@ function fillTemplate(content: string, vars: Record<string, string>): string {
   return content.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] || `{{${key}}}`);
 }
 
-const formatCurrency = (value: number | string | null | undefined) => {
-  const numeric = typeof value === 'number' ? value : Number(value || 0);
-  return numeric.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
 
 const onlyDigits = (value: string) => value.replace(/\D/g, '');
 

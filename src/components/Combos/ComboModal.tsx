@@ -15,9 +15,8 @@ import toast from 'react-hot-toast';
 import { Button, Modal } from '../common';
 import { StoreCombo } from '../../services/storesApi';
 import { useComboValidation } from '../../hooks/useComboValidation';
+import { formatCurrency } from '../../utils/formatters';
 
-const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const fmt = (v: number | string) => CURRENCY.format(Number(v));
 
 export interface ComboModalProps {
   combo: StoreCombo | null;
@@ -123,9 +122,9 @@ export const ComboModal: React.FC<ComboModalProps> = ({
         <div>
           <p className="text-gray-600 dark:text-fg-muted-token">{combo.description}</p>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{fmt(combo.price)}</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(combo.price)}</span>
             {combo.compare_at_price && Number(combo.compare_at_price) > combo.price && (
-              <span className="text-sm text-gray-400 line-through">{fmt(combo.compare_at_price)}</span>
+              <span className="text-sm text-gray-400 line-through">{formatCurrency(combo.compare_at_price)}</span>
             )}
           </div>
         </div>

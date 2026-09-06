@@ -12,8 +12,8 @@ import {
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toCsv, downloadCsv } from '../../utils/csv';
-import { formatAxisCurrency } from '../../utils/formatters';
-import { Card, Button, Badge, StatCard, PageShell } from '../../components/ui';
+import { formatAxisCurrency, formatCurrency } from '../../utils/formatters';
+import { Card, Button, Badge, StatCard, PageShell, KpiGrid } from '../../components/ui';
 import { relatorioPorSlug, type TabValue } from './relatorios';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankedList } from './sections/shared';
@@ -114,7 +114,6 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, change, tone 
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 // Rótulos do gráfico adaptados ao agrupamento. Antes era 'dd/MM' fixo: no modo
 // Mês saía "01/06" (parece dia) e na aba Faturamento o tooltip nem formatava →
@@ -352,16 +351,23 @@ const AnalyticsPage: React.FC = () => {
           <h2 className="text-lg font-semibold text-fg-token mb-4">Clientes</h2>
           {customersLoading ? <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /> : (
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{customersReport?.summary.total_customers || 0}</p>
-                  <p className="text-sm text-fg-muted-token">Total de Clientes</p>
-                </div>
-                <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{customersReport?.summary.retention_rate || 0}%</p>
-                  <p className="text-sm text-fg-muted-token">Taxa de Retenção</p>
-                </div>
-              </div>
+              <KpiGrid
+                itens={[
+                  {
+                    label: 'Clientes',
+                    value: customersReport?.summary.total_customers || 0,
+                    definicao: 'Pessoas com pelo menos um pedido no período.',
+                  },
+                  {
+                    label: 'Taxa de retenção',
+                    value: `${customersReport?.summary.retention_rate || 0}%`,
+                    // Retenção sem a régua vira número decorativo: 40% é bom ou
+                    // ruim depende de sobre QUEM se mede.
+                    definicao: 'Dos que já tinham comprado antes, quantos voltaram no período.',
+                    tone: 'success',
+                  },
+                ]}
+              />
               <div className="border-t border-border-token pt-4 flex flex-col gap-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-fg-muted-token">Novos Clientes</span>

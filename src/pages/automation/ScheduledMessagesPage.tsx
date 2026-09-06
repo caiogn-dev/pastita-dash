@@ -21,7 +21,7 @@ import {
   ScheduledMessageStats,
   WhatsAppAccount,
 } from '../../types';
-import { PageShell, Tabela, RowActions, KpiGrid } from '../../components/ui';
+import { PageShell, Tabela, RowActions, KpiGrid, Select } from '../../components/ui';
 
 const statusVariants: Record<string, 'gray' | 'info' | 'success' | 'danger' | 'warning'> = {
   pending: 'info',
@@ -223,29 +223,25 @@ export default function ScheduledMessagesPage() {
       {/* Filters */}
       <Card className="p-4">
         <div className="flex flex-wrap gap-4">
-          <select
-            className="rounded-md border-border-token shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            value={filters.account_id}
-            onChange={(e) => setFilters({ ...filters, account_id: e.target.value })}
-          >
-            <option value="">Todas as contas</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className="rounded-md border-border-token shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          >
-            <option value="">Todos os status</option>
-            <option value="pending">Pendente</option>
-            <option value="sent">Enviada</option>
-            <option value="failed">Falhou</option>
-            <option value="cancelled">Cancelada</option>
-          </select>
+          <Select
+            rotuloOculto="Filtrar por conta"
+            vazio="Todas as contas"
+            valor={filters.account_id}
+            onMudar={(v) => setFilters({ ...filters, account_id: v })}
+            opcoes={accounts.map((a) => ({ valor: a.id, rotulo: a.name }))}
+          />
+          <Select
+            rotuloOculto="Filtrar por status"
+            vazio="Todos os status"
+            valor={filters.status}
+            onMudar={(v) => setFilters({ ...filters, status: v })}
+            opcoes={[
+              { valor: 'pending', rotulo: 'Pendente' },
+              { valor: 'sent', rotulo: 'Enviada' },
+              { valor: 'failed', rotulo: 'Falhou' },
+              { valor: 'cancelled', rotulo: 'Cancelada' },
+            ]}
+          />
           <Button variant="secondary" onClick={fetchData}>
             <ArrowPathIcon className="h-5 w-5" />
           </Button>

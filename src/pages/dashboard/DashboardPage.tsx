@@ -38,17 +38,11 @@ import { STATUS_LABELS } from '../../utils/rotulosDeEstado';
 import { StarIcon } from '@heroicons/react/24/outline';
 import { useAvaliacoesDaLoja } from '../../hooks/queries/useAvaliacoesDaLoja';
 import { leituraDeAvaliacoes } from './leituraDeAvaliacoes';
+import { formatCurrency } from '../../utils/formatters';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-const fmt = (n: number | string) => {
-  // A API serializa Decimal como STRING ("219.98"). Number.isFinite(string) é
-  // sempre false -> caía em 0 (R$ 0,00 em todo pedido). Coage antes.
-  const v = Number(n);
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number.isFinite(v) ? v : 0);
-};
 
 const PIPELINE = [
   { key: 'pending',          label: 'Pendentes',   color: 'bg-yellow-500' },
@@ -441,7 +435,7 @@ export const DashboardPage: React.FC = () => {
           label="Receita hoje"
           icone={<BanknotesIcon />}
           serie={sparkline.revenue}
-          value={kpisLoading ? '—' : fmt(revenueToday)}
+          value={kpisLoading ? '—' : formatCurrency(revenueToday)}
           tone="brand"
           sub="Pagos e não cancelados, pela data do pagamento. Sem pedido de teste."
           comparativo={
@@ -574,7 +568,7 @@ export const DashboardPage: React.FC = () => {
                 cabecalho: 'Total',
                 alinhamento: 'direita',
                 render: (o) => (
-                  <span className="text-sm font-semibold text-fg-token">{fmt(o.total)}</span>
+                  <span className="text-sm font-semibold text-fg-token">{formatCurrency(o.total)}</span>
                 ),
               },
               {
@@ -774,11 +768,11 @@ export const DashboardPage: React.FC = () => {
               <div className="p-4">
                 <p className="overline mb-2">Pedidos 24h</p>
                 <p className="text-xl font-bold text-fg-token">{projectHealth.commerce.orders_24h}</p>
-                <p className="text-badge text-fg-muted-token mt-1">{fmt(projectHealth.commerce.revenue_today)} hoje</p>
+                <p className="text-badge text-fg-muted-token mt-1">{formatCurrency(projectHealth.commerce.revenue_today)} hoje</p>
               </div>
               <div className="p-4">
                 <p className="overline mb-2">Ticket médio</p>
-                <p className="text-xl font-bold text-fg-token">{fmt(projectHealth.commerce.avg_ticket_month)}</p>
+                <p className="text-xl font-bold text-fg-token">{formatCurrency(projectHealth.commerce.avg_ticket_month)}</p>
                 <p className="text-badge text-fg-muted-token mt-1">
                   {projectHealth.commerce.cancelled_7d > 0
                     ? <span className="text-red-500">{projectHealth.commerce.cancelled_7d} cancel. (7d)</span>

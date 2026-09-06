@@ -39,6 +39,7 @@ import { useStore } from '../../hooks';
 import { useOrderStats } from '../../hooks/queries/useOrderStats';
 import { usePaymentsOrders } from '../../hooks/queries/usePaymentsOrders';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
+import { formatCurrency } from '../../utils/formatters';
 
 // DRF default page size (apps/stores/api/views/order_views.py / settings PAGE_SIZE)
 const PAGE_SIZE = 20;
@@ -180,12 +181,6 @@ export const PaymentsPage: React.FC = () => {
     return PAYMENT_STATUS_OPTIONS.map(option => ({ ...option }));
   }, []);
 
-  // Format currency
-  const formatMoney = (value: number | string) => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
   // Table columns
   const columns = [
     {
@@ -202,7 +197,7 @@ export const PaymentsPage: React.FC = () => {
       key: 'total',
       header: 'Valor',
       render: (order: Order) => (
-        <span className="font-semibold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(order.total)}</span>
+        <span className="font-semibold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatCurrency(order.total)}</span>
       ),
     },
     {
@@ -351,7 +346,7 @@ export const PaymentsPage: React.FC = () => {
       descricao={
         statsFailed
           ? 'Acompanhe o que foi cobrado, o que entrou e o que ficou pendente.'
-          : `${stats.total} pedido(s) · ${formatMoney(stats.totalRevenue)} recebido`
+          : `${stats.total} pedido(s) · ${formatCurrency(stats.totalRevenue)} recebido`
       }
     >
 
@@ -389,7 +384,7 @@ export const PaymentsPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Receita Hoje</p>
-                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(stats.todayRevenue)}</p>
+                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatCurrency(stats.todayRevenue)}</p>
                 <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{stats.todayCount} pedido(s)</p>
               </div>
             </div>
@@ -402,7 +397,7 @@ export const PaymentsPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total Recebido</p>
-                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatMoney(stats.totalRevenue)}</p>
+                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatCurrency(stats.totalRevenue)}</p>
                 <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{stats.paidCount} pago(s)</p>
               </div>
             </div>
@@ -416,7 +411,7 @@ export const PaymentsPage: React.FC = () => {
               <div>
                 <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Aguardando</p>
                 <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.pendingCount}</p>
-                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{formatMoney(stats.pendingRevenue)} a receber</p>
+                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{formatCurrency(stats.pendingRevenue)} a receber</p>
               </div>
             </div>
           </Card>

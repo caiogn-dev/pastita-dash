@@ -13,9 +13,8 @@ import {
   addCashMovement,
   closeCashSession,
 } from '../../services/cash';
+import { formatCurrency } from '../../utils/formatters';
 
-const fmtMoney = (v: string | number | null | undefined) =>
-  Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const CashPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
@@ -109,16 +108,16 @@ const CashPage: React.FC = () => {
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-fg-muted-token">Esperado</p>
-              <p className="font-bold text-fg-token">{fmtMoney(closedResult.expected_amount)}</p>
+              <p className="font-bold text-fg-token">{formatCurrency(closedResult.expected_amount)}</p>
             </div>
             <div>
               <p className="text-fg-muted-token">Contado</p>
-              <p className="font-bold text-fg-token">{fmtMoney(closedResult.counted_amount)}</p>
+              <p className="font-bold text-fg-token">{formatCurrency(closedResult.counted_amount)}</p>
             </div>
             <div>
               <p className="text-fg-muted-token">Diferença</p>
               <p className={`font-bold ${Number(closedResult.difference) < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                {fmtMoney(closedResult.difference)}
+                {formatCurrency(closedResult.difference)}
               </p>
             </div>
           </div>
@@ -158,10 +157,10 @@ const CashPage: React.FC = () => {
                   {session.opened_at && !Number.isNaN(new Date(session.opened_at).getTime())
                     ? `Aberto em ${format(new Date(session.opened_at), "dd/MM 'às' HH:mm", { locale: ptBR })} · `
                     : ''}
-                  fundo {fmtMoney(session.opening_amount)}
+                  fundo {formatCurrency(session.opening_amount)}
                 </p>
                 <p className="text-2xl font-bold text-fg-token mt-1">
-                  Esperado em caixa: {fmtMoney(session.expected_cash)}
+                  Esperado em caixa: {formatCurrency(session.expected_cash)}
                 </p>
                 <p className="text-xs text-fg-muted-token mt-0.5">
                   Fundo + reforços − sangrias (vendas em dinheiro: confira no relatório de pedidos)
@@ -226,7 +225,7 @@ const CashPage: React.FC = () => {
                     <tr key={mv.id} className="border-t border-border-token">
                       <td className="py-1.5 capitalize text-fg-token">{mv.kind}</td>
                       <td className={`py-1.5 font-medium ${mv.kind === 'sangria' ? 'text-red-600' : 'text-emerald-600'}`}>
-                        {mv.kind === 'sangria' ? '−' : '+'}{fmtMoney(mv.amount)}
+                        {mv.kind === 'sangria' ? '−' : '+'}{formatCurrency(mv.amount)}
                       </td>
                       <td className="py-1.5 text-fg-muted-token">{mv.reason || '—'}</td>
                       <td className="py-1.5 text-fg-muted-token text-right">

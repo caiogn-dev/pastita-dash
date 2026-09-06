@@ -24,6 +24,8 @@ export { Paginacao } from './Paginacao';
 export type { PaginacaoProps } from './Paginacao';
 export { Tabela } from './Tabela';
 export type { TabelaProps, ColunaDaTabela } from './Tabela';
+export { Select } from './Select';
+export type { SelectProps, OpcaoDeSelect } from './Select';
 export { KpiGrid } from './KpiGrid';
 export type { KpiGridProps, KpiItem } from './KpiGrid';
 export { InsightList } from './InsightList';

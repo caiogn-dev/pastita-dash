@@ -18,7 +18,11 @@ module.exports = {
     // a suíte, entre eles a tela de diagnóstico do WhatsApp.
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  testMatch: ['**/__tests__/**/*.test.ts?(x)'],
+  // `.spec.ts` além de `.test.ts`: a spec descreve o CONTRATO de um módulo
+  // (o que ele promete a quem chama) e nasce antes da implementação; o teste
+  // cobre o comportamento de uma tela ou de um bug específico. Nomes
+  // diferentes para intenções diferentes.
+  testMatch: ['**/__tests__/**/*.test.ts?(x)', '**/__tests__/**/*.spec.ts?(x)'],
   transform: {
     '/src/mobile/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '/src/components/whatsapp/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',

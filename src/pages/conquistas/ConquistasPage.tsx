@@ -30,9 +30,8 @@ import { PageShell, KpiGrid, Card, EmptyState } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { useStore } from '../../hooks';
 import { getConquistas, type Conquista } from '../../services/conquistas';
+import { formatCurrency } from '../../utils/formatters';
 
-const brl = (v: string | number | null | undefined) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v ?? 0));
 
 const dataCurta = (iso: string) =>
   new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR', {
@@ -82,7 +81,7 @@ const LinhaDoTempo: React.FC<{ itens: Conquista[] }> = ({ itens }) => (
         <p className="mt-1 text-caption text-fg-muted-token">
           Faturamento no marco:{' '}
           <span className="font-semibold tabular-nums text-fg-token">
-            {brl(c.faturamento_no_marco)}
+            {formatCurrency(c.faturamento_no_marco)}
           </span>
         </p>
       </li>
@@ -124,7 +123,7 @@ export const ConquistasPage: React.FC = () => {
         itens={[
           {
             label: 'Faturamento do mês',
-            value: brl(resumo.mes_atual),
+            value: formatCurrency(resumo.mes_atual),
             definicao: 'Pedidos pagos e não cancelados no mês corrente.',
             icone: <BanknotesIcon />,
             tone: 'brand',
@@ -139,7 +138,7 @@ export const ConquistasPage: React.FC = () => {
             // isso em vez de inventar um alvo que ninguém definiu.
             value: meta.alvo ? `${Math.round(meta.progresso_pct ?? 0)}%` : 'Sem base',
             definicao: meta.alvo
-              ? `${brl(meta.realizado)} de ${brl(meta.alvo)} — ${meta.crescimento_pct}% sobre ${meta.ano - 1}.`
+              ? `${formatCurrency(meta.realizado)} de ${formatCurrency(meta.alvo)} — ${meta.crescimento_pct}% sobre ${meta.ano - 1}.`
               : `Sem faturamento em ${meta.ano - 1} para calcular uma meta.`,
             icone: <FlagIcon />,
           },
@@ -149,12 +148,12 @@ export const ConquistasPage: React.FC = () => {
               resumo.crescimento_mensal_pct !== null
                 ? `${resumo.crescimento_mensal_pct > 0 ? '+' : ''}${resumo.crescimento_mensal_pct}%`
                 : 'Sem base',
-            definicao: `${brl(resumo.mes_atual)} contra ${brl(resumo.mes_anterior)} no mês anterior.`,
+            definicao: `${formatCurrency(resumo.mes_atual)} contra ${formatCurrency(resumo.mes_anterior)} no mês anterior.`,
             icone: <ArrowTrendingUpIcon />,
           },
           {
             label: 'Faturamento do ano',
-            value: brl(resumo.ano_atual),
+            value: formatCurrency(resumo.ano_atual),
             definicao: `Acumulado de ${meta.ano}, do dia 1º de janeiro até hoje.`,
             icone: <CalendarDaysIcon />,
           },
@@ -177,9 +176,9 @@ export const ConquistasPage: React.FC = () => {
           <div className="mt-4 space-y-2">
             <Progresso pct={proxima.progresso_pct} rotulo={`Progresso até ${proxima.titulo}`} />
             <p className="text-caption text-fg-muted-token">
-              {brl(proxima.acumulado)}
-              {proxima.valor ? ` de ${brl(proxima.valor)}` : ''}
-              {proxima.falta ? ` · faltam ${brl(proxima.falta)}` : ''}
+              {formatCurrency(proxima.acumulado)}
+              {proxima.valor ? ` de ${formatCurrency(proxima.valor)}` : ''}
+              {proxima.falta ? ` · faltam ${formatCurrency(proxima.falta)}` : ''}
             </p>
           </div>
 

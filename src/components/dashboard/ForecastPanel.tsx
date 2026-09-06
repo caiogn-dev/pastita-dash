@@ -23,6 +23,7 @@ import {
 import { Card } from '../ui';
 import TimeSeriesChart from '../reports/TimeSeriesChart';
 import RankBarList from '../reports/RankBarList';
+import { formatCurrency } from '../../utils/formatters';
 
 export interface ForecastDaily {
   date: string;
@@ -48,8 +49,6 @@ export interface ForecastData {
   days_without_sale?: number;
 }
 
-const money = (v: number) =>
-  (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const moneyShort = (v: number) =>
   v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${Math.round(v ?? 0)}`;
@@ -94,7 +93,7 @@ const TrendHero: React.FC<{ pct: number; recentAvg?: number; reliable?: boolean;
       </div>
       <span className="text-xs text-fg-muted-token">
         {estavel ? 'estável no período' : subindo ? 'crescendo' : 'em queda'}
-        {recentAvg !== undefined && ` · ${money(recentAvg)}/dia agora`}
+        {recentAvg !== undefined && ` · ${formatCurrency(recentAvg)}/dia agora`}
       </span>
     </div>
   );
@@ -114,8 +113,8 @@ const MonthProgress: React.FC<{ realized: number; projection: number; daysLeft: 
         </span>
       </div>
       <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-semibold text-fg-token">{money(realized)}</span>
-        <span className="text-sm text-fg-muted-token">de {money(projection)} projetados</span>
+        <span className="text-2xl font-semibold text-fg-token">{formatCurrency(realized)}</span>
+        <span className="text-sm text-fg-muted-token">de {formatCurrency(projection)} projetados</span>
       </div>
       {/* 2px de respiro entre o preenchimento e o trilho, como manda o spec de marcas */}
       <div
@@ -234,7 +233,7 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
             label="Receita"
             type="bar"
             height={200}
-            valueFormat={money}
+            valueFormat={formatCurrency}
             yTickFormat={moneyShort}
           />
         </div>
@@ -251,7 +250,7 @@ const ForecastPanel: React.FC<{ forecast?: ForecastData | null; loading?: boolea
                 acima dizia "o pior dia é domingo" e a lista escondia justamente
                 o domingo, que faturou R$ 0,00. O `tone: 'danger'` calculado
                 acima nunca chegava a renderizar: o item era filtrado antes. */}
-            <RankBarList items={ranking} valueFormat={money} hideZero={false} />
+            <RankBarList items={ranking} valueFormat={formatCurrency} hideZero={false} />
           </div>
         )}
       </div>

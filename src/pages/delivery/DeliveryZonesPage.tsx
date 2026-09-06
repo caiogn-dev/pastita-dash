@@ -11,7 +11,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
-import { Card, Button, Badge, StatCard, PageShell, RowActions, Tabela, SearchInput } from '../../components/ui';
+import { Card, Button, Badge, StatCard, PageShell, RowActions, Tabela, SearchInput, Select } from '../../components/ui';
 import DeliveryZonesMap, { COR_DA_PROMO, corDoAnel } from '../../components/maps/DeliveryZonesMap';
 import { zonasParaCirculos } from '../../components/maps/zonasParaCirculos';
 import {
@@ -28,16 +28,11 @@ import { FormulaDeEntregaCard } from './FormulaDeEntregaCard';
 import { FreteGratisCard } from './FreteGratisCard';
 import { anelDaPromo, lerPromo } from './freteGratis';
 import { getStore, updateStore } from '../../services/storesApi';
+import { formatCurrency } from '../../utils/formatters';
 
 const formatKm = (value?: number | string | null) => {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
   if (!Number.isFinite(numeric)) return '0.00';
-  return numeric.toFixed(2);
-};
-
-const formatMoney = (value?: number | string | null) => {
-  const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
-  if (Number.isNaN(numeric)) return '0.00';
   return numeric.toFixed(2);
 };
 
@@ -391,7 +386,7 @@ export const DeliveryZonesPage: React.FC = () => {
                           <span className="font-semibold text-fg-token">{c.nome}</span>
                           {zona && (
                             <span className="tabular-nums text-fg-muted-token">
-                              R$ {formatMoney(zona.delivery_fee)}
+                              {formatCurrency(zona.delivery_fee)}
                             </span>
                           )}
                           {c.aberta && (
@@ -507,7 +502,7 @@ export const DeliveryZonesPage: React.FC = () => {
         <div className="grid grid-cols-4 max-lg:grid-cols-2 gap-3 md:gap-4">
           <StatCard label="Total de Faixas" value={stats.total} />
           <StatCard label="Ativas" value={stats.active} tone="brand" />
-          <StatCard label="Valor Médio" value={`R$ ${formatMoney(stats.avg_fee)}`} />
+          <StatCard label="Valor Médio" value={formatCurrency(stats.avg_fee)} />
           <StatCard label="Prazo Médio" value={`${formatDays(stats.avg_days)} dias`} />
         </div>
       )}
@@ -522,15 +517,17 @@ export const DeliveryZonesPage: React.FC = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <select
-            value={filterActive === undefined ? '' : String(filterActive)}
-            onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
-            className="w-full sm:w-auto px-3 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand text-sm md:text-base"
-          >
-            <option value="">Todos os status</option>
-            <option value="true">Ativas</option>
-            <option value="false">Inativas</option>
-          </select>
+          <Select
+            className="w-full sm:w-auto"
+            rotuloOculto="Filtrar por status"
+            vazio="Todos os status"
+            valor={filterActive === undefined ? '' : String(filterActive)}
+            onMudar={(v) => setFilterActive(v === '' ? undefined : v === 'true')}
+            opcoes={[
+              { valor: 'true', rotulo: 'Ativas' },
+              { valor: 'false', rotulo: 'Inativas' },
+            ]}
+          />
         </div>
       </Card>
 
@@ -590,7 +587,7 @@ export const DeliveryZonesPage: React.FC = () => {
             cabecalho: 'Frete',
             render: (z) => (
               <span className="text-base font-semibold text-brand-ink">
-                R$ {formatMoney(z.delivery_fee)}
+                {formatCurrency(z.delivery_fee)}
               </span>
             ),
           },

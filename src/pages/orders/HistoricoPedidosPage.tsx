@@ -32,7 +32,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { Card, Badge, Button, PageShell, KpiGrid, EmptyState, Tabela, SearchInput } from '../../components/ui';
+import { Card, Badge, Button, PageShell, KpiGrid, EmptyState, Tabela, SearchInput, Select } from '../../components/ui';
 import { PageLoading } from '../../components/common';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { useStore, useDebounce } from '../../hooks';
@@ -50,6 +50,7 @@ import {
   STATUS_LABELS as STATUS_LABEL,
   PAYMENT_METHOD_LABELS as PAGAMENTO_LABEL,
 } from '../../utils/rotulosDeEstado';
+import { formatCurrency } from '../../utils/formatters';
 
 const PAGE_SIZE = 50;
 
@@ -57,11 +58,6 @@ const PAGE_SIZE = 50;
 const CANAL_LABEL: Record<string, string> = {
   web: 'Site', whatsapp: 'WhatsApp', pdv: 'Balcão (PDV)',
   instagram: 'Instagram', nao_informado: 'Não informado',
-};
-
-const dinheiro = (v: number | string | null | undefined) => {
-  const n = typeof v === 'string' ? Number(v) : (v ?? 0);
-  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 /** Cancelado e estornado ficam legíveis mas apagados — existem, não pesam. */
@@ -244,26 +240,35 @@ export const HistoricoPedidosPage: React.FC = () => {
               }}
             />
 
-            <select aria-label="Status" className={selectCls} value={status} onChange={(e) => mudar('status', e.target.value)}>
-              <option value="">Todos os status</option>
-              {Object.entries(STATUS_LABEL).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
+            <Select
+              rotuloOculto="Status"
+              vazio="Todos os status"
+              valor={status}
+              onMudar={(v) => mudar('status', v)}
+              opcoes={Object.entries(STATUS_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))}
+            />
 
-            <select aria-label="Forma de pagamento" className={selectCls} value={pagamento} onChange={(e) => mudar('pagamento', e.target.value)}>
-              <option value="">Qualquer pagamento</option>
-              {['pix', 'cash', 'credit_card', 'debit_card'].map((v) => (
-                <option key={v} value={v}>{PAGAMENTO_LABEL[v]}</option>
-              ))}
-            </select>
+            <Select
+              rotuloOculto="Forma de pagamento"
+              vazio="Qualquer pagamento"
+              valor={pagamento}
+              onMudar={(v) => mudar('pagamento', v)}
+              opcoes={['pix', 'cash', 'credit_card', 'debit_card'].map((valor) => ({
+                valor,
+                rotulo: PAGAMENTO_LABEL[valor],
+              }))}
+            />
 
-            <select aria-label="Canal" className={selectCls} value={canal} onChange={(e) => mudar('canal', e.target.value)}>
-              <option value="">Todos os canais</option>
-              {['web', 'whatsapp', 'pdv'].map((v) => (
-                <option key={v} value={v}>{CANAL_LABEL[v]}</option>
-              ))}
-            </select>
+            <Select
+              rotuloOculto="Canal"
+              vazio="Todos os canais"
+              valor={canal}
+              onMudar={(v) => mudar('canal', v)}
+              opcoes={['web', 'whatsapp', 'pdv'].map((valor) => ({
+                valor,
+                rotulo: CANAL_LABEL[valor],
+              }))}
+            />
           </div>
         </div>
       }
@@ -279,14 +284,14 @@ export const HistoricoPedidosPage: React.FC = () => {
             },
             {
               label: 'Faturamento',
-              value: `R$ ${dinheiro(resumo.faturamento)}`,
+              value: formatCurrency(resumo.faturamento),
               tone: 'brand',
               definicao: resumo.definicoes?.faturamento ?? 'soma dos pedidos pagos',
             },
             {
               label: 'Ticket médio',
               // "R$ 0,00" leria como venda de graça; sem venda, não há ticket.
-              value: resumo.ticket_medio === null ? '—' : `R$ ${dinheiro(resumo.ticket_medio)}`,
+              value: resumo.ticket_medio === null ? '—' : formatCurrency(resumo.ticket_medio),
               definicao: resumo.definicoes?.ticket_medio ?? 'faturamento ÷ pedidos que faturaram',
             },
             {
@@ -310,7 +315,7 @@ export const HistoricoPedidosPage: React.FC = () => {
                   {PAGAMENTO_LABEL[q.chave] ?? q.chave}
                 </p>
                 <p className="text-lg font-bold text-fg-token leading-tight">
-                  R$ {dinheiro(q.total)}
+                  {formatCurrency(q.total)}
                 </p>
                 <p className="text-xs text-fg-muted-token">
                   {q.pedidos} {q.pedidos === 1 ? 'pedido' : 'pedidos'}
@@ -451,7 +456,7 @@ export const HistoricoPedidosPage: React.FC = () => {
                         : 'font-bold'
                     }
                   >
-                    R$ {dinheiro(p.total)}
+                    {formatCurrency(p.total)}
                   </span>
                 ),
               },

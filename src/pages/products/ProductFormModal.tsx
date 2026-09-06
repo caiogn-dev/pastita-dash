@@ -12,7 +12,7 @@ import {
 import toast from 'react-hot-toast';
 import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validarProduto';
 import { FormChecklist, FormSummary, ChoiceCards, FormStepper, StringListField } from '../../components/ui';
-import { Card, Button } from '../../components/ui';
+import { Card, Button, KpiGrid } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
 // Lazy de propósito: a aba Nutricional é a menos usada do formulário, e o
@@ -30,6 +30,7 @@ import storesApi, {
 import logger from '../../services/logger';
 import { compressImage } from '../../utils/compressImage';
 import { PaywallModal } from '../../components/billing/PaywallModal';
+import { formatCurrency } from '../../utils/formatters';
 
 export interface ProductFormModalProps {
   isOpen: boolean;
@@ -898,29 +899,31 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </div>
 
               {formData.price > 0 && formData.cost_price && formData.cost_price > 0 && (
-                <Card className="p-4 bg-surface-2">
-                  <h4 className="text-sm font-medium text-fg-token mb-2">Análise de Margem</h4>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.price - formData.cost_price)}
-                      </p>
-                      <p className="text-xs text-fg-muted-token">Lucro Bruto</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {(((formData.price - formData.cost_price) / formData.price) * 100).toFixed(1)}%
-                      </p>
-                      <p className="text-xs text-fg-muted-token">Margem</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                        {(((formData.price - formData.cost_price) / formData.cost_price) * 100).toFixed(1)}%
-                      </p>
-                      <p className="text-xs text-fg-muted-token">Markup</p>
-                    </div>
-                  </div>
-                </Card>
+                <KpiGrid
+                  titulo="Análise de margem"
+                  itens={[
+                    {
+                      label: 'Lucro bruto',
+                      value: formatCurrency(formData.price - formData.cost_price),
+                      definicao: 'Preço de venda menos o custo. É o que sobra por unidade vendida.',
+                      tone: 'success',
+                    },
+                    {
+                      label: 'Margem',
+                      value: `${(((formData.price - formData.cost_price) / formData.price) * 100).toFixed(1)}%`,
+                      // Margem e markup davam números diferentes lado a lado,
+                      // do mesmo tamanho, sem dizer sobre o quê. Confundir os
+                      // dois é como se erra preço de cardápio.
+                      definicao: 'Quanto do PREÇO é lucro. É esta que entra na conta do negócio.',
+                      tone: 'brand',
+                    },
+                    {
+                      label: 'Markup',
+                      value: `${(((formData.price - formData.cost_price) / formData.cost_price) * 100).toFixed(1)}%`,
+                      definicao: 'Quanto você somou sobre o CUSTO para chegar no preço.',
+                    },
+                  ]}
+                />
               )}
             </div>
           )}

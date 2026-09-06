@@ -6,22 +6,59 @@
 
 // ==================== Currency Formatting ====================
 
-/**
- * Format a number as Brazilian Real (BRL) currency
- * @param value - Number to format
- * @param options - Optional Intl.NumberFormatOptions
- */
-export function formatCurrency(value: number, options?: Intl.NumberFormatOptions): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    ...options,
-  }).format(value);
+/** Aceita o que o backend e os formulários realmente mandam. */
+export type ValorEmDinheiro = number | string | null | undefined;
+
+export interface OpcoesDeDinheiro {
+  /** Só o número, para quando o "R$" já está no cabeçalho da coluna. */
+  semSimbolo?: boolean;
 }
 
 /**
- * Alias for formatCurrency (backwards compatibility)
+ * O número que vira dinheiro na tela, ou zero.
+ *
+ * Zero e não NaN: "R$ NaN" na tela é pior que um zero — o dono liga achando
+ * que o sistema quebrou. Aceita a string do `DecimalField` do DRF ("1234.57")
+ * e a do formulário brasileiro ("1234,57").
  */
+const paraNumero = (valor: ValorEmDinheiro): number => {
+  if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
+  if (typeof valor !== 'string') return 0;
+
+  // "1.234,57" (brasileiro) e "1234.57" (do backend) precisam dar o mesmo
+  // número. O ponto só é separador de milhar quando há vírgula depois.
+  const limpo = valor.includes(',') ? valor.replace(/\./g, '').replace(',', '.') : valor;
+  const n = Number(limpo);
+  return Number.isFinite(n) ? n : 0;
+};
+
+/**
+ * Dinheiro do painel. ESPECIFICAÇÃO em `__tests__/dinheiro.spec.ts`.
+ *
+ * Fonte única: antes disto havia dezoito formatadores privados espalhados
+ * pelas telas e DOIS `formatCurrency` exportados com o mesmo nome de arquivos
+ * diferentes. Eles discordavam em símbolo, casas decimais, valor ausente e
+ * string do backend — cada discordância é um jeito de mostrar valor errado.
+ */
+export function formatCurrency(valor: ValorEmDinheiro, opcoes?: OpcoesDeDinheiro): string {
+  const numero = paraNumero(valor);
+
+  const texto = new Intl.NumberFormat('pt-BR', {
+    style: opcoes?.semSimbolo ? 'decimal' : 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    // Sem o máximo, o Intl NÃO arredonda e R$ 1.234,567 chega à tela com três
+    // casas. Qualquer divisão — ticket médio, comissão, rateio de frete —
+    // produz esse número.
+    maximumFractionDigits: 2,
+  }).format(numero);
+
+  // O Intl separa "R$" do número com U+00A0. Invisível na tela, sobrevive à
+  // cópia: vai para o CSV do contador e para a mensagem colada no WhatsApp.
+  return texto.replace(/\u00A0/g, ' ');
+}
+
+/** Mesma função, nome que metade do painel já usa. */
 export const formatMoney = formatCurrency;
 
 /**

@@ -12,8 +12,8 @@ import {
 } from '../../utils/labelPrint';
 import { precoVigenteDoProduto } from '../../utils/precoVigente';
 import { PageShell } from '../../components/ui';
+import { formatCurrency } from '../../utils/formatters';
 
-const fmtMoney = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
 const MM_PX = 96 / 25.4;
 
@@ -213,7 +213,7 @@ const EtiquetasPage: React.FC = () => {
   const produtoLabel = (c: CatalogEntry, barcode?: string) => ({
     name: c.product.name,
     description: c.product.short_description || c.product.description || undefined,
-    price: fmtMoney(precoVigenteDoProduto(c.product)),
+    price: formatCurrency(precoVigenteDoProduto(c.product)),
     barcode: barcode ?? c.product.barcode ?? undefined,
   });
 
@@ -341,7 +341,7 @@ const EtiquetasPage: React.FC = () => {
     if (template === 'produto') {
       const sample = selected[0]
         ? produtoLabel(selected[0])
-        : { name: 'Produto de exemplo', description: 'Descrição', price: fmtMoney(19.9), barcode: '2000000000008' };
+        : { name: 'Produto de exemplo', description: 'Descrição', price: formatCurrency(19.9), barcode: '2000000000008' };
       const p = cfg.produto;
       const paper = Math.max(p.paperW, p.width);
       return {
@@ -446,7 +446,7 @@ const EtiquetasPage: React.FC = () => {
                   <div className="font-medium truncate">{c.product.name}</div>
                   <div className="text-xs opacity-60">
                     {stores.length > 1 && `${c.storeName} · `}
-                    {fmtMoney(precoVigenteDoProduto(c.product))}
+                    {formatCurrency(precoVigenteDoProduto(c.product))}
                     {c.product.barcode ? ` · ${c.product.barcode}` : ' · sem código (gera na impressão)'}
                   </div>
                 </div>

@@ -13,7 +13,7 @@ import {
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import { StatCard, RowActions, FormStepper, InsightList, Tabela, SearchInput } from '../../components/ui';
+import { StatCard, RowActions, FormStepper, InsightList, Tabela, SearchInput, Select } from '../../components/ui';
 import { insightsDeCupons } from './insightsDeCupons';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
 import { getCategories, StoreCategory } from '../../services/storesApi';
@@ -328,24 +328,26 @@ export const CouponsPage: React.FC = () => {
             />
           </div>
           <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3">
-            <select
-              value={filterActive === undefined ? '' : String(filterActive)}
-              onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-2 sm:px-3 py-2 border border-border-token dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-            >
-              <option value="">Status</option>
-              <option value="true">Ativos</option>
-              <option value="false">Inativos</option>
-            </select>
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as 'percentage' | 'fixed' | '')}
-              className="px-2 sm:px-3 py-2 border border-border-token dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-            >
-              <option value="">Tipo</option>
-              <option value="percentage">%</option>
-              <option value="fixed">R$</option>
-            </select>
+            <Select
+              rotuloOculto="Filtrar por status"
+              vazio="Todos os status"
+              valor={filterActive === undefined ? '' : String(filterActive)}
+              onMudar={(v) => setFilterActive(v === '' ? undefined : v === 'true')}
+              opcoes={[
+                { valor: 'true', rotulo: 'Ativos' },
+                { valor: 'false', rotulo: 'Inativos' },
+              ]}
+            />
+            <Select
+              rotuloOculto="Filtrar por tipo de desconto"
+              vazio="Todos os tipos"
+              valor={filterType}
+              onMudar={(v) => setFilterType(v as 'percentage' | 'fixed' | '')}
+              opcoes={[
+                { valor: 'percentage', rotulo: 'Porcentagem (%)' },
+                { valor: 'fixed', rotulo: 'Valor fixo (R$)' },
+              ]}
+            />
           </div>
         </div>
       </Card>
@@ -559,17 +561,15 @@ export const CouponsPage: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-fg-token mb-1">
-                Tipo de Desconto *
-              </label>
-              <select
-                value={formData.discount_type}
-                onChange={(e) => setFormData({ ...formData, discount_type: e.target.value as 'percentage' | 'fixed' })}
-                className="w-full px-3 py-2 border border-border-token dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="percentage">Porcentagem (%)</option>
-                <option value="fixed">Valor Fixo (R$)</option>
-              </select>
+              <Select
+                rotuloOculto="Tipo de desconto"
+                valor={formData.discount_type}
+                onMudar={(v) => setFormData({ ...formData, discount_type: v as 'percentage' | 'fixed' })}
+                opcoes={[
+                  { valor: 'percentage', rotulo: 'Porcentagem (%)' },
+                  { valor: 'fixed', rotulo: 'Valor fixo (R$)' },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-fg-token mb-1">

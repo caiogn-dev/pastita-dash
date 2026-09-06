@@ -62,6 +62,7 @@ import { pedidosDaColuna, ENTREGUES_DE_HOJE } from './pedidosDoQuadro';
 import type { ColumnId } from './orderColumns';
 import { getStageStart, getAvgPrepMinutes } from './orderSla';
 import { proximaAcaoDoPedido } from './proximaAcao';
+import { formatCurrency } from '../../utils/formatters';
 
 // Next status for advance button
 /**
@@ -82,11 +83,6 @@ const needsPayment = (order: StoreOrder) =>
   );
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const fmt = (v: number | string | null | undefined) => {
-  const n = typeof v === 'string' ? parseFloat(v) : (v ?? 0);
-  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
 
 const getElapsedMinutes = (createdAt?: string | null): number => {
   if (!createdAt) return 0;
@@ -244,7 +240,7 @@ const OrderCardBase: React.FC<CardProps> = ({
           {order.customer_name || 'Cliente'}
         </p>
         <p className="shrink-0 text-body font-bold tracking-tight text-fg-token">
-          R$ {fmt(order.total)}
+          {formatCurrency(order.total)}
         </p>
       </div>
 

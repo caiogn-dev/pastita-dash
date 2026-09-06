@@ -20,11 +20,8 @@ import { Card } from '../ui';
 import { EmptyState, Skeleton } from '../common';
 import { useAiDailySummary, aiDailySummaryQueryKey } from '../../hooks/queries/useAiDailySummary';
 import { aiService } from '../../services/ai';
+import { formatCurrency } from '../../utils/formatters';
 
-const fmtBRL = (n: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    Number.isFinite(Number(n)) ? Number(n) : 0,
-  );
 
 interface MiniStatProps {
   label: string;
@@ -188,8 +185,8 @@ export const AiDailySummaryCard: React.FC<AiDailySummaryCardProps> = ({ store, c
 
           <div className="grid grid-cols-5 max-md:grid-cols-2 gap-3 pt-1 border-t border-border-token [&>*]:pt-3">
             <MiniStat label="Pedidos" value={data.stats.orders} />
-            <MiniStat label="Receita" value={fmtBRL(data.stats.revenue)} />
-            <MiniStat label="Ticket médio" value={fmtBRL(data.stats.avg_ticket)} />
+            <MiniStat label="Receita" value={formatCurrency(data.stats.revenue)} />
+            <MiniStat label="Ticket médio" value={formatCurrency(data.stats.avg_ticket)} />
             <MiniStat
               label="Pico"
               value={data.stats.peak_hour !== null && data.stats.peak_hour !== undefined ? `${data.stats.peak_hour}h` : '—'}
@@ -203,7 +200,7 @@ export const AiDailySummaryCard: React.FC<AiDailySummaryCardProps> = ({ store, c
             <p className="text-xs text-fg-muted-token">
               Top produto:{' '}
               <span className="font-semibold text-fg-token">{data.stats.top_products[0].name}</span>
-              {' · '}{data.stats.top_products[0].qty}x{' · '}{fmtBRL(data.stats.top_products[0].total)}
+              {' · '}{data.stats.top_products[0].qty}x{' · '}{formatCurrency(data.stats.top_products[0].total)}
             </p>
           )}
         </div>

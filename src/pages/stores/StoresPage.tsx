@@ -10,6 +10,7 @@ import { Card, Button, Loading, Badge, Modal, Input } from '../../components/com
 import logger from '../../services/logger';
 import storesApi, { Store as StoreType, StoreInput, StoreStats } from '../../services/storesApi';
 import { PageShell, KpiGrid } from '../../components/ui';
+import { formatCurrency } from '../../utils/formatters';
 
 const StoresPage: React.FC = () => {
   const navigate = useNavigate();
@@ -210,13 +211,13 @@ const StoresPage: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-fg-muted-token">Receita Total</span>
                       <span className="font-semibold text-green-600 dark:text-green-400">
-                        R$ {stats.revenue.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {formatCurrency(stats.revenue.total)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-sm text-fg-muted-token">Hoje</span>
                       <span className="font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-                        R$ {stats.revenue.today.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {formatCurrency(stats.revenue.today)}
                       </span>
                     </div>
                   </div>

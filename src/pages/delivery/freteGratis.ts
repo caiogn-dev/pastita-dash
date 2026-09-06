@@ -80,8 +80,11 @@ export function custoPorPedidoNoRaio(
 // `toLocaleString` devolve espaço NÃO-QUEBRÁVEL entre "R$" e o número. Ele
 // sobrevive a copiar/colar e vaza para comparações e para o texto do template
 // de campanha; troco por espaço normal na origem.
-export const reais = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\u00a0/g, ' ');
+// Este módulo tinha descoberto o problema do espaço não-quebrável por conta
+// própria e resolvido só aqui — a mesma descoberta feita duas vezes é o
+// sintoma de DRY que faltava. Hoje a regra mora em `formatCurrency`.
+export { formatCurrency as reais } from '../../utils/formatters';
+import { formatCurrency as reais } from '../../utils/formatters';
 
 /** A frase exatamente como o cliente vai ler no cardápio. */
 export function textoDaPromo(promo: PromoDeFrete): string {

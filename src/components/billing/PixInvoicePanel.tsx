@@ -7,6 +7,7 @@
 import { copyToClipboard } from '../../utils/clipboard';
 import React from 'react';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '../../utils/formatters';
 
 export interface PixInvoicePanelProps {
   pixCode?: string | null;
@@ -18,8 +19,6 @@ export interface PixInvoicePanelProps {
   onCopy?: (code: string) => void;
 }
 
-const formatMoney = (value: number) =>
-  `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
 type BadgeTone = 'paid' | 'pending' | 'expired';
 
@@ -80,7 +79,7 @@ export const PixInvoicePanel: React.FC<PixInvoicePanelProps> = ({
         <div className="flex items-center gap-2">
           {amount != null && (
             <span className="text-sm font-semibold text-fg-token">
-              {formatMoney(amount)}
+              {formatCurrency(amount)}
             </span>
           )}
           {expiresAtLabel && (

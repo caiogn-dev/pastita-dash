@@ -12,11 +12,12 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Card, Modal, Loading } from '../../components/common';
-import { PageShell, Tabela, RowActions, Badge, SearchInput, KpiGrid } from '../../components/ui';
+import { PageShell, Tabela, RowActions, Badge, SearchInput, KpiGrid, Select } from '../../components/ui';
 import { useStore } from '../../hooks';
 import { marketingService, Subscriber } from '../../services/marketingService';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
+import { formatCurrency } from '../../utils/formatters';
 
 interface NewSubscriber {
   email: string;
@@ -305,10 +306,7 @@ export const SubscribersPage: React.FC = () => {
           },
           {
             label: 'Receita identificada',
-            value: `R$ ${revenueFromBase.toLocaleString('pt-BR', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}`,
+            value: formatCurrency(revenueFromBase),
             definicao: 'Soma dos pedidos pagos de quem está nesta base.',
             tone: 'brand',
             icone: <EnvelopeIcon />,
@@ -326,16 +324,18 @@ export const SubscribersPage: React.FC = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            className="rounded-lg border border-border-token px-4 py-2 focus:ring-2 focus:ring-primary-500 dark:border-[var(--dark-border,#2a2a2a)]"
-          >
-            <option value="all">Todos os status</option>
-            <option value="active">Ativos</option>
-            <option value="unsubscribed">Descadastrados</option>
-            <option value="bounced">Bounced</option>
-          </select>
+          <Select
+            rotuloOculto="Filtrar por status"
+            valor={statusFilter}
+            onMudar={setStatusFilter}
+            opcoes={[
+              { valor: 'all', rotulo: 'Todos os status' },
+              { valor: 'active', rotulo: 'Ativos' },
+              { valor: 'unsubscribed', rotulo: 'Descadastrados' },
+              // "Bounced" é jargão de e-mail; o dono não sabe o que é.
+              { valor: 'bounced', rotulo: 'E-mail inválido' },
+            ]}
+          />
         </div>
       </Card>
 

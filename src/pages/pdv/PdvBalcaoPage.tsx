@@ -19,8 +19,8 @@ import { ordersService } from '../../services/orders';
 import type { Order } from '../../types';
 import { copyToClipboard } from '../../utils/clipboard';
 import { precoVigenteDoProduto } from '../../utils/precoVigente';
+import { formatCurrency } from '../../utils/formatters';
 
-const fmtMoney = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 type PaymentChoice = 'cash' | 'pix' | 'credit_card' | 'debit_card';
 
@@ -343,7 +343,7 @@ const PdvBalcaoPage: React.FC = () => {
           setPixCharges(created);
         } else {
           beep(true);
-          toast.success(`Venda de ${fmtMoney(created.reduce((s, c) => s + Number(c.order.total), 0))} registrada!`);
+          toast.success(`Venda de ${formatCurrency(created.reduce((s, c) => s + Number(c.order.total), 0))} registrada!`);
         }
         // estoque mudou no servidor → recarrega catálogo em background
         loadCatalog();
@@ -428,7 +428,7 @@ const PdvBalcaoPage: React.FC = () => {
         // para o cliente. Fica no canto das ações, no mesmo lugar de sempre.
         <div className="text-right">
           <div className="text-sm opacity-70">{items.reduce((s, i) => s + i.quantity, 0)} itens</div>
-          <div className="text-3xl font-bold tabular-nums" data-testid="pdv-total">{fmtMoney(total)}</div>
+          <div className="text-3xl font-bold tabular-nums" data-testid="pdv-total">{formatCurrency(total)}</div>
         </div>
       }
       filtros={
@@ -446,14 +446,14 @@ const PdvBalcaoPage: React.FC = () => {
           candidatos={manualMatches}
           onEscolher={addManual}
           totalDeLojas={storeCount}
-          formatarValor={fmtMoney}
+          formatarValor={formatCurrency}
         />
         <ComandaDoBalcao
           grupos={groups}
           vazia={items.length === 0}
           onAlterarQuantidade={changeQty}
           onRemover={removeItem}
-          formatarValor={fmtMoney}
+          formatarValor={formatCurrency}
         />
       </Card>
 
@@ -495,7 +495,7 @@ const PdvBalcaoPage: React.FC = () => {
           onClick={handleSubmit}
           data-testid="pdv-finalizar"
         >
-          {submitting ? 'Registrando…' : `Finalizar venda — ${fmtMoney(total)}`}
+          {submitting ? 'Registrando…' : `Finalizar venda — ${formatCurrency(total)}`}
         </Button>
       </Card>
 
@@ -508,7 +508,7 @@ const PdvBalcaoPage: React.FC = () => {
         onEscolher={handleLinkProduct}
         vinculando={linking}
         totalDeLojas={storeCount}
-        formatarValor={fmtMoney}
+        formatarValor={formatCurrency}
       />
 
       {/* Modal de vínculo de cliente: busca no cadastro ou cria na hora */}
@@ -575,7 +575,7 @@ const PdvBalcaoPage: React.FC = () => {
         cobrancas={pixCharges}
         onFechar={() => setPixCharges(null)}
         onCopiar={copyPix}
-        formatarValor={fmtMoney}
+        formatarValor={formatCurrency}
       />
     </PageShell>
   );

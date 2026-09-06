@@ -48,18 +48,11 @@ import logger from '../../../services/logger';
 import { SeletorDeAudiencia } from './SeletorDeAudiencia';
 import { avisoDaJanela, horarioParaConsulta, type ResumoDaJanela } from './janelaDe24h';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
+import { formatCurrency } from '../../../utils/formatters';
 
 type TemplateVariable = {
   name: string;
   source: 'body' | 'header' | 'button';
-};
-
-const formatMoney = (value?: number | string | null) => {
-  const numeric = Number(value || 0);
-  return numeric.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 };
 
 const extractTemplateVariables = (template?: MessageTemplate): TemplateVariable[] => {
@@ -1077,11 +1070,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                                 <div className="mt-2 flex items-baseline gap-2">
                                   {hasDiscount && (
                                     <span className="text-xs text-fg-muted-token line-through">
-                                      R$ {formatMoney(compareAt)}
+                                      {formatCurrency(compareAt)}
                                     </span>
                                   )}
                                   <span className="font-semibold text-green-700">
-                                    R$ {formatMoney(price)}
+                                    {formatCurrency(price)}
                                   </span>
                                   {hasDiscount && (
                                     <span className="text-xs text-green-700">
@@ -1470,7 +1463,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         {selectedOfferProducts.map(product => (
                           <div key={product.id} className="flex items-center justify-between gap-3 text-sm">
                             <span className="text-fg-token">{product.name}</span>
-                            <span className="font-medium text-green-700">R$ {formatMoney(precoVigenteDoProduto(product))}</span>
+                            <span className="font-medium text-green-700">{formatCurrency(precoVigenteDoProduto(product))}</span>
                           </div>
                         ))}
                       </div>

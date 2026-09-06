@@ -29,6 +29,7 @@ import storesApi, { Store, StoreStats } from '../../services/storesApi';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
 import { PageShell, KpiGrid } from '../../components/ui';
+import { formatCurrency } from '../../utils/formatters';
 
 type TabId = 'overview' | 'products' | 'combos' | 'orders' | 'coupons' | 'delivery' | 'settings' | 'storefront';
 
@@ -172,13 +173,12 @@ export const StoreDetailPage: React.FC = () => {
           itens={[
             {
               label: 'Receita total',
-              value: `R$ ${stats.revenue.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+              value: formatCurrency(stats.revenue.total),
               // O "Hoje: R$ …" vivia numa terceira linha do cartão, do mesmo
               // tamanho do resto. A definição é onde ele pertence: é o recorte
               // do número, não outro indicador.
-              definicao: `Tudo que já entrou nesta loja. Hoje: R$ ${stats.revenue.today.toLocaleString(
-                'pt-BR',
-                { minimumFractionDigits: 2 },
+              definicao: `Tudo que já entrou nesta loja. Hoje: ${formatCurrency(
+                stats.revenue.today,
               )}.`,
               tone: 'success',
             },

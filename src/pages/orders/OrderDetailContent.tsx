@@ -88,6 +88,7 @@ import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_RECORD_STATUS_LABELS,
 } from '../../utils/rotulosDeEstado';
+import { formatCurrency } from '../../utils/formatters';
 
 // =============================================================================
 // STATUS CONFIGURATION
@@ -131,13 +132,6 @@ const STATUS_COLORS: Record<string, string> = {
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
-
-const formatMoney = (value: number | string | undefined | null) => {
-  // A API serializa Decimal como STRING ("1234.5"). String.toLocaleString ignora
-  // as opções → saía "R$ 1234.5" sem separador BR. Coage pra número antes.
-  const n = Number(value);
-  return `R$ ${(Number.isFinite(n) ? n : 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
 
 const getManualSurcharge = (metadata?: Record<string, unknown>) => {
   const raw = metadata?.manual_surcharge;
@@ -655,7 +649,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   {STATUS_LABELS[order.status.toLowerCase()] || order.status}
                 </span>
                 <span className="rounded-full border border-brand-soft bg-brand-soft px-4 py-2 text-sm font-semibold text-fg-token">
-                  {formatMoney(order.total)}
+                  {formatCurrency(order.total)}
                 </span>
               </div>
             </div>
@@ -828,7 +822,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                           )}
                         </div>
                         <p className="mt-1 text-xs text-fg-muted-token">
-                          {formatMoney(item.unit_price)} cada
+                          {formatCurrency(item.unit_price)} cada
                         </p>
                         {selectionLines.length > 0 && (
                           <ul className="mt-1 space-y-0.5" data-testid="combo-selections">
@@ -846,7 +840,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                         )}
                       </div>
                       <div className="text-right text-sm font-semibold">
-                        {formatMoney(item.subtotal)}
+                        {formatCurrency(item.subtotal)}
                       </div>
                     </div>
                   );
@@ -856,17 +850,17 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               <div className="mt-4 grid gap-2 rounded border border-dashed border-border-token px-4 py-4 text-sm sm:grid-cols-2">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-fg-muted-token">Subtotal</span>
-                  <span className="font-semibold">{formatMoney(order.subtotal)}</span>
+                  <span className="font-semibold">{formatCurrency(order.subtotal)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-fg-muted-token">Entrega</span>
-                  <span className="font-semibold">{formatMoney(order.delivery_fee || order.shipping_cost)}</span>
+                  <span className="font-semibold">{formatCurrency(order.delivery_fee || order.shipping_cost)}</span>
                 </div>
                 {order.discount ? (
                   <div className="sm:col-span-2">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-fg-muted-token">Desconto</span>
-                      <span className="font-semibold text-[var(--success)]">-{formatMoney(order.discount)}</span>
+                      <span className="font-semibold text-[var(--success)]">-{formatCurrency(order.discount)}</span>
                     </div>
                     {order.manual_discount_reason?.trim() ? (
                       <p className="mt-0.5 text-xs italic text-fg-muted-token">
@@ -879,7 +873,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   <div className="sm:col-span-2">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-fg-muted-token">Acréscimo</span>
-                      <span className="font-semibold">{formatMoney(manualSurcharge)}</span>
+                      <span className="font-semibold">{formatCurrency(manualSurcharge)}</span>
                     </div>
                     {order.surcharge_reason?.trim() ? (
                       <p className="mt-0.5 text-xs italic text-fg-muted-token">
@@ -895,7 +889,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 ) : null}
                 <div className="flex items-center justify-between gap-3 border-t border-border-token pt-3 text-base sm:col-span-2">
                   <span className="font-semibold">Total do pedido</span>
-                  <span className="text-xl font-semibold tracking-[-0.03em]">{formatMoney(order.total)}</span>
+                  <span className="text-xl font-semibold tracking-[-0.03em]">{formatCurrency(order.total)}</span>
                 </div>
               </div>
             </div>
@@ -908,7 +902,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   className="flex items-center justify-between gap-3 rounded-xl border border-border-token bg-[var(--warning-soft)] px-4 py-4 text-fg-token sm:px-5"
                 >
                   <span className="text-sm font-semibold">Falta receber</span>
-                  <span className="text-lg font-semibold tracking-[-0.02em]">{formatMoney(amountDue)}</span>
+                  <span className="text-lg font-semibold tracking-[-0.02em]">{formatCurrency(amountDue)}</span>
                 </div>
               ) : (
                 <div
@@ -1046,7 +1040,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                               {PAYMENT_RECORD_STATUS_LABELS[payment.status] ?? payment.status}
                             </p>
                           </div>
-                          <span className="font-semibold">{formatMoney(payment.amount)}</span>
+                          <span className="font-semibold">{formatCurrency(payment.amount)}</span>
                         </div>
                       ))}
                     </div>
@@ -1197,7 +1191,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm text-fg-muted-token">Total</span>
-                <span className="text-sm font-semibold">{formatMoney(order.total)}</span>
+                <span className="text-sm font-semibold">{formatCurrency(order.total)}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm text-fg-muted-token">Criado</span>

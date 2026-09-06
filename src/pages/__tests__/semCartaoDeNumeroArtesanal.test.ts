@@ -19,9 +19,10 @@
  *
  * Número que o dono não sabe conferir é número que ele não usa para decidir.
  *
- * O que sobra é legítimo e este teste não persegue: mini-números DENTRO de um
- * cartão de loja (outra escala) e o painel de relatórios, que tem componentes
- * próprios de gráfico.
+ * O que sobra é legítimo e este teste não persegue: os mini-números DENTRO do
+ * cartão de cada loja (outra escala — são três números de apoio num cartão de
+ * lista, não indicadores de página) e o número-título de "Esperado em caixa",
+ * que é o valor principal de uma seção, não um item de faixa.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -29,7 +30,7 @@ import * as path from 'path';
 const PASTA = path.join(__dirname, '..');
 
 /** Quantas telas ainda escrevem o valor do indicador à mão. */
-const TETO = 6;
+const TETO = 3;
 
 const arquivos = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {

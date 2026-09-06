@@ -23,5 +23,5 @@ export interface Customer extends CustomerSearchResult {
   phone_number_edited?: string;
 }
 
-export const fmt = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+/** Mantido como reexport: meia dúzia de arquivos do PDV importam `fmt` daqui. */
+export { formatCurrency as fmt } from '../../../utils/formatters';

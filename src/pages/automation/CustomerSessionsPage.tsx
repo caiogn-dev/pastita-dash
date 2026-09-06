@@ -16,6 +16,7 @@ import {
 import { CustomerSession, CompanyProfile, SessionStatus } from '../../types';
 import { toast } from 'react-hot-toast';
 import { PageShell, Tabela, RowActions, Modal } from '../../components/ui';
+import { formatCurrency } from '../../utils/formatters';
 
 const statusColors: Record<SessionStatus, string> = {
   active: 'bg-blue-100 text-blue-800',
@@ -90,13 +91,6 @@ const CustomerSessionsPage: React.FC = () => {
     } catch (error) {
       toast.error('Erro ao enviar notificação');
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
   };
 
   const formatDate = (dateString: string) => {

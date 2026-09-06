@@ -43,6 +43,7 @@ import { useOrderDetailModal } from '../../hooks/useOrderDetailModal';
 import { useSaldoDoCliente } from '../../hooks/queries/useSaldoDoCliente';
 import type { CashbackClienteRow } from '../../services/cashback';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
+import { formatCurrency } from '../../utils/formatters';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -69,11 +70,6 @@ const SEGMENTO_NA_FICHA: Record<string, { label: string; tone: 'success' | 'warn
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const formatMoney = (v: number | string | null | undefined) => {
-  const n = typeof v === 'string' ? Number(v) : (v ?? 0);
-  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
 
 const formatDate = (v?: string | null) => {
   if (!v) return '—';
@@ -342,7 +338,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
           <div className="px-4 py-3 text-center">
             <p className="overline mb-1">Gasto total</p>
             <p className="text-lg font-bold text-brand-ink">
-              R$ {formatMoney(resumoDosPedidos.gasto)}
+              {formatCurrency(resumoDosPedidos.gasto)}
             </p>
           </div>
           <div className="px-4 py-3 text-center">
@@ -351,7 +347,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
           </div>
           <div className="px-4 py-3 text-center">
             <p className="overline mb-1">Ticket médio</p>
-            <p className="text-lg font-bold text-fg-token">R$ {formatMoney(resumoDosPedidos.ticket)}</p>
+            <p className="text-lg font-bold text-fg-token">{formatCurrency(resumoDosPedidos.ticket)}</p>
           </div>
         </div>
 
@@ -418,7 +414,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
               <div className="rounded border border-border-token px-4 py-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-lg font-bold text-brand-ink">
-                    R$ {formatMoney(saldo.saldo)}
+                    {formatCurrency(saldo.saldo)}
                   </span>
                   <span className="text-xs text-fg-muted-token">
                     {saldo.dias_para_vencer === 0
@@ -431,7 +427,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                     {Number(saldo.saldo_carteira) > 0 && (
                       // O comprado separado do concedido: são dinheiros
                       // diferentes e só um deles a loja ainda deve.
-                      <>R$ {formatMoney(saldo.saldo_carteira)} são de carteira comprada</>
+                      <>{formatCurrency(saldo.saldo_carteira)} são de carteira comprada</>
                     )}
                     {Number(saldo.saldo_carteira) > 0 && saldo.cupons_entrega > 0 && ' · '}
                     {saldo.cupons_entrega > 0 && (
@@ -504,7 +500,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                     chave: 'total',
                     cabecalho: 'Total',
                     alinhamento: 'direita',
-                    render: (o) => <span className="font-bold">R$ {formatMoney(o.total)}</span>,
+                    render: (o) => <span className="font-bold">{formatCurrency(o.total)}</span>,
                   },
                 ]}
               />
@@ -706,7 +702,7 @@ export const CustomersPage: React.FC = () => {
             { label: 'Com pedidos', value: kpis.withOrders, definicao: 'já fizeram ao menos uma compra' },
             {
               label: 'Receita total',
-              value: `R$ ${formatMoney(kpis.totalRevenue)}`,
+              value: formatCurrency(kpis.totalRevenue),
               tone: 'brand',
               definicao: 'soma dos pedidos pagos de todos os clientes',
             },
@@ -819,7 +815,7 @@ export const CustomersPage: React.FC = () => {
               return Number(gasto) > 500 ? (
                 <Badge tone="success">R$ {Number(gasto).toFixed(2)}</Badge>
               ) : (
-                <span className="font-bold text-fg-token">R$ {formatMoney(gasto)}</span>
+                <span className="font-bold text-fg-token">{formatCurrency(gasto)}</span>
               );
             },
           },
