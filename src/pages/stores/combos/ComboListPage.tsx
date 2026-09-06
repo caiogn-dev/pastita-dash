@@ -135,7 +135,6 @@ export const ComboListPage: React.FC = () => {
   return (
     <PageShell
       titulo="Combos"
-      descricao="Kits com preço fechado — o jeito de subir o ticket sem parecer mais caro."
       acoes={
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={loadData} title="Atualizar">

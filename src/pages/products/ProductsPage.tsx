@@ -161,7 +161,6 @@ export const ProductsPage: React.FC = () => {
   return (
     <PageShell
       titulo="Cardápio"
-      descricao="O que a loja vende, na ordem em que o cliente vê."
       acoes={
         <AcoesDoCardapio
           reorderMode={reorderMode}

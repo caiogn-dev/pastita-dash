@@ -15,6 +15,7 @@ import { AgentForm, AgentStats, AgentChatTest, ConversationList } from '../../co
 import agentsService, { AgentDetail, AgentStats as Stats, AgentConversation } from '../../services/agents';
 import { useConfirm } from '../../hooks';
 import { whatsappService } from '../../services';
+import { PageShell } from '../../components/ui';
 
 type Tab = 'overview' | 'edit' | 'test' | 'conversations';
 
@@ -217,87 +218,68 @@ export const AgentDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-start gap-4">
-          <button
-            onClick={() => navigate('/agents')}
-            className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
-          >
-            <ArrowLeftIcon className="w-5 h-5 text-fg-muted-token" />
-          </button>
-          
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-                {agent.name}
-              </h1>
-              <span className={cn(
-                "px-2.5 py-0.5 rounded-full text-xs font-medium",
-                statusColors[agent.status]
-              )}>
-                {agent.status === 'active' ? 'Ativo' : agent.status === 'inactive' ? 'Inativo' : 'Rascunho'}
-              </span>
-              <span className={cn(
-                "px-2.5 py-0.5 rounded-full text-xs font-medium",
-                providerColors[agent.provider]
-              )}>
-                {agent.provider.toUpperCase()}
-              </span>
-            </div>
-            <p className="text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-              {agent.description || `Modelo: ${agent.model_name}`}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleToggleStatus}
-            className={cn(
-              "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              agent.status === 'active'
-                ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300"
-                : "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300"
-            )}
-          >
-            {agent.status === 'active' ? (
-              <>
-                <PauseIcon className="w-4 h-4" />
-                Desativar
-              </>
-            ) : (
-              <>
-                <PlayIcon className="w-4 h-4" />
-                Ativar
-              </>
-            )}
-          </button>
-          
-          <button
-            onClick={handleDuplicate}
-            className={cn(
-              "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              "bg-zinc-100 text-fg-token hover:bg-zinc-200 dark:bg-[var(--dark-bg-hover,#161616)] dark:text-zinc-300"
-            )}
-          >
-            <DocumentDuplicateIcon className="w-4 h-4" />
-            Duplicar
-          </button>
-          
-          <button
-            onClick={handleDelete}
-            className={cn(
-              "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300"
-            )}
-          >
-            <TrashIcon className="w-4 h-4" />
-            Excluir
-          </button>
-        </div>
-      </div>
+    <PageShell
+      className="mx-auto max-w-7xl"
+      trilha={[{ rotulo: 'Agentes', href: '/agents' }, { rotulo: agent.name }]}
+      titulo={agent.name}
+      selo={
+        <>
+          <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', statusColors[agent.status])}>
+            {agent.status === 'active' ? 'Ativo' : agent.status === 'inactive' ? 'Inativo' : 'Rascunho'}
+          </span>
+          <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', providerColors[agent.provider])}>
+            {agent.provider.toUpperCase()}
+          </span>
+        </>
+      }
+      acoes={
+        <>
+            <button
+              onClick={handleToggleStatus}
+              className={cn(
+                "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                agent.status === 'active'
+                  ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300"
+                  : "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300"
+              )}
+            >
+              {agent.status === 'active' ? (
+                <>
+                  <PauseIcon className="w-4 h-4" />
+                  Desativar
+                </>
+              ) : (
+                <>
+                  <PlayIcon className="w-4 h-4" />
+                  Ativar
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={handleDuplicate}
+              className={cn(
+                "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "bg-zinc-100 text-fg-token hover:bg-zinc-200 dark:bg-[var(--dark-bg-hover,#161616)] dark:text-zinc-300"
+              )}
+            >
+              <DocumentDuplicateIcon className="w-4 h-4" />
+              Duplicar
+            </button>
+            
+            <button
+              onClick={handleDelete}
+              className={cn(
+                "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300"
+              )}
+            >
+              <TrashIcon className="w-4 h-4" />
+              Excluir
+            </button>
+        </>
+      }
+    >
 
       {/* Tabs */}
       <div className="flex border-b border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] mb-6">
@@ -488,7 +470,7 @@ export const AgentDetailPage: React.FC = () => {
         </div>
       )}
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 };
 

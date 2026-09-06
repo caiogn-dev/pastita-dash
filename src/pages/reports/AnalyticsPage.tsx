@@ -630,7 +630,6 @@ const AnalyticsPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Relatórios' }, { rotulo: relatorio.titulo }]}
       titulo={relatorio.titulo}
-      descricao={relatorio.descricao}
       acoes={
         <>
           {/* Um menu só: cada relatório aparece uma vez, com CSV e Excel lado

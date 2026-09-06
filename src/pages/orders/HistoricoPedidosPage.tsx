@@ -173,7 +173,6 @@ export const HistoricoPedidosPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Pedidos', href: `/stores/${storeQuery}/orders` }, { rotulo: 'Histórico' }]}
       titulo="Histórico de pedidos"
-      descricao={`Todos os pedidos do período — ${rotuloDaJanela(janela)}.`}
       acoes={
         <Button
           variant="secondary"

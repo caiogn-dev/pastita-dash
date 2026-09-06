@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge, Modal, Input } from '../../components/common';
 import logger from '../../services/logger';
 import storesApi, { Store as StoreType, StoreInput, StoreStats } from '../../services/storesApi';
+import { PageShell } from '../../components/ui';
 
 const StoresPage: React.FC = () => {
   const navigate = useNavigate();
@@ -99,18 +100,15 @@ const StoresPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">Lojas</h1>
-          <p className="text-fg-muted-token">Gerencie todas as suas lojas e integrações</p>
-        </div>
+    <PageShell
+      titulo="Lojas"
+      acoes={
         <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Loja
+        <Plus className="w-4 h-4 mr-2" />
+        Nova Loja
         </Button>
-      </div>
+      }
+    >
 
       {/* Stats Overview */}
       <div className="grid grid-cols-4 max-md:grid-cols-1 gap-4 mb-6">
@@ -291,7 +289,7 @@ const StoresPage: React.FC = () => {
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateStore}
       />
-    </div>
+    </PageShell>
   );
 };
 

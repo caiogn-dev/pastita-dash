@@ -305,7 +305,6 @@ const FidelidadePage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Cardápio' }, { rotulo: 'Fidelidade' }]}
       titulo="Fidelidade & Cupons"
-      descricao="Dar motivo para o cliente voltar. Escolha o programa que combina com a sua margem."
       acoes={
         <Badge tone={enabled || cbLigado ? 'success' : 'neutral'}>
           {enabled ? 'Cartão ativo' : cbLigado ? 'Cashback ativo' : 'Nenhum programa ativo'}
@@ -435,96 +434,99 @@ const FidelidadePage: React.FC = () => {
         />
       )}
 
-      {programa === 'carimbo' && (
-      <Card title="Programa de fidelidade">
-        <form className="space-y-4" onSubmit={handleSaveConfig}>
-          {/* Era um checkbox nu escrito "Programa ativo". Um quadradinho não
-              diz o que acontece ao marcar, e o cliente é quem sente o efeito —
-              a linha explica antes de você clicar. */}
-          <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
-            <span className="min-w-0">
-              <span className="block text-body font-semibold text-fg-token">
-                Programa ativo
+      {/* Dois formulários curtos: empilhados eram uma tela de rolagem
+          para oito campos. Lado a lado no desktop, cabem na mesma dobra. */}
+      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+        {programa === 'carimbo' && (
+        <Card title="Programa de fidelidade">
+          <form className="space-y-4" onSubmit={handleSaveConfig}>
+            {/* Era um checkbox nu escrito "Programa ativo". Um quadradinho não
+                diz o que acontece ao marcar, e o cliente é quem sente o efeito —
+                a linha explica antes de você clicar. */}
+            <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
+              <span className="min-w-0">
+                <span className="block text-body font-semibold text-fg-token">
+                  Programa ativo
+                </span>
+                <span className="mt-0.5 block text-caption text-fg-muted-token">
+                  Ligado, o cartão do cliente anda a cada pedido pago e o grátis
+                  aparece sozinho no carrinho dele.
+                </span>
               </span>
-              <span className="mt-0.5 block text-caption text-fg-muted-token">
-                Ligado, o cartão do cliente anda a cada pedido pago e o grátis
-                aparece sozinho no carrinho dele.
-              </span>
-            </span>
-            <input
-              type="checkbox"
-              className="mt-1 h-5 w-5 shrink-0 accent-[var(--brand)]"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
+              <input
+                type="checkbox"
+                className="mt-1 h-5 w-5 shrink-0 accent-[var(--brand)]"
+                checked={enabled}
+                onChange={(e) => setEnabled(e.target.checked)}
+              />
+            </label>
+  
+            <Input
+              id="loyalty-threshold"
+              label="Itens para ganhar 1 grátis"
+              type="number"
+              min={1}
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
             />
-          </label>
-
-          <Input
-            id="loyalty-threshold"
-            label="Itens para ganhar 1 grátis"
-            type="number"
-            min={1}
-            value={threshold}
-            onChange={(e) => setThreshold(e.target.value)}
-          />
-
-          <div>
-            <p className="block text-sm font-medium text-fg-token mb-1">Categorias que pontuam</p>
-            {storeCategories.length > 0 ? (
-              <div className="space-y-1.5 rounded-md border border-border-token bg-surface p-3">
-                {storeCategories.map((cat) => (
-                  <label
-                    key={cat.id}
-                    className="flex items-center gap-2 text-sm text-fg-token"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={qualifyingCategoryIds.includes(cat.id)}
-                      onChange={() => toggleQualifyingCategory(cat.id)}
-                    />
-                    {cat.name}
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-fg-muted-token">Nenhuma categoria cadastrada nesta loja.</p>
+  
+            <div>
+              <p className="block text-sm font-medium text-fg-token mb-1">Categorias que pontuam</p>
+              {storeCategories.length > 0 ? (
+                <div className="space-y-1.5 rounded-md border border-border-token bg-surface p-3">
+                  {storeCategories.map((cat) => (
+                    <label
+                      key={cat.id}
+                      className="flex items-center gap-2 text-sm text-fg-token"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={qualifyingCategoryIds.includes(cat.id)}
+                        onChange={() => toggleQualifyingCategory(cat.id)}
+                      />
+                      {cat.name}
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-fg-muted-token">Nenhuma categoria cadastrada nesta loja.</p>
+              )}
+              <p className="text-xs text-fg-muted-token mt-1">
+                Nenhuma marcada = todos os itens do cardápio contam
+              </p>
+            </div>
+  
+            <Button type="submit" isLoading={saving}>
+              Salvar
+            </Button>
+          </form>
+        </Card>
+        )}
+        <Card title="Cupom de boas-vindas">
+          <div className="space-y-4">
+            <Input
+              id="loyalty-coupon-pct"
+              label="Desconto (%)"
+              type="number"
+              min={1}
+              max={100}
+              placeholder="10"
+              value={pct}
+              onChange={(e) => setPct(e.target.value)}
+            />
+            <Button onClick={handleCreateCoupon} isLoading={creatingCoupon}>
+              Criar cupom de boas-vindas
+            </Button>
+            {createdCoupon && (
+              <Badge tone="success">Cupom criado: {createdCoupon}</Badge>
             )}
-            <p className="text-xs text-fg-muted-token mt-1">
-              Nenhuma marcada = todos os itens do cardápio contam
+            {couponError && <p className="text-sm text-fg-muted-token">{couponError}</p>}
+            <p className="text-xs text-fg-muted-token">
+              Banner no cardápio disponível nos planos Pro e Premium.
             </p>
           </div>
-
-          <Button type="submit" isLoading={saving}>
-            Salvar
-          </Button>
-        </form>
-      </Card>
-      )}
-
-      <Card title="Cupom de boas-vindas">
-        <div className="space-y-4">
-          <Input
-            id="loyalty-coupon-pct"
-            label="Desconto (%)"
-            type="number"
-            min={1}
-            max={100}
-            placeholder="10"
-            value={pct}
-            onChange={(e) => setPct(e.target.value)}
-          />
-          <Button onClick={handleCreateCoupon} isLoading={creatingCoupon}>
-            Criar cupom de boas-vindas
-          </Button>
-          {createdCoupon && (
-            <Badge tone="success">Cupom criado: {createdCoupon}</Badge>
-          )}
-          {couponError && <p className="text-sm text-fg-muted-token">{couponError}</p>}
-          <p className="text-xs text-fg-muted-token">
-            Banner no cardápio disponível nos planos Pro e Premium.
-          </p>
-        </div>
-      </Card>
+        </Card>
+      </div>
 
       {programa === 'carimbo' && (
       <Card

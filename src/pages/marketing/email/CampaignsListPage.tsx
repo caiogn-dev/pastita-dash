@@ -24,6 +24,7 @@ import { Card, Button, Modal, Loading } from '../../../components/common';
 import { useStore, useConfirm } from '../../../hooks';
 import api from '@/services/api';
 import { EMAIL_RECIPIENT_STATUS_LABELS } from '../../../utils/rotulosDeEstado';
+import { PageShell } from '../../../components/ui';
 
 interface EmailCampaign {
   id: string;
@@ -180,18 +181,15 @@ export const CampaignsListPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-fg-token">Campanhas de Email</h1>
-          <p className="text-fg-muted-token">{campaigns.length} campanha(s)</p>
-        </div>
+    <PageShell
+      titulo="Campanhas de e-mail"
+      acoes={
         <Button onClick={() => navigate('/marketing/email/new')}>
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Nova Campanha
+        <PlusIcon className="w-5 h-5 mr-2" />
+        Nova Campanha
         </Button>
-      </div>
+      }
+    >
 
       {campaigns.length === 0 ? (
         <Card className="p-12 text-center">
@@ -386,7 +384,7 @@ export const CampaignsListPage: React.FC = () => {
         )}
       </Modal>
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 };
 

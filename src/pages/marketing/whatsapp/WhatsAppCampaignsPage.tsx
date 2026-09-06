@@ -265,7 +265,6 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'WhatsApp' }]}
       titulo="Campanhas WhatsApp"
-      descricao="Mensagem em massa para quem já é seu cliente — reativação, novidade, promoção."
       acoes={
         <Button onClick={() => navigate('/marketing/whatsapp/new')}>
           <PlusIcon className="w-5 h-5 mr-2" />

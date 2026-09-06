@@ -715,7 +715,6 @@ export const CustomersPage: React.FC = () => {
     <>
     <PageShell
       titulo="Clientes"
-      descricao="Quem compra, quem parou de comprar e quem nunca comprou."
       acoes={
         <div className="flex items-center gap-2">
           <button

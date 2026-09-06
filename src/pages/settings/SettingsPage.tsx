@@ -214,7 +214,6 @@ export const SettingsPage: React.FC = () => {
   return (
     <PageShell
       titulo="Configurações"
-      descricao="Sua conta, sua senha e as preferências deste painel."
     >
 
       {/* User Info */}

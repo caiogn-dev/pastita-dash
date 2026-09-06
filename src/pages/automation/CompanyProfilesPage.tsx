@@ -18,6 +18,7 @@ import { companyProfileService, businessTypeLabels } from '../../services/automa
 import { CompanyProfile } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
+import { PageShell } from '../../components/ui';
 
 const CompanyProfilesPage: React.FC = () => {
   const [ConfirmDialog, confirm] = useConfirm();
@@ -71,23 +72,18 @@ const CompanyProfilesPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-fg-token">Automação & Perfis</h1>
-          <p className="mt-1 text-sm text-fg-muted-token">
-            Configure automações, mensagens e agentes para cada número WhatsApp
-          </p>
-        </div>
+    <PageShell
+      titulo="Automação e perfis"
+      acoes={
         <Link
-          to="/automation/companies/new"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-medium shadow-sm transition-colors"
+        to="/automation/companies/new"
+        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-medium shadow-sm transition-colors"
         >
-          <PlusIcon className="h-5 w-5" />
-          Novo Perfil
+        <PlusIcon className="h-5 w-5" />
+        Novo Perfil
         </Link>
-      </div>
+      }
+    >
 
       {/* Quick Nav Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -275,7 +271,7 @@ const CompanyProfilesPage: React.FC = () => {
         </div>
       )}
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 };
 

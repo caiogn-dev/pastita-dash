@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
-  ArrowLeftIcon,
   PlusIcon,
   PencilIcon,
   TrashIcon,
@@ -19,6 +18,7 @@ import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '../../components/ui/modal';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../hooks';
+import { PageShell } from '../../components/ui';
 
 const AutoMessagesPage: React.FC = () => {
   const { companyId } = useParams<{ companyId: string }>();
@@ -229,33 +229,27 @@ const AutoMessagesPage: React.FC = () => {
   }, {} as Record<string, AutoMessage[]>);
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link
-            to={`/automation/companies/${companyId}`}
-            className="p-2 rounded-lg text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-display font-bold text-fg-token">Mensagens Automáticas</h1>
-            <p className="text-sm text-fg-muted-token">{company?.company_name}</p>
-          </div>
-        </div>
+    <PageShell
+      trilha={[
+        { rotulo: 'Automação', href: '/automation/companies' },
+        { rotulo: company?.company_name || 'Perfil', href: `/automation/companies/${companyId}` },
+        { rotulo: 'Mensagens automáticas' },
+      ]}
+      titulo="Mensagens automáticas"
+      acoes={
         <button
-          onClick={() => {
-            resetForm();
-            setEditingMessage(null);
-            setShowModal(true);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-medium shadow-sm transition-colors"
+        onClick={() => {
+        resetForm();
+        setEditingMessage(null);
+        setShowModal(true);
+        }}
+        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-medium shadow-sm transition-colors"
         >
-          <PlusIcon className="h-5 w-5" />
-          Nova Mensagem
+        <PlusIcon className="h-5 w-5" />
+        Nova Mensagem
         </button>
-      </div>
+      }
+    >
 
       {/* Messages by Event Type */}
       {Object.keys(eventTypeLabels).map((eventType) => {
@@ -617,7 +611,7 @@ const AutoMessagesPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 };
 

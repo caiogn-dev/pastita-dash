@@ -282,7 +282,6 @@ const LinkBioPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Cardápio' }, { rotulo: 'Link na Bio' }]}
       titulo="Link na Bio"
-      descricao="Um mini-site com o essencial da sua loja, para colocar na bio do Instagram."
       acoes={
         <>
           <Button variant="outline" onClick={handleCopy} disabled={!bioUrl}>

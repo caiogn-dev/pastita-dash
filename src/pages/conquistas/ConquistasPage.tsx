@@ -107,7 +107,6 @@ export const ConquistasPage: React.FC = () => {
       <PageShell titulo="Metas e Conquistas">
         <EmptyState
           titulo="Não foi possível carregar suas conquistas"
-          descricao="Tente novamente em instantes. Seu faturamento não foi afetado."
         />
       </PageShell>
     );
@@ -120,7 +119,6 @@ export const ConquistasPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Relatórios' }, { rotulo: 'Metas e Conquistas' }]}
       titulo="Metas e Conquistas"
-      descricao="De onde sua loja saiu e para onde está indo. Cada marco é calculado do seu histórico real de vendas."
     >
       <KpiGrid
         itens={[

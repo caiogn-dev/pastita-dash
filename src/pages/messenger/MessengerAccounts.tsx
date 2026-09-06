@@ -10,6 +10,7 @@ import {
 import { Button, Badge } from '../../components/common';
 import { messengerService, MessengerAccount } from '../../services/messenger';
 import { useConfirm } from '../../hooks';
+import { PageShell } from '../../components/ui';
 
 export default function MessengerAccounts() {
   const [ConfirmDialog, confirm] = useConfirm();
@@ -80,19 +81,10 @@ export default function MessengerAccounts() {
   });
 
   return (
-    <div className="p-6">
-      {/* Header card */}
-      <div className="bg-bg-card border border-border-primary rounded-xl p-5 mb-6 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
-            <ChatBubbleLeftIcon className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-fg-primary">Contas do Messenger</h1>
-            <p className="text-sm text-fg-muted">Gerencie suas páginas do Facebook Messenger</p>
-          </div>
-        </div>
-        <div className="flex gap-2 flex-wrap items-center">
+    <PageShell
+      titulo="Contas do Messenger"
+      acoes={<Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-4 h-4" />}>Adicionar Conta</Button>}
+      filtros={
           <div className="relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
             <input
@@ -103,9 +95,8 @@ export default function MessengerAccounts() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-4 h-4" />}>Adicionar Conta</Button>
-        </div>
-      </div>
+      }
+    >
 
       {/* Error */}
       {error && (
@@ -229,6 +220,6 @@ export default function MessengerAccounts() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -24,6 +24,7 @@ import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { Input, Switch, Textarea } from '../../components/common';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../hooks/useConfirm';
+import { PageShell } from '../../components/ui';
 
 const daysOfWeek = [
   { key: 'monday', label: 'Segunda-feira' },
@@ -317,28 +318,15 @@ const CompanyProfileDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link
-            to="/automation/companies"
-            className="p-2 text-fg-muted-token hover:text-fg-token transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-fg-token">
-              {isCreateMode ? 'Novo Perfil de Automação' : profile?.company_name}
-            </h1>
-            <p className="text-sm text-fg-muted-token">
-              {isCreateMode
-                ? 'Vincule uma loja e uma conta WhatsApp para centralizar automações'
-                : profile?.account_phone}
-            </p>
-          </div>
-        </div>
-        {!isCreateMode && id && (
-          <div className="flex space-x-2">
+    <PageShell
+      trilha={[
+        { rotulo: 'Automação', href: '/automation/companies' },
+        { rotulo: isCreateMode ? 'Novo perfil' : profile?.company_name || 'Perfil' },
+      ]}
+      titulo={isCreateMode ? 'Novo perfil de automação' : profile?.company_name || 'Perfil'}
+      acoes={
+        !isCreateMode && id ? (
+          <>
             <Link
               to={`/automation/companies/${id}/messages`}
               className="inline-flex items-center px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface hover:bg-surface-2 transition-colors"
@@ -352,9 +340,10 @@ const CompanyProfileDetailPage: React.FC = () => {
               <TrashIcon className="h-4 w-4 mr-2" />
               Excluir
             </button>
-          </div>
-        )}
-      </div>
+          </>
+        ) : null
+      }
+    >
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {isCreateMode && (
@@ -834,7 +823,7 @@ const CompanyProfileDetailPage: React.FC = () => {
         </div>
       </form>
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 };
 

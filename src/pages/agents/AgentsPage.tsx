@@ -108,7 +108,6 @@ export const AgentsPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Automação' }, { rotulo: 'Agentes IA' }]}
       titulo="Agentes IA"
-      descricao="Quem responde o cliente no WhatsApp quando você não está: tom de voz, regras e limites."
       className="mx-auto max-w-7xl"
       acoes={
         <button

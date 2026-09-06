@@ -20,6 +20,8 @@ export type { PeriodChipsProps, PeriodOption } from './PeriodChips';
 // TODA tela do painel vivem aqui. Não monte esses blocos à mão numa página.
 export { PageShell } from './PageShell';
 export type { PageShellProps, TrilhaItem } from './PageShell';
+export { Paginacao } from './Paginacao';
+export type { PaginacaoProps } from './Paginacao';
 export { KpiGrid } from './KpiGrid';
 export type { KpiGridProps, KpiItem } from './KpiGrid';
 export { InsightList } from './InsightList';

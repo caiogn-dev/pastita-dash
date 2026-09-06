@@ -19,6 +19,7 @@ import {
   type Invoice,
 } from '../../services/billing';
 import PixInvoicePanel from '../../components/billing/PixInvoicePanel';
+import { PageShell } from '../../components/ui';
 
 const STATUS_LABEL: Record<string, string> = {
   none:      'Sem assinatura',
@@ -197,10 +198,12 @@ export default function SubscriptionManagementPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-6 space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-fg-token">Assinatura</h1>
-        <p className="mt-1 text-sm text-fg-muted-token">
+    <PageShell
+      className="mx-auto max-w-4xl"
+      titulo="Assinatura"
+    >
+      {/* O estado da assinatura em uma frase — é a primeira coisa que se procura aqui. */}
+      <p className="text-sm text-fg-muted-token">
           Status:{' '}
           <strong className="text-fg-token">
             {STATUS_LABEL[sub?.status ?? 'none']}
@@ -218,8 +221,7 @@ export default function SubscriptionManagementPage() {
               </strong>
             </>
           )}
-        </p>
-      </header>
+      </p>
 
       {sub?.status === 'suspended' && (
         <div className="rounded-lg border border-[var(--danger)]/30 bg-[var(--danger-soft)] p-4 text-danger-token text-sm">
@@ -382,6 +384,6 @@ export default function SubscriptionManagementPage() {
         </div>
       )}
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 }

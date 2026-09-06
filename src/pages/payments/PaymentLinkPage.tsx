@@ -22,6 +22,7 @@ import { paymentsService, getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
 import { ordersService } from '../../services';
 import type { Order } from '../../types';
+import { PageShell } from '../../components/ui';
 
 interface GeneratedLink {
   payment_url?: string;
@@ -201,15 +202,10 @@ export const PaymentLinkPage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-fg-token">Link de pagamento</h1>
-        <p className="mt-1 text-sm text-fg-muted-token">
-          Gere um link para cobrar um valor avulso, sem precisar de um pedido. O cliente
-          abre o link e paga por cartão, PIX ou boleto.
-          {storeName ? ` Loja: ${storeName}.` : ''}
-        </p>
-      </header>
+    <PageShell
+      className="mx-auto w-full max-w-2xl"
+      titulo="Link de pagamento"
+    >
 
       {!isStoreSelected && (
         <div className="rounded-xl border border-border-token bg-surface px-4 py-3 text-sm text-fg-muted-token">
@@ -475,7 +471,7 @@ export const PaymentLinkPage: React.FC = () => {
           </ul>
         )}
       </section>
-    </div>
+    </PageShell>
   );
 };
 

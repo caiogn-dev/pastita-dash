@@ -18,6 +18,7 @@ import {
 import { CustomerSession, CompanyProfile, SessionStatus } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
+import { PageShell } from '../../components/ui';
 
 const statusColors: Record<SessionStatus, string> = {
   active: 'bg-blue-100 text-blue-800',
@@ -120,27 +121,22 @@ const CustomerSessionsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">Sessões de Clientes</h1>
-          <p className="mt-1 text-sm text-fg-muted-token">
-            Acompanhe as sessões de clientes entre o site e WhatsApp
-          </p>
-        </div>
+    <PageShell
+      titulo="Sessões de clientes"
+      acoes={
         <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
-            showFilters
-              ? 'border-green-500 text-green-700 bg-green-50'
-              : 'border-border-token text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
-          }`}
+        onClick={() => setShowFilters(!showFilters)}
+        className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
+        showFilters
+        ? 'border-green-500 text-green-700 bg-green-50'
+        : 'border-border-token text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
+        }`}
         >
-          <FunnelIcon className="h-5 w-5 mr-2" />
-          Filtros
+        <FunnelIcon className="h-5 w-5 mr-2" />
+        Filtros
         </button>
-      </div>
+      }
+    >
 
       {/* Filters */}
       {showFilters && (
@@ -511,7 +507,7 @@ const CustomerSessionsPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 };
 

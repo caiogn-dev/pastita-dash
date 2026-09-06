@@ -129,7 +129,6 @@ export const ComboFormPage: React.FC = () => {
         { rotulo: isEditing ? 'Editar' : 'Novo combo' },
       ]}
       titulo={isEditing ? `Editar combo — ${combo?.name}` : 'Novo combo'}
-      descricao="Junte itens do cardápio num preço só. O cliente escolhe os sabores dentro dos grupos que você definir."
       acoes={
         <Button variant="outline" onClick={() => navigate(-1)} leftIcon={<ArrowLeftIcon className="h-4 w-4" />}>
           Voltar

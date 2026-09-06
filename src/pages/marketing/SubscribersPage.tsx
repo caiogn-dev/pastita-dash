@@ -255,7 +255,6 @@ export const SubscribersPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'Base de clientes' }]}
       titulo="Base de clientes"
-      descricao={`Quem já comprou em ${effectiveStoreLabel} — pedidos e contatos num lugar só, prontos para campanha.`}
       acoes={
         <>
           <Button variant="secondary" onClick={openOrders}>

@@ -51,6 +51,12 @@ export interface PageShellProps {
   titulo: string;
   /** Uma frase explicando o que a tela faz. Aparece sob o título. */
   descricao?: string;
+  /**
+   * O ESTADO daquilo que a página descreve — "Ativo", "Rascunho", "Suspensa".
+   * Fica colado no título, e não no canto das ações: ação é o que dá para
+   * fazer, selo é o que a coisa É.
+   */
+  selo?: React.ReactNode;
   /** Caminho até aqui. O último item deve vir SEM href. */
   trilha?: TrilhaItem[];
   /** Botões da página (o primário por último, à direita). */
@@ -69,6 +75,7 @@ export interface PageShellProps {
 export const PageShell: React.FC<PageShellProps> = ({
   titulo,
   descricao,
+  selo,
   trilha,
   acoes,
   filtros,
@@ -124,18 +131,21 @@ export const PageShell: React.FC<PageShellProps> = ({
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1
-              className={cn(
-                // `font-display` é o Cinzel da identidade do painel. O chassi
-                // não o usava, e o `PageTitle` — o cabeçalho paralelo que seis
-                // páginas usavam — usava: padronizar sem isto TIRAVA a marca
-                // das telas convertidas, deixando-as mais genéricas que antes.
-                'font-display font-bold tracking-tight text-fg-token',
-                quadro ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl',
-              )}
-            >
-              {titulo}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1
+                className={cn(
+                  // `font-display` é o Cinzel da identidade do painel. O chassi
+                  // não o usava, e o `PageTitle` — o cabeçalho paralelo que seis
+                  // páginas usavam — usava: padronizar sem isto TIRAVA a marca
+                  // das telas convertidas, deixando-as mais genéricas.
+                  'font-display font-bold tracking-tight text-fg-token',
+                  quadro ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl',
+                )}
+              >
+                {titulo}
+              </h1>
+              {selo}
+            </div>
             {/* No quadro a descrição não entra: quem trabalha ali já sabe o que
                 a tela faz, e a frase empurra as colunas para baixo. */}
             {descricao && !quadro && (

@@ -4,6 +4,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { AgentForm } from '../../components/agents';
 import agentsService, { CreateAgentData } from '../../services/agents';
 import { whatsappService } from '../../services';
+import { PageShell } from '../../components/ui';
 
 interface WhatsAppAccount {
   id: string;
@@ -47,24 +48,11 @@ export const AgentCreatePage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => navigate('/agents')}
-          className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-fg-muted-token" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-            Criar Novo Agente
-          </h1>
-          <p className="text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-            Configure um novo agente de inteligência artificial
-          </p>
-        </div>
-      </div>
+    <PageShell
+      className="mx-auto max-w-4xl"
+      trilha={[{ rotulo: 'Agentes', href: '/agents' }, { rotulo: 'Novo agente' }]}
+      titulo="Novo agente"
+    >
 
       {/* Erro de submissão */}
       {submitError && (
@@ -82,7 +70,7 @@ export const AgentCreatePage: React.FC = () => {
           isLoading={isLoading}
         />
       </div>
-    </div>
+    </PageShell>
   );
 };
 

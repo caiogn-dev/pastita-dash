@@ -16,6 +16,7 @@ import { agentFlowService, AgentFlow } from '../../services/automation';
 import { useStore, useConfirm } from '../../hooks';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { PageShell } from '../../components/ui';
 
 export const AgentFlowsPage: React.FC = () => {
   const { storeId } = useStore();
@@ -123,25 +124,20 @@ export const AgentFlowsPage: React.FC = () => {
   if (loading) return <Loading />;
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">Flows de Agente</h1>
-          <p className="text-sm text-fg-muted-token">
-            Configure fluxos de automação com IA
-          </p>
-        </div>
+    <PageShell
+      titulo="Fluxos do robô"
+      acoes={
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={loadFlows}>
-            <ArrowPathIcon className="h-5 w-5" />
-          </Button>
-          <Button onClick={openCreate}>
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Novo Flow
-          </Button>
+        <Button variant="secondary" onClick={loadFlows}>
+        <ArrowPathIcon className="h-5 w-5" />
+        </Button>
+        <Button onClick={openCreate}>
+        <PlusIcon className="h-5 w-5 mr-2" />
+        Novo Flow
+        </Button>
         </div>
-      </div>
+      }
+    >
 
       {/* Stats */}
       <div className="grid grid-cols-4 max-md:grid-cols-2 gap-4">
@@ -310,7 +306,7 @@ export const AgentFlowsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 

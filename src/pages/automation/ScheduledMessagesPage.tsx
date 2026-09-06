@@ -21,6 +21,7 @@ import {
   ScheduledMessageStats,
   WhatsAppAccount,
 } from '../../types';
+import { PageShell } from '../../components/ui';
 
 const statusVariants: Record<string, 'gray' | 'info' | 'success' | 'danger' | 'warning'> = {
   pending: 'info',
@@ -158,18 +159,15 @@ export default function ScheduledMessagesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">Mensagens Agendadas</h1>
-          <p className="text-fg-muted-token">Agende mensagens para envio futuro</p>
-        </div>
+    <PageShell
+      titulo="Mensagens agendadas"
+      acoes={
         <Button onClick={() => setIsModalOpen(true)}>
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Nova Mensagem
+        <PlusIcon className="h-5 w-5 mr-2" />
+        Nova Mensagem
         </Button>
-      </div>
+      }
+    >
 
       {/* Stats */}
       {stats && (
@@ -471,6 +469,6 @@ export default function ScheduledMessagesPage() {
         </div>
       </Modal>
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 }

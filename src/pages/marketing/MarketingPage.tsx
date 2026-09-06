@@ -268,11 +268,6 @@ export const MarketingPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Campanhas' }, { rotulo: 'Marketing' }]}
       titulo="Marketing"
-      descricao={
-        storeName
-          ? `Campanhas, promoções e contatos de ${storeName}.`
-          : 'Alcance quem já comprou: e-mail, WhatsApp e promoções.'
-      }
       acoes={
         <>
           <Button variant="secondary" onClick={() => navigate('/marketing/subscribers')}>

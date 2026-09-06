@@ -19,6 +19,7 @@ import { WhatsAppAccount } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ACCOUNT_STATUS_LABELS } from '../../utils/rotulosDeEstado';
+import { PageShell } from '../../components/ui';
 
 const STATUS_VARIANT: Record<string, string> = {
   active: 'success',
@@ -99,19 +100,14 @@ export const AccountsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col gap-6">
-
-        {/* Header */}
-        <div className="flex flex-wrap justify-between items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-fg-primary">Contas WhatsApp</h1>
-            <p className="text-sm text-fg-muted mt-0.5">{accounts.length} conta(s) cadastrada(s)</p>
-          </div>
-          <Button leftIcon={<PlusIcon className="w-5 h-5" />} onClick={() => navigate('/accounts/new')}>
-            Nova Conta
-          </Button>
-        </div>
+    <PageShell
+      titulo="Contas de WhatsApp"
+      acoes={
+        <Button leftIcon={<PlusIcon className="w-5 h-5" />} onClick={() => navigate('/accounts/new')}>
+          Nova Conta
+        </Button>
+      }
+    >
 
         {/* Table */}
         <Card noPadding>
@@ -234,7 +230,6 @@ export const AccountsPage: React.FC = () => {
             </div>
           )}
         </Card>
-      </div>
 
       {/* Delete Modal */}
       <Modal
@@ -252,7 +247,7 @@ export const AccountsPage: React.FC = () => {
           <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>Excluir</Button>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 

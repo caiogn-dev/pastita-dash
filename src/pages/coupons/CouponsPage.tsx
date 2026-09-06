@@ -14,7 +14,7 @@ import {
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Button, Input, Badge, Modal, Loading } from '../../components/common';
-import { StatCard, RowActions, linhaClicavel, FormStepper, InsightList } from '../../components/ui';
+import { StatCard, RowActions, linhaClicavel, FormStepper, InsightList, Paginacao } from '../../components/ui';
 import { insightsDeCupons } from './insightsDeCupons';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
 import { getCategories, StoreCategory } from '../../services/storesApi';
@@ -28,6 +28,8 @@ import { useStore } from '../../hooks';
  * usos que aparecem em toda loja — primeira compra, promoção genérica, data
  * comemorativa.
  */
+const POR_PAGINA = 20;
+
 const SUGESTOES_DE_CODIGO = ['BEMVINDO10', 'PROMO15', 'VOLTEI10'] as const;
 
 export const CouponsPage: React.FC = () => {
@@ -41,6 +43,8 @@ export const CouponsPage: React.FC = () => {
     return match?.id || contextStoreId || undefined;
   }, [routeStoreId, contextStoreId, stores]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<CouponStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -111,10 +115,15 @@ export const CouponsPage: React.FC = () => {
           search: search || undefined,
           is_active: filterActive,
           discount_type: filterType || undefined,
+          // Sem `page`, o backend devolve a primeira página e a tela some
+          // com o resto sem avisar: a Cê Saladas tem 35 cupons e via 20.
+          page,
+          page_size: POR_PAGINA,
         }),
         couponsService.getStats(storeId),
       ]);
       setCoupons(couponsData.results);
+      setTotal(couponsData.count ?? couponsData.results.length);
       setStats(statsData);
     } catch (err) {
       logger.error('Error loading coupons:', err);
@@ -122,12 +131,18 @@ export const CouponsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive, filterType, storeId]);
+  }, [search, filterActive, filterType, storeId, page]);
 
   // Reload when store changes
   useEffect(() => {
     loadCoupons();
   }, [loadCoupons]);
+
+  // Filtro novo recomeça na primeira página: buscar estando na página 2 de um
+  // resultado que agora tem uma página só devolveria uma lista vazia.
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterActive, filterType, storeId]);
 
   // Update form data when store changes
   useEffect(() => {
@@ -264,7 +279,6 @@ export const CouponsPage: React.FC = () => {
   return (
     <PageShell
       titulo="Cupons"
-      descricao="Desconto que você controla: quem pode usar, quantas vezes e até quando."
       acoes={
         <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto">
           <PlusIcon className="w-5 h-5 mr-2" />
@@ -546,6 +560,14 @@ export const CouponsPage: React.FC = () => {
           </div>
         )}
       </Card>
+
+      <Paginacao
+        pagina={page}
+        porPagina={POR_PAGINA}
+        total={total}
+        onPagina={setPage}
+        rotulo="cupons"
+      />
 
       {/* Create/Edit Modal */}
       <Modal

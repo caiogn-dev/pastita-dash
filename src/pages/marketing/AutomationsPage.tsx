@@ -227,7 +227,6 @@ export default function AutomationsPage() {
     <PageShell
       trilha={[{ rotulo: 'Automação' }, { rotulo: 'E-mail' }]}
       titulo="Automações de E-mail"
-      descricao="E-mail que sai sozinho quando algo acontece — pedido confirmado, carrinho abandonado, cliente sumido."
       acoes={
         <Button onClick={() => setShowCreateModal(true)}>
           <PlusIcon className="w-5 h-5 mr-2" />

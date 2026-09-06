@@ -300,7 +300,6 @@ export const ConversationsPage: React.FC = () => {
   return (
     <PageShell
       titulo="Conversas"
-      descricao="Toda a atividade por conversa, da mais recente para a mais antiga."
       acoes={
         <Button variant="secondary" onClick={() => void loadConversations(false)}>
           <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />

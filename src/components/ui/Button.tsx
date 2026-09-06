@@ -47,15 +47,23 @@ const VARIANTS: Record<ButtonVariant, string> = {
   // text-on-brand e nao text-white: branco sobre ouro da 2.40:1 (claro)
   // e 1.79:1 (escuro). A WCAG AA pede 4.5:1 para texto.
   primary: 'bg-brand text-on-brand hover:bg-brand-hover',
-  outline: 'border border-border-token text-fg-token hover:bg-surface-2',
-  ghost: 'text-fg-muted-token hover:bg-surface-2',
+  // `bg-surface` explícito: sem fundo próprio, dentro de um Card (que já é
+  // bg-surface) sobra 1px de borda e o controle deixa de parecer clicável.
+  outline: 'border border-border-token bg-surface text-fg-token hover:bg-surface-2',
+  // Ghost não pinta fundo — mas escreve na cor de texto PRINCIPAL. Com
+  // `text-fg-muted-token` (a cor de legenda) o rótulo reprovava na WCAG AA, e
+  // ghost é a variante das ações de tabela: "Editar", "Duplicar".
+  ghost: 'text-fg-token hover:bg-surface-2',
   danger: 'border border-[var(--danger)] text-[var(--danger)] hover:bg-[var(--danger-soft)]',
   success: 'border border-[var(--success)] bg-[var(--success)] text-white hover:bg-[var(--success-strong)]',
   warning: 'border border-[var(--warning)] bg-[var(--warning)] text-white hover:brightness-95',
   info: 'border border-[var(--info)] bg-[var(--info)] text-white hover:brightness-95',
   // aliases legados
-  solid: 'bg-brand text-white hover:bg-brand-hover',
-  secondary: 'border border-border-token text-fg-token hover:bg-surface-2',
+  // `text-on-brand`, não `text-white`: ver a medição em `primary`. A correção
+  // de contraste tinha ficado só na variante nova e o alias legado — usado por
+  // metade do painel — continuava reprovado.
+  solid: 'bg-brand text-on-brand hover:bg-brand-hover',
+  secondary: 'border border-border-token bg-surface text-fg-token hover:bg-surface-2',
   link: 'text-brand-ink hover:underline px-0 py-0',
 };
 

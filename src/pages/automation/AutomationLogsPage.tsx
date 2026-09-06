@@ -15,6 +15,7 @@ import {
 import { AutomationLog, CompanyProfile, AutomationLogStats } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
+import { PageShell } from '../../components/ui';
 
 const actionTypeLabels: Record<string, string> = {
   message_received: 'Mensagem Recebida',
@@ -111,44 +112,39 @@ const AutomationLogsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">Logs de Automação</h1>
-          <p className="mt-1 text-sm text-fg-muted-token">
-            Histórico de todas as ações de automação
-          </p>
-        </div>
+    <PageShell
+      titulo="Logs de automação"
+      acoes={
         <div className="flex space-x-2">
-          <button
-            onClick={loadStats}
-            className="inline-flex items-center px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
-          >
-            <ChartBarIcon className="h-5 w-5 mr-2" />
-            Estatísticas
-          </button>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
-              showFilters
-                ? 'border-green-500 text-green-700 bg-green-50'
-                : 'border-border-token text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
-            }`}
-          >
-            <FunnelIcon className="h-5 w-5 mr-2" />
-            Filtros
-          </button>
-          <button
-            type="button"
-            aria-label="Atualizar logs"
-            onClick={loadLogs}
-            className="inline-flex items-center px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
-          >
-            <ArrowPathIcon className="h-5 w-5" />
-          </button>
+        <button
+        onClick={loadStats}
+        className="inline-flex items-center px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
+        >
+        <ChartBarIcon className="h-5 w-5 mr-2" />
+        Estatísticas
+        </button>
+        <button
+        onClick={() => setShowFilters(!showFilters)}
+        className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
+        showFilters
+        ? 'border-green-500 text-green-700 bg-green-50'
+        : 'border-border-token text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
+        }`}
+        >
+        <FunnelIcon className="h-5 w-5 mr-2" />
+        Filtros
+        </button>
+        <button
+        type="button"
+        aria-label="Atualizar logs"
+        onClick={loadLogs}
+        className="inline-flex items-center px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-card,#1a1a1a)]"
+        >
+        <ArrowPathIcon className="h-5 w-5" />
+        </button>
         </div>
-      </div>
+      }
+    >
 
       {/* Filters */}
       {showFilters && (
@@ -519,7 +515,7 @@ const AutomationLogsPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 };
 

@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { intentService, intentTypeLabels } from '../../services';
 import type { IntentStats, IntentType } from '../../types';
+import { PageShell } from '../../components/ui';
 
 
 export const IntentStatsPage: React.FC = () => {
@@ -40,44 +41,9 @@ export const IntentStatsPage: React.FC = () => {
   const uniqueIntents = stats?.top_intents?.length || 0;
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl">
-            <ChartBarIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-              Estatísticas de Intenções
-            </h1>
-            <p className="text-sm text-fg-muted-token mt-0.5">
-              Análise de detecção de intenções nas mensagens
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <select
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-border-token bg-surface text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value={1}>Últimas 24h</option>
-            <option value={7}>Últimos 7 dias</option>
-            <option value={30}>Últimos 30 dias</option>
-          </select>
-
-          <button
-            onClick={loadStats}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border-token bg-surface text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] text-sm hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] disabled:opacity-50 transition-colors"
-          >
-            <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </button>
-        </div>
-      </div>
+    <PageShell
+      titulo="O que o cliente pede"
+    >
 
       {/* Error State */}
       {error && (
@@ -202,7 +168,7 @@ export const IntentStatsPage: React.FC = () => {
           )}
         </>
       )}
-    </div>
+    </PageShell>
   );
 };
 

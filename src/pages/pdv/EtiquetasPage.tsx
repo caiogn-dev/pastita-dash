@@ -11,6 +11,7 @@ import {
   PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
 } from '../../utils/labelPrint';
 import { precoVigenteDoProduto } from '../../utils/precoVigente';
+import { PageShell } from '../../components/ui';
 
 const fmtMoney = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
@@ -370,58 +371,51 @@ const EtiquetasPage: React.FC = () => {
   if (loading) return <Loading />;
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-4 md:space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold flex items-center gap-2">
-            <TagIcon className="w-6 h-6" /> Etiquetas
-          </h1>
-          <p className="text-sm opacity-70">
-            Imprima etiquetas de produto (com código de barras) ou de validade direto do cadastro —
-            produto sem código ganha um EAN-13 interno na hora.
-          </p>
-        </div>
+    <PageShell
+      titulo="Etiquetas"
+      acoes={
         <div className="flex flex-col items-stretch gap-2 sm:min-w-80">
-          <div className="flex flex-wrap items-center gap-2">
-            <select className="rounded border border-black/15 bg-transparent px-2 py-1.5 text-sm"
-                    value={lojaDaFolha} onChange={(e) => { setLojaDaFolha(e.target.value); setCategoriasDaFolha(new Set()); }}>
-              <option value="">Todas as lojas</option>
-              {lojasDisponiveis.map((l) => <option key={l.slug} value={l.slug}>{l.name}</option>)}
-            </select>
-            <Button variant="secondary" disabled={daFolha.length === 0} onClick={handleExportPdf}>
-              <ArrowDownTrayIcon className="w-5 h-5" />
-              Folha de códigos ({daFolha.length})
-            </Button>
-          </div>
-          {categoriasDisponiveis.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {categoriasDisponiveis.map((c) => {
-                const on = categoriasDaFolha.has(c);
-                return (
-                  <button key={c} type="button" aria-pressed={on}
-                    onClick={() => setCategoriasDaFolha((s) => {
-                      const novo = new Set(s);
-                      if (novo.has(c)) novo.delete(c); else novo.add(c);
-                      return novo;
-                    })}
-                    className={`rounded-full border px-2 py-0.5 text-xs ${on ? 'border-black bg-black text-white' : 'border-black/15 opacity-70 hover:opacity-100'}`}>
-                    {c}
-                  </button>
-                );
-              })}
-              {categoriasDaFolha.size > 0 && (
-                <button type="button" className="px-2 py-0.5 text-xs underline"
-                        onClick={() => setCategoriasDaFolha(new Set())}>limpar</button>
-              )}
-            </div>
-          )}
-          <label className="flex items-center gap-1.5 text-xs opacity-75">
-            <input type="checkbox" checked={catalogoCompacto}
-                   onChange={(e) => setCatalogoCompacto(e.target.checked)} />
-            Compacta — só nome, código e preço, 4 por linha
-          </label>
+        <div className="flex flex-wrap items-center gap-2">
+        <select className="rounded border border-black/15 bg-transparent px-2 py-1.5 text-sm"
+        value={lojaDaFolha} onChange={(e) => { setLojaDaFolha(e.target.value); setCategoriasDaFolha(new Set()); }}>
+        <option value="">Todas as lojas</option>
+        {lojasDisponiveis.map((l) => <option key={l.slug} value={l.slug}>{l.name}</option>)}
+        </select>
+        <Button variant="secondary" disabled={daFolha.length === 0} onClick={handleExportPdf}>
+        <ArrowDownTrayIcon className="w-5 h-5" />
+        Folha de códigos ({daFolha.length})
+        </Button>
         </div>
-      </div>
+        {categoriasDisponiveis.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+        {categoriasDisponiveis.map((c) => {
+        const on = categoriasDaFolha.has(c);
+        return (
+        <button key={c} type="button" aria-pressed={on}
+        onClick={() => setCategoriasDaFolha((s) => {
+        const novo = new Set(s);
+        if (novo.has(c)) novo.delete(c); else novo.add(c);
+        return novo;
+        })}
+        className={`rounded-full border px-2 py-0.5 text-xs ${on ? 'border-black bg-black text-white' : 'border-black/15 opacity-70 hover:opacity-100'}`}>
+        {c}
+        </button>
+        );
+        })}
+        {categoriasDaFolha.size > 0 && (
+        <button type="button" className="px-2 py-0.5 text-xs underline"
+        onClick={() => setCategoriasDaFolha(new Set())}>limpar</button>
+        )}
+        </div>
+        )}
+        <label className="flex items-center gap-1.5 text-xs opacity-75">
+        <input type="checkbox" checked={catalogoCompacto}
+        onChange={(e) => setCatalogoCompacto(e.target.checked)} />
+        Compacta — só nome, código e preço, 4 por linha
+        </label>
+        </div>
+      }
+    >
 
       <div className="grid lg:grid-cols-[1fr,360px] gap-4 md:gap-5 items-start">
         <Card className="p-4 sm:p-5 space-y-3">
@@ -627,7 +621,7 @@ const EtiquetasPage: React.FC = () => {
           </p>
         </Card>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

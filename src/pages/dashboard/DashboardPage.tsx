@@ -373,7 +373,6 @@ export const DashboardPage: React.FC = () => {
       // painel de manhã não sabe de cara em qual loja está, e com multi-loja
       // isso é um erro caro. A saudação nomeia a loja.
       titulo={`${saudacaoDoDia()}${store?.name ? `, ${store.name}` : ''}!`}
-      descricao="O que precisa da sua atenção agora, e como o dia está indo."
     >
       {storeId && (
         <OnboardingWizard open={wizardOpen} steps={buildWizardSteps(storeId)} onClose={() => setWizardOpen(false)} />

@@ -18,6 +18,7 @@ import { messengerService } from '../../services/messenger';
 import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
 import { Toggle } from './Toggle';
+import { PageShell } from '../../components/ui';
 
 // ─── Platform config ──────────────────────────────────────────────────────────
 
@@ -382,26 +383,22 @@ export default function ConnectionsPage() {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-fg-primary">Conexões de Mensagens</h1>
-          <p className="text-fg-muted mt-1">Gerencie todas as suas conexões em um só lugar</p>
-        </div>
-        <div className="flex gap-3 items-center flex-wrap">
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-            <input
-              className="pl-9 pr-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500 w-64"
-              placeholder="Buscar conexões..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-5 h-5" />}>Nova Conexão</Button>
-        </div>
-      </div>
+    <PageShell
+      className="mx-auto max-w-7xl"
+      titulo="Conexões de mensagens"
+      acoes={<Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-5 h-5" />}>Nova Conexão</Button>}
+      filtros={
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
+              <input
+                className="pl-9 pr-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500 w-64"
+                placeholder="Buscar conexões..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+      }
+    >
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 mb-8">
@@ -654,6 +651,6 @@ export default function ConnectionsPage() {
         </div>
       </Modal>
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 }

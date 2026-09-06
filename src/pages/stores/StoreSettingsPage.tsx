@@ -290,11 +290,6 @@ export const StoreSettingsPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Loja' }]}
       titulo="Configurações da Loja"
-      descricao={
-        store?.name
-          ? `Dados, endereço e operação de ${store.name}. O que está aqui aparece para o cliente.`
-          : 'Dados, endereço e operação. O que está aqui aparece para o cliente.'
-      }
       className="mx-auto max-w-6xl"
     >
 

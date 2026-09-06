@@ -99,7 +99,6 @@ const CashPage: React.FC = () => {
   return (
     <PageShell
       titulo="Caixa"
-      descricao="Abertura, sangria e reforço, e o fechamento com conferência do que entrou."
       className="max-w-3xl"
     >
 

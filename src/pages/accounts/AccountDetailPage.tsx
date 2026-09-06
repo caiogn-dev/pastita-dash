@@ -128,7 +128,6 @@ export const AccountDetailPage: React.FC = () => {
   return (
     <PageShell
       titulo={account.name}
-      descricao={account.display_phone_number || account.phone_number}
       trilha={[
         { rotulo: 'Conexões', href: '/accounts' },
         { rotulo: account.name },

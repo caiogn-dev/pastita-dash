@@ -4,6 +4,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { AgentChatTest } from '../../components/agents';
 import agentsService, { AgentDetail } from '../../services/agents';
 import { useStore } from '../../hooks';
+import { PageShell } from '../../components/ui';
 
 export const AgentTestPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -80,25 +81,15 @@ export const AgentTestPage: React.FC = () => {
   const agentModel = typeof agent.model_name === 'string' ? agent.model_name : JSON.stringify(agent.model_name);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => navigate(`/agents/${id}`)}
-          className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-fg-muted-token" />
-        </button>
-        
-        <div>
-          <h1 className="text-2xl font-display font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-            Testar: {agentName}
-          </h1>
-          <p className="text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">
-            {agentProvider} / {agentModel}
-          </p>
-        </div>
-      </div>
+    <PageShell
+      className="mx-auto max-w-4xl"
+      trilha={[
+        { rotulo: 'Agentes', href: '/agents' },
+        { rotulo: agentName, href: `/agents/${id}` },
+        { rotulo: 'Teste' },
+      ]}
+      titulo={`Testar: ${agentName}`}
+    >
 
       {/* Chat Test */}
       <AgentChatTest
@@ -106,7 +97,7 @@ export const AgentTestPage: React.FC = () => {
         onSendMessage={handleSendMessage}
         onClearChat={() => {}}
       />
-    </div>
+    </PageShell>
   );
 };
 

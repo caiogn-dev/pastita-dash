@@ -30,6 +30,7 @@ import {
   listPrintJobs,
   requeuePrintJob,
 } from '../../services/printing';
+import { PageShell } from '../../components/ui';
 
 const JOB_STATUS_TONE: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
   completed: 'success',
@@ -190,26 +191,19 @@ const PrintSettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-fg-token flex items-center gap-2">
-            <PrinterIcon className="w-7 h-7" />
-            Impressão automática
-          </h1>
-          <p className="text-sm text-fg-muted-token mt-0.5">
-            Comandas impressas automaticamente quando entra pedido — sem dialog do navegador.
-          </p>
-        </div>
+    <PageShell
+      titulo="Impressão automática"
+      acoes={
         <div className="flex gap-2">
-          <Button variant="ghost" onClick={loadData} disabled={loading} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
-            {loading ? 'Atualizando…' : 'Atualizar'}
-          </Button>
-          <Button onClick={() => setIsCreateOpen(true)} leftIcon={<PlusIcon className="w-4 h-4" />}>
-            Novo agente
-          </Button>
+        <Button variant="ghost" onClick={loadData} disabled={loading} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
+        {loading ? 'Atualizando…' : 'Atualizar'}
+        </Button>
+        <Button onClick={() => setIsCreateOpen(true)} leftIcon={<PlusIcon className="w-4 h-4" />}>
+        Novo agente
+        </Button>
         </div>
-      </div>
+      }
+    >
 
       {/* Agentes */}
       <Card className="p-6">
@@ -441,7 +435,7 @@ const PrintSettingsPage: React.FC = () => {
         </div>
       </Modal>
       {ConfirmDialog}
-    </div>
+    </PageShell>
   );
 };
 

@@ -29,6 +29,7 @@ import { Card, Button, Badge, Loading, Modal } from '../../components/common';
 import storesApi, { Store, StoreStats } from '../../services/storesApi';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
+import { PageShell } from '../../components/ui';
 
 type TabId = 'overview' | 'products' | 'combos' | 'orders' | 'coupons' | 'delivery' | 'settings' | 'storefront';
 
@@ -130,45 +131,16 @@ export const StoreDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <button
-          onClick={() => navigate('/stores')}
-          className="flex items-center text-fg-muted-token hover:text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-4"
-        >
-          <ArrowLeftIcon className="w-4 h-4 mr-2" />
-          Voltar para Lojas
-        </button>
-
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            {store.logo_url ? (
-              <img
-                src={store.logo_url}
-                alt={store.name}
-                className="w-16 h-16 rounded-xl object-cover"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-xl bg-primary-100 flex items-center justify-center">
-                <BuildingStorefrontIcon className="w-8 h-8 text-primary-600" />
-              </div>
-            )}
-            <div>
-              <h1 className="text-2xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{store.name}</h1>
-              <p className="text-fg-muted-token">{store.slug}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant={store.status === 'active' ? 'success' : 'gray'}>
-                  {store.status === 'active' ? 'Ativa' : 'Inativa'}
-                </Badge>
-                <span className="text-sm text-fg-muted-token">
-                  {store.store_type === 'food' ? '🍕 Alimentação' : store.store_type}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
+    <PageShell
+      trilha={[{ rotulo: 'Lojas', href: '/stores' }, { rotulo: store.name }]}
+      titulo={store.name}
+      selo={
+        <Badge variant={store.status === 'active' ? 'success' : 'gray'}>
+          {store.status === 'active' ? 'Ativa' : 'Inativa'}
+        </Badge>
+      }
+      acoes={
+        <>
             <Button
               variant="secondary"
               onClick={() => setIsEditModalOpen(true)}
@@ -192,9 +164,9 @@ export const StoreDetailPage: React.FC = () => {
                 </>
               )}
             </Button>
-          </div>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* Stats Cards */}
       {stats && (
@@ -383,7 +355,7 @@ export const StoreDetailPage: React.FC = () => {
           </Button>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 

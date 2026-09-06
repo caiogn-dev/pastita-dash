@@ -294,7 +294,6 @@ export const DeliveryZonesPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Zonas de Entrega' }]}
       titulo="Zonas de Entrega"
-      descricao="Até onde você entrega e quanto cobra por distância. O cliente vê a taxa da faixa dele no checkout."
       acoes={
         <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
           Nova Faixa

@@ -23,6 +23,7 @@ import {
   conversationInsightsQueryKey,
 } from '../../hooks/queries/useConversationInsights';
 import { aiService } from '../../services/ai';
+import { PageShell } from '../../components/ui';
 
 const PERIODS = [7, 14, 30] as const;
 
@@ -122,56 +123,41 @@ export const ConversationInsightsPage: React.FC = () => {
   const sentiment = insights ? sentimentBadge(insights.sentiment) : null;
 
   return (
-    <div className="space-y-5">
-      {/* ── Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-fg-token flex items-center gap-2">
-            <SparklesIcon className="h-6 w-6 text-brand-ink" aria-hidden="true" />
-            Insights de Conversas (IA)
-          </h1>
-          <p className="text-sm text-fg-muted-token mt-1">
-            {isLoading
-              ? 'Analisando conversas…'
-              : data
-                ? `${data.message_count} mensage${data.message_count === 1 ? 'm analisada' : 'ns analisadas'} nos últimos ${data.days} dias`
-                : 'Análise das conversas do WhatsApp'}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Seletor de período */}
-          <div role="group" aria-label="Período de análise" className="flex rounded-lg border border-border-token overflow-hidden">
-            {PERIODS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setDays(p)}
-                aria-pressed={days === p}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  days === p
-                    ? 'bg-brand text-white'
-                    : 'bg-surface text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
-                }`}
-              >
-                {p} dias
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={refreshing || isLoading}
-            aria-label="Regenerar insights"
-            title="Regenerar insights"
-            className="p-2 rounded-lg border border-border-token text-fg-muted-token
-                       hover:text-fg-token hover:bg-surface-2 disabled:opacity-50 transition-colors"
-          >
-            <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      </div>
+    <PageShell
+      titulo="Insights de conversas"
+      filtros={
+            <div role="group" aria-label="Período de análise" className="flex rounded-lg border border-border-token overflow-hidden">
+              {PERIODS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setDays(p)}
+                  aria-pressed={days === p}
+                  className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    days === p
+                      ? 'bg-brand text-white'
+                      : 'bg-surface text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
+                  }`}
+                >
+                  {p} dias
+                </button>
+              ))}
+            </div>
+      }
+      acoes={
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing || isLoading}
+              aria-label="Regenerar insights"
+              title="Regenerar insights"
+              className="p-2 rounded-lg border border-border-token text-fg-muted-token
+                         hover:text-fg-token hover:bg-surface-2 disabled:opacity-50 transition-colors"
+            >
+              <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+      }
+    >
 
       {/* ── Body ── */}
       {isLoading || refreshing ? (
@@ -245,7 +231,7 @@ export const ConversationInsightsPage: React.FC = () => {
           </Card>
         </>
       )}
-    </div>
+    </PageShell>
   );
 };
 

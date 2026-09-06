@@ -196,7 +196,6 @@ export const StorefrontPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Storefront' }]}
       titulo="Storefront"
-      descricao="A cara da sua loja: capa, logo, cores e template. É o que o cliente vê ao abrir o link."
       acoes={
         urlPublica ? (
           <a href={urlPublica} target="_blank" rel="noopener noreferrer">

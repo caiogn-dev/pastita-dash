@@ -19,6 +19,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge } from '../../components/common';
 import api from '@/services/api';
 import logger from '@/services/logger';
+import { PageShell } from '../../components/ui';
 
 interface DiagnosticsData {
   status: string;
@@ -187,32 +188,25 @@ export const WebhookDiagnosticsPage: React.FC = () => {
   const healthStatus = healthScore >= 4 ? 'healthy' : healthScore >= 2 ? 'warning' : 'critical';
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-row max-sm:flex-col sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-fg-token">
-            Diagnóstico de Webhooks WhatsApp
-          </h1>
-          <p className="text-fg-muted-token">
-            Monitore o recebimento de mensagens em tempo real
-          </p>
-        </div>
+    <PageShell
+      titulo="Diagnóstico de webhooks"
+      acoes={
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-sm text-fg-muted-token">
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="rounded border-border-token"
-            />
-            Auto-refresh (5s)
-          </label>
-          <Button variant="secondary" onClick={fetchDiagnostics}>
-            <ArrowPathIcon className="w-5 h-5" />
-          </Button>
+        <label className="flex items-center gap-2 text-sm text-fg-muted-token">
+        <input
+        type="checkbox"
+        checked={autoRefresh}
+        onChange={(e) => setAutoRefresh(e.target.checked)}
+        className="rounded border-border-token"
+        />
+        Auto-refresh (5s)
+        </label>
+        <Button variant="secondary" onClick={fetchDiagnostics}>
+        <ArrowPathIcon className="w-5 h-5" />
+        </Button>
         </div>
-      </div>
+      }
+    >
 
       {/* Health Status */}
       <Card className={`p-6 border-l-4 ${
@@ -480,7 +474,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
           <span>Celery: {data.celery_status}</span>
         </div>
       </Card>
-    </div>
+    </PageShell>
   );
 };
 

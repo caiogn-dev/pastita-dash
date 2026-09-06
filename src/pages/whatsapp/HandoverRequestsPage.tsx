@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { ArrowPathIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Badge, BadgeVariant, Button } from '../../components/common';
 import { handoverService, HandoverRequest } from '../../services/handover';
+import { PageShell } from '../../components/ui';
 
 const PRIORITY_VARIANT: Record<HandoverRequest['priority'], BadgeVariant> = {
   low: 'gray', medium: 'info', high: 'warning', urgent: 'danger',
@@ -60,22 +61,19 @@ export const HandoverRequestsPage: React.FC = () => {
   const resolved = requests.filter(r => r.status !== 'pending');
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-fg-primary">Solicitações de Handover</h1>
-          <p className="text-sm text-fg-muted mt-0.5">Pedidos de agentes para transferência para atendimento humano</p>
-        </div>
+    <PageShell
+      titulo="Pedidos de atendimento humano"
+      acoes={
         <button
-          onClick={loadRequests}
-          disabled={isLoading}
-          className="p-2 rounded-lg hover:bg-bg-hover transition-colors text-fg-muted disabled:opacity-50"
-          aria-label="Atualizar"
+        onClick={loadRequests}
+        disabled={isLoading}
+        className="p-2 rounded-lg hover:bg-bg-hover transition-colors text-fg-muted disabled:opacity-50"
+        aria-label="Atualizar"
         >
-          <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+        <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
-      </div>
+      }
+    >
 
       {isLoading && requests.length === 0 ? (
         <div className="flex justify-center py-12">
@@ -165,7 +163,7 @@ export const HandoverRequestsPage: React.FC = () => {
           )}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 };
 
