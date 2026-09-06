@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { XMarkIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { whatsappService, conversationsService, getErrorMessage } from '../../services';
 import { MessageTemplate, Conversation } from '../../types';
+import { Modal } from '../ui';
 
 interface NewConversationModalProps {
   accountId: string;
@@ -103,20 +104,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
     : '';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="w-full max-w-md bg-[var(--bg-card,#fff)] dark:bg-[var(--dark-bg-card,#1a1a1a)] rounded-2xl shadow-2xl border border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] p-6 animate-scale-in"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-lg font-bold text-[var(--fg-primary,#111)] dark:text-[var(--dark-text-primary,#FAF9F7)]">
-            Nova Conversa
-          </h2>
-          <button type="button" onClick={onClose} aria-label="Fechar" className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] transition-colors">
-            <XMarkIcon className="w-5 h-5 text-[var(--fg-secondary)]" />
-          </button>
-        </div>
+    <Modal open onClose={onClose} title="Nova conversa">
 
         {/* Phone input */}
         <div className="mb-4">
@@ -194,7 +182,6 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
           <PaperAirplaneIcon className="w-4 h-4" />
           {isSending ? 'Enviando...' : 'Enviar'}
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 };

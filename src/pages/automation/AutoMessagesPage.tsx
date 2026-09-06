@@ -18,7 +18,7 @@ import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '../../components/ui/modal';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../hooks';
-import { PageShell } from '../../components/ui';
+import { PageShell, Button } from '../../components/ui';
 
 const AutoMessagesPage: React.FC = () => {
   const { companyId } = useParams<{ companyId: string }>();
@@ -142,6 +142,15 @@ const AutoMessagesPage: React.FC = () => {
     }
   };
 
+  // Fechar o teste tem que limpar o telefone e a prévia: reabrir o modal com
+  // o número da vez passada mostrando a prévia de OUTRA mensagem já mandou
+  // teste para o contato errado.
+  const fecharTeste = () => {
+    setTestModal(null);
+    setTestPhone('');
+    setTestResult(null);
+  };
+
   const handleSendTest = async () => {
     if (!testModal || !testPhone) return;
     try {
@@ -150,9 +159,7 @@ const AutoMessagesPage: React.FC = () => {
         send: true,
       });
       toast.success('Mensagem de teste enviada!');
-      setTestModal(null);
-      setTestPhone('');
-      setTestResult(null);
+      fecharTeste();
     } catch (error) {
       toast.error('Erro ao enviar mensagem de teste');
     }
@@ -530,87 +537,67 @@ const AutoMessagesPage: React.FC = () => {
       {ConfirmDialog}
 
       {/* Test Modal */}
-      {testModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-black/60" onClick={() => {
-              setTestModal(null);
-              setTestPhone('');
-              setTestResult(null);
-            }} />
-            <div className="relative bg-surface border border-border-token rounded-lg shadow-xl max-w-lg w-full">
-              <div className="px-6 py-4 border-b border-border-token">
-                <h3 className="text-lg font-medium text-fg-token">
-                  Testar Mensagem: {testModal.name}
-                </h3>
-              </div>
-              <div className="px-6 py-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-fg-token">
-                    Número de Telefone
-                  </label>
-                  <input
-                    type="text"
-                    value={testPhone}
-                    onChange={(e) => setTestPhone(e.target.value)}
-                    placeholder="5511999999999"
-                    className="mt-1 block w-full rounded-md border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
-                  />
+      <Modal
+        open={Boolean(testModal)}
+        onClose={fecharTeste}
+        title={testModal ? `Testar: ${testModal.name}` : 'Testar mensagem'}
+        size="lg"
+      >
+        {testModal && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label
+                htmlFor="teste-telefone"
+                className="block text-sm font-medium text-fg-token"
+              >
+                Número de telefone
+              </label>
+              <input
+                id="teste-telefone"
+                type="text"
+                value={testPhone}
+                onChange={(e) => setTestPhone(e.target.value)}
+                placeholder="5511999999999"
+                className="mt-1 block w-full rounded-md border border-border-token bg-surface-2 text-fg-token shadow-sm focus:border-brand focus:ring-brand"
+              />
+            </div>
+
+            <Button variant="outline" className="w-full" onClick={handleTest}>
+              Ver como vai ficar
+            </Button>
+
+            {testResult && (
+              <div className="rounded-lg bg-surface-2 p-4">
+                <p className="mb-2 text-sm font-medium text-fg-token">Prévia</p>
+                <div className="whitespace-pre-wrap rounded-lg bg-[var(--success-soft)] p-3 text-sm text-fg-token">
+                  {testResult}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleTest}
-                  className="w-full px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface hover:bg-surface-2 transition-colors"
-                >
-                  Visualizar Preview
-                </button>
-                {testResult && (
-                  <div className="bg-surface-2 rounded-lg p-4">
-                    <p className="text-sm font-medium text-fg-token mb-2">Preview:</p>
-                    <div className="bg-[var(--success-soft)] text-fg-token rounded-lg p-3 text-sm whitespace-pre-wrap">
-                      {testResult}
-                    </div>
-                    {testModal.buttons && testModal.buttons.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {testModal.buttons.map((btn, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center px-3 py-1 rounded-full bg-surface border border-brand text-brand-ink text-sm"
-                          >
-                            {btn.title}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                {testModal.buttons && testModal.buttons.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {testModal.buttons.map((btn, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center rounded-full border border-brand bg-surface px-3 py-1 text-sm text-brand-ink"
+                      >
+                        {btn.title}
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>
-              <div className="px-6 py-4 border-t border-border-token flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTestModal(null);
-                    setTestPhone('');
-                    setTestResult(null);
-                  }}
-                  className="px-4 py-2 border border-border-token rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface hover:bg-surface-2 transition-colors"
-                >
-                  Fechar
-                </button>
-                {testResult && (
-                  <button
-                    type="button"
-                    onClick={handleSendTest}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand hover:bg-brand-hover transition-colors"
-                  >
-                    Enviar Teste
-                  </button>
-                )}
-              </div>
-            </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        <ModalFooter>
+          <Button variant="outline" onClick={fecharTeste}>
+            Fechar
+          </Button>
+          {/* Só aparece depois da prévia: mandar mensagem de teste para um
+              número real sem ter visto o texto é disparar às cegas. */}
+          {testResult && <Button onClick={handleSendTest}>Enviar teste</Button>}
+        </ModalFooter>
+      </Modal>
     </PageShell>
   );
 };

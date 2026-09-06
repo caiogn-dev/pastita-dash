@@ -7,7 +7,7 @@ import { useConfirm } from '../../hooks';
 import {
   PlusIcon, PencilIcon, TrashIcon,
   CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
-  LinkIcon, QrCodeIcon, XMarkIcon, ArrowPathIcon, ChartBarIcon,
+  LinkIcon, QrCodeIcon, ArrowPathIcon, ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Badge } from '../../components/common';
@@ -18,7 +18,7 @@ import { messengerService } from '../../services/messenger';
 import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
 import { Toggle } from './Toggle';
-import { PageShell, SearchInput } from '../../components/ui';
+import { PageShell, SearchInput, Modal, ModalFooter } from '../../components/ui';
 
 // ─── Platform config ──────────────────────────────────────────────────────────
 
@@ -91,26 +91,6 @@ const getStatusLabel = (status: string, isActive: boolean) => {
 };
 
 const initials = (name: string) => name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
-
-// ─── Modal ────────────────────────────────────────────────────────────────────
-
-const Modal: React.FC<{ open: boolean; onClose: () => void; title: string; children: React.ReactNode; footer?: React.ReactNode; maxW?: string }> =
-  ({ open, onClose, title, children, footer, maxW = 'max-w-md' }) => {
-    if (!open) return null;
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-        <div className={`relative bg-bg-card border border-border-primary rounded-xl shadow-2xl w-full ${maxW} max-h-[90vh] overflow-y-auto`}>
-          <div className="flex items-center justify-between p-5 border-b border-border-primary">
-            <h2 className="text-lg font-semibold text-fg-primary">{title}</h2>
-            <button type="button" aria-label="Fechar" onClick={onClose} className="p-1 rounded hover:bg-bg-hover"><XMarkIcon className="w-5 h-5 text-fg-muted" /></button>
-          </div>
-          <div className="p-5">{children}</div>
-          {footer && <div className="flex justify-end gap-3 p-5 border-t border-border-primary">{footer}</div>}
-        </div>
-      </div>
-    );
-  };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -546,7 +526,7 @@ export default function ConnectionsPage() {
       )}
 
       {/* Modal: Platform selection */}
-      <Modal open={dialogOpen && !selectedPlatform} onClose={closeDialog} title="Escolher Plataforma" maxW="max-w-lg">
+      <Modal open={dialogOpen && !selectedPlatform} onClose={closeDialog} title="Escolher Plataforma" size="lg">
         <p className="text-fg-muted mb-4">Selecione a plataforma de mensagens que deseja conectar:</p>
         <div className="flex flex-col gap-3">
           {Object.entries(PLATFORMS).filter(([key]) => key === 'whatsapp').map(([key, p]) => (
@@ -583,10 +563,6 @@ export default function ConnectionsPage() {
         open={dialogOpen && !!selectedPlatform}
         onClose={closeDialog}
         title={editingConnection ? 'Editar Conexão' : `Nova Conexão ${PLATFORMS[selectedPlatform as keyof typeof PLATFORMS]?.name || ''}`}
-        footer={<>
-          <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-          <Button onClick={handleSubmit} isLoading={submitting}>{editingConnection ? 'Salvar Alterações' : 'Criar Conexão'}</Button>
-        </>}
       >
         {selectedPlatform === 'whatsapp' && !editingConnection && (
           <div className="mb-4 p-3 rounded-lg border border-border-primary bg-bg-hover/30">
@@ -619,6 +595,14 @@ export default function ConnectionsPage() {
             ))}
           </div>
         )}
+        <ModalFooter>
+          <Button variant="outline" onClick={closeDialog}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit} isLoading={submitting}>
+            {editingConnection ? 'Salvar alterações' : 'Criar conexão'}
+          </Button>
+        </ModalFooter>
       </Modal>
 
       {/* Modal: QR Code */}
@@ -626,8 +610,7 @@ export default function ConnectionsPage() {
         open={qrDialogOpen}
         onClose={() => setQrDialogOpen(false)}
         title="Conectar WhatsApp"
-        maxW="max-w-sm"
-        footer={<Button variant="outline" onClick={() => setQrDialogOpen(false)}>Fechar</Button>}
+        size="sm"
       >
         <div className="flex flex-col items-center gap-4 py-2">
           <p className="text-center text-fg-muted text-sm">Escaneie o QR Code com seu WhatsApp para conectar</p>
@@ -647,6 +630,11 @@ export default function ConnectionsPage() {
             <span>Abra o WhatsApp → Configurações → Dispositivos Conectados → Conectar um dispositivo</span>
           </div>
         </div>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setQrDialogOpen(false)}>
+            Fechar
+          </Button>
+        </ModalFooter>
       </Modal>
       {ConfirmDialog}
     </PageShell>

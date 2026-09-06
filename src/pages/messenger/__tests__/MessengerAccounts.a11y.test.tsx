@@ -76,9 +76,12 @@ describe('MessengerAccounts — acessibilidade dos controles icon-only', () => {
     adicionar.click();
 
     // getByLabelText só resolve se label estiver associado ao input.
-    expect(await screen.findByLabelText('Nome da Conta')).toBeInTheDocument();
-    expect(screen.getByLabelText('Page ID')).toBeInTheDocument();
-    expect(screen.getByLabelText('Nome da Página')).toBeInTheDocument();
-    expect(screen.getByLabelText('Page Access Token')).toBeInTheDocument();
+    // Os rótulos deixaram de ser "Page ID" e "Page Access Token": o painel é
+    // de quem vende comida, e essas duas linhas eram inglês de API no meio de
+    // um formulário em português.
+    expect(await screen.findByLabelText('Nome da conta')).toBeInTheDocument();
+    expect(screen.getByLabelText('ID da página')).toBeInTheDocument();
+    expect(screen.getByLabelText('Nome da página')).toBeInTheDocument();
+    expect(screen.getByLabelText('Token de acesso da página')).toBeInTheDocument();
   });
 });

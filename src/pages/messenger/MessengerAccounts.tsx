@@ -5,12 +5,11 @@ import React, { useState, useEffect } from 'react';
 import {
   PlusIcon, PencilIcon, TrashIcon, ArrowPathIcon,
   CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
- XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { Button, Badge } from '../../components/common';
 import { messengerService, MessengerAccount } from '../../services/messenger';
 import { useConfirm } from '../../hooks';
-import { PageShell, SearchInput } from '../../components/ui';
+import { PageShell, SearchInput, Modal, ModalFooter } from '../../components/ui';
 
 export default function MessengerAccounts() {
   const [ConfirmDialog, confirm] = useConfirm();
@@ -175,48 +174,56 @@ export default function MessengerAccounts() {
       {ConfirmDialog}
 
       {/* Modal */}
-      {dialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={closeDialog} />
-          <div className="relative bg-bg-card border border-border-primary rounded-xl shadow-2xl w-full max-w-md">
-            <div className="flex items-center justify-between p-5 border-b border-border-primary">
-              <h2 className="text-lg font-semibold text-fg-primary">{editingAccount ? 'Editar Conta' : 'Adicionar Conta do Messenger'}</h2>
-              <button onClick={closeDialog} aria-label="Fechar" title="Fechar" className="p-1 rounded hover:bg-bg-hover"><XMarkIcon className="w-5 h-5 text-fg-muted" /></button>
-            </div>
-            <div className="p-5 flex flex-col gap-4">
-              {[
-                { key: 'name', label: 'Nome da Conta', type: 'text', placeholder: 'Nome para identificar esta conta' },
-                { key: 'page_id', label: 'Page ID', type: 'text', placeholder: 'ID da página do Facebook', disabled: !!editingAccount },
-                { key: 'page_name', label: 'Nome da Página', type: 'text', placeholder: 'Ex: Loja Oficial' },
-                { key: 'page_access_token', label: 'Page Access Token', type: 'password', placeholder: 'Token de acesso da página' },
-              ].map(({ key, label, type, placeholder, disabled }) => (
-                <div key={key}>
-                  <label htmlFor={`messenger-account-${key}`} className="block text-sm font-medium text-fg-secondary mb-1">{label}</label>
-                  <input
-                    id={`messenger-account-${key}`}
-                    type={type}
-                    value={(formData as any)[key]}
-                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                    placeholder={placeholder}
-                    disabled={disabled}
-                    className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end gap-3 p-5 border-t border-border-primary">
-              <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-              <Button
-                onClick={handleSubmit}
-                isLoading={submitting}
-                disabled={!formData.name || !formData.page_id || !formData.page_name || !formData.page_access_token}
+      <Modal
+        open={dialogOpen}
+        onClose={closeDialog}
+        title={editingAccount ? 'Editar conta' : 'Adicionar conta do Messenger'}
+      >
+        <div className="flex flex-col gap-4">
+          {[
+            { key: 'name', label: 'Nome da conta', type: 'text', placeholder: 'Nome para identificar esta conta' },
+            { key: 'page_id', label: 'ID da página', type: 'text', placeholder: 'ID da página do Facebook', disabled: !!editingAccount },
+            { key: 'page_name', label: 'Nome da página', type: 'text', placeholder: 'Ex.: Loja Oficial' },
+            { key: 'page_access_token', label: 'Token de acesso da página', type: 'password', placeholder: 'Token de acesso da página' },
+          ].map(({ key, label, type, placeholder, disabled }) => (
+            <div key={key}>
+              <label
+                htmlFor={`messenger-account-${key}`}
+                className="mb-1 block text-sm font-medium text-fg-muted-token"
               >
-                Salvar
-              </Button>
+                {label}
+              </label>
+              <input
+                id={`messenger-account-${key}`}
+                type={type}
+                value={(formData as Record<string, string>)[key]}
+                onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                placeholder={placeholder}
+                disabled={disabled}
+                className="w-full rounded-lg border border-border-token bg-surface px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
+              />
             </div>
-          </div>
+          ))}
         </div>
-      )}
+
+        <ModalFooter>
+          <Button variant="outline" onClick={closeDialog}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            isLoading={submitting}
+            disabled={
+              !formData.name ||
+              !formData.page_id ||
+              !formData.page_name ||
+              !formData.page_access_token
+            }
+          >
+            Salvar
+          </Button>
+        </ModalFooter>
+      </Modal>
     </PageShell>
   );
 }

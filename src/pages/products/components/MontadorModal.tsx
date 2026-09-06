@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
 import type { StoreCategory } from '../../../services/storesApi';
+
+import { Modal } from '../../../components/ui';
 
 export interface ConfigMontador {
   builder_step_order: number | null;
@@ -84,34 +85,23 @@ export const MontadorModal: React.FC<Props> = ({
     'text-[length:var(--text-body)] text-fg-token focus:border-brand focus:outline-none';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-brand-strong/60 p-4"
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      ariaLabel={`Montador — ${category.name}`}
+      size="sm"
+      className="p-0"
     >
-      <div
-        role="dialog"
-        aria-label={`Montador — ${category.name}`}
-        className="w-full max-w-md rounded-xl border border-border-token bg-surface-token shadow-[var(--elev-flutuante)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flex items-start justify-between gap-3 border-b border-border-token px-5 py-4">
-          <div>
-            <p className="text-[length:var(--text-overline)] uppercase tracking-[var(--tracking-overline)] text-fg-muted-token">
-              Monte o seu
-            </p>
-            <h2 className="font-brand text-[length:var(--text-lead)] text-fg-token">
-              {category.name}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar"
-            className="rounded p-1 text-fg-muted-token hover:text-fg-token"
-          >
-            <X size={18} />
-          </button>
-        </header>
+      <header className="flex items-start justify-between gap-3 border-b border-border-token px-5 py-4">
+        <div>
+          <p className="text-[length:var(--text-overline)] uppercase tracking-[var(--tracking-overline)] text-fg-muted-token">
+            Monte o seu
+          </p>
+          <h2 className="font-brand text-[length:var(--text-lead)] text-fg-token">
+            {category.name}
+          </h2>
+        </div>
+      </header>
 
         <div className="space-y-4 px-5 py-4">
           <div className="flex items-start justify-between gap-4">
@@ -263,7 +253,6 @@ export const MontadorModal: React.FC<Props> = ({
             {saving ? 'Salvando…' : 'Salvar'}
           </button>
         </footer>
-      </div>
-    </div>
+    </Modal>
   );
 };

@@ -14,7 +14,7 @@ import {
 } from '../../services/automation';
 import { AutomationLog, CompanyProfile, AutomationLogStats } from '../../types';
 import { toast } from 'react-hot-toast';
-import { PageShell, Tabela } from '../../components/ui';
+import { PageShell, Tabela, Modal, StatCard, RankedList } from '../../components/ui';
 
 const actionTypeLabels: Record<string, string> = {
   message_received: 'Mensagem Recebida',
@@ -283,166 +283,126 @@ const AutomationLogsPage: React.FC = () => {
       />
 
       {/* Log Detail Modal */}
-      {selectedLog && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500/75 dark:bg-black/75" onClick={() => setSelectedLog(null)} />
-            <div className="relative bg-surface dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b border-border-token dark:border-zinc-800">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-fg-token">
-                    Detalhes do Log
-                  </h3>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    actionTypeColors[selectedLog.action_type || ''] || 'bg-surface-2 text-fg-token'
-                  }`}>
-                    {actionTypeLabels[selectedLog.action_type || ''] || selectedLog.action_type || '-'}
-                  </span>
-                </div>
+      <Modal
+        open={Boolean(selectedLog)}
+        onClose={() => setSelectedLog(null)}
+        title="Detalhes do registro"
+        size="lg"
+      >
+        {selectedLog && (
+          <div className="flex flex-col gap-4">
+            <span
+              className={`inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                actionTypeColors[selectedLog.action_type || ''] || 'bg-surface-2 text-fg-token'
+              }`}
+            >
+              {actionTypeLabels[selectedLog.action_type || ''] || selectedLog.action_type || '—'}
+            </span>
+
+            <dl className="grid grid-cols-2 gap-4">
+              <div>
+                <dt className="text-sm font-medium text-fg-muted-token">Data/hora</dt>
+                <dd className="mt-1 text-sm text-fg-token">{formatDate(selectedLog.created_at)}</dd>
               </div>
-              <div className="px-6 py-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token">Data/Hora</label>
-                    <p className="mt-1 text-sm text-fg-token">{formatDate(selectedLog.created_at)}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token">Empresa</label>
-                    <p className="mt-1 text-sm text-fg-token">{selectedLog.company_name}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token">Telefone</label>
-                    <p className="mt-1 text-sm text-fg-token">{selectedLog.phone_number || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token">Tipo de Evento</label>
-                    <p className="mt-1 text-sm text-fg-token">{selectedLog.event_type || '-'}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-fg-muted-token">Descrição</label>
-                  <p className="mt-1 text-sm text-fg-token">{selectedLog.description}</p>
-                </div>
-
-                {selectedLog.is_error && selectedLog.error_message && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <label className="block text-sm font-medium text-red-800">Mensagem de Erro</label>
-                    <p className="mt-1 text-sm text-red-700 dark:text-red-300">{selectedLog.error_message}</p>
-                  </div>
-                )}
-
-                {selectedLog.request_data && Object.keys(selectedLog.request_data || {}).length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token mb-2">Dados da Requisição</label>
-                    <pre className="bg-surface-2 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
-                      {JSON.stringify(selectedLog.request_data, null, 2)}
-                    </pre>
-                  </div>
-                )}
-
-                {selectedLog.response_data && Object.keys(selectedLog.response_data || {}).length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token mb-2">Dados da Resposta</label>
-                    <pre className="bg-surface-2 dark:bg-black rounded-lg p-4 text-xs overflow-x-auto">
-                      {JSON.stringify(selectedLog.response_data, null, 2)}
-                    </pre>
-                  </div>
-                )}
+              <div>
+                <dt className="text-sm font-medium text-fg-muted-token">Empresa</dt>
+                <dd className="mt-1 text-sm text-fg-token">{selectedLog.company_name}</dd>
               </div>
-              <div className="px-6 py-4 border-t border-border-token dark:border-zinc-800 flex justify-end">
-                <button
-                  onClick={() => setSelectedLog(null)}
-                  className="px-4 py-2 border border-border-token dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black"
-                >
-                  Fechar
-                </button>
+              <div>
+                <dt className="text-sm font-medium text-fg-muted-token">Telefone</dt>
+                <dd className="mt-1 text-sm text-fg-token">{selectedLog.phone_number || '—'}</dd>
               </div>
+              <div>
+                <dt className="text-sm font-medium text-fg-muted-token">Evento</dt>
+                <dd className="mt-1 text-sm text-fg-token">{selectedLog.event_type || '—'}</dd>
+              </div>
+            </dl>
+
+            <div>
+              <h4 className="text-sm font-medium text-fg-muted-token">Descrição</h4>
+              <p className="mt-1 text-sm text-fg-token">{selectedLog.description}</p>
             </div>
+
+            {selectedLog.is_error && selectedLog.error_message && (
+              <div className="rounded-lg border border-[var(--danger)]/30 bg-[var(--danger-soft)] p-4">
+                <h4 className="text-sm font-medium text-danger-token">Mensagem de erro</h4>
+                <p className="mt-1 text-sm text-danger-token">{selectedLog.error_message}</p>
+              </div>
+            )}
+
+            {selectedLog.request_data &&
+              Object.keys(selectedLog.request_data || {}).length > 0 && (
+                <div>
+                  <h4 className="mb-2 text-sm font-medium text-fg-muted-token">O que foi pedido</h4>
+                  <pre className="overflow-x-auto rounded-lg bg-surface-2 p-4 text-xs">
+                    {JSON.stringify(selectedLog.request_data, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+            {selectedLog.response_data &&
+              Object.keys(selectedLog.response_data || {}).length > 0 && (
+                <div>
+                  <h4 className="mb-2 text-sm font-medium text-fg-muted-token">O que voltou</h4>
+                  <pre className="overflow-x-auto rounded-lg bg-surface-2 p-4 text-xs">
+                    {JSON.stringify(selectedLog.response_data, null, 2)}
+                  </pre>
+                </div>
+              )}
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Stats Modal */}
-      {showStats && stats && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500/75 dark:bg-black/75" onClick={() => setShowStats(false)} />
-            <div className="relative bg-surface dark:bg-zinc-900 rounded-lg shadow-xl max-w-lg w-full">
-              <div className="px-6 py-4 border-b border-border-token dark:border-zinc-800">
-                <h3 className="text-lg font-medium text-fg-token">
-                  Estatísticas de Automação
-                </h3>
-              </div>
-              <div className="px-6 py-4 space-y-6">
-                {/* Summary */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-surface-2 dark:bg-black rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-fg-token">{stats.total}</p>
-                    <p className="text-sm text-fg-muted-token">Total de Logs</p>
-                  </div>
-                  <div className="bg-surface-2 dark:bg-black rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-fg-token">{stats.today}</p>
-                    <p className="text-sm text-fg-muted-token">Hoje</p>
-                  </div>
-                  <div className="bg-surface-2 dark:bg-black rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-fg-token">{stats.this_week}</p>
-                    <p className="text-sm text-fg-muted-token">Esta Semana</p>
-                  </div>
-                  <div className="bg-red-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.error_rate}%</p>
-                    <p className="text-sm text-fg-muted-token">Taxa de Erro</p>
-                  </div>
-                </div>
+      <Modal
+        open={showStats && Boolean(stats)}
+        onClose={() => setShowStats(false)}
+        title="Resumo da automação"
+      >
+        {stats && (
+          <div className="flex flex-col gap-6">
+            {/* Os quatro números vinham em quadrados desenhados à mão, cada um
+                com o próprio `text-2xl font-bold` — o painel tem `StatCard`
+                para isso, e é ele que garante o mesmo peso em toda tela. */}
+            <div className="grid grid-cols-2 gap-4">
+              <StatCard label="Total de registros" value={stats.total} />
+              <StatCard label="Hoje" value={stats.today} />
+              <StatCard label="Esta semana" value={stats.this_week} />
+              <StatCard
+                label="Taxa de erro"
+                value={`${stats.error_rate}%`}
+                tone={Number(stats.error_rate) > 0 ? 'danger' : 'default'}
+              />
+            </div>
 
-                {/* By Action Type */}
-                <div>
-                  <h4 className="text-sm font-medium text-fg-token mb-3">Por Tipo de Ação</h4>
-                  <div className="space-y-2">
-                    {stats.by_action_type?.map((item) => (
-                      <div key={item.action_type} className="flex items-center justify-between">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          actionTypeColors[item.action_type] || 'bg-surface-2 text-fg-token'
-                        }`}>
-                          {actionTypeLabels[item.action_type] || item.action_type}
-                        </span>
-                        <span className="text-sm font-medium text-fg-token">{item.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <div>
+              <h4 className="mb-3 text-sm font-medium text-fg-token">Por tipo de ação</h4>
+              <RankedList
+                medals={false}
+                items={(stats.by_action_type ?? []).map((item) => ({
+                  label: actionTypeLabels[item.action_type] || item.action_type,
+                  value: item.count,
+                }))}
+              />
+            </div>
 
-                {/* By Day */}
-                <div>
-                  <h4 className="text-sm font-medium text-fg-token mb-3">Últimos 7 Dias</h4>
-                  <div className="space-y-2">
-                    {stats.by_day?.map((item) => (
-                      <div key={item.date} className="flex items-center justify-between">
-                        <span className="text-sm text-fg-muted-token">{item.date}</span>
-                        <div className="flex items-center">
-                          <div
-                            className="h-2 bg-green-500 rounded"
-                            style={{ width: `${Math.max(4, (item.count / Math.max(...(stats.by_day?.map(d => d.count) || [1]))) * 100)}px` }}
-                          />
-                          <span className="ml-2 text-sm font-medium text-fg-token">{item.count}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="px-6 py-4 border-t border-border-token dark:border-zinc-800 flex justify-end">
-                <button
-                  onClick={() => setShowStats(false)}
-                  className="px-4 py-2 border border-border-token dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black"
-                >
-                  Fechar
-                </button>
-              </div>
+            <div>
+              <h4 className="mb-3 text-sm font-medium text-fg-token">Últimos 7 dias</h4>
+              {/* A barra era um `div` verde com a largura em PIXELS calculada à
+                  mão — 100px no maior dia, encolhendo dali. Num modal estreito
+                  isso não dizia nada; o ranking do painel escala em % e mostra
+                  o número junto. */}
+              <RankedList
+                medals={false}
+                items={(stats.by_day ?? []).map((item) => ({
+                  label: item.date,
+                  value: item.count,
+                }))}
+              />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </PageShell>
   );
 };

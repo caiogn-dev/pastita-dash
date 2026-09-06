@@ -15,7 +15,7 @@ import {
 } from '../../services/automation';
 import { CustomerSession, CompanyProfile, SessionStatus } from '../../types';
 import { toast } from 'react-hot-toast';
-import { PageShell, Tabela, RowActions } from '../../components/ui';
+import { PageShell, Tabela, RowActions, Modal } from '../../components/ui';
 
 const statusColors: Record<SessionStatus, string> = {
   active: 'bg-blue-100 text-blue-800',
@@ -310,135 +310,126 @@ const CustomerSessionsPage: React.FC = () => {
       />
 
       {/* Session Detail Modal */}
-      {selectedSession && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500/75 dark:bg-black/75" onClick={() => setSelectedSession(null)} />
-            <div className="relative bg-surface dark:bg-zinc-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b border-border-token dark:border-zinc-800">
-                <h3 className="text-lg font-medium text-fg-token">
-                  Detalhes da Sessão
-                </h3>
+      <Modal
+        open={Boolean(selectedSession)}
+        onClose={() => setSelectedSession(null)}
+        title="Detalhes da sessão"
+        size="lg"
+      >
+        {selectedSession && (
+          <div className="flex flex-col gap-4">
+            <dl className="grid grid-cols-2 gap-4">
+              <div>
+                <dt className="text-sm font-medium text-fg-muted-token">Cliente</dt>
+                <dd className="mt-1 text-sm text-fg-token">
+                  {selectedSession.customer_name || 'Não informado'}
+                </dd>
               </div>
-              <div className="px-6 py-4 space-y-4">
-                {/* Customer Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token">Cliente</label>
-                    <p className="mt-1 text-sm text-fg-token">
-                      {selectedSession.customer_name || 'Não informado'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token">Telefone</label>
-                    <p className="mt-1 text-sm text-fg-token">{selectedSession.phone_number}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token">Email</label>
-                    <p className="mt-1 text-sm text-fg-token">
-                      {selectedSession.customer_email || 'Não informado'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-fg-muted-token">Status</label>
-                    <span className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              <div>
+                <dt className="text-sm font-medium text-fg-muted-token">Telefone</dt>
+                <dd className="mt-1 text-sm text-fg-token">{selectedSession.phone_number}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-fg-muted-token">E-mail</dt>
+                <dd className="mt-1 text-sm text-fg-token">
+                  {selectedSession.customer_email || 'Não informado'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-fg-muted-token">Status</dt>
+                <dd className="mt-1">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       statusColors[selectedSession.status]
-                    }`}>
-                      {sessionStatusLabels[selectedSession.status]}
+                    }`}
+                  >
+                    {sessionStatusLabels[selectedSession.status]}
+                  </span>
+                </dd>
+              </div>
+            </dl>
+
+            {(selectedSession.cart_items_count || 0) > 0 && (
+              <div className="border-t border-border-token pt-4">
+                <h4 className="mb-2 text-sm font-medium text-fg-token">Carrinho</h4>
+                <div className="rounded-lg bg-surface-2 p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-fg-muted-token">
+                      {selectedSession.cart_items_count}{' '}
+                      {(selectedSession.cart_items_count || 0) === 1 ? 'item' : 'itens'}
+                    </span>
+                    <span className="text-lg font-medium text-fg-token">
+                      {formatCurrency(selectedSession.cart_total || 0)}
                     </span>
                   </div>
-                </div>
-
-                {/* Cart Info */}
-                {(selectedSession.cart_items_count || 0) > 0 && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium text-fg-token mb-2">Carrinho</h4>
-                    <div className="bg-surface-2 dark:bg-black rounded-lg p-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-fg-muted-token">
-                          {selectedSession.cart_items_count} {(selectedSession.cart_items_count || 0) === 1 ? 'item' : 'itens'}
-                        </span>
-                        <span className="text-lg font-medium text-fg-token">
-                          {formatCurrency(selectedSession.cart_total || 0)}
-                        </span>
-                      </div>
-                      {selectedSession.cart_created_at && (
-                        <p className="mt-2 text-xs text-fg-muted-token">
-                          Criado em: {formatDate(selectedSession.cart_created_at)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Payment Info */}
-                {selectedSession.pix_code && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium text-fg-token mb-2">Pagamento PIX</h4>
-                    <div className="bg-surface-2 dark:bg-black rounded-lg p-4">
-                      <p className="text-xs text-fg-muted-token mb-2">Código PIX:</p>
-                      <code className="block text-xs bg-surface dark:bg-zinc-900 p-2 rounded border overflow-x-auto">
-                        {selectedSession.pix_code}
-                      </code>
-                      {selectedSession.pix_expires_at && (
-                        <p className="mt-2 text-xs text-fg-muted-token">
-                          Expira em: {formatDate(selectedSession.pix_expires_at)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Notifications */}
-                {(selectedSession.notifications_sent || []).length > 0 && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium text-fg-token mb-2">Notificações Enviadas</h4>
-                    <ul className="space-y-2">
-                      {(selectedSession.notifications_sent || []).map((notification, index) => (
-                        <li key={index} className="flex items-center justify-between text-sm">
-                          <span className="text-fg-muted-token">{notification.type}</span>
-                          <span className="text-fg-muted-token">{formatDate(notification.sent_at)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Session IDs */}
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-fg-token mb-2">Identificadores</h4>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <label className="text-fg-muted-token">Session ID</label>
-                      <p className="font-mono text-fg-token">{selectedSession.session_id}</p>
-                    </div>
-                    {selectedSession.external_customer_id && (
-                      <div>
-                        <label className="text-fg-muted-token">Customer ID Externo</label>
-                        <p className="font-mono text-fg-token">{selectedSession.external_customer_id}</p>
-                      </div>
-                    )}
-                    {selectedSession.external_order_id && (
-                      <div>
-                        <label className="text-fg-muted-token">Order ID Externo</label>
-                        <p className="font-mono text-fg-token">{selectedSession.external_order_id}</p>
-                      </div>
-                    )}
-                  </div>
+                  {selectedSession.cart_created_at && (
+                    <p className="mt-2 text-xs text-fg-muted-token">
+                      Criado em {formatDate(selectedSession.cart_created_at)}
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="px-6 py-4 border-t border-border-token dark:border-zinc-800 flex justify-end">
-                <button
-                  onClick={() => setSelectedSession(null)}
-                  className="px-4 py-2 border border-border-token dark:border-zinc-700 rounded-md shadow-sm text-sm font-medium text-fg-token bg-surface dark:bg-zinc-900 hover:bg-surface-2 dark:hover:bg-zinc-700 dark:bg-black"
-                >
-                  Fechar
-                </button>
+            )}
+
+            {selectedSession.pix_code && (
+              <div className="border-t border-border-token pt-4">
+                <h4 className="mb-2 text-sm font-medium text-fg-token">Pagamento PIX</h4>
+                <div className="rounded-lg bg-surface-2 p-4">
+                  <p className="mb-2 text-xs text-fg-muted-token">Código PIX</p>
+                  <code className="block overflow-x-auto rounded border border-border-token bg-surface p-2 text-xs">
+                    {selectedSession.pix_code}
+                  </code>
+                  {selectedSession.pix_expires_at && (
+                    <p className="mt-2 text-xs text-fg-muted-token">
+                      Expira em {formatDate(selectedSession.pix_expires_at)}
+                    </p>
+                  )}
+                </div>
               </div>
+            )}
+
+            {(selectedSession.notifications_sent || []).length > 0 && (
+              <div className="border-t border-border-token pt-4">
+                <h4 className="mb-2 text-sm font-medium text-fg-token">Mensagens enviadas</h4>
+                <ul className="flex flex-col gap-2">
+                  {(selectedSession.notifications_sent || []).map((n, i) => (
+                    <li key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-fg-muted-token">{n.type}</span>
+                      <span className="text-fg-muted-token">{formatDate(n.sent_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="border-t border-border-token pt-4">
+              <h4 className="mb-2 text-sm font-medium text-fg-token">Identificadores</h4>
+              <dl className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <dt className="text-fg-muted-token">Sessão</dt>
+                  <dd className="font-mono text-fg-token">{selectedSession.session_id}</dd>
+                </div>
+                {selectedSession.external_customer_id && (
+                  <div>
+                    <dt className="text-fg-muted-token">Cliente (externo)</dt>
+                    <dd className="font-mono text-fg-token">
+                      {selectedSession.external_customer_id}
+                    </dd>
+                  </div>
+                )}
+                {selectedSession.external_order_id && (
+                  <div>
+                    <dt className="text-fg-muted-token">Pedido (externo)</dt>
+                    <dd className="font-mono text-fg-token">
+                      {selectedSession.external_order_id}
+                    </dd>
+                  </div>
+                )}
+              </dl>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </PageShell>
   );
 };
