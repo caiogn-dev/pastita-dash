@@ -19,9 +19,6 @@ import {
   UsersIcon,
   DocumentTextIcon,
   ClockIcon,
-  PlusIcon,
-  TrashIcon,
-  ArrowUpTrayIcon,
   ChatBubbleLeftRightIcon,
   PhotoIcon,
   XMarkIcon,
@@ -45,7 +42,6 @@ type SystemContact = {
   source?: 'conversation' | 'order' | 'subscriber' | 'session';
 };
 import logger from '../../../services/logger';
-import { SeletorDeAudiencia } from './SeletorDeAudiencia';
 import { avisoDaJanela, horarioParaConsulta, type ResumoDaJanela } from './janelaDe24h';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 import { formatCurrency } from '../../../utils/formatters';
@@ -55,6 +51,9 @@ import {
   variaveisDoTemplate,
 } from './campanha/componentesDoTemplate';
 import { contatosDoCsv } from './campanha/contatosDoCsv';
+import { PassoDaConta } from './campanha/passos/PassoDaConta';
+import { PassoDaRevisao } from './campanha/passos/PassoDaRevisao';
+import { PassoDosDestinatarios } from './campanha/passos/PassoDosDestinatarios';
 import {
   PASSOS,
   podeAvancar,
@@ -754,55 +753,11 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Passo: Account Selection */}
         {currentStep === 'account' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold text-fg-token mb-2">
-                Selecione a Conta WhatsApp
-              </h2>
-              <p className="text-fg-muted-token">
-                Escolha a conta que será usada para enviar as mensagens
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
-              {accounts.map((account) => (
-                <button
-                  key={account.id}
-                  onClick={() => handleAccountSelect(account.id)}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    formData.accountId === account.id
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                      : 'border-border-token dark:border-zinc-800 hover:border-green-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      account.status === 'active' ? 'bg-green-100' : 'bg-surface-2'
-                    }`}>
-                      <DevicePhoneMobileIcon className={`w-6 h-6 ${
-                        account.status === 'active' ? 'text-green-600' : 'text-fg-muted-token'
-                      }`} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-fg-token">{account.name}</h3>
-                      <p className="text-sm text-fg-muted-token">
-                        {account.display_phone_number || account.phone_number}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      account.status === 'active' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-surface-2 text-fg-muted-token'
-                    }`}>
-                      {account.status === 'active' ? 'Ativa' : account.status}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          <PassoDaConta
+            accounts={accounts}
+            formData={formData}
+            handleAccountSelect={handleAccountSelect}
+          />
         )}
 
         {/* Passo: Message Configuration */}
@@ -1205,255 +1160,33 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
         {/* Passo: Recipients */}
         {currentStep === 'recipients' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold text-fg-token mb-2">
-                Adicione os Destinatários
-              </h2>
-              <p className="text-fg-muted-token">
-                Adicione os contatos que receberão a mensagem
-              </p>
-            </div>
-
-            {/* Add Contact Form */}
-            <Card className="p-4">
-              <h3 className="font-medium text-fg-token mb-3">Adicionar Contato</h3>
-              <div className="flex gap-3">
-                <Input
-                  value={newContact.phone}
-                  onChange={(e) => setNewContact(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="Telefone (ex: 5511999999999)"
-                  className="flex-1"
-                />
-                <Input
-                  value={newContact.name}
-                  onChange={(e) => setNewContact(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Nome (opcional)"
-                  className="flex-1"
-                />
-                <Button onClick={handleAddContact} aria-label="Adicionar contato">
-                  <PlusIcon className="w-5 h-5" />
-                </Button>
-              </div>
-            </Card>
-
-            {/* Segmentação: a escolha de QUEM recebe.
-                Vem antes de adicionar contato à mão porque é o caminho que
-                deveria ser usado — digitar telefone um a um é a exceção. */}
-            <SeletorDeAudiencia
-              accountId={formData.accountId || undefined}
-              storeSlug={storeSlug || undefined}
-              onUsarAudiencia={handleUsarAudiencia}
-            />
-
-            {/* Import Options */}
-            <div className="flex flex-wrap gap-3">
-              <Button variant="secondary" onClick={handleLoadSystemContacts}>
-                <UserGroupIcon className="w-5 h-5 mr-2" />
-                Escolher um a um
-              </Button>
-              
-              <Button variant="secondary" onClick={() => setShowImportModal(true)}>
-                <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
-                Importar CSV
-              </Button>
-              
-              {contactLists.length > 0 && (
-                <select
-                  onChange={(e) => e.target.value && handleLoadContactList(e.target.value)}
-                  className="px-3 py-2 border border-border-token rounded-lg bg-surface dark:bg-[var(--dark-bg-hover,#161616)] text-fg-token"
-                  defaultValue=""
-                >
-                  <option value="">Carregar lista salva...</option>
-                  {contactLists.map((list) => (
-                    <option key={list.id} value={list.id}>
-                      {list.name} ({list.contact_count} contatos)
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Contact List */}
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-fg-token">
-                  Contatos ({formData.contacts.length})
-                </h3>
-                {formData.contacts.length > 0 && (
-                  <Button 
-                    variant="secondary" 
-                    size="sm"
-                    onClick={() => setFormData(prev => ({ ...prev, contacts: [] }))}
-                  >
-                    Limpar Todos
-                  </Button>
-                )}
-              </div>
-
-              {formData.contacts.length === 0 ? (
-                <div className="text-center py-8 text-fg-muted-token">
-                  <UserGroupIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>Nenhum contato adicionado</p>
-                </div>
-              ) : (
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {formData.contacts.map((contact, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-2 bg-surface-2 rounded-lg"
-                    >
-                      <div>
-                        <span className="font-medium text-fg-token">
-                          {contact.phone}
-                        </span>
-                        {contact.name && (
-                          <span className="text-fg-muted-token ml-2">
-                            ({contact.name})
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleRemoveContact(index)}
-                        className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                        aria-label={`Remover contato ${contact.phone}`}
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </div>
+          <PassoDosDestinatarios
+            formData={formData}
+            setFormData={setFormData as never}
+            contactLists={contactLists}
+            newContact={newContact}
+            setNewContact={setNewContact}
+            storeSlug={storeSlug}
+            onAdicionarContato={handleAddContact}
+            onRemoverContato={handleRemoveContact}
+            onCarregarLista={handleLoadContactList}
+            onCarregarContatosDoSistema={handleLoadSystemContacts}
+            onUsarAudiencia={handleUsarAudiencia}
+            onAbrirImportacao={setShowImportModal}
+          />
         )}
 
         {/* Passo: Review */}
         {currentStep === 'review' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold text-fg-token mb-2">
-                Revise e Envie
-              </h2>
-              <p className="text-fg-muted-token">
-                Confira os detalhes da campanha antes de enviar
-              </p>
-            </div>
-
-            {/* Summary */}
-            <Card className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-fg-muted-token">Campanha</p>
-                  <p className="font-medium text-fg-token">
-                    {formData.name || 'Sem nome'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-fg-muted-token">Conta</p>
-                  <p className="font-medium text-fg-token">
-                    {selectedAccount?.name}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-fg-muted-token">Tipo de Mensagem</p>
-                  <p className="font-medium text-fg-token">
-                    {formData.messageType === 'template' ? 'Template' : 'Texto Livre'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-fg-muted-token">Destinatários</p>
-                  <p className="font-medium text-fg-token">
-                    {recipientCount} contatos
-                  </p>
-                </div>
-              </div>
-
-              {formData.messageType === 'template' && selectedTemplate && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-fg-muted-token mb-1">Template</p>
-                  <p className="font-medium text-fg-token">
-                    {selectedTemplate.name}
-                  </p>
-                  {selectedOfferProducts.length > 0 && (
-                    <div className="mt-3 rounded-lg bg-surface-2 p-3">
-                      <p className="text-sm font-medium text-fg-token mb-2">
-                        Produtos da oferta
-                      </p>
-                      <div className="space-y-2">
-                        {selectedOfferProducts.map(product => (
-                          <div key={product.id} className="flex items-center justify-between gap-3 text-sm">
-                            <span className="text-fg-token">{product.name}</span>
-                            <span className="font-medium text-green-700">{formatCurrency(precoVigenteDoProduto(product))}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {(mediaPreviewUrl || formData.mediaUrl) && (
-                    <div className="mt-3">
-                      <p className="text-sm text-fg-muted-token mb-1">Imagem do cabeçalho</p>
-                      <img
-                        src={mediaPreviewUrl || formData.mediaUrl}
-                        alt="Imagem do template"
-                        className="w-48 h-48 rounded-lg object-cover border border-border-token"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {formData.messageType === 'text' && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-fg-muted-token mb-1">Mensagem</p>
-                  <p className="text-fg-token whitespace-pre-wrap bg-surface-2 p-3 rounded-lg">
-                    {formData.textContent || 'Imagem sem legenda'}
-                  </p>
-                  {(mediaPreviewUrl || formData.mediaUrl) && (
-                    <div className="mt-3">
-                      <p className="text-sm text-fg-muted-token mb-1">Imagem</p>
-                      <img
-                        src={mediaPreviewUrl || formData.mediaUrl}
-                        alt="Card promocional"
-                        className="w-48 h-48 rounded-lg object-cover border border-border-token"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Rate Limiting */}
-              <div className="pt-4 border-t">
-                <label className="block text-sm text-fg-muted-token mb-2">
-                  Velocidade de Envio
-                </label>
-                <select
-                  value={formData.messagesPerMinute}
-                  onChange={(e) => setFormData(prev => ({ ...prev, messagesPerMinute: Number(e.target.value) }))}
-                  className="px-3 py-2 border border-border-token rounded-lg bg-surface dark:bg-[var(--dark-bg-hover,#161616)] text-fg-token"
-                >
-                  <option value={30}>30 mensagens/minuto (Conservador)</option>
-                  <option value={60}>60 mensagens/minuto (Recomendado)</option>
-                  <option value={120}>120 mensagens/minuto (Rápido)</option>
-                </select>
-                <p className="text-xs text-fg-muted-token mt-1">
-                  Tempo estimado: ~{Math.ceil(recipientCount / formData.messagesPerMinute)} minutos
-                </p>
-              </div>
-            </Card>
-
-            {/* Warning */}
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                ⚠️ <strong>Atenção:</strong> Certifique-se de que todos os contatos consentiram em receber mensagens. 
-                O envio de spam pode resultar em bloqueio da sua conta WhatsApp Business.
-              </p>
-            </div>
-          </div>
+          <PassoDaRevisao
+            formData={formData}
+            setFormData={setFormData as never}
+            selectedAccount={selectedAccount}
+            selectedTemplate={selectedTemplate}
+            selectedOfferProducts={selectedOfferProducts}
+            mediaPreviewUrl={mediaPreviewUrl}
+            recipientCount={recipientCount}
+          />
         )}
 
         {/* Navigation Buttons */}
