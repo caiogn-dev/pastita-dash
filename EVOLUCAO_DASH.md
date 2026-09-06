@@ -3,6 +3,51 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-06)
+
+- `npm ci`: ok. `npm audit`: **10 vulnerabilidades** (1 low, 3 moderate, 6 high),
+  transitivas (dev/build e `react-router`); bumps majores seguem como fatia
+  dedicada com validação de build.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **antes 1432/1433 (1 falha PRÉ-EXISTENTE)** → **depois 1435/1435
+  verdes / 247 suítes**. A falha pré-existente era `pedidosDoQuadro.test.ts`
+  (corrigida nesta fatia, ver abaixo); +2 testes novos desta fatia.
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~12s).
+
+## Histórico
+
+### 2026-09-06 — Correção: "entregue hoje" usava o fuso do runtime (baseline vermelho)
+- **Medido:** o baseline estava **vermelho** — `src/pages/orders/__tests__/pedidosDoQuadro.test.ts`
+  falhava ("não arrasta o que foi entregue ontem"). Não era flake nem data do
+  sistema: a suíte roda em **UTC** e `pedidosDoQuadro.ts` decidia "mesmo dia"
+  com `getFullYear/getMonth/getDate`, ou seja, **no fuso do runtime**. Um pedido
+  entregue às 21h de ontem no Brasil (`-03:00`) é `00h de hoje em UTC`, então em
+  UTC caía como "entregue hoje" e poluía a coluna de finalizados do quadro de
+  pedidos. Bug real de correção, não só de teste: o corte do dia comercial
+  dependia do fuso do navegador/servidor de quem abrisse o painel.
+- **Mudado (`src/pages/orders/pedidosDoQuadro.ts`):** o corte de "hoje" passou a
+  ser o **dia comercial brasileiro** via `Intl.DateTimeFormat('en-CA', { timeZone:
+  'America/Sao_Paulo' })` (constante `FUSO_BRASIL`), comparando o dia formatado.
+  Resultado estável onde quer que o código rode (browser em qualquer fuso, CI em
+  UTC, Vercel). Só a coluna de finalizados (`ENTREGUES_DE_HOJE`) usa o corte; as
+  colunas de trabalho em aberto continuam mostrando tudo (pedido atrasado de
+  ontem não pode sumir). Nenhuma mudança de assinatura ou de comportamento visual.
+- **Teste (TDD, vermelho→verde):** a falha pré-existente já cobria o caso; somei
+  um bloco explícito ("o 'hoje' é o dia do Brasil, não o fuso de quem abre o
+  painel") com 2 casos — pedido de 21h de ontem-BR que em UTC cairia em "hoje"
+  fica de fora, e pedido logo após a meia-noite brasileira entra. Confirmados
+  vermelhos (2/2) antes e verdes depois.
+- **Antes/depois:** `npm test` **1432/1433 (1 falha)** → **1435/1435 (247 suítes)**;
+  `tsc --noEmit` limpo, `vite build` ok e eslint sem warnings nos arquivos tocados,
+  nos dois lados. Só produção alterada: função pura de filtro do quadro, risco baixo.
+- **Próximo passo priorizado:** (1) auditar outros pontos que decidem "hoje/dia"
+  pelo fuso do runtime (`chatTime.ts`, `formatters.ts`, `exportarPedidos.ts`,
+  KPIs de relatórios que agregam por dia) e padronizar o dia comercial via um
+  util compartilhado de `America/Sao_Paulo`. (2) Segurança/deps: planejar os
+  bumps majores de `react-router` 6→7 e `vite` (esbuild/postcss dev-only), cada
+  um como fatia dedicada. (3) Continuar a varredura de "zeros enganosos" em KPIs
+  derivados de query (`ProductsPage`, seções de `reports/`, `AnalyticsPage`).
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas

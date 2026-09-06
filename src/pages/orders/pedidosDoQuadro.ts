@@ -25,10 +25,25 @@ interface ColunaDoQuadro {
   statuses: readonly string[];
 }
 
-const mesmoDia = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear()
-  && a.getMonth() === b.getMonth()
-  && a.getDate() === b.getDate();
+/**
+ * O dia comercial do Cardapidex é o dia do Brasil, não o fuso de quem abre o
+ * painel. Comparar `getDate()` usava o fuso do runtime: num servidor/CI em UTC
+ * um pedido das 21h de ontem no Brasil (= 00h de hoje em UTC) entrava como
+ * "entregue hoje". Fixamos o corte em America/Sao_Paulo para o resultado ser
+ * estável onde quer que o código rode.
+ */
+const FUSO_BRASIL = 'America/Sao_Paulo';
+
+const formatadorDiaBrasil = new Intl.DateTimeFormat('en-CA', {
+  timeZone: FUSO_BRASIL,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+const diaNoBrasil = (d: Date) => formatadorDiaBrasil.format(d);
+
+const mesmoDia = (a: Date, b: Date) => diaNoBrasil(a) === diaNoBrasil(b);
 
 export function pedidosDaColuna<T extends PedidoDoQuadro>(
   pedidos: T[],
