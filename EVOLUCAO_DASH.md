@@ -3,6 +3,108 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## ⚠️ BLOQUEIO DE INFRA (2026-09-06): CI do GitHub Actions nunca roda (sem runner)
+
+**Achado que precisa do dono — não é corrigível por código.** O job `build` do
+CI (`.github/workflows/ci.yml`) aparece **vermelho em TODO commit** (main e PRs),
+mas a causa **não é o código**: nenhum runner é alocado. Evidência via API:
+
+- **0 execuções bem-sucedidas em 447** (`status=success` → `total_count: 0`).
+- Toda run dura **2–4 s** e termina em `failure` com **`runner_id: 0`** e
+  **nenhum step** (nem `npm ci` chega a rodar). Ex.: runs #447, #446, #445 (main),
+  #444, #443 … #433 — todas iguais.
+- Local, com paridade ao CI (Node 22): `npm run build` ok, `npm run lint`
+  **0 errors**, `npm test` **1435/1435**. O código passa; o runner é que não sobe.
+
+**Causa provável:** limite de gasto / billing do GitHub Actions esgotado (ou
+Actions desabilitado) na conta `caiogn-dev`. Runner `ubuntu-latest` (hospedado
+pela GitHub) exige minutos/billing ativos em repo privado.
+
+**Ação do dono (fora do código):** GitHub → Settings → Billing → **Actions**
+(spending limit / método de pagamento), e Settings → Actions (habilitado). Deploy
+de produção **não** depende disso — a Vercel builda por conta própria e os previews
+saíram **Ready**. Enquanto o billing não voltar, o check `build` seguirá vermelho
+em qualquer PR, independentemente do diff.
+
+> Nota: o loop de evolução não consegue usar o CI como portão. Até o billing
+> voltar, a verificação é local (build+lint+test) + preview da Vercel.
+
+## Baseline atual (2026-09-06)
+
+- **CI do GitHub Actions:** vermelho por falta de runner (ver bloqueio acima),
+  não por código. Local passa em paridade.
+- `npm ci`: ok. `npm audit`: **10 vulnerabilidades** (1 low, 3 moderate, 6 high),
+  transitivas (dev/build e `react-router`); bumps majores seguem como fatia
+  dedicada com validação de build.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **antes 1432/1433 (1 falha PRÉ-EXISTENTE)** → **depois 1435/1435
+  verdes / 247 suítes**. A falha pré-existente era `pedidosDoQuadro.test.ts`
+  (corrigida nesta fatia, ver abaixo); +2 testes novos desta fatia.
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~12s).
+- `npm run lint`: **antes 2 errors** (`no-irregular-whitespace`, PRÉ-EXISTENTES em
+  `variaveisDaOferta.ts` + seu teste) → **depois 0 errors / 273 warnings** (gate 400).
+  Corrigido nesta fatia (ver abaixo). O passo `lint` do job `build` do CI falhava
+  aqui, ou seja, o CI da `main` estava vermelho para **todo** PR.
+
+## Histórico
+
+### 2026-09-06 — CI: `no-irregular-whitespace` derrubava o job `build` da main inteira
+- **Medido:** ao dirigir o PR #189 ao verde, o job `build` do CI (`.github/workflows/ci.yml`:
+  `build → lint → test`) falhava. Duas causas pré-existentes na `main`, nenhuma do
+  diff do #189: (a) o teste de fuso do quadro (corrigido no #189, abaixo) e (b)
+  **2 errors de `no-irregular-whitespace`** em `src/pages/marketing/whatsapp/variaveisDaOferta.ts:44`
+  e no seu teste `:38`. O passo `lint` roda antes do `test`, então esses 2 errors
+  já barravam o pipeline (o `test` nem chegava a rodar) — o CI da `main` estava
+  vermelho para qualquer PR.
+- **Causa:** ambos os arquivos usam um NBSP (U+00A0) **literal** dentro de uma
+  regex — proposital: `toLocaleString('pt-BR')` insere NBSP no dinheiro ("R$ 5,00")
+  e o código normaliza para espaço comum com `.replace(/<NBSP>/g, ' ')`; o teste
+  garante que o NBSP não sobrevive. Só que o caractere NBSP cru no fonte dispara a
+  regra `no-irregular-whitespace`.
+- **Mudado (comportamento idêntico):** trocado o NBSP **literal** pelo escape
+  ` ` na regex (`/ /g` e `/ /`) nos dois arquivos. A regex casa
+  exatamente o mesmo caractere — zero mudança de runtime — mas some o caractere
+  irregular do fonte. Fix portado para o #189 (per drive-to-green: sem ele o #189
+  não fica verde, já que o `lint` do CI é o mesmo para o repo todo).
+- **Verificação:** teste afetado `variaveisDaOferta.test.ts` **12/12 verde** antes
+  e depois (comportamento preservado); `npm run lint` **2 errors → 0 errors**;
+  `tsc` limpo e `vite build` ok.
+- **Próximo passo priorizado:** varrer o repo por outros NBSP/whitespace irregular
+  cru em fonte e, se recorrente, considerar `no-irregular-whitespace` com
+  `skipTemplates`/`skipRegExps` no eslintrc para evitar reincidência.
+
+### 2026-09-06 — Correção: "entregue hoje" usava o fuso do runtime (baseline vermelho)
+- **Medido:** o baseline estava **vermelho** — `src/pages/orders/__tests__/pedidosDoQuadro.test.ts`
+  falhava ("não arrasta o que foi entregue ontem"). Não era flake nem data do
+  sistema: a suíte roda em **UTC** e `pedidosDoQuadro.ts` decidia "mesmo dia"
+  com `getFullYear/getMonth/getDate`, ou seja, **no fuso do runtime**. Um pedido
+  entregue às 21h de ontem no Brasil (`-03:00`) é `00h de hoje em UTC`, então em
+  UTC caía como "entregue hoje" e poluía a coluna de finalizados do quadro de
+  pedidos. Bug real de correção, não só de teste: o corte do dia comercial
+  dependia do fuso do navegador/servidor de quem abrisse o painel.
+- **Mudado (`src/pages/orders/pedidosDoQuadro.ts`):** o corte de "hoje" passou a
+  ser o **dia comercial brasileiro** via `Intl.DateTimeFormat('en-CA', { timeZone:
+  'America/Sao_Paulo' })` (constante `FUSO_BRASIL`), comparando o dia formatado.
+  Resultado estável onde quer que o código rode (browser em qualquer fuso, CI em
+  UTC, Vercel). Só a coluna de finalizados (`ENTREGUES_DE_HOJE`) usa o corte; as
+  colunas de trabalho em aberto continuam mostrando tudo (pedido atrasado de
+  ontem não pode sumir). Nenhuma mudança de assinatura ou de comportamento visual.
+- **Teste (TDD, vermelho→verde):** a falha pré-existente já cobria o caso; somei
+  um bloco explícito ("o 'hoje' é o dia do Brasil, não o fuso de quem abre o
+  painel") com 2 casos — pedido de 21h de ontem-BR que em UTC cairia em "hoje"
+  fica de fora, e pedido logo após a meia-noite brasileira entra. Confirmados
+  vermelhos (2/2) antes e verdes depois.
+- **Antes/depois:** `npm test` **1432/1433 (1 falha)** → **1435/1435 (247 suítes)**;
+  `tsc --noEmit` limpo, `vite build` ok e eslint sem warnings nos arquivos tocados,
+  nos dois lados. Só produção alterada: função pura de filtro do quadro, risco baixo.
+- **Próximo passo priorizado:** (1) auditar outros pontos que decidem "hoje/dia"
+  pelo fuso do runtime (`chatTime.ts`, `formatters.ts`, `exportarPedidos.ts`,
+  KPIs de relatórios que agregam por dia) e padronizar o dia comercial via um
+  util compartilhado de `America/Sao_Paulo`. (2) Segurança/deps: planejar os
+  bumps majores de `react-router` 6→7 e `vite` (esbuild/postcss dev-only), cada
+  um como fatia dedicada. (3) Continuar a varredura de "zeros enganosos" em KPIs
+  derivados de query (`ProductsPage`, seções de `reports/`, `AnalyticsPage`).
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas

@@ -105,6 +105,33 @@ describe('regras que já valiam', () => {
   });
 });
 
+describe('o "hoje" é o dia do Brasil, não o fuso de quem abre o painel', () => {
+  // O corte de "entregue hoje" tem de ser o dia comercial brasileiro
+  // (America/Sao_Paulo), independente do fuso do runtime/navegador. Um pedido
+  // das 21h de ontem no horário do Brasil vira "hoje" em UTC — não pode entrar.
+  const done = coluna('done', ['delivered', 'completed']);
+
+  it('não conta pedido de ontem que, em UTC, cai no mesmo dia de agora', () => {
+    const itens = pedidosDaColuna(
+      [
+        // 21h de 26/08 no Brasil = 00h de 27/08 em UTC (mesmo "dia" que agora em UTC)
+        pedido('ontem-noite', 'delivered', '2026-08-26T21:00:00-03:00'),
+        pedido('hoje-cedo', 'delivered', '2026-08-27T00:30:00-03:00'),
+      ],
+      done, AGORA,
+    );
+    expect(itens.map((o) => o.id)).toEqual(['hoje-cedo']);
+  });
+
+  it('conta o pedido logo após a meia-noite brasileira', () => {
+    const itens = pedidosDaColuna(
+      [pedido('virada', 'delivered', '2026-08-27T00:05:00-03:00')],
+      done, AGORA,
+    );
+    expect(itens.map((o) => o.id)).toEqual(['virada']);
+  });
+});
+
 describe('qual coluna é o passado', () => {
   it('é a de finalizados', () => {
     expect(ENTREGUES_DE_HOJE).toBe('done');
