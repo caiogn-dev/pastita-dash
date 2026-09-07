@@ -25,10 +25,25 @@ interface ColunaDoQuadro {
   statuses: readonly string[];
 }
 
-const mesmoDia = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear()
-  && a.getMonth() === b.getMonth()
-  && a.getDate() === b.getDate();
+/**
+ * "Hoje" é o dia da LOJA, não o do relógio de quem abre o painel. Comparar por
+ * `getFullYear/getMonth/getDate` usa o fuso local do ambiente (navegador ou
+ * servidor); um operador em UTC — ou o CI — classificaria a coluna "Entregue
+ * hoje" errado perto da meia-noite. Fixamos o horário de Brasília e comparamos
+ * a data já formatada nesse fuso (`en-CA` dá `AAAA-MM-DD` estável).
+ */
+const FUSO_DA_LOJA = 'America/Sao_Paulo';
+
+const formatoDoDia = new Intl.DateTimeFormat('en-CA', {
+  timeZone: FUSO_DA_LOJA,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+const diaDaLoja = (d: Date) => formatoDoDia.format(d);
+
+const mesmoDia = (a: Date, b: Date) => diaDaLoja(a) === diaDaLoja(b);
 
 export function pedidosDaColuna<T extends PedidoDoQuadro>(
   pedidos: T[],

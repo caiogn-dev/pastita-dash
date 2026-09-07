@@ -3,6 +3,45 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-07)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1377 testes / 237 suítes verdes** (era 1376/237 com **1 falhando**
+  — a suíte estava VERMELHA na `origin/main` por um bug de fuso, corrigido nesta
+  fatia; +1 teste novo).
+- `origin/main` = `3ea9c63`; o checkout do container estava com `HEAD` destacado
+  em 20 commits locais **não publicados** à frente — a branch desta fatia parte de
+  `origin/main`, o default remoto real.
+
+## Histórico
+
+### 2026-09-07 — Bug de fuso: "Entregue hoje" usava o relógio do ambiente, não o da loja
+- **Medido:** a suíte estava **VERMELHA** na `origin/main`
+  (`src/pages/orders/__tests__/pedidosDoQuadro.test.ts` → "não arrasta o que foi
+  entregue ontem"). Causa-raiz: `pedidosDaColuna` decide a coluna "Entregue hoje"
+  com `mesmoDia`, que comparava `getFullYear/getMonth/getDate` — ou seja, o **fuso
+  local do ambiente**. Num container/CI em UTC (e para qualquer operador cujo
+  navegador não esteja no horário de Brasília), um pedido entregue às 21h em São
+  Paulo vira o dia seguinte em UTC e escapava/duplicava na coluna do dia. Não é só
+  o teste: é erro real perto da meia-noite em produção.
+- **Mudado (`src/pages/orders/pedidosDoQuadro.ts`):** `mesmoDia` agora formata a
+  data no fuso fixo da loja (`America/Sao_Paulo`, via `Intl.DateTimeFormat('en-CA')`
+  → `AAAA-MM-DD` estável) e compara as strings. "Hoje" passa a ser o dia da LOJA,
+  não o de quem abre o painel — determinístico em qualquer fuso de runtime.
+- **Teste (TDD, vermelho→verde):** além do caso pré-existente que voltou ao verde,
+  novo caso "usa o dia da loja (São Paulo), não o fuso do ambiente" fixa a
+  intenção com um pedido às 23h em SP (02h UTC do dia seguinte) vs. véspera às 21h.
+  Escrito vermelho antes, verde depois.
+- **Antes/depois:** `npm test` 1376 (1 falhando) → **1377 verdes**; `tsc --noEmit`
+  limpo e `eslint` sem warnings nos arquivos tocados, nos dois lados. Só a lógica
+  de classificação da coluna mudou; nenhuma mudança visual.
+- **Próximo passo priorizado:** varrer outros lugares que decidem "hoje/ontem" pelo
+  fuso local do navegador (`janelaDePeriodo.ts`, `chatTime.ts`, KPIs de relatórios
+  que agregam por dia) — o mesmo defeito de fuso pode falsear janelas de período e
+  agrupamentos diários para operadores fora do horário de Brasília. Avaliar extrair
+  um util compartilhado `diaDaLoja`/`America/Sao_Paulo` em vez de repetir o padrão.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
