@@ -51,6 +51,27 @@ describe('coluna de finalizados', () => {
     );
     expect(itens.map((o) => o.id)).toEqual(['c']);
   });
+
+  /**
+   * "Hoje" é o dia da LOJA (America/Sao_Paulo), não o fuso do navegador de quem
+   * abre o painel nem o do servidor de CI. Um pedido entregue às 21h em São Paulo
+   * (que já é o dia seguinte em UTC) pertence ao dia de São Paulo. Sem fixar o
+   * fuso, este quadro classifica errado perto da meia-noite para qualquer
+   * operador cujo relógio não esteja no horário de Brasília — e some/duplica
+   * pedido em "Entregue hoje".
+   */
+  it('usa o dia da loja (São Paulo), não o fuso do ambiente', () => {
+    const itens = pedidosDaColuna(
+      [
+        // 23h em SP no dia 27 = 02h UTC do dia 28: mesmo dia da loja que AGORA.
+        pedido('noite-sp', 'delivered', '2026-08-27T23:00:00-03:00'),
+        // 21h em SP no dia 26 = 00h UTC do dia 27: dia anterior da loja.
+        pedido('vespera-sp', 'delivered', '2026-08-26T21:00:00-03:00'),
+      ],
+      done, AGORA,
+    );
+    expect(itens.map((o) => o.id)).toEqual(['noite-sp']);
+  });
 });
 
 describe('colunas de trabalho em aberto', () => {
