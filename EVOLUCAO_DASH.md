@@ -24,6 +24,14 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   > job (`build`); ambos estavam vermelhos em `main` antes desta fatia. Como o job é
   > monolítico, o único jeito do check ficar verde era destravar os dois — por isso
   > os 4 errors triviais e pré-existentes entraram nesta mesma fatia (byte-safe).
+- ⚠️ **CI de conta quebrada (fora do código):** independente do código, o job
+  `build` está **morrendo na partida** — todas as ~12 execuções recentes (inclusive
+  pushes diretos na `main`, runs 449–460) terminam em **3–4s, sem runner e com logs
+  vazios**. Assinatura de **minutos de GitHub Actions esgotados / limite de gasto**
+  bloqueando o agendamento do runner. **Nenhuma mudança de código destrava isso** —
+  ação do dono em *Settings → Billing*. Até lá, a validação de cada fatia é **local**
+  (build + lint + test + tsc), como acima; o check vermelho da CI **não** reflete o
+  código enquanto os runners não subirem. (Sem permissão para re-executar: `403`.)
 
 ## Histórico
 
