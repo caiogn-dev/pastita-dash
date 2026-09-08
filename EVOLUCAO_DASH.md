@@ -10,20 +10,20 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - `npm run build` (tsc && vite build, igual à Vercel): **ok** (~19s).
 - `npm test` (Jest): estava **1 falha / 1525 testes** por fuso horário (ver fatia
   abaixo); **depois da fatia: 1527/259 verdes** (+2 do teste-guarda).
-- `npm run lint`: **VERMELHO — 4 errors / 254 warnings** (gate em 400 warnings).
-  Os 4 errors são **pré-existentes** e NÃO tocados por esta fatia:
+- `npm run lint`: estava **VERMELHO — 4 errors / 254 warnings**; **depois da fatia:
+  0 errors / 254 warnings** (gate em 400 warnings) → **verde**.
+  Os 4 errors eram **pré-existentes** em `main`; corrigidos aqui (byte-safe):
   - `variaveisDaOferta.ts:44` e `variaveisDaOferta.test.ts:38` —
-    `no-irregular-whitespace`: há um **NBSP (U+00A0) literal e proposital** dentro
-    de `.replace(/ /g, ' ')`, que remove o espaço não-quebrável que o
-    `Intl.NumberFormat` (BRL) injeta. Correção segura = trocar o literal por
-    ` ` no regex (mantém o comportamento) — fatia própria, precisa validar a
-    formatação de moeda.
+    `no-irregular-whitespace`: um **NBSP (U+00A0) literal e proposital** no regex
+    que remove o espaço não-quebrável que o `Intl.NumberFormat` (BRL) injeta.
+    Trocado o literal pelo escape `\u00A0` no regex — **regex idêntico,
+    comportamento idêntico** (teste de moeda segue 12/12 verde), agora lint-clean.
   - `OrdersHeatMap.tsx:65,86` — `Unused eslint-disable directive` (dois
-    `eslint-disable` de `no-explicit-any` que já não pegam nada): remover as
-    diretivas. Trivial, mas fatia própria.
-  > A CI (`.github/workflows/ci.yml`) roda `npm run lint` **e** `npm test`; ambos
-  > estavam vermelhos em `main` antes desta fatia (lint pelos 4 errors acima,
-  > testes pelo fuso). Esta fatia conserta o vermelho dos testes.
+    `eslint-disable` de `no-explicit-any` que já não pegavam nada): diretivas removidas.
+  > A CI (`.github/workflows/ci.yml`) roda `npm run lint` **e** `npm test` num único
+  > job (`build`); ambos estavam vermelhos em `main` antes desta fatia. Como o job é
+  > monolítico, o único jeito do check ficar verde era destravar os dois — por isso
+  > os 4 errors triviais e pré-existentes entraram nesta mesma fatia (byte-safe).
 
 ## Histórico
 
@@ -58,16 +58,21 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   escorregava) **verde depois**. Garante o invariante para futuros testes de data
   (relatórios, etiquetas, janelas de período) e faz a CI reclamar se o fuso for
   desconfigurado.
+- **Também nesta fatia (para a CI ficar verde):** os 4 lint errors pré-existentes
+  do job monolítico (ver baseline). Correções **byte-safe, sem mudança de
+  comportamento**: NBSP literal → escape ` ` no regex de moeda
+  (`variaveisDaOferta.ts`/test) e remoção de dois `eslint-disable` inúteis em
+  `OrdersHeatMap.tsx`. Verificado: teste de moeda 12/12 verde e `no-explicit-any`
+  não reclama sem as diretivas.
 - **Antes/depois:** `npm test` **1 falha/1525 → 1527/259 verdes** (+2 do guarda,
-  +1 destravado); `tsc --noEmit` limpo e `vite build` ok nos dois lados. Produção
-  intacta — só infra de teste.
-- **Próximo passo priorizado:** (1) **Lint/CI verde:** consertar os 4 errors
-  pré-existentes (NBSP ` ` em `variaveisDaOferta` + `eslint-disable` inúteis em
-  `OrdersHeatMap`) — cada um com validação, para a CI ficar 100% verde. (2)
-  **A11y — `dialog.tsx` composto:** ligar `DialogTitle`↔`Dialog` via contexto para
-  nomear automaticamente o diálogo (hoje `WhatsAppAuthDialog` usa `DialogTitle` sem
-  `ariaLabelledby` → diálogo sem nome acessível). (3) **Segurança/deps:** major bump
-  de `react-router` 6→7 (open redirect) como fatia dedicada.
+  +1 destravado); `npm run lint` **4 errors → 0 errors** (254 warnings, gate 400);
+  `tsc --noEmit` limpo e `vite build` ok nos dois lados. Sem mudança de
+  comportamento de runtime — infra de teste + lint byte-safe.
+- **Próximo passo priorizado:** (1) **A11y — `dialog.tsx` composto:** ligar
+  `DialogTitle`↔`Dialog` via contexto para nomear automaticamente o diálogo (hoje
+  `WhatsAppAuthDialog` usa `DialogTitle` sem `ariaLabelledby` → diálogo sem nome
+  acessível). (2) **Segurança/deps:** major bump de `react-router` 6→7 (open
+  redirect) como fatia dedicada com validação de build.
 
 ## Baseline atual (2026-08-08)
 
