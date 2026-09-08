@@ -3,6 +3,85 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-08)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~19s).
+- `npm test` (Jest): estava **1 falha / 1525 testes** por fuso horário (ver fatia
+  abaixo); **depois da fatia: 1527/259 verdes** (+2 do teste-guarda).
+- `npm run lint`: estava **VERMELHO — 4 errors / 254 warnings**; **depois da fatia:
+  0 errors / 254 warnings** (gate em 400 warnings) → **verde**.
+  Os 4 errors eram **pré-existentes** em `main`; corrigidos aqui (byte-safe):
+  - `variaveisDaOferta.ts:44` e `variaveisDaOferta.test.ts:38` —
+    `no-irregular-whitespace`: um **NBSP (U+00A0) literal e proposital** no regex
+    que remove o espaço não-quebrável que o `Intl.NumberFormat` (BRL) injeta.
+    Trocado o literal pelo escape `\u00A0` no regex — **regex idêntico,
+    comportamento idêntico** (teste de moeda segue 12/12 verde), agora lint-clean.
+  - `OrdersHeatMap.tsx:65,86` — `Unused eslint-disable directive` (dois
+    `eslint-disable` de `no-explicit-any` que já não pegavam nada): diretivas removidas.
+  > A CI (`.github/workflows/ci.yml`) roda `npm run lint` **e** `npm test` num único
+  > job (`build`); ambos estavam vermelhos em `main` antes desta fatia. Como o job é
+  > monolítico, o único jeito do check ficar verde era destravar os dois — por isso
+  > os 4 errors triviais e pré-existentes entraram nesta mesma fatia (byte-safe).
+- ⚠️ **CI de conta quebrada (fora do código):** independente do código, o job
+  `build` está **morrendo na partida** — todas as ~12 execuções recentes (inclusive
+  pushes diretos na `main`, runs 449–460) terminam em **3–4s, sem runner e com logs
+  vazios**. Assinatura de **minutos de GitHub Actions esgotados / limite de gasto**
+  bloqueando o agendamento do runner. **Nenhuma mudança de código destrava isso** —
+  ação do dono em *Settings → Billing*. Até lá, a validação de cada fatia é **local**
+  (build + lint + test + tsc), como acima; o check vermelho da CI **não** reflete o
+  código enquanto os runners não subirem. (Sem permissão para re-executar: `403`.)
+
+## Histórico
+
+### 2026-09-08 — Infra de testes: suíte determinística por fuso horário (destrava a CI)
+- **Medido:** o baseline `npm test` vinha **vermelho** por 1 teste —
+  `src/pages/orders/__tests__/pedidosDoQuadro.test.ts` ("não arrasta o que foi
+  entregue ontem"). Causa raiz: o `pedidosDoQuadro` filtra a coluna "Entregue"
+  por **dia local** (`getFullYear/getMonth/getDate` via `mesmoDia`), e o teste usa
+  instantes com offset `-03:00`. Sem fixar o fuso, a suíte herda o do runner: em
+  dev (-03) passa, mas na **CI (ubuntu = UTC)** e na **Vercel** um `21:00 -03` de
+  ontem vira `00:00 UTC` de hoje e o "mesmo dia" escorrega uma data → vermelho.
+  O produto é um SaaS de restaurantes brasileiros: "hoje" é o dia da loja (-03),
+  então o fuso do teste tem de ser o fuso do produto.
+- **Descartado (não era regressão minha):** a falha é **pré-existente** e
+  ambiental (TZ do runner), não introduzida por código. A suíte cresceu de
+  708 (baseline 2026-08-08) para 1525 testes desde então; o teste frágil entrou
+  nesse intervalo.
+- **Por que não no `setupTests.ts`:** tentei fixar `process.env.TZ` no
+  `setupFilesAfterEnv` — **não funciona**. O V8/ICU lê o fuso **uma única vez** no
+  início do processo; quando o setup roda, o worker já cacheou UTC (verificado:
+  `process.env.TZ` fica setado mas `Intl…resolvedOptions().timeZone` continua UTC).
+- **Mudado (infra de teste, zero toque em produção):**
+  - Novo `scripts/jest-tz.cjs`: seta `process.env.TZ='America/Sao_Paulo'` **antes**
+    de carregar o Jest e chama `require('jest').run(...)`. Os workers herdam esse
+    env ao nascer, então o ICU cacheia o fuso certo. Sem dependência nova
+    (nada de `cross-env`), cross-platform (node puro).
+  - `package.json`: `test`/`test:watch` passam a rodar via o wrapper.
+  - `src/setupTests.ts`: comentário explicando por que o fuso é fixado no wrapper
+    e não ali (removida a atribuição inócua).
+- **Teste (TDD):** novo `src/__tests__/fusoHorarioDeterministico.test.ts` — escrito
+  **vermelho antes** (2/2 falhando: fuso resolvia UTC, dia de um instante -03
+  escorregava) **verde depois**. Garante o invariante para futuros testes de data
+  (relatórios, etiquetas, janelas de período) e faz a CI reclamar se o fuso for
+  desconfigurado.
+- **Também nesta fatia (para a CI ficar verde):** os 4 lint errors pré-existentes
+  do job monolítico (ver baseline). Correções **byte-safe, sem mudança de
+  comportamento**: NBSP literal → escape ` ` no regex de moeda
+  (`variaveisDaOferta.ts`/test) e remoção de dois `eslint-disable` inúteis em
+  `OrdersHeatMap.tsx`. Verificado: teste de moeda 12/12 verde e `no-explicit-any`
+  não reclama sem as diretivas.
+- **Antes/depois:** `npm test` **1 falha/1525 → 1527/259 verdes** (+2 do guarda,
+  +1 destravado); `npm run lint` **4 errors → 0 errors** (254 warnings, gate 400);
+  `tsc --noEmit` limpo e `vite build` ok nos dois lados. Sem mudança de
+  comportamento de runtime — infra de teste + lint byte-safe.
+- **Próximo passo priorizado:** (1) **A11y — `dialog.tsx` composto:** ligar
+  `DialogTitle`↔`Dialog` via contexto para nomear automaticamente o diálogo (hoje
+  `WhatsAppAuthDialog` usa `DialogTitle` sem `ariaLabelledby` → diálogo sem nome
+  acessível). (2) **Segurança/deps:** major bump de `react-router` 6→7 (open
+  redirect) como fatia dedicada com validação de build.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
