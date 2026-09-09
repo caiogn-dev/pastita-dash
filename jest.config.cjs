@@ -1,3 +1,16 @@
+/**
+ * Fuso fixo para a suíte. Sem isto o resultado depende do fuso da máquina que
+ * roda o teste: casos que comparam "mesmo dia" (ex.: a coluna de finalizados do
+ * quadro de pedidos, em `pedidosDoQuadro.ts`) usam os getters LOCAIS do `Date`
+ * (`getDate`, `getMonth`…). Os dados dos testes são escritos em -03:00, o fuso
+ * real do lojista; num runner em UTC um pedido das 21h de ontem vira "hoje" e o
+ * caso reprova — verde no Brasil, vermelho na nuvem. Fuso pré-existente vence
+ * (`TZ=UTC npm test` continua valendo para checar robustez de fuso), mas o
+ * padrão passa a ser o do público real do painel, e a suíte deixa de ser
+ * verde-ou-vermelha conforme a máquina.
+ */
+process.env.TZ = process.env.TZ || 'America/Sao_Paulo';
+
 module.exports = {
   /**
    * Sem limite de workers o jest abria um por núcleo e a máquina passava mais

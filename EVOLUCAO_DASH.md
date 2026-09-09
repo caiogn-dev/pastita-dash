@@ -3,6 +3,77 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-09)
+
+- `npm ci`: ok. `npm audit`: **11 vulnerabilidades** (1 low, 4 moderate, 6 high),
+  transitivas (`react-router`/`vite`/`esbuild`); só corrigem via major bump —
+  fatia dedicada com validação de build (ver backlog).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1525 testes / 258 suítes verdes** — mas antes desta fatia a suíte
+  estava **vermelha (1 caso)** no ambiente de nuvem por dependência de fuso, não
+  por regressão de código (ver abaixo).
+- `npm run lint`: gate em 400 warnings; **254 warnings, 0 errors** — antes desta
+  fatia eram **4 errors** (lint reprovava e derrubava o job de CI inteiro).
+- `npm run build` (vite): **ok** (~15s).
+
+### 2026-09-09 — CI de volta ao verde: 4 erros de lint pré-existentes + fuso da suíte
+> **Descoberta:** o job único `build` do CI (`.github/workflows/ci.yml`) roda
+> `build → lint → test` em sequência. Na `main` ele **morria no passo de lint**
+> (4 errors), então o passo de teste **nunca rodava** — o bug de fuso abaixo
+> passava despercebido no CI. Os dois defeitos são independentes e **nenhum dos
+> dois sozinho deixa o CI verde**; por isso vêm juntos nesta fatia (destravar o
+> CI ponta a ponta), não como PRs meio-verdes.
+
+**Parte 1 — 4 erros de lint pré-existentes na `main` (job de CI vermelho para todo mundo):**
+- **Medido:** `eslint . --max-warnings 400` saía com código 1 por **4 errors**
+  (não warnings), em arquivos que esta fatia não introduziu:
+  - `src/components/maps/OrdersHeatMap.tsx:65,86` — `eslint-disable` **sem uso**
+    (o `no-explicit-any` já não dispara ali; `window.google!.maps` deixou de ser `any`).
+  - `src/pages/marketing/whatsapp/variaveisDaOferta.ts:44` e o teste `:38` —
+    `no-irregular-whitespace`: um **NBSP (U+00A0) literal dentro de um regex**.
+    O regex é intencional (`.replace(/…/g, ' ')` tira o NBSP que o `toLocaleString`
+    põe entre `R$` e o número, que "aparece torto no WhatsApp") — **não dá para
+    remover o caractere**.
+- **Mudado (mínimo, comportamento idêntico):**
+  - `OrdersHeatMap.tsx`: removidas as 2 diretivas `eslint-disable` sem uso.
+  - `variaveisDaOferta.ts` e o teste: o NBSP literal do regex virou o escape
+    ` ` — **mesmo caractere**, sem irregular-whitespace no fonte e mais
+    explícito sobre o que casa. Suíte do módulo segue 12/12.
+
+**Parte 2 — Determinismo: fuso fixo na suíte (suíte era verde-ou-vermelha por máquina)
+- **Medido:** `npm test` no runner da nuvem (UTC) reprovava
+  `src/pages/orders/__tests__/pedidosDoQuadro.test.ts` ("não arrasta o que foi
+  entregue ontem"): um pedido `delivered` das `2026-08-26T21:00-03:00` vazava para
+  a coluna de finalizados de "hoje". Causa: `pedidosDoQuadro.ts` decide "mesmo dia"
+  com os getters **locais** do `Date` (`getFullYear/getMonth/getDate`); os dados do
+  teste são escritos em -03:00 (fuso do lojista), mas num runner UTC as 21h de -03:00
+  viram `00:00` do dia seguinte em UTC — mesmo dia do `AGORA`. Resultado: **verde no
+  Brasil, vermelho na nuvem**, exatamente o tipo de vermelho intermitente que faz o
+  time aprender a ignorar a suíte (o mesmo risco que o comentário do `jest.config`
+  já combate para timeouts). tsc já estava limpo; não era regressão de código.
+- **Mudado (`jest.config.cjs`, só infra de teste — zero mudança em produção):**
+  `process.env.TZ = process.env.TZ || 'America/Sao_Paulo'` antes do `module.exports`.
+  Fixa o fuso da suíte no do público real do painel; propaga aos workers por herança
+  de env. Fuso explícito ainda vence (`TZ=UTC npm test` continua servindo para checar
+  robustez de fuso), então nada de novo fica escondido.
+- **Antes/depois:** UTC (padrão do ambiente) **1524/1525 → 1525/1525**;
+  `TZ=America/Sao_Paulo` já era 1525/1525 e continua; `tsc --noEmit` limpo e
+  `vite build` ok. Nenhum código de produção tocado.
+
+**Resultado da fatia (job `build` do CI, ponta a ponta em UTC):** lint
+**4 errors → 0 errors**; `tsc --noEmit` limpo; `npm test` **1525/1525**;
+`vite build` ok. Antes, o CI reprovava para qualquer PR e qualquer push na `main`.
+- **Backlog / próximo passo priorizado:**
+  1. **Correção de fuso em produção (fatia dedicada):** `pedidosDoQuadro.ts` ainda
+     depende do fuso do navegador do operador para definir "hoje". Hoje funciona
+     (operador em -03:00), mas é frágil para dispositivo em outro fuso. Fixar o
+     cálculo de "mesmo dia" num fuso explícito da loja quando houver plumbing de
+     timezone por tenant. Auditar antes: só há Brasil hoje; não hardcodar tenant.
+  2. **Segurança/deps:** 11 vulnerabilidades transitivas, só via major bump
+     (`react-router` 6→7, `vite` 5→8); cada uma como fatia dedicada com validação.
+  3. **Zeros enganosos:** continuar a varredura de KPIs derivados de query sem
+     estado de erro (`ProductsPage`, seções de `reports/`, `AnalyticsPage`).
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
