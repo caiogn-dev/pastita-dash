@@ -30,9 +30,21 @@ type Bruto = Record<string, unknown>;
 
 const texto = (v: unknown): string => (typeof v === 'string' ? v.trim() : v ? String(v).trim() : '');
 
-/** Sem acento e sem caixa: "Centro" e "centro" são a mesma palavra. */
+/**
+ * Sem acento, sem caixa e sem espaço sobrando.
+ *
+ * "Centro" e "centro" são a mesma palavra; e o mesmo endereço digitado
+ * "ortolife , espaço" e "ortolife, espaço" também. Sem normalizar o espaço
+ * antes da pontuação, o complemento aparecia de novo como linha própria
+ * embaixo da rua que já o continha.
+ */
 const normalizar = (s: string) =>
-  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  s.normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/\s+([,;.\-])/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

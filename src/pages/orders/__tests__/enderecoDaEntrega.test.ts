@@ -88,3 +88,14 @@ it('limpa a repetição de dentro da própria rua', () => {
   expect(texto.match(/Palmas/g) ?? []).toHaveLength(1);
   expect(e.linhas[0]).toBe('Quadra 501 Sul Avenida NS 1, 9, Recepção da ortolife - Centro, Palmas, TO');
 });
+
+it('espaço antes da vírgula não engana a comparação', () => {
+  // Caso real: a rua traz "ortolife, espaço life" e o complemento
+  // "ortolife , espaço life" — o mesmo texto, digitado com um espaço a mais.
+  const e = enderecoDaEntrega({
+    street: 'Quadra 501 Sul, 9, Recepção da ortolife, espaço life - Centro, Palmas, TO',
+    complement: 'Recepção da ortolife , espaço life ',
+    city: 'Palmas', state: 'TO', zip_code: '77016006',
+  });
+  expect(e.linhas.join(' | ').match(/ortolife/g) ?? []).toHaveLength(1);
+});
