@@ -12,9 +12,35 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - `npm test`: **1525 testes / 258 suítes verdes** — mas antes desta fatia a suíte
   estava **vermelha (1 caso)** no ambiente de nuvem por dependência de fuso, não
   por regressão de código (ver abaixo).
+- `npm run lint`: gate em 400 warnings; **254 warnings, 0 errors** — antes desta
+  fatia eram **4 errors** (lint reprovava e derrubava o job de CI inteiro).
 - `npm run build` (vite): **ok** (~15s).
 
-### 2026-09-09 — Determinismo: fuso fixo na suíte (suíte era verde-ou-vermelha por máquina)
+### 2026-09-09 — CI de volta ao verde: 4 erros de lint pré-existentes + fuso da suíte
+> **Descoberta:** o job único `build` do CI (`.github/workflows/ci.yml`) roda
+> `build → lint → test` em sequência. Na `main` ele **morria no passo de lint**
+> (4 errors), então o passo de teste **nunca rodava** — o bug de fuso abaixo
+> passava despercebido no CI. Os dois defeitos são independentes e **nenhum dos
+> dois sozinho deixa o CI verde**; por isso vêm juntos nesta fatia (destravar o
+> CI ponta a ponta), não como PRs meio-verdes.
+
+**Parte 1 — 4 erros de lint pré-existentes na `main` (job de CI vermelho para todo mundo):**
+- **Medido:** `eslint . --max-warnings 400` saía com código 1 por **4 errors**
+  (não warnings), em arquivos que esta fatia não introduziu:
+  - `src/components/maps/OrdersHeatMap.tsx:65,86` — `eslint-disable` **sem uso**
+    (o `no-explicit-any` já não dispara ali; `window.google!.maps` deixou de ser `any`).
+  - `src/pages/marketing/whatsapp/variaveisDaOferta.ts:44` e o teste `:38` —
+    `no-irregular-whitespace`: um **NBSP (U+00A0) literal dentro de um regex**.
+    O regex é intencional (`.replace(/…/g, ' ')` tira o NBSP que o `toLocaleString`
+    põe entre `R$` e o número, que "aparece torto no WhatsApp") — **não dá para
+    remover o caractere**.
+- **Mudado (mínimo, comportamento idêntico):**
+  - `OrdersHeatMap.tsx`: removidas as 2 diretivas `eslint-disable` sem uso.
+  - `variaveisDaOferta.ts` e o teste: o NBSP literal do regex virou o escape
+    ` ` — **mesmo caractere**, sem irregular-whitespace no fonte e mais
+    explícito sobre o que casa. Suíte do módulo segue 12/12.
+
+**Parte 2 — Determinismo: fuso fixo na suíte (suíte era verde-ou-vermelha por máquina)
 - **Medido:** `npm test` no runner da nuvem (UTC) reprovava
   `src/pages/orders/__tests__/pedidosDoQuadro.test.ts` ("não arrasta o que foi
   entregue ontem"): um pedido `delivered` das `2026-08-26T21:00-03:00` vazava para
@@ -33,6 +59,10 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - **Antes/depois:** UTC (padrão do ambiente) **1524/1525 → 1525/1525**;
   `TZ=America/Sao_Paulo` já era 1525/1525 e continua; `tsc --noEmit` limpo e
   `vite build` ok. Nenhum código de produção tocado.
+
+**Resultado da fatia (job `build` do CI, ponta a ponta em UTC):** lint
+**4 errors → 0 errors**; `tsc --noEmit` limpo; `npm test` **1525/1525**;
+`vite build` ok. Antes, o CI reprovava para qualquer PR e qualquer push na `main`.
 - **Backlog / próximo passo priorizado:**
   1. **Correção de fuso em produção (fatia dedicada):** `pedidosDoQuadro.ts` ainda
      depende do fuso do navegador do operador para definir "hoje". Hoje funciona

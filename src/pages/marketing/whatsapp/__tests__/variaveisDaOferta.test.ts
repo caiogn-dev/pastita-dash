@@ -35,7 +35,7 @@ describe('precoParaTemplate', () => {
 
   it('não usa espaço não-quebrável', () => {
     // o NBSP do toLocaleString sobrevive ao envio e aparece torto no WhatsApp
-    expect(precoParaTemplate(52.9)).not.toMatch(/ /);
+    expect(precoParaTemplate(52.9)).not.toMatch(/\u00A0/);
   });
 });
 
