@@ -78,7 +78,9 @@ describe('OrderDetailPage — Fase 3 (F2 banner)', () => {
   it('mostra "Pago integralmente" quando amount_due = 0 / is_fully_paid', async () => {
     mockGetOrder.mockResolvedValue({ ...baseOrder, amount_paid: 50, amount_due: 0, is_fully_paid: true });
     render(<OrderDetailPage />);
-    expect(await screen.findByText('Pago integralmente')).toBeInTheDocument();
+    // O selo encurtou para 'Pago': ele vive sob o título 'Pagamento', que já
+    // dá o contexto que 'integralmente' carregava sozinho.
+    expect(await screen.findByText('Pago')).toBeInTheDocument();
     expect(screen.queryByText('Falta receber')).not.toBeInTheDocument();
   });
 });
@@ -94,7 +96,12 @@ describe('OrderDetailPage — método digital (link de pagamento)', () => {
   it('mantém "Delivery" para pedido delivery', async () => {
     mockGetOrder.mockResolvedValue({ ...baseOrder, delivery_method: 'delivery' });
     render(<OrderDetailPage />);
-    expect(await screen.findByText('Delivery')).toBeInTheDocument();
+    // 'Delivery' virou 'Entrega' (ou o bairro, quando o pedido tem endereço):
+    // o painel fala português com quem atende.
+    // "Entrega" aparece duas vezes de propósito (o modo, e a taxa nos
+    // totais); o que este teste guarda é que um pedido de entrega NÃO é
+    // rotulado como link de pagamento.
+    expect((await screen.findAllByText('Entrega')).length).toBeGreaterThan(0);
     expect(screen.queryByText('Link de pagamento')).not.toBeInTheDocument();
   });
 });
@@ -159,15 +166,16 @@ describe('OrderDetailPage — Fase 3 (F4 lista de cobranças)', () => {
 
     render(<OrderDetailPage />);
 
-    await screen.findByText('Cobranças');
-    // 2 cobranças renderizadas (PIX duas vezes na lista)
-    expect(screen.getAllByText('PIX').length).toBeGreaterThanOrEqual(2);
-    // Status de cada cobrança, no vocabulário da COBRANÇA: ela fica
-    // `completed` ("Recebido") enquanto o PEDIDO fica `paid` ("Pago").
-    // Reusar o mapa do pedido aqui era o que fazia a tela exibir "completed"
-    // cru quando o estado não existia lá.
-    expect(screen.getAllByText('Recebido').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Pendente').length).toBeGreaterThanOrEqual(1);
+    await screen.findByText('Pagamento');
+    // Método e estado saem na MESMA linha ("PIX · Recebido"), uma linha por
+    // cobrança. O vocabulário é o da COBRANÇA: ela fica `completed`
+    // ("Recebido") enquanto o PEDIDO fica `paid` ("Pago") — reusar o mapa do
+    // pedido aqui era o que exibia "completed" cru.
+    expect(screen.getAllByText(/PIX/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/Recebido/).length).toBeGreaterThanOrEqual(1);
+    // 'Aguardando' e não 'Pendente': "Pendente" era o status do PEDIDO, num
+    // cartão que agora mostra quanto falta receber — número, não rótulo.
+    expect(screen.getAllByText(/Aguardando/).length).toBeGreaterThanOrEqual(1);
     // valores das cobranças aparecem
     const valores = screen.getAllByText((_, el) => {
       const t = el?.textContent?.replace(/\s/g, '');
@@ -249,7 +257,7 @@ describe('OrderDetailPage — de onde veio o desconto', () => {
   it('diz quantos pedidos o cliente já fez', async () => {
     mockGetOrder.mockResolvedValue({ ...baseOrder, pedidos_do_cliente: 4 });
     render(<OrderDetailPage />);
-    expect(await screen.findByText(/4º pedido deste cliente/i)).toBeInTheDocument();
+    expect(await screen.findByText(/4º pedido na loja/i)).toBeInTheDocument();
   });
 
   it('não inventa histórico quando o backend não mandou a contagem', async () => {

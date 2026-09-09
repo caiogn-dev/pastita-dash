@@ -19,7 +19,7 @@ export const MobileOrdersScreen: React.FC = () => {
 
   const advance = async (order: StoreOrder, e: React.MouseEvent) => {
     e.stopPropagation();
-    const next = nextOrderStatus(order.status);
+    const next = nextOrderStatus(order);
     if (!next) return;
     setBusyId(order.id);
     try {
@@ -67,7 +67,7 @@ export const MobileOrdersScreen: React.FC = () => {
               </h2>
               <ul className="space-y-2">
                 {colOrders.map((order) => {
-                  const next = nextOrderStatus(order.status);
+                  const next = nextOrderStatus(order);
                   return (
                     <li
                       key={order.id}

@@ -16,7 +16,7 @@ export const MobileOrderDetailSheet: React.FC<Props> = ({ order, onClose, onAdva
   const [busy, setBusy] = useState(false);
   if (!order) return null;
 
-  const next = nextOrderStatus(order.status);
+  const next = nextOrderStatus(order);
 
   const advance = async () => {
     if (!next) return;

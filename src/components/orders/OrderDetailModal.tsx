@@ -57,7 +57,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ onOrderChang
       showCloseButton={false}
       closeOnEscape={!nestedOpen}
       closeOnOverlayClick={!nestedOpen}
-      className="!max-w-5xl bg-canvas text-fg-token"
+      className="!max-w-6xl bg-canvas text-fg-token"
     >
       {orderId && (
         <>
@@ -88,7 +88,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ onOrderChang
               </button>
             </div>
           )}
-          <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+          <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
             <OrderDetailContent
               orderId={orderId}
               variant="modal"

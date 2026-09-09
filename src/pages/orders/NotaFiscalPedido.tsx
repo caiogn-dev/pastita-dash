@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Modal } from '../../components/common';
 import { DocumentTextIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { ordersService, getErrorMessage } from '../../services';
@@ -8,6 +9,15 @@ import logger from '../../services/logger';
 interface NotaFiscalPedidoProps {
   orderId: string;
   storeSlug?: string;
+  /**
+   * `painel` desenha o bloco inteiro na tela; `barra` devolve um botão para a
+   * barra de ações, que abre o mesmo bloco num modal.
+   *
+   * Nota fiscal é AÇÃO, não informação de leitura: ocupava uma caixa fixa na
+   * lateral do pedido — com campo de CPF e dois botões — mesmo nos pedidos em
+   * que ninguém vai emitir nada.
+   */
+  variant?: 'painel' | 'barra';
 }
 
 const BOTAO =
@@ -83,7 +93,8 @@ const dentroDaJanela = (nota: NotaFiscal) =>
  * Só aparece em loja com emissão configurada: sem isso, as outras lojas
  * ganhariam um botão que só sabe responder erro.
  */
-export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, storeSlug }) => {
+export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, storeSlug, variant = 'painel' }) => {
+  const [abertoNaBarra, setAbertoNaBarra] = useState(false);
   const [habilitado, setHabilitado] = useState(false);
   const [documentos, setDocumentos] = useState<NotaFiscal[]>([]);
   const [carregado, setCarregado] = useState(false);
@@ -160,12 +171,14 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
   const jaEmitida = (modelo: '65' | '55') =>
     documentos.some(d => d.modelo === modelo && (d.status === 'authorized' || d.status === 'pending'));
 
-  return (
-    <div className="mt-6 rounded border border-white/15 p-4">
-      <div className="flex items-center gap-2">
-        <DocumentTextIcon className="h-4 w-4 text-fg-muted-token" />
-        <h3 className="text-sm font-semibold text-fg-token">Nota fiscal</h3>
-      </div>
+  const corpo = (
+    <div className={variant === 'barra' ? '' : 'mt-6 rounded border border-white/15 p-4'}>
+      {variant === 'painel' && (
+        <div className="flex items-center gap-2">
+          <DocumentTextIcon className="h-4 w-4 text-fg-muted-token" />
+          <h3 className="text-sm font-semibold text-fg-token">Nota fiscal</h3>
+        </div>
+      )}
 
       {(!jaEmitida('65') || !jaEmitida('55')) && (
         <div className="mt-3 grid gap-2">
@@ -280,6 +293,31 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
         );
       })}
     </div>
+  );
+
+  if (variant === 'painel') return corpo;
+
+  // Na barra: o rótulo já diz em que pé está a nota, para o dono não precisar
+  // abrir o modal só para descobrir se emitiu.
+  const autorizada = documentos.some(d => d.status === 'authorized');
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAbertoNaBarra(true)}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
+      >
+        <DocumentTextIcon className="h-4 w-4" />
+        {autorizada ? 'Nota emitida' : 'Emitir nota'}
+      </button>
+      <Modal
+        isOpen={abertoNaBarra}
+        onClose={() => setAbertoNaBarra(false)}
+        title="Nota fiscal"
+      >
+        {corpo}
+      </Modal>
+    </>
   );
 };
 

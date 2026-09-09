@@ -26,6 +26,18 @@ import {
   BellIcon,
   BellSlashIcon,
   LinkIcon,
+  InboxArrowDownIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  FireIcon,
+  CheckBadgeIcon,
+  ShoppingBagIcon,
+  ChatBubbleLeftRightIcon,
+  ArrowTopRightOnSquareIcon,
+  DocumentDuplicateIcon,
+  BuildingStorefrontIcon,
+  GlobeAltIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -80,6 +92,8 @@ import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
 import { useStore } from '../../hooks';
 import { marcosDoPedido, duracaoLegivel } from './marcosDoPedido';
 import { proximaAcaoDoPedido } from './proximaAcao';
+import { etapasDoPedido, type EtapaDoPedido } from './fluxoDoPedido';
+import { enderecoDaEntrega } from './enderecoDaEntrega';
 // Os rótulos moram num arquivo só, com teste que confere contra a lista de
 // status do backend: era esta duplicação que deixava "cancelled" cru na tela.
 import {
@@ -88,28 +102,26 @@ import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_RECORD_STATUS_LABELS,
 } from '../../utils/rotulosDeEstado';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatPhone, formatPhoneForWhatsApp } from '../../utils/formatters';
 
 // =============================================================================
 // STATUS CONFIGURATION
 // =============================================================================
 
-const STATUS_FLOW = [
-  { id: 'pending', label: 'Pendente', icon: ClockIcon },
-  { id: 'confirmed', label: 'Confirmado', icon: CheckIcon },
-  { id: 'preparing', label: 'Preparando', icon: TruckIcon },
-  { id: 'dispatched', label: 'Pronto/Entrega', icon: TruckIcon },
-  { id: 'delivered', label: 'Entregue', icon: HomeIcon },
-];
-
-// Status aliases for progress tracking
-const STATUS_FLOW_ALIAS: Record<string, string> = {
-  processing: 'pending',
-  paid: 'confirmed',
-  ready: 'dispatched',
-  out_for_delivery: 'dispatched',
-  shipped: 'dispatched',
-  completed: 'delivered',
+/**
+ * De onde o pedido veio.
+ *
+ * O `source` existia no backend com cinco valores e aparecia só no Histórico:
+ * quem abria um pedido não sabia se ele veio do site, do balcão ou do bot — e
+ * é a primeira coisa que se pergunta quando o cliente reclama.
+ */
+const CANAL_DO_PEDIDO: Record<string, string> = {
+  web: 'Site',
+  pdv: 'Balcão',
+  whatsapp: 'WhatsApp',
+  payment_link: 'Link de pagamento',
+  carteira: 'Carteira',
+  dashboard: 'Painel',
 };
 
 // Badges de status nos tokens semânticos do tema (os --*-soft já têm valor
@@ -207,81 +219,91 @@ const formatScheduledLabel = (
   return datePart || timePart;
 };
 
-const getStatusIndex = (status: string): number => {
-  const normalized = STATUS_FLOW_ALIAS[status.toLowerCase()] ?? status.toLowerCase();
-  const index = STATUS_FLOW.findIndex(s => s.id === normalized);
-  return index >= 0 ? index : 0;
+/**
+ * A régua de status, atravessando o topo do pedido.
+ *
+ * É a primeira pergunta de quem abre um pedido — "onde ele está?" — então ela
+ * ocupa a largura inteira, antes de qualquer outra coisa. As etapas vêm de
+ * `fluxoDoPedido`, que ramifica entrega e retirada igual ao botão de ação.
+ */
+const ICONE_DA_ETAPA: Record<EtapaDoPedido['chave'], typeof ClockIcon> = {
+  recebido: InboxArrowDownIcon,
+  confirmado: CheckCircleIcon,
+  preparo: FireIcon,
+  despacho: TruckIcon,
+  fim: CheckBadgeIcon,
 };
 
-// =============================================================================
-// PROGRESS TIMELINE COMPONENT
-// =============================================================================
-
-interface ProgressTimelineProps {
-  currentStatus: string;
+interface FluxoDoStatusProps {
+  order: Order;
   isCancelled?: boolean;
 }
 
-const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ currentStatus, isCancelled }) => {
-  const currentIndex = getStatusIndex(currentStatus);
+const FluxoDoStatus: React.FC<FluxoDoStatusProps> = ({ order, isCancelled }) => {
+  const etapas = etapasDoPedido(order);
+  const retirada = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
+  const feitas = etapas.filter((e) => e.estado === 'concluida').length;
+  // A barra preenchida vai até o CENTRO da bolinha atual, por isso a conta é
+  // sobre os vãos (4) e não sobre as etapas (5).
+  const preenchido = (feitas / (etapas.length - 1)) * 100;
 
   if (isCancelled) {
     return (
-      <div className="flex items-center justify-center py-6">
-        <div className="flex items-center gap-3 px-6 py-3 bg-[var(--danger-soft)] rounded-full">
-          <XMarkIcon className="w-6 h-6 text-[var(--danger)]" />
-          <span className="text-lg font-semibold text-[var(--danger)]">Pedido Cancelado</span>
-        </div>
+      <div className="flex items-center gap-2 rounded-lg bg-[var(--danger-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--danger)]">
+        <XCircleIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+        Pedido cancelado
       </div>
     );
   }
 
   return (
-    <div className="py-2">
-      <div className="flex items-center justify-between gap-2 relative">
-        {/* Progress Line */}
-        <div className="absolute left-6 right-6 top-5 h-px bg-border-token z-0" />
-        <div
-          className="absolute left-6 top-5 h-px bg-[var(--brand)] z-0 transition-all duration-500"
-          style={{ width: `calc(${(currentIndex / (STATUS_FLOW.length - 1)) * 100}% - 3rem)` }}
-        />
+    <ol className="relative flex items-start justify-between" aria-label="Andamento do pedido">
+      {/* Trilho: uma linha só atrás de tudo, do centro da primeira bolinha ao
+          centro da última — daí o inset de 10% (metade de 1/5 da largura). */}
+      <span
+        aria-hidden="true"
+        className="absolute left-[10%] right-[10%] top-4 h-0.5 rounded-full bg-border-token"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute left-[10%] top-4 h-0.5 rounded-full bg-[var(--brand)] transition-[width] duration-500"
+        style={{ width: `calc((100% - 20%) * ${preenchido / 100})` }}
+      />
 
-        {/* Steps */}
-        {STATUS_FLOW.map((step, index) => {
-          const isCompleted = index <= currentIndex;
-          const isCurrent = index === currentIndex;
-          const Icon = step.icon;
-
-          return (
-            <div key={step.id} className="relative z-10 flex flex-col items-center">
-              <div
-                className={`
-                  h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300
-                  ${isCompleted
-                    ? 'bg-[var(--brand)] text-brand-strong'
-                    : 'bg-surface border border-border-token text-fg-muted-token'}
-                  ${isCurrent ? 'ring-4 ring-brand-soft scale-110' : ''}
-                `}
-              >
-                {isCompleted && index < currentIndex ? (
-                  <CheckIcon className="w-5 h-5" />
-                ) : (
-                  <Icon className="w-5 h-5" />
-                )}
-              </div>
-              <span
-                className={`
-                  mt-2 text-badge font-medium whitespace-nowrap
-                  ${isCompleted ? 'text-fg-token' : 'text-fg-muted-token'}
-                `}
-              >
-                {step.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+      {etapas.map((etapa) => {
+        const Icone = etapa.chave === 'despacho' && retirada ? ShoppingBagIcon : ICONE_DA_ETAPA[etapa.chave];
+        const concluida = etapa.estado === 'concluida';
+        const atual = etapa.estado === 'atual';
+        return (
+          <li
+            key={etapa.chave}
+            className="relative z-10 flex flex-1 flex-col items-center gap-2 text-center"
+            aria-current={atual ? 'step' : undefined}
+          >
+            <span
+              className={[
+                'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
+                concluida
+                  ? 'border-[var(--brand)] bg-[var(--brand)] text-brand-strong'
+                  : atual
+                    ? 'border-[var(--brand)] bg-surface text-[var(--brand)] ring-4 ring-brand-soft'
+                    : 'border-border-token bg-surface text-fg-muted-token',
+              ].join(' ')}
+            >
+              {concluida ? <CheckIcon className="h-4 w-4" /> : <Icone className="h-4 w-4" />}
+            </span>
+            <span
+              className={[
+                'text-xs leading-tight',
+                atual ? 'font-semibold text-fg-token' : concluida ? 'text-fg-token' : 'text-fg-muted-token',
+              ].join(' ')}
+            >
+              {etapa.rotulo}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 };
 
@@ -597,18 +619,14 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   }
 
   const statusColors = STATUS_COLORS[order.status.toLowerCase()] || STATUS_COLORS.pending;
-  const address = parseAddress(order.delivery_address || order.shipping_address);
   const paymentStatus = order.payment_status || 'pending';
   const paymentStatusLabel = PAYMENT_STATUS_LABELS;
-
   const paymentMethodLabel = PAYMENT_METHOD_LABELS;
 
   const paymentLink = order.pix_ticket_url || order.payment_url || order.payment_link || order.init_point || null;
-  // Fase 3 — saldo de pagamento (campos read-only do backend; podem não existir em respostas antigas)
   const hasPaymentBalance = order.amount_due !== undefined && order.amount_due !== null;
   const amountDue = Number(order.amount_due ?? 0);
   const isFullyPaid = order.is_fully_paid === true || (hasPaymentBalance && amountDue <= 0);
-  const compactAddress = buildCompactAddress(address);
   const customerInitials = getInitials(order.customer_name);
   const manualSurcharge =
     Number(order.surcharge_value ?? order.metadata?.manual_surcharge ?? 0) || 0;
@@ -620,654 +638,597 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     order.manual_discount_reason?.trim() ||
     getAdjustmentReason(order.metadata);
 
+  const entrega = enderecoDaEntrega(
+    parseAddress(order.delivery_address || order.shipping_address),
+  );
+  const ehRetirada = order.delivery_method === 'pickup';
+  const ehDigital = order.delivery_method === 'digital';
+  const telefone = order.customer_phone || '';
+  const zap = formatPhoneForWhatsApp(telefone);
+  const canal = CANAL_DO_PEDIDO[order.source || ''] ?? null;
+  // Cobranças que não viraram dinheiro ficam recolhidas: um pedido pago com 3
+  // tentativas canceladas mostrava 4 linhas de mesmo valor e mesmo peso, e a
+  // que importa é a que entrou.
+  const cobrancasVivas = payments.filter((p) => p.status !== 'cancelled' && p.status !== 'failed');
+  const cobrancasMortas = payments.filter((p) => p.status === 'cancelled' || p.status === 'failed');
+
+  /** Um rótulo de seção: peso de texto, não faixa dourada em caixa alta. */
+  const Secao: React.FC<{ children: React.ReactNode; acao?: React.ReactNode }> = ({ children, acao }) => (
+    <div className="mb-2 flex items-baseline justify-between gap-3">
+      <h2 className="text-sm font-semibold text-fg-token">{children}</h2>
+      {acao}
+    </div>
+  );
+
   return (
     <>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_360px]">
-        <section className="rounded-xl border border-border-token bg-surface p-5 sm:p-7">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex min-w-0 items-start gap-4">
-                <button
-                  onClick={onClose}
-                  aria-label={variant === 'modal' ? 'Fechar' : 'Voltar'}
-                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-border-token bg-surface text-fg-token transition hover:bg-surface-2"
-                >
-                  {variant === 'modal' ? <XMarkIcon className="h-5 w-5" /> : <ArrowLeftIcon className="h-5 w-5" />}
-                </button>
-                <div className="min-w-0">
-                  <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-[var(--brand)]">
-                    Pedido Nº {order.order_number}
-                  </p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-strong text-base font-semibold text-[var(--brand)]">
-                      {customerInitials}
-                    </div>
-                    <div className="min-w-0">
-                      {/* Era `text-4xl`: o nome do cliente ocupava a largura
-                          toda e empurrava itens e pagamento para baixo da
-                          dobra. O assunto da tela é o PEDIDO; o nome é quem
-                          pediu. */}
-                      <h1 className="truncate text-2xl font-semibold tracking-[-0.03em] text-fg-token">
-                        {order.customer_name || 'Cliente sem nome'}
-                      </h1>
-                      <p className="mt-1 text-sm text-fg-muted-token">
-                        {formatOrderCreatedAt(order.created_at)}
-                      </p>
-                      {/* Quem é essa pessoa para a loja. Um cliente na décima
-                          compra e um estreante recebem o mesmo cuidado, mas
-                          quem atende merece saber a diferença. */}
-                      {typeof order.pedidos_do_cliente === 'number' && order.pedidos_do_cliente > 0 ? (
-                        <p className="mt-1 text-xs font-medium text-[var(--brand)]">
-                          {order.pedidos_do_cliente === 1
-                            ? 'Primeiro pedido deste cliente'
-                            : `${order.pedidos_do_cliente}º pedido deste cliente`}
+      <div className="flex flex-col gap-5">
+        {/* ── Cabeçalho: número, quem, estado e valor ───────────────────── */}
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              onClick={onClose}
+              aria-label={variant === 'modal' ? 'Fechar' : 'Voltar'}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border-token text-fg-muted-token transition hover:bg-surface-2 hover:text-fg-token"
+            >
+              {variant === 'modal' ? <XMarkIcon className="h-5 w-5" /> : <ArrowLeftIcon className="h-5 w-5" />}
+            </button>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-sm font-semibold text-[var(--brand)]">
+              {customerInitials}
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-semibold tracking-[-0.02em] text-fg-token">
+                {order.customer_name || 'Cliente sem nome'}
+              </h1>
+              <p className="truncate text-xs text-fg-muted-token">
+                <span className="font-mono">#{order.order_number}</span>
+                {' · '}{formatOrderCreatedAt(order.created_at)}
+                {canal ? <>{' · '}{canal}</> : null}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${statusColors}`}>
+              {STATUS_LABELS[order.status.toLowerCase()] || order.status}
+            </span>
+            <span className="text-xl font-semibold tracking-[-0.03em] text-fg-token">
+              {formatCurrency(order.total)}
+            </span>
+          </div>
+        </header>
+
+        {/* ── A régua de status, atravessando o topo ────────────────────── */}
+        <div className="rounded-xl border border-border-token bg-surface px-5 py-4">
+          <FluxoDoStatus order={order} isCancelled={isCancelled} />
+        </div>
+
+        {/* ── Cliente e entrega: uma faixa horizontal, largura inteira ─────
+            Estas três coisas respondem UMA pergunta — para quem e para onde —
+            e viviam em três lugares: telefone num cartão, "Delivery" em outro,
+            e o endereço três blocos abaixo. */}
+        <section className="grid gap-x-6 gap-y-4 rounded-xl border border-border-token bg-surface p-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_auto]">
+          <div className="min-w-0">
+            <p className="mb-1.5 text-xs font-medium text-fg-muted-token">Cliente</p>
+            {telefone ? (
+              <a href={`tel:${telefone}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-fg-token hover:underline">
+                <PhoneIcon className="h-4 w-4 shrink-0 text-fg-muted-token" />
+                {formatPhone(telefone)}
+              </a>
+            ) : (
+              <span className="text-sm text-fg-muted-token">Sem telefone</span>
+            )}
+            {typeof order.pedidos_do_cliente === 'number' && order.pedidos_do_cliente > 0 ? (
+              <p className="mt-1 text-xs text-fg-muted-token">
+                {order.pedidos_do_cliente === 1 ? 'Primeiro pedido' : `${order.pedidos_do_cliente}º pedido na loja`}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleToggleNotifications}
+              disabled={togglingNotifications}
+              aria-pressed={notificationsSuppressed}
+              title={notificationsSuppressed
+                ? 'As mensagens automáticas de status estão silenciadas para este pedido. Clique para reativar.'
+                : 'Silenciar as mensagens automáticas de WhatsApp deste pedido (ex.: pedido de balcão).'}
+              className={`mt-2 inline-flex items-center gap-1.5 rounded px-1.5 py-1 text-xs font-medium transition disabled:opacity-50 ${
+                notificationsSuppressed
+                  ? 'bg-[var(--warning-soft)] text-[var(--warning)]'
+                  : 'text-fg-muted-token hover:bg-surface-2'
+              }`}
+            >
+              {notificationsSuppressed
+                ? <><BellSlashIcon className="h-3.5 w-3.5" />Avisos silenciados</>
+                : <><BellIcon className="h-3.5 w-3.5" />Avisando a cada etapa</>}
+            </button>
+          </div>
+
+          <div className="min-w-0 sm:border-l sm:border-border-token sm:pl-6">
+            <p className="mb-1.5 text-xs font-medium text-fg-muted-token">
+              {ehRetirada ? 'Retirada' : ehDigital ? 'Cobrança' : 'Entrega'}
+            </p>
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-fg-token">
+              {ehRetirada ? <HomeIcon className="h-4 w-4 shrink-0 text-fg-muted-token" />
+                : ehDigital ? <LinkIcon className="h-4 w-4 shrink-0 text-fg-muted-token" />
+                : <TruckIcon className="h-4 w-4 shrink-0 text-fg-muted-token" />}
+              {ehRetirada ? 'Retirada no balcão'
+                : ehDigital ? 'Link de pagamento'
+                : entrega.bairro || 'Entrega'}
+            </p>
+            {/* O endereço fica JUNTO de quem recebe — e com o complemento, que
+                é o que faz a entrega chegar. */}
+            {!ehRetirada && !ehDigital && !entrega.vazio && (
+              <div className="mt-1 space-y-0.5 text-sm leading-snug text-fg-muted-token">
+                {entrega.linhas.map((linha) => <p key={linha}>{linha}</p>)}
+              </div>
+            )}
+            {formatScheduledLabel(order) && (
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded bg-brand-soft px-2 py-1 text-xs font-semibold text-[var(--brand)]">
+                <ClockIcon className="h-3.5 w-3.5" />
+                Agendado: {formatScheduledLabel(order)}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-start gap-2 sm:justify-end">
+            {zap && (
+              <a
+                href={`https://wa.me/${zap}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
+              >
+                <ChatBubbleLeftRightIcon className="h-4 w-4" />
+                WhatsApp
+              </a>
+            )}
+            {!ehRetirada && !ehDigital && entrega.mapa && (
+              <a
+                href={entrega.mapa}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
+              >
+                <MapPinIcon className="h-4 w-4" />
+                Ver no mapa
+              </a>
+            )}
+          </div>
+        </section>
+
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex min-w-0 flex-col gap-5">
+            {/* ── Observações: acima dos itens, é instrução de cozinha ── */}
+            {(order.customer_notes || order.notes) && (
+              <div className="flex gap-2 rounded-xl border border-[var(--warning)]/30 bg-[var(--warning-soft)] px-4 py-3 text-sm text-fg-token">
+                <ExclamationTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--warning)]" />
+                <p className="leading-relaxed">{order.customer_notes || order.notes}</p>
+              </div>
+            )}
+
+            {/* ── O que foi pedido ──────────────────────────────────── */}
+            <section className="rounded-xl border border-border-token bg-surface p-5">
+              <Secao
+                acao={
+                  <span className="text-xs text-fg-muted-token">
+                    {order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'itens'}
+                  </span>
+                }
+              >
+                Itens
+              </Secao>
+
+              <ul className="divide-y divide-border-token">
+                {order.items?.map((item, index) => {
+                  const isSalad = !!(item.options?.is_salad_builder);
+                  const combo = order.combo_items?.find((c) => c.order_item === item.id);
+                  const selectionLines = comboSelectionLines(combo);
+                  return (
+                    <li key={item.id || index} className="flex gap-3 py-2.5 first:pt-0 last:pb-0">
+                      <span className="mt-0.5 shrink-0 rounded bg-surface-2 px-1.5 py-0.5 font-mono text-xs font-semibold text-fg-token">
+                        {item.quantity}×
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-fg-token">
+                          {item.product_name}
+                          {item.variant_name ? ` — ${item.variant_name}` : ''}
+                          {isSalad && (
+                            <span className="ml-2 rounded-full bg-[var(--success-soft)] px-1.5 py-0.5 text-badge font-semibold text-[var(--success)]">
+                              Salada
+                            </span>
+                          )}
                         </p>
-                      ) : null}
-                    </div>
+                        {selectionLines.length > 0 && (
+                          <ul className="mt-0.5 space-y-0.5" data-testid="combo-selections">
+                            {selectionLines.map((line, i) => (
+                              <li key={i} className="text-xs text-fg-muted-token">{line}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {item.notes && (
+                          <p className="mt-0.5 text-xs italic text-fg-muted-token">{item.notes}</p>
+                        )}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold text-fg-token">{formatCurrency(item.subtotal)}</p>
+                        {item.quantity > 1 && (
+                          <p className="text-xs text-fg-muted-token">{formatCurrency(item.unit_price)} cada</p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <dl className="mt-4 space-y-1.5 border-t border-border-token pt-3 text-sm">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-fg-muted-token">Subtotal</dt>
+                  <dd>{formatCurrency(order.subtotal)}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-fg-muted-token">Entrega</dt>
+                  <dd>{formatCurrency(order.delivery_fee || order.shipping_cost)}</dd>
+                </div>
+                {/* De ONDE veio o abatimento: cupom e saldo gasto ficavam
+                    somados num "Desconto" só, e quem abria o pedido não tinha
+                    como saber por que o valor era aquele. */}
+                {cashbackUsado > 0 ? (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-fg-muted-token">Cashback usado</dt>
+                    <dd className="text-[var(--success)]">-{formatCurrency(cashbackUsado)}</dd>
                   </div>
+                ) : null}
+                {order.coupon_code?.trim() ? (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-fg-muted-token">Cupom</dt>
+                    <dd className="font-mono text-xs">{order.coupon_code.trim()}</dd>
+                  </div>
+                ) : null}
+                {order.discount ? (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-fg-muted-token">
+                      {cashbackUsado > 0 ? 'Desconto total' : 'Desconto'}
+                    </dt>
+                    <dd className="text-[var(--success)]">-{formatCurrency(order.discount)}</dd>
+                  </div>
+                ) : null}
+                {manualSurcharge > 0 ? (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-fg-muted-token">Acréscimo</dt>
+                    <dd>{formatCurrency(manualSurcharge)}</dd>
+                  </div>
+                ) : null}
+                {adjustmentReason ? (
+                  <p className="text-xs italic text-fg-muted-token">{adjustmentReason}</p>
+                ) : null}
+                <div className="flex justify-between gap-3 border-t border-border-token pt-2.5 text-base font-semibold">
+                  <dt>Total</dt>
+                  <dd className="tracking-[-0.02em]">{formatCurrency(order.total)}</dd>
                 </div>
-              </div>
+              </dl>
+            </section>
+          </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full px-4 py-2 text-sm font-semibold ${statusColors}`}>
-                  {STATUS_LABELS[order.status.toLowerCase()] || order.status}
-                </span>
-                <span className="rounded-full border border-brand-soft bg-brand-soft px-4 py-2 text-sm font-semibold text-fg-token">
-                  {formatCurrency(order.total)}
-                </span>
-              </div>
-            </div>
+          {/* ══ Coluna de apoio: dinheiro, nota, tempos ════════════════ */}
+          <aside className="flex min-w-0 flex-col gap-5">
 
-            <div aria-hidden="true">
-              <div className="h-[2px] bg-[var(--brand)]" />
-              <div className="mt-[3px] h-px bg-[var(--brand)] opacity-40" />
-            </div>
+            {/* ── Dinheiro ─────────────────────────────────────────── */}
+            <section className="rounded-xl border border-border-token bg-surface p-5">
+              <Secao>Pagamento</Secao>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-border-token bg-canvas px-4 py-3">
-                <p className="overline font-display tracking-[0.24em] text-[var(--brand)]">Contato</p>
-                <div className="mt-2 flex items-center gap-2 text-sm font-medium">
-                  <PhoneIcon className="h-4 w-4 text-[var(--brand)]" />
-                  {order.customer_phone ? (
-                    <a href={`tel:${order.customer_phone}`} className="hover:underline">
-                      {order.customer_phone}
-                    </a>
-                  ) : (
-                    <span className="text-fg-muted-token">Não informado</span>
-                  )}
+              {hasPaymentBalance && amountDue > 0 ? (
+                <div className="flex items-baseline justify-between gap-3 rounded-lg bg-[var(--warning-soft)] px-3 py-2.5">
+                  <span className="text-sm font-semibold text-[var(--warning)]">Falta receber</span>
+                  <span className="text-lg font-semibold text-[var(--warning)]">{formatCurrency(amountDue)}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleToggleNotifications}
-                  disabled={togglingNotifications}
-                  aria-pressed={notificationsSuppressed}
-                  title={notificationsSuppressed
-                    ? 'As mensagens automáticas de status estão silenciadas para este pedido. Clique para reativar.'
-                    : 'Silenciar as mensagens automáticas de WhatsApp deste pedido (ex.: pedido de balcão).'}
-                  className={`mt-2 flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
-                    notificationsSuppressed
-                      ? 'bg-[var(--warning)]/15 text-[var(--warning)]'
-                      : 'text-fg-muted-token hover:bg-surface-2'
-                  }`}
+              ) : isFullyPaid ? (
+                <div className="flex items-center gap-2 rounded-lg bg-[var(--success-soft)] px-3 py-2.5 text-sm font-semibold text-[var(--success)]">
+                  <CheckCircleIcon className="h-5 w-5 shrink-0" />
+                  Pago
+                </div>
+              ) : (
+                <div className={`rounded-lg px-3 py-2.5 text-sm font-semibold ${
+                  paymentStatus === 'failed' ? 'bg-[var(--danger-soft)] text-[var(--danger)]' : 'bg-[var(--warning-soft)] text-[var(--warning)]'
+                }`}>
+                  {paymentStatusLabel[paymentStatus] || paymentStatus}
+                </div>
+              )}
+
+              <p className="mt-2 text-sm text-fg-muted-token">
+                {paymentMethodLabel[order.payment_method || ''] || order.payment_method || 'Forma não informada'}
+              </p>
+
+              {/* PIX gravado no pedido: era texto de 200 caracteres para
+                  selecionar na mão, em 117 dos 172 pedidos da loja. */}
+              {order.pix_code && (
+                <div className="mt-3 flex items-center gap-2">
+                  {/* O código fica visível, truncado: se o navegador negar a
+                      área de transferência, o aviso manda copiar à mão — e
+                      sem o texto na tela não haveria o que copiar. */}
+                  <code
+                    title={order.pix_code}
+                    className="min-w-0 flex-1 truncate rounded border border-dashed border-border-token px-2 py-1.5 text-badge text-fg-muted-token"
+                  >
+                    {order.pix_code}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyPix(order.pix_code as string)}
+                    aria-label="Copiar código PIX"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border-token px-2.5 py-1.5 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
+                  >
+                    <DocumentDuplicateIcon className="h-4 w-4" />
+                    Copiar
+                  </button>
+                </div>
+              )}
+
+              {paymentLink && (
+                <a
+                  href={paymentLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
                 >
-                  {notificationsSuppressed ? (
-                    <>
-                      <BellSlashIcon className="h-4 w-4" />
-                      Notificações silenciadas
-                    </>
-                  ) : (
-                    <>
-                      <BellIcon className="h-4 w-4" />
-                      Notificar cliente: ativo
-                    </>
-                  )}
-                </button>
-              </div>
+                  <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                  Abrir link de pagamento
+                </a>
+              )}
 
-              <div className="rounded-xl border border-border-token bg-canvas px-4 py-3">
-                <p className="overline font-display tracking-[0.24em] text-[var(--brand)]">Entrega</p>
-                <div className="mt-2 flex items-center gap-2 text-sm font-medium">
-                  {order.delivery_method === 'pickup' ? (
-                    <>
-                      <HomeIcon className="h-4 w-4 text-[var(--brand)]" />
-                      <span>Retirada no balcão</span>
-                    </>
-                  ) : order.delivery_method === 'digital' ? (
-                    // Cobrança por link de pagamento não tem para onde entregar —
-                    // mostrar "Delivery" + caminhão era a confusão do dono.
-                    <>
-                      <LinkIcon className="h-4 w-4 text-[var(--brand)]" />
-                      <span>Link de pagamento</span>
-                    </>
-                  ) : (
-                    <>
-                      <TruckIcon className="h-4 w-4 text-[var(--brand)]" />
-                      <span>Delivery</span>
-                    </>
-                  )}
-                </div>
-                {formatScheduledLabel(order) && (
-                  <div className="mt-2 flex items-center gap-2 rounded bg-[var(--brand)]/10 px-2 py-1.5 text-xs font-semibold text-[var(--brand)]">
-                    <ClockIcon className="h-4 w-4" />
-                    Agendado: {formatScheduledLabel(order)}
+              {/* Cobrar a diferença */}
+              {amountDue > 0 && (
+                <div className="mt-3 space-y-2 border-t border-border-token pt-3">
+                  <label className="block text-xs text-fg-muted-token" htmlFor="valor-da-cobranca">
+                    Valor da cobrança (R$)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="valor-da-cobranca"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      aria-label="Valor da cobrança"
+                      value={chargeAmount}
+                      onChange={(e) => setChargeAmount(e.target.value)}
+                      className="w-24 rounded-lg border border-border-token bg-surface px-2.5 py-2 text-sm outline-none focus:border-[var(--brand)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleGenerateCharge}
+                      disabled={generatingCharge}
+                      className="flex-1 rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-semibold text-brand-strong transition hover:bg-[var(--brand-hover)] disabled:opacity-60"
+                    >
+                      {generatingCharge ? 'Gerando…' : 'Gerar cobrança PIX'}
+                    </button>
                   </div>
-                )}
-              </div>
-
-              <div className="rounded-xl border border-border-token bg-canvas px-4 py-3">
-                <p className="overline font-display tracking-[0.24em] text-[var(--brand)]">Pagamento</p>
-                <div className="mt-2 flex items-center justify-between gap-2 text-sm">
-                  <span className="font-medium">
-                    {paymentMethodLabel[order.payment_method || ''] || order.payment_method || 'Não informado'}
-                  </span>
-                  <span className={`font-semibold ${paymentStatus === 'paid' ? 'text-[var(--success)]' : paymentStatus === 'failed' ? 'text-[var(--danger)]' : 'text-[var(--warning)]'}`}>
-                    {paymentStatusLabel[paymentStatus] || paymentStatus}
-                  </span>
                 </div>
-              </div>
-            </div>
+              )}
 
-            <div className="rounded-xl border border-border-token bg-surface-2 px-4 py-4 sm:px-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="overline font-display tracking-[0.28em] text-[var(--brand)]">
-                    Progresso operacional
-                  </p>
-                  <p className="mt-1 text-sm text-fg-muted-token">
-                    Avance o pedido sem sair da tela.
-                  </p>
+              {/* PIX recém-gerado */}
+              {generatedPix && (
+                <div className="mt-3 space-y-2 border-t border-border-token pt-3">
+                  {generatedPix.via_link && (
+                    <p className="text-xs text-fg-muted-token">
+                      O Mercado Pago recusou o PIX. A cobrança seguiu por link — mande o link
+                      abaixo para o cliente.
+                    </p>
+                  )}
+                  {generatedPix.pix_code && (
+                    <div className="flex items-center gap-2">
+                      <code
+                        title={generatedPix.pix_code}
+                        className="min-w-0 flex-1 truncate rounded border border-dashed border-border-token px-2 py-1.5 text-badge text-fg-muted-token"
+                      >
+                        {generatedPix.pix_code}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyPix(generatedPix.pix_code!)}
+                        aria-label="Copiar código PIX"
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--brand)] px-2.5 py-1.5 text-xs font-semibold text-[var(--brand)] transition hover:bg-brand-soft"
+                      >
+                        <DocumentDuplicateIcon className="h-4 w-4" />
+                        Copiar
+                      </button>
+                    </div>
+                  )}
+                  {generatedPix.pix_qr_code && (
+                    <img
+                      src={generatedPix.pix_qr_code.startsWith('data:')
+                        ? generatedPix.pix_qr_code
+                        : `data:image/png;base64,${generatedPix.pix_qr_code}`}
+                      alt="QR Code PIX"
+                      className="mx-auto h-32 w-32 rounded-lg border border-border-token"
+                    />
+                  )}
+                  {generatedPix.ticket_url && (
+                    <a
+                      href={generatedPix.ticket_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-semibold transition hover:bg-surface-2"
+                    >
+                      <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                      Abrir link de pagamento
+                    </a>
+                  )}
                 </div>
-              </div>
-              <div className="mt-4">
-                <ProgressTimeline currentStatus={order.status} isCancelled={isCancelled} />
-              </div>
+              )}
 
-              {/* As bolinhas dizem ONDE o pedido está. Não dizem QUANDO cada
-                  coisa aconteceu nem quanto demorou — e é a duração que
-                  responde a reclamação do cliente e mostra onde a operação
-                  trava. A API já gravava todos esses horários; ninguém
-                  mostrava. */}
-              {marcos.length > 1 && (
-                <ol className="mt-5 space-y-2 border-t border-border-token pt-4">
+              {/* Cobranças: as que valeram em cima, as mortas recolhidas */}
+              {cobrancasVivas.length > 0 && (
+                <ul className="mt-3 space-y-1.5 border-t border-border-token pt-3 text-xs">
+                  {cobrancasVivas.map((payment) => (
+                    <li key={payment.id} className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-fg-muted-token">
+                        {PAYMENT_METHOD_LABELS[payment.payment_method] ?? payment.payment_method}
+                        {' · '}
+                        {/* Vocabulário da COBRANÇA, não do pedido: aqui o
+                            dinheiro fica `completed`, o pedido fica `paid`. */}
+                        {PAYMENT_RECORD_STATUS_LABELS[payment.status] ?? payment.status}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        {/* O link mora no StorePayment. Sem ele na linha, ao
+                            reabrir o pedido sobrava "Aguardando" e nada para
+                            mandar ao cliente. */}
+                        {payment.payment_url && payment.status === 'pending' && (
+                          <a
+                            href={payment.payment_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-full border border-border-token px-2 py-0.5 font-medium text-fg-token hover:bg-surface-2"
+                          >
+                            Abrir cobrança
+                          </a>
+                        )}
+                        <span className="font-semibold text-fg-token">{formatCurrency(payment.amount)}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {cobrancasMortas.length > 0 && (
+                <details className="mt-2 text-xs">
+                  <summary className="cursor-pointer text-fg-muted-token hover:text-fg-token">
+                    {cobrancasMortas.length} tentativa{cobrancasMortas.length > 1 ? 's' : ''} sem sucesso
+                  </summary>
+                  <ul className="mt-1.5 space-y-1">
+                    {cobrancasMortas.map((payment) => (
+                      <li key={payment.id} className="flex items-center justify-between gap-2 text-fg-muted-token">
+                        <span className="min-w-0 truncate">
+                          {PAYMENT_METHOD_LABELS[payment.payment_method] ?? payment.payment_method}
+                          {' · '}
+                          {PAYMENT_RECORD_STATUS_LABELS[payment.status] ?? payment.status}
+                        </span>
+                        <span className="shrink-0">{formatCurrency(payment.amount)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </section>
+
+            {/* ── Quando cada coisa aconteceu ───────────────────────── */}
+            {marcos.length > 1 && (
+              <section className="rounded-xl border border-border-token bg-surface p-5">
+                <Secao>Tempos</Secao>
+                <ol className="space-y-1.5 text-xs">
                   {marcos.map((m) => (
-                    <li key={m.chave} className="flex items-baseline gap-3 text-sm">
-                      <span className="w-12 shrink-0 font-mono text-xs text-fg-muted-token">
+                    <li key={m.chave} className="flex items-baseline gap-2">
+                      <span className="w-10 shrink-0 font-mono text-fg-muted-token">
                         {m.quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                       <span className={m.ruim ? 'font-semibold text-[var(--danger)]' : 'text-fg-token'}>
                         {m.rotulo}
                       </span>
                       {m.minutosDesdeAnterior !== null && (
-                        <span className="ml-auto text-xs text-fg-muted-token">
+                        <span className="ml-auto shrink-0 text-fg-muted-token">
                           +{duracaoLegivel(m.minutosDesdeAnterior)}
                         </span>
                       )}
                     </li>
                   ))}
                 </ol>
-              )}
-            </div>
-
-            <div className="rounded-xl border border-border-token bg-surface px-4 py-4 sm:px-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-semibold">Itens do pedido</h2>
-                  <p className="text-sm text-fg-muted-token">
-                    Resumo compacto para conferência rápida.
-                  </p>
-                </div>
-                <span className="text-sm font-semibold text-fg-muted-token">
-                  {/* "1 item(ns)" denuncia a máquina numa tela que o dono
-                      mostra para o cliente ao telefone. */}
-                  {order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'itens'}
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                {order.items?.map((item, index) => {
-                  const isSalad = !!(item.options?.is_salad_builder);
-                  const combo = order.combo_items?.find((c) => c.order_item === item.id);
-                  const selectionLines = comboSelectionLines(combo);
-                  return (
-                    <div
-                      key={item.id || index}
-                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-border-token bg-surface-2 px-4 py-3"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold">
-                            {item.quantity}x {item.product_name}
-                            {item.variant_name ? ` — ${item.variant_name}` : ''}
-                          </span>
-                          {isSalad && (
-                            <span className="overline rounded-full bg-[var(--success-soft)] px-2 py-0.5 text-[var(--success)]">
-                              Salada
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1 text-xs text-fg-muted-token">
-                          {formatCurrency(item.unit_price)} cada
-                        </p>
-                        {selectionLines.length > 0 && (
-                          <ul className="mt-1 space-y-0.5" data-testid="combo-selections">
-                            {selectionLines.map((line, i) => (
-                              <li key={i} className="text-xs font-medium text-fg-token">
-                                • {line}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {item.notes && (
-                          <p className="mt-1 text-xs text-fg-muted-token">
-                            {item.notes}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right text-sm font-semibold">
-                        {formatCurrency(item.subtotal)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 grid gap-2 rounded border border-dashed border-border-token px-4 py-4 text-sm sm:grid-cols-2">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-fg-muted-token">Subtotal</span>
-                  <span className="font-semibold">{formatCurrency(order.subtotal)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-fg-muted-token">Entrega</span>
-                  <span className="font-semibold">{formatCurrency(order.delivery_fee || order.shipping_cost)}</span>
-                </div>
-                {/* De ONDE veio o abatimento. O modal mostrava só "Desconto"
-                    somado: o cupom e o saldo gasto ficavam invisíveis, mesmo
-                    já vindo do backend, e quem abria o pedido não tinha como
-                    saber por que o valor era aquele. */}
-                {cashbackUsado > 0 ? (
-                  <div className="flex items-center justify-between gap-3 sm:col-span-2">
-                    <span className="text-fg-muted-token">
-                      Cashback usado
-                    </span>
-                    <span className="font-semibold text-[var(--success)]">-{formatCurrency(cashbackUsado)}</span>
-                  </div>
-                ) : null}
-                {order.coupon_code?.trim() ? (
-                  <div className="flex items-center justify-between gap-3 sm:col-span-2">
-                    <span className="text-fg-muted-token">Cupom</span>
-                    <span className="rounded-full border border-dashed border-border-token px-2 py-0.5 font-mono text-xs font-semibold">
-                      {order.coupon_code.trim()}
-                    </span>
-                  </div>
-                ) : null}
-                {order.discount ? (
-                  <div className="sm:col-span-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-fg-muted-token">
-                        {cashbackUsado > 0 ? 'Desconto total' : 'Desconto'}
-                      </span>
-                      <span className="font-semibold text-[var(--success)]">-{formatCurrency(order.discount)}</span>
-                    </div>
-                    {order.manual_discount_reason?.trim() ? (
-                      <p className="mt-0.5 text-xs italic text-fg-muted-token">
-                        {order.manual_discount_reason.trim()}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-                {manualSurcharge > 0 ? (
-                  <div className="sm:col-span-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-fg-muted-token">Acréscimo</span>
-                      <span className="font-semibold">{formatCurrency(manualSurcharge)}</span>
-                    </div>
-                    {order.surcharge_reason?.trim() ? (
-                      <p className="mt-0.5 text-xs italic text-fg-muted-token">
-                        {order.surcharge_reason.trim()}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-                {!order.surcharge_reason?.trim() && !order.manual_discount_reason?.trim() && adjustmentReason ? (
-                  <div className="sm:col-span-2 text-xs text-fg-muted-token italic">
-                    {adjustmentReason}
-                  </div>
-                ) : null}
-                <div className="flex items-center justify-between gap-3 border-t border-border-token pt-3 text-base sm:col-span-2">
-                  <span className="font-semibold">Total do pedido</span>
-                  <span className="text-xl font-semibold tracking-[-0.03em]">{formatCurrency(order.total)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Saldo de pagamento (Fase 3) */}
-            {hasPaymentBalance && (
-              amountDue > 0 ? (
-                <div
-                  role="status"
-                  className="flex items-center justify-between gap-3 rounded-xl border border-border-token bg-[var(--warning-soft)] px-4 py-4 text-fg-token sm:px-5"
-                >
-                  <span className="text-sm font-semibold">Falta receber</span>
-                  <span className="text-lg font-semibold tracking-[-0.02em]">{formatCurrency(amountDue)}</span>
-                </div>
-              ) : (
-                <div
-                  role="status"
-                  className="flex items-center gap-2 rounded-xl border border-border-token bg-[var(--success-soft)] px-4 py-4 text-sm font-semibold text-[var(--success)] sm:px-5"
-                >
-                  <CheckIcon className="h-5 w-5" />
-                  Pago integralmente
-                </div>
-              )
+              </section>
             )}
+          </aside>
+        </div>
 
-            {/* Notes — always visible, critical for kitchen ops */}
-            {(order.customer_notes || order.notes) && (
-              <div className="rounded-xl border border-border-token bg-[var(--warning-soft)] px-4 py-4 text-fg-token sm:px-5">
-                <p className="overline font-display tracking-[0.24em] mb-2 text-[var(--warning)]">Observações do cliente</p>
-                <p className="text-sm leading-relaxed">{order.customer_notes || order.notes}</p>
-              </div>
-            )}
-
-            {/* Endereço de entrega — só para pedido de delivery de verdade.
-                'digital' (link de pagamento) e 'pickup' não têm entrega. */}
-            {compactAddress && order.delivery_method === 'delivery' && (
-              <div className="rounded-xl border border-border-token bg-surface px-4 py-4 sm:px-5">
-                <p className="overline tracking-[0.24em] mb-2">Endereço de entrega</p>
-                <div className="flex items-start gap-2 text-sm">
-                  <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]" />
-                  <span>{compactAddress}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Payment details — secondary info in collapsible */}
-            {(paymentLink || order.pix_code || payments.length > 0 || (hasPaymentBalance && amountDue > 0)) && (
-              <details className="group rounded-xl border border-border-token bg-surface px-4 py-4 sm:px-5" open>
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-semibold">Dados de pagamento</h2>
-                  </div>
-                  <ChevronDownIcon className="h-5 w-5 text-fg-muted-token transition group-open:rotate-180" />
-                </summary>
-
-                <div className="mt-4 space-y-4 text-sm">
-                  {/* F3 — gerar cobrança PIX da diferença */}
-                  {amountDue > 0 && (
-                    <div className="space-y-3 rounded border border-dashed border-brand-soft bg-surface px-4 py-4 ">
-                      <p className="overline font-display tracking-[0.2em] text-[var(--brand)]">
-                        Gerar cobrança PIX
-                      </p>
-                      <div className="flex flex-wrap items-end gap-3">
-                        <label className="flex flex-col gap-1 text-xs">
-                          <span className="text-fg-muted-token">Valor da cobrança (R$)</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            inputMode="decimal"
-                            aria-label="Valor da cobrança"
-                            value={chargeAmount}
-                            onChange={(e) => setChargeAmount(e.target.value)}
-                            className="w-36 rounded-xl border border-border-token bg-surface px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={handleGenerateCharge}
-                          disabled={generatingCharge}
-                          className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-brand-strong transition hover:bg-[var(--brand-hover)] disabled:opacity-60"
-                        >
-                          {generatingCharge ? 'Gerando...' : 'Gerar cobrança PIX'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* F3 — PIX recém-gerado: copia-e-cola + QR + link */}
-                  {generatedPix && (
-                    <div className="space-y-3 rounded border border-brand-soft bg-surface px-4 py-4 ">
-                      {generatedPix.via_link && (
-                        <p className="text-xs text-fg-muted-token">
-                          O PIX foi recusado pelo Mercado Pago. A cobrança seguiu por link de
-                          pagamento — mande o link abaixo para o cliente.
-                        </p>
-                      )}
-                      {generatedPix.pix_code && (
-                        <div className="space-y-2">
-                          <span className="text-xs font-semibold">PIX copia e cola</span>
-                          <div className="flex items-center gap-2">
-                            <code className="block flex-1 break-all rounded border border-dashed border-border-token px-3 py-2 text-xs">
-                              {generatedPix.pix_code}
-                            </code>
-                            <button
-                              type="button"
-                              onClick={() => handleCopyPix(generatedPix.pix_code!)}
-                              className="shrink-0 rounded-full border border-border-token px-3 py-2 text-xs font-medium hover:bg-surface-2"
-                            >
-                              Copiar
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      {generatedPix.pix_qr_code && (
-                        <img
-                          src={generatedPix.pix_qr_code.startsWith('data:')
-                            ? generatedPix.pix_qr_code
-                            : `data:image/png;base64,${generatedPix.pix_qr_code}`}
-                          alt="QR Code PIX"
-                          className="h-40 w-40 rounded-xl border border-border-token"
-                        />
-                      )}
-                      {generatedPix.ticket_url && (
-                        <a
-                          href={generatedPix.ticket_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex rounded-full border border-border-token px-4 py-2 font-medium hover:bg-surface-2"
-                        >
-                          Abrir link de pagamento
-                        </a>
-                      )}
-                    </div>
-                  )}
-
-                  {/* F4 — lista de cobranças do pedido */}
-                  {payments.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="overline font-display tracking-[0.2em] text-[var(--brand)]">
-                        Cobranças
-                      </p>
-                      {payments.map((payment) => (
-                        <div key={payment.id} className="flex items-center justify-between gap-3 rounded-xl border border-border-token px-4 py-3">
-                          <div>
-                            <p className="font-medium">
-                              {PAYMENT_METHOD_LABELS[payment.payment_method] ?? payment.payment_method}
-                            </p>
-                            <p className="text-xs text-fg-muted-token">
-                              {/* Vocabulário da COBRANÇA, não do pedido: aqui o
-                                  dinheiro fica `completed`, o pedido fica
-                                  `paid`. Reusar o mapa do pedido é o que
-                                  mostrava "completed" cru na lista. */}
-                              {PAYMENT_RECORD_STATUS_LABELS[payment.status] ?? payment.status}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {/* O link mora no StorePayment, mas só aparecia no
-                                instante da geração: ao reabrir o pedido a
-                                linha era "Aguardando" e mais nada, e o
-                                operador não tinha o que mandar pro cliente. */}
-                            {payment.payment_url && payment.status === 'pending' && (
-                              <a
-                                href={payment.payment_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="rounded-full border border-border-token px-3 py-1.5 text-xs font-medium hover:bg-surface-2"
-                              >
-                                Abrir cobrança
-                              </a>
-                            )}
-                            <span className="font-semibold">{formatCurrency(payment.amount)}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {order.pix_code && (
-                    <div className="break-all rounded border border-dashed border-border-token px-4 py-3 text-xs">
-                      <span className="font-semibold">PIX copia e cola:</span> {order.pix_code}
-                    </div>
-                  )}
-
-                  {paymentLink && (
-                    <a
-                      href={paymentLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex rounded-full border border-border-token px-4 py-2 font-medium hover:bg-surface-2"
-                    >
-                      Abrir link de pagamento
-                    </a>
-                  )}
-                </div>
-              </details>
-            )}
-          </div>
-        </section>
-
-        <aside className="flex flex-col gap-4 lg:sticky lg:top-6 lg:h-fit">
-          <div className="rounded border border-[var(--border-strong)] bg-brand-strong p-5 text-canvas dark:text-fg-token sm:p-6">
-            <p className="overline font-display tracking-[0.28em] text-[var(--brand)]">
-              Ação principal
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">
-              {nextAction ? nextAction.label : isCancelled ? 'Pedido cancelado' : 'Pedido concluído'}
-            </h2>
-            <p className="mt-2 text-sm opacity-70">
-              Só o próximo passo operacional fica em destaque.
-            </p>
-
-            {nextAction && !isCancelled && !isCompleted && (
-              <button
-                onClick={() => handleAction(nextAction.action)}
-                disabled={!!actionLoading}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded bg-[var(--brand)] px-4 py-4 text-base font-semibold text-brand-strong transition-transform hover:-translate-y-0.5 hover:bg-[var(--brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {actionLoading === nextAction.action ? (
-                  <>
-                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Processando...
-                  </>
-                ) : (
-                  <>
-                    <CheckIcon className="h-5 w-5" />
-                    {nextAction.label}
-                  </>
-                )}
-              </button>
-            )}
-
-            {order && order.delivery_method === 'delivery' && !isCancelled && !isCompleted && (
-              <button
-                onClick={() => setShowUberModal(true)}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-base font-semibold transition-colors hover:bg-surface/5"
-              >
-                <TruckIcon className="h-5 w-5" />
-                Enviar para Uber Direct
-              </button>
-            )}
-
-            <div className="mt-6 grid gap-2">
+        {/* ── Barra de ações: secundárias à esquerda, a principal à direita ── */}
+        <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-token bg-surface/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {/* Três impressões numa fileira, não três botões de largura total:
+                é uma escolha, não três decisões. */}
+            <span className="inline-flex overflow-hidden rounded-lg border border-border-token">
               <button
                 onClick={() => handlePrint(false)}
-                className="flex items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-surface/5"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
               >
                 <PrinterIcon className="h-4 w-4" />
-                Imprimir (completo)
+                Pedido
               </button>
-
               <button
                 onClick={() => handlePrint(true)}
-                className="flex items-center justify-center gap-2 rounded border border-[var(--brand)]/30 px-4 py-3 text-sm font-medium text-[var(--brand)] transition hover:bg-[var(--brand)]/10"
+                title="Comanda sem preços, para a cozinha"
+                className="border-l border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
               >
-                <PrinterIcon className="h-4 w-4" />
-                Comanda cozinha (sem preços)
+                Cozinha
               </button>
-
-              {/* Via de montagem: papel separado de propósito. A composição
-                  de uma Tábua de Frios são dez linhas — somada à comanda de
-                  entrega, ela afoga o que o entregador precisa ler. */}
               <button
                 onClick={() => handlePrint(true, true)}
-                className="flex items-center justify-center gap-2 rounded border border-[var(--brand)]/30 px-4 py-3 text-sm font-medium text-[var(--brand)] transition hover:bg-[var(--brand)]/10"
+                title="Via de montagem, com a composição de cada item"
+                className="border-l border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
               >
-                <PrinterIcon className="h-4 w-4" />
-                Comanda de preparo (montagem)
+                Preparo
               </button>
+            </span>
 
+            <button
+              onClick={() => setEditing(true)}
+              className="rounded-lg border border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
+            >
+              Editar
+            </button>
+
+            {/* Some sozinho em loja sem emissão configurada. */}
+            <NotaFiscalPedido orderId={order.id} storeSlug={store?.slug || undefined} variant="barra" />
+
+            {order.delivery_method === 'delivery' && !isCancelled && !isCompleted && (
               <button
-                onClick={() => setEditing(true)}
-                className="flex items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-surface/5"
+                onClick={() => setShowUberModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
               >
-                Editar pedido
+                <TruckIcon className="h-4 w-4" />
+                Uber Direct
               </button>
+            )}
 
-              {/* Sempre visível: pedido de convidado responde 'sem_cliente' e
-                  o toast explica — esconder daria a impressão de bug. */}
+            {/* Sempre visível: pedido de convidado responde 'sem_cliente' e o
+                toast explica — esconder daria a impressão de bug. */}
+            <button
+              onClick={handleRecalcularFidelidade}
+              disabled={recalculandoFidelidade}
+              title="Use depois de corrigir os selos de um produto: os pedidos antigos ficam com o valor da época."
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2 disabled:opacity-50"
+            >
+              <ArrowPathIcon className={`h-4 w-4 ${recalculandoFidelidade ? 'animate-spin' : ''}`} />
+              Fidelidade
+            </button>
+
+            {!isCancelled && !isCompleted && (
               <button
-                onClick={handleRecalcularFidelidade}
-                disabled={recalculandoFidelidade}
-                title="Use depois de corrigir os selos de um produto: os pedidos antigos ficam com o valor da época."
-                className="flex items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-surface/5 disabled:opacity-50"
+                onClick={() => setShowCancelModal(true)}
+                className="rounded-lg px-3 py-2 text-xs font-medium text-[var(--danger)] transition hover:bg-[var(--danger-soft)]"
               >
-                <ArrowPathIcon className={`h-4 w-4 ${recalculandoFidelidade ? 'animate-spin' : ''}`} />
-                {recalculandoFidelidade ? 'Recalculando…' : 'Recalcular fidelidade'}
+                Cancelar pedido
               </button>
+            )}
+          </div>
 
-              {!isCancelled && !isCompleted && (
-                <button
-                  onClick={() => setShowCancelModal(true)}
-                  className="flex items-center justify-center gap-2 rounded border border-white/10 px-4 py-3 text-sm font-medium text-danger-400 transition hover:bg-surface/5"
-                >
-                  <XMarkIcon className="h-4 w-4" />
-                  Cancelar pedido
-                </button>
+          {nextAction && !isCancelled && !isCompleted ? (
+            <button
+              onClick={() => handleAction(nextAction.action)}
+              disabled={!!actionLoading}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--brand)] px-6 py-2.5 text-sm font-semibold text-brand-strong transition hover:bg-[var(--brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {actionLoading === nextAction.action ? (
+                <>
+                  <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                  Salvando…
+                </>
+              ) : (
+                <>
+                  <CheckIcon className="h-4 w-4" />
+                  {nextAction.label}
+                </>
               )}
-            </div>
-
-            {/* Só renderiza em loja com emissão configurada — o componente
-                se esconde sozinho quando a loja não emite. */}
-            <NotaFiscalPedido orderId={order.id} storeSlug={store?.slug || undefined} />
-          </div>
-
-          <div className="rounded-xl border border-border-token bg-surface p-5 sm:p-6">
-            <p className="overline font-display tracking-[0.28em] text-[var(--brand)]">
-              Leitura rápida
-            </p>
-            <div className="mt-4 grid gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-fg-muted-token">Status</span>
-                <span className="text-sm font-semibold">{STATUS_LABELS[order.status.toLowerCase()] || order.status}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-fg-muted-token">Itens</span>
-                <span className="text-sm font-semibold">{order.items?.length || 0}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-fg-muted-token">Total</span>
-                <span className="text-sm font-semibold">{formatCurrency(order.total)}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-fg-muted-token">Criado</span>
-                <span className="text-sm font-semibold">{format(order.created_at ? new Date(order.created_at) : new Date(), 'HH:mm')}</span>
-              </div>
-            </div>
-          </div>
-        </aside>
+            </button>
+          ) : (
+            <span className="px-2 text-xs font-medium text-fg-muted-token">
+              {isCancelled ? 'Pedido cancelado' : 'Pedido concluído'}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Edit Order Drawer */}
