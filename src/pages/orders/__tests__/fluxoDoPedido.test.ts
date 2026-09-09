@@ -6,7 +6,7 @@
  * "Pronto/Entrega" — uma barra tentando ser os dois caminhos ao mesmo tempo,
  * que não descrevia nenhum dos dois.
  */
-import { etapasDoPedido } from '../fluxoDoPedido';
+import { etapasDoPedido, horariosDasEtapas } from '../fluxoDoPedido';
 
 const pedido = (status: string, delivery_method = 'delivery') =>
   ({ status, delivery_method }) as never;
@@ -51,4 +51,49 @@ it('status desconhecido cai na primeira etapa em vez de sumir', () => {
 
 it('link de pagamento não tem entregador — segue o caminho da retirada', () => {
   expect(etapasDoPedido(pedido('preparing', 'digital'))[3].rotulo).toBe('Pronto para retirar');
+});
+
+describe('horários dentro da régua', () => {
+  const marco = (chave: string, hora: string, minutos: number | null = null) => ({
+    chave, rotulo: chave, quando: new Date(`2026-09-09T${hora}:00-03:00`),
+    minutosDesdeAnterior: minutos,
+  });
+
+  it('põe o horário de cada marco na etapa correspondente', () => {
+    const h = horariosDasEtapas([
+      marco('created', '07:29'),
+      marco('confirmed', '07:39', 10),
+      marco('preparing', '08:50', 71),
+      marco('out_for_delivery', '09:00', 10),
+      marco('delivered', '09:14', 14),
+    ]);
+    expect(h.recebido?.hora).toBe('07:29');
+    expect(h.confirmado?.hora).toBe('07:39');
+    expect(h.preparo?.hora).toBe('08:50');
+    expect(h.despacho?.hora).toBe('09:00');
+    expect(h.fim?.hora).toBe('09:14');
+  });
+
+  it('guarda quanto tempo levou desde a etapa anterior', () => {
+    const h = horariosDasEtapas([marco('created', '07:29'), marco('confirmed', '07:39', 10)]);
+    expect(h.confirmado?.minutos).toBe(10);
+  });
+
+  it('duas marcações na mesma etapa ficam com a primeira', () => {
+    // `ready` e `out_for_delivery` caem os dois no despacho.
+    const h = horariosDasEtapas([marco('ready', '08:55'), marco('out_for_delivery', '09:00')]);
+    expect(h.despacho?.hora).toBe('08:55');
+  });
+
+  it('retirada pelo cliente fecha o pedido igual entrega', () => {
+    expect(horariosDasEtapas([marco('picked_up', '10:05')]).fim?.hora).toBe('10:05');
+  });
+
+  it('cancelamento não vira etapa da régua', () => {
+    expect(horariosDasEtapas([marco('cancelled', '11:00')]).fim).toBeUndefined();
+  });
+
+  it('sem marcos, nenhuma etapa tem horário', () => {
+    expect(horariosDasEtapas([])).toEqual({});
+  });
 });

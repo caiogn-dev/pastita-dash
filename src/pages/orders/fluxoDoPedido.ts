@@ -66,3 +66,53 @@ export function etapasDoPedido(pedido: PedidoDoFluxo): EtapaDoPedido[] {
           : 'futura',
   }));
 }
+
+/** O que a régua mostra em cada etapa, além do rótulo. */
+export interface HorarioDaEtapa {
+  /** "07:29" — quando a etapa aconteceu. */
+  hora: string;
+  /** Minutos desde a etapa anterior, para a linha entre as bolinhas. */
+  minutos: number | null;
+}
+
+/** De qual marco do pedido sai o horário de cada etapa da régua. */
+const ETAPA_DO_MARCO: Record<string, EtapaDoPedido['chave']> = {
+  created: 'recebido',
+  paid: 'confirmado',
+  confirmed: 'confirmado',
+  preparing: 'preparo',
+  ready: 'despacho',
+  out_for_delivery: 'despacho',
+  picked_up: 'fim',
+  delivered: 'fim',
+};
+
+/**
+ * Os horários do pedido, encaixados nas etapas da régua.
+ *
+ * Eles viviam num cartão "Tempos" na coluna do dinheiro — lugar errado por
+ * duas razões: horário é irmão do status, não do pagamento; e aquele cartão
+ * esticava a coluna lateral, deixando 155px de buraco ao lado dos itens.
+ *
+ * Na régua, cada bolinha ganha a hora e cada trecho de linha ganha a duração:
+ * a linha ENTRE duas etapas é, literalmente, o tempo que se passou entre elas.
+ */
+export function horariosDasEtapas(
+  marcos: Array<{ chave: string; quando: Date; minutosDesdeAnterior: number | null }>,
+): Partial<Record<EtapaDoPedido['chave'], HorarioDaEtapa>> {
+  const saida: Partial<Record<EtapaDoPedido['chave'], HorarioDaEtapa>> = {};
+  for (const marco of marcos) {
+    const etapa = ETAPA_DO_MARCO[marco.chave];
+    // Cancelado e estornado não são etapas do fluxo — o selo de status conta
+    // essa história, e mais alto.
+    if (!etapa) continue;
+    // `ready` e `out_for_delivery` caem os dois no despacho: vale o primeiro,
+    // que é quando a etapa de fato começou.
+    if (saida[etapa]) continue;
+    saida[etapa] = {
+      hora: marco.quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      minutos: marco.minutosDesdeAnterior,
+    };
+  }
+  return saida;
+}

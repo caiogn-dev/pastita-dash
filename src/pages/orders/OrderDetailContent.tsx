@@ -10,7 +10,7 @@
  * is provided by the caller so the same content renders in both surfaces.
  */
 import { copyToClipboard } from '../../utils/clipboard';
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { Fragment, useEffect, useState, useMemo, useRef } from 'react';
 import {
   ArrowLeftIcon,
   ArrowPathIcon,
@@ -92,7 +92,7 @@ import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
 import { useStore } from '../../hooks';
 import { marcosDoPedido, duracaoLegivel } from './marcosDoPedido';
 import { proximaAcaoDoPedido } from './proximaAcao';
-import { etapasDoPedido, type EtapaDoPedido } from './fluxoDoPedido';
+import { etapasDoPedido, horariosDasEtapas, type EtapaDoPedido } from './fluxoDoPedido';
 import { enderecoDaEntrega } from './enderecoDaEntrega';
 // Os rótulos moram num arquivo só, com teste que confere contra a lista de
 // status do backend: era esta duplicação que deixava "cancelled" cru na tela.
@@ -237,15 +237,14 @@ const ICONE_DA_ETAPA: Record<EtapaDoPedido['chave'], typeof ClockIcon> = {
 interface FluxoDoStatusProps {
   order: Order;
   isCancelled?: boolean;
+  /** Horários reais do pedido, para pendurar em cada etapa. */
+  marcos?: Array<{ chave: string; quando: Date; minutosDesdeAnterior: number | null }>;
 }
 
-const FluxoDoStatus: React.FC<FluxoDoStatusProps> = ({ order, isCancelled }) => {
+const FluxoDoStatus: React.FC<FluxoDoStatusProps> = ({ order, isCancelled, marcos = [] }) => {
   const etapas = etapasDoPedido(order);
+  const horarios = horariosDasEtapas(marcos);
   const retirada = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
-  const feitas = etapas.filter((e) => e.estado === 'concluida').length;
-  // A barra preenchida vai até o CENTRO da bolinha atual, por isso a conta é
-  // sobre os vãos (4) e não sobre as etapas (5).
-  const preenchido = (feitas / (etapas.length - 1)) * 100;
 
   if (isCancelled) {
     return (
@@ -257,50 +256,65 @@ const FluxoDoStatus: React.FC<FluxoDoStatusProps> = ({ order, isCancelled }) => 
   }
 
   return (
-    <ol className="relative flex items-start justify-between" aria-label="Andamento do pedido">
-      {/* Trilho: uma linha só atrás de tudo, do centro da primeira bolinha ao
-          centro da última — daí o inset de 10% (metade de 1/5 da largura). */}
-      <span
-        aria-hidden="true"
-        className="absolute left-[10%] right-[10%] top-4 h-0.5 rounded-full bg-border-token"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute left-[10%] top-4 h-0.5 rounded-full bg-[var(--brand)] transition-[width] duration-500"
-        style={{ width: `calc((100% - 20%) * ${preenchido / 100})` }}
-      />
-
-      {etapas.map((etapa) => {
+    <ol className="flex items-start" aria-label="Andamento do pedido">
+      {etapas.map((etapa, i) => {
         const Icone = etapa.chave === 'despacho' && retirada ? ShoppingBagIcon : ICONE_DA_ETAPA[etapa.chave];
         const concluida = etapa.estado === 'concluida';
         const atual = etapa.estado === 'atual';
+        const quando = horarios[etapa.chave];
+        const anterior = i > 0 ? etapas[i - 1] : null;
+
         return (
-          <li
-            key={etapa.chave}
-            className="relative z-10 flex flex-1 flex-col items-center gap-2 text-center"
-            aria-current={atual ? 'step' : undefined}
-          >
-            <span
-              className={[
-                'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
-                concluida
-                  ? 'border-[var(--brand)] bg-[var(--brand)] text-brand-strong'
-                  : atual
-                    ? 'border-[var(--brand)] bg-surface text-[var(--brand)] ring-4 ring-brand-soft'
-                    : 'border-border-token bg-surface text-fg-muted-token',
-              ].join(' ')}
+          <Fragment key={etapa.chave}>
+            {/* O trecho de linha ENTRE duas bolinhas é o tempo que se passou
+                entre elas — é onde a duração pertence. */}
+            {anterior && (
+              <li aria-hidden="true" className="flex flex-1 flex-col items-center pt-4">
+                <span
+                  className={`h-0.5 w-full rounded-full ${
+                    concluida || atual ? 'bg-[var(--brand)]' : 'bg-border-token'
+                  }`}
+                />
+                {quando?.minutos != null && (
+                  <span className="mt-1 text-badge text-fg-muted-token">
+                    {duracaoLegivel(quando.minutos)}
+                  </span>
+                )}
+              </li>
+            )}
+
+            <li
+              className="flex shrink-0 flex-col items-center gap-1.5 px-1 text-center"
+              aria-current={atual ? 'step' : undefined}
             >
-              {concluida ? <CheckIcon className="h-4 w-4" /> : <Icone className="h-4 w-4" />}
-            </span>
-            <span
-              className={[
-                'text-xs leading-tight',
-                atual ? 'font-semibold text-fg-token' : concluida ? 'text-fg-token' : 'text-fg-muted-token',
-              ].join(' ')}
-            >
-              {etapa.rotulo}
-            </span>
-          </li>
+              <span
+                className={[
+                  'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
+                  concluida
+                    ? 'border-[var(--brand)] bg-[var(--brand)] text-brand-strong'
+                    : atual
+                      ? 'border-[var(--brand)] bg-surface text-[var(--brand)] ring-4 ring-brand-soft'
+                      : 'border-border-token bg-surface text-fg-muted-token',
+                ].join(' ')}
+              >
+                {concluida ? <CheckIcon className="h-4 w-4" /> : <Icone className="h-4 w-4" />}
+              </span>
+              <span
+                className={[
+                  'text-xs leading-tight',
+                  atual ? 'font-semibold text-fg-token' : concluida ? 'text-fg-token' : 'text-fg-muted-token',
+                ].join(' ')}
+              >
+                {etapa.rotulo}
+              </span>
+              {/* A hora vive na etapa: o cartão "Tempos" que a guardava
+                  esticava a coluna lateral e abria um buraco ao lado dos
+                  itens. Aqui ela responde "onde" e "quando" de uma vez. */}
+              <span className="text-badge tabular-nums text-fg-muted-token">
+                {quando?.hora ?? '\u00A0'}
+              </span>
+            </li>
+          </Fragment>
         );
       })}
     </ol>
@@ -699,24 +713,40 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
         {/* ── A régua de status, atravessando o topo ────────────────────── */}
         <div className="rounded-xl border border-border-token bg-surface px-5 py-4">
-          <FluxoDoStatus order={order} isCancelled={isCancelled} />
+          <FluxoDoStatus order={order} isCancelled={isCancelled} marcos={marcos} />
         </div>
 
         {/* ── Cliente e entrega: uma faixa horizontal, largura inteira ─────
             Estas três coisas respondem UMA pergunta — para quem e para onde —
             e viviam em três lugares: telefone num cartão, "Delivery" em outro,
             e o endereço três blocos abaixo. */}
-        <section className="grid gap-x-6 gap-y-4 rounded-xl border border-border-token bg-surface p-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_auto]">
+        {/* Duas colunas, não três. Os botões moravam numa coluna só deles e
+            deixavam 110px de buraco embaixo: botão não é informação, ele
+            pertence à coisa que opera. */}
+        <section className="grid gap-x-8 gap-y-4 rounded-xl border border-border-token bg-surface p-5 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <div className="min-w-0">
             <p className="mb-1.5 text-xs font-medium text-fg-muted-token">Cliente</p>
-            {telefone ? (
-              <a href={`tel:${telefone}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-fg-token hover:underline">
-                <PhoneIcon className="h-4 w-4 shrink-0 text-fg-muted-token" />
-                {formatPhone(telefone)}
-              </a>
-            ) : (
-              <span className="text-sm text-fg-muted-token">Sem telefone</span>
-            )}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              {telefone ? (
+                <a href={`tel:${telefone}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-fg-token hover:underline">
+                  <PhoneIcon className="h-4 w-4 shrink-0 text-fg-muted-token" />
+                  {formatPhone(telefone)}
+                </a>
+              ) : (
+                <span className="text-sm text-fg-muted-token">Sem telefone</span>
+              )}
+              {zap && (
+                <a
+                  href={`https://wa.me/${zap}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-2.5 py-1 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
+                >
+                  <ChatBubbleLeftRightIcon className="h-3.5 w-3.5" />
+                  WhatsApp
+                </a>
+              )}
+            </div>
             {typeof order.pedidos_do_cliente === 'number' && order.pedidos_do_cliente > 0 ? (
               <p className="mt-1 text-xs text-fg-muted-token">
                 {order.pedidos_do_cliente === 1 ? 'Primeiro pedido' : `${order.pedidos_do_cliente}º pedido na loja`}
@@ -761,41 +791,30 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 {entrega.linhas.map((linha) => <p key={linha}>{linha}</p>)}
               </div>
             )}
-            {formatScheduledLabel(order) && (
-              <p className="mt-2 inline-flex items-center gap-1.5 rounded bg-brand-soft px-2 py-1 text-xs font-semibold text-[var(--brand)]">
-                <ClockIcon className="h-3.5 w-3.5" />
-                Agendado: {formatScheduledLabel(order)}
-              </p>
-            )}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {formatScheduledLabel(order) && (
+                <span className="inline-flex items-center gap-1.5 rounded bg-brand-soft px-2 py-1 text-xs font-semibold text-[var(--brand)]">
+                  <ClockIcon className="h-3.5 w-3.5" />
+                  Agendado: {formatScheduledLabel(order)}
+                </span>
+              )}
+              {!ehRetirada && !ehDigital && entrega.mapa && (
+                <a
+                  href={entrega.mapa}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-2.5 py-1 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
+                >
+                  <MapPinIcon className="h-3.5 w-3.5" />
+                  Ver no mapa
+                </a>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-start gap-2 sm:justify-end">
-            {zap && (
-              <a
-                href={`https://wa.me/${zap}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
-              >
-                <ChatBubbleLeftRightIcon className="h-4 w-4" />
-                WhatsApp
-              </a>
-            )}
-            {!ehRetirada && !ehDigital && entrega.mapa && (
-              <a
-                href={entrega.mapa}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
-              >
-                <MapPinIcon className="h-4 w-4" />
-                Ver no mapa
-              </a>
-            )}
-          </div>
         </section>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="flex min-w-0 flex-col gap-5">
             {/* ── Observações: acima dos itens, é instrução de cozinha ── */}
             {(order.customer_notes || order.notes) && (
@@ -1108,29 +1127,6 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               )}
             </section>
 
-            {/* ── Quando cada coisa aconteceu ───────────────────────── */}
-            {marcos.length > 1 && (
-              <section className="rounded-xl border border-border-token bg-surface p-5">
-                <Secao>Tempos</Secao>
-                <ol className="space-y-1.5 text-xs">
-                  {marcos.map((m) => (
-                    <li key={m.chave} className="flex items-baseline gap-2">
-                      <span className="w-10 shrink-0 font-mono text-fg-muted-token">
-                        {m.quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span className={m.ruim ? 'font-semibold text-[var(--danger)]' : 'text-fg-token'}>
-                        {m.rotulo}
-                      </span>
-                      {m.minutosDesdeAnterior !== null && (
-                        <span className="ml-auto shrink-0 text-fg-muted-token">
-                          +{duracaoLegivel(m.minutosDesdeAnterior)}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
           </aside>
         </div>
 
