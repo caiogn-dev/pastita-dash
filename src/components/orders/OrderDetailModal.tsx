@@ -88,7 +88,12 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ onOrderChang
               </button>
             </div>
           )}
-          <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+          {/* Sem padding embaixo: a barra de ações do conteúdo é `sticky
+              bottom-0` e traz o próprio respiro. Com `pb`, sobrava uma tira
+              de 20px sob a barra por onde o conteúdo rolado aparecia — era
+              o "sobreposto" (o Subtotal cortado ao meio, o Desconto
+              espiando por baixo). */}
+          <div className="flex-1 overflow-y-auto px-4 pt-5 sm:px-6">
             <OrderDetailContent
               orderId={orderId}
               variant="modal"
