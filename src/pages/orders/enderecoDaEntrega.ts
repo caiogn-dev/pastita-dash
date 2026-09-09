@@ -44,9 +44,30 @@ const jaFoiDito = (acumulado: string, parte: string) => {
   return new RegExp(`(^|\\W)${escapar(p)}(\\W|$)`).test(normalizar(acumulado));
 };
 
+/**
+ * Tira a repetição de DENTRO de um campo.
+ *
+ * O checkout de alguns pedidos grava o endereço formatado inteiro — e às vezes
+ * duas vezes — dentro de `street`. Deduplicar entre campos não alcança isso: a
+ * repetição mora num campo só. Quebramos por vírgula e hífen, que é como o
+ * endereço foi montado, e mantemos a primeira ocorrência de cada pedaço.
+ */
+function semRepeticaoInterna(valor: string): string {
+  const pedacos = valor.split(/\s*,\s*/).filter(Boolean);
+  const vistos = new Set<string>();
+  const mantidos: string[] = [];
+  for (const pedaco of pedacos) {
+    const chave = normalizar(pedaco);
+    if (vistos.has(chave)) continue;
+    vistos.add(chave);
+    mantidos.push(pedaco);
+  }
+  return mantidos.join(', ');
+}
+
 export function enderecoDaEntrega(bruto: Bruto | null | undefined): EnderecoDeEntrega {
   const d = bruto || {};
-  const rua = texto(d.street) || texto(d.address);
+  const rua = semRepeticaoInterna(texto(d.street) || texto(d.address));
   const numero = texto(d.number);
   const complemento = texto(d.complement);
   const referencia = texto(d.reference);

@@ -1135,7 +1135,10 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
         </div>
 
         {/* ── Barra de ações: secundárias à esquerda, a principal à direita ── */}
-        <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-token bg-surface/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+        {/* Fundo OPACO: com `bg-surface/95` os itens passavam por trás e a
+            barra parecia flutuar no meio da lista. Ela é o chão da tela, não
+            uma camada. O `-mb` come o gap do flex para encostar no fim. */}
+        <div className="sticky bottom-0 z-20 -mx-4 -mb-5 flex flex-wrap items-center justify-between gap-3 border-t border-border-token bg-surface px-4 py-3 shadow-[0_-8px_16px_-12px_rgba(0,0,0,0.6)] sm:-mx-6 sm:px-6">
           <div className="flex flex-wrap items-center gap-1.5">
             {/* Três impressões numa fileira, não três botões de largura total:
                 é uma escolha, não três decisões. */}

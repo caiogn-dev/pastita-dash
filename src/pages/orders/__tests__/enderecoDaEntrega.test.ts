@@ -73,3 +73,18 @@ it('a referência do cliente entra como linha própria', () => {
   const e = enderecoDaEntrega({ street: 'Rua A', number: '1', reference: 'portão azul ao lado da padaria' });
   expect(e.linhas).toContain('portão azul ao lado da padaria');
 });
+
+it('limpa a repetição de dentro da própria rua', () => {
+  // O checkout gravou o endereço formatado DUAS VEZES dentro de `street`
+  // (pedido CE-2609098839). Deduplicar entre campos não bastava: a repetição
+  // está dentro de um campo só.
+  const e = enderecoDaEntrega({
+    street: 'Quadra 501 Sul Avenida NS 1, 9, Recepção da ortolife - Centro, Palmas, TO, 9, Recepção da ortolife - Centro, Palmas, TO',
+    number: '9', complement: 'Recepção da ortolife',
+    neighborhood: 'Centro', city: 'Palmas', state: 'TO', zip_code: '77016006',
+  });
+  const texto = e.linhas.join(' | ');
+  expect(texto.match(/Recepção da ortolife/g) ?? []).toHaveLength(1);
+  expect(texto.match(/Palmas/g) ?? []).toHaveLength(1);
+  expect(e.linhas[0]).toBe('Quadra 501 Sul Avenida NS 1, 9, Recepção da ortolife - Centro, Palmas, TO');
+});
