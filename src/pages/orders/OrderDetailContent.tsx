@@ -612,6 +612,9 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   const customerInitials = getInitials(order.customer_name);
   const manualSurcharge =
     Number(order.surcharge_value ?? order.metadata?.manual_surcharge ?? 0) || 0;
+  // O saldo gasto vive no metadata do pedido desde que o cashback existe —
+  // é o `discount` que o soma junto com o cupom.
+  const cashbackUsado = Number(order.metadata?.cashback_aplicado ?? 0) || 0;
   const adjustmentReason =
     order.surcharge_reason?.trim() ||
     order.manual_discount_reason?.trim() ||
@@ -650,6 +653,16 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                       <p className="mt-1 text-sm text-fg-muted-token">
                         {formatOrderCreatedAt(order.created_at)}
                       </p>
+                      {/* Quem é essa pessoa para a loja. Um cliente na décima
+                          compra e um estreante recebem o mesmo cuidado, mas
+                          quem atende merece saber a diferença. */}
+                      {typeof order.pedidos_do_cliente === 'number' && order.pedidos_do_cliente > 0 ? (
+                        <p className="mt-1 text-xs font-medium text-[var(--brand)]">
+                          {order.pedidos_do_cliente === 1
+                            ? 'Primeiro pedido deste cliente'
+                            : `${order.pedidos_do_cliente}º pedido deste cliente`}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -867,10 +880,32 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   <span className="text-fg-muted-token">Entrega</span>
                   <span className="font-semibold">{formatCurrency(order.delivery_fee || order.shipping_cost)}</span>
                 </div>
+                {/* De ONDE veio o abatimento. O modal mostrava só "Desconto"
+                    somado: o cupom e o saldo gasto ficavam invisíveis, mesmo
+                    já vindo do backend, e quem abria o pedido não tinha como
+                    saber por que o valor era aquele. */}
+                {cashbackUsado > 0 ? (
+                  <div className="flex items-center justify-between gap-3 sm:col-span-2">
+                    <span className="text-fg-muted-token">
+                      Cashback usado
+                    </span>
+                    <span className="font-semibold text-[var(--success)]">-{formatCurrency(cashbackUsado)}</span>
+                  </div>
+                ) : null}
+                {order.coupon_code?.trim() ? (
+                  <div className="flex items-center justify-between gap-3 sm:col-span-2">
+                    <span className="text-fg-muted-token">Cupom</span>
+                    <span className="rounded-full border border-dashed border-border-token px-2 py-0.5 font-mono text-xs font-semibold">
+                      {order.coupon_code.trim()}
+                    </span>
+                  </div>
+                ) : null}
                 {order.discount ? (
                   <div className="sm:col-span-2">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-fg-muted-token">Desconto</span>
+                      <span className="text-fg-muted-token">
+                        {cashbackUsado > 0 ? 'Desconto total' : 'Desconto'}
+                      </span>
                       <span className="font-semibold text-[var(--success)]">-{formatCurrency(order.discount)}</span>
                     </div>
                     {order.manual_discount_reason?.trim() ? (

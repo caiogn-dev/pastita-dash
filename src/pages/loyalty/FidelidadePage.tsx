@@ -13,6 +13,9 @@ import { cashbackService, CashbackResponse } from '../../services/cashback';
 import CashbackSection from './CashbackSection';
 import { IndicacoesCard } from './IndicacoesCard';
 import { getStores, updateStore, getCategories, Store, StoreCategory } from '../../services/storesApi';
+import toast from 'react-hot-toast';
+import { publicEmail } from '../../utils/internalEmail';
+import { formatPhone } from '../../utils/formatters';
 
 /**
  * Extrai a mensagem que o servidor mandou, em vez de descartá-la.
@@ -74,6 +77,35 @@ const FidelidadePage: React.FC = () => {
   const [accountsPage, setAccountsPage] = useState(1);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [accountsError, setAccountsError] = useState<string | null>(null);
+  /** `user_id` em voo — trava só a linha clicada, não a tabela inteira. */
+  const [resgatando, setResgatando] = useState<string | null>(null);
+
+  /**
+   * Baixa (ou devolve) um brinde entregue fora do checkout.
+   *
+   * Reconcilia a linha com a RESPOSTA do backend, não com uma conta feita
+   * aqui: quem valida saldo é ele, e recarregar a lista inteira faria a linha
+   * saltar de lugar (a ordem é por quem está mais perto de fechar o cartão).
+   */
+  const registrarResgate = async (conta: LoyaltyAccountRow, quantidade: number) => {
+    if (!storeIdentifier || resgatando) return;
+    setResgatando(String(conta.user_id));
+    try {
+      const atualizada = await loyaltyService.resgatarBrinde(
+        String(storeIdentifier), String(conta.user_id), quantidade,
+      );
+      setAccounts((prev) => prev.map((c) => (
+        String(c.user_id) === String(conta.user_id) ? { ...c, ...atualizada } : c
+      )));
+      toast.success(quantidade > 0 ? 'Resgate registrado' : 'Resgate desfeito');
+    } catch (e) {
+      // A mensagem do servidor é a informação útil ("disponível 1, pedido 4").
+      const resposta = (e as { response?: { data?: unknown } })?.response?.data;
+      toast.error(mensagemDoServidor(resposta) ?? 'Não foi possível registrar o resgate.');
+    } finally {
+      setResgatando(null);
+    }
+  };
   const [resumo, setResumo] = useState<LoyaltyResumo | null>(null);
 
   useEffect(() => {
@@ -562,7 +594,12 @@ const FidelidadePage: React.FC = () => {
                           responde nenhuma pergunta desta tela — vira metadado
                           sob o nome e devolve uma coluna para o que importa. */}
                       <p className="truncate font-semibold">{a.display_name}</p>
-                      <p className="truncate text-caption text-fg-muted-token">{a.email}</p>
+                      {/* O e-mail de quem entra por WhatsApp é fabricado pelo
+                          backend (`<fone>@local.invalid`) e aparecia cru em 30
+                          das 84 contas. O telefone é o contato que existe. */}
+                      <p className="truncate text-caption text-fg-muted-token">
+                        {publicEmail(a.email) ?? (a.phone ? formatPhone(a.phone) : '')}
+                      </p>
                     </div>
                   ),
                 },
@@ -626,6 +663,39 @@ const FidelidadePage: React.FC = () => {
                     ) : (
                       '—'
                     ),
+                },
+                {
+                  // A tela era só relatório: mostrava "3 grátis disponíveis" e
+                  // não deixava dizer que dois já saíram pelo WhatsApp. Em
+                  // produção eram 161 créditos e ZERO resgates — e o storefront
+                  // seguia prometendo brinde já entregue.
+                  chave: 'acoes',
+                  cabecalho: 'Resgate',
+                  alinhamento: 'direita',
+                  render: (a) => (
+                    <div className="flex items-center justify-end gap-1">
+                      {a.available_rewards > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          isLoading={resgatando === a.user_id}
+                          onClick={() => registrarResgate(a, 1)}
+                        >
+                          Marcar resgate
+                        </Button>
+                      )}
+                      {a.redeemed_count > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          isLoading={resgatando === a.user_id}
+                          onClick={() => registrarResgate(a, -1)}
+                        >
+                          Desfazer resgate
+                        </Button>
+                      )}
+                    </div>
+                  ),
                 },
               ]}
             />

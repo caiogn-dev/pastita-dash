@@ -22,7 +22,7 @@ import toast from 'react-hot-toast';
 // erro dos KPIs que o bot trouxe. Nenhum substitui o outro.
 import { PageLoading, EmptyState } from '../../components/common';
 import {
-  Card, Button, Badge, RowActions,
+  Card, Button, Badge, RowActions, Input,
   PageShell, KpiGrid, InsightList, Tabela, SearchInput,
 } from '../../components/ui';
 import { insightsDeClientes } from './insightsDeClientes';
@@ -41,9 +41,9 @@ import { useAnalyticsReport } from '../../hooks/queries/useReports';
 import type { RfmReport, DateRange } from '../../services/reports';
 import { useOrderDetailModal } from '../../hooks/useOrderDetailModal';
 import { useSaldoDoCliente } from '../../hooks/queries/useSaldoDoCliente';
-import type { CashbackClienteRow } from '../../services/cashback';
+import { cashbackService, type CashbackClienteRow } from '../../services/cashback';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatPhone } from '../../utils/formatters';
 import { Loading } from '../../components/common';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -121,7 +121,18 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
   const [saving, setSaving] = useState(false);
   const isEdit = Boolean(customer);
 
+  // O endereço editável é o PADRÃO (`Meta.ordering = ['-is_default', …]`);
+  // os demais viajam intactos no payload — ver `outrosEnderecos`.
   const addr0 = customer?.address_list?.[0];
+  /**
+   * Os outros endereços do cliente, preservados na íntegra.
+   *
+   * `_sync_address_list` no backend é replace-all: apaga todo endereço que não
+   * vier no payload. O formulário edita um só, então sem carregar os demais
+   * junto uma correção de nome DELETAVA os outros — 22 dos 85 clientes da Cê
+   * Saladas têm 2 ou mais. Não é enfeite: é o que impede perda de dado.
+   */
+  const outrosEnderecos = (customer?.address_list ?? []).slice(1);
   const [street, setStreet] = useState(addr0?.street ?? '');
   const [number, setNumber] = useState(addr0?.number ?? '');
   const [complement, setComplement] = useState(addr0?.complement ?? '');
@@ -132,12 +143,14 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
 
   const buildAddressList = (): StoreCustomerAddress[] | undefined => {
     const filled = street || number || neighborhood || city || zip;
-    if (!filled) return undefined;
+    // Sem nada preenchido e sem outros endereços, `undefined` mantém o
+    // comportamento antigo: o backend não recebe a chave e não mexe em nada.
+    if (!filled) return outrosEnderecos.length ? [...outrosEnderecos] : undefined;
     const addr: StoreCustomerAddress = {
       street, number, complement, neighborhood, city, state: uf, zip_code: zip, is_default: true,
     };
     if (addr0?.id) addr.id = addr0.id;
-    return [addr];
+    return [addr, ...outrosEnderecos];
   };
 
   const handleSave = async () => {
@@ -190,7 +203,19 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
             <textarea id="cf-notes" className={inputCls} rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           <div className="pt-2 border-t border-border-token space-y-3">
-            <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">Endereço</p>
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
+                {outrosEnderecos.length ? 'Endereço padrão' : 'Endereço'}
+              </p>
+              {/* Quem vê um formulário com um endereço só assume que o cliente
+                  tem um. Dizer quantos ficaram guardados evita que o dono
+                  redigite aqui um endereço que já existe na conta. */}
+              {outrosEnderecos.length > 0 && (
+                <p className="text-xs text-fg-muted-token">
+                  mais {outrosEnderecos.length} endereço{outrosEnderecos.length > 1 ? 's' : ''} salvo{outrosEnderecos.length > 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-2">
                 <label htmlFor="cf-street" className="sr-only">Rua</label>
@@ -243,10 +268,12 @@ interface CustomerDrawerProps {
    * uma vez (05/09).
    */
   saldo?: CashbackClienteRow | null;
+  /** Avisa o pai que o saldo mudou, para ele refazer a consulta. */
+  onAjustado?: () => void;
 }
 
 export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
-  customer, onClose, onEdit, segmento = null, saldo = null,
+  customer, onClose, onEdit, segmento = null, saldo = null, onAjustado,
 }) => {
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
@@ -289,6 +316,40 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
       ticket: pagos.length ? gasto / pagos.length : 0,
     };
   }, [orders]);
+
+  // Ajuste de saldo pela própria ficha. Antes só existia na tela de
+  // Fidelidade, com o telefone digitado à mão: a ficha mostrava o número do
+  // cliente e não deixava mexer nele.
+  const [ajusteAberto, setAjusteAberto] = useState(false);
+  const [valorDoAjuste, setValorDoAjuste] = useState('');
+  const [motivoDoAjuste, setMotivoDoAjuste] = useState('');
+  const [ajustando, setAjustando] = useState(false);
+
+  const aplicarAjuste = async (sinal: 1 | -1) => {
+    const telefone = customer?.whatsapp || customer?.phone || '';
+    const valor = valorDoAjuste.replace(',', '.').trim();
+    // `motivo` é obrigatório no backend de propósito: crédito sem
+    // justificativa é o buraco por onde some dinheiro num programa de
+    // fidelidade. A trava vive aqui também para não gastar a ida ao servidor.
+    if (!telefone || !valor || Number(valor) <= 0 || !motivoDoAjuste.trim() || ajustando) return;
+    setAjustando(true);
+    try {
+      await cashbackService.ajustar(String(storeQuery), {
+        phone: telefone,
+        valor: sinal > 0 ? valor : `-${valor}`,
+        motivo: motivoDoAjuste.trim(),
+      });
+      toast.success(sinal > 0 ? 'Saldo creditado' : 'Saldo debitado');
+      setValorDoAjuste('');
+      setMotivoDoAjuste('');
+      setAjusteAberto(false);
+      onAjustado?.();
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setAjustando(false);
+    }
+  };
 
   const whatsappNumber = customer?.whatsapp || customer?.phone || '';
   const cleanPhone = whatsappNumber.replace(/\D/g, '');
@@ -362,7 +423,9 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
               {(customer.whatsapp || customer.phone) && (
                 <div className="flex items-center gap-3 px-4 py-3">
                   <PhoneIcon className="h-4 w-4 text-fg-muted-token shrink-0" />
-                  <span className="text-sm text-fg-token">{customer.whatsapp || customer.phone}</span>
+                  <span className="text-sm text-fg-token">
+                    {formatPhone(customer.whatsapp || customer.phone)}
+                  </span>
                 </div>
               )}
               {publicEmail(customer.user_email) && (
@@ -405,40 +468,87 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
             </div>
           </div>
 
-          {/* Cashback — só aparece para quem tem. Um bloco "R$ 0,00" em toda
-              ficha empurraria o histórico para baixo sem dizer nada. */}
-          {saldo && Number(saldo.saldo) > 0 && (
-            <div className="space-y-2">
+          {/* Cashback — sempre presente enquanto a loja usa o programa.
+              Escondê-lo com saldo zero deixava "cliente sem saldo" e "a loja
+              não tem cashback" com exatamente a mesma cara — e o telefone
+              gravado em outra grafia (com/sem o nono dígito) cai no mesmo
+              zero, o que fazia a ficha mentir em silêncio. */}
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between gap-2">
               <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
                 Cashback
               </p>
-              <div className="rounded border border-border-token px-4 py-3">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-lg font-bold text-brand-ink">
-                    {formatCurrency(saldo.saldo)}
-                  </span>
+              <button
+                type="button"
+                onClick={() => setAjusteAberto((v) => !v)}
+                className="text-xs font-semibold text-brand-ink hover:underline"
+              >
+                Ajustar saldo
+              </button>
+            </div>
+            <div className="rounded border border-border-token px-4 py-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-lg font-bold text-brand-ink">
+                  {formatCurrency(saldo?.saldo ?? 0)}
+                </span>
+                {saldo && Number(saldo.saldo) > 0 && (
                   <span className="text-xs text-fg-muted-token">
                     {saldo.dias_para_vencer === 0
                       ? 'vence hoje'
                       : `vence em ${saldo.dias_para_vencer} dia${saldo.dias_para_vencer > 1 ? 's' : ''}`}
                   </span>
-                </div>
-                {(Number(saldo.saldo_carteira) > 0 || saldo.cupons_entrega > 0) && (
-                  <p className="mt-1.5 text-xs text-fg-muted-token">
-                    {Number(saldo.saldo_carteira) > 0 && (
-                      // O comprado separado do concedido: são dinheiros
-                      // diferentes e só um deles a loja ainda deve.
-                      <>{formatCurrency(saldo.saldo_carteira)} são de carteira comprada</>
-                    )}
-                    {Number(saldo.saldo_carteira) > 0 && saldo.cupons_entrega > 0 && ' · '}
-                    {saldo.cupons_entrega > 0 && (
-                      <>{saldo.cupons_entrega} entrega{saldo.cupons_entrega > 1 ? 's' : ''} grátis</>
-                    )}
-                  </p>
                 )}
               </div>
+              {saldo && (Number(saldo.saldo_carteira) > 0 || saldo.cupons_entrega > 0) && (
+                <p className="mt-1.5 text-xs text-fg-muted-token">
+                  {Number(saldo.saldo_carteira) > 0 && (
+                    // O comprado separado do concedido: são dinheiros
+                    // diferentes e só um deles a loja ainda deve.
+                    <>{formatCurrency(saldo.saldo_carteira)} são de carteira comprada</>
+                  )}
+                  {Number(saldo.saldo_carteira) > 0 && saldo.cupons_entrega > 0 && ' · '}
+                  {saldo.cupons_entrega > 0 && (
+                    <>{saldo.cupons_entrega} entrega{saldo.cupons_entrega > 1 ? 's' : ''} grátis</>
+                  )}
+                </p>
+              )}
+
+              {ajusteAberto && (
+                <div className="mt-3 space-y-2 border-t border-border-token pt-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      label="Valor"
+                      inputMode="decimal"
+                      placeholder="10,00"
+                      value={valorDoAjuste}
+                      onChange={(e) => setValorDoAjuste(e.target.value)}
+                    />
+                    <div className="col-span-2">
+                      <Input
+                        label="Motivo"
+                        placeholder="cortesia pelo atraso"
+                        value={motivoDoAjuste}
+                        onChange={(e) => setMotivoDoAjuste(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" isLoading={ajustando} onClick={() => aplicarAjuste(1)}>
+                      Creditar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      isLoading={ajustando}
+                      onClick={() => aplicarAjuste(-1)}
+                    >
+                      Debitar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Order history */}
           <div className="space-y-2">
@@ -779,7 +889,7 @@ export const CustomersPage: React.FC = () => {
                 {(c.phone || c.whatsapp) && (
                   <div className="flex items-center gap-1.5 text-xs text-fg-muted-token">
                     <PhoneIcon className="h-3 w-3 shrink-0" />
-                    {c.whatsapp || c.phone}
+                    {formatPhone(c.whatsapp || c.phone)}
                   </div>
                 )}
                 {publicEmail(c.user_email) && (
@@ -813,8 +923,11 @@ export const CustomersPage: React.FC = () => {
             classe: 'max-lg:hidden',
             render: (c) => {
               const gasto = c.gasto_real ?? Number(c.total_spent ?? 0);
+              // O destaque acima de R$ 500 escapava do `formatCurrency` e caía
+              // num `toFixed(2)` cru: "R$ 1152.33". Quem cruza o corte é o
+              // cliente mais valioso — é a última linha que pode sair torta.
               return Number(gasto) > 500 ? (
-                <Badge tone="success">R$ {Number(gasto).toFixed(2)}</Badge>
+                <Badge tone="success">{formatCurrency(gasto)}</Badge>
               ) : (
                 <span className="font-bold text-fg-token">{formatCurrency(gasto)}</span>
               );

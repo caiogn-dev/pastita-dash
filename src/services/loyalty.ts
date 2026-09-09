@@ -4,6 +4,9 @@ export interface LoyaltyAccountRow {
   user_id: string;
   display_name: string;
   email: string;
+  /** Telefone do cliente. O e-mail de quem entra por WhatsApp é fabricado
+   *  pelo backend (`<fone>@local.invalid`) e não serve para contato. */
+  phone?: string;
   qualified_count: number;
   redeemed_count: number;
   progress: number;
@@ -41,6 +44,27 @@ class LoyaltyService {
       // pedi-lo a cada rolagem seria a mesma conta repetida.
       params: { page, ...(comResumo ? { resumo: 1 } : {}) },
     });
+    return data;
+  }
+
+  /**
+   * Baixa (ou devolve) um brinde entregue FORA do checkout.
+   *
+   * `quantidade` negativa desfaz um resgate registrado por engano — sem volta,
+   * o dono não usa o botão. O backend valida saldo e recusa deixar o resgate
+   * negativo, então a resposta é sempre a conta já reconciliada.
+   */
+  async resgatarBrinde(
+    storeSlug: string,
+    userId: string,
+    quantidade = 1,
+    motivo = '',
+  ): Promise<Pick<LoyaltyAccountRow,
+    'user_id' | 'qualified_count' | 'redeemed_count' | 'progress' | 'available_rewards'>> {
+    const { data } = await api.post(
+      `/stores/${storeSlug}/loyalty/accounts/${userId}/resgatar/`,
+      { quantidade, ...(motivo ? { motivo } : {}) },
+    );
     return data;
   }
 }

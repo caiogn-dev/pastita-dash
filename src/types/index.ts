@@ -352,6 +352,14 @@ export interface Order {
   amount_due?: number;
   /** Fase 3 — true quando amount_due == 0. Read-only do backend. */
   is_fully_paid?: boolean;
+  /** Código do cupom que REALMENTE valeu no pedido (vazio quando não houve). */
+  coupon_code?: string;
+  /**
+   * Quantos pedidos esta pessoa já fez na loja, incluindo este. Só vem no
+   * DETALHE — na listagem o backend manda null para não pagar um COUNT por
+   * linha.
+   */
+  pedidos_do_cliente?: number | null;
   status: 'pending' | 'processing' | 'confirmed' | 'preparing' | 'ready' | 'shipped' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'completed' | 'refunded' | 'failed' | 'paid';
   payment_status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
   payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card' | string;

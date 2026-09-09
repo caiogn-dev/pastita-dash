@@ -224,3 +224,38 @@ describe('OrderDetailPage — lista de cobranças', () => {
     expect(link).toHaveAttribute('href', 'https://mp.com/checkout/abc');
   });
 });
+
+describe('OrderDetailPage — de onde veio o desconto', () => {
+  it('mostra o cupom aplicado e o cashback usado em linhas próprias', async () => {
+    // O modal só mostrava "Desconto -R$ 12,00": o cupom e o saldo gasto
+    // ficavam invisíveis, embora os dois já viessem do backend. O dono
+    // abria o pedido e não tinha como saber por que o valor era aquele.
+    mockGetOrder.mockResolvedValue({
+      ...baseOrder,
+      subtotal: 45.91,
+      discount: 14.59,
+      coupon_code: 'SALADA10',
+      total: 31.32,
+      metadata: { cashback_aplicado: 10 },
+    });
+
+    render(<OrderDetailPage />);
+
+    expect(await screen.findByText(/SALADA10/)).toBeInTheDocument();
+    expect(await screen.findByText(/Cashback usado/i)).toBeInTheDocument();
+    expect(await screen.findByText('-R$ 10,00')).toBeInTheDocument();
+  });
+
+  it('diz quantos pedidos o cliente já fez', async () => {
+    mockGetOrder.mockResolvedValue({ ...baseOrder, pedidos_do_cliente: 4 });
+    render(<OrderDetailPage />);
+    expect(await screen.findByText(/4º pedido deste cliente/i)).toBeInTheDocument();
+  });
+
+  it('não inventa histórico quando o backend não mandou a contagem', async () => {
+    mockGetOrder.mockResolvedValue({ ...baseOrder });
+    render(<OrderDetailPage />);
+    await screen.findByText('Falta receber').catch(() => null);
+    expect(screen.queryByText(/pedido deste cliente/i)).not.toBeInTheDocument();
+  });
+});
