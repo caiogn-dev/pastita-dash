@@ -176,3 +176,51 @@ describe('OrderDetailPage — Fase 3 (F4 lista de cobranças)', () => {
     expect(valores.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('OrderDetailPage — cobrança que caiu no fallback de link', () => {
+  it('mostra o link de pagamento quando o backend devolve payment_url (sem PIX)', async () => {
+    // Quando o MP recusa o PIX, o backend segue por Checkout Pro e devolve
+    // `payment_url`/`init_point` — nunca `ticket_url`. Lendo só as chaves do
+    // PIX, o painel mostrava uma caixa vazia e o operador ficava com um
+    // "Aguardando" e nenhum link para mandar ao cliente (09/set).
+    mockGetOrder.mockResolvedValue({ ...baseOrder, amount_paid: 20, amount_due: 30 });
+    mockGeneratePayment.mockResolvedValue({
+      payment: {
+        payment_method: 'link',
+        status: 'pending',
+        payment_url: 'https://mp.com/checkout/abc',
+        init_point: 'https://mp.com/checkout/abc',
+        pix_fallback: true,
+      },
+      order: { ...baseOrder, amount_due: 30 },
+    });
+
+    render(<OrderDetailPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /Gerar cobrança PIX/i }));
+
+    const link = await screen.findByRole('link', { name: /Abrir link de pagamento/i });
+    expect(link).toHaveAttribute('href', 'https://mp.com/checkout/abc');
+  });
+});
+
+describe('OrderDetailPage — lista de cobranças', () => {
+  it('dá o link da cobrança pendente na própria linha', async () => {
+    // Sem isto o link só existia no instante em que a cobrança era gerada:
+    // ao reabrir o pedido, a lista mostrava "Aguardando R$ 57,73" e o
+    // operador não tinha o que mandar para o cliente.
+    mockGetOrder.mockResolvedValue({ ...baseOrder, amount_paid: 0, amount_due: 57.73 });
+    mockGetByOrder.mockResolvedValue([
+      {
+        id: 'p1', order: 'o1', gateway: '', external_id: 'pref-1',
+        amount: 57.73, status: 'pending', payment_method: 'other',
+        payment_url: 'https://mp.com/checkout/abc',
+        created_at: '2026-09-09T14:18:00Z', updated_at: '2026-09-09T14:18:00Z',
+      } as unknown as Payment,
+    ]);
+
+    render(<OrderDetailPage />);
+
+    const link = await screen.findByRole('link', { name: /Abrir cobrança/i });
+    expect(link).toHaveAttribute('href', 'https://mp.com/checkout/abc');
+  });
+});

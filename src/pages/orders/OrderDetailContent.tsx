@@ -333,7 +333,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   const [chargeAmount, setChargeAmount] = useState<string>('');
   const [generatingCharge, setGeneratingCharge] = useState(false);
   const [generatedPix, setGeneratedPix] = useState<
-    { pix_code?: string; pix_qr_code?: string; ticket_url?: string } | null
+    { pix_code?: string; pix_qr_code?: string; ticket_url?: string; via_link?: boolean } | null
   >(null);
 
   // Imprime o pedido. hidePrices=true gera a comanda da cozinha (sem
@@ -398,14 +398,25 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
       });
       setOrder(updated);
       onOrderChanged?.(updated);
+      // Quando o MP recusa o PIX, o backend segue por Checkout Pro e devolve
+      // `payment_url`/`init_point` — nunca `ticket_url`. Lendo só as chaves do
+      // PIX, a caixa saía VAZIA e o operador ficava com um "Aguardando" na
+      // lista de cobranças e nenhum link para mandar ao cliente.
+      const viaLink = Boolean(payment.pix_fallback) || payment.payment_method === 'link';
       setGeneratedPix({
         pix_code: (payment.pix_code as string) || undefined,
         pix_qr_code: (payment.pix_qr_code as string) || undefined,
-        ticket_url: (payment.ticket_url as string) || (payment.pix_ticket_url as string) || undefined,
+        ticket_url:
+          (payment.ticket_url as string)
+          || (payment.pix_ticket_url as string)
+          || (payment.payment_url as string)
+          || (payment.init_point as string)
+          || undefined,
+        via_link: viaLink,
       });
       const fresh = await paymentsService.getByOrder(order.id).catch(() => payments);
       setPayments(fresh);
-      toast.success('Cobrança PIX gerada!');
+      toast.success(viaLink ? 'Cobrança gerada por link de pagamento.' : 'Cobrança PIX gerada!');
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -981,6 +992,12 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   {/* F3 — PIX recém-gerado: copia-e-cola + QR + link */}
                   {generatedPix && (
                     <div className="space-y-3 rounded border border-brand-soft bg-surface px-4 py-4 ">
+                      {generatedPix.via_link && (
+                        <p className="text-xs text-fg-muted-token">
+                          O PIX foi recusado pelo Mercado Pago. A cobrança seguiu por link de
+                          pagamento — mande o link abaixo para o cliente.
+                        </p>
+                      )}
                       {generatedPix.pix_code && (
                         <div className="space-y-2">
                           <span className="text-xs font-semibold">PIX copia e cola</span>
@@ -1040,7 +1057,23 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                               {PAYMENT_RECORD_STATUS_LABELS[payment.status] ?? payment.status}
                             </p>
                           </div>
-                          <span className="font-semibold">{formatCurrency(payment.amount)}</span>
+                          <div className="flex items-center gap-3">
+                            {/* O link mora no StorePayment, mas só aparecia no
+                                instante da geração: ao reabrir o pedido a
+                                linha era "Aguardando" e mais nada, e o
+                                operador não tinha o que mandar pro cliente. */}
+                            {payment.payment_url && payment.status === 'pending' && (
+                              <a
+                                href={payment.payment_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="rounded-full border border-border-token px-3 py-1.5 text-xs font-medium hover:bg-surface-2"
+                              >
+                                Abrir cobrança
+                              </a>
+                            )}
+                            <span className="font-semibold">{formatCurrency(payment.amount)}</span>
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -458,6 +458,8 @@ export interface Payment {
    */
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded' | 'partially_refunded';
   payment_method: string;
+  /** Link do Checkout Pro da cobrança — é o que o operador manda pro cliente. */
+  payment_url?: string;
   paid_at?: string;
   refunded_at?: string;
   metadata?: Record<string, unknown>;
