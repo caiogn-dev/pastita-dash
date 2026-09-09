@@ -23,6 +23,7 @@ import {
 import { useStore } from '../../hooks';
 import logger from '../../services/logger';
 import { Card, Button, StatCard, PageShell, PageTabs } from '../../components/ui';
+import { aoAlternarModo, resumoDosModos, type ModosDeRecebimento, type Modo } from './modosDeRecebimento';
 import RecebimentoSection from './RecebimentoSection';
 import NotaFiscalSection from './NotaFiscalSection';
 
@@ -68,6 +69,42 @@ export const StoreSettingsPage: React.FC = () => {
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
   const [googleReviewUrl, setGoogleReviewUrl] = useState('');
+  /** Entrega/retirada: os campos existem no banco e o cardápio já os respeita
+   *  — faltava o dono poder mudar depois do onboarding. */
+  const [modos, setModos] = useState<ModosDeRecebimento>({ delivery: true, pickup: true });
+  const [salvandoModos, setSalvandoModos] = useState<Modo | null>(null);
+
+  /**
+   * Liga/desliga entrega ou retirada.
+   *
+   * Salva no ato (sem botão "Salvar"): é um interruptor de duas posições e
+   * o efeito é imediato no cardápio. Em caso de erro, volta ao estado
+   * anterior — deixar o botão ligado sem ter salvo é pior que não mexer.
+   */
+  const alternarRecebimento = useCallback(async (modo: Modo, ligado: boolean) => {
+    const anterior = modos;
+    const novo = aoAlternarModo(anterior, modo, ligado);
+    if (!novo) {
+      toast.error('A loja precisa de pelo menos uma forma de receber: entrega ou retirada.');
+      return;
+    }
+    if (!effectiveStoreId) return;
+    setModos(novo);
+    setSalvandoModos(modo);
+    try {
+      await updateStore(effectiveStoreId, {
+        delivery_enabled: novo.delivery,
+        pickup_enabled: novo.pickup,
+      });
+      toast.success(resumoDosModos(novo));
+    } catch (error) {
+      setModos(anterior);
+      logger.error('Erro ao salvar formas de recebimento:', error);
+      toast.error('Não foi possível salvar. Nada mudou no cardápio.');
+    } finally {
+      setSalvandoModos(null);
+    }
+  }, [modos, effectiveStoreId]);
   const [storeForm, setStoreForm] = useState({
     name: '',
     email: '',
@@ -111,6 +148,10 @@ export const StoreSettingsPage: React.FC = () => {
 
       const metadata = data.metadata || {};
       setGoogleReviewUrl(String(metadata.google_review_url || ''));
+      setModos({
+        delivery: data.delivery_enabled !== false,
+        pickup: data.pickup_enabled !== false,
+      });
       const stored = (data.operating_hours as OperatingHours) || {};
       const initialized: OperatingHours = {};
       DAYS.forEach(d => {
@@ -452,6 +493,55 @@ export const StoreSettingsPage: React.FC = () => {
 
             {aba === 'entrega' && (
               <>
+        {/* COMO O CLIENTE RECEBE — antes do preço, porque decide se o preço
+            sequer existe. O cardápio já lê estes campos; o que faltava era o
+            dono poder mudar depois do onboarding. */}
+        <Card className="p-6">
+          <div className="mb-1 flex items-center gap-2">
+            <TruckIcon className="h-5 w-5 text-fg-muted-token" />
+            <h2 className="text-lg font-semibold text-fg-token">Como o cliente recebe</h2>
+          </div>
+          <p className="text-sm text-fg-muted-token">{resumoDosModos(modos)}</p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {([
+              { modo: 'delivery' as Modo, titulo: 'Entrega', ajuda: 'O cliente informa o endereço e paga o frete.' },
+              { modo: 'pickup' as Modo, titulo: 'Retirada no balcão', ajuda: 'O cliente busca na loja, sem frete.' },
+            ]).map(({ modo, titulo, ajuda }) => {
+              const ligado = modos[modo];
+              return (
+                <button
+                  key={modo}
+                  type="button"
+                  role="switch"
+                  aria-checked={ligado}
+                  aria-label={titulo}
+                  disabled={salvandoModos !== null}
+                  onClick={() => alternarRecebimento(modo, !ligado)}
+                  className={`flex items-start gap-3 rounded-xl border p-4 text-left transition disabled:opacity-60 ${
+                    ligado
+                      ? 'border-[var(--brand)] bg-brand-soft'
+                      : 'border-border-token bg-surface hover:bg-surface-2'
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`mt-0.5 flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition ${
+                      ligado ? 'justify-end bg-[var(--brand)]' : 'justify-start bg-surface-2'
+                    }`}
+                  >
+                    <span className="h-4 w-4 rounded-full bg-canvas shadow" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-fg-token">{titulo}</span>
+                    <span className="mt-0.5 block text-xs text-fg-muted-token">{ajuda}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+
         {/* O PREÇO da entrega mora em Zonas de Entrega, não aqui.
             Esta aba tinha os mesmos campos e uma TERCEIRA cópia da matemática
             do frete (`calculateExampleFee`) — três implementações do mesmo
