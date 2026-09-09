@@ -94,6 +94,7 @@ import { marcosDoPedido, duracaoLegivel } from './marcosDoPedido';
 import { proximaAcaoDoPedido } from './proximaAcao';
 import { etapasDoPedido, horariosDasEtapas, type EtapaDoPedido } from './fluxoDoPedido';
 import { enderecoDaEntrega } from './enderecoDaEntrega';
+import { composicaoDaSalada } from './composicaoDaSalada';
 // Os rótulos moram num arquivo só, com teste que confere contra a lista de
 // status do backend: era esta duplicação que deixava "cancelled" cru na tela.
 import {
@@ -838,39 +839,54 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
               <ul className="divide-y divide-border-token">
                 {order.items?.map((item, index) => {
-                  const isSalad = !!(item.options?.is_salad_builder);
                   const combo = order.combo_items?.find((c) => c.order_item === item.id);
                   const selectionLines = comboSelectionLines(combo);
+                  const salada = composicaoDaSalada(item.options);
+                  // `notes` da salada é a MESMA composição, achatada numa linha
+                  // pelo storefront. Mostrar as duas repetiria a receita inteira.
+                  const observacao = salada.length ? '' : (item.notes || '');
                   return (
-                    <li key={item.id || index} className="flex gap-3 py-2.5 first:pt-0 last:pb-0">
-                      <span className="mt-0.5 shrink-0 rounded bg-surface-2 px-1.5 py-0.5 font-mono text-xs font-semibold text-fg-token">
+                    <li key={item.id || index} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                      <span className="mt-px shrink-0 rounded bg-surface-2 px-1.5 py-0.5 font-mono text-xs font-semibold text-fg-token">
                         {item.quantity}×
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-fg-token">
+                        <p className="text-sm font-medium leading-snug text-fg-token">
                           {item.product_name}
                           {item.variant_name ? ` — ${item.variant_name}` : ''}
-                          {isSalad && (
-                            <span className="ml-2 rounded-full bg-[var(--success-soft)] px-1.5 py-0.5 text-badge font-semibold text-[var(--success)]">
-                              Salada
-                            </span>
-                          )}
                         </p>
+
+                        {/* A receita, um grupo por linha. O rótulo do papel
+                            fica numa coluna fixa para os ingredientes
+                            alinharem — quem monta lê de cima a baixo. */}
+                        {salada.length > 0 && (
+                          <dl className="mt-1.5 space-y-1" data-testid="composicao-salada">
+                            {salada.map((grupo) => (
+                              <div key={grupo.papel} className="flex gap-2 text-xs leading-snug">
+                                <dt className="w-24 shrink-0 text-fg-muted-token">{grupo.papel}</dt>
+                                <dd className="min-w-0 flex-1 text-fg-token">
+                                  {grupo.itens.join(' · ')}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
+
                         {selectionLines.length > 0 && (
-                          <ul className="mt-0.5 space-y-0.5" data-testid="combo-selections">
+                          <ul className="mt-1 space-y-0.5" data-testid="combo-selections">
                             {selectionLines.map((line, i) => (
-                              <li key={i} className="text-xs text-fg-muted-token">{line}</li>
+                              <li key={i} className="text-xs leading-snug text-fg-muted-token">{line}</li>
                             ))}
                           </ul>
                         )}
-                        {item.notes && (
-                          <p className="mt-0.5 text-xs italic text-fg-muted-token">{item.notes}</p>
+                        {observacao && (
+                          <p className="mt-1 text-xs italic leading-snug text-fg-muted-token">{observacao}</p>
                         )}
                       </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-sm font-semibold text-fg-token">{formatCurrency(item.subtotal)}</p>
+                      <div className="w-24 shrink-0 text-right">
+                        <p className="text-sm font-semibold tabular-nums text-fg-token">{formatCurrency(item.subtotal)}</p>
                         {item.quantity > 1 && (
-                          <p className="text-xs text-fg-muted-token">{formatCurrency(item.unit_price)} cada</p>
+                          <p className="text-xs tabular-nums text-fg-muted-token">{formatCurrency(item.unit_price)} cada</p>
                         )}
                       </div>
                     </li>
