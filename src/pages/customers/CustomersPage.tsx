@@ -43,7 +43,30 @@ import { useOrderDetailModal } from '../../hooks/useOrderDetailModal';
 import { useSaldoDoCliente } from '../../hooks/queries/useSaldoDoCliente';
 import { cashbackService, type CashbackClienteRow } from '../../services/cashback';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
-import { formatCurrency, formatPhone } from '../../utils/formatters';
+import { formatCurrency, formatPhone, formatPhoneForWhatsApp } from '../../utils/formatters';
+import { buscarCep } from '../../services/cep';
+
+/**
+ * Telefone como uma PESSOA lê, para dentro do campo de edição.
+ *
+ * `formatPhone` devolve '-' para vazio, o que num input viraria o texto "-"
+ * a ser apagado antes de digitar. Aqui vazio é vazio.
+ */
+function formatPhoneParaEdicao(valor?: string | null): string {
+  if (!valor) return '';
+  const formatado = formatPhone(valor);
+  return formatado === '-' ? valor : formatado;
+}
+
+/**
+ * O que vai para o backend: só dígitos, com o DDI que o resto do sistema usa.
+ *
+ * A máscara é da tela. Quem consome o campo é o WhatsApp e o casamento do
+ * pedido por telefone — ambos comparam número, não pontuação.
+ */
+function telefoneParaEnvio(valor: string): string {
+  return formatPhoneForWhatsApp(valor);
+}
 import { Loading } from '../../components/common';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -115,10 +138,15 @@ export interface CustomerFormDrawerProps {
 
 export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlug, customer, onClose, onSaved }) => {
   const [name, setName] = useState(customer?.user_name ?? '');
-  const [phone, setPhone] = useState(customer?.phone ?? '');
-  const [whatsapp, setWhatsapp] = useState(customer?.whatsapp ?? '');
+  // O telefone é EXIBIDO formatado e ENVIADO em dígitos. O painel mostrava
+  // "5563999192628" num campo de cadastro, que é o número como o banco guarda
+  // — não como uma pessoa lê ou confere.
+  const [phone, setPhone] = useState(formatPhoneParaEdicao(customer?.phone));
+  const [whatsapp, setWhatsapp] = useState(formatPhoneParaEdicao(customer?.whatsapp));
   const [notes, setNotes] = useState(customer?.notes ?? '');
+  const [aceitaMarketing, setAceitaMarketing] = useState(Boolean(customer?.accepts_marketing));
   const [saving, setSaving] = useState(false);
+  const [erros, setErros] = useState<Record<string, string>>({});
   const isEdit = Boolean(customer);
 
   // O endereço editável é o PADRÃO (`Meta.ordering = ['-is_default', …]`);
@@ -140,6 +168,37 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
   const [city, setCity] = useState(addr0?.city ?? '');
   const [uf, setUf] = useState(addr0?.state ?? '');
   const [zip, setZip] = useState(addr0?.zip_code ?? '');
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const [erroDoCep, setErroDoCep] = useState<string | null>(null);
+
+  /**
+   * CEP completo preenche rua, bairro, cidade e UF.
+   *
+   * Sete campos digitados na mão viravam quatro erros de digitação. O ViaCEP
+   * falhando não trava nada: a mensagem aparece e os campos seguem editáveis.
+   */
+  const aoDigitarCep = async (valor: string) => {
+    setZip(valor);
+    setErroDoCep(null);
+    const digits = valor.replace(/\D/g, '');
+    if (digits.length !== 8) return;
+    setBuscandoCep(true);
+    try {
+      const achado = await buscarCep(digits);
+      if (!achado) {
+        setErroDoCep('CEP não encontrado — preencha à mão');
+        return;
+      }
+      // Rua e número já digitados não são sobrescritos: quem digitou sabe
+      // mais que o ViaCEP sobre o complemento daquela entrega.
+      setStreet((atual) => atual || achado.street);
+      setNeighborhood((atual) => atual || achado.neighborhood);
+      setCity(achado.city);
+      setUf(achado.state);
+    } finally {
+      setBuscandoCep(false);
+    }
+  };
 
   const buildAddressList = (): StoreCustomerAddress[] | undefined => {
     const filled = street || number || neighborhood || city || zip;
@@ -153,12 +212,42 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
     return [addr, ...outrosEnderecos];
   };
 
+  /**
+   * A validação que faltava.
+   *
+   * O formulário salvava nome vazio e telefone com duas letras. O cadastro
+   * ruim só aparece semanas depois, quando a campanha não entrega e o pedido
+   * não acha o cliente.
+   */
+  const validar = (): Record<string, string> => {
+    const achados: Record<string, string> = {};
+    if (!name.trim()) achados.name = 'Nome é obrigatório';
+    const digitos = (t: string) => t.replace(/\D/g, '');
+    if (phone.trim() && digitos(phone).length < 10) achados.phone = 'Telefone incompleto';
+    if (whatsapp.trim() && digitos(whatsapp).length < 10) achados.whatsapp = 'WhatsApp incompleto';
+    if (uf.trim() && uf.trim().length !== 2) achados.uf = 'UF tem 2 letras';
+    if (zip.trim() && digitos(zip).length !== 8) achados.zip = 'CEP tem 8 dígitos';
+    return achados;
+  };
+
   const handleSave = async () => {
     if (saving) return;
+    const achados = validar();
+    setErros(achados);
+    if (Object.keys(achados).length) return;
     setSaving(true);
     try {
       const address_list = buildAddressList();
-      const payload = { name, phone, whatsapp, notes, ...(address_list ? { address_list } : {}) };
+      const payload = {
+        name,
+        // Dígitos, nunca a máscara: quem consome isto é o WhatsApp e o
+        // casamento por telefone do checkout.
+        phone: telefoneParaEnvio(phone),
+        whatsapp: telefoneParaEnvio(whatsapp),
+        notes,
+        accepts_marketing: aceitaMarketing,
+        ...(address_list ? { address_list } : {}),
+      };
       if (isEdit && customer) {
         await updateCustomer(customer.id, payload);
       } else {
@@ -166,14 +255,12 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
       }
       toast.success(isEdit ? 'Cliente atualizado' : 'Cliente criado');
       onSaved();
-    } catch {
-      toast.error('Erro ao salvar cliente');
+    } catch (e) {
+      toast.error(getErrorMessage(e));
     } finally {
       setSaving(false);
     }
   };
-
-  const inputCls = 'w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:border-brand';
 
   return (
     <>
@@ -185,26 +272,79 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
+
+        {/* QUEM está sendo editado. O formulário não dizia nada sobre a pessoa
+            — os mesmos números da ficha, aqui, evitam editar às cegas. */}
+        {isEdit && customer && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border-token bg-surface-2 px-6 py-3 text-xs text-fg-muted-token">
+            <span className="font-semibold text-fg-token">
+              {customer.pedidos_reais ?? customer.total_orders ?? 0} pedidos
+            </span>
+            <span className="font-semibold text-fg-token">
+              {formatCurrency(customer.gasto_real ?? Number(customer.total_spent ?? 0))}
+            </span>
+            <span>{rotuloDeDias(customer.dias_sem_comprar).texto}</span>
+            <span>cliente desde {formatDate(customer.created_at)}</span>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <Input
+            label="Nome"
+            value={name}
+            error={erros.name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            label="Telefone"
+            inputMode="tel"
+            value={phone}
+            error={erros.phone}
+            hint="Usado para casar o pedido com o cadastro"
+            onChange={(e) => setPhone(e.target.value)}
+            onBlur={() => setPhone(formatPhoneParaEdicao(telefoneParaEnvio(phone)))}
+          />
+          <Input
+            label="WhatsApp"
+            inputMode="tel"
+            value={whatsapp}
+            error={erros.whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            onBlur={() => setWhatsapp(formatPhoneParaEdicao(telefoneParaEnvio(whatsapp)))}
+          />
           <div>
-            <label htmlFor="cf-name" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Nome</label>
-            <input id="cf-name" className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
+            <label htmlFor="cf-notes" className="mb-1.5 block text-sm font-medium text-fg-token">Notas</label>
+            <textarea
+              id="cf-notes"
+              rows={3}
+              className="w-full rounded-xl border border-border-token bg-surface px-4 py-2.5 text-sm text-fg-token focus:border-brand focus:outline-none"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </div>
-          <div>
-            <label htmlFor="cf-phone" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Telefone</label>
-            <input id="cf-phone" className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="cf-wa" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">WhatsApp</label>
-            <input id="cf-wa" className={inputCls} value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="cf-notes" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Notas</label>
-            <textarea id="cf-notes" className={inputCls} rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </div>
-          <div className="pt-2 border-t border-border-token space-y-3">
+
+          {/* Consentimento de marketing: o campo existe no backend e é a base
+              legal das campanhas, mas não havia onde ler nem mudar. */}
+          <label className="flex items-start gap-3 rounded-xl border border-border-token p-3 text-sm text-fg-token">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 accent-[var(--brand)]"
+              checked={aceitaMarketing}
+              onChange={(e) => setAceitaMarketing(e.target.checked)}
+            />
+            <span>
+              Aceita receber campanhas
+              <span className="mt-0.5 block text-xs text-fg-muted-token">
+                {customer?.marketing_opt_in_at
+                  ? `Consentimento registrado em ${formatDate(customer.marketing_opt_in_at)}`
+                  : 'Sem consentimento registrado'}
+              </span>
+            </span>
+          </label>
+
+          <div className="space-y-3 border-t border-border-token pt-4">
             <div className="flex items-baseline justify-between gap-2">
-              <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
+              <p className="text-xs font-bold uppercase tracking-widest text-fg-muted-token">
                 {outrosEnderecos.length ? 'Endereço padrão' : 'Endereço'}
               </p>
               {/* Quem vê um formulário com um endereço só assume que o cliente
@@ -216,25 +356,38 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
                 </p>
               )}
             </div>
+
+            <Input
+              label="CEP"
+              inputMode="numeric"
+              value={zip}
+              error={erros.zip}
+              hint={buscandoCep ? 'Buscando endereço…' : (erroDoCep ?? 'Preenche rua, bairro e cidade')}
+              onChange={(e) => aoDigitarCep(e.target.value)}
+            />
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-2">
-                <label htmlFor="cf-street" className="sr-only">Rua</label>
-                <input id="cf-street" aria-label="Rua" className={inputCls} placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)} />
+                <Input label="Rua" value={street} onChange={(e) => setStreet(e.target.value)} />
               </div>
-              <div>
-                <label htmlFor="cf-number" className="sr-only">Número</label>
-                <input id="cf-number" aria-label="Número" className={inputCls} placeholder="Nº" value={number} onChange={(e) => setNumber(e.target.value)} />
-              </div>
+              <Input label="Número" value={number} onChange={(e) => setNumber(e.target.value)} />
             </div>
-            <input aria-label="Complemento" className={inputCls} placeholder="Complemento" value={complement} onChange={(e) => setComplement(e.target.value)} />
-            <input aria-label="Bairro" className={inputCls} placeholder="Bairro" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} />
+            <Input label="Complemento" value={complement} onChange={(e) => setComplement(e.target.value)} />
+            <Input label="Bairro" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} />
             <div className="grid grid-cols-3 gap-2">
-              <input aria-label="Cidade" className={`${inputCls} col-span-2`} placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
-              <input aria-label="UF" maxLength={2} className={inputCls} placeholder="UF" value={uf} onChange={(e) => setUf(e.target.value)} />
+              <div className="col-span-2">
+                <Input label="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
+              </div>
+              <Input
+                label="UF"
+                maxLength={2}
+                value={uf}
+                error={erros.uf}
+                onChange={(e) => setUf(e.target.value.toUpperCase())}
+              />
             </div>
-            <input aria-label="CEP" className={inputCls} placeholder="CEP" value={zip} onChange={(e) => setZip(e.target.value)} />
           </div>
         </div>
+
         <div className="px-6 py-4 border-t border-border-token flex gap-2">
           <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-border-token text-sm font-semibold text-fg-token hover:bg-surface-2">Cancelar</button>
           <button onClick={handleSave} disabled={saving} className="flex-1 py-2 rounded-xl bg-brand text-white text-sm font-semibold disabled:opacity-50">
@@ -748,10 +901,11 @@ export const CustomersPage: React.FC = () => {
   );
   // O cashback vinha só na tela de Fidelidade: para saber o saldo de alguém o
   // dono saía da ficha, abria outra página e procurava o telefone na lista.
-  const saldoDoSelecionado = useSaldoDoCliente(
+  const saldoQuery = useSaldoDoCliente(
     storeSlug ?? storeId,
     selectedCustomer?.whatsapp || selectedCustomer?.phone || null,
-  ).data ?? null;
+  );
+  const saldoDoSelecionado = saldoQuery.data ?? null;
 
   const segmentoDoSelecionado = segmentoPorTelefone(
     rfm.data?.customers ?? [],
@@ -1028,6 +1182,9 @@ export const CustomersPage: React.FC = () => {
       onEdit={(c) => { setEditingCustomer(c); setFormOpen(true); }}
       segmento={segmentoDoSelecionado}
       saldo={saldoDoSelecionado}
+      // O crédito acabou de ser lançado: sem refazer a consulta o bloco
+      // continuaria mostrando o saldo de antes do ajuste.
+      onAjustado={() => saldoQuery.refetch()}
     />
     {formOpen && (
       <CustomerFormDrawer

@@ -47,6 +47,9 @@ jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest
 import { CustomerFormDrawer } from '../CustomersPage';
 import * as storesApi from '../../../services/storesApi';
 
+// O telefone sai com o DDI (`formatPhoneForWhatsApp`), não como foi digitado:
+// é assim que o cadastro casa com o pedido e com o WhatsApp, e é como os
+// clientes já gravados estão no banco ('5563999192628'). Antes ia cru.
 test('novo cliente chama createCustomer com storeSlug+name+phone', async () => {
   (storesApi.createCustomer as jest.Mock).mockResolvedValue({ id: 'c1' });
   const onSaved = jest.fn();
@@ -59,7 +62,7 @@ test('novo cliente chama createCustomer com storeSlug+name+phone', async () => {
   await waitFor(() =>
     expect(storesApi.createCustomer).toHaveBeenCalledWith(
       'loja-1',
-      expect.objectContaining({ name: 'Maria Souza', phone: '63999990000' })
+      expect.objectContaining({ name: 'Maria Souza', phone: '5563999990000' })
     )
   );
   expect(onSaved).toHaveBeenCalled();
