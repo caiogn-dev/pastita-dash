@@ -23,12 +23,19 @@ export const parseCoords = (texto: string): Coords | null => {
   if (!texto) return null;
   const t = texto.trim();
 
-  // 1) Links do Google Maps: query=lat,lng | q=lat,lng | @lat,lng | !3dlat!4dlng
+  // 1) Links do Google Maps, do MAIS confiável para o menos.
+  //
+  //    `!3d!4d` é o PIN — o lugar de verdade.
+  //    `@lat,lng` é o CENTRO DA TELA de quem gerou o link.
+  //
+  //    No link do CE-2608103109 os dois diferem 280 m em longitude. Ler o
+  //    centro cotava o frete e mandava o entregador para outra quadra, então a
+  //    ordem aqui não é estética: o pin tem que ser testado primeiro.
   const padroesUrl = [
+    /!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/,                            // o PIN
     /[?&](?:query|q|destination)=(-?\d{1,3}\.\d+)%2C(-?\d{1,3}\.\d+)/i, // encodado
     /[?&](?:query|q|destination)=(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/i,
-    /@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,                                // /@lat,lng,zoom
-    /!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/,                            // place data
+    /@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,                                // centro da tela
   ];
   if (/maps|google|geo:/i.test(t)) {
     for (const re of padroesUrl) {

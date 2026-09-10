@@ -7,7 +7,7 @@ import type { Product } from '../../../services/products';
 import type { CustomerSearchResult, UserAddress, DiscountType, RouteQuote } from '../../../types/crm';
 import type { CartItem, PaymentMethod, Customer } from './types';
 import { parseCoords, type Coords } from './parseCoords';
-import { enderecoParaOPedido, rotuloDoEndereco } from './enderecoDoPedido';
+import { enderecoParaOPedido, rotuloDoEndereco, eSoUmPontoNoMapa } from './enderecoDoPedido';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 
 export interface UseNewOrderWizardOpts {
@@ -75,6 +75,19 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
   const next = () => setStep((s) => Math.min(4, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
 
+  // Link e coordenada não são endereço para quem lê a comanda. Troca o texto
+  // pelo nome do lugar — e só isso: a cotação já rodou e não depende disto, por
+  // isso a falha aqui é engolida. Texto original é melhor que campo vazio.
+  const nomearSeForPonto = async (texto: string, coords: Coords | null) => {
+    if (!coords || !eSoUmPontoNoMapa(texto)) return;
+    try {
+      const nome = await ordersService.nomeDoLugar(coords.lat, coords.lng);
+      if (nome) setFreeAddressText(nome);
+    } catch {
+      // Sem nome, fica o que o operador colou.
+    }
+  };
+
   const handleCalculateRoute = async (address: string, coordsOverride?: Coords | null) => {
     if (!address.trim() || !storeSlug) return;
     // Coords explícitas (endereço salvo com lat/lng) têm prioridade; senão tenta
@@ -85,6 +98,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
       const data = await ordersService.calculateDeliveryFee(storeSlug, address, coords);
       setRouteQuote({ fee: data.fee, distance_km: data.distance_km, duration_minutes: data.duration_minutes });
       setRouteCoords(coords);
+      await nomearSeForPonto(address, coords);
     } catch (err) {
       console.error('[NewOrderWizard] handleCalculateRoute:', err);
       toast.error(getErrorMessage(err) || 'Erro ao calcular a taxa de entrega');
@@ -112,6 +126,8 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
       const data = await ordersService.calculateDeliveryFee(storeSlug, label, { lat: loc.lat, lng: loc.lng });
       setRouteQuote({ fee: data.fee, distance_km: data.distance_km, duration_minutes: data.duration_minutes });
       setRouteCoords({ lat: loc.lat, lng: loc.lng });
+      // O pin vem sem nome quase sempre: o WhatsApp manda só a coordenada.
+      await nomearSeForPonto(label, { lat: loc.lat, lng: loc.lng });
     } catch (err) {
       toast.error(getErrorMessage(err) || 'Erro ao puxar a localização');
     } finally {

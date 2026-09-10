@@ -68,3 +68,20 @@ export const enderecoParaOPedido = ({ selectedAddress, freeAddressText, routeCoo
 
   return texto;
 };
+
+const _URL = /^\s*https?:\/\/\S+\s*$/i;
+const _SO_O_PAR = /^\s*-?\d{1,3}\.\d{3,}\s*[,;]\s*-?\d{1,3}\.\d{3,}\s*$/;
+const _ROTULO_DE_PIN = /^\s*localiza[çc][ãa]o\s+enviada\b/i;
+
+/**
+ * O texto é só um link/coordenada, sem nome de lugar dentro?
+ *
+ * Espelha `e_so_um_ponto_no_mapa` do server2 (`nome_do_lugar.py`). Lá a régua
+ * roda na GRAVAÇÃO; aqui roda na TELA, para o operador ver o endereço antes de
+ * fechar o pedido — quem confere é ele, não o servidor.
+ */
+export const eSoUmPontoNoMapa = (texto: string): boolean => {
+  const valor = (texto || '').trim();
+  if (!valor) return false;
+  return _URL.test(valor) || _SO_O_PAR.test(valor) || _ROTULO_DE_PIN.test(valor);
+};

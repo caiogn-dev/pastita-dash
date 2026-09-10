@@ -141,6 +141,29 @@ export const ordersService = {
   /** Última localização (pin) que o cliente enviou no WhatsApp — para reusar no
    *  cálculo de rota / criação de pedido sem redigitar. Passe conversationId
    *  (inbox) ou phone (PDV). Retorna null quando não há pin compartilhado. */
+  /**
+   * Nome do lugar a partir da coordenada.
+   *
+   * Serve para o operador VER o endereço em vez do link que ele colou. Devolve
+   * null quando não dá — o texto original é melhor que campo vazio.
+   */
+  nomeDoLugar: async (lat: number, lng: number): Promise<string | null> => {
+    try {
+      const { data } = await api.get<{
+        street?: string; number?: string; neighborhood?: string;
+        city?: string; state_code?: string; state?: string;
+      }>('/stores/maps/reverse-geocode/', { params: { lat, lng } });
+      const uf = data.state_code || data.state || '';
+      const inicio = [data.street, data.number].filter(Boolean).join(', ');
+      const comBairro = [inicio, data.neighborhood].filter(Boolean).join(' — ');
+      const local = data.city && uf ? `${data.city}-${uf}` : (data.city || uf);
+      const texto = [comBairro, local].filter(Boolean).join(', ');
+      return texto || null;
+    } catch {
+      return null;
+    }
+  },
+
   getSharedLocation: async (
     storeSlug: string,
     by: { conversationId?: string; phone?: string },
