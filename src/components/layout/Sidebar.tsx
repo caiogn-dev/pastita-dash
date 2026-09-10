@@ -219,7 +219,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         // navbar, dando a impressão de que o hover não funcionava. Só clicando
         // a seta ela aparecia, porque aí o espaço entra no fluxo em vez de
         // flutuar. Precisa ser MAIOR, não igual.
-        espiada && 'z-50 shadow-2xl'
+        // `relative` junto do z-index, e não por estilo: sem posição o
+        // navegador IGNORA o z-index, e a navbar (sticky de verdade) pintava
+        // por cima dos 56px do topo da coluna — a marca virava "CA" e o resto
+        // sumia atrás da barra.
+        espiada && 'relative z-50 shadow-2xl'
       )}
       style={{ transitionTimingFunction: 'var(--mola)' }}
     >

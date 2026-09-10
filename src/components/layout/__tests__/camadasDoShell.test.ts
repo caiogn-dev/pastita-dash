@@ -36,6 +36,21 @@ describe('camadas do shell', () => {
     expect(zSidebarEspiada()).not.toBe(zNavbar());
   });
 
+  /**
+   * O empate resolvido não bastava: `z-50` num elemento ESTÁTICO não existe.
+   *
+   * A coluna deixou de ser `sticky` quando o invólucro passou a segurar o
+   * espaço, e ninguém devolveu uma posição. Com `position: static` o navegador
+   * ignora o z-index inteiro, e a navbar — que é `sticky` de verdade — voltou
+   * a pintar por cima dos 56px do topo da coluna: no hover a marca aparecia
+   * como "CA" e o resto sumia atrás da barra. O teste antigo passava porque
+   * comparava dois números e nenhum dos dois valia.
+   */
+  it('a camada só existe se o elemento estiver posicionado', () => {
+    const linha = layout('Sidebar.tsx').split('\n').find((l) => /espiada &&/.test(l))!;
+    expect(linha).toMatch(/\b(relative|sticky|absolute|fixed)\b/);
+  });
+
   it('a coluna espiada mantém a sombra que a lê como camada de cima', () => {
     expect(layout('Sidebar.tsx')).toMatch(/espiada &&.*shadow-2xl/);
   });
