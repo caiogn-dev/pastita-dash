@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { StoreCategory } from '../../../services/storesApi';
 
 import { Modal } from '../../../components/ui';
+import { Switch } from '../../../components/common';
 
 export interface ConfigMontador {
   builder_step_order: number | null;
@@ -111,23 +112,11 @@ export const MontadorModal: React.FC<Props> = ({
                 O cliente escolhe itens desta categoria como um passo da montagem.
               </p>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={ligado}
-              aria-label="Usar no montador"
-              onClick={() => setLigado((v) => !v)}
-              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                ligado ? 'bg-brand' : 'bg-border-token'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface-token transition-[left] duration-200 ${
-                  ligado ? 'left-[22px]' : 'left-0.5'
-                }`}
-                style={{ transitionTimingFunction: 'var(--mola)' }}
-              />
-            </button>
+            <Switch
+              checked={ligado}
+              onChange={setLigado}
+              ariaLabel="Usar no montador"
+            />
           </div>
 
           {ligado && (

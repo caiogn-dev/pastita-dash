@@ -7,6 +7,7 @@ import {
   LinkIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
+import { Switch } from '../common';
 import {
   PROVIDER_CONFIGS, 
   DEFAULT_AGENT_VALUES, 
@@ -445,19 +446,11 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   Mantém histórico de conversas no Redis
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleChange('use_memory', !formData.use_memory)}
-                className={cn(
-                  "relative w-12 h-6 rounded-full transition-colors",
-                  formData.use_memory ? "bg-primary-500" : "bg-zinc-300 dark:bg-zinc-600"
-                )}
-              >
-                <span className={cn(
-                  "absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform",
-                  formData.use_memory ? "translate-x-6" : "translate-x-0.5"
-                )} />
-              </button>
+              <Switch
+                checked={!!formData.use_memory}
+                onChange={(marcado) => handleChange('use_memory', marcado)}
+                ariaLabel="Usar memória de contexto"
+              />
             </div>
           </div>
         )}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Switch } from '../Switch';
 
 // O Switch compartilhado usa role="switch" + aria-checked, mas sem nome
@@ -21,6 +21,17 @@ describe('Switch — nome acessível', () => {
       </>
     );
     expect(screen.getByRole('switch', { name: /cardápio/i })).toBeInTheDocument();
+  });
+
+  // Herdado do `Toggle` do messaging, que morreu quando as seis grafias de
+  // interruptor viraram uma: quem chamava aquele componente agora chama este.
+  it('desabilitado não dispara — a tela salvando não pode receber outro clique', () => {
+    const onChange = jest.fn();
+    render(<Switch checked disabled onChange={onChange} ariaLabel="Entrega" />);
+    const chave = screen.getByRole('switch', { name: 'Entrega' });
+    expect(chave).toBeDisabled();
+    fireEvent.click(chave);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('mantém o estado em aria-checked', () => {

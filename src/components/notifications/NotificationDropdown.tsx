@@ -6,6 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { notificationsService, Notification } from '../../services/notifications';
 import { useWS } from '../../context/WebSocketContext';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { Switch } from '../common';
 
 /**
  * Linha de opt-in de push DENTRO do dropdown de notificações — antes era um
@@ -24,23 +25,13 @@ const PushToggleRow: React.FC = () => {
           <p className="text-xs text-fg-muted-token">Bloqueado nas permissões do navegador</p>
         )}
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isSubscribed}
-        aria-label={isSubscribed ? 'Desativar notificações push' : 'Ativar notificações push'}
+      <Switch
+        size="sm"
+        checked={isSubscribed}
         disabled={isLoading || denied}
-        onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
-        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-          isSubscribed ? 'bg-brand' : 'bg-surface-2 border border-border-token'
-        }`}
-      >
-        <span
-          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-            isSubscribed ? 'translate-x-[18px]' : 'translate-x-[3px]'
-          }`}
-        />
-      </button>
+        onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
+        ariaLabel={isSubscribed ? 'Desativar notificações push' : 'Ativar notificações push'}
+      />
     </div>
   );
 };

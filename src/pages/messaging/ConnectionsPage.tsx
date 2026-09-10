@@ -17,7 +17,7 @@ import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsApp
 import { messengerService } from '../../services/messenger';
 import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
-import { Toggle } from './Toggle';
+import { Switch } from '../../components/common';
 import { PageShell, SearchInput, Modal, ModalFooter, KpiGrid } from '../../components/ui';
 import { Loading } from '../../components/common';
 
@@ -450,10 +450,11 @@ export default function ConnectionsPage() {
                     <p className="text-xs text-fg-muted">{PLATFORMS[conn.platform].icon} {PLATFORMS[conn.platform].name}</p>
                   </div>
                 </div>
-                <Toggle
+                <Switch
+                  size="sm"
                   checked={conn.is_active}
                   onChange={() => handleToggleActive(conn)}
-                  label={`${conn.is_active ? 'Desativar' : 'Ativar'} conexão ${conn.name}`}
+                  ariaLabel={`${conn.is_active ? 'Desativar' : 'Ativar'} conexão ${conn.name}`}
                 />
               </div>
 

@@ -23,6 +23,7 @@ import {
 import { useStore } from '../../hooks';
 import logger from '../../services/logger';
 import { Card, Button, StatCard, PageShell, PageTabs } from '../../components/ui';
+import { Switch } from '../../components/common';
 import { aoAlternarModo, resumoDosModos, type ModosDeRecebimento, type Modo } from './modosDeRecebimento';
 import RecebimentoSection from './RecebimentoSection';
 import NotaFiscalSection from './NotaFiscalSection';
@@ -503,43 +504,42 @@ export const StoreSettingsPage: React.FC = () => {
           </div>
           <p className="text-sm text-fg-muted-token">{resumoDosModos(modos)}</p>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {/* Linha com chave, e não cartão-que-é-chave.
+              O cartão inteiro era um `role="switch"` com um pino desenhado
+              dentro dele — a terceira geometria de interruptor do painel, e um
+              alvo de clique do tamanho de um parágrafo, onde ler a explicação
+              já mudava a configuração da loja. Agora a chave é a chave. */}
+          <ul className="mt-4 divide-y divide-border-token">
             {([
-              { modo: 'delivery' as Modo, titulo: 'Entrega', ajuda: 'O cliente informa o endereço e paga o frete.' },
-              { modo: 'pickup' as Modo, titulo: 'Retirada no balcão', ajuda: 'O cliente busca na loja, sem frete.' },
-            ]).map(({ modo, titulo, ajuda }) => {
+              { modo: 'delivery' as Modo, titulo: 'Entrega', ajuda: 'O cliente informa o endereço e paga o frete.', Icone: TruckIcon },
+              { modo: 'pickup' as Modo, titulo: 'Retirada no balcão', ajuda: 'O cliente busca na loja, sem frete.', Icone: BuildingStorefrontIcon },
+            ]).map(({ modo, titulo, ajuda, Icone }) => {
               const ligado = modos[modo];
               return (
-                <button
-                  key={modo}
-                  type="button"
-                  role="switch"
-                  aria-checked={ligado}
-                  aria-label={titulo}
-                  disabled={salvandoModos !== null}
-                  onClick={() => alternarRecebimento(modo, !ligado)}
-                  className={`flex items-start gap-3 rounded-xl border p-4 text-left transition disabled:opacity-60 ${
-                    ligado
-                      ? 'border-[var(--brand)] bg-brand-soft'
-                      : 'border-border-token bg-surface hover:bg-surface-2'
-                  }`}
-                >
+                <li key={modo} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                   <span
-                    aria-hidden="true"
-                    className={`mt-0.5 flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition ${
-                      ligado ? 'justify-end bg-[var(--brand)]' : 'justify-start bg-surface-2'
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+                      ligado
+                        ? 'border-brand/40 bg-brand-soft text-brand-ink'
+                        : 'border-border-token bg-surface-2 text-fg-muted-token'
                     }`}
                   >
-                    <span className="h-4 w-4 rounded-full bg-canvas shadow" />
+                    <Icone className="h-5 w-5" />
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-fg-token">{titulo}</span>
-                    <span className="mt-0.5 block text-xs text-fg-muted-token">{ajuda}</span>
-                  </span>
-                </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-fg-token">{titulo}</p>
+                    <p className="text-xs text-fg-muted-token">{ajuda}</p>
+                  </div>
+                  <Switch
+                    checked={ligado}
+                    disabled={salvandoModos !== null}
+                    onChange={(marcado) => alternarRecebimento(modo, marcado)}
+                    ariaLabel={titulo}
+                  />
+                </li>
               );
             })}
-          </div>
+          </ul>
         </Card>
 
         {/* O PREÇO da entrega mora em Zonas de Entrega, não aqui.
