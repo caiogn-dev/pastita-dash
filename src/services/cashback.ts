@@ -34,6 +34,25 @@ export interface CashbackClienteRow {
   dias_para_vencer: number;
 }
 
+/** Uma linha do extrato: o que entrou ou saiu, e de onde veio. */
+export interface LancamentoDeCashback {
+  tipo: 'entrada' | 'saida';
+  quando: string;
+  /** `purchase` | `referral` | `adjust` | `prepaid` | `redemption`. */
+  origem: string;
+  /** Já em português, pronto para exibir — vem do backend. */
+  rotulo: string;
+  valor: string;
+  /** Quanto sobrou DESTE lote. `null` nas saídas. */
+  restante: string | null;
+  /** Na indicação, é aqui que mora a resposta: de quem foi o pedido. */
+  pedido: { id: string; numero: string; cliente: string; total: string } | null;
+  /** Motivo do crédito manual, quando não há pedido. */
+  referencia: string;
+  vence_em: string | null;
+  vencido: boolean;
+}
+
 export interface AjusteDeSaldo {
   phone: string;
   valor: string;
@@ -84,6 +103,19 @@ class CashbackService {
   async saldoDoCliente(storeSlug: string, phone: string): Promise<CashbackClienteRow | null> {
     const { data } = await api.get(`/stores/${storeSlug}/cashback/`, { params: { phone } });
     return (data?.results ?? [])[0] ?? null;
+  }
+
+  /**
+   * De onde veio cada real do cliente.
+   *
+   * Separado do saldo de propósito: o saldo é um número que toda ficha lê, o
+   * extrato é uma lista que só interessa quando alguém pergunta "de onde veio
+   * isso?". Carregar os dois juntos faria toda abertura de ficha pagar por
+   * uma pergunta que quase nunca é feita.
+   */
+  async extrato(storeSlug: string, phone: string): Promise<LancamentoDeCashback[]> {
+    const { data } = await api.get(`/stores/${storeSlug}/cashback/extrato/`, { params: { phone } });
+    return data?.lancamentos ?? [];
   }
 
   /**

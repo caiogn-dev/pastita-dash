@@ -42,6 +42,7 @@ import type { RfmReport, DateRange } from '../../services/reports';
 import { useOrderDetailModal } from '../../hooks/useOrderDetailModal';
 import { useSaldoDoCliente } from '../../hooks/queries/useSaldoDoCliente';
 import { cashbackService, type CashbackClienteRow } from '../../services/cashback';
+import { ExtratoDeCashback } from './ExtratoDeCashback';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { formatCurrency, formatPhone, formatPhoneForWhatsApp } from '../../utils/formatters';
 import { buscarCep } from '../../services/cep';
@@ -474,6 +475,9 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
   // Fidelidade, com o telefone digitado à mão: a ficha mostrava o número do
   // cliente e não deixava mexer nele.
   const [ajusteAberto, setAjusteAberto] = useState(false);
+  // "De onde veio esse dinheiro?" — a pergunta que a ficha não respondia.
+  // Fica fechado por padrão: o extrato só é buscado quando alguém pergunta.
+  const [extratoAberto, setExtratoAberto] = useState(false);
   const [valorDoAjuste, setValorDoAjuste] = useState('');
   const [motivoDoAjuste, setMotivoDoAjuste] = useState('');
   const [ajustando, setAjustando] = useState(false);
@@ -631,13 +635,22 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
               <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
                 Cashback
               </p>
-              <button
-                type="button"
-                onClick={() => setAjusteAberto((v) => !v)}
-                className="text-xs font-semibold text-brand-ink hover:underline"
-              >
-                Ajustar saldo
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setExtratoAberto((v) => !v)}
+                  className="text-xs font-semibold text-brand-ink hover:underline"
+                >
+                  De onde veio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAjusteAberto((v) => !v)}
+                  className="text-xs font-semibold text-brand-ink hover:underline"
+                >
+                  Ajustar saldo
+                </button>
+              </div>
             </div>
             <div className="rounded border border-border-token px-4 py-3">
               <div className="flex items-baseline justify-between gap-3">
@@ -664,6 +677,12 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                     <>{saldo.cupons_entrega} entrega{saldo.cupons_entrega > 1 ? 's' : ''} grátis</>
                   )}
                 </p>
+              )}
+
+              {/* Montado só depois do clique: assim a consulta acontece uma
+                  vez, quando alguém realmente pergunta. */}
+              {extratoAberto && customerPhone && (
+                <ExtratoDeCashback storeSlug={String(storeQuery)} telefone={customerPhone} />
               )}
 
               {ajusteAberto && (
