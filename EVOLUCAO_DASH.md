@@ -3,6 +3,60 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-10)
+
+- Base: `origin/main` (`3ea9c63`) — a branch de PRODUÇÃO. Atenção: o checkout
+  chega em HEAD destacado num commit local (`db89d98`, "fix(pedido)") que **não
+  está em `origin/main`**; medir baseline ali engana. Toda fatia parte de
+  `origin/main`.
+- `npm ci`: ok. `npm audit`: **11 vulnerabilidades** (1 low, 4 moderate, 6 high),
+  transitivas — avaliar em fatia dedicada (bumps majores de router/vite mexem em
+  build e pedem validação).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1375/1376** com **1 vermelho pré-existente** —
+  `pedidosDoQuadro.test.ts` ("não arrasta o que foi entregue ontem"). Depois
+  desta fatia: **1382/1382, 238 suítes, tudo verde**.
+- `npm run build` (tsc && vite): **ok** (~12s).
+- Nota de infra do jest: `testMatch` só casa `*.test.ts?(x)` — `*.spec.ts` NÃO
+  é coletado (o `.env` normaliza o config no start da sessão). Nome de arquivo
+  de teste novo: `*.test.ts(x)`.
+
+### 2026-09-10 — Correção de fuso: a coluna "Entregue" seguia o relógio do navegador
+- **Medido:** único teste vermelho na base (`pedidosDoQuadro.test.ts`). Causa
+  raiz: `pedidosDaColuna` decidia "de hoje" com `mesmoDia` usando
+  `getFullYear/Month/Date` — ou seja, o **fuso do runtime**. Funciona no
+  navegador do lojista em -03:00, mas um pedido entregue às 21h de ontem no
+  Brasil é meia-noite de hoje em UTC: em qualquer acesso fora de -03:00 (suporte,
+  dono viajando) e no CI (UTC) ele escorregava para a coluna de finalizados de
+  **hoje**, poluindo o quadro do dia com o histórico de ontem. Mesmo defeito de
+  fuso que o `toLocaleTimeString` sem `timeZone` espalha pelo painel.
+- **Mudado (aditivo, sem mudar o caso comum):**
+  - Novo `src/utils/fusoBrasil.ts`: `FUSO_BRASIL = 'America/Sao_Paulo'` (o mesmo
+    default já usado em `ScheduledMessagesPage`), `diaNoFuso` (lê `YYYY-MM-DD` no
+    fuso via `Intl.DateTimeFormat('en-CA')`) e `mesmoDiaNoFuso`.
+  - `pedidosDoQuadro.ts`: `mesmoDia` local → `mesmoDiaNoFuso(...)` com um 4º
+    parâmetro opcional `fuso` (default `FUSO_BRASIL`), pronto para receber
+    `store.timezone` no futuro sem outra reescrita.
+  - Para o lojista em -03:00 (caso comum; o Brasil não tem horário de verão
+    desde 2019) o comportamento é **idêntico**; muda só para acessos de outro
+    fuso, onde passa a ser correto.
+- **Teste (TDD):** novo `src/utils/__tests__/fusoBrasil.test.ts` (7 casos, verde)
+  cobrindo dia civil no fuso, `mesmoDiaNoFuso` e override explícito de fuso; o
+  caso pré-existente `pedidosDoQuadro` "não arrasta o que foi entregue ontem"
+  vira verde. `.test.ts` (não `.spec.ts`) porque o `testMatch` do repo só coleta
+  `*.test`.
+- **Antes/depois:** `npm test` 1375/1376 (1 vermelho) → **1382/1382, 238 suítes**;
+  `tsc --noEmit` limpo e `vite build` ok nos dois lados; lint limpo nos arquivos
+  tocados.
+- **Próximo passo priorizado:** (1) **Fuso, continuação:** o resto do painel
+  ainda formata data/hora no fuso do runtime — `src/utils/formatters.ts`
+  (`formatDate/formatDateTime/formatTime`) e o `toLocaleTimeString` de telas de
+  pedido não passam `timeZone`. Centralizar em `fusoBrasil.ts` e, idealmente,
+  puxar `store.timezone` do `useStore()` nas telas de pedido. (2) **Deps:**
+  planejar os bumps majores (react-router 6→7, vite) como fatias dedicadas com
+  validação de build. (3) Seguir a varredura de "zeros enganosos" em seções de
+  KPI derivadas de query.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas

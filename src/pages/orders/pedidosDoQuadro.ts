@@ -11,6 +11,8 @@
  * de hoje, e o resto vive na página de Histórico.
  */
 
+import { FUSO_BRASIL, mesmoDiaNoFuso } from '../../utils/fusoBrasil';
+
 /** A única coluna que representa trabalho encerrado. */
 export const ENTREGUES_DE_HOJE = 'done';
 
@@ -25,21 +27,21 @@ interface ColunaDoQuadro {
   statuses: readonly string[];
 }
 
-const mesmoDia = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear()
-  && a.getMonth() === b.getMonth()
-  && a.getDate() === b.getDate();
-
 export function pedidosDaColuna<T extends PedidoDoQuadro>(
   pedidos: T[],
   coluna: ColunaDoQuadro,
   agora: Date = new Date(),
+  // "Hoje" é o dia da COZINHA, não o do navegador de quem abre o painel. Sem
+  // fixar o fuso, um pedido entregue às 21h de ontem no Brasil (meia-noite em
+  // UTC) escorregava para a coluna de finalizados de hoje em qualquer acesso
+  // fora de -03:00. Quando a loja tiver `store.timezone` em mãos, passe-o aqui.
+  fuso: string = FUSO_BRASIL,
 ): T[] {
   const soDeHoje = coluna.id === ENTREGUES_DE_HOJE;
 
   return pedidos
     .filter((o) => o.status !== 'cancelled')
     .filter((o) => coluna.statuses.includes(o.status))
-    .filter((o) => !soDeHoje || mesmoDia(new Date(o.created_at), agora))
+    .filter((o) => !soDeHoje || mesmoDiaNoFuso(new Date(o.created_at), agora, fuso))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
