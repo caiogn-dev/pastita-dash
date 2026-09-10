@@ -102,6 +102,10 @@
   /* Elástica: estica na largada, corre no meio, desacelera no fim. É o que
      faz o indicador da navegação parecer matéria, não um retângulo teletransportado. */
   --mola: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Sem passar do ponto. A `--mola` é ótima para um ícone girar e péssima
+     para LARGURA: o overshoot faz a coluna inteira crescer além do destino e
+     voltar, arrastando o layout de tudo que está dentro dela duas vezes. */
+  --desliza: cubic-bezier(0.22, 1, 0.36, 1);
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Cinzel', Georgia, serif;
 
@@ -141,6 +145,10 @@
   /* No escuro a sombra some contra o fundo; o que dá relevo é a luz na borda
      de cima. Mesmos nomes, técnica diferente — quem consome não precisa saber. */
   --mola: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Sem passar do ponto. A `--mola` é ótima para um ícone girar e péssima
+     para LARGURA: o overshoot faz a coluna inteira crescer além do destino e
+     voltar, arrastando o layout de tudo que está dentro dela duas vezes. */
+  --desliza: cubic-bezier(0.22, 1, 0.36, 1);
   --elev-repouso: 0 1px 0 rgba(245,236,222,.05) inset, 0 2px 6px rgba(0,0,0,.35);
   --elev-hover: 0 1px 0 rgba(245,236,222,.08) inset, 0 8px 18px rgba(0,0,0,.45);
   --elev-flutuante: 0 1px 0 rgba(245,236,222,.10) inset, 0 18px 40px rgba(0,0,0,.6);

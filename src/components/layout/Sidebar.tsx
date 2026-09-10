@@ -40,7 +40,17 @@ export interface SidebarProps {
  * coluna já tem quase toda a largura, e esperar o último frame faria o texto
  * chegar atrasado em vez de junto.
  */
-const ESPERA_DA_LARGURA = 240;
+const ESPERA_DA_LARGURA = 120;
+
+/**
+ * O rótulo entra JUNTO com a coluna (ver `.entra-com-a-coluna` no index.css).
+ *
+ * A espera sozinha trocava um defeito por outro: sem o corte, mas com um
+ * degrau — a largura terminava e o texto aparecia inteiro no frame seguinte.
+ * Com a espera curta e a entrada em 260ms os dois movimentos se sobrepõem e
+ * leem como um só gesto.
+ */
+const ENTRADA = 'entra-com-a-coluna';
 
 /** O caminho casa com o destino, incluindo sub-rotas (`/orders/123`). */
 function ativo(pathname: string, href: string): boolean {
@@ -77,7 +87,7 @@ const ItemDeMenu: React.FC<{
   const miolo = (
     <>
       <Icone className="h-4 w-4 shrink-0" />
-      <span className={cn('truncate', rotuloOculto && 'sr-only')}>{item.name}</span>
+      <span className={cn('truncate', rotuloOculto ? 'sr-only' : ENTRADA)}>{item.name}</span>
       {item.badge && !rotuloOculto && (
         <span className="ml-auto rounded-full bg-surface-2 px-1.5 py-0.5 text-badge font-bold text-fg-muted-token">
           {item.badge}
@@ -177,7 +187,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   // lado, e o alvo de clique encostava na borda da tela. 72 dá respiro e
   // permite o ícone maior sem apertar.
   const largura = estreita ? 'w-[72px]' : 'w-64';
-  const tamIcone = miolo ? 'h-6 w-6' : 'h-5 w-5';
+  // O ícone também é movimento: sem a transição ele TROCA de tamanho num
+  // frame, no meio de uma coluna que está deslizando.
+  const tamIcone = cn('transition-[width,height] duration-200', miolo ? 'h-6 w-6' : 'h-5 w-5');
 
   return (
     // O invólucro segura o ESPAÇO da coluna na preferência do usuário. Sem ele,
@@ -203,7 +215,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
       className={cn(
         // `h-full` e não `h-screen`: dentro da app shell a coluna preenche a
         // casca, que já é a viewport. `h-screen` ignoraria uma casca menor.
-        'flex h-full flex-col border-r border-border-token bg-surface',
+        'coluna-lateral flex h-full flex-col border-r border-border-token bg-surface',
         // A largura anima com a MESMA curva elástica do indicador ativo:
         // recolher e expandir é movimento de matéria, não corte de frame.
         'transition-[width] duration-300',
@@ -225,13 +237,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         // sumia atrás da barra.
         espiada && 'relative z-50 shadow-2xl'
       )}
-      style={{ transitionTimingFunction: 'var(--mola)' }}
+      style={{ transitionTimingFunction: 'var(--desliza)' }}
     >
       {/* IDENTIDADE: de que produto é a tela, e de que LOJA.
           A marca ficava aqui e o seletor de loja na barra de cima, a 800px de
           distância — duas perguntas do mesmo tipo ("onde eu estou?") respondidas
           em cantos opostos. Juntas, viram um bloco de contexto só. */}
-      <div className={cn('flex flex-col gap-2 py-3', miolo ? 'px-2' : 'px-3')}>
+      <div className={cn('flex flex-col gap-2 py-3 transition-[padding] duration-300', miolo ? 'px-2' : 'px-3')}>
         <Link
           to="/"
           aria-label="Cardapidex — ir para o início"
@@ -247,7 +259,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
             onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
           {!miolo && (
-            <span className="truncate font-brand text-lead uppercase tracking-[0.16em] text-brand-ink">
+            <span className={cn(ENTRADA, 'truncate font-brand text-lead uppercase tracking-[0.16em] text-brand-ink')}>
               Cardapidex
             </span>
           )}
@@ -274,6 +286,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
             ) : (
               <li
                 className={cn(
+                  ENTRADA,
                   'px-2.5 pb-1 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-fg-muted-token/70',
                   indice === 0 ? 'pt-1' : 'pt-4',
                 )}
@@ -295,7 +308,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   title={miolo ? secao.label : undefined}
                   className={cn(
                     'relative flex items-center gap-2.5 rounded-md py-2 text-body font-medium',
-                    miolo ? 'justify-center px-0' : 'px-2.5',
+                    'transition-[padding] duration-300',
+                    'transition-[padding] duration-300',
+                  'transition-[padding] duration-300',
+            miolo ? 'justify-center px-0' : 'px-2.5',
                     'transition-colors duration-200',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     estaAtiva
@@ -322,7 +338,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
                   {/* Recolhido esconde o rótulo VISUALMENTE, nunca do leitor de
                       tela — senão a coluna vira uma fileira de ícones mudos. */}
-                  <span className={cn('truncate', miolo && 'sr-only')}>{secao.label}</span>
+                  <span className={cn('truncate', miolo ? 'sr-only' : ENTRADA)}>{secao.label}</span>
                   {secao.badge && !miolo && (
                     <span className="ml-auto rounded-full bg-brand px-1.5 py-0.5 text-badge font-bold text-on-brand">
                       {secao.badge}
@@ -374,7 +390,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   style={{ transitionTimingFunction: 'var(--mola)' }}
                 />
                 <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
-                <span className={cn('truncate', miolo && 'sr-only')}>{secao.label}</span>
+                <span className={cn('truncate', miolo ? 'sr-only' : ENTRADA)}>{secao.label}</span>
                 {!miolo && (
                   <ChevronDownIcon
                     className={cn(
@@ -439,7 +455,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
             style={{ transitionTimingFunction: 'var(--mola)' }}
             aria-hidden
           />
-          <span className={cn('truncate', miolo && 'sr-only')}>
+          <span className={cn('truncate', miolo ? 'sr-only' : ENTRADA)}>
             {recolhido ? 'Fixar aberto' : 'Recolher'}
           </span>
         </button>
