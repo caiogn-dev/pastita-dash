@@ -9,26 +9,39 @@
  * O resultado é o pior tipo de defeito de interface: o clique funciona, o menu
  * abre, e nada aparece.
  *
- * `left-0` ancora pela esquerda do botão e o menu cresce para o lado onde há
- * espaço — a área de conteúdo.
+ * Este arquivo lia o ARQUIVO FONTE com regex e quebrou assim que o `className`
+ * virou `cn(...)` — sem que nada do comportamento mudasse. Agora abre o menu de
+ * verdade e olha o elemento: o que importa é onde ele ancora, não como o
+ * atributo foi escrito.
  */
-import * as fs from 'fs';
-import * as path from 'path';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
 
-const fonte = fs.readFileSync(
-  path.join(__dirname, '..', 'StoreSelector.tsx'),
-  'utf8'
-);
+import { StoreSelector } from '../StoreSelector';
+import { useRootStore } from '../../../stores/rootStore';
+
+const DUAS = [
+  { id: '1', name: 'Cê Saladas' },
+  { id: '2', name: 'Pastita' },
+];
+
+function abrirOMenu() {
+  useRootStore.setState({ stores: DUAS, selectedStoreId: '1' } as never);
+  render(<StoreSelector />);
+  fireEvent.click(screen.getByRole('button', { name: /trocar de loja/i }));
+  return screen.getByRole('menu', { name: /trocar de loja/i });
+}
 
 describe('ancoragem do menu de lojas', () => {
   it('ancora à esquerda do botão, não à direita', () => {
-    expect(fonte).toMatch(/className="[^"]*\bleft-0\b/);
-    expect(fonte).not.toMatch(/className="[^"]*\bright-0\b/);
+    const menu = abrirOMenu();
+    expect(menu.className).toMatch(/\bleft-0\b/);
+    expect(menu.className).not.toMatch(/\bright-0\b/);
   });
 
   it('continua acima do conteúdo da página', () => {
     // O menu vive dentro do header (z-40). Perder o z-50 o coloca atrás dos
     // cards da própria home.
-    expect(fonte).toMatch(/z-50/);
+    expect(abrirOMenu().className).toMatch(/z-50/);
   });
 });

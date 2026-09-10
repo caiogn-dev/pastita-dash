@@ -25,11 +25,22 @@ import { ChevronDownIcon, ChevronDoubleLeftIcon } from '@heroicons/react/24/outl
 import { cn } from '../../utils/cn';
 import { NavItem, NavSection } from './navSections';
 import { publicarRecuo } from './larguraDaColuna';
+import { lerPreferencia, gravarPreferencia } from './preferenciaDaColuna';
+import { StoreSelector } from './StoreSelector';
 
 export interface SidebarProps {
   sections: NavSection[];
   className?: string;
 }
+
+/**
+ * Quanto o conteúdo espera antes de aparecer, em ms.
+ *
+ * Um pouco MENOS que os 300ms da animação de largura: no fim do trajeto a
+ * coluna já tem quase toda a largura, e esperar o último frame faria o texto
+ * chegar atrasado em vez de junto.
+ */
+const ESPERA_DA_LARGURA = 240;
 
 /** O caminho casa com o destino, incluindo sub-rotas (`/orders/123`). */
 function ativo(pathname: string, href: string): boolean {
@@ -90,12 +101,35 @@ const ItemDeMenu: React.FC<{
 export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   const { pathname } = useLocation();
   const [aberto, setAberto] = useState<string | null>(null);
-  const [recolhido, setRecolhido] = useState(false);
+  // `useState(fn)` e não `useState(lerPreferencia())`: a segunda forma leria o
+  // localStorage a CADA render, e só o primeiro valor seria usado.
+  const [recolhido, setRecolhido] = useState(lerPreferencia);
   // Espiada por ponteiro/teclado. É SEPARADA de `recolhido` de propósito: o
   // clique é a preferência do usuário ("quero a coluna estreita"), o hover é
   // só uma consulta. Se o hover escrevesse na preferência, o primeiro passar
   // de mouse deixaria a coluna larga para sempre.
   const [espiando, setEspiando] = useState(false);
+
+  /**
+   * Trocar a preferência ZERA a espiada — e é isso que consertava a
+   * sobreposição.
+   *
+   * O botão mora DENTRO da coluna, então para clicá-lo o ponteiro está
+   * obrigatoriamente sobre ela: `espiando` é sempre true no instante do clique.
+   * Sem zerar aqui, recolher caía direto em `espiada` (recolhido && espiando) e
+   * a coluna continuava com 256px flutuando, enquanto o invólucro já tinha
+   * devolvido o espaço para 72px — o conteúdo da página saltava 184px para a
+   * esquerda e ia parar ATRÁS da coluna.
+   *
+   * `mouseenter` não redispara com o ponteiro parado, então a coluna fica
+   * recolhida de verdade até o operador sair e voltar. É o gesto que ele pediu:
+   * o clique manda, o hover só consulta.
+   */
+  const mudarPreferencia = (novo: boolean) => {
+    setRecolhido(novo);
+    setEspiando(false);
+    gravarPreferencia(novo);
+  };
 
   // O grupo da rota atual abre sozinho a cada navegação. Sem isso, entrar em
   // /combos por link direto deixa o menu mostrando outra coisa.
@@ -109,6 +143,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   const estreita = recolhido && !espiando;
   const espiada = recolhido && espiando;
 
+  /**
+   * O MIOLO espera a largura chegar. A coluna cresce em 300ms, mas os rótulos
+   * entravam no DOM no primeiro frame: "CARDAPIDEX" tem 129px e o container
+   * ainda tinha 7 — o `truncate` cortava e o dono lia "CA" a cada passar de
+   * mouse, no logo e em todos os itens do menu.
+   *
+   * Só na abertura. Ao recolher o conteúdo volta ao modo ícone na hora, antes
+   * de a largura encolher, pelo mesmo motivo: primeiro o texto sai, depois a
+   * coluna aperta. Nunca há texto largo em coluna estreita.
+   */
+  const [larguraPronta, setLarguraPronta] = useState(!recolhido);
+  useEffect(() => {
+    if (estreita) {
+      setLarguraPronta(false);
+      return;
+    }
+    const id = setTimeout(() => setLarguraPronta(true), ESPERA_DA_LARGURA);
+    return () => clearTimeout(id);
+  }, [estreita]);
+
+  /** O que o conteúdo mostra AGORA — atrás da largura, nunca à frente dela. */
+  const miolo = estreita || !larguraPronta;
+
   // A navbar acompanha a coluna. Publicado como variável CSS, e não como
   // estado do React, porque hover não pode re-renderizar a árvore da página.
   useEffect(() => {
@@ -120,7 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   // lado, e o alvo de clique encostava na borda da tela. 72 dá respiro e
   // permite o ícone maior sem apertar.
   const largura = estreita ? 'w-[72px]' : 'w-64';
-  const tamIcone = estreita ? 'h-6 w-6' : 'h-5 w-5';
+  const tamIcone = miolo ? 'h-6 w-6' : 'h-5 w-5';
 
   return (
     // O invólucro segura o ESPAÇO da coluna na preferência do usuário. Sem ele,
@@ -166,13 +223,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
       )}
       style={{ transitionTimingFunction: 'var(--mola)' }}
     >
-      {/* Marca no topo. A coluna abria direto nos itens, sem nada dizendo de
-          que produto é a tela — e recolhida virava uma faixa de ícones órfã. */}
-      <div className="flex items-center gap-2 px-3 py-3">
+      {/* IDENTIDADE: de que produto é a tela, e de que LOJA.
+          A marca ficava aqui e o seletor de loja na barra de cima, a 800px de
+          distância — duas perguntas do mesmo tipo ("onde eu estou?") respondidas
+          em cantos opostos. Juntas, viram um bloco de contexto só. */}
+      <div className={cn('flex flex-col gap-2 py-3', miolo ? 'px-2' : 'px-3')}>
         <Link
           to="/"
           aria-label="Cardapidex — ir para o início"
-          className="flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className={cn(
+            'flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+            miolo && 'justify-center',
+          )}
         >
           <img
             src="/brand/symbol-256.png"
@@ -180,41 +242,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
             className="h-8 w-8 shrink-0 rounded-md object-contain"
             onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
-          {!estreita && (
+          {!miolo && (
             <span className="truncate font-brand text-lead uppercase tracking-[0.16em] text-brand-ink">
               Cardapidex
             </span>
           )}
         </Link>
 
-        {!recolhido && (
-          <button
-            type="button"
-            onClick={() => setRecolhido(true)}
-            aria-label="Recolher menu"
-            className="ml-auto rounded-md p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          >
-            <ChevronDoubleLeftIcon className="h-4 w-4" />
-          </button>
-        )}
+        <StoreSelector variante="coluna" estreito={miolo} />
       </div>
-
-      {/* Durante a espiada a coluna JÁ está larga, então este botão deixa de
-          significar "abrir" e passa a significar "deixar assim" — o rótulo
-          precisa dizer isso, senão o operador clica esperando outra coisa. */}
-      {recolhido && (
-        <button
-          type="button"
-          onClick={() => setRecolhido(false)}
-          aria-label={espiada ? 'Fixar menu aberto' : 'Expandir menu'}
-          className={cn(
-            'mb-1 rounded-md p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
-            espiada ? 'mr-3 self-end' : 'mx-auto',
-          )}
-        >
-          <ChevronDoubleLeftIcon className="h-4 w-4 rotate-180" />
-        </button>
-      )}
 
       <ul className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
         {sections.map((secao, indice) => {
@@ -229,7 +265,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           // a separação ainda vale.
           const primeiraDoGrupo = secao.grupo && sections[indice - 1]?.grupo !== secao.grupo;
           const cabecalhoDoGrupo = primeiraDoGrupo ? (
-            estreita ? (
+            miolo ? (
               <li aria-hidden className="mx-auto my-2 h-px w-6 bg-border-token" />
             ) : (
               <li
@@ -252,10 +288,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                 <Link
                   to={secao.href}
                   aria-current={estaAtiva ? 'page' : undefined}
-                  title={estreita ? secao.label : undefined}
+                  title={miolo ? secao.label : undefined}
                   className={cn(
                     'relative flex items-center gap-2.5 rounded-md py-2 text-body font-medium',
-                    estreita ? 'justify-center px-0' : 'px-2.5',
+                    miolo ? 'justify-center px-0' : 'px-2.5',
                     'transition-colors duration-200',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     estaAtiva
@@ -282,8 +318,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
                   {/* Recolhido esconde o rótulo VISUALMENTE, nunca do leitor de
                       tela — senão a coluna vira uma fileira de ícones mudos. */}
-                  <span className={cn('truncate', estreita && 'sr-only')}>{secao.label}</span>
-                  {secao.badge && !estreita && (
+                  <span className={cn('truncate', miolo && 'sr-only')}>{secao.label}</span>
+                  {secao.badge && !miolo && (
                     <span className="ml-auto rounded-full bg-brand px-1.5 py-0.5 text-badge font-bold text-on-brand">
                       {secao.badge}
                     </span>
@@ -307,16 +343,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   // cinco quadradinhos sem nome. O gesto de abrir um grupo é
                   // um pedido para VER o grupo: a coluna expande junto.
                   if (recolhido) {
-                    setRecolhido(false);
+                    mudarPreferencia(false);
                     setAberto(secao.label);
                     return;
                   }
                   setAberto(estaAberta ? null : secao.label);
                 }}
-                title={estreita ? secao.label : undefined}
+                title={miolo ? secao.label : undefined}
                 className={cn(
                   'relative flex w-full items-center gap-2.5 rounded-md py-2 text-body font-medium',
-                  estreita ? 'justify-center px-0' : 'px-2.5',
+                  miolo ? 'justify-center px-0' : 'px-2.5',
                   'transition-colors duration-200',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                   estaAtiva
@@ -334,8 +370,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   style={{ transitionTimingFunction: 'var(--mola)' }}
                 />
                 <Icone className={cn(tamIcone, 'shrink-0', estaAtiva && 'text-brand-ink')} />
-                <span className={cn('truncate', estreita && 'sr-only')}>{secao.label}</span>
-                {!estreita && (
+                <span className={cn('truncate', miolo && 'sr-only')}>{secao.label}</span>
+                {!miolo && (
                   <ChevronDownIcon
                     className={cn(
                       'ml-auto h-4 w-4 shrink-0 transition-transform',
@@ -347,7 +383,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
               </button>
 
               {estaAberta && (
-                <ul className={cn('mt-0.5 space-y-0.5', !estreita && 'ml-4 border-l border-border-token pl-2')}>
+                <ul className={cn('mt-0.5 space-y-0.5', !miolo && 'ml-4 border-l border-border-token pl-2')}>
                   {secao.items.map((item) => {
                     const ItemIcone = item.icon;
                     const itemAtivo = ativo(pathname, item.href);
@@ -357,7 +393,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                           item={item}
                           ativo={itemAtivo}
                           Icone={ItemIcone}
-                          rotuloOculto={estreita}
+                          rotuloOculto={miolo}
                         />
                       </li>
                     );
@@ -369,6 +405,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           );
         })}
       </ul>
+
+      {/* RODAPÉ. O controle de largura não é navegação: misturado aos destinos
+          ele competia com eles pela mesma leitura. Embaixo, atrás de uma linha,
+          ele lê como o que é — ajuste da moldura, não um lugar para ir.
+          `mt-auto` prende no fim mesmo quando a lista é curta demais para
+          empurrá-lo até lá. */}
+      <div className="mt-auto border-t border-border-token p-2">
+        <button
+          type="button"
+          onClick={() => mudarPreferencia(!recolhido)}
+          // Durante a espiada a coluna JÁ está larga: aqui o botão deixa de
+          // significar "abrir" e passa a significar "deixar assim".
+          aria-label={recolhido ? (espiada ? 'Fixar menu aberto' : 'Expandir menu') : 'Recolher menu'}
+          aria-expanded={!recolhido}
+          title={miolo ? 'Expandir menu' : undefined}
+          className={cn(
+            'flex w-full items-center gap-2.5 rounded-md py-2 text-body font-medium',
+            miolo ? 'justify-center px-0' : 'px-2.5',
+            'text-fg-muted-token transition-colors duration-200 hover:bg-surface-2 hover:text-fg-token',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+          )}
+        >
+          <ChevronDoubleLeftIcon
+            className={cn(
+              'h-5 w-5 shrink-0 transition-transform duration-300',
+              recolhido && 'rotate-180',
+            )}
+            style={{ transitionTimingFunction: 'var(--mola)' }}
+            aria-hidden
+          />
+          <span className={cn('truncate', miolo && 'sr-only')}>
+            {recolhido ? 'Fixar aberto' : 'Recolher'}
+          </span>
+        </button>
+      </div>
     </nav>
     </div>
   );

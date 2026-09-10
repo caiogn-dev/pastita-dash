@@ -30,6 +30,11 @@ function renderizar(pathname = '/') {
 }
 
 describe('Sidebar', () => {
+  // A largura da coluna virou preferência gravada (ver preferenciaDaColuna).
+  // Sem limpar, o teste que recolhe deixa a escolha no disco e o SEGUINTE
+  // nasce recolhido — falha que parece do componente e é do harness.
+  beforeEach(() => localStorage.clear());
+
   it('todas as seções aparecem — nenhuma cai em menu "Mais"', () => {
     renderizar();
     const nav = screen.getByRole('navigation', { name: /principal/i });
@@ -92,7 +97,7 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: /Combos/ })).toBeInTheDocument();
   });
 
-  it('recolhida, passar o mouse expande — sem precisar clicar', () => {
+  it('recolhida, passar o mouse expande — sem precisar clicar', async () => {
     // Recolher e expandir por clique cobra dois cliques por consulta ao menu:
     // um para abrir, outro para fechar. O ponteiro já está lá; a coluna deve
     // responder à presença dele.
@@ -101,7 +106,9 @@ describe('Sidebar', () => {
     expect(screen.queryByText('Cardapidex')).not.toBeInTheDocument();
 
     fireEvent.mouseEnter(screen.getByRole('navigation', { name: /principal/i }));
-    expect(screen.getByText('Cardapidex')).toBeInTheDocument();
+    // `find` e não `get`: o texto entra DEPOIS da largura, senão apareceria
+    // espremido em 72px e o `truncate` cortaria a marca em "CA".
+    expect(await screen.findByText('Cardapidex')).toBeInTheDocument();
   });
 
   it('tirar o mouse volta ao modo ícone — hover não vira preferência', () => {
@@ -120,14 +127,14 @@ describe('Sidebar', () => {
     expect(screen.getByRole('button', { name: /expandir menu/i })).toBeInTheDocument();
   });
 
-  it('foco pelo teclado expande igual ao mouse', () => {
+  it('foco pelo teclado expande igual ao mouse', async () => {
     // Quem navega por Tab não tem ponteiro. Sem isso, o teclado ficaria preso
     // numa fileira de ícones enquanto o mouse ganha a coluna inteira.
     renderizar();
     fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
 
     fireEvent.focus(screen.getByRole('button', { name: /Cardápio/ }));
-    expect(screen.getByText('Cardapidex')).toBeInTheDocument();
+    expect(await screen.findByText('Cardapidex')).toBeInTheDocument();
   });
 
   it('expandida por clique, o mouse não muda nada', () => {

@@ -40,7 +40,20 @@ const Avatar: React.FC<{ nome: string; logo?: string | null }> = ({ nome, logo }
     </span>
   );
 
-export const StoreSelector: React.FC = () => {
+export interface StoreSelectorProps {
+  /**
+   * `coluna` é o seletor dentro da barra lateral: ocupa a largura toda e alinha
+   * com os itens do menu. `navbar` é a pílula compacta da barra de cima.
+   */
+  variante?: 'navbar' | 'coluna';
+  /** Coluna recolhida: sobra o avatar. O nome continua no accessible name. */
+  estreito?: boolean;
+}
+
+export const StoreSelector: React.FC<StoreSelectorProps> = ({
+  variante = 'navbar',
+  estreito = false,
+}) => {
   const stores = useRootStore((s) => s.stores);
   const selectedStoreId = useRootStore((s) => s.selectedStoreId);
   const setSelectedStore = useRootStore((s) => s.setSelectedStore);
@@ -82,9 +95,17 @@ export const StoreSelector: React.FC = () => {
   // Uma loja: identidade, não controle.
   if (stores.length === 1) {
     return (
-      <span className="flex max-w-[180px] items-center gap-2 px-1 text-body font-semibold text-chrome-fg">
+      <span
+        title={estreito ? atual?.name : undefined}
+        className={cn(
+          'flex items-center gap-2 text-body font-semibold',
+          variante === 'coluna'
+            ? cn('w-full rounded-lg px-2 py-1.5 text-fg-token', estreito && 'justify-center px-0')
+            : 'max-w-[180px] px-1 text-chrome-fg',
+        )}
+      >
         <Avatar nome={atual?.name || ''} logo={(atual as { logo_url?: string })?.logo_url} />
-        <span className="truncate">{atual?.name}</span>
+        <span className={cn('truncate', estreito && 'sr-only')}>{atual?.name}</span>
       </span>
     );
   }
@@ -97,12 +118,46 @@ export const StoreSelector: React.FC = () => {
         type="button"
         aria-haspopup="menu"
         aria-expanded={aberto}
+        // Sem rótulo próprio o botão se anunciava só pelo nome da loja atual —
+        // "Pastita" não diz que aquilo TROCA de loja.
+        aria-label={`Trocar de loja — atual: ${atual?.name ?? ''}`}
+        title={estreito ? atual?.name : undefined}
         onClick={() => setAberto((v) => !v)}
-        className="flex max-w-[200px] items-center gap-2 rounded-lg border border-chrome-border px-2 py-1.5 text-body font-semibold text-chrome-fg transition-colors hover:bg-chrome-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className={cn(
+          'flex items-center gap-2 rounded-lg border text-body font-semibold',
+          // `transition-colors` sozinho não anima o que ninguém declarou: a
+          // borda tinha uma cor só, então mudava de nada para nada. Agora os
+          // três estados (repouso, hover, aberto) são cores DIFERENTES.
+          'transition-colors duration-200',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+          variante === 'coluna'
+            ? cn(
+                'w-full px-2 py-1.5 text-fg-token',
+                estreito && 'justify-center px-0',
+                aberto
+                  ? 'border-brand bg-brand-soft'
+                  : 'border-border-token hover:border-brand hover:bg-surface-2',
+              )
+            : cn(
+                'max-w-[200px] px-2 py-1.5 text-chrome-fg',
+                aberto
+                  ? 'border-brand bg-chrome-hover'
+                  : 'border-chrome-border hover:border-brand hover:bg-chrome-hover',
+              ),
+        )}
       >
         <Avatar nome={atual?.name || ''} logo={(atual as { logo_url?: string })?.logo_url} />
-        <span className="truncate">{atual?.name}</span>
-        <ChevronUpDownIcon className="h-4 w-4 shrink-0 text-chrome-muted" aria-hidden />
+        <span className={cn('min-w-0 flex-1 truncate text-left', estreito && 'sr-only')}>
+          {atual?.name}
+        </span>
+        <ChevronUpDownIcon
+          className={cn(
+            'h-4 w-4 shrink-0 transition-colors',
+            estreito && 'sr-only',
+            aberto ? 'text-brand-ink' : 'text-fg-muted-token',
+          )}
+          aria-hidden
+        />
       </button>
 
       {aberto && (
@@ -113,7 +168,12 @@ export const StoreSelector: React.FC = () => {
           // um menu ancorado à direita cresce para fora da tela — os 256px
           // entravam na faixa da coluna lateral, que pinta por cima. O clique
           // funcionava, o menu abria, e nada aparecia.
-          className="absolute left-0 z-50 mt-1 w-64 overflow-hidden rounded border border-border-token bg-surface shadow-flutuante"
+          className={cn(
+            'absolute left-0 z-50 mt-1 overflow-hidden rounded border border-border-token bg-surface shadow-flutuante',
+            // Na coluna recolhida o menu não pode herdar os 72px do botão:
+            // ficaria mais estreito que os nomes que precisa mostrar.
+            variante === 'coluna' && estreito ? 'w-64 min-w-max' : 'w-64',
+          )}
         >
           {comBusca && (
             <div className="flex items-center gap-2 border-b border-border-token px-3">

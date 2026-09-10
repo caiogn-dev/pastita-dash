@@ -370,7 +370,12 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
               loja na outra ponta, a 800px de distância — a mesma informação
               duas vezes, e nenhum dos lados com significado próprio. */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="block max-sm:hidden">
+            {/* `lg:hidden`: a partir de lg a COLUNA existe (MainLayout esconde a
+                sidebar com `max-lg:hidden`) e o seletor mora lá, junto da marca.
+                Mantê-lo aqui também mostraria a mesma loja duas vezes na mesma
+                tela — que é o defeito que este bloco já tinha corrigido uma vez,
+                quando o logo da loja ficava aqui e o nome dela na outra ponta. */}
+            <div className="block max-sm:hidden lg:hidden">
               <StoreSelector />
             </div>
 

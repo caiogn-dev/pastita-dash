@@ -1,19 +1,19 @@
 /**
  * Quanto a coluna lateral está ocupando AGORA, para a navbar acompanhar.
  *
- * A coluna recolhida reserva 72px no fluxo; ao espiar, ela cresce para 264px
+ * A coluna recolhida reserva 72px no fluxo; ao espiar, ela cresce para 256px
  * mas FLUTUA — o espaço reservado continua 72px de propósito, senão a página
- * inteira andaria 192px a cada passada de mouse.
+ * inteira andaria 184px a cada passada de mouse.
  *
  * Só que a navbar ficava embaixo dessa parte flutuante e parecia não reagir.
- * A diferença (192px) vira um recuo aplicado SÓ na navbar: o topo acompanha a
+ * A diferença (184px) vira um recuo aplicado SÓ na navbar: o topo acompanha a
  * coluna e o conteúdo da página não se mexe.
  *
  * Publicado como variável CSS em vez de estado do React: hover não pode
  * re-renderizar a árvore inteira da página.
  */
 export const LARGURA_RECOLHIDA = 72;
-export const LARGURA_ABERTA = 264;
+export const LARGURA_ABERTA = 256;
 
 /** Recuo extra que a navbar precisa para não ficar sob a coluna espiada. */
 export const recuoDaNavbar = (espiada: boolean): string =>
