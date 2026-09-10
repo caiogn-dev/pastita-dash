@@ -1,7 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import {
+  ArrowTopRightOnSquareIcon,
+  BookOpenIcon,
+  ChatBubbleLeftRightIcon,
+  CameraIcon,
+  MapPinIcon,
+  PlusIcon,
+  TrashIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+} from '@heroicons/react/24/outline';
+
 import { Card, Button, Input, Switch, Loading } from '../../components/common';
-import { PageShell, PhonePreview } from '../../components/ui';
+import { PageShell, PhonePreview, RowActions, EmptyState, Badge } from '../../components/ui';
 import { PaywallModal } from '../../components/billing/PaywallModal';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankBarList } from '../../components/reports/RankBarList';
@@ -18,6 +30,7 @@ import {
 } from '../../services/bioApi';
 import toast from 'react-hot-toast';
 import { copyToClipboard } from '../../utils/clipboard';
+import { cn } from '../../utils/cn';
 
 interface BioLinksToggles {
   menu?: boolean;
@@ -37,6 +50,26 @@ const DEFAULT_BIO_SETTINGS: BioSettings = {
   instagram_url: '',
   links: { menu: true, whatsapp: true, maps: true, instagram: true },
 };
+
+/**
+ * Os quatro botões que o mini-site já traz prontos.
+ *
+ * Estava como uma lista de pares `[chave, rótulo]` dentro do JSX. Rótulo
+ * sozinho não explica o que a chave faz — "Como chegar" para onde? — e sem
+ * ícone as quatro linhas viram um bloco de texto igual, onde ninguém acha a
+ * que veio desligar.
+ */
+const BOTOES_FIXOS: {
+  chave: keyof BioLinksToggles;
+  rotulo: string;
+  explicacao: string;
+  Icone: React.ComponentType<{ className?: string }>;
+}[] = [
+  { chave: 'menu', rotulo: 'Cardápio', explicacao: 'Leva direto para o seu cardápio online.', Icone: BookOpenIcon },
+  { chave: 'whatsapp', rotulo: 'WhatsApp', explicacao: 'Abre a conversa no número da loja.', Icone: ChatBubbleLeftRightIcon },
+  { chave: 'maps', rotulo: 'Como chegar', explicacao: 'Abre o endereço da loja no mapa.', Icone: MapPinIcon },
+  { chave: 'instagram', rotulo: 'Instagram', explicacao: 'Usa o endereço preenchido acima.', Icone: CameraIcon },
+];
 
 function readBioSettings(metadata: Record<string, unknown> | undefined | null): BioSettings {
   const raw = (metadata?.bio_settings as Partial<BioSettings>) || {};
@@ -66,6 +99,7 @@ const LinkBioPage: React.FC = () => {
 
   const [bioSettings, setBioSettings] = useState<BioSettings>(DEFAULT_BIO_SETTINGS);
   const [savingContent, setSavingContent] = useState(false);
+  const [salvandoChave, setSalvandoChave] = useState<keyof BioLinksToggles | null>(null);
   const [contentError, setContentError] = useState<string | null>(null);
 
   const [links, setLinks] = useState<BioLink[]>([]);
@@ -176,20 +210,23 @@ const LinkBioPage: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveContent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!store) return;
-    setSavingContent(true);
+  /**
+   * Grava as configurações da bio. Uma função só, dois gatilhos.
+   *
+   * Devolve `true`/`false` porque quem chama precisa saber: a chave que falhou
+   * tem que VOLTAR, senão a tela fica mostrando um estado que o servidor não
+   * tem.
+   */
+  const gravarConfiguracoes = async (novo: BioSettings): Promise<boolean> => {
+    if (!store) return false;
     setContentError(null);
     try {
       const currentMetadata = (store.metadata as Record<string, unknown>) || {};
       const updated = await updateStore(store.id, {
-        metadata: {
-          ...currentMetadata,
-          bio_settings: bioSettings,
-        },
+        metadata: { ...currentMetadata, bio_settings: novo },
       });
       setStore(updated);
+      return true;
     } catch (err) {
       const { status, detail } = extractDetail(err);
       if (status === 403 && detail) {
@@ -197,9 +234,33 @@ const LinkBioPage: React.FC = () => {
       } else {
         setContentError('Não foi possível salvar o conteúdo.');
       }
-    } finally {
-      setSavingContent(false);
+      return false;
     }
+  };
+
+  const handleSaveContent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingContent(true);
+    await gravarConfiguracoes(bioSettings);
+    setSavingContent(false);
+  };
+
+  /**
+   * A chave do botão fixo aplica na hora — como a do link personalizado.
+   *
+   * Antes ela só mexia no estado local e esperava um "Salvar" que morava
+   * quatro campos abaixo, fora do campo de visão de quem acabou de mexer na
+   * chave. Quem desligava via a chave virar e ia embora; nada tinha sido
+   * gravado. Duas gramáticas de salvamento na mesma tela é uma a mais.
+   */
+  const alternarBotaoFixo = async (chave: keyof BioLinksToggles, ligado: boolean) => {
+    const anterior = bioSettings;
+    const proximo = { ...anterior, links: { ...anterior.links, [chave]: ligado } };
+    setBioSettings(proximo);
+    setSalvandoChave(chave);
+    const ok = await gravarConfiguracoes(proximo);
+    setSalvandoChave(null);
+    if (!ok) setBioSettings(anterior);
   };
 
   const handleCreateLink = async (e: React.FormEvent) => {
@@ -301,175 +362,220 @@ const LinkBioPage: React.FC = () => {
           precisa acompanhar a rolagem. */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex min-w-0 flex-col gap-6">
-      <Card title="Conteúdo">
-        <form className="space-y-4" onSubmit={handleSaveContent}>
-          <Input
-            id="bio-headline"
-            label="Headline"
-            maxLength={120}
-            value={bioSettings.headline}
-            onChange={(e) => setBioSettings((prev) => ({ ...prev, headline: e.target.value }))}
-          />
-          <Input
-            id="bio-instagram-url"
-            label="Instagram (URL)"
-            value={bioSettings.instagram_url}
-            onChange={(e) => setBioSettings((prev) => ({ ...prev, instagram_url: e.target.value }))}
-          />
+          <Card title="Identidade" subtitle="O que aparece no topo do mini-site.">
+            <form className="max-w-xl space-y-4" onSubmit={handleSaveContent}>
+              <Input
+                id="bio-headline"
+                label="Headline"
+                maxLength={120}
+                placeholder="Peça pelo cardápio, receba em casa"
+                value={bioSettings.headline}
+                onChange={(e) => setBioSettings((prev) => ({ ...prev, headline: e.target.value }))}
+              />
+              <Input
+                id="bio-instagram-url"
+                label="Instagram (URL)"
+                placeholder="instagram.com/sualoja"
+                value={bioSettings.instagram_url}
+                onChange={(e) => setBioSettings((prev) => ({ ...prev, instagram_url: e.target.value }))}
+              />
+              {contentError && <p className="text-sm text-danger-token">{contentError}</p>}
+              <Button type="submit" isLoading={savingContent}>
+                Salvar
+              </Button>
+            </form>
+          </Card>
 
-          <div className="space-y-3">
-            {([
-              ['menu', 'Cardápio'],
-              ['whatsapp', 'WhatsApp'],
-              ['maps', 'Como chegar'],
-              ['instagram', 'Instagram'],
-            ] as const).map(([key, label]) => (
-              <label key={key} className="flex items-center justify-between gap-3 text-sm text-fg-token">
-                {label}
-                <Switch
-                  ariaLabel={`Exibir ${label} no link da bio`}
-                  checked={bioSettings.links[key] !== false}
-                  onChange={(checked) =>
-                    setBioSettings((prev) => ({
-                      ...prev,
-                      links: { ...prev.links, [key]: checked },
-                    }))
-                  }
-                />
-              </label>
-            ))}
-          </div>
-
-          {contentError && <p className="text-sm text-fg-muted-token">{contentError}</p>}
-
-          <Button type="submit" isLoading={savingContent}>
-            Salvar
-          </Button>
-        </form>
-      </Card>
-
-      <Card title="Links personalizados">
-        <div className="space-y-4">
-          {loadingLinks ? (
-            <Loading />
-          ) : linksError ? (
-            <p className="text-sm text-fg-muted-token">{linksError}</p>
-          ) : links.length === 0 ? (
-            <p className="text-sm text-fg-muted-token">Nenhum link personalizado ainda.</p>
-          ) : (
-            <ul className="space-y-2">
-              {links.map((link, index) => (
-                <li
-                  key={link.id}
-                  className="flex items-center gap-3 rounded border border-border-token px-3 py-2"
-                >
-                  {link.icon_url ? (
-                    <img
-                      src={link.icon_url}
-                      alt=""
-                      className="h-7 w-7 rounded-md object-cover"
-                      crossOrigin="anonymous"
+          {/* Botões fixos: chave aplica na hora, como no resto do painel. */}
+          <Card title="Botões fixos" subtitle="Vêm prontos com a loja. Desligue o que você não usa.">
+            <ul className="divide-y divide-border-token">
+              {BOTOES_FIXOS.map(({ chave, rotulo, explicacao, Icone }) => {
+                const ligado = bioSettings.links[chave] !== false;
+                return (
+                  <li key={chave} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                    <span
+                      className={cn(
+                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors',
+                        ligado
+                          ? 'border-brand/40 bg-brand-soft text-brand-ink'
+                          : 'border-border-token bg-surface-2 text-fg-muted-token',
+                      )}
+                    >
+                      <Icone className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-fg-token">{rotulo}</p>
+                      <p className="text-xs text-fg-muted-token">{explicacao}</p>
+                    </div>
+                    {salvandoChave === chave && <Loading size="sm" />}
+                    <Switch
+                      ariaLabel={`Exibir ${rotulo} no link da bio`}
+                      checked={ligado}
+                      disabled={salvandoChave === chave}
+                      onChange={(marcado) => alternarBotaoFixo(chave, marcado)}
                     />
-                  ) : (
-                    <span className="text-lg">{link.icon}</span>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-fg-token">{link.title}</p>
-                    <p className="truncate text-xs text-fg-muted-token">{link.url}</p>
-                  </div>
-                  <Switch
-                    ariaLabel={`${link.is_active ? 'Desativar' : 'Ativar'} link ${link.title}`}
-                    checked={link.is_active}
-                    onChange={() => handleToggleActive(link)}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label="mover para cima"
-                    disabled={index === 0}
-                    onClick={() => handleMove(index, -1)}
-                  >
-                    ↑
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label="mover para baixo"
-                    disabled={index === links.length - 1}
-                    onClick={() => handleMove(index, 1)}
-                  >
-                    ↓
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(link.id)}>
-                    Excluir
-                  </Button>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
-          )}
+          </Card>
 
-          <form className="flex flex-wrap items-end gap-3 border-t border-border-token pt-4" onSubmit={handleCreateLink}>
-            <Input
-              id="bio-link-icon"
-              label="Emoji"
-              className="w-16"
-              value={newIcon}
-              onChange={(e) => setNewIcon(e.target.value)}
-            />
-            <Input
-              id="bio-link-title"
-              label="Título"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-            />
-            <Input
-              id="bio-link-url"
-              label="URL"
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
-            />
-            <Input
-              id="bio-link-icon-url"
-              label="Logo (URL da imagem, opcional)"
-              placeholder="https://…/logo.png"
-              value={newIconUrl}
-              onChange={(e) => setNewIconUrl(e.target.value)}
-            />
-            <Button type="submit" isLoading={creatingLink}>
-              Adicionar link
-            </Button>
-          </form>
-        </div>
-      </Card>
+          <Card
+            title="Links personalizados"
+            subtitle="Qualquer outro destino: promoção, pesquisa, outra loja sua."
+          >
+            <div className="space-y-4">
+              {loadingLinks ? (
+                <Loading />
+              ) : linksError ? (
+                <p className="text-sm text-danger-token">{linksError}</p>
+              ) : links.length === 0 ? (
+                <EmptyState
+                  titulo="Nenhum link personalizado"
+                  descricao="Use o formulário abaixo para apontar para uma promoção, uma pesquisa ou outra loja sua."
+                  icone={<PlusIcon className="h-7 w-7" />}
+                />
+              ) : (
+                <ul className="divide-y divide-border-token">
+                  {links.map((link, index) => (
+                    <li
+                      key={link.id}
+                      className={cn(
+                        'flex items-center gap-3 py-3 first:pt-0 last:pb-0 transition-opacity',
+                        !link.is_active && 'opacity-60',
+                      )}
+                    >
+                      {link.icon_url ? (
+                        <img
+                          src={link.icon_url}
+                          alt=""
+                          className="h-9 w-9 shrink-0 rounded-lg border border-border-token object-cover"
+                          crossOrigin="anonymous"
+                        />
+                      ) : (
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border-token bg-surface-2 text-lg">
+                          {link.icon}
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-2 truncate text-sm font-semibold text-fg-token">
+                          <span className="truncate">{link.title}</span>
+                          {/* A chave cinza é fácil de não ver numa lista de
+                              cinco. O selo diz em palavra o que aconteceu. */}
+                          {!link.is_active && <Badge tone="neutral">Oculto</Badge>}
+                        </p>
+                        <p className="truncate text-xs text-fg-muted-token">{link.url}</p>
+                      </div>
+                      <Switch
+                        ariaLabel={`${link.is_active ? 'Desativar' : 'Ativar'} link ${link.title}`}
+                        checked={link.is_active}
+                        onChange={() => handleToggleActive(link)}
+                      />
+                      <RowActions
+                        rotulo={`Ações do link ${link.title}`}
+                        acoes={[
+                          {
+                            rotulo: 'Mover para cima',
+                            icone: <ArrowUpIcon className="h-4 w-4" />,
+                            desabilitada: index === 0,
+                            onClick: () => handleMove(index, -1),
+                          },
+                          {
+                            rotulo: 'Mover para baixo',
+                            icone: <ArrowDownIcon className="h-4 w-4" />,
+                            desabilitada: index === links.length - 1,
+                            onClick: () => handleMove(index, 1),
+                          },
+                          {
+                            rotulo: 'Excluir',
+                            icone: <TrashIcon className="h-4 w-4" />,
+                            destrutiva: true,
+                            onClick: () => handleDelete(link.id),
+                          },
+                        ]}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-      <Card title="Estatísticas (30 dias)">
-        {loadingStats ? (
-          <Loading />
-        ) : statsError ? (
-          <div className="space-y-3">
-            <p className="text-sm text-fg-muted-token">{statsError}</p>
-            <Link to="/assinatura">
-              <Button variant="outline">Ver planos</Button>
-            </Link>
-          </div>
-        ) : stats ? (
-          <div className="space-y-4">
-            <p className="text-sm text-fg-token">
-              <span className="text-2xl font-semibold">{stats.page_views.total}</span>{' '}
-              <span className="text-fg-muted-token">visitas nos últimos {stats.days} dias</span>
-            </p>
-            <TimeSeriesChart
-              data={stats.page_views.series}
-              xKey="date"
-              yKey="views"
-              label="Visitas"
-              type="bar"
-            />
-            <RankBarList items={stats.links.map((l) => ({ label: l.title, value: l.total }))} />
-          </div>
-        ) : null}
-      </Card>
+              {/* Grade fixa em vez de `flex-wrap`: os quatro campos tinham
+                  larguras diferentes a cada tamanho de janela, e o botão
+                  terminava em qualquer lugar da linha. */}
+              <form
+                className="grid grid-cols-1 gap-3 border-t border-border-token pt-4 sm:grid-cols-[4.5rem_1fr_1fr]"
+                onSubmit={handleCreateLink}
+              >
+                <Input
+                  id="bio-link-icon"
+                  label="Emoji"
+                  value={newIcon}
+                  onChange={(e) => setNewIcon(e.target.value)}
+                />
+                <Input
+                  id="bio-link-title"
+                  label="Título"
+                  placeholder="Promoção da semana"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                />
+                <Input
+                  id="bio-link-url"
+                  label="URL"
+                  placeholder="https://…"
+                  value={newUrl}
+                  onChange={(e) => setNewUrl(e.target.value)}
+                />
+                <div className="sm:col-span-2">
+                  <Input
+                    id="bio-link-icon-url"
+                    label="Logo (URL da imagem, opcional)"
+                    placeholder="https://…/logo.png"
+                    value={newIconUrl}
+                    onChange={(e) => setNewIconUrl(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" isLoading={creatingLink} className="w-full">
+                    Adicionar link
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </Card>
 
+          <Card title="Estatísticas" subtitle="Últimos 30 dias.">
+            {loadingStats ? (
+              <Loading />
+            ) : statsError ? (
+              <div className="space-y-3">
+                <p className="text-sm text-fg-muted-token">{statsError}</p>
+                <Link to="/assinatura">
+                  <Button variant="outline">Ver planos</Button>
+                </Link>
+              </div>
+            ) : stats ? (
+              <div className="space-y-5">
+                <div>
+                  <p className="overline text-fg-muted-token">Visitas</p>
+                  <p className="text-3xl font-bold text-fg-token">{stats.page_views.total}</p>
+                </div>
+                <TimeSeriesChart
+                  data={stats.page_views.series}
+                  xKey="date"
+                  yKey="views"
+                  label="Visitas"
+                  type="bar"
+                />
+                {stats.links.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="overline text-fg-muted-token">Mais clicados</p>
+                    <RankBarList items={stats.links.map((l) => ({ label: l.title, value: l.total }))} />
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </Card>
         </div>
 
         <aside className="xl:sticky xl:top-4 xl:self-start">

@@ -51,7 +51,14 @@ export const Switch: React.FC<SwitchProps> = ({
       onClick={() => onChange(!checked)}
       className={cn(
         'relative inline-flex items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2',
-        checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600',
+        // Ligado usa a cor do PAINEL, não a da loja.
+        //
+        // Era `bg-primary-500`, que é a cor da marca do lojista: na Cê Saladas
+        // isso pinta a chave de terracota, e no tema escuro toda opção LIGADA
+        // aparece vermelha — a cor que o resto do painel usa para erro e para
+        // excluir. Uma tela com quatro chaves ligadas parecia quatro alertas.
+        // O ouro é o mesmo do botão primário e do anel de foco.
+        checked ? 'bg-brand' : 'bg-surface-2 border border-border-token',
         disabled && 'opacity-50 cursor-not-allowed',
         sizeClasses[size],
         className
