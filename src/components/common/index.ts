@@ -1,7 +1,6 @@
 export { Button } from './Button';
 export { Input } from './Input';
 export { Card } from './Card';
-export { Tabs } from './Tabs';
 export { Switch } from './Switch';
 export { EmptyState } from './EmptyState';
 export { 
@@ -34,14 +33,6 @@ export type { BadgeVariant, BadgeProps } from './Badge';
 export { Modal, ConfirmModal } from './Modal';
 export { Table, Pagination } from './Table';
 export { Loading, PageLoading, FullPageLoading } from './Loading';
-export { 
-  StatusFilter, 
-  OrderStatusFilter, 
-  ConversationStatusFilter,
-  StatusTabs,
-  OrderStatusTabs,
-  QuickFilterPills,
-} from './StatusFilter';
 
 export { Textarea } from './Textarea';
 export { SkeletonLoader } from './SkeletonLoader';

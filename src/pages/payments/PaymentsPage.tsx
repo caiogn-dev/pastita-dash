@@ -28,10 +28,9 @@ import {
   Table,
   Pagination,
   PageLoading,
-  StatusFilter,
   EmptyState,
 } from '../../components/common';
-import { PageShell } from '../../components/ui';
+import { PageShell, PeriodChips } from '../../components/ui';
 import { ordersService } from '../../services';
 import { Order } from '../../types';
 import logger from '../../services/logger';
@@ -177,9 +176,13 @@ export const PaymentsPage: React.FC = () => {
 
   // Filter options. Contagens por payment_status não vêm do stats agregado,
   // então não exibimos badges de contagem nos filtros (eram derivadas dos 500).
-  const filterOptions = useMemo(() => {
-    return PAYMENT_STATUS_OPTIONS.map(option => ({ ...option }));
-  }, []);
+  // 'todos' entra como opção em vez de um botão à parte: o `StatusFilter`
+  // desenhava o "Todos" por fora com `value === null`, e era a única razão
+  // para aquele componente existir ao lado do chip canônico do painel.
+  const filterOptions = useMemo(
+    () => [{ value: 'todos', label: 'Todos' }, ...PAYMENT_STATUS_OPTIONS.map((o) => ({ ...o }))],
+    [],
+  );
 
   // Table columns
   const columns = [
@@ -433,11 +436,11 @@ export const PaymentsPage: React.FC = () => {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <StatusFilter
+          <PeriodChips
+            ariaLabel="Filtrar por situação do pagamento"
             options={filterOptions}
-            value={statusFilter}
-            onChange={changeStatusFilter}
-            className="flex-wrap"
+            value={statusFilter ?? 'todos'}
+            onChange={(v) => changeStatusFilter(v === 'todos' ? null : v)}
           />
           <Button
             variant="secondary"

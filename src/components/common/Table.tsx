@@ -1,4 +1,5 @@
 import React from 'react';
+import { Loading } from './Loading';
 
 interface Column<T> {
   key: string;
@@ -27,7 +28,10 @@ export function Table<T>({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+        {/* O anel comum: tem `role="status"` e o ouro do painel. O daqui era
+            traço fino na cor da LOJA — mudava de cor conforme quem estava
+            selecionado e não dizia nada a quem usa leitor de tela. */}
+        <Loading />
       </div>
     );
   }
@@ -155,8 +159,8 @@ export const Pagination: React.FC<PaginationProps> = ({
                   onClick={() => onPageChange(pageNum)}
                   className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                     currentPage === pageNum
-                      ? 'z-10 bg-primary-50 dark:bg-primary-900/30 border-primary-500 text-primary-600 dark:text-primary-400'
-                      : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-gray-600'
+                      ? 'z-10 border-brand bg-brand-soft text-brand-ink'
+                      : 'border-border-token bg-surface text-fg-muted-token hover:bg-surface-2'
                   }`}
                 >
                   {pageNum}

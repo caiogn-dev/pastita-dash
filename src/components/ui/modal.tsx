@@ -374,13 +374,15 @@ const variantStyles = {
     icon: 'text-warning-500 bg-warning-100 dark:bg-warning-900/30',
     button: 'bg-warning-600 hover:bg-warning-700 text-white',
   },
+  // O ouro do painel, não a cor da loja: a confirmação é cromo do painel e
+  // não pode trocar de cor conforme quem está selecionado no seletor.
   info: {
-    icon: 'text-primary-500 bg-primary-100 dark:bg-primary-900/30',
-    button: 'bg-primary-600 hover:bg-primary-700 text-white',
+    icon: 'text-brand-ink bg-brand-soft',
+    button: 'bg-brand text-on-brand hover:bg-brand-hover',
   },
   default: {
-    icon: 'text-primary-500 bg-primary-100 dark:bg-primary-900/30',
-    button: 'bg-primary-600 hover:bg-primary-700 text-white',
+    icon: 'text-brand-ink bg-brand-soft',
+    button: 'bg-brand text-on-brand hover:bg-brand-hover',
   },
 };
 
