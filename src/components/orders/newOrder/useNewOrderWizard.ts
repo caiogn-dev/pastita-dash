@@ -7,6 +7,7 @@ import type { Product } from '../../../services/products';
 import type { CustomerSearchResult, UserAddress, DiscountType, RouteQuote } from '../../../types/crm';
 import type { CartItem, PaymentMethod, Customer } from './types';
 import { parseCoords, type Coords } from './parseCoords';
+import { enderecoParaOPedido, rotuloDoEndereco } from './enderecoDoPedido';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 
 export interface UseNewOrderWizardOpts {
@@ -21,6 +22,7 @@ export interface NewOrderWizard {
   customer: Customer | null; setCustomer: (c: Customer | null) => void;
   deliveryMethod: 'delivery' | 'pickup'; setDeliveryMethod: (m: 'delivery' | 'pickup') => void;
   selectedAddress: UserAddress | null; setSelectedAddress: (a: UserAddress | null) => void;
+  escolherEnderecoSalvo: (a: UserAddress) => void;
   freeAddressText: string; setFreeAddressText: (v: string) => void;
   routeQuote: RouteQuote | null; calculatingRoute: boolean; handleCalculateRoute: (address: string, coords?: Coords | null) => Promise<void>;
   handleUseSharedLocation: () => Promise<void>; customerHasPhone: boolean;
@@ -146,13 +148,14 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     if (!customer || cart.length === 0 || submitting) return;
     setSubmitting(true);
     try {
-      // Com coords (pin do WhatsApp / link do Maps), manda endereço estruturado
-      // com lat/lng — o pedido fica geolocalizado, não um texto solto.
+      // Endereço salvo viaja ESTRUTURADO (rua/número/bairro/cidade/UF/CEP), não
+      // como rótulo montado: mandar o rótulo fazia o servidor guardá-lo inteiro
+      // dentro de `street`, e o pedido seguinte montava rótulo em cima de
+      // rótulo. Com coords (pin do WhatsApp / link do Maps) o pedido ainda sai
+      // geolocalizado.
       const deliveryAddress = deliveryMethod !== 'delivery'
         ? undefined
-        : routeCoords
-          ? { lat: routeCoords.lat, lng: routeCoords.lng, raw_address: freeAddressText.trim() }
-          : freeAddressText.trim();
+        : enderecoParaOPedido({ selectedAddress, freeAddressText, routeCoords });
       const apiPaymentMethod: 'pix' | 'cash' | 'credit_card' | 'debit_card' =
         paymentMethod === 'fiado' ? 'cash' : (paymentMethod as 'pix' | 'cash' | 'credit_card');
       const isNewCustomer = customer.id === '';
@@ -215,11 +218,25 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     setFreeAddressText(v);
     setRouteQuote(null);
     setRouteCoords(null);
+    // O endereço salvo também deixa de valer: sem isto dava para escolher o
+    // salvo A, digitar o B por cima e o pedido sair com os campos do A.
+    setSelectedAddress(null);
+  };
+
+  // Escolher um endereço salvo é o oposto de digitar: o texto vira só rótulo e
+  // os CAMPOS continuam valendo. Precisa ser uma ação própria porque
+  // `updateAddress` — o caminho de digitar — descarta o endereço salvo.
+  const escolherEnderecoSalvo = (addr: UserAddress) => {
+    setFreeAddressText(rotuloDoEndereco(addr));
+    setRouteQuote(null);
+    setRouteCoords(null);
+    setSelectedAddress(addr);
   };
 
   return {
     step, setStep, next, back, canProceed,
     customer, setCustomer, deliveryMethod, setDeliveryMethod, selectedAddress, setSelectedAddress,
+    escolherEnderecoSalvo,
     freeAddressText, setFreeAddressText: updateAddress, routeQuote, calculatingRoute, handleCalculateRoute,
     handleUseSharedLocation,
     customerHasPhone: Boolean((customer?.phone_number_edited || customer?.phone_number || '').replace(/\D/g, '')),

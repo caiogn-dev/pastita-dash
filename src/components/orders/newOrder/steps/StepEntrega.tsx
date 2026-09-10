@@ -3,6 +3,7 @@ import type { Customer } from '../types';
 import type { UserAddress, RouteQuote } from '../../../../types/crm';
 import { fmt } from '../types';
 import { TIME_SLOTS } from '../../../../utils/schedulingSlots';
+import { rotuloDoEndereco } from '../enderecoDoPedido';
 
 /** Step 2 */
 export function StepEntrega({
@@ -11,6 +12,7 @@ export function StepEntrega({
   setDeliveryMethod,
   selectedAddress,
   setSelectedAddress,
+  escolherEnderecoSalvo,
   freeAddressText,
   setFreeAddressText,
   routeQuote,
@@ -30,6 +32,7 @@ export function StepEntrega({
   setDeliveryMethod: (m: 'delivery' | 'pickup') => void;
   selectedAddress: UserAddress | null;
   setSelectedAddress: (a: UserAddress | null) => void;
+  escolherEnderecoSalvo: (a: UserAddress) => void;
   freeAddressText: string;
   setFreeAddressText: (v: string) => void;
   routeQuote: RouteQuote | null;
@@ -47,9 +50,12 @@ export function StepEntrega({
   const addresses = customer?.addresses ?? [];
 
   const handleSelectSaved = (addr: UserAddress) => {
-    setSelectedAddress(addr);
-    const full = `${addr.street}, ${addr.number} — ${addr.neighborhood}, ${addr.city}-${addr.state}`;
-    setFreeAddressText(full);
+    // Ação própria: guarda os CAMPOS e escreve o rótulo. Passar pelo
+    // `setFreeAddressText` (o caminho de digitar) descartaria o endereço salvo.
+    escolherEnderecoSalvo(addr);
+    // Só o TEXTO de exibição/cotação. O que vai no pedido é o endereço
+    // estruturado — ver `enderecoParaOPedido`.
+    const full = rotuloDoEndereco(addr);
     // Endereço salvo com lat/lng calcula por coordenada (distância real), sem
     // depender de geocodificar o texto montado.
     const coords = addr.lat != null && addr.lng != null ? { lat: addr.lat, lng: addr.lng } : null;
@@ -96,7 +102,7 @@ export function StepEntrega({
                         : 'border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
                     }`}
                   >
-                    <span className="font-semibold">{addr.label}</span>: {addr.street}, {addr.number} — {addr.neighborhood}, {addr.city}
+                    <span className="font-semibold">{addr.label}</span>: {rotuloDoEndereco(addr)}
                     {addr.is_default && (
                       <span className="ml-2 text-badge bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 px-1.5 py-0.5 rounded-full">
                         padrão
