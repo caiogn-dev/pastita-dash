@@ -21,7 +21,7 @@ export const InstallBanner: React.FC = () => {
 
   return (
     <div className="m-3 flex items-center gap-3 rounded-xl border border-border-primary bg-bg-card p-3">
-      <ArrowDownTrayIcon className="h-6 w-6 shrink-0 text-brand-500" />
+      <ArrowDownTrayIcon className="h-6 w-6 shrink-0 text-brand-ink" />
       <div className="flex-1 text-sm text-fg-secondary">
         {isIOS
           ? 'Instale o app: toque em Compartilhar → "Adicionar à Tela de Início".'
@@ -29,7 +29,7 @@ export const InstallBanner: React.FC = () => {
       </div>
       {!isIOS && (
         <button type="button" onClick={promptInstall}
-          className="rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white">Instalar</button>
+          className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-on-brand">Instalar</button>
       )}
       <button type="button" aria-label="Dispensar" onClick={dismiss} className="p-3">
         <XMarkIcon className="h-5 w-5 text-fg-muted" />

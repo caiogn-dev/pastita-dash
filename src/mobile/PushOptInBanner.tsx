@@ -18,7 +18,7 @@ export const PushOptInBanner: React.FC = () => {
 
   return (
     <div className="m-3 flex items-center gap-3 rounded-xl bg-bg-card border border-border-primary p-3">
-      <BellAlertIcon className="h-6 w-6 text-brand-500 shrink-0" />
+      <BellAlertIcon className="h-6 w-6 text-brand-ink shrink-0" />
       <div className="flex-1 text-sm text-fg-secondary">
         Ative as notificações para saber na hora quando entrar um pedido.
         {error && <span className="text-xs text-danger-500">{error}</span>}
@@ -27,7 +27,7 @@ export const PushOptInBanner: React.FC = () => {
         type="button"
         disabled={isLoading}
         onClick={() => subscribe()}
-        className="rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+        className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-on-brand disabled:opacity-60"
       >
         {isLoading ? '...' : 'Ativar notificações'}
       </button>

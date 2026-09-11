@@ -63,7 +63,7 @@ export const MobileOrderDetailSheet: React.FC<Props> = ({ order, onClose, onAdva
             type="button"
             disabled={busy}
             onClick={advance}
-            className="w-full rounded-lg bg-brand-500 py-3 text-base font-semibold text-white disabled:opacity-60"
+            className="w-full rounded-lg bg-brand py-3 text-base font-semibold text-on-brand disabled:opacity-60"
           >
             {next.label}
           </button>

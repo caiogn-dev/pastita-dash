@@ -220,7 +220,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                 <div
                   className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
                     group.is_required
-                      ? 'border-brand-400 bg-brand-soft dark:bg-brand-soft dark:border-brand-600'
+                      ? 'border-brand bg-brand-soft -soft'
                       : 'border-border-token dark:border-border-token bg-white dark:bg-surface'
                   }`}
                   onClick={() => onUpdate(group._key, { is_required: !group.is_required })}
@@ -229,7 +229,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                   <div
                     className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
                       group.is_required
-                        ? 'bg-brand-600 text-white'
+                        ? 'bg-brand text-on-brand'
                         : 'border-2 border-border-token dark:border-border-token'
                     }`}
                   >
@@ -242,7 +242,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                 <div
                   className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
                     group.allow_duplicate_variants
-                      ? 'border-brand-400 bg-brand-soft dark:bg-brand-soft dark:border-brand-600'
+                      ? 'border-brand bg-brand-soft -soft'
                       : 'border-border-token dark:border-border-token bg-white dark:bg-surface'
                   }`}
                   onClick={() => onUpdate(group._key, { allow_duplicate_variants: !group.allow_duplicate_variants })}
@@ -251,7 +251,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
                   <div
                     className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
                       group.allow_duplicate_variants
-                        ? 'bg-brand-600 text-white'
+                        ? 'bg-brand text-on-brand'
                         : 'border-2 border-border-token dark:border-border-token'
                     }`}
                   >
@@ -400,7 +400,7 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
               key={product.id}
               className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${
                 checked
-                  ? 'border-brand-400 bg-brand-soft dark:bg-brand-soft dark:border-brand-600'
+                  ? 'border-brand bg-brand-soft -soft'
                   : 'border-border-token dark:border-border-token bg-white dark:bg-surface'
               }`}
             >
@@ -409,7 +409,7 @@ const ProductOptionsChecklist: React.FC<ProductOptionsChecklistProps> = ({ group
                 onClick={() => toggle(product)}
                 className={`w-5 h-5 rounded flex items-center justify-center transition-colors shrink-0 ${
                   checked
-                    ? 'bg-brand-600 text-white'
+                    ? 'bg-brand text-on-brand'
                     : 'border-2 border-border-token dark:border-border-token'
                 }`}
                 aria-label={checked ? `Remover ${product.name}` : `Adicionar ${product.name}`}
@@ -885,7 +885,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
                   key={key}
                   className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors ${
                     isOn
-                      ? 'border-brand-400 bg-brand-soft dark:bg-brand-soft dark:border-brand-600'
+                      ? 'border-brand bg-brand-soft -soft'
                       : 'border-border-token dark:border-border-token bg-white dark:bg-surface'
                   }`}
                   onClick={() => set(key, !isOn)}
@@ -900,7 +900,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
                   <div
                     className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
                       isOn
-                        ? 'bg-brand-600 text-white'
+                        ? 'bg-brand text-on-brand'
                         : 'border-2 border-border-token dark:border-border-token'
                     }`}
                   >

@@ -38,7 +38,7 @@ export const BottomNav: React.FC = () => {
             aria-current={isActive ? 'page' : undefined}
             onClick={() => navigate(`/?tab=${key}`)}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs ${
-              isActive ? 'text-brand-500' : 'text-fg-muted'
+              isActive ? 'text-brand-ink' : 'text-fg-muted'
             }`}
           >
             <Icon className="h-6 w-6" />

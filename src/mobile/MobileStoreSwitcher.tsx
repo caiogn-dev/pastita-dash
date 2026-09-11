@@ -23,7 +23,7 @@ export const MobileStoreSwitcher: React.FC<Props> = ({ open, onClose }) => {
               className="flex w-full items-center justify-between px-4 py-4 text-left text-fg-primary active:bg-bg-secondary"
             >
               <span>{store.name}</span>
-              {store.id === selectedStoreId && <CheckIcon className="h-5 w-5 text-brand-500" />}
+              {store.id === selectedStoreId && <CheckIcon className="h-5 w-5 text-brand-ink" />}
             </button>
           </li>
         ))}

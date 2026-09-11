@@ -41,7 +41,7 @@ export const MobileOrdersScreen: React.FC = () => {
     return (
       <div className="p-4 text-center">
         <p className="mb-3 text-fg-secondary">{error}</p>
-        <button type="button" onClick={refetch} className="rounded-lg bg-brand-500 px-4 py-2 text-sm text-white">
+        <button type="button" onClick={refetch} className="rounded-lg bg-brand px-4 py-2 text-sm text-on-brand">
           Tentar novamente
         </button>
       </div>
@@ -88,7 +88,7 @@ export const MobileOrdersScreen: React.FC = () => {
                           type="button"
                           disabled={busyId === order.id}
                           onClick={(e) => advance(order, e)}
-                          className="mt-3 w-full rounded-lg bg-brand-500 py-3 text-sm font-medium text-white disabled:opacity-60"
+                          className="mt-3 w-full rounded-lg bg-brand py-3 text-sm font-medium text-on-brand disabled:opacity-60"
                         >
                           {next.label}
                         </button>

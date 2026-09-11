@@ -36,7 +36,7 @@ export const MobileNewOrderScreen: React.FC = () => {
       </header>
       <div className="flex gap-1 px-3 py-2">
         {STEP_LABELS.map((label, i) => (
-          <div key={label} className={`h-1 flex-1 rounded-full ${i <= wiz.step ? 'bg-brand-500' : 'bg-bg-card'}`} />
+          <div key={label} className={`h-1 flex-1 rounded-full ${i <= wiz.step ? 'bg-brand' : 'bg-bg-card'}`} />
         ))}
       </div>
 
@@ -53,12 +53,12 @@ export const MobileNewOrderScreen: React.FC = () => {
         ) : <span />}
         {isLast ? (
           <button type="button" disabled={wiz.submitting || !wiz.canProceed()} onClick={wiz.handleSubmit}
-            className="rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand disabled:opacity-60">
             {wiz.submitting ? 'Enviando...' : 'Finalizar pedido'}
           </button>
         ) : (
           <button type="button" disabled={!wiz.canProceed()} onClick={wiz.next}
-            className="flex items-center gap-1 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            className="flex items-center gap-1 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand disabled:opacity-60">
             Próximo <ChevronRightIcon className="h-4 w-4" />
           </button>
         )}

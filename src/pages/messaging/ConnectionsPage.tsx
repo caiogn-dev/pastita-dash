@@ -91,7 +91,7 @@ const getStatusLabel = (status: string, isActive: boolean) => {
   return 'Inativo';
 };
 
-const initials = (name: string) => name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+const initials = (name: string) => name.split('').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -400,7 +400,7 @@ export default function ConnectionsPage() {
       <div className="flex gap-1 border-b border-border-primary mb-6">
         {TABS.map(t => (
           <button key={t.value} onClick={() => setActiveTab(t.value)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === t.value ? 'border-brand-600 text-brand-600 dark:text-brand-400' : 'border-transparent text-fg-muted hover:text-fg-primary'}`}>
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === t.value ? 'border-brand text-brand-ink' : 'border-transparent text-fg-muted hover:text-fg-primary'}`}>
             {t.label}
           </button>
         ))}
@@ -543,7 +543,7 @@ export default function ConnectionsPage() {
                 }
                 setSelectedPlatform(key);
               }}
-              className={`flex items-center gap-4 p-4 border-2 rounded-xl text-left transition-colors ${p.disabled ? 'opacity-50 cursor-not-allowed border-border-primary' : 'border-border-primary hover:border-brand-500 cursor-pointer'}`}
+              className={`flex items-center gap-4 p-4 border-2 rounded-xl text-left transition-colors ${p.disabled ? 'opacity-50 cursor-not-allowed border-border-primary' : 'border-border-primary hover:border-brand cursor-pointer'}`}
             >
               <span className="text-4xl">{p.icon}</span>
               <div className="flex-1">

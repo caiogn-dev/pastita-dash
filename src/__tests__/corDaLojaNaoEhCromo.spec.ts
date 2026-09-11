@@ -55,6 +55,17 @@ describe('spec: cromo do painel é constante', () => {
     expect(pintados.length).toBeLessThanOrEqual(TETO);
   });
 
+  /**
+   * `brand-400/500/600` NÃO é a marca: o `index.css` aponta os três para
+   * `primary-400/500/600`. É a cor da loja com nome de marca, e passava batido
+   * pela regra acima justamente por causa do nome. A marca de verdade é
+   * `brand` (e `brand-soft`, `brand-hover`, `brand-ink`), sem número.
+   */
+  it('nem com nome de marca — `brand-500` é `primary-500` disfarçado', () => {
+    const disfarcados = pintadosCom(/(?:bg|text|border|ring|from|to|via)-brand-(?:400|500|600)\b/);
+    expect(disfarcados.map((f) => path.relative(SRC, f))).toHaveLength(0);
+  });
+
   it('não cresce o número de telas com cinza cru em vez de token', () => {
     const pintados = pintadosCom(
       /(?:bg|text|border|divide|placeholder|ring)-(?:zinc|gray|slate|neutral|stone)-\d{2,3}/,

@@ -47,7 +47,7 @@ export const MobileMoreScreen: React.FC = () => {
       </ul>
       {!isStandalone && (canInstall || isIOS) && (
         <button type="button" onClick={() => { if (!isIOS) promptInstall(); }}
-          className="mt-4 flex w-full items-center gap-3 px-4 py-4 text-brand-500">
+          className="mt-4 flex w-full items-center gap-3 px-4 py-4 text-brand-ink">
           <ArrowDownTrayIcon className="h-5 w-5" />
           {isIOS ? 'Como instalar o app' : 'Instalar app'}
         </button>

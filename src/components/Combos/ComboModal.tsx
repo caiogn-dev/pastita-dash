@@ -205,7 +205,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                                 ? 'bg-surface-2 border-border-token cursor-not-allowed opacity-60'
                                 : 'border-border-token dark:border-border-token cursor-pointer hover:bg-surface-2 dark:hover:bg-surface-muted-token'
                             } ${
-                              isSelected && !disabledReason ? 'border-brand-500 bg-brand-soft dark:bg-brand-soft' : ''
+                              isSelected && !disabledReason ? 'border-brand bg-brand-soft -soft' : ''
                             }`}
                           >
                             <input
@@ -213,7 +213,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                               checked={isSelected}
                               onChange={() => handleToggleVariant(groupId, variantId, canSelect)}
                               disabled={!canSelect}
-                              className="w-4 h-4 rounded border-border-token dark:border-border-token text-brand-600 focus:ring-2 focus:ring-brand disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-4 h-4 rounded border-border-token dark:border-border-token text-brand-ink focus:ring-2 focus:ring-brand disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <div className="flex-1">
                               <p className="text-sm font-medium text-fg-token">
@@ -243,7 +243,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                             {/* Selection Status / Disabled Reason */}
                             <div className="text-right">
                               {isSelected ? (
-                                <CheckIcon className="w-5 h-5 text-brand-600" />
+                                <CheckIcon className="w-5 h-5 text-brand-ink" />
                               ) : disabledReason ? (
                                 <span className="text-xs text-fg-muted-token dark:text-fg-muted-token font-medium">
                                   {disabledReason}
