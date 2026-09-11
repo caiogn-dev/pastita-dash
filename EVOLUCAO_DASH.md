@@ -3,6 +3,57 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-11)
+
+- `npm ci`: ok. `npm audit`: **11 vulnerabilidades** (1 low, 4 moderate, 6 high).
+  Reavaliar em fatia dedicada de deps (envolve major bumps de build/roteador).
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1654 testes / 278 suítes verdes** (era 1644/276 verdes com
+  **4 falhando em 2 suítes** — reprovação PRÉ-EXISTENTE, ver fatia abaixo).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~15s).
+- `npm run lint`: gate em 400 warnings; sem novos warnings nos arquivos tocados.
+
+## Histórico
+
+### 2026-09-11 — Correção: quadro de pedidos e régua de status no fuso do NEGÓCIO (não no do dispositivo)
+- **Medido (baseline vermelho):** no checkout limpo (runner em **UTC**), `npm test`
+  reprovava **4 casos em 2 suítes** — reprovação pré-existente, não introduzida
+  por esta fatia:
+  - `pedidosDoQuadro.test.ts` › "não arrasta o que foi entregue ontem": a coluna
+    de finalizados incluía o pedido entregue às **21h -03:00 de ontem** junto com
+    o de hoje.
+  - `fluxoDoPedido.test.ts` › 3 casos de "horários dentro da régua": o marco de
+    **07:29 -03:00** aparecia como **10:29**.
+- **Causa-raiz:** ambos derivam o "dia" e a "hora" do **fuso do dispositivo**.
+  `pedidosDaColuna` comparava o dia com `getFullYear/Month/Date` (fuso local) e
+  `horariosDasEtapas` formatava com `toLocaleTimeString` **sem `timeZone`**. Isso
+  só acerta se o relógio de quem olha está no horário de Brasília; um celular em
+  viagem/mal configurado (ou o runner de CI em UTC) arrasta o pedido da noite de
+  ontem para a coluna de hoje e mostra a hora errada na régua. O teste, escrito
+  com entradas `-03:00`, é o contrato de "dia/hora do negócio" que o código não
+  garantia.
+- **Mudado (aditivo, comportamento idêntico para quem opera no horário de Brasília):**
+  - Novo `src/utils/fusoDeNegocio.ts`: constante `FUSO_DE_NEGOCIO =
+    'America/Sao_Paulo'` (já havia precedente em `ScheduledMessagesPage`; SP não
+    tem horário de verão desde 2019, então a saída para o dispositivo em -03:00
+    é byte a byte a mesma) + `mesmoDiaNoFuso(a, b)` e `horaNoFuso(quando)`.
+  - `pedidosDoQuadro.ts`: filtro da coluna de finalizados passa a usar
+    `mesmoDiaNoFuso` (remove o `mesmoDia` local).
+  - `fluxoDoPedido.ts`: `horariosDasEtapas` formata a hora com `horaNoFuso`.
+- **Teste (TDD):** nova suíte `fusoDeNegocio.test.ts` escrita **vermelha antes**
+  (módulo inexistente), **verde depois** — 6 casos cobrindo mesmo-dia no fuso do
+  negócio (incl. o virar da meia-noite UTC) e formatação de hora independente do
+  fuso do runner. As 2 suítes de pedidos que estavam vermelhas ficaram verdes sem
+  edição — o contrato delas passou a valer em qualquer fuso.
+- **Antes/depois:** `npm test` 1644 verdes/4 vermelhos → **1654 verdes/0
+  vermelhos** (277→278 suítes: +1 nova; +6 testes novos, -4 reprovações); tsc
+  limpo e `vite build` ok nos dois lados; lint sem novos warnings.
+- **Próximo passo priorizado:** (1) auditar outros pontos que derivam "dia/hora"
+  do dispositivo (relatórios com agregação por dia, `AnalyticsPage`, `chatTime`)
+  e migrar para `fusoDeNegocio` onde a semântica for de negócio. (2) Deps: planejar
+  o major bump de `react-router` 6→7 e `vite` (dev-only) como fatia dedicada com
+  validação de build. (3) Continuar a varredura de "zeros enganosos" em KPIs de query.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
