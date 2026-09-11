@@ -304,7 +304,7 @@ export const DashboardPage: React.FC = () => {
       // A home não tinha título visível — só um h1 `sr-only`. Quem abre o
       // painel de manhã não sabe de cara em qual loja está, e com multi-loja
       // isso é um erro caro. A saudação nomeia a loja.
-      titulo={`${saudacaoDoDia()}${store?.name ? `, ${store.name}` : ''}!`}
+      titulo={`${saudacaoDoDia()}${store?.name ?`, ${store.name}` : ''}!`}
     >
       {storeId && (
         <OnboardingWizard open={wizardOpen} steps={buildWizardSteps(storeId)} onClose={() => setWizardOpen(false)} />
@@ -489,7 +489,7 @@ export const DashboardPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(`/stores/${storeRoute}/orders?novo=1`)}
-                className="flex items-center gap-1 text-xs bg-brand hover:bg-brand-hover text-white px-2.5 py-1.5 rounded font-medium transition-colors"
+                className="flex items-center gap-1 text-xs bg-brand hover:bg-brand-hover text-on-brand px-2.5 py-1.5 rounded font-medium transition-colors"
               >
                 <PlusIcon className="h-3.5 w-3.5" />
                 Novo pedido
@@ -622,11 +622,11 @@ export const DashboardPage: React.FC = () => {
                                        group-hover:text-fg-token dark:group-hover:text-white transition-colors">
                         {label}
                       </span>
-                      <span className={`text-sm font-bold tabular-nums ${count > 0 ? 'text-fg-token' : 'text-gray-300 dark:text-fg-token'}`}>
+                      <span className={`text-sm font-bold tabular-nums ${count > 0 ? 'text-fg-token' : 'text-fg-muted-token dark:text-fg-token'}`}>
                         {count}
                       </span>
                     </div>
-                    <div className="h-2 bg-surface-2 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-surface-2 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${color} rounded-full transition-all duration-700`}
                         style={{ width: count > 0 ? `${Math.max(pct, 6)}%` : '0%' }}
@@ -761,10 +761,10 @@ export const DashboardPage: React.FC = () => {
         {healthLoading && !projectHealth ? (
           <div className="flex justify-center items-center h-32"><Loading /></div>
         ) : projectHealth ? (
-          <div className="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-100 dark:divide-zinc-800">
+          <div className="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border-token">
 
             {/* ── Commerce ── */}
-            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
+            <div className="grid grid-cols-3 divide-x divide-border-token">
               <div className="p-4">
                 <p className="overline mb-2">Pedidos 24h</p>
                 <p className="text-xl font-bold text-fg-token">{projectHealth.commerce.orders_24h}</p>
@@ -789,7 +789,7 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* ── Messaging ── */}
-            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-zinc-800">
+            <div className="grid grid-cols-3 divide-x divide-border-token">
               <div className="p-4">
                 <p className="overline mb-2">Mensagens 24h</p>
                 <p className="text-xl font-bold text-fg-token">{projectHealth.messaging.messages_24h}</p>
@@ -819,19 +819,19 @@ export const DashboardPage: React.FC = () => {
             <div className="p-4 space-y-4">
               {/* Quick stats */}
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-surface-2 dark:bg-zinc-900 p-2.5">
+                <div className="rounded-lg bg-surface-2 p-2.5">
                   <CubeIcon className="h-3.5 w-3.5 mx-auto mb-1 text-fg-muted-token" />
                   <p className={`text-sm font-bold ${projectHealth.catalog.low_stock_products > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-fg-token'}`}>
                     {projectHealth.catalog.low_stock_products}
                   </p>
                   <p className="text-badge text-fg-muted-token dark:text-fg-muted-token">Est. baixo</p>
                 </div>
-                <div className="rounded-lg bg-surface-2 dark:bg-zinc-900 p-2.5">
+                <div className="rounded-lg bg-surface-2 p-2.5">
                   <BoltIcon className="h-3.5 w-3.5 mx-auto mb-1 text-fg-muted-token" />
                   <p className="text-sm font-bold text-fg-token">{projectHealth.automation.active_agents}</p>
                   <p className="text-badge text-fg-muted-token dark:text-fg-muted-token">Agentes</p>
                 </div>
-                <div className="rounded-lg bg-surface-2 dark:bg-zinc-900 p-2.5">
+                <div className="rounded-lg bg-surface-2 p-2.5">
                   <ExclamationTriangleIcon className={`h-3.5 w-3.5 mx-auto mb-1 ${projectHealth.issues.length > 0 ? 'text-yellow-500' : 'text-fg-muted-token'}`} />
                   <p className={`text-sm font-bold ${projectHealth.issues.length > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-fg-token'}`}>
                     {projectHealth.issues.length}
@@ -853,9 +853,9 @@ export const DashboardPage: React.FC = () => {
                       return (
                         <div key={item.intent_type} className="flex items-center gap-2">
                           <span className="text-badge text-fg-muted-token truncate flex-1 capitalize">
-                            {item.intent_type.replace(/_/g, ' ')}
+                            {item.intent_type.replace(/_/g, '')}
                           </span>
-                          <div className="w-16 h-1.5 bg-surface-2 dark:bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="w-16 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                             <div className="h-full bg-brand rounded-full" style={{ width: `${Math.max(pct, 8)}%` }} />
                           </div>
                           <span className="text-badge font-bold text-fg-token tabular-nums w-5 text-right">{item.count}</span>
@@ -878,12 +878,12 @@ export const DashboardPage: React.FC = () => {
                         else if (issue.area === 'messages') navigate('/whatsapp/inbox');
                         else navigate('/analytics');
                       }}
-                      className={`w-full text-left rounded-lg border p-2.5 transition-colors hover:bg-surface-2 dark:hover:bg-zinc-900 ${
+                      className={`w-full text-left rounded-lg border p-2.5 transition-colors hover:bg-surface-2  ${
                         issue.level === 'critical'
                           ? 'border-red-200 dark:border-red-900/50'
                           : issue.level === 'warning'
                           ? 'border-yellow-200 dark:border-yellow-900/50'
-                          : 'border-border-token dark:border-zinc-800'
+                          : 'border-border-token'
                       }`}
                     >
                       <p className="text-xs font-semibold text-fg-token line-clamp-1">{issue.title}</p>
@@ -906,9 +906,9 @@ export const DashboardPage: React.FC = () => {
       </Card>}
 
       {/* Footer */}
-      <p className="text-right text-xs text-fg-muted-token dark:text-zinc-600">
+      <p className="text-right text-xs text-fg-muted-token">
         Atualizado às {refreshedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-        {' · '}
+        {'·'}
         <button onClick={loadData} className="hover:text-brand-ink underline transition-colors">
           atualizar agora
         </button>

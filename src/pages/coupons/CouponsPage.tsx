@@ -408,7 +408,7 @@ export const CouponsPage: React.FC = () => {
           {
             chave: 'uso',
             cabecalho: 'Uso',
-            render: (c) => `${c.used_count}${c.usage_limit ? ` / ${c.usage_limit}` : ''}`,
+            render: (c) => `${c.used_count}${c.usage_limit ?` / ${c.usage_limit}` : ''}`,
           },
           {
             chave: 'validade',
@@ -660,8 +660,8 @@ export const CouponsPage: React.FC = () => {
                       aria-pressed={active}
                       className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                         active
-                          ? 'bg-primary-600 text-white border-primary-600'
-                          : 'border-border-token dark:border-zinc-700 text-fg-token hover:border-primary-400'
+                          ? 'bg-brand text-on-brand border-brand'
+                          : 'border-border-token text-fg-token hover:border-brand'
                       }`}
                     >
                       {cat.name}
@@ -682,7 +682,7 @@ export const CouponsPage: React.FC = () => {
               id="first_order_only"
               checked={formData.first_order_only ?? false}
               onChange={(e) => setFormData({ ...formData, first_order_only: e.target.checked })}
-              className="h-4 w-4 text-primary-600 focus:ring-brand border-border-token dark:border-zinc-700 rounded"
+              className="h-4 w-4 text-brand-ink focus:ring-brand border-border-token rounded"
             />
             <label htmlFor="first_order_only" className="ml-2 block text-sm text-fg-token">
               Só primeira compra do cliente
@@ -728,11 +728,11 @@ export const CouponsPage: React.FC = () => {
                 pedido de R$ 72" é a decisão que o dono está tomando. */}
             {formData.parceiro_phone && (
               <p className="mt-2 text-caption text-fg-muted-token">
-                Num pedido de R$ 72 com este cupom, o parceiro ganha{' '}
+                Num pedido de R$ 72 com este cupom, o parceiro ganha{''}
                 <strong className="text-fg-token">
                   {formatCurrency(72 * (Number(formData.parceiro_percent) || 0) / 100)}
                 </strong>
-                {!formData.parceiro_percent && ' — usando a taxa padrão da loja'}.
+                {!formData.parceiro_percent && '— usando a taxa padrão da loja'}.
                 A comissão sai do valor da comida, sem a entrega e já com o
                 desconto do cupom aplicado.
               </p>
@@ -768,7 +768,7 @@ export const CouponsPage: React.FC = () => {
               id="is_active"
               checked={formData.is_active}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="h-4 w-4 text-primary-600 focus:ring-brand border-border-token dark:border-zinc-700 rounded"
+              className="h-4 w-4 text-brand-ink focus:ring-brand border-border-token rounded"
             />
             <label htmlFor="is_active" className="ml-2 block text-sm text-fg-token">
               Cupom ativo

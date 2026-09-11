@@ -21,7 +21,17 @@ import * as path from 'path';
 const SRC = path.join(__dirname, '..');
 
 /** Arquivos que ainda pintam cromo com a cor da loja. Só diminui. */
-const TETO = 28;
+const TETO = 20;
+
+/**
+ * Cinza cru — `zinc-400`, `gray-900` — é o mesmo problema com outra roupa.
+ *
+ * O painel tem dois temas; a cor crua só serve a um, e quem escreve resolve
+ * pregando um `dark:` ao lado. São duas decisões onde deveria haver uma, e
+ * basta esquecer metade para a tela ficar branca no escuro. O token responde
+ * pelos dois.
+ */
+const TETO_CRU = 49;
 
 const arquivos = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -30,15 +40,25 @@ const arquivos = (dir: string): string[] =>
     return /\.tsx$/.test(e.name) ? [p] : [];
   });
 
+const pintadosCom = (regex: RegExp) =>
+  arquivos(SRC).filter((f) => {
+    const fonte = fs
+      .readFileSync(f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+    return regex.test(fonte);
+  });
+
 describe('spec: cromo do painel é constante', () => {
   it('não cresce o número de telas pintadas com a cor da loja', () => {
-    const pintados = arquivos(SRC).filter((f) => {
-      const fonte = fs
-        .readFileSync(f, 'utf8')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/^\s*\/\/.*$/gm, '');
-      return /(?:bg|text|border|ring|accent|from|to|via)-primary-\d/.test(fonte);
-    });
+    const pintados = pintadosCom(/(?:bg|text|border|ring|accent|from|to|via)-primary-\d/);
     expect(pintados.length).toBeLessThanOrEqual(TETO);
+  });
+
+  it('não cresce o número de telas com cinza cru em vez de token', () => {
+    const pintados = pintadosCom(
+      /(?:bg|text|border|divide|placeholder|ring)-(?:zinc|gray|slate|neutral|stone)-\d{2,3}/,
+    );
+    expect(pintados.length).toBeLessThanOrEqual(TETO_CRU);
   });
 });

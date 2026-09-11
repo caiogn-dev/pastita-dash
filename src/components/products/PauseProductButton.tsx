@@ -87,7 +87,7 @@ const PauseProductButton: React.FC<PauseProductButtonProps> = ({ productId, isPa
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-1 w-36 rounded-md border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+          className="absolute right-0 z-20 mt-1 w-36 rounded-md border border-border-token bg-white py-1 shadow-lg"
         >
           {PAUSE_OPTIONS.map((opt) => (
             <button
@@ -95,7 +95,7 @@ const PauseProductButton: React.FC<PauseProductButtonProps> = ({ productId, isPa
               type="button"
               role="menuitem"
               onClick={() => handlePause(opt.minutes)}
-              className="block w-full px-3 py-1.5 text-left text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="block w-full px-3 py-1.5 text-left text-xs hover:bg-surface-2"
             >
               {opt.label}
             </button>

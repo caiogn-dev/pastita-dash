@@ -28,7 +28,7 @@ export function StepCliente({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-2">
+        <label className="block text-xs font-semibold uppercase tracking-widest text-fg-muted-token mb-2">
           Buscar cliente
         </label>
         <CustomerSearchInput
@@ -39,7 +39,7 @@ export function StepCliente({
         />
       </div>
       {!customer && (
-        <p className="text-xs text-gray-400 dark:text-zinc-500">
+        <p className="text-xs text-fg-muted-token">
           Digite nome ou telefone para buscar. Se não encontrar, um novo cliente
           será criado.
         </p>
@@ -54,18 +54,18 @@ export function StepCliente({
             value={customer.phone_number_edited || ''}
             onChange={(e) => handlePhoneChange(e.target.value)}
             placeholder="(11) 99999-9999"
-            className="w-full px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand"
+            className="w-full px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-surface text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
       )}
       {customer && customer.addresses.length > 0 && (
-        <div className="rounded-xl border border-gray-100 dark:border-zinc-800 p-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-2">
+        <div className="rounded-xl border border-border-token p-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-fg-muted-token mb-2">
             Endereços salvos
           </p>
           <div className="space-y-1">
             {customer.addresses.slice(0, 3).map((addr) => (
-              <p key={addr.id} className="text-xs text-gray-600 dark:text-zinc-400">
+              <p key={addr.id} className="text-xs text-fg-muted-token">
                 {addr.label}: {addr.street}, {addr.number} — {addr.neighborhood}, {addr.city}
               </p>
             ))}

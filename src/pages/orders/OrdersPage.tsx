@@ -114,7 +114,7 @@ const formatScheduledShort = (order: { scheduled_date?: string | null; scheduled
     const [, m, d] = date.split('-');
     datePart = m && d ? `${d}/${m}` : date;
   }
-  return [datePart, time].filter(Boolean).join(' ');
+  return [datePart, time].filter(Boolean).join('');
 };
 
 // ─── PaymentBadge ─────────────────────────────────────────────────────────────
@@ -209,7 +209,7 @@ const OrderCardBase: React.FC<CardProps> = ({
             <span className={`flex items-center gap-0.5 text-badge font-semibold px-1.5 py-0.5 rounded-full ${
               urgency === 'critical' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
               urgency === 'warning'  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-              'bg-surface-2 text-fg-muted-token dark:bg-zinc-800 dark:text-zinc-400'
+              'bg-surface-2 text-fg-muted-token'
             }`}>
               <ClockIcon className="h-2.5 w-2.5" />
               {formatElapsed(elapsed)}

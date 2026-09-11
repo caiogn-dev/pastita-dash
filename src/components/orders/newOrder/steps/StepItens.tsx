@@ -55,22 +55,22 @@ export function StepItens({
   return (
     <div className="space-y-3">
       {/* Search */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
-        <MagnifyingGlassIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-token bg-surface">
+        <MagnifyingGlassIcon className="h-4 w-4 text-fg-muted-token flex-shrink-0" />
         <input
           type="text"
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Buscar produto..."
-          className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none"
+          className="flex-1 bg-transparent text-sm text-fg-token placeholder:text-fg-muted-token outline-none"
         />
       </div>
 
       {/* Product list */}
       {loadingProducts ? (
-        <p className="text-sm text-gray-400 text-center py-4">Carregando produtos...</p>
+        <p className="text-sm text-fg-muted-token text-center py-4">Carregando produtos...</p>
       ) : filteredProducts.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-4">
+        <p className="text-sm text-fg-muted-token text-center py-4">
           {search ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}
         </p>
       ) : (
@@ -85,8 +85,8 @@ export function StepItens({
                 disabled={inCart}
                 className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-sm transition-colors text-left ${
                   inCart
-                    ? 'border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/20 opacity-60 cursor-default'
-                    : 'border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300'
+                    ? 'border-brand bg-brand-soft opacity-60 cursor-default'
+                    : 'border-border-token hover:bg-surface-2 text-fg-token'
                 }`}
               >
                 <span className="truncate font-medium">{product.name}</span>
@@ -102,20 +102,20 @@ export function StepItens({
       {/* Cart */}
       {cart.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400">
+          <p className="text-xs font-semibold uppercase tracking-widest text-fg-muted-token">
             Carrinho
           </p>
           {cart.map((item) => (
             <div
               key={item.product.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-token bg-surface"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <p className="text-sm font-medium text-fg-token truncate">
                   {item.product.name}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-zinc-400">
-                  {fmt(precoVigenteDoProduto(item.product))} × {item.quantity} ={' '}
+                <p className="text-xs text-fg-muted-token">
+                  {fmt(precoVigenteDoProduto(item.product))} × {item.quantity} ={''}
                   <strong>{fmt(precoVigenteDoProduto(item.product) * item.quantity)}</strong>
                 </p>
               </div>
@@ -133,18 +133,18 @@ export function StepItens({
                       ? `Diminuir quantidade de ${item.product.name}`
                       : `Remover ${item.product.name} do carrinho`
                   }
-                  className="flex items-center justify-center h-6 w-6 rounded-full border border-gray-200 dark:border-zinc-700 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="flex items-center justify-center h-6 w-6 rounded-full border border-border-token text-fg-muted-token hover:bg-surface-2 transition-colors"
                 >
                   <MinusIcon className="h-3 w-3" />
                 </button>
-                <span className="text-sm font-bold w-5 text-center text-gray-900 dark:text-white">
+                <span className="text-sm font-bold w-5 text-center text-fg-token">
                   {item.quantity}
                 </span>
                 <button
                   type="button"
                   onClick={() => onQtyChange(item.product.id, item.quantity + 1)}
                   aria-label={`Aumentar quantidade de ${item.product.name}`}
-                  className="flex items-center justify-center h-6 w-6 rounded-full border border-gray-200 dark:border-zinc-700 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="flex items-center justify-center h-6 w-6 rounded-full border border-border-token text-fg-muted-token hover:bg-surface-2 transition-colors"
                 >
                   <PlusIcon className="h-3 w-3" />
                 </button>
@@ -160,8 +160,8 @@ export function StepItens({
             </div>
           ))}
           <div className="flex justify-between items-center px-3 py-1">
-            <span className="text-sm text-gray-600 dark:text-zinc-400">Subtotal</span>
-            <span className="text-sm font-bold text-gray-900 dark:text-white">
+            <span className="text-sm text-fg-muted-token">Subtotal</span>
+            <span className="text-sm font-bold text-fg-token">
               {fmt(subtotal)}
             </span>
           </div>

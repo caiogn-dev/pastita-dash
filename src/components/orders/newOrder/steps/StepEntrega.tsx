@@ -73,8 +73,8 @@ export function StepEntrega({
             onClick={() => setDeliveryMethod(m)}
             className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
               deliveryMethod === m
-                ? 'bg-primary-600 border-primary-600 text-white'
-                : 'border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                ? 'bg-brand border-brand text-on-brand'
+                : 'border-border-token text-fg-token hover:bg-surface-2'
             }`}
           >
             {m === 'delivery' ? '🚚 Entrega' : '🏠 Retirada'}
@@ -87,7 +87,7 @@ export function StepEntrega({
           {/* Endereços salvos */}
           {addresses.length > 0 && (
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-widest text-fg-muted-token mb-2">
                 Endereços do cliente
               </label>
               <div className="space-y-1.5">
@@ -98,13 +98,13 @@ export function StepEntrega({
                     onClick={() => handleSelectSaved(addr)}
                     className={`w-full text-left px-3 py-2 rounded-xl border text-sm transition-colors ${
                       selectedAddress?.id === addr.id
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                        : 'border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                        ? 'border-brand bg-brand-soft text-brand-ink'
+                        : 'border-border-token text-fg-token hover:bg-surface-2'
                     }`}
                   >
                     <span className="font-semibold">{addr.label}</span>: {rotuloDoEndereco(addr)}
                     {addr.is_default && (
-                      <span className="ml-2 text-badge bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 text-badge bg-brand-soft text-brand-ink px-1.5 py-0.5 rounded-full">
                         padrão
                       </span>
                     )}
@@ -119,7 +119,7 @@ export function StepEntrega({
               type="button"
               onClick={() => onUseSharedLocation()}
               disabled={calculatingRoute}
-              className="w-full mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-primary-300 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-sm font-semibold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/40 disabled:opacity-50 transition-colors"
+              className="w-full mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-brand bg-brand-soft text-sm font-semibold text-brand-ink hover:bg-brand-soft disabled:opacity-50 transition-colors"
             >
               📍 {calculatingRoute ? 'Buscando...' : 'Usar localização enviada no WhatsApp'}
             </button>
@@ -127,7 +127,7 @@ export function StepEntrega({
 
           {/* Endereço livre */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-2">
+            <label className="block text-xs font-semibold uppercase tracking-widest text-fg-muted-token mb-2">
               Endereço ou localização do cliente
             </label>
             <div className="flex gap-2">
@@ -146,18 +146,18 @@ export function StepEntrega({
                   }
                 }}
                 placeholder="Endereço, ou cole o link do Google Maps que o cliente enviou"
-                className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand"
+                className="flex-1 px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
               />
               <button
                 type="button"
                 disabled={!freeAddressText.trim() || calculatingRoute}
                 onClick={() => onCalculateRoute(freeAddressText.trim())}
-                className="px-3 py-2 rounded-xl bg-gray-100 dark:bg-zinc-800 text-sm font-semibold text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                className="px-3 py-2 rounded-xl bg-surface-2 text-sm font-semibold text-fg-token hover:bg-surface-2 disabled:opacity-50 transition-colors whitespace-nowrap"
               >
                 {calculatingRoute ? 'Calc...' : 'Calcular'}
               </button>
             </div>
-            <p className="mt-1.5 text-xs text-gray-400 dark:text-zinc-500">
+            <p className="mt-1.5 text-xs text-fg-muted-token">
               Cole o link de localização do WhatsApp/Maps para calcular a taxa pelo pin exato.
             </p>
           </div>
@@ -177,7 +177,7 @@ export function StepEntrega({
                 <p className="text-xs text-emerald-600 dark:text-emerald-400">
                   {Number(routeQuote.distance_km).toFixed(1)} km
                   {routeQuote.duration_minutes != null &&
-                    ` · ~${Math.round(Number(routeQuote.duration_minutes))} min`}
+                    `· ~${Math.round(Number(routeQuote.duration_minutes))} min`}
                 </p>
               )}
             </div>
@@ -194,38 +194,38 @@ export function StepEntrega({
       )}
 
       {deliveryMethod === 'pickup' && (
-        <p className="text-sm text-gray-500 dark:text-zinc-400 py-2">
+        <p className="text-sm text-fg-muted-token py-2">
           O cliente buscará o pedido na loja. Nenhuma taxa de entrega será cobrada.
         </p>
       )}
 
       {/* Agendamento */}
-      <div className="rounded-xl border border-gray-200 dark:border-zinc-700 p-3 space-y-3">
+      <div className="rounded-xl border border-border-token p-3 space-y-3">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={enableScheduling}
             onChange={(e) => setEnableScheduling(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-brand"
+            className="h-4 w-4 rounded border-border-token text-brand-ink focus:ring-brand"
           />
-          <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">📅 Agendar pedido</span>
+          <span className="text-sm font-semibold text-fg-token">📅 Agendar pedido</span>
         </label>
 
         {enableScheduling && (
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-widest text-fg-muted-token mb-2">
                 Data
               </label>
               <input
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand"
+                className="w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-widest text-fg-muted-token mb-2">
                 Janela de horário
               </label>
               <div className="flex flex-wrap gap-1.5">
@@ -236,8 +236,8 @@ export function StepEntrega({
                     onClick={() => setScheduledTime(slot)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
                       scheduledTime === slot
-                        ? 'bg-primary-600 border-primary-600 text-white'
-                        : 'border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                        ? 'bg-brand border-brand text-on-brand'
+                        : 'border-border-token text-fg-token hover:bg-surface-2'
                     }`}
                   >
                     {slot}

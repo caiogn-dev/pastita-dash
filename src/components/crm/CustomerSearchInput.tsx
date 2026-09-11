@@ -51,12 +51,12 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
   // If a customer is already selected, show a badge
   if (selectedCustomer) {
     return (
-      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/20">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-brand bg-brand-soft">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+          <p className="text-sm font-semibold text-fg-token truncate">
             {selectedCustomer.name}
           </p>
-          <p className="text-xs text-gray-500 dark:text-zinc-400">
+          <p className="text-xs text-fg-muted-token">
             {selectedCustomer.phone_number}
             {selectedCustomer.total_orders > 0 && (
               <> · {selectedCustomer.total_orders} pedido(s) · {formatCurrency(selectedCustomer.total_spent)}</>
@@ -66,7 +66,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
         <button
           type="button"
           onClick={handleClear}
-          className="p-1 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+          className="p-1 rounded-full text-fg-muted-token hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
           title="Remover cliente"
         >
           <XMarkIcon className="h-4 w-4" />
@@ -78,18 +78,18 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
   return (
     <div ref={containerRef} className="relative">
       {/* Input */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500 transition-colors">
-        <MagnifyingGlassIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-token bg-surface focus-within:border-brand focus-within:ring-1 focus-within:ring-brand transition-colors">
+        <MagnifyingGlassIcon className="h-4 w-4 text-fg-muted-token flex-shrink-0" />
         <input
           type="text"
           value={query}
           onChange={(e) => search(e.target.value)}
           placeholder="Buscar cliente por nome ou telefone..."
-          className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none min-w-0"
+          className="flex-1 bg-transparent text-sm text-fg-token placeholder:text-fg-muted-token outline-none min-w-0"
           autoComplete="off"
         />
         {loading && (
-          <span className="text-xs text-gray-400 animate-pulse flex-shrink-0">
+          <span className="text-xs text-fg-muted-token animate-pulse flex-shrink-0">
             Buscando...
           </span>
         )}
@@ -97,7 +97,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
           <button
             type="button"
             onClick={() => search('')}
-            className="p-0.5 text-gray-400 hover:text-gray-600 flex-shrink-0"
+            className="p-0.5 text-fg-muted-token hover:text-fg-muted-token flex-shrink-0"
           >
             <XMarkIcon className="h-3.5 w-3.5" />
           </button>
@@ -106,12 +106,12 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
 
       {/* Dropdown */}
       {(results.length > 0 || (query.length >= 2 && !loading && results.length === 0)) && (
-        <div className="absolute z-50 top-full mt-1 left-0 right-0 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden">
+        <div className="absolute z-50 top-full mt-1 left-0 right-0 rounded-xl border border-border-token bg-surface shadow-xl overflow-hidden">
           {results.length === 0 ? (
             // No results — offer "new customer" option
             <button
               type="button"
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-surface-2 transition-colors"
               onClick={() => {
                 // Create a placeholder customer with query as name
                 const newCustomer: CustomerSearchResult = {
@@ -125,14 +125,14 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
                 handleSelect(newCustomer);
               }}
             >
-              <span className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-100 dark:bg-zinc-800 flex-shrink-0">
-                <UserPlusIcon className="h-4 w-4 text-gray-500" />
+              <span className="flex items-center justify-center h-8 w-8 rounded-full bg-surface-2 flex-shrink-0">
+                <UserPlusIcon className="h-4 w-4 text-fg-muted-token" />
               </span>
               <div>
-                <p className="font-medium text-gray-700 dark:text-zinc-200">
-                  Novo cliente: <span className="text-primary-600">{query}</span>
+                <p className="font-medium text-fg-token">
+                  Novo cliente: <span className="text-brand-ink">{query}</span>
                 </p>
-                <p className="text-xs text-gray-400">Cliente não encontrado — criar novo</p>
+                <p className="text-xs text-fg-muted-token">Cliente não encontrado — criar novo</p>
               </div>
             </button>
           ) : (
@@ -141,7 +141,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
                 key={customer.id}
                 type="button"
                 onClick={() => handleSelect(customer)}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors border-b border-gray-100 dark:border-zinc-800 last:border-0"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-surface-2 transition-colors border-b border-border-token last:border-0"
               >
                 {/* Avatar */}
                 <span
@@ -152,10 +152,10 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
                 </span>
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 dark:text-white truncate">
+                  <p className="font-semibold text-fg-token truncate">
                     {customer.name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
+                  <p className="text-xs text-fg-muted-token truncate">
                     {customer.phone_number}
                     {customer.total_orders > 0 && (
                       <> · {customer.total_orders} pedido(s)</>

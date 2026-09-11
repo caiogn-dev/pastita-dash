@@ -144,28 +144,28 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
   };
 
   const renderForm = () => (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end p-3 rounded-lg border border-primary-300 dark:border-primary-700 bg-primary-50/50 dark:bg-primary-900/10">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end p-3 rounded-lg border border-brand bg-brand-soft">
       <div className="col-span-2 md:col-span-1">
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nome *</label>
+        <label className="block text-xs font-medium text-fg-muted-token mb-1">Nome *</label>
         <input
           type="text"
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           placeholder="Ex.: Frango, Grande…"
-          className="w-full px-2 py-1.5 text-sm rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white"
+          className="w-full px-2 py-1.5 text-sm rounded-md border border-border-token bg-surface text-fg-token"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">SKU</label>
+        <label className="block text-xs font-medium text-fg-muted-token mb-1">SKU</label>
         <input
           type="text"
           value={form.sku}
           onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
-          className="w-full px-2 py-1.5 text-sm rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white"
+          className="w-full px-2 py-1.5 text-sm rounded-md border border-border-token bg-surface text-fg-token"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Preço (R$)</label>
+        <label className="block text-xs font-medium text-fg-muted-token mb-1">Preço (R$)</label>
         <input
           type="number"
           min="0"
@@ -173,21 +173,21 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
           value={form.price}
           onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
           placeholder={basePrice != null ? `${basePrice} (herdado)` : 'herda do produto'}
-          className="w-full px-2 py-1.5 text-sm rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white"
+          className="w-full px-2 py-1.5 text-sm rounded-md border border-border-token bg-surface text-fg-token"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Estoque</label>
+        <label className="block text-xs font-medium text-fg-muted-token mb-1">Estoque</label>
         <input
           type="number"
           min="0"
           value={form.stock_quantity}
           onChange={(e) => setForm((f) => ({ ...f, stock_quantity: e.target.value }))}
-          className="w-full px-2 py-1.5 text-sm rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white"
+          className="w-full px-2 py-1.5 text-sm rounded-md border border-border-token bg-surface text-fg-token"
         />
       </div>
       <div className="flex items-center gap-2">
-        <label className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+        <label className="flex items-center gap-1.5 text-sm text-fg-token cursor-pointer">
           <input
             type="checkbox"
             checked={form.is_active}
@@ -200,7 +200,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="p-1.5 rounded-md bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+          className="p-1.5 rounded-md bg-brand text-on-brand hover:bg-brand disabled:opacity-50"
           title="Salvar variante"
         >
           <CheckIcon className="w-4 h-4" />
@@ -208,7 +208,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
         <button
           type="button"
           onClick={cancelEdit}
-          className="p-1.5 rounded-md bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300"
+          className="p-1.5 rounded-md bg-surface-2 text-fg-token hover:bg-surface"
           title="Cancelar"
         >
           <XMarkIcon className="w-4 h-4" />
@@ -218,15 +218,15 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
   );
 
   if (loading) {
-    return <p className="text-sm text-gray-500 dark:text-zinc-400 py-4">Carregando variantes…</p>;
+    return <p className="text-sm text-fg-muted-token py-4">Carregando variantes…</p>;
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Variantes do produto</h4>
-          <p className="text-xs text-gray-500 dark:text-zinc-400">
+          <h4 className="text-sm font-semibold text-fg-token">Variantes do produto</h4>
+          <p className="text-xs text-fg-muted-token">
             Sabores, tamanhos, opções… Variantes são necessárias para montar combos.
           </p>
         </div>
@@ -241,7 +241,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
       {editingId === 'new' && renderForm()}
 
       {variants.length === 0 && editingId !== 'new' && (
-        <p className="text-sm text-gray-500 dark:text-zinc-400 py-3 text-center border border-dashed border-gray-300 dark:border-zinc-700 rounded-lg">
+        <p className="text-sm text-fg-muted-token py-3 text-center border border-dashed border-border-token rounded-lg">
           Nenhuma variante cadastrada.
         </p>
       )}
@@ -252,23 +252,23 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
             {editingId === v.id ? (
               renderForm()
             ) : (
-              <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800">
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-border-token">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <p className="text-sm font-medium text-fg-token truncate">
                     {v.name}
                     {!v.is_active && (
-                      <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-gray-300">inativa</span>
+                      <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-surface-2 text-fg-muted-token">inativa</span>
                     )}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400">
-                    {v.sku ? `${v.sku} · ` : ''}R$ {Number(v.effective_price).toFixed(2)} · estoque {v.stock_quantity}
+                  <p className="text-xs text-fg-muted-token">
+                    {v.sku ? `${v.sku} ·` : ''}R$ {Number(v.effective_price).toFixed(2)} · estoque {v.stock_quantity}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
                     onClick={() => startEdit(v)}
-                    className="p-1.5 rounded-md text-gray-500 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                    className="p-1.5 rounded-md text-fg-muted-token hover:text-brand-ink hover:bg-surface-2"
                     title="Editar"
                     aria-label={`Editar variante ${v.name}`}
                   >
@@ -277,7 +277,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
                   <button
                     type="button"
                     onClick={() => handleDelete(v)}
-                    className="p-1.5 rounded-md text-gray-500 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                    className="p-1.5 rounded-md text-fg-muted-token hover:text-red-600 hover:bg-surface-2"
                     title="Excluir"
                     aria-label={`Excluir variante ${v.name}`}
                   >
