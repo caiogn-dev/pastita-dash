@@ -11,9 +11,37 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - `npm test`: **1654 testes / 278 suítes verdes** (era 1644/276 verdes com
   **4 falhando em 2 suítes** — reprovação PRÉ-EXISTENTE, ver fatia abaixo).
 - `npm run build` (tsc && vite build, igual à Vercel): **ok** (~15s).
-- `npm run lint`: gate em 400 warnings; sem novos warnings nos arquivos tocados.
+- `npm run lint`: **0 errors, 258 warnings** (gate 400) — era **6 errors** (CI
+  vermelho na main; corrigido nesta execução, ver fatia abaixo).
 
 ## Histórico
+
+### 2026-09-11 — CI verde de novo: 6 erros de lint pré-existentes que travavam a main
+- **Medido:** o CI (`.github/workflows/ci.yml`) roda `build` → `lint` → `test`
+  num único job. O passo `npm run lint` reprovava com **6 errors** (258 warnings,
+  abaixo do gate de 400) em 5 arquivos **não relacionados a nenhuma fatia** — ou
+  seja, o CI da `main` já estava **vermelho**. A Vercel só roda `tsc && vite
+  build`, então o deploy de PRODUÇÃO continuava saindo e mascarava o CI vermelho.
+  Como o job é único, o PR do fuso (#195) também não fecharia verde só com o
+  passo de teste corrigido — o `lint` reprovava junto.
+- **Mudado (mecânico, sem mudança de comportamento — 5 arquivos):**
+  - `sidebarColuna.test.tsx`: remove `eslint-disable no-bitwise` (regra não
+    habilitada → diretiva inútil, virou error por `--report-unused-disable-directives`).
+  - `OrdersHeatMap.tsx`: remove 2 `eslint-disable @typescript-eslint/no-explicit-any`
+    que não cobriam `any` real (`window.google!.maps` não tem `any` explícito).
+  - `variaveisDaOferta.ts` + teste: o **NBSP** dentro do regex vira ` `
+    (mesmo match, sem caractere de espaço irregular no fonte → sai o
+    `no-irregular-whitespace`).
+  - `enderecoDaEntrega.ts`: `[,;.\-]` → `[,;.-]` (hífen no fim da classe já é
+    literal; a barra era `no-useless-escape`).
+- **Zero-regressão:** as 3 suítes que tocam esses arquivos seguem verdes (36/36);
+  `tsc` limpo e `vite build` ok. Sem teste novo — correção de lint mecânica não
+  tem superfície de teste própria; a verificação é a sequência do CI verde.
+- **Entrega:** cherry-pick no mesmo PR do fuso (#195), pois só as duas correções
+  **juntas** deixam o job único do CI verde (build+lint+test). Commit separado e
+  rotulado para revisão.
+- **Antes/depois:** `npm run lint` 6 errors → **0 errors**; sequência do CI
+  (build → lint → test) **toda verde** localmente.
 
 ### 2026-09-11 — Correção: quadro de pedidos e régua de status no fuso do NEGÓCIO (não no do dispositivo)
 - **Medido (baseline vermelho):** no checkout limpo (runner em **UTC**), `npm test`
