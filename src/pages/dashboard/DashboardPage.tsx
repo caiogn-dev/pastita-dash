@@ -622,7 +622,7 @@ export const DashboardPage: React.FC = () => {
                                        group-hover:text-fg-token dark:group-hover:text-white transition-colors">
                         {label}
                       </span>
-                      <span className={`text-sm font-bold tabular-nums ${count > 0 ? 'text-fg-token' : 'text-fg-muted-token dark:text-fg-token'}`}>
+                      <span className={`text-sm font-bold tabular-nums ${count > 0 ? 'text-fg-token' : 'text-fg-muted-token'}`}>
                         {count}
                       </span>
                     </div>
@@ -824,19 +824,19 @@ export const DashboardPage: React.FC = () => {
                   <p className={`text-sm font-bold ${projectHealth.catalog.low_stock_products > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-fg-token'}`}>
                     {projectHealth.catalog.low_stock_products}
                   </p>
-                  <p className="text-badge text-fg-muted-token dark:text-fg-muted-token">Est. baixo</p>
+                  <p className="text-badge text-fg-muted-token">Est. baixo</p>
                 </div>
                 <div className="rounded-lg bg-surface-2 p-2.5">
                   <BoltIcon className="h-3.5 w-3.5 mx-auto mb-1 text-fg-muted-token" />
                   <p className="text-sm font-bold text-fg-token">{projectHealth.automation.active_agents}</p>
-                  <p className="text-badge text-fg-muted-token dark:text-fg-muted-token">Agentes</p>
+                  <p className="text-badge text-fg-muted-token">Agentes</p>
                 </div>
                 <div className="rounded-lg bg-surface-2 p-2.5">
                   <ExclamationTriangleIcon className={`h-3.5 w-3.5 mx-auto mb-1 ${projectHealth.issues.length > 0 ? 'text-yellow-500' : 'text-fg-muted-token'}`} />
                   <p className={`text-sm font-bold ${projectHealth.issues.length > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-fg-token'}`}>
                     {projectHealth.issues.length}
                   </p>
-                  <p className="text-badge text-fg-muted-token dark:text-fg-muted-token">Alertas</p>
+                  <p className="text-badge text-fg-muted-token">Alertas</p>
                 </div>
               </div>
 
