@@ -107,3 +107,55 @@ describe('VoucherSection', () => {
     expect(criar).not.toHaveBeenCalled();
   });
 });
+
+describe('VoucherSection — desligar o vale', () => {
+  const GATEWAY_LIGADO = {
+    id: 'g1', gateway_type: 'pagarme', is_enabled: true,
+    public_key: 'pk_x', configuration: { voucher_brands: ['vr'] },
+  };
+
+  it('quando o vale já está ligado, existe um jeito de desligar', async () => {
+    listar.mockResolvedValue({ results: [GATEWAY_LIGADO] });
+    render(<VoucherSection storeId="s1" />);
+    expect(await screen.findByLabelText(/aceitar vale nesta loja/i)).toBeChecked();
+  });
+
+  it('desmarcar e salvar desliga o gateway em vez de apagar a configuração', async () => {
+    listar.mockResolvedValue({ results: [GATEWAY_LIGADO] });
+    render(<VoucherSection storeId="s1" />);
+
+    fireEvent.click(await screen.findByLabelText(/aceitar vale nesta loja/i));
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+    await waitFor(() => expect(atualizar).toHaveBeenCalled());
+    expect(atualizar.mock.calls[0][1]).toMatchObject({ is_enabled: false });
+    // As bandeiras continuam gravadas: religar nao pode exigir remarcar tudo.
+    expect(atualizar.mock.calls[0][1].configuration).toMatchObject({ voucher_brands: ['vr'] });
+  });
+
+  it('desligando, não exige bandeira marcada', async () => {
+    listar.mockResolvedValue({
+      results: [{ ...GATEWAY_LIGADO, configuration: { voucher_brands: [] } }],
+    });
+    render(<VoucherSection storeId="s1" />);
+
+    fireEvent.click(await screen.findByLabelText(/aceitar vale nesta loja/i));
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+    await waitFor(() => expect(atualizar).toHaveBeenCalled());
+    expect(screen.queryByText(/ao menos uma bandeira/i)).not.toBeInTheDocument();
+  });
+
+  it('ligado, continua exigindo bandeira', async () => {
+    listar.mockResolvedValue({
+      results: [{ ...GATEWAY_LIGADO, configuration: { voucher_brands: [] } }],
+    });
+    render(<VoucherSection storeId="s1" />);
+    await screen.findByLabelText(/aceitar vale nesta loja/i);
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/ao menos uma bandeira/i)).toBeInTheDocument());
+    expect(atualizar).not.toHaveBeenCalled();
+  });
+});

@@ -13,6 +13,8 @@ interface Bandeira {
 interface GatewayDeVale {
   id: string;
   gateway_type: string;
+  /** Ausente em linha antiga; `!== false` trata isso como ligado. */
+  is_enabled?: boolean;
   public_key?: string;
   configuration?: { voucher_brands?: string[] };
 }
@@ -41,6 +43,9 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
   const [publica, setPublica] = useState('');
   const [catalogo, setCatalogo] = useState<Bandeira[]>([]);
   const [marcadas, setMarcadas] = useState<string[]>([]);
+  // Liga/desliga o recebimento por vale SEM perder a configuracao. O lojista
+  // que para de aceitar hoje precisa poder voltar amanha sem recadastrar.
+  const [aceitaVale, setAceitaVale] = useState(true);
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
 
@@ -66,6 +71,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
       setGatewayId(pagarme.id);
       setPublica(pagarme.public_key || '');
       setMarcadas(pagarme.configuration?.voucher_brands || []);
+      setAceitaVale(pagarme.is_enabled !== false);
     }).catch((erroGateway) => {
       // lista vazia é estado válido: loja ainda não configurou vale
       logger.error('Erro ao carregar gateway de vale da loja:', erroGateway);
@@ -87,7 +93,9 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
 
   const salvar = useCallback(async () => {
     setErro('');
-    if (marcadas.length === 0) {
+    // Desligando, a bandeira nao importa — a exigencia existe para nao ligar o
+    // vale no cardapio sem nada para o cliente escolher.
+    if (aceitaVale && marcadas.length === 0) {
       setErro('Marque ao menos uma bandeira para começar a receber com vale.');
       return;
     }
@@ -104,7 +112,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
         gateway_type: 'pagarme',
         api_key: secreta,
         public_key: publica,
-        is_enabled: true,
+        is_enabled: aceitaVale,
         is_sandbox: ehTeste(secreta),
         configuration: { voucher_brands: ordenadas },
       };
@@ -120,7 +128,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
     } finally {
       setSalvando(false);
     }
-  }, [catalogo, gatewayId, marcadas, publica, secreta, storeId]);
+  }, [aceitaVale, catalogo, gatewayId, marcadas, publica, secreta, storeId]);
 
   return (
     <Card className="p-6">
@@ -137,6 +145,26 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
           </p>
         </div>
       </div>
+
+      <label
+        htmlFor="pagarme-vale-aceita"
+        className="flex items-center gap-2 py-1 text-sm text-fg-token"
+      >
+        <input
+          id="pagarme-vale-aceita"
+          type="checkbox"
+          className="h-4 w-4 accent-[var(--color-brand)]"
+          checked={aceitaVale}
+          onChange={() => setAceitaVale((v) => !v)}
+        />
+        <span>Aceitar vale nesta loja</span>
+      </label>
+      {!aceitaVale && (
+        <p role="status" className="text-sm text-fg-muted-token">
+          O vale deixa de aparecer no cardápio. As chaves e as bandeiras ficam
+          guardadas — é só marcar de novo para voltar a aceitar.
+        </p>
+      )}
 
       <div className="space-y-4">
         <Input
