@@ -9,6 +9,11 @@ jest.mock('../../../services/storesApi', () => ({
   getStore: jest.fn(),
   updateStore: jest.fn(),
   updateStoreWithFiles: jest.fn(),
+  // A página agora monta a seção de banners, que lista ao abrir.
+  MAXIMO_DE_BANNERS: 3,
+  listarBanners: jest.fn().mockResolvedValue([]),
+  subirBanner: jest.fn(),
+  apagarBanner: jest.fn(),
 }));
 
 jest.mock('../../../services', () => ({

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 import { Card, Button } from '../../components/ui';
-import Loading from '../../components/common/Loading';
+import { Loading } from '../../components/common/Loading';
 import {
   apagarBanner, listarBanners, subirBanner, MAXIMO_DE_BANNERS, type BannerDoCardapio,
 } from '../../services/storesApi';
