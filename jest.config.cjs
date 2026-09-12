@@ -1,3 +1,20 @@
+/**
+ * Fuso fixo para a suíte inteira, ANTES de qualquer coisa.
+ *
+ * O painel roda no browser do lojista, quase sempre no horário de Brasília, e
+ * vários testes de pedidos assertam a hora e o corte do dia formatados em BRT
+ * (`toLocaleTimeString('pt-BR')` em fluxoDoPedido, "entregue hoje" em
+ * pedidosDoQuadro). Sem fixar o fuso, o mesmo teste passa na máquina do dev
+ * (America/Sao_Paulo) e reprova no CI/Vercel (UTC): 07:29 vira 10:29 e o pedido
+ * de ontem escorrega para hoje.
+ *
+ * Precisa ser aqui, no topo do config (processo principal, antes de o jest
+ * bifurcar os workers, que herdam este env de nascença). Em `setupFilesAfterEnv`
+ * já é tarde: o V8 fixa o fuso na primeira operação de Date, e o jest faz várias
+ * antes daquele hook rodar.
+ */
+process.env.TZ = 'America/Sao_Paulo';
+
 module.exports = {
   /**
    * Sem limite de workers o jest abria um por núcleo e a máquina passava mais
