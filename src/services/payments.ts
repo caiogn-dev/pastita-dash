@@ -15,6 +15,23 @@ import { Payment, PaymentGateway, PaginatedResponse } from '../types';
 const BASE_URL = '/stores/payments';
 const GATEWAYS_URL = `${BASE_URL}/gateways`;
 
+interface BandeiraDeVale {
+  value: string;
+  label: string;
+  logo?: string;
+}
+
+/**
+ * Os dois catálogos na mesma resposta: `brands` são as bandeiras cobradas por
+ * API, `manual_brands` as que só dá para cobrar por link. Separados porque o
+ * checkout trata cada grupo de um jeito — misturar abriria formulário de
+ * cartão para bandeira que não tem como ser cobrada.
+ */
+export interface CatalogoDeBandeiras {
+  brands: BandeiraDeVale[];
+  manual_brands?: BandeiraDeVale[];
+}
+
 export const paymentsService = {
   // ========== PAYMENTS ==========
   
@@ -239,8 +256,8 @@ export const paymentsService = {
    * Pagar.me. Fonte única no backend — o painel não mantém lista própria:
    * quando uma bandeira entra ou sai, é um deploy do server2, não do painel.
    */
-  getVoucherBrands: async (): Promise<{ brands: Array<{ value: string; label: string }> }> => {
-    const response = await api.get<{ brands: Array<{ value: string; label: string }> }>(
+  getVoucherBrands: async (): Promise<CatalogoDeBandeiras> => {
+    const response = await api.get<CatalogoDeBandeiras>(
       `${GATEWAYS_URL}/bandeiras-de-vale/`,
     );
     return response.data;

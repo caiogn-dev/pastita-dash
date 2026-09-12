@@ -27,6 +27,7 @@ import { Switch } from '../../components/common';
 import { aoAlternarModo, resumoDosModos, type ModosDeRecebimento, type Modo } from './modosDeRecebimento';
 import RecebimentoSection from './RecebimentoSection';
 import VoucherSection from './VoucherSection';
+import ValePorLinkSection from './ValePorLinkSection';
 import NotaFiscalSection from './NotaFiscalSection';
 
 const DAYS = [
@@ -744,6 +745,16 @@ export const StoreSettingsPage: React.FC = () => {
                 />
                 <div className="mt-6">
                   <VoucherSection storeId={store.id} />
+                </div>
+                <div className="mt-6">
+                  <ValePorLinkSection
+                    storeId={store.id}
+                    ligadas={
+                      (store as unknown as { vale_por_link_brands?: string[] })
+                        .vale_por_link_brands || []
+                    }
+                    whatsapp={store.whatsapp_number || ''}
+                  />
                 </div>
               </>
             )}
