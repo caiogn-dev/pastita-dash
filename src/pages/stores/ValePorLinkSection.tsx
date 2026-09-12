@@ -9,6 +9,8 @@ import logger from '../../services/logger';
 interface Bandeira {
   value: string;
   label: string;
+  /** Chega vazia enquanto a imagem não subiu — aí a tela desenha só o nome. */
+  logo?: string;
 }
 
 interface ValePorLinkSectionProps {
@@ -103,7 +105,7 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
           Bandeiras aceitas por link
         </legend>
         <div className="space-y-2">
-          {catalogo.map(({ value, label }) => (
+          {catalogo.map(({ value, label, logo }) => (
             <label
               key={value}
               htmlFor={`vale-link-${value}`}
@@ -116,6 +118,7 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
                 onChange={() => alternar(value)}
                 className="h-4 w-4 accent-[var(--color-brand)]"
               />
+              {logo && <img src={logo} alt="" aria-hidden="true" className="h-5 w-auto max-w-[64px] object-contain" />}
               {label}
             </label>
           ))}
