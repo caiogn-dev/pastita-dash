@@ -8,6 +8,7 @@ import { buildStorefrontUrl, buildStorefrontPreviewUrl } from '../../utils/store
 import { Card, Button, PageShell, PhonePreview } from '../../components/ui';
 import { PhotoIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import { buscarTemplates, TEMPLATES_DE_EMERGENCIA, type TemplateDoCardapio } from './templatesDoCardapio';
+import BannersSection from './BannersSection';
 
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -211,6 +212,8 @@ export const StorefrontPage: React.FC = () => {
           celular ao lado, cada mudança tem consequência visível na hora. */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex min-w-0 flex-col gap-6">
+
+      {store?.id && <BannersSection storeId={store.id} />}
 
       {/* Identidade do cardápio — capa + logo compostos como aparecem no cardápio real (WYSIWYG) */}
       <Card noPadding className="overflow-hidden">

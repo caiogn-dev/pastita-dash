@@ -695,6 +695,34 @@ export const updateStoreWithFiles = async (
   }
 };
 
+/** Um banner do carrossel do cardápio. */
+export interface BannerDoCardapio {
+  id: string;
+  url: string;
+  position: number;
+}
+
+/** Máximo de banners por loja — o servidor recusa o 4º. */
+export const MAXIMO_DE_BANNERS = 3;
+
+export const listarBanners = async (storeId: string): Promise<BannerDoCardapio[]> => {
+  const response = await api.get(`${STORES_ADMIN_URL}/${storeId}/banners/`);
+  return response.data;
+};
+
+export const subirBanner = async (storeId: string, imagem: File): Promise<BannerDoCardapio> => {
+  const formData = new FormData();
+  formData.append('image', imagem);
+  const response = await api.post(`${STORES_ADMIN_URL}/${storeId}/banners/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const apagarBanner = async (storeId: string, bannerId: string): Promise<void> => {
+  await api.delete(`${STORES_ADMIN_URL}/${storeId}/banners/${bannerId}/`);
+};
+
 export const deleteStore = async (id: string): Promise<void> => {
   try {
     await api.delete(`${STORES_ADMIN_URL}/${id}/`);
