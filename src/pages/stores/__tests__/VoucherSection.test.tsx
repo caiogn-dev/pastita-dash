@@ -159,3 +159,24 @@ describe('VoucherSection — desligar o vale', () => {
     expect(atualizar).not.toHaveBeenCalled();
   });
 });
+
+describe('VoucherSection — aviso de credenciamento', () => {
+  it('avisa que a conta precisa estar habilitada nas bandeiras', async () => {
+    render(<VoucherSection storeId="s1" />);
+    expect(await screen.findByText(/habilitad/i)).toBeInTheDocument();
+  });
+
+  it('diz o que acontece se o lojista pular esse passo', async () => {
+    render(<VoucherSection storeId="s1" />);
+    // O perigo nao e "nao funciona" — e aparecer no cardapio e falhar no clique.
+    expect(await screen.findByText(/aparece no card[áa]pio/i)).toBeInTheDocument();
+    expect(screen.getByText(/recusad|falha/i)).toBeInTheDocument();
+  });
+
+  it('o aviso aparece mesmo antes de colar qualquer chave', async () => {
+    listar.mockResolvedValue({ results: [] });
+    render(<VoucherSection storeId="s1" />);
+    // Avisar so depois de configurar seria avisar tarde demais.
+    expect(await screen.findByText(/habilitad/i)).toBeInTheDocument();
+  });
+});

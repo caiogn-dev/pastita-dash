@@ -146,6 +146,25 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
         </div>
       </div>
 
+      {/* O credenciamento e o passo que ninguem lembra e que quebra tudo: as
+          chaves passam na validacao, o vale aparece no cardapio, e so o
+          cliente descobre que nao funciona — ja com o cartao digitado. Nao da
+          para verificar isso por API, entao avisamos ANTES de configurar. */}
+      <div
+        role="note"
+        className="rounded-lg border border-warning-300 bg-warning-50 p-3 text-sm text-fg-token dark:border-warning-700 dark:bg-warning-900/25"
+      >
+        <strong className="block font-medium">
+          Antes de ligar: sua conta precisa estar habilitada em cada bandeira.
+        </strong>
+        <span className="text-fg-muted-token">
+          O credenciamento para venda pela internet é pedido a cada operadora
+          (VR, Pluxee, Ticket), com o CNPJ da loja. Sem ele, o vale aparece no
+          cardápio normalmente e a cobrança é recusada na hora do pagamento —
+          com o cliente já tendo digitado o cartão.
+        </span>
+      </div>
+
       <label
         htmlFor="pagarme-vale-aceita"
         className="flex items-center gap-2 py-1 text-sm text-fg-token"
