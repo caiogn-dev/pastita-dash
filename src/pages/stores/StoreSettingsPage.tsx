@@ -26,6 +26,7 @@ import { Card, Button, StatCard, PageShell, PageTabs } from '../../components/ui
 import { Switch } from '../../components/common';
 import { aoAlternarModo, resumoDosModos, type ModosDeRecebimento, type Modo } from './modosDeRecebimento';
 import RecebimentoSection from './RecebimentoSection';
+import VoucherSection from './VoucherSection';
 import NotaFiscalSection from './NotaFiscalSection';
 
 const DAYS = [
@@ -734,12 +735,17 @@ export const StoreSettingsPage: React.FC = () => {
             )}
 
             {aba === 'recebimento' && store?.id && (
-              <RecebimentoSection
-                storeId={store.id}
-                usaGatewayDaPlataforma={Boolean(
-                  (store as unknown as { usa_gateway_da_plataforma?: boolean }).usa_gateway_da_plataforma,
-                )}
-              />
+              <>
+                <RecebimentoSection
+                  storeId={store.id}
+                  usaGatewayDaPlataforma={Boolean(
+                    (store as unknown as { usa_gateway_da_plataforma?: boolean }).usa_gateway_da_plataforma,
+                  )}
+                />
+                <div className="mt-6">
+                  <VoucherSection storeId={store.id} />
+                </div>
+              </>
             )}
 
             {aba === 'fiscal' && store?.id && (

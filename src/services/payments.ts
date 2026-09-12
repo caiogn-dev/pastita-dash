@@ -235,6 +235,18 @@ export const paymentsService = {
   },
 
   /**
+   * Catálogo de bandeiras de vale (VR/VA) aceitas pela plataforma via
+   * Pagar.me. Fonte única no backend — o painel não mantém lista própria:
+   * quando uma bandeira entra ou sai, é um deploy do server2, não do painel.
+   */
+  getVoucherBrands: async (): Promise<{ brands: Array<{ value: string; label: string }> }> => {
+    const response = await api.get<{ brands: Array<{ value: string; label: string }> }>(
+      `${GATEWAYS_URL}/bandeiras-de-vale/`,
+    );
+    return response.data;
+  },
+
+  /**
    * Onde mandar o lojista para autorizar a conta dele no Mercado Pago.
    *
    * O painel nunca troca o `code` por token: isso exige o Client Secret, que
