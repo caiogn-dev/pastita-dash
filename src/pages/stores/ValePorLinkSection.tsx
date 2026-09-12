@@ -84,11 +84,11 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
       <div className="flex items-start gap-3 mb-4">
         <LinkIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" />
         <div>
-          <h3 className="text-lg font-medium text-fg-token">Vale cobrado por link</h3>
+          <h3 className="text-lg font-medium text-fg-token">Vale cobrado por QR Code</h3>
           <p className="text-sm text-fg-muted-token">
             Bandeiras que não fecham o pagamento dentro do cardápio. O cliente
-            escolhe, o pedido fica registrado como pendente e você manda o link
-            de cobrança pelo WhatsApp.
+            escolhe, o pedido fica registrado como pendente e você manda o QR
+            Code de cobrança pelo WhatsApp.
           </p>
         </div>
       </div>
@@ -102,7 +102,7 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
 
       <fieldset>
         <legend className="text-sm font-medium text-fg-token mb-2">
-          Bandeiras aceitas por link
+          Bandeiras aceitas por QR Code
         </legend>
         <div className="space-y-2">
           {catalogo.map(({ value, label, logo }) => (

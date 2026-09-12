@@ -27,6 +27,31 @@ interface BandeiraDeVale {
  * checkout trata cada grupo de um jeito — misturar abriria formulário de
  * cartão para bandeira que não tem como ser cobrada.
  */
+/**
+ * O corpo que cria ou atualiza um gateway.
+ *
+ * Os segredos sao opcionais de proposito: campo em branco significa "nao mexi
+ * nisso", e o backend descarta chave vazia em vez de apagar a que esta la.
+ * `is_sandbox` segue a mesma regra — mandar sempre convertia conta de teste em
+ * conta de producao a cada Salvar.
+ */
+export interface DadosDoGateway {
+  store: string;
+  name: string;
+  gateway_type: string;
+  is_enabled?: boolean;
+  is_sandbox?: boolean;
+  is_default?: boolean;
+  api_key?: string;
+  api_secret?: string;
+  access_token?: string;
+  public_key?: string;
+  webhook_secret?: string;
+  endpoint_url?: string;
+  webhook_url?: string;
+  configuration?: Record<string, unknown>;
+}
+
 export interface CatalogoDeBandeiras {
   brands: BandeiraDeVale[];
   manual_brands?: BandeiraDeVale[];
@@ -208,22 +233,7 @@ export const paymentsService = {
   /**
    * Create a new payment gateway
    */
-  createGateway: async (data: {
-    store: string;
-    name: string;
-    gateway_type: string;
-    is_enabled?: boolean;
-    is_sandbox?: boolean;
-    is_default?: boolean;
-    api_key?: string;
-    api_secret?: string;
-    access_token?: string;
-    public_key?: string;
-    webhook_secret?: string;
-    endpoint_url?: string;
-    webhook_url?: string;
-    configuration?: Record<string, unknown>;
-  }): Promise<PaymentGateway> => {
+  createGateway: async (data: DadosDoGateway): Promise<PaymentGateway> => {
     const response = await api.post<PaymentGateway>(`${GATEWAYS_URL}/`, data);
     return response.data;
   },
@@ -231,7 +241,7 @@ export const paymentsService = {
   /**
    * Update a payment gateway
    */
-  updateGateway: async (id: string, data: Partial<PaymentGateway>): Promise<PaymentGateway> => {
+  updateGateway: async (id: string, data: Partial<DadosDoGateway>): Promise<PaymentGateway> => {
     const response = await api.patch<PaymentGateway>(`${GATEWAYS_URL}/${id}/`, data);
     return response.data;
   },

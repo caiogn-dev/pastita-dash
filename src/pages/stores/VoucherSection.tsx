@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CreditCardIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 import { Card, Button, Input } from '../../components/ui';
-import { paymentsService } from '../../services/payments';
+import { paymentsService, type DadosDoGateway } from '../../services/payments';
 import logger from '../../services/logger';
 
 interface Bandeira {
@@ -15,6 +15,9 @@ interface GatewayDeVale {
   gateway_type: string;
   /** Ausente em linha antiga; `!== false` trata isso como ligado. */
   is_enabled?: boolean;
+  is_sandbox?: boolean;
+  /** O segredo nunca volta. Este booleano é como a tela sabe que ele existe. */
+  tem_credencial?: boolean;
   public_key?: string;
   configuration?: { voucher_brands?: string[] };
 }
@@ -39,6 +42,9 @@ interface VoucherSectionProps {
  */
 export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
   const [gatewayId, setGatewayId] = useState<string | null>(null);
+  // O segredo NUNCA volta do backend — e está certo. Mas um campo em branco faz
+  // o lojista achar que a configuração se perdeu. Guardamos só o ESTADO dele.
+  const [jaTemSegredo, setJaTemSegredo] = useState(false);
   const [secreta, setSecreta] = useState('');
   const [publica, setPublica] = useState('');
   const [catalogo, setCatalogo] = useState<Bandeira[]>([]);
@@ -72,6 +78,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
       setPublica(pagarme.public_key || '');
       setMarcadas(pagarme.configuration?.voucher_brands || []);
       setAceitaVale(pagarme.is_enabled !== false);
+      setJaTemSegredo(Boolean(pagarme.tem_credencial));
     }).catch((erroGateway) => {
       // lista vazia é estado válido: loja ainda não configurou vale
       logger.error('Erro ao carregar gateway de vale da loja:', erroGateway);
@@ -106,18 +113,29 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
 
     setSalvando(true);
     try {
-      const corpo = {
+      // 🚨 `is_sandbox` só entra quando o segredo foi REDIGITADO.
+      //
+      // Antes ele era recalculado sempre a partir do campo — que nasce vazio,
+      // porque o segredo não volta do backend. Resultado: quem abria a tela só
+      // para marcar uma bandeira e salvava convertia uma conta de TESTE em
+      // conta de PRODUÇÃO sem pedir nada a ninguém.
+      //
+      // Mesma lógica do backend, que descarta segredo em branco: campo vazio
+      // significa "não mexi nisso", não "apague".
+      const corpo: DadosDoGateway = {
         store: storeId,
         name: 'Pagar.me (vale)',
         gateway_type: 'pagarme',
-        api_key: secreta,
         public_key: publica,
         is_enabled: aceitaVale,
-        is_sandbox: ehTeste(secreta),
         configuration: { voucher_brands: ordenadas },
       };
+      if (secreta) {
+        corpo.api_key = secreta;
+        corpo.is_sandbox = ehTeste(secreta);
+      }
       if (gatewayId) {
-        await paymentsService.updateGateway(gatewayId, corpo as never);
+        await paymentsService.updateGateway(gatewayId, corpo);
       } else {
         const criado = await paymentsService.createGateway(corpo);
         setGatewayId(criado.id);
@@ -191,9 +209,16 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
           label="Chave secreta"
           type="password"
           autoComplete="off"
+          placeholder={jaTemSegredo ? 'Deixe em branco para manter a atual' : undefined}
           value={secreta}
           onChange={(e) => setSecreta(e.target.value)}
         />
+        {jaTemSegredo && !secreta && (
+          <p role="status" className="-mt-2 text-sm text-fg-muted-token">
+            Chave secreta já configurada. Ela não aparece aqui por segurança —
+            preencha só se for trocar a conta.
+          </p>
+        )}
 
         <Input
           id="pagarme-vale-pk"

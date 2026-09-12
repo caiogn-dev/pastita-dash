@@ -180,3 +180,72 @@ describe('VoucherSection — aviso de credenciamento', () => {
     expect(await screen.findByText(/habilitad/i)).toBeInTheDocument();
   });
 });
+
+describe('VoucherSection — estado do que já está configurado', () => {
+  const JA_CONFIGURADO = {
+    id: 'g1',
+    gateway_type: 'pagarme',
+    is_enabled: true,
+    is_sandbox: true,
+    tem_credencial: true,
+    public_key: 'pk_test_publica',
+    configuration: { voucher_brands: ['vr', 'ticket'] },
+  };
+
+  beforeEach(() => {
+    listar.mockResolvedValue({ results: [JA_CONFIGURADO] });
+  });
+
+  it('marca as bandeiras que a loja já tinha', async () => {
+    render(<VoucherSection storeId="s1" />);
+    await waitFor(() => expect(screen.getByLabelText('VR Benefícios')).toBeChecked());
+    expect(screen.getByLabelText('Ticket')).toBeChecked();
+    expect(screen.getByLabelText('Sodexo')).not.toBeChecked();
+  });
+
+  it('mostra a chave pública que está salva', async () => {
+    render(<VoucherSection storeId="s1" />);
+    await waitFor(() => expect(screen.getByLabelText(/chave pública/i))
+      .toHaveValue('pk_test_publica'));
+  });
+
+  it('diz que a chave secreta JÁ existe, em vez de campo vazio mudo', async () => {
+    // O segredo nunca volta — e está certo. Mas campo em branco faz o lojista
+    // achar que perdeu a configuração e digitar de novo (ou pior: achar que
+    // nunca salvou).
+    render(<VoucherSection storeId="s1" />);
+    expect(await screen.findByText(/chave secreta j[áa] (est[áa] )?(salva|configurada|guardada)/i))
+      .toBeInTheDocument();
+  });
+
+  it('salvar sem retocar o segredo NÃO troca o ambiente da conta', async () => {
+    // `is_sandbox` era recalculado a partir do campo em branco e virava false:
+    // uma conta de teste passava a produção sozinha, sem ninguém pedir.
+    render(<VoucherSection storeId="s1" />);
+    await waitFor(() => expect(screen.getByLabelText('VR Benefícios')).toBeChecked());
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+    await waitFor(() => expect(atualizar).toHaveBeenCalled());
+    const [, corpo] = atualizar.mock.calls[0];
+    expect(corpo).not.toHaveProperty('is_sandbox');
+    expect(corpo).not.toHaveProperty('api_key');
+  });
+
+  it('digitando um segredo novo, o ambiente volta a ser recalculado', async () => {
+    render(<VoucherSection storeId="s1" />);
+    await waitFor(() => expect(screen.getByLabelText('VR Benefícios')).toBeChecked());
+    fireEvent.change(screen.getByLabelText(/chave secreta/i),
+      { target: { value: 'sk_live_nova' } });
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+    await waitFor(() => expect(atualizar).toHaveBeenCalled());
+    const [, corpo] = atualizar.mock.calls[0];
+    expect(corpo.api_key).toBe('sk_live_nova');
+    expect(corpo.is_sandbox).toBe(false);
+  });
+
+  it('loja sem gateway nenhum continua com a tela em branco, que é a verdade', async () => {
+    listar.mockResolvedValue({ results: [] });
+    render(<VoucherSection storeId="s1" />);
+    await waitFor(() => expect(screen.getByLabelText('VR Benefícios')).not.toBeChecked());
+    expect(screen.queryByText(/chave secreta j[áa]/i)).not.toBeInTheDocument();
+  });
+});
