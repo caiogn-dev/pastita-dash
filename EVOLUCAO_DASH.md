@@ -3,6 +3,52 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-12)
+
+- `npm ci`: ok. `npm audit`: **11 vulnerabilidades** (1 low, 4 moderate, 6 high),
+  transitivas (`react-router`/`vite`/`esbuild`); `audit fix` só via `--force`
+  (bumps majores) — segue como fatia dedicada com validação de build.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1657 testes / 279 suítes verdes** (era 1651/275 verdes + **4
+  falhando** por fuso pré-existente; +2 testes de guarda desta fatia).
+- `npm run build` (tsc && vite build, igual à Vercel): **ok** (~15s).
+
+## Histórico
+
+### 2026-09-12 — Suíte determinística: fixar o fuso da suíte em Brasília
+- **Medido:** baseline vermelho na chegada — **4 testes falhando** em 2 suítes de
+  pedidos, todos por dependência de fuso horário não fixado. O container/CI roda
+  em **UTC** (`TZ` vazio), mas os testes cravam offsets de Brasília (`-03:00`) e
+  esperam a saída formatada em BRT:
+  - `fluxoDoPedido.test.ts` (3 casos): `horariosDasEtapas` usa
+    `toLocaleTimeString('pt-BR')` (fuso do runtime) → `07:29` virava `10:29`.
+  - `pedidosDoQuadro.test.ts` (1 caso): o corte "entregue **hoje**" usa o limite
+    do dia local → o pedido de ontem escorregava para hoje em UTC.
+  O código de produção está **correto** para o lojista (browser em BRT); o defeito
+  era a suíte não fixar o fuso que ela pressupõe. Suíte vermelha "por design"
+  ensina o time a ignorar vermelho — o mesmo anti-padrão já documentado no
+  `jest.config.cjs` sobre os timeouts de worker.
+- **Mudado (só infra de teste, zero produção):** `process.env.TZ =
+  'America/Sao_Paulo'` no **topo do `jest.config.cjs`** — processo principal,
+  antes de o jest bifurcar os workers, que herdam o env de nascença. Descoberto
+  na marra: em `setupFilesAfterEnv` **já é tarde** (o V8 fixa o fuso na primeira
+  operação de `Date`, e o jest faz várias antes daquele hook), o que deixou o
+  teste de guarda vermelho até mover o pin para o topo do config.
+- **Teste (TDD, guarda do contrato):** novo `src/__tests__/fusoDaSuite.test.ts`
+  (2 casos) — a suíte roda em `America/Sao_Paulo` e um `Date` com offset `-03:00`
+  formata sem deslocar. Escrito para **falhar alto e claro** se alguém remover o
+  pin, em vez de os testes de data quebrarem de forma obscura no CI. Os 4 testes
+  antes vermelhos passaram sem tocar em nenhum código de produção.
+- **Antes/depois:** `npm test` 1651/275 verdes + 4 falhando → **1657/279 verdes,
+  0 falhando**; `tsc --noEmit` limpo e `vite build` ok nos dois lados. Nenhuma
+  mudança em código de runtime.
+- **Próximo passo priorizado:** (1) **Segurança/deps:** as 11 vulnerabilidades só
+  fecham com `audit fix --force` (majores de `react-router` 6→7 e `vite` 5→8) —
+  cada uma como fatia dedicada com validação de build/rotas. (2) **A11y:** seguir
+  a varredura de nomes acessíveis/foco em controles icon-only nas páginas ainda
+  não cobertas. (3) **UX/Resiliência:** continuar caçando "zeros enganosos" em
+  seções de KPI derivadas de query sem estado de erro.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
