@@ -345,6 +345,8 @@ export interface Order {
   surcharge_value?: number;
   surcharge_reason?: string;
   manual_discount_reason?: string;
+  /** Acréscimo cobrado do cliente por pagar com vale. Zero fora do vale. */
+  voucher_fee?: number;
   total: number;
   /** Fase 3 — soma das cobranças (StorePayment) já pagas. Read-only do backend. */
   amount_paid?: number;

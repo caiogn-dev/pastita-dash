@@ -495,6 +495,7 @@ export const useOrderPrint = () => {
         ${deliveryFee > 0 ? `<div class="tot"><span>Entrega</span><span>${formatMoney(deliveryFee)}</span></div>` : ''}
         ${discount > 0 ? `<div class="tot"><span>Desconto</span><span>- ${formatMoney(discount)}</span></div>` : ''}
         ${surcharge > 0 ? `<div class="tot"><span>Acrescimo</span><span>${formatMoney(surcharge)}</span></div>` : ''}
+        ${Number(pedido.voucher_fee || 0) > 0 ? `<div class="tot"><span>Acrescimo vale</span><span>${formatMoney(Number(pedido.voucher_fee))}</span></div>` : ''}
         <div class="total-final">TOTAL ${formatMoney(total)}</div>
 
         <!-- Faixa 4: calma quando pago, grito quando não -->

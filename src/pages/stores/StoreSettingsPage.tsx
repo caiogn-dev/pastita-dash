@@ -28,6 +28,7 @@ import { aoAlternarModo, resumoDosModos, type ModosDeRecebimento, type Modo } fr
 import RecebimentoSection from './RecebimentoSection';
 import VoucherSection from './VoucherSection';
 import ValePorLinkSection from './ValePorLinkSection';
+import AcrescimoDoValeSection from './AcrescimoDoValeSection';
 import NotaFiscalSection from './NotaFiscalSection';
 
 const DAYS = [
@@ -754,6 +755,14 @@ export const StoreSettingsPage: React.FC = () => {
                         .vale_por_link_brands || []
                     }
                     whatsapp={store.whatsapp_number || ''}
+                  />
+                </div>
+                <div className="mt-6">
+                  <AcrescimoDoValeSection
+                    storeId={store.id}
+                    percentualAtual={Number(
+                      (store as unknown as { voucher_fee_percent?: number }).voucher_fee_percent,
+                    ) || 0}
                   />
                 </div>
               </>

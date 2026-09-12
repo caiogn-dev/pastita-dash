@@ -932,6 +932,15 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                     <dd>{formatCurrency(manualSurcharge)}</dd>
                   </div>
                 ) : null}
+                {Number(order.voucher_fee ?? 0) > 0 ? (
+                  // Separado do acréscimo manual: este é automático, cobrado
+                  // porque o cliente pagou com vale. Somar os dois numa linha
+                  // só faria o operador achar que alguém mexeu no pedido.
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-fg-muted-token">Acréscimo do vale</dt>
+                    <dd>{formatCurrency(Number(order.voucher_fee))}</dd>
+                  </div>
+                ) : null}
                 {adjustmentReason ? (
                   <p className="text-xs italic text-fg-muted-token">{adjustmentReason}</p>
                 ) : null}
