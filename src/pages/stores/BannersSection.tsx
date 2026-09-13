@@ -13,11 +13,10 @@ interface BannersSectionProps {
 }
 
 /**
- * Banners do carrossel no topo do cardápio — até 3 imagens.
+ * Cards de aviso no topo do cardápio — até 3 imagens quadradas (1:1).
  *
- * Com 1 ou 2 o cardápio completa o carrossel repetindo as imagens (sempre 3
- * slides girando), então a loja não precisa ter 3 fotos para ter o carrossel.
- * Isto é diferente da CAPA: a capa é a identidade fixa atrás do logo; o banner
+ * O cardápio mostra só as imagens que a loja subiu, lado a lado, sem repetir:
+ * card igual ao lado do outro parece defeito. Isto é diferente da CAPA: a capa é a identidade fixa atrás do logo; o banner
  * é a promoção da semana.
  */
 export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
@@ -78,7 +77,7 @@ export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
         <div>
           <h3 className="text-lg font-medium text-fg-token">Banners do cardápio</h3>
           <p className="text-sm text-fg-muted-token">
-            Até {MAXIMO_DE_BANNERS} imagens girando no topo. Com uma só, ela se repete no carrossel.
+            Até {MAXIMO_DE_BANNERS} cards quadrados no topo do cardápio, lado a lado — o cliente arrasta para ver os outros.
           </p>
         </div>
         <span className="shrink-0 text-sm tabular-nums text-fg-muted-token">
@@ -92,7 +91,7 @@ export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {banners.map((b, i) => (
             <li key={b.id} className="relative overflow-hidden rounded-lg border border-border-token">
-              <img src={b.url} alt={`Banner ${i + 1}`} className="aspect-[16/7] w-full object-cover" />
+              <img src={b.url} alt={`Banner ${i + 1}`} className="aspect-square w-full object-cover" />
               <button
                 type="button"
                 onClick={() => apagar(b.id)}
@@ -109,7 +108,7 @@ export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
                 type="button"
                 onClick={() => entrada.current?.click()}
                 disabled={enviando}
-                className="flex aspect-[16/7] w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-token text-sm text-fg-muted-token hover:border-[var(--brand)] hover:text-fg-token focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
+                className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-token text-sm text-fg-muted-token hover:border-[var(--brand)] hover:text-fg-token focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
               >
                 <PhotoIcon className="h-6 w-6" />
                 {enviando ? 'Enviando...' : 'Adicionar banner'}
@@ -127,7 +126,7 @@ export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
         aria-label="Arquivo do banner"
         onChange={(e) => escolher(e.target.files?.[0])}
       />
-      <p className="mt-3 text-xs text-fg-muted-token">Formato largo funciona melhor (ex.: 1600 × 700).</p>
+      <p className="mt-3 text-xs text-fg-muted-token">Imagem quadrada (1:1), ex.: 1080 × 1080. Texto grande e no centro.</p>
       {erro && <p role="alert" className="mt-2 text-sm text-danger-500">{erro}</p>}
     </Card>
   );
