@@ -15,8 +15,8 @@ interface BannersSectionProps {
 /**
  * Cards de aviso no topo do cardápio — até 3 imagens quadradas (1:1).
  *
- * O cardápio mostra só as imagens que a loja subiu, lado a lado, sem repetir:
- * card igual ao lado do outro parece defeito. Isto é diferente da CAPA: a capa é a identidade fixa atrás do logo; o banner
+ * O cardápio completa o carrossel repetindo as imagens (sempre 3 slides),
+ * então 1 foto já basta. Isto é diferente da CAPA: a capa é a identidade fixa atrás do logo; o banner
  * é a promoção da semana.
  */
 export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
@@ -77,7 +77,7 @@ export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
         <div>
           <h3 className="text-lg font-medium text-fg-token">Banners do cardápio</h3>
           <p className="text-sm text-fg-muted-token">
-            Até {MAXIMO_DE_BANNERS} cards quadrados no topo do cardápio, lado a lado — o cliente arrasta para ver os outros.
+            Até {MAXIMO_DE_BANNERS} cards quadrados girando no topo (3 na tela no computador, 1 no celular). Com uma imagem só, ela se repete.
           </p>
         </div>
         <span className="shrink-0 text-sm tabular-nums text-fg-muted-token">
