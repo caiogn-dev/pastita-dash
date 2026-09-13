@@ -1,3 +1,17 @@
+/**
+ * Fuso fixo em America/Sao_Paulo — o fuso do produto (operador brasileiro).
+ *
+ * Módulos de pedidos (`pedidosDoQuadro`, `fluxoDoPedido`) decidem "mesmo dia" e
+ * formatam a hora de cada marco pelo fuso LOCAL do runtime (`Date#getDate`,
+ * `toLocaleTimeString`). Rodando em UTC (CI/nuvem), um pedido de "ontem 21:00
+ * -03:00" cai em "hoje" e um marco de "07:29 -03:00" vira "10:29": a suíte
+ * reprovava 4 casos por 3h de diferença, sem nenhuma mudança de código. Definido
+ * no topo do config (processo pai, antes dos workers) para que cada worker herde
+ * o fuso pelo `process.env`. O invariante está travado em
+ * `src/__tests__/fusoDosTestes.test.ts`.
+ */
+process.env.TZ = 'America/Sao_Paulo';
+
 module.exports = {
   /**
    * Sem limite de workers o jest abria um por núcleo e a máquina passava mais

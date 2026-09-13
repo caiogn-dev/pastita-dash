@@ -3,6 +3,46 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-13)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1689 testes / 282 suítes verdes** (na chegada: 1686/281 com **4
+  casos vermelhos** por fuso horário — ver fatia abaixo; após o fix, 4 passam e
+  +3 do teste-guarda).
+- `npm run build` (vite): **ok** (~19s).
+
+## Histórico
+
+### 2026-09-13 — Infra de teste: fuso fixo em America/Sao_Paulo (baseline determinística)
+- **Medido:** o baseline chegou **vermelho** — 4 casos reprovando em duas suítes
+  (`pedidosDoQuadro.test.ts`, `fluxoDoPedido.test.ts`), sem nenhuma mudança de
+  código. Causa: os módulos de pedidos decidem "mesmo dia" (`Date#getDate`) e
+  formatam a hora de cada marco (`toLocaleTimeString`) pelo fuso **local do
+  runtime**. Em produção o operador é brasileiro (navegador em -03:00) e a conta
+  bate; na nuvem/CI o processo roda em **UTC**, então "ontem 21:00 -03:00" (00:00Z
+  de hoje) era lido como "hoje" e o marco "07:29 -03:00" era exibido como "10:29".
+  Falha ambiental, não regressão — mas trava a disciplina do próprio loop, que
+  depende de rodar a suíte antes/depois e confiar no verde.
+- **Mudado (só infra de teste, zero código de produção):** `jest.config.cjs`
+  passa a fixar `process.env.TZ = 'America/Sao_Paulo'` no topo do config (processo
+  pai, antes dos workers, que herdam o fuso via `process.env`). Nenhum arquivo de
+  `src/` de produção tocado → risco de produção nulo.
+- **Teste (TDD, vermelho→verde):** novo `src/__tests__/fusoDosTestes.test.ts`
+  trava o invariante em 3 casos (fuso resolvido = America/Sao_Paulo; "ontem
+  21:00" ≠ dia de "hoje 16:00"; hora local = 07:29). Escrito **vermelho antes**
+  (3/3 falhando em UTC), **verde depois**. Se alguém remover o `TZ` do config,
+  reprova aqui — com a causa escrita — em vez de espalhar vermelho intermitente
+  por dezenas de casos.
+- **Antes/depois:** `npm test` 1686/281 (4 vermelhos) → **1689/282 (0 vermelho)**;
+  `tsc --noEmit` limpo e `vite build` ok nos dois lados; lint sem novos warnings.
+- **Próximo passo priorizado:** (1) **Produção (fatia maior, avaliar):** as
+  telas de pedidos formatam hora/"hoje" pelo fuso do navegador, não pelo fuso da
+  loja — para operador em outro fuso ou navegador mal configurado os horários
+  deslocam. Auditar se `useStore()` expõe o fuso da loja e centralizar a
+  formatação. (2) **A11y** e **deps (`react-router` 6→7, `vite` 5→8)** seguem no
+  backlog das fatias anteriores.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
