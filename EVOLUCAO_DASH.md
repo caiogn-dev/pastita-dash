@@ -11,8 +11,29 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   casos vermelhos** por fuso horário — ver fatia abaixo; após o fix, 4 passam e
   +3 do teste-guarda).
 - `npm run build` (vite): **ok** (~19s).
+- `npm run lint`: **0 errors / 261 warnings** (na chegada: **6 errors** que
+  reprovavam o job `build` do CI — ver fatia abaixo).
 
 ## Histórico
+
+### 2026-09-13 — CI vermelho no `main`: 6 erros de lint pré-existentes (desbloqueio)
+- **Medido:** o job `build` do CI (`.github/workflows/ci.yml` roda `npm run build`
+  → `npm run lint` → `npm test`) reprova por **6 errors de ESLint** em arquivos
+  **fora** do diff desta fatia — ou seja, o `main` já estava com o CI vermelho e
+  **nenhum PR conseguia ficar verde**. Erros: (1) `sidebarColuna.test.tsx` e
+  `OrdersHeatMap.tsx` (×2) — `eslint-disable` órfão (a regra citada não reporta
+  nada ali); (2) `variaveisDaOferta.ts` e seu teste — NBSP literal no regex
+  (`no-irregular-whitespace`); (3) `enderecoDaEntrega.ts` — escape inútil `\-`
+  dentro de classe de caractere.
+- **Mudado (correções mecânicas, comportamento idêntico):** removidos os 3
+  `eslint-disable` órfãos; NBSP literal trocado por ` ` (mesmo caractere,
+  agora escapado) nos dois regex; `[,;.\-]` → `[,;.-]`. Nenhuma lógica alterada.
+- **Por que junto com a fatia do fuso:** os dois defeitos são pré-existentes e
+  **interdependentes** para o verde — sem o fuso os 4 testes reprovam em UTC, sem
+  o lint o job reprova antes de rodar teste. Um PR com só metade continua
+  vermelho, então as duas correções de "baseline verde" viajam no mesmo PR.
+- **Antes/depois:** `npm run lint` 6 errors → **0 errors** (261 warnings, sob o
+  gate de 400); `build` e `test` verdes.
 
 ### 2026-09-13 — Infra de teste: fuso fixo em America/Sao_Paulo (baseline determinística)
 - **Medido:** o baseline chegou **vermelho** — 4 casos reprovando em duas suítes

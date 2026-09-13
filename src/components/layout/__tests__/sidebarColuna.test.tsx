@@ -96,7 +96,6 @@ describe('um controle só, no rodapé', () => {
     renderizar();
     const lista = screen.getByRole('navigation', { name: /principal/i }).querySelector('ul');
     const posicao = lista!.compareDocumentPosition(oBotao());
-    // eslint-disable-next-line no-bitwise
     expect(posicao & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
