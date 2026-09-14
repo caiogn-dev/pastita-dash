@@ -11,6 +11,7 @@
  * atende lê a mesma palavra que a pessoa do outro lado.
  */
 import type { Order } from '../../types';
+import { horaNoFuso } from '../../utils/fusoDeNegocio';
 
 export type EstadoDaEtapa = 'concluida' | 'atual' | 'futura';
 
@@ -110,7 +111,7 @@ export function horariosDasEtapas(
     // que é quando a etapa de fato começou.
     if (saida[etapa]) continue;
     saida[etapa] = {
-      hora: marco.quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      hora: horaNoFuso(marco.quando),
       minutos: marco.minutosDesdeAnterior,
     };
   }

@@ -11,6 +11,8 @@
  * de hoje, e o resto vive na página de Histórico.
  */
 
+import { mesmoDiaNoFuso } from '../../utils/fusoDeNegocio';
+
 /** A única coluna que representa trabalho encerrado. */
 export const ENTREGUES_DE_HOJE = 'done';
 
@@ -25,11 +27,6 @@ interface ColunaDoQuadro {
   statuses: readonly string[];
 }
 
-const mesmoDia = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear()
-  && a.getMonth() === b.getMonth()
-  && a.getDate() === b.getDate();
-
 export function pedidosDaColuna<T extends PedidoDoQuadro>(
   pedidos: T[],
   coluna: ColunaDoQuadro,
@@ -40,6 +37,6 @@ export function pedidosDaColuna<T extends PedidoDoQuadro>(
   return pedidos
     .filter((o) => o.status !== 'cancelled')
     .filter((o) => coluna.statuses.includes(o.status))
-    .filter((o) => !soDeHoje || mesmoDia(new Date(o.created_at), agora))
+    .filter((o) => !soDeHoje || mesmoDiaNoFuso(new Date(o.created_at), agora))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }

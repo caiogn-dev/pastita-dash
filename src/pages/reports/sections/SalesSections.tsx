@@ -33,6 +33,8 @@ export const HeatmapSection: React.FC<{ range: DateRange; enabled: boolean }> = 
       title="Horários de pico"
       subtitle={peak ? `Pico: ${WEEKDAYS[peak.weekday]} às ${peak.hour}h (${peak.orders} pedidos)` : undefined}
       loading={q.isLoading}
+      error={q.isError}
+      onRetry={() => { void q.refetch(); }}
       action={
         <ExportCsvButton
           rows={cells.map((c) => ({ dia: WEEKDAYS[c.weekday], hora: `${c.hour}h`, pedidos: c.orders, receita: c.revenue }))}
@@ -99,7 +101,7 @@ export const ChannelsSection: React.FC<{ range: DateRange; enabled: boolean }> =
   ) => {
     const total = rows.reduce((acc, r) => acc + r.value, 0);
     return (
-      <SectionCard title={title} subtitle={subtitle} loading={q.isLoading}>
+      <SectionCard title={title} subtitle={subtitle} loading={q.isLoading} error={q.isError} onRetry={() => { void q.refetch(); }}>
         <DonutChart
           data={rows.map((r) => ({ name: r.label, value: r.value }))}
           centerLabel={formatBRL(total)}
@@ -177,6 +179,8 @@ export const MenuMatrixSection: React.FC<{ range: DateRange; enabled: boolean }>
       title="Engenharia de cardápio"
       subtitle="Popularidade × margem de contribuição — precisa do custo preenchido no produto"
       loading={q.isLoading}
+      error={q.isError}
+      onRetry={() => { void q.refetch(); }}
       action={
         <ExportCsvButton
           rows={products}
@@ -240,6 +244,8 @@ export const AbcBasketSection: React.FC<{ range: DateRange; enabled: boolean }> 
         title="Curva ABC"
         subtitle={abc.data ? `${abc.data.summary.a_count} produtos (classe A) concentram 80% da receita` : undefined}
         loading={abc.isLoading}
+        error={abc.isError}
+        onRetry={() => { void abc.refetch(); }}
         action={
           <ExportCsvButton
             rows={abc.data?.products ?? []}
@@ -270,6 +276,8 @@ export const AbcBasketSection: React.FC<{ range: DateRange; enabled: boolean }> 
         title="Pedidos juntos"
         subtitle="Pares mais frequentes — candidatos a combo/upsell"
         loading={basket.isLoading}
+        error={basket.isError}
+        onRetry={() => { void basket.refetch(); }}
       >
         {(basket.data?.pairs?.length ?? 0) === 0 ? (
           <EmptyNote />

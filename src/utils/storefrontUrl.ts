@@ -45,7 +45,9 @@ export const buildStorefrontUrl = (
 
   const base = customDomain
     ? `https://${stripProtocol(customDomain)}`
-    : metadataUrl || `${stripTrailingSlash(DEFAULT_STOREFRONT_BASE_URL)}/${slug}`;
+    : metadataUrl
+      ? `https://${stripProtocol(metadataUrl)}`
+      : `${stripTrailingSlash(DEFAULT_STOREFRONT_BASE_URL)}/${slug}`;
 
   const normalizedBase = stripTrailingSlash(base);
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;

@@ -1,3 +1,10 @@
+// PR #197: rede de segurança extra além do fuso explícito em
+// `src/utils/fusoDeNegocio.ts` — fixa o fuso do PROCESSO do jest para que
+// qualquer código que ainda use `Date`/`toLocaleString` sem `timeZone`
+// explícito (fora do que já foi migrado) rode determinístico em CI (UTC) e
+// localmente, em vez de depender do fuso de quem roda a suíte.
+process.env.TZ = process.env.TZ || 'America/Sao_Paulo';
+
 module.exports = {
   /**
    * Sem limite de workers o jest abria um por núcleo e a máquina passava mais

@@ -53,6 +53,21 @@ describe('filtros do cardápio', () => {
     expect(onCategoryFilter).toHaveBeenCalledWith('c1');
   });
 
+  it('busca e filtro têm nome acessível (PR #160)', () => {
+    render(
+      <ProductsToolbar
+        search=""
+        onSearch={jest.fn()}
+        categoryFilter=""
+        categories={[]}
+        onCategoryFilter={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('searchbox', { name: /buscar produto/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /categoria/i })).toBeInTheDocument();
+  });
+
   it('não carrega mais botão de ação nenhum', () => {
     // A regressão que este teste impede: alguém devolver "adicionar categoria"
     // para a barra de filtros por parecer perto.
