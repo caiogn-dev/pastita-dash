@@ -3,6 +3,43 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-14)
+
+- `npm ci`: ok.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test` (Jest) **antes** desta fatia: **4 testes vermelhos / 2 suítes**
+  (`orders/__tests__/fluxoDoPedido` e `orders/__tests__/pedidosDoQuadro`) — NÃO
+  regressão minha: falhavam só por causa do fuso da máquina (container em UTC).
+  **Depois** desta fatia: **1688 testes / 282 suítes verdes** (era 1682 verdes +
+  4 vermelhos; +2 do novo `fusoDaSuite` e +4 que voltaram ao verde).
+- `npm run build` (vite): **ok** (~20s).
+
+### 2026-09-14 — Infra de teste: fuso fixo (suíte determinística onde quer que rode)
+- **Medido:** o baseline chegava **vermelho** na nuvem. `fluxoDoPedido` e
+  `pedidosDoQuadro` montam datas com offset de Brasília (`-03:00`) e esperam a
+  hora de volta na parede / a virada do dia em Brasília. O código formata com
+  `toLocaleTimeString` **sem `timeZone`** e decide "entregue hoje" pela virada
+  local — correto no navegador do lojista (Brasil), mas numa CI em UTC formata
+  3h adiantado: `07:29` vira `10:29` e o pedido `2026-08-26T21:00-03:00` (ontem
+  em Brasília, mas já dia 27 em UTC) **vazava** para a coluna "Entregue" de hoje.
+  Vermelho que dependia do relógio da máquina, não do código — e que corrói o
+  gate "testes verdes" de todo este loop.
+- **Mudado (só infra de teste, zero impacto em produção):**
+  - `jest.config.cjs`: `process.env.TZ = 'America/Sao_Paulo'` no topo, **antes**
+    do jest forkar os workers (que herdam o fuso via ambiente). Nenhum arquivo
+    de `src/` mudou.
+- **Teste (TDD):** novo `src/__tests__/fusoDaSuite.test.ts` — escrito **vermelho
+  antes** (2/2 falhando: `timeZone` era `UTC`, hora formatava `10:29`) e **verde
+  depois**. Trava o fuso da suíte para que ninguém remova a config sem quebrar
+  um teste explícito.
+- **Antes/depois:** `npm test` 1682 verdes + 4 vermelhos → **1688/282 todos
+  verdes**; `tsc --noEmit` limpo e `vite build` ok nos dois lados.
+- **Próximo passo priorizado:** avaliar se a formatação de horário de pedido
+  deveria usar o fuso da **loja** explicitamente (`timeZone` no
+  `toLocaleTimeString`) em vez do fuso do navegador — hoje um lojista abrindo o
+  painel de outro fuso veria horários trocados. Requer saber onde o fuso da loja
+  vive no modelo (`useStore()`); fatia dedicada com validação.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas

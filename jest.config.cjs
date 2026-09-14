@@ -1,3 +1,15 @@
+/**
+ * Fuso fixo para toda a suíte. O painel raciocina em horário de Brasília: os
+ * marcos de um pedido chegam com offset (`-03:00`) e a régua/kanban formatam a
+ * hora de volta na parede do lojista, e a virada do dia ("entregue hoje") é a de
+ * Brasília. Vários testes de `src/pages/orders` foram escritos assumindo esse
+ * fuso. Numa máquina em UTC (a CI da nuvem) sem fixar, o mesmo código formata 3h
+ * adiantado e o "Entregue" arrasta o pedido de ontem — vermelho que depende do
+ * relógio da máquina, não do código. Definido aqui, antes do jest forkar os
+ * workers, para que cada worker herde o fuso via ambiente.
+ */
+process.env.TZ = 'America/Sao_Paulo';
+
 module.exports = {
   /**
    * Sem limite de workers o jest abria um por núcleo e a máquina passava mais
