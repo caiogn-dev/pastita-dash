@@ -705,6 +705,8 @@ export class RealtimeConnection {
       'order.created': 'order_created',
       'order.updated': 'order_updated',
       'order.paid': 'payment_received',
+      // Pago a menor muda o saldo do pedido: quem ouve updates precisa saber.
+      'order.payment_partial': 'order_updated',
       'order.cancelled': 'order_cancelled',
       'order.status_changed': 'order_updated',
     };

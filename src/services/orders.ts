@@ -321,6 +321,20 @@ export const ordersService = {
     return { ...response.data, order: normalizeOrder(response.data.order) };
   },
 
+  /**
+   * Registra dinheiro recebido fora do sistema (espécie, maquininha, PIX direto).
+   * `amount` omitido = o que falta. `idempotency_key` é gerada UMA vez por
+   * abertura do modal: duplo clique devolve o mesmo registro, não dois.
+   */
+  registrarPagamento: async (
+    orderId: string,
+    body: { payment_method: string; amount?: number; idempotency_key: string; observacao?: string },
+    storeSlug?: string,
+  ): Promise<{ order: Order; payment: Record<string, unknown> }> => {
+    const response = await api.post(`${getBaseUrl(storeSlug)}/${orderId}/registrar-pagamento/`, body);
+    return { ...response.data, order: normalizeOrder(response.data.order) };
+  },
+
   addEvent: async (orderId: string, event: { type: string; description: string }, storeSlug?: string): Promise<OrderEvent> => {
     const response = await api.post<OrderEvent>(`${getBaseUrl(storeSlug)}/${orderId}/events/`, event);
     return response.data;

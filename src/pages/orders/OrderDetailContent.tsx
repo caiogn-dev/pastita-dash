@@ -89,6 +89,8 @@ const parseAddress = (addr: string | Record<string, unknown> | undefined): Recor
 };
 import { useOrderPrint } from '../../components/orders/OrderPrint';
 import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
+import { RegistrarPagamentoModal } from '../../components/orders/RegistrarPagamentoModal';
+import { saldoDoPedido, podeRegistrarPagamento } from './saldoDoPedido';
 import { useStore } from '../../hooks';
 import { marcosDoPedido, duracaoLegivel } from './marcosDoPedido';
 import { proximaAcaoDoPedido } from './proximaAcao';
@@ -369,6 +371,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   const [editing, setEditing] = useState(false);
   // Fase 3 — geração de cobrança PIX (link de pagamento)
   const [chargeAmount, setChargeAmount] = useState<string>('');
+  const [registrandoPagamento, setRegistrandoPagamento] = useState(false);
   const [generatingCharge, setGeneratingCharge] = useState(false);
   const [generatedPix, setGeneratedPix] = useState<
     { pix_code?: string; pix_qr_code?: string; ticket_url?: string; via_link?: boolean } | null
@@ -406,7 +409,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
   // Reporta pro modal externo quando um sub-modal está aberto (cancelar/editar/Uber),
   // pra ele suspender o fechamento por Escape / click-fora enquanto isso.
-  const nestedOpen = showCancelModal || showUberModal || editing;
+  const nestedOpen = showCancelModal || showUberModal || editing || registrandoPagamento;
   useEffect(() => {
     onNestedOpenChange?.(nestedOpen);
   }, [nestedOpen, onNestedOpenChange]);
@@ -978,6 +981,13 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 </div>
               )}
 
+              {/* Pago a menor era mudo: o pedido só parava em "processando". */}
+              {saldoDoPedido(order).aMenor && (
+                <p className="mt-2 text-sm font-semibold text-[var(--warning)]">
+                  {saldoDoPedido(order).texto}
+                </p>
+              )}
+
               <p className="mt-2 text-sm text-fg-muted-token">
                 {paymentMethodLabel[order.payment_method || ''] || order.payment_method || 'Forma não informada'}
               </p>
@@ -986,6 +996,19 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   {textoDoTroco(order.change_for, order.change_due)}
                 </p>
               ) : null}
+
+              {/* Dinheiro na mão / maquininha: sem isto o pedido ficava
+                  "Falta receber" para sempre. */}
+              {podeRegistrarPagamento(order) && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={() => setRegistrandoPagamento(true)}
+                >
+                  Registrar pagamento
+                </Button>
+              )}
 
               {/* PIX gravado no pedido: era texto de 200 caracteres para
                   selecionar na mão, em 117 dos 172 pedidos da loja. */}
@@ -1269,6 +1292,18 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
           onSaved={() => { setEditing(false); loadOrder(); }}
         />
       )}
+
+      <RegistrarPagamentoModal
+        isOpen={registrandoPagamento}
+        order={order}
+        onClose={() => setRegistrandoPagamento(false)}
+        onRegistrado={async (atualizado) => {
+          setOrder(atualizado);
+          onOrderChanged?.(atualizado);
+          const frescas = await paymentsService.getByOrder(atualizado.id).catch(() => payments);
+          setPayments(frescas);
+        }}
+      />
 
       {/* Cancel Modal */}
       <Modal

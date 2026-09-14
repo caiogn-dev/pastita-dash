@@ -62,6 +62,7 @@ import { pedidosDaColuna, ENTREGUES_DE_HOJE } from './pedidosDoQuadro';
 import type { ColumnId } from './orderColumns';
 import { getStageStart, getAvgPrepMinutes, situacaoDoPreparo } from './orderSla';
 import { proximaAcaoDoPedido } from './proximaAcao';
+import { saldoDoPedido } from './saldoDoPedido';
 import { formatCurrency } from '../../utils/formatters';
 
 // Next status for advance button
@@ -275,6 +276,15 @@ const OrderCardBase: React.FC<CardProps> = ({
           </span>
         )}
         <PaymentBadge status={order.payment_status} method={order.payment_method} />
+        {/* Pago a menor: a trava deixa o pedido parado — o card precisa dizer por quê. */}
+        {saldoDoPedido(order).aMenor && (
+          <span
+            title={saldoDoPedido(order).texto}
+            className="text-badge font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+          >
+            Falta {formatCurrency(saldoDoPedido(order).falta)}
+          </span>
+        )}
         {order.items?.length > 0 && (
           <span className="text-badge text-fg-muted-token">
             {/* "1 item(ns)" denuncia a máquina no quadro que o dono olha o dia
