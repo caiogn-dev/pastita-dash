@@ -11,14 +11,14 @@ import {
 import { AccountMenu, ACCOUNT_LINKS } from './AccountMenu';
 import { useStore } from '../../hooks/useStore';
 import { useAuthStore } from '../../stores/authStore';
-import { useTotalUnreadCount, useWsConnected } from '../../stores/chatStore';
+import { useWsConnected } from '../../stores/chatStore';
 import { useAccountStore } from '../../stores/accountStore';
 import { StoreSelector } from './StoreSelector';
 import { CentralDePedidosLink } from './CentralDePedidosLink';
 import { ThemeToggle } from '../theme';
 import { NotificationDropdown } from '../notifications';
-import { buildNavSections, type NavSection } from './navSections';
-import { useAutomationEnabled } from '../../hooks/useAutomationEnabled';
+import { type NavSection } from './navSections';
+import { useNavSections } from './useNavSections';
 
 /**
  * Glifo do WhatsApp.
@@ -274,27 +274,19 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
   const { store } = useStore();
   const { logout } = useAuthStore();
   const navigate = useNavigate();
-  const totalUnreadCount = useTotalUnreadCount();
   const wsConnected = useWsConnected();
   const { accounts, selectedAccount, setSelectedAccount } = useAccountStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-
   const storeKey = store?.slug || store?.id || null;
-  const storeHref = useMemo(
-    () => (path: string) => storeKey ? `/stores/${storeKey}/${path}` : '/stores',
-    [storeKey]
-  );
 
-  const automationEnabled = useAutomationEnabled();
-  const sections: NavSection[] = useMemo(
-    () => buildNavSections({
-      storeHref,
-      unreadBadge: totalUnreadCount > 0 ? String(totalUnreadCount > 99 ? '99+' : totalUnreadCount) : undefined,
-      automationEnabled,
-    }),
-    [storeHref, totalUnreadCount, automationEnabled],
-  );
+  // ÁRVORE ÚNICA: a Navbar montava esta lista sozinha, com sua própria cópia
+  // de `storeHref`/`buildNavSections` — divergindo do hook que a Sidebar e a
+  // CommandPalette usam era só questão de tempo (ver o comentário em
+  // `useNavSections.ts`, escrito exatamente para evitar isto). O drawer do
+  // celular é o único consumidor real deste `sections` aqui (a faixa de
+  // desktop nunca desenha: `MainLayout` sempre passa `semNavegacaoDesktop`).
+  const sections: NavSection[] = useNavSections();
 
   const brandInfo = useMemo(() => {
     if (!store) return {
@@ -513,7 +505,11 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
                         {section.label}
                       </p>
                       {section.items.map((item) => (
-                        <React.Fragment key={item.href}>
+                        // O nome, não o href: enquanto a loja ainda não
+                        // carregou, `storeHref` devolve `/stores` para vários
+                        // itens do mesmo grupo — chave repetida (ver a mesma
+                        // correção em Sidebar.tsx).
+                        <React.Fragment key={item.name}>
                           {item.sectionHeader && (
                             <p className="overline px-3 pt-2 pb-0.5">
                               {item.sectionHeader}
@@ -521,7 +517,13 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
                           )}
                           <NavLink
                             to={item.href}
-                            end={item.href === '/'}
+                            // `/stores` é também o fallback de `storeHref`
+                            // sem loja selecionada: sem `end`, QUALQUER
+                            // página de loja (`/stores/x/pdv`) casaria como
+                            // ativa com todo item nesse estado — o mesmo
+                            // destaque falso corrigido em `ativo()` do
+                            // Sidebar.
+                            end={item.href === '/' || item.href === '/stores'}
                             className={({ isActive }) =>
                               `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
                                 isActive
