@@ -113,7 +113,7 @@ const WhatsAppTemplatesPage: React.FC = () => {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   selectedCategory === cat
-                    ? 'bg-violet-600 text-white'
+                    ? 'bg-brand text-on-brand'
                     : 'bg-surface-2 text-fg-token hover:bg-brand-soft'
                 }`}
               >
@@ -181,7 +181,7 @@ const WhatsAppTemplatesPage: React.FC = () => {
                           ...prev,
                           [variable]: e.target.value
                         }))}
-                        className="w-full px-3 py-2 bg-surface-2 text-fg-token border border-border-token rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                        className="w-full px-3 py-2 bg-surface-2 text-fg-token border border-border-token rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand"
                         placeholder={`Valor para {{${variable}}}`}
                       />
                     </div>
@@ -204,7 +204,7 @@ const WhatsAppTemplatesPage: React.FC = () => {
 
               {/* Actions */}
               <div className="p-4 border-t border-border-token flex gap-3">
-                <button className="flex-1 bg-violet-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-violet-700 transition-colors">
+                <button className="flex-1 bg-brand text-on-brand px-4 py-2 rounded-lg font-medium hover:bg-brand-hover transition-colors">
                   Usar Template
                 </button>
                 <button className="px-4 py-2 border border-border-token rounded-lg font-medium text-fg-token hover:bg-surface-2 transition-colors">

@@ -56,11 +56,11 @@ interface CampaignRecipient {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   draft: { label: 'Rascunho', color: 'bg-surface-2 text-fg-token', icon: ClockIcon },
-  scheduled: { label: 'Agendada', color: 'bg-blue-100 text-blue-700', icon: ClockIcon },
-  sending: { label: 'Enviando', color: 'bg-yellow-100 text-yellow-700', icon: ArrowPathIcon },
-  sent: { label: 'Enviada', color: 'bg-green-100 text-green-700', icon: CheckCircleIcon },
-  paused: { label: 'Pausada', color: 'bg-orange-100 text-orange-700', icon: PauseIcon },
-  cancelled: { label: 'Cancelada', color: 'bg-red-100 text-red-700', icon: XCircleIcon },
+  scheduled: { label: 'Agendada', color: 'bg-info-soft text-info-token', icon: ClockIcon },
+  sending: { label: 'Enviando', color: 'bg-warning-soft text-warning-token', icon: ArrowPathIcon },
+  sent: { label: 'Enviada', color: 'bg-success-soft text-success-token', icon: CheckCircleIcon },
+  paused: { label: 'Pausada', color: 'bg-warning-soft text-warning-token', icon: PauseIcon },
+  cancelled: { label: 'Cancelada', color: 'bg-danger-soft text-danger-token', icon: XCircleIcon },
 };
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -193,7 +193,7 @@ export const CampaignsListPage: React.FC = () => {
 
       {campaigns.length === 0 ? (
         <Card className="p-12 text-center">
-          <EnvelopeIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <EnvelopeIcon className="w-16 h-16 text-fg-muted-token mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-fg-token mb-2">Nenhuma campanha criada</h3>
           <p className="text-fg-muted-token mb-6">Crie sua primeira campanha de email marketing</p>
           <Button onClick={() => navigate('/marketing/email/new')}>
@@ -237,11 +237,11 @@ export const CampaignsListPage: React.FC = () => {
                         <p className="text-xs text-fg-muted-token">Enviados</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-lg font-bold text-blue-600">{getOpenRate(campaign)}%</p>
+                        <p className="text-lg font-bold text-info-token">{getOpenRate(campaign)}%</p>
                         <p className="text-xs text-fg-muted-token">Abertura</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-lg font-bold text-green-600">{getClickRate(campaign)}%</p>
+                        <p className="text-lg font-bold text-success-token">{getClickRate(campaign)}%</p>
                         <p className="text-xs text-fg-muted-token">Cliques</p>
                       </div>
                     </div>
@@ -311,7 +311,7 @@ export const CampaignsListPage: React.FC = () => {
           </div>
         ) : recipients.length === 0 ? (
           <div className="py-12 text-center">
-            <EnvelopeIcon className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+            <EnvelopeIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-2" />
             <p className="text-fg-muted-token">Nenhum destinatário encontrado</p>
           </div>
         ) : (

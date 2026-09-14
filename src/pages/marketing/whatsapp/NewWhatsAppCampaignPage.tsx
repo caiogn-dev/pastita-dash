@@ -671,7 +671,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   if (accounts.length === 0) {
     return (
       <div className="p-6 text-center">
-        <DevicePhoneMobileIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <DevicePhoneMobileIcon className="w-16 h-16 text-fg-muted-token mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma conta WhatsApp</h2>
         <p className="text-fg-muted-token mb-4">Configure uma conta WhatsApp para criar campanhas.</p>
         <Button onClick={() => navigate('/accounts/new')}>Adicionar Conta</Button>
@@ -791,7 +791,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
                   formData.messageType === 'template'
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : 'border-border-token dark:border-zinc-800 hover:border-green-300'
+                    : 'border-border-token hover:border-success-token/40'
                 }`}
               >
                 <DocumentTextIcon className="w-8 h-8 text-green-600 mb-2" />
@@ -806,7 +806,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
                   formData.messageType === 'text'
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : 'border-border-token dark:border-zinc-800 hover:border-green-300'
+                    : 'border-border-token hover:border-success-token/40'
                 }`}
               >
                 <ChatBubbleLeftRightIcon className="w-8 h-8 text-blue-600 mb-2" />
@@ -825,7 +825,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                 </label>
                 {templates.length === 0 ? (
                   <div className="text-center py-8 text-fg-muted-token">
-                    <DocumentTextIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                    <DocumentTextIcon className="w-12 h-12 mx-auto mb-2 text-fg-muted-token" />
                     <p>Nenhum template aprovado encontrado</p>
                     <Button 
                       variant="secondary" 
@@ -852,7 +852,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         className={`p-3 rounded-lg border text-left transition-all ${
                           formData.templateId === template.id
                             ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                            : 'border-border-token dark:border-zinc-800 hover:border-green-300'
+                            : 'border-border-token hover:border-success-token/40'
                         }`}
                       >
                         <h4 className="font-medium text-fg-token">{template.name}</h4>
@@ -885,7 +885,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                     </div>
 
                     {!storeId ? (
-                      <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+                      <div className="rounded-lg border border-warning-token/30 bg-warning-soft p-3 text-sm text-warning-token">
                         Selecione uma loja no topo do painel para carregar o cardápio.
                       </div>
                     ) : loadingProducts ? (
@@ -913,7 +913,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                               className={`flex gap-3 p-3 rounded-lg border text-left transition-all ${
                                 isSelected
                                   ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                  : 'border-border-token dark:border-zinc-800 hover:border-green-300'
+                                  : 'border-border-token hover:border-success-token/40'
                               }`}
                             >
                               <div className="w-16 h-16 rounded-lg bg-surface-2 overflow-hidden shrink-0">
@@ -1001,7 +1001,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                             setMediaPreviewUrl('');
                             setFormData(prev => ({ ...prev, mediaUrl: '', mediaType: '', mediaFilename: '' }));
                           }}
-                          className="p-2 rounded-lg text-fg-muted-token hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          className="p-2 rounded-lg text-fg-muted-token hover:text-danger-token hover:bg-danger-soft"
                           title="Remover imagem"
                         >
                           <XMarkIcon className="w-5 h-5" />
@@ -1093,7 +1093,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                           setMediaPreviewUrl('');
                           setFormData(prev => ({ ...prev, mediaUrl: '', mediaType: '', mediaFilename: '' }));
                         }}
-                        className="p-2 rounded-lg text-fg-muted-token hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        className="p-2 rounded-lg text-fg-muted-token hover:text-danger-token hover:bg-danger-soft"
                         title="Remover imagem"
                       >
                         <XMarkIcon className="w-5 h-5" />
@@ -1312,7 +1312,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             </div>
           ) : systemContacts.length === 0 ? (
             <div className="text-center py-8 text-fg-muted-token">
-              <UserGroupIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+              <UserGroupIcon className="w-12 h-12 mx-auto mb-2 text-fg-muted-token" />
               <p>Nenhum contato encontrado no sistema</p>
             </div>
           ) : (
@@ -1340,7 +1340,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                 {systemContacts.map((contact) => (
                   <label
                     key={contact.phone}
-                    className="flex items-center gap-3 p-2 hover:bg-surface-2 dark:hover:bg-zinc-700 rounded cursor-pointer"
+                    className="flex items-center gap-3 p-2 hover:bg-surface-2 rounded cursor-pointer"
                   >
                     <input
                       type="checkbox"

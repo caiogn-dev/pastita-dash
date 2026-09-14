@@ -238,7 +238,7 @@ export const SubscribersPage: React.FC = () => {
   if (!effectiveStoreId) {
     return (
       <div className="p-6 text-center">
-        <UserGroupIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <UserGroupIcon className="w-16 h-16 text-fg-muted-token mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma loja selecionada</h2>
         <p className="text-fg-muted-token mb-4">Selecione uma loja para visualizar a base de clientes.</p>
         <Button onClick={() => navigate('/stores')}>Ver lojas</Button>
@@ -342,7 +342,7 @@ export const SubscribersPage: React.FC = () => {
       <Card>
         {filteredSubscribers.length === 0 ? (
           <div className="p-12 text-center">
-            <UserGroupIcon className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+            <UserGroupIcon className="mx-auto mb-4 h-16 w-16 text-fg-muted-token" />
             <h3 className="mb-2 text-lg font-semibold text-fg-token">
               {subscribers.length === 0 ? 'Nenhum cliente na base ainda' : 'Nenhum resultado encontrado'}
             </h3>

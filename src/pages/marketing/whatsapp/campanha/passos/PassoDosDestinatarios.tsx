@@ -147,7 +147,7 @@ export const PassoDosDestinatarios: React.FC<Props> = ({
 
             {formData.contacts.length === 0 ? (
               <div className="text-center py-8 text-fg-muted-token">
-                <UserGroupIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <UserGroupIcon className="w-12 h-12 mx-auto mb-2 text-fg-muted-token" />
                 <p>Nenhum contato adicionado</p>
               </div>
             ) : (
@@ -169,7 +169,7 @@ export const PassoDosDestinatarios: React.FC<Props> = ({
                     </div>
                     <button
                       onClick={() => onRemoverContato(index)}
-                      className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                      className="p-1 text-danger-token hover:bg-danger-soft rounded"
                       aria-label={`Remover contato ${contact.phone}`}
                     >
                       <TrashIcon className="w-4 h-4" />

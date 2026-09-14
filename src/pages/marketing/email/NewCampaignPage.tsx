@@ -400,7 +400,7 @@ export const NewCampaignPage: React.FC = () => {
   if (!storeId) {
     return (
       <div className="p-6 text-center">
-        <EnvelopeIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <EnvelopeIcon className="w-16 h-16 text-fg-muted-token mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma loja selecionada</h2>
         <p className="text-fg-muted-token mb-4">Selecione uma loja para criar campanhas.</p>
         <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
@@ -558,14 +558,14 @@ export const NewCampaignPage: React.FC = () => {
               </Card>
 
               {/* Variables Info Card */}
-              <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+              <Card className="p-6 bg-info-soft border-info-token/30">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <SparklesIcon className="w-5 h-5 text-blue-600" />
+                  <div className="p-2 bg-info-soft rounded-lg">
+                    <SparklesIcon className="w-5 h-5 text-info-token" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-blue-900 mb-2">Personalização Automática</h3>
-                    <p className="text-sm text-blue-700 mb-3">
+                    <h3 className="font-semibold text-info-token mb-2">Personalização Automática</h3>
+                    <p className="text-sm text-info-token mb-3">
                       As variáveis do template serão preenchidas automaticamente com os dados de cada cliente:
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -879,12 +879,12 @@ export const NewCampaignPage: React.FC = () => {
                 </dl>
               </Card>
 
-              <Card className="p-6 bg-amber-50 border-amber-200">
-                <h3 className="font-semibold text-amber-800 mb-2 flex items-center gap-2">
+              <Card className="p-6 bg-warning-soft border-warning-token/30">
+                <h3 className="font-semibold text-warning-token mb-2 flex items-center gap-2">
                   <PaperAirplaneIcon className="w-5 h-5" />
                   Pronto para enviar?
                 </h3>
-                <p className="text-amber-700 text-sm">
+                <p className="text-warning-token text-sm">
                   Ao clicar em "Enviar Campanha", os emails serão disparados imediatamente 
                   para {audienceCount} {audienceCount === 1 ? 'contato' : 'contatos'}.
                 </p>
