@@ -105,6 +105,147 @@ describe('RowActions', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Editar' }));
     expect(abrir).not.toHaveBeenCalled();
   });
+
+  // Teclado — o padrão ARIA de menu button exige que abrir o menu leve o foco
+  // para dentro dele e que as setas naveguem entre os itens. Sem isso o menu
+  // anuncia role="menu"/"menuitem" (prometendo navegação por seta ao leitor de
+  // tela) mas não a entrega: quem usa teclado abre o menu e o foco fica preso
+  // no gatilho.
+  describe('navegação por teclado (WAI-ARIA menu button)', () => {
+    const abrirMenu = () =>
+      fireEvent.click(screen.getByRole('button', { name: 'Ações' }));
+
+    it('ao abrir, o foco vai para o primeiro item', () => {
+      render(
+        <RowActions
+          rotulo="Ações"
+          acoes={[
+            { rotulo: 'Editar', onClick: abrir },
+            { rotulo: 'Duplicar', onClick: jest.fn() },
+          ]}
+        />
+      );
+      abrirMenu();
+      expect(screen.getByRole('menuitem', { name: 'Editar' })).toHaveFocus();
+    });
+
+    it('seta para baixo avança e para cima retrocede, com volta ao início', () => {
+      render(
+        <RowActions
+          rotulo="Ações"
+          acoes={[
+            { rotulo: 'Editar', onClick: abrir },
+            { rotulo: 'Duplicar', onClick: jest.fn() },
+          ]}
+        />
+      );
+      abrirMenu();
+      const menu = screen.getByRole('menu');
+      const editar = screen.getByRole('menuitem', { name: 'Editar' });
+      const duplicar = screen.getByRole('menuitem', { name: 'Duplicar' });
+
+      fireEvent.keyDown(menu, { key: 'ArrowDown' });
+      expect(duplicar).toHaveFocus();
+
+      // Da última, ArrowDown volta ao começo (wraparound).
+      fireEvent.keyDown(menu, { key: 'ArrowDown' });
+      expect(editar).toHaveFocus();
+
+      // Da primeira, ArrowUp vai para a última.
+      fireEvent.keyDown(menu, { key: 'ArrowUp' });
+      expect(duplicar).toHaveFocus();
+    });
+
+    it('Home vai para o primeiro item e End para o último', () => {
+      render(
+        <RowActions
+          rotulo="Ações"
+          acoes={[
+            { rotulo: 'Editar', onClick: abrir },
+            { rotulo: 'Duplicar', onClick: jest.fn() },
+            { rotulo: 'Excluir', onClick: excluir, destrutiva: true },
+          ]}
+        />
+      );
+      abrirMenu();
+      const menu = screen.getByRole('menu');
+
+      fireEvent.keyDown(menu, { key: 'End' });
+      expect(screen.getByRole('menuitem', { name: 'Excluir' })).toHaveFocus();
+
+      fireEvent.keyDown(menu, { key: 'Home' });
+      expect(screen.getByRole('menuitem', { name: 'Editar' })).toHaveFocus();
+    });
+
+    it('a navegação por seta pula itens desabilitados', () => {
+      render(
+        <RowActions
+          rotulo="Ações"
+          acoes={[
+            { rotulo: 'Editar', onClick: abrir },
+            { rotulo: 'Duplicar', onClick: jest.fn(), desabilitada: true },
+            { rotulo: 'Arquivar', onClick: jest.fn() },
+          ]}
+        />
+      );
+      abrirMenu();
+      const menu = screen.getByRole('menu');
+
+      // De "Editar", ArrowDown pula "Duplicar" (desabilitada) e cai em "Arquivar".
+      fireEvent.keyDown(menu, { key: 'ArrowDown' });
+      expect(screen.getByRole('menuitem', { name: 'Arquivar' })).toHaveFocus();
+    });
+
+    it('seta para baixo no gatilho fechado abre com foco no primeiro item', () => {
+      render(
+        <RowActions
+          rotulo="Ações"
+          acoes={[
+            { rotulo: 'Editar', onClick: abrir },
+            { rotulo: 'Excluir', onClick: excluir, destrutiva: true },
+          ]}
+        />
+      );
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Ações' }), { key: 'ArrowDown' });
+      expect(screen.getByRole('menuitem', { name: 'Editar' })).toHaveFocus();
+    });
+
+    it('seta para cima no gatilho fechado abre com foco no último item', () => {
+      // Padrão menu button: ArrowUp num gatilho fechado abre o menu focando o
+      // ÚLTIMO item ativo, não o primeiro.
+      render(
+        <RowActions
+          rotulo="Ações"
+          acoes={[
+            { rotulo: 'Editar', onClick: abrir },
+            { rotulo: 'Excluir', onClick: excluir, destrutiva: true },
+          ]}
+        />
+      );
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Ações' }), { key: 'ArrowUp' });
+      expect(screen.getByRole('menuitem', { name: 'Excluir' })).toHaveFocus();
+    });
+
+    it('Escape fecha e devolve o foco ao gatilho', () => {
+      render(<RowActions rotulo="Ações" acoes={[{ rotulo: 'Editar', onClick: abrir }]} />);
+      const gatilho = screen.getByRole('button', { name: 'Ações' });
+      fireEvent.click(gatilho);
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      expect(screen.queryByRole('menuitem', { name: 'Editar' })).not.toBeInTheDocument();
+      expect(gatilho).toHaveFocus();
+    });
+
+    it('acionar um item pelo teclado devolve o foco ao gatilho', () => {
+      render(<RowActions rotulo="Ações" acoes={[{ rotulo: 'Editar', onClick: abrir }]} />);
+      const gatilho = screen.getByRole('button', { name: 'Ações' });
+      fireEvent.click(gatilho);
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Editar' }));
+
+      expect(abrir).toHaveBeenCalledTimes(1);
+      expect(gatilho).toHaveFocus();
+    });
+  });
 });
 
 describe('linhaClicavel', () => {
