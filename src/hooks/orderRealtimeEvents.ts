@@ -44,6 +44,9 @@ export function applyOrderEventToOrders(
   if (event.total !== undefined && event.total !== null) patch.total = Number(event.total);
   if (event.updated_at) patch.updated_at = event.updated_at;
   if (event.customer_name) patch.customer_name = event.customer_name;
+  // Aviso de pagamento a menor traz o saldo — o card mostra sem refetch.
+  if (event.amount_paid !== undefined && event.amount_paid !== null) patch.amount_paid = Number(event.amount_paid);
+  if (event.amount_due !== undefined && event.amount_due !== null) patch.amount_due = Number(event.amount_due);
 
   return orders.map((o, i) => (i === idx ? { ...o, ...patch } : o));
 }

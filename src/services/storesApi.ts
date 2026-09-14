@@ -403,6 +403,10 @@ export interface StoreOrder {
   status_display: string;
   payment_status: string;
   payment_status_display: string;
+  /** Recebido por cobrança (derivado no backend). */
+  amount_paid?: number;
+  /** Quanto falta receber (respeita o rótulo `paid` do dinheiro na mão). */
+  amount_due?: number;
   subtotal: number;
   discount: number;
   coupon_code: string;

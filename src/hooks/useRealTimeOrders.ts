@@ -14,6 +14,8 @@ import { useAuthStore } from '../stores/authStore';
 import { createWebSocket, clearWebSocketInstance } from '../services/websocket';
 import { useNotificationSound } from './useNotificationSound';
 import { applyOrderEventToOrders, type OrderRealtimeEvent } from './orderRealtimeEvents';
+import toast from 'react-hot-toast';
+import { formatCurrency } from '../utils/formatters';
 
 export { applyOrderEventToOrders };
 export type { OrderRealtimeEvent };
@@ -139,6 +141,19 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
 
       ws.subscribe('order.cancelled', (event) => {
         applyEventOrRefresh(event as OrderRealtimeEvent);
+      });
+
+      // Pagamento a menor: a trava do backend deixa o pedido em `processing`
+      // e isso era MUDO — o pedido só parava. Aviso na tela, em qualquer página.
+      ws.subscribe('order.payment_partial', (event) => {
+        const e = event as OrderRealtimeEvent;
+        applyEventOrRefresh(e);
+        const falta = Number(e.amount_due ?? 0);
+        const pago = Number(e.amount_paid ?? 0);
+        toast.error(
+          `Pedido #${e.order_number ?? ''} pago a menor: entrou ${formatCurrency(pago)}, falta ${formatCurrency(falta)}.`,
+          { duration: 15000, id: `pagamento-a-menor-${e.order_id}` },
+        );
       });
     };
 
