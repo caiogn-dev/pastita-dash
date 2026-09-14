@@ -82,6 +82,17 @@ export default {
         'success-token': 'var(--success)',
         'danger-token': 'var(--danger)',
         'warning-token': 'var(--warning)',
+        'info-token': 'var(--info)',
+        // Chip/badge de status (fundo claro, texto na cor forte por cima).
+        // `--success-soft`/`--danger-soft`/`--warning-soft`/`--info-soft` já
+        // existiam em tokens.css desde sempre, mas NENHUMA classe do
+        // Tailwind os usava — todo card "R$ 12,90 pago" ou "3 pendentes"
+        // continuava escrito em zinc/red/green/blue crus (que não viram de
+        // tom no escuro), porque não havia `bg-success-soft` para trocar.
+        'success-soft': 'var(--success-soft)',
+        'danger-soft': 'var(--danger-soft)',
+        'warning-soft': 'var(--warning-soft)',
+        'info-soft': 'var(--info-soft)',
         border: {
           primary: 'var(--border-default)',
           subtle: 'var(--border-subtle)',
