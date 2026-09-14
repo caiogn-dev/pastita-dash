@@ -49,8 +49,8 @@ export const AgentTestPage: React.FC = () => {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="animate-pulse">
-          <div className="h-8 w-64 bg-zinc-200 dark:bg-[var(--dark-border,#2a2a2a)] rounded mb-4" />
-          <div className="h-[600px] bg-zinc-200 dark:bg-[var(--dark-border,#2a2a2a)] rounded-xl" />
+          <div className="h-8 w-64 bg-surface-2 rounded mb-4" />
+          <div className="h-[600px] bg-surface-2 rounded-xl" />
         </div>
       </div>
     );
@@ -60,7 +60,7 @@ export const AgentTestPage: React.FC = () => {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="text-center py-16">
-          <p className="text-xl font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
+          <p className="text-xl font-medium text-fg-token mb-2">
             Agente não encontrado
           </p>
           <button

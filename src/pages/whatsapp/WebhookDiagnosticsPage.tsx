@@ -88,11 +88,11 @@ interface DiagnosticsData {
 const StatusIndicator: React.FC<{ ok: boolean; label: string }> = ({ ok, label }) => (
   <div className="flex items-center gap-2">
     {ok ? (
-      <CheckCircleIcon className="w-5 h-5 text-green-500" />
+      <CheckCircleIcon className="w-5 h-5 text-success-token" />
     ) : (
-      <XCircleIcon className="w-5 h-5 text-red-500" />
+      <XCircleIcon className="w-5 h-5 text-danger-token" />
     )}
-    <span className={ok ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
+    <span className={ok ? 'text-success-token' : 'text-danger-token'}>
       {label}
     </span>
   </div>
@@ -150,7 +150,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
     return (
       <div className="p-6">
         <Card className="p-6 text-center">
-          <ExclamationTriangleIcon className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+          <ExclamationTriangleIcon className="w-12 h-12 text-warning-token mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-fg-token mb-2">
             Erro ao carregar diagnóstico
           </h2>
@@ -210,9 +210,9 @@ export const WebhookDiagnosticsPage: React.FC = () => {
 
       {/* Health Status */}
       <Card className={`p-6 border-l-4 ${
-        healthStatus === 'healthy' ? 'border-l-green-500 bg-green-50 dark:bg-green-900/20' :
-        healthStatus === 'warning' ? 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' :
-        'border-l-red-500 bg-red-50 dark:bg-red-900/20'
+        healthStatus === 'healthy' ? 'border-l-success-token bg-success-soft' :
+        healthStatus === 'warning' ? 'border-l-warning-token bg-warning-soft' :
+        'border-l-danger-token bg-danger-soft'
       }`}>
         <div className="flex items-center justify-between">
           <div>
@@ -229,9 +229,9 @@ export const WebhookDiagnosticsPage: React.FC = () => {
             </div>
           </div>
           <div className={`text-4xl font-bold ${
-            healthStatus === 'healthy' ? 'text-green-600' :
-            healthStatus === 'warning' ? 'text-yellow-600' :
-            'text-red-600'
+            healthStatus === 'healthy' ? 'text-success-token' :
+            healthStatus === 'warning' ? 'text-warning-token' :
+            'text-danger-token'
           }`}>
             {healthScore}/5
           </div>
@@ -311,7 +311,7 @@ export const WebhookDiagnosticsPage: React.FC = () => {
 
       {/* Actions */}
       {(diagnosis.has_pending_events || diagnosis.has_failed_events) && (
-        <Card className="p-6 bg-yellow-50 dark:bg-yellow-900/20">
+        <Card className="p-6 bg-warning-soft">
           <h3 className="text-lg font-semibold text-fg-token mb-4">
             Ações de Recuperação
           </h3>
@@ -345,13 +345,13 @@ export const WebhookDiagnosticsPage: React.FC = () => {
           </h3>
           <div className="space-y-3">
             {failed_events.map((event) => (
-              <div key={event.id} className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <div key={event.id} className="p-3 bg-danger-soft rounded-lg">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-medium text-fg-token">
                       {event.event_type} - Tentativas: {event.retry_count}
                     </p>
-                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    <p className="text-sm text-danger-token mt-1">
                       {event.error_message || 'Erro desconhecido'}
                     </p>
                   </div>

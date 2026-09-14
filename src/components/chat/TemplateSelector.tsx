@@ -209,17 +209,17 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     : '';
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
+    <div className="flex flex-col h-full bg-surface">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border-token flex-shrink-0">
+        <p className="text-sm font-semibold text-fg-token">
           Templates WhatsApp
         </p>
         <button
           type="button"
           onClick={onClose}
           aria-label="Fechar templates"
-          className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+          className="p-1 rounded-lg text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors"
         >
           <XMarkIcon className="h-4 w-4" />
         </button>
@@ -228,9 +228,9 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       {/* Templates list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {loading ? (
-          <p className="text-sm text-gray-400 text-center py-8">Carregando templates...</p>
+          <p className="text-sm text-fg-muted-token text-center py-8">Carregando templates...</p>
         ) : templates.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">
+          <p className="text-sm text-fg-muted-token text-center py-8">
             Nenhum template disponível.
           </p>
         ) : (
@@ -242,7 +242,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                 className={`rounded-xl border transition-colors ${
                   isExpanded
                     ? 'border-primary-300 dark:border-primary-700 bg-primary-50/50 dark:bg-primary-900/10'
-                    : 'border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+                    : 'border-border-token bg-surface'
                 }`}
               >
                 {/* Header row */}
@@ -252,23 +252,23 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 truncate">
+                    <p className="text-sm font-semibold text-fg-token truncate">
                       {template.name}
                     </p>
-                    <p className="text-badge text-gray-400 dark:text-zinc-500">
+                    <p className="text-badge text-fg-muted-token">
                       {template.category} · {template.language}
                       {template.source === 'local' && (
-                        <span className="ml-1 text-yellow-600 dark:text-yellow-400">(preview local)</span>
+                        <span className="ml-1 text-warning-token">(preview local)</span>
                       )}
                       {template.status && (
-                        <span className="ml-1 text-gray-400"> · {template.status}</span>
+                        <span className="ml-1 text-fg-muted-token"> · {template.status}</span>
                       )}
                     </p>
                   </div>
                   {isExpanded ? (
-                    <ChevronUpIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <ChevronUpIcon className="h-4 w-4 text-fg-muted-token flex-shrink-0" />
                   ) : (
-                    <ChevronDownIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <ChevronDownIcon className="h-4 w-4 text-fg-muted-token flex-shrink-0" />
                   )}
                 </button>
 
@@ -276,8 +276,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                 {isExpanded && (
                   <div className="px-3 pb-3 space-y-3">
                     {/* Preview */}
-                    <div className="rounded-lg bg-gray-100 dark:bg-zinc-800 p-2.5">
-                      <p className="text-xs text-gray-700 dark:text-zinc-300 whitespace-pre-wrap">
+                    <div className="rounded-lg bg-surface-2 p-2.5">
+                      <p className="text-xs text-fg-muted-token whitespace-pre-wrap">
                         {previewBody}
                       </p>
                     </div>
@@ -300,7 +300,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                                 }))
                               }
                               placeholder={`Valor para {{${v.index}}}`}
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand"
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-border-token bg-surface text-xs text-fg-token placeholder-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
                             />
                           </div>
                         ))}

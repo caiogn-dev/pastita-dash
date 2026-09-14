@@ -52,9 +52,21 @@ const ESPERA_DA_LARGURA = 120;
  */
 const ENTRADA = 'entra-com-a-coluna';
 
-/** O caminho casa com o destino, incluindo sub-rotas (`/orders/123`). */
+/**
+ * O caminho casa com o destino, incluindo sub-rotas (`/orders/123`).
+ *
+ * `/stores` é caso à parte: além de ser a lista de lojas, é também o
+ * FALLBACK de `storeHref` quando nenhuma loja está selecionada ainda (ver
+ * `useNavSections.ts`). Nesse instante, vários itens de grupos diferentes
+ * (Balcão, Cardápio, Etiquetas, Configurações…) compartilham o mesmo href
+ * `/stores` — e com o prefixo de rota valendo para ele, QUALQUER página de
+ * loja (`/stores/minha-loja/pdv`, `/stores/minha-loja/orders`…) casava como
+ * "ativa" com TODOS eles ao mesmo tempo. Era esse falso positivo que
+ * destacava "Venda no balcão" e "Caixa" como se fossem a página aberta,
+ * e abria o grupo errado sozinho. `/stores` (como `/`) só casa exato.
+ */
 function ativo(pathname: string, href: string): boolean {
-  if (href === '/') return pathname === '/';
+  if (href === '/' || href === '/stores') return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -408,7 +420,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                     const ItemIcone = item.icon;
                     const itemAtivo = ativo(pathname, item.href);
                     return (
-                      <li key={item.href}>
+                      // O nome, não o href: enquanto a loja ainda não
+                      // carregou, `storeHref` devolve `/stores` para vários
+                      // itens do mesmo grupo (Venda no balcão, Caixa, Cozinha)
+                      // — chave repetida faz o React confundir a
+                      // reconciliação desses irmãos quando o href de verdade
+                      // chega. O nome é único dentro do grupo (garantido por
+                      // teste em navSections.semDuplicata.test.ts).
+                      <li key={item.name}>
                         <ItemDeMenu
                           item={item}
                           ativo={itemAtivo}

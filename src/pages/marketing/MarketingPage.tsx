@@ -53,7 +53,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon: Icon,
         <p className={`text-3xl font-bold ${color} mt-1`}>{value}</p>
         {subtitle && <p className="text-xs text-fg-muted-token mt-1">{subtitle}</p>}
         {trend !== undefined && (
-          <div className={`flex items-center gap-1 mt-2 text-sm ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className={`flex items-center gap-1 mt-2 text-sm ${trend >= 0 ? 'text-success-token' : 'text-danger-token'}`}>
             <ArrowTrendingUpIcon className={`w-4 h-4 ${trend < 0 ? 'rotate-180' : ''}`} />
             <span>{Math.abs(trend)}% vs mês anterior</span>
           </div>
@@ -102,7 +102,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow group">
       {/* Preview Area */}
-      <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
+      <div className="h-40 bg-surface-2 relative overflow-hidden">
         {/* sandbox="" blocks all scripts, plugins, forms — safe for untrusted HTML */}
         <iframe
           sandbox=""
@@ -116,7 +116,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button
             onClick={onPreview}
-            className="p-2 bg-surface rounded-full hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-zinc-700"
+            className="p-2 bg-surface rounded-full hover:bg-surface-2 dark:hover:bg-surface-2"
             title="Visualizar"
           >
             <EyeIcon className="w-5 h-5 text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]" />
@@ -145,7 +145,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
         {template.variables.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
             {template.variables.slice(0, 3).map((v) => (
-              <span key={v} className="text-xs bg-surface-2 dark:bg-gray-700 text-fg-muted-token px-1.5 py-0.5 rounded">
+              <span key={v} className="text-xs bg-surface-2 text-fg-muted-token px-1.5 py-0.5 rounded">
                 {`{{${v}}}`}
               </span>
             ))}
@@ -252,7 +252,7 @@ export const MarketingPage: React.FC = () => {
   if (!storeId) {
     return (
       <div className="p-6 text-center">
-        <MegaphoneIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <MegaphoneIcon className="w-16 h-16 text-fg-muted-token mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma loja selecionada</h2>
         <p className="text-fg-muted-token mb-4">Selecione uma loja para acessar o marketing.</p>
         <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
@@ -394,10 +394,10 @@ export const MarketingPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      campaign.status === 'sent' ? 'bg-green-100 text-green-700' :
+                      campaign.status === 'sent' ? 'bg-success-soft text-success-token' :
                       campaign.status === 'draft' ? 'bg-surface-2 text-fg-token' :
-                      campaign.status === 'sending' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-blue-100 text-blue-700'
+                      campaign.status === 'sending' ? 'bg-warning-soft text-warning-token' :
+                      'bg-info-soft text-info-token'
                     }`}>
                       {campaign.status === 'sent' ? 'Enviada' :
                        campaign.status === 'draft' ? 'Rascunho' :
@@ -412,7 +412,7 @@ export const MarketingPage: React.FC = () => {
           </div>
         ) : (
           <Card className="p-8 text-center">
-            <MegaphoneIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <MegaphoneIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
             <p className="text-fg-muted-token mb-4">Nenhuma campanha criada ainda</p>
             <Button onClick={() => navigate('/marketing/email/new')}>
               <PlusIcon className="w-5 h-5 mr-2" />

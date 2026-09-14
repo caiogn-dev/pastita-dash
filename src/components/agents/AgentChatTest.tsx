@@ -218,26 +218,26 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-[600px] bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+    <div className="flex flex-col h-[600px] bg-surface rounded-xl border border-border-token overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border-token bg-surface-2">
         <div className="flex items-center gap-2">
           <CpuChipIcon className={cn(
             "w-5 h-5",
             connectionStatus === 'connected' && "text-primary-500",
-            connectionStatus === 'loading' && "text-yellow-500 animate-pulse",
-            connectionStatus === 'error' && "text-red-500"
+            connectionStatus === 'loading' && "text-warning-token animate-pulse",
+            connectionStatus === 'error' && "text-danger-token"
           )} />
-          <span className="font-medium text-zinc-900 dark:text-white">
+          <span className="font-medium text-fg-token">
             Testar {agentName}
           </span>
           {connectionStatus === 'error' && (
-            <span className="text-xs text-red-500 ml-2">(Erro de conexão)</span>
+            <span className="text-xs text-danger-token ml-2">(Erro de conexão)</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           {sessionId && (
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-700 px-2 py-1 rounded">
+            <span className="text-xs text-fg-muted-token bg-surface-2 px-2 py-1 rounded">
               Session: {sessionId.slice(0, 8)}...
             </span>
           )}
@@ -245,7 +245,7 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
             onClick={() => setShowDebug(!showDebug)}
             className={cn(
               "p-2 rounded-lg transition-colors",
-              showDebug ? "bg-blue-100 text-blue-600" : "text-zinc-500 hover:text-blue-600 hover:bg-blue-50"
+              showDebug ? "bg-info-soft text-info-token" : "text-fg-muted-token hover:text-info-token hover:bg-info-soft"
             )}
             title="Toggle debug mode"
           >
@@ -253,7 +253,7 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
           </button>
           <button
             onClick={handleClear}
-            className="p-2 rounded-lg text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+            className="p-2 rounded-lg text-fg-muted-token hover:text-danger-token hover:bg-danger-soft transition-colors"
             title="Limpar conversa"
           >
             <TrashIcon className="w-4 h-4" />
@@ -263,7 +263,7 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
 
       {/* Debug Panel */}
       {showDebug && (
-        <div className="px-4 py-2 bg-slate-900 text-slate-300 text-xs font-mono border-b border-zinc-700">
+        <div className="px-4 py-2 bg-slate-900 text-slate-300 text-xs font-mono border-b border-border-token">
           <div>Agent ID: {agentId || 'N/A'}</div>
           <div>Session ID: {sessionId || 'N/A'}</div>
           <div>Status: {connectionStatus}</div>
@@ -276,11 +276,11 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <CpuChipIcon className="w-16 h-16 text-zinc-200 dark:text-zinc-700 mb-4" />
-            <p className="text-zinc-500 dark:text-zinc-400 mb-2">
+            <CpuChipIcon className="w-16 h-16 text-fg-muted-token mb-4" />
+            <p className="text-fg-muted-token mb-2">
               Inicie uma conversa com o agente
             </p>
-            <p className="text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="text-sm text-fg-muted-token">
               Envie uma mensagem para testar o comportamento do agente
             </p>
           </div>
@@ -300,8 +300,8 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
               )}
               
               {message.role === 'error' && (
-                <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
-                  <ExclamationTriangleIcon className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <div className="w-8 h-8 rounded-full bg-danger-soft flex items-center justify-center flex-shrink-0">
+                  <ExclamationTriangleIcon className="w-4 h-4 text-danger-token" />
                 </div>
               )}
               
@@ -310,21 +310,21 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
                 message.role === 'user'
                   ? "bg-primary-600 text-white rounded-br-md"
                   : message.role === 'error'
-                  ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 rounded-bl-md"
-                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-bl-md"
+                  ? "bg-danger-soft border border-danger-token/30 text-danger-token rounded-bl-md"
+                  : "bg-surface-2 text-fg-token rounded-bl-md"
               )}>
                 <p className="whitespace-pre-wrap break-words">{typeof message.content === 'string' ? message.content : message.content != null ? JSON.stringify(message.content) : ''}</p>
                 
                 {/* Metadata for assistant messages */}
                 {message.role === 'assistant' && (message.tokens_used || message.response_time_ms) && (
-                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border-token">
                     {message.tokens_used && (
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <span className="text-xs text-fg-muted-token">
                         {message.tokens_used} tokens
                       </span>
                     )}
                     {message.response_time_ms && (
-                      <span className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+                      <span className="flex items-center gap-1 text-xs text-fg-muted-token">
                         <ClockIcon className="w-3 h-3" />
                         {message.response_time_ms}ms
                       </span>
@@ -334,15 +334,15 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
 
                 {/* Error details and retry button */}
                 {message.role === 'error' && (
-                  <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-800">
+                  <div className="mt-2 pt-2 border-t border-danger-token/30">
                     {message.errorDetails?.statusCode && (
-                      <div className="text-xs text-red-600 dark:text-red-400 mb-1">
+                      <div className="text-xs text-danger-token mb-1">
                         Status: {message.errorDetails.statusCode}
                       </div>
                     )}
                     <button
                       onClick={handleRetry}
-                      className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 hover:underline"
+                      className="flex items-center gap-1 text-xs text-danger-token hover:underline"
                     >
                       <ArrowPathIcon className="w-3 h-3" />
                       Tentar novamente
@@ -352,8 +352,8 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
               </div>
 
               {message.role === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center flex-shrink-0">
-                  <UserCircleIcon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center flex-shrink-0">
+                  <UserCircleIcon className="w-4 h-4 text-fg-muted-token" />
                 </div>
               )}
             </div>
@@ -366,10 +366,10 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
             <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
               <CpuChipIcon className="w-4 h-4 text-primary-600 dark:text-primary-400" />
             </div>
-            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-bl-md px-4 py-3">
+            <div className="bg-surface-2 rounded-2xl rounded-bl-md px-4 py-3">
               <div className="flex items-center gap-2">
-                <ArrowPathIcon className="w-4 h-4 text-zinc-500 animate-spin" />
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                <ArrowPathIcon className="w-4 h-4 text-fg-muted-token animate-spin" />
+                <span className="text-sm text-fg-muted-token">
                   Pensando...
                 </span>
               </div>
@@ -381,7 +381,7 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+      <div className="p-4 border-t border-border-token bg-surface-2">
         <form onSubmit={handleSubmit} className="flex gap-2">
           <textarea
             ref={inputRef}
@@ -393,9 +393,9 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
             rows={1}
             className={cn(
               "flex-1 px-4 py-3 rounded-xl border resize-none",
-              "bg-white dark:bg-zinc-800",
-              "text-zinc-900 dark:text-white placeholder-zinc-400",
-              "border-zinc-200 dark:border-zinc-700",
+              "bg-surface",
+              "text-fg-token placeholder-fg-muted-token",
+              "border-border-token",
               "focus:ring-2 focus:ring-brand focus:border-transparent",
               "disabled:opacity-50"
             )}
@@ -413,10 +413,10 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
             <PaperAirplaneIcon className="w-5 h-5" />
           </button>
         </form>
-        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-2 text-center">
+        <p className="text-xs text-fg-muted-token mt-2 text-center">
           Pressione Enter para enviar, Shift+Enter para nova linha
           {connectionStatus === 'error' && (
-            <span className="text-red-500 ml-2">• Erro de conexão detectado</span>
+            <span className="text-danger-token ml-2">• Erro de conexão detectado</span>
           )}
         </p>
       </div>

@@ -55,13 +55,13 @@ export const AgentCreatePage: React.FC = () => {
 
       {/* Erro de submissão */}
       {submitError && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+        <div className="mb-4 p-3 bg-danger-soft border border-danger-token/30 rounded-lg text-danger-token text-sm">
           {submitError}
         </div>
       )}
 
       {/* Form */}
-      <div className="bg-surface rounded-xl border border-zinc-200 dark:border-[var(--dark-border,#2a2a2a)] overflow-hidden">
+      <div className="bg-surface rounded-xl border border-border-token overflow-hidden">
         <AgentForm
           whatsappAccounts={whatsappAccounts}
           onSubmit={handleSubmit}

@@ -292,7 +292,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
       {conflito && (
         <p
           role="alert"
-          className="text-sm text-red-600 dark:text-red-400 flex items-start gap-1.5"
+          className="text-sm text-danger-token flex items-start gap-1.5"
         >
           <ExclamationTriangleIcon className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
           {conflito}
@@ -304,9 +304,9 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
           role={aviso.tom === 'ok' ? undefined : 'alert'}
           className={`text-sm flex items-start gap-1.5 ${
             aviso.tom === 'vazio'
-              ? 'text-red-600 dark:text-red-400'
+              ? 'text-danger-token'
               : aviso.tom === 'pequena'
-                ? 'text-amber-600 dark:text-amber-400'
+                ? 'text-warning-token'
                 : 'text-fg-muted-token'
           }`}
         >

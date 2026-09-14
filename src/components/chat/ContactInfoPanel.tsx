@@ -79,9 +79,9 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
   const profilePic = conversation.profile_picture || conversation.profile_picture_url;
 
   return (
-    <div className="w-72 flex-shrink-0 flex flex-col border-l border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-card,#fff)] dark:bg-[var(--dark-bg-card,#1a1a1a)] overflow-hidden animate-slide-in-right">
+    <div className="w-72 flex-shrink-0 flex flex-col border-l border-border-token bg-surface overflow-hidden animate-slide-in-right">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border-token">
         {/* Tabs */}
         <div className="flex gap-1">
           {TABS.map(tab => (
@@ -91,7 +91,7 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
                 activeTab === tab.key
                   ? 'bg-primary-600 text-white'
-                  : 'text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)]'
+                  : 'text-fg-muted-token hover:bg-surface-2'
               }`}
             >
               {tab.label}
@@ -100,10 +100,10 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--dark-bg-hover)] transition-colors"
+          className="p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
           aria-label="Fechar painel de contato"
         >
-          <XMarkIcon className="w-4 h-4 text-[var(--fg-secondary)]" />
+          <XMarkIcon className="w-4 h-4 text-fg-muted-token" />
         </button>
       </div>
 
@@ -122,21 +122,21 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
                   : initials}
               </div>
               <div className="text-center">
-                <p className="font-semibold text-[var(--fg-primary)] dark:text-[var(--dark-text-primary,#FAF9F7)]">
+                <p className="font-semibold text-fg-token">
                   {conversation.contact_name || 'Sem nome'}
                 </p>
                 <div className="flex items-center gap-1.5 justify-center mt-0.5">
-                  <p className="text-sm text-[var(--fg-secondary)]">{conversation.phone_number}</p>
+                  <p className="text-sm text-fg-muted-token">{conversation.phone_number}</p>
                   <button onClick={handleCopyPhone} title="Copiar telefone" aria-label="Copiar telefone">
-                    <ClipboardDocumentIcon className="w-3.5 h-3.5 text-[var(--fg-muted)] hover:text-primary-600 transition-colors" />
+                    <ClipboardDocumentIcon className="w-3.5 h-3.5 text-fg-muted-token hover:text-primary-600 transition-colors" />
                   </button>
                 </div>
               </div>
               {/* Modo */}
               <span className={`px-2.5 py-0.5 rounded-full text-badge font-semibold ${
                 conversation.mode === 'human'
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                  ? 'bg-success-soft text-success-token'
+                  : 'bg-surface-2 text-fg-muted-token'
               }`}>
                 {conversation.mode === 'human' ? 'Humano' : 'Bot'}
               </span>
@@ -149,21 +149,21 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
                   Último Pedido
                 </p>
                 {lastOrder ? (
-                  <div className="rounded-xl border border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] p-3 text-sm">
+                  <div className="rounded-xl border border-border-token p-3 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-semibold text-[var(--fg-primary)] dark:text-[var(--dark-text-primary)]">
+                      <span className="font-mono font-semibold text-fg-token">
                         #{lastOrder.id}
                       </span>
-                      <span className="font-semibold text-[var(--fg-primary)] dark:text-[var(--dark-text-primary)]">
+                      <span className="font-semibold text-fg-token">
                         R$ {Number(lastOrder.total).toFixed(2)}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--fg-secondary)] mt-0.5">
+                    <p className="text-xs text-fg-muted-token mt-0.5">
                       {format(new Date(lastOrder.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-xs text-[var(--fg-muted)] italic">Nenhum pedido encontrado</p>
+                  <p className="text-xs text-fg-muted-token italic">Nenhum pedido encontrado</p>
                 )}
               </div>
             )}
@@ -179,7 +179,7 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
                 onBlur={handleNoteBlur}
                 placeholder="Anotações sobre esse contato..."
                 rows={3}
-                className="w-full px-3 py-2 rounded-xl border border-[var(--border-default,#e5e7eb)] dark:border-[var(--dark-border,#2a2a2a)] bg-[var(--bg-primary,#fff)] dark:bg-[var(--dark-bg-primary,#0D0907)] text-sm text-[var(--fg-primary)] dark:text-[var(--dark-text-primary)] placeholder-[var(--fg-muted)] resize-none focus:outline-none focus:ring-2 focus:ring-brand"
+                className="w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token placeholder-fg-muted-token resize-none focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
 

@@ -361,7 +361,7 @@ export default function AutomationsPage() {
                       </button>
                       <button
                         onClick={() => handleDelete(automation)}
-                        className="p-2 text-fg-muted-token hover:text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
+                        className="p-2 text-fg-muted-token hover:text-danger-token hover:bg-red-50 rounded-lg"
                         title="Excluir"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -431,9 +431,9 @@ export default function AutomationsPage() {
           </div>
 
           {/* Variables Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-blue-900 mb-2">📝 Variáveis Disponíveis</h4>
-            <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
+          <div className="bg-info-soft border border-info-token/30 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-info-token mb-2">📝 Variáveis Disponíveis</h4>
+            <p className="text-xs text-info-token mb-2">
               Use estas variáveis no assunto e conteúdo - serão preenchidas automaticamente:
             </p>
             <div className="flex flex-wrap gap-1">

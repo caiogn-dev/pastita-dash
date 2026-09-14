@@ -69,25 +69,25 @@ export interface MessageBubbleProps {
 const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
   switch (status) {
     case 'pending':
-      return <ClockIcon className="w-3.5 h-3.5 text-gray-400" title="Pendente" />;
+      return <ClockIcon className="w-3.5 h-3.5 text-fg-muted-token" title="Pendente" />;
     case 'sent':
-      return <CheckIcon className="w-3.5 h-3.5 text-gray-400" title="Enviado" />;
+      return <CheckIcon className="w-3.5 h-3.5 text-fg-muted-token" title="Enviado" />;
     case 'delivered':
       return (
         <div className="flex -space-x-1" title="Entregue">
-          <CheckIcon className="w-3.5 h-3.5 text-gray-400" />
-          <CheckIcon className="w-3.5 h-3.5 text-gray-400" />
+          <CheckIcon className="w-3.5 h-3.5 text-fg-muted-token" />
+          <CheckIcon className="w-3.5 h-3.5 text-fg-muted-token" />
         </div>
       );
     case 'read':
       return (
         <div className="flex -space-x-1" title="Lido">
-          <CheckIconSolid className="w-3.5 h-3.5 text-blue-500" />
-          <CheckIconSolid className="w-3.5 h-3.5 text-blue-500" />
+          <CheckIconSolid className="w-3.5 h-3.5 text-info-token" />
+          <CheckIconSolid className="w-3.5 h-3.5 text-info-token" />
         </div>
       );
     case 'failed':
-      return <ExclamationCircleIcon className="w-3.5 h-3.5 text-red-500" title="Falhou" />;
+      return <ExclamationCircleIcon className="w-3.5 h-3.5 text-danger-token" title="Falhou" />;
     default:
       return null;
   }
@@ -191,8 +191,8 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
 
   if (!isValidUrl) {
     return (
-      <div className="w-[280px] bg-gray-100 dark:bg-zinc-800 rounded-lg p-3 mb-2">
-        <div className="flex items-center gap-2 text-gray-500">
+      <div className="w-[280px] bg-surface-2 rounded-lg p-3 mb-2">
+        <div className="flex items-center gap-2 text-fg-muted-token">
           <MusicalNoteIcon className="w-5 h-5" />
           <span className="text-sm">Áudio não disponível</span>
         </div>
@@ -201,7 +201,7 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
   }
 
   return (
-    <div className="w-[280px] bg-gray-100 dark:bg-zinc-800 rounded-lg p-3 mb-2">
+    <div className="w-[280px] bg-surface-2 rounded-lg p-3 mb-2">
       <audio
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
@@ -229,7 +229,7 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
               onClick={togglePlay}
               disabled={isLoading}
               aria-label={isPlaying ? 'Pausar áudio' : 'Reproduzir áudio'}
-              className="w-10 h-10 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+              className="w-10 h-10 bg-brand hover:bg-brand-hover disabled:bg-surface-2 text-on-brand rounded-full flex items-center justify-center transition-colors flex-shrink-0"
             >
               {isPlaying ? (
                 <PauseIcon className="w-5 h-5" />
@@ -240,12 +240,12 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <MusicalNoteIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span className="text-xs text-gray-600 dark:text-gray-300 truncate">
+                <MusicalNoteIcon className="w-4 h-4 text-fg-muted-token flex-shrink-0" />
+                <span className="text-xs text-fg-muted-token truncate">
                   {fileName || 'Áudio'}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
+              <div className="flex items-center justify-between text-xs text-fg-muted-token mt-1">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
@@ -256,7 +256,7 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
               onClick={toggleMute}
               disabled={isLoading}
               aria-label={isMuted ? 'Ativar som do áudio' : 'Silenciar áudio'}
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
+              className="p-1.5 text-fg-muted-token hover:text-fg-token disabled:opacity-50"
             >
               {isMuted ? (
                 <SpeakerXMarkIcon className="w-4 h-4" />
@@ -274,7 +274,7 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
             onChange={handleSeek}
             disabled={isLoading || !duration}
             aria-label="Posição do áudio"
-            className="w-full h-1.5 bg-gray-300 dark:bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-violet-600 disabled:opacity-50"
+            className="w-full h-1.5 bg-surface-2 rounded-lg appearance-none cursor-pointer accent-[var(--brand)] disabled:opacity-50"
           />
         </>
       )}
@@ -326,7 +326,7 @@ const MediaPreview: React.FC<{
         />
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
           <div className="w-12 h-12 bg-white/80 rounded-full flex items-center justify-center">
-            <FilmIcon className="w-6 h-6 text-gray-800" />
+            <FilmIcon className="w-6 h-6 text-fg-token" />
           </div>
         </div>
       </div>
@@ -342,21 +342,21 @@ const MediaPreview: React.FC<{
   if (type === 'document') {
     return (
       <div 
-        className="flex items-center gap-3 p-3 bg-gray-100/50 dark:bg-black/20 rounded-lg mb-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-black/30 transition-colors max-w-[280px]"
+        className="flex items-center gap-3 p-3 bg-surface-2 rounded-lg mb-2 cursor-pointer hover:bg-surface-2 transition-colors max-w-[280px]"
         onClick={onClick}
       >
         <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
           <DocumentIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+          <p className="text-sm font-medium text-fg-token truncate">
             {fileName || 'Documento'}
           </p>
-          <p className="text-xs text-gray-500 dark:text-zinc-400">
+          <p className="text-xs text-fg-muted-token">
             Clique para baixar
           </p>
         </div>
-        <ArrowDownTrayIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+        <ArrowDownTrayIcon className="w-5 h-5 text-fg-muted-token flex-shrink-0" />
       </div>
     );
   }
@@ -392,18 +392,18 @@ const MediaPreview: React.FC<{
           <MapPinIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
+          <p className="text-sm font-medium text-fg-token">
             {name}
           </p>
           {/* `location` sem declarar local cai no `window.location` do
               navegador — o TypeScript só apontou isso quando o `as any` saiu. */}
           {endereco && endereco !== name && (
-            <p className="text-xs text-gray-600 dark:text-zinc-300 mt-0.5 break-words">
+            <p className="text-xs text-fg-muted-token mt-0.5 break-words">
               {endereco}
             </p>
           )}
           {lat && lng && (
-            <p className="text-xs text-gray-500 dark:text-zinc-400">
+            <p className="text-xs text-fg-muted-token">
               {lat.toFixed(6)}, {lng.toFixed(6)}
             </p>
           )}
@@ -429,11 +429,11 @@ const MediaPreview: React.FC<{
           <UserIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+          <p className="text-sm font-medium text-fg-token truncate">
             {displayName}{extra}
           </p>
           {displayPhone && (
-            <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
+            <p className="text-xs text-fg-muted-token truncate">
               {displayPhone}
             </p>
           )}
@@ -451,9 +451,9 @@ const MediaPreview: React.FC<{
           <ShoppingCartIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">Pedido WhatsApp</p>
+          <p className="text-sm font-medium text-fg-token">Pedido WhatsApp</p>
           {itensDoPedido.length > 0 && (
-            <p className="text-xs text-gray-500 dark:text-zinc-400">
+            <p className="text-xs text-fg-muted-token">
               {itensDoPedido.length} {itensDoPedido.length === 1 ? 'item' : 'itens'}
             </p>
           )}
@@ -478,7 +478,7 @@ const MediaPreview: React.FC<{
     return (
       <div className="flex items-center gap-2 py-1 px-2">
         <span className="text-2xl">{emoji}</span>
-        <span className="text-xs text-gray-400 dark:text-zinc-500">Reagiu</span>
+        <span className="text-xs text-fg-muted-token">Reagiu</span>
       </div>
     );
   }
@@ -499,7 +499,7 @@ const MediaPreview: React.FC<{
   if (type === 'system') {
     return (
       <div className="flex justify-center my-1">
-        <span className="text-xs text-gray-400 dark:text-zinc-500 italic px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full">
+        <span className="text-xs text-fg-muted-token italic px-3 py-1 bg-surface-2 rounded-full">
           {typeof content === 'string' ? content : 'Mensagem do sistema'}
         </span>
       </div>
@@ -553,11 +553,11 @@ const InteractiveContent: React.FC<{
   if ((interactiveType === 'buttons' || interactiveType === 'button') && Array.isArray(data.buttons)) {
     const buttons = data.buttons as Array<Record<string, string>>;
     return (
-      <div className="border-t border-gray-100 dark:border-zinc-700">
+      <div className="border-t border-border-token">
         {buttons.map((btn, i) => (
           <div
             key={btn.id || i}
-            className="px-3 py-2.5 text-center text-sm font-medium text-blue-600 dark:text-blue-400 border-t border-gray-100 dark:border-zinc-700 first:border-t-0 cursor-default select-none"
+            className="px-3 py-2.5 text-center text-sm font-medium text-blue-600 dark:text-blue-400 border-t border-border-token first:border-t-0 cursor-default select-none"
           >
             {btn.title || btn.id}
           </div>
@@ -575,12 +575,12 @@ const InteractiveContent: React.FC<{
       return acc + rows.length;
     }, 0);
     return (
-      <div className="border-t border-gray-100 dark:border-zinc-700 px-3 py-2">
+      <div className="border-t border-border-token px-3 py-2">
         <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400">
           <span>☰</span>
           <span>{buttonText}</span>
           {totalItems > 0 && (
-            <span className="text-xs text-gray-400 dark:text-zinc-500">({totalItems} opções)</span>
+            <span className="text-xs text-fg-muted-token">({totalItems} opções)</span>
           )}
         </div>
       </div>
@@ -629,8 +629,8 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
       <div
         className={`chat-bubble chat-bubble-${direction} max-w-[70%] overflow-hidden ${
           isInbound
-            ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white'
-            : 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-900 dark:text-white'
+            ? 'bg-surface text-fg-token'
+            : 'bg-[#d9fdd3] dark:bg-[#005c4b] text-fg-token'
         } rounded-lg shadow-sm`}
       >
         {/* Mídia */}
@@ -686,7 +686,7 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
 
         {/* Footer com timestamp e status */}
         <div className="flex items-center justify-end gap-1 px-3 pb-2">
-          <span className="text-badge text-gray-400">
+          <span className="text-badge text-fg-muted-token">
             {(() => {
               try {
                 return createdAt ? format(new Date(createdAt), 'HH:mm', { locale: ptBR }) : '--:--';
@@ -706,7 +706,7 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
         {/* Erro */}
         {errorMessage && (
           <div className="px-3 pb-2">
-            <p className="text-xs text-red-500">{renderText(errorMessage)}</p>
+            <p className="text-xs text-danger-token">{renderText(errorMessage)}</p>
           </div>
         )}
       </div>

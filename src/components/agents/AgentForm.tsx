@@ -151,22 +151,22 @@ export const AgentForm: React.FC<AgentFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-700">
-        <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
+        <h2 className="text-xl font-semibold text-fg-token">
           {isEditing ? 'Editar Agente' : 'Novo Agente'}
         </h2>
         <button
           type="button"
           aria-label="Fechar formulário"
           onClick={onCancel}
-          className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          className="p-2 rounded-lg hover:bg-surface-2 transition-colors"
         >
-          <XMarkIcon className="w-5 h-5 text-zinc-500" />
+          <XMarkIcon className="w-5 h-5 text-fg-muted-token" />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-zinc-200 dark:border-zinc-700 px-6">
+      <div className="flex border-b border-border-token px-6">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -176,7 +176,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
               "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors",
               activeTab === tab.id
                 ? "border-primary-500 text-primary-600 dark:text-primary-400"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                : "border-transparent text-fg-muted-token hover:text-fg-token"
             )}
           >
             <tab.icon className="w-4 h-4" />
@@ -192,7 +192,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
           <div className="space-y-6">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-fg-token mb-2">
                 Nome do Agente *
               </label>
               <input
@@ -202,19 +202,19 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 placeholder="Ex: Assistente de Vendas"
                 className={cn(
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white placeholder-zinc-400",
+                  "bg-surface",
+                  "text-fg-token placeholder-fg-muted-token",
                   errors.name
-                    ? "border-red-300 dark:border-red-600 focus:ring-red-500"
-                    : "border-zinc-200 dark:border-zinc-700 focus:ring-brand"
+                    ? "border-danger-token focus:ring-danger-token"
+                    : "border-border-token focus:ring-brand"
                 )}
               />
-              {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+              {errors.name && <p className="mt-1 text-sm text-danger-token">{errors.name}</p>}
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-fg-token mb-2">
                 Descrição
               </label>
               <textarea
@@ -224,16 +224,16 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 rows={3}
                 className={cn(
                   "w-full px-4 py-2.5 rounded-lg border transition-colors resize-none",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white placeholder-zinc-400",
-                  "border-zinc-200 dark:border-zinc-700 focus:ring-brand"
+                  "bg-surface",
+                  "text-fg-token placeholder-fg-muted-token",
+                  "border-border-token focus:ring-brand"
                 )}
               />
             </div>
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-fg-token mb-2">
                 Status
               </label>
               <select
@@ -241,9 +241,9 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 onChange={e => handleChange('status', e.target.value)}
                 className={cn(
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white",
-                  "border-zinc-200 dark:border-zinc-700 focus:ring-brand"
+                  "bg-surface",
+                  "text-fg-token",
+                  "border-border-token focus:ring-brand"
                 )}
               >
                 <option value="draft">Rascunho</option>
@@ -259,7 +259,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
           <div className="space-y-6">
             {/* Provider */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-fg-token mb-2">
                 Provedor *
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -272,13 +272,13 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                       "px-4 py-3 rounded-lg border-2 text-left transition-all",
                       formData.provider === key
                         ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
-                        : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300"
+                        : "border-border-token hover:border-border-strong-token"
                     )}
                   >
-                    <div className="font-medium text-zinc-900 dark:text-white">
+                    <div className="font-medium text-fg-token">
                       {config.name}
                     </div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    <div className="text-xs text-fg-muted-token mt-0.5">
                       {config.models.length} modelos
                     </div>
                   </button>
@@ -288,7 +288,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
 
             {/* Model */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-fg-token mb-2">
                 Modelo
               </label>
               <select
@@ -296,9 +296,9 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 onChange={e => handleChange('model_name', e.target.value)}
                 className={cn(
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white",
-                  "border-zinc-200 dark:border-zinc-700 focus:ring-brand"
+                  "bg-surface",
+                  "text-fg-token",
+                  "border-border-token focus:ring-brand"
                 )}
               >
                 {currentProvider.models.map(model => (
@@ -306,7 +306,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 ))}
               </select>
               {formData.provider === 'kimi' && (
-                <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                <p className="mt-1 text-xs text-info-token">
                   ℹ️ Kimi usa API no estilo Anthropic (backend gerencia)
                 </p>
               )}
@@ -314,9 +314,9 @@ export const AgentForm: React.FC<AgentFormProps> = ({
 
             {/* Base URL - Loaded from Backend */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-fg-token mb-2">
                 Base URL
-                <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-normal">
+                <span className="ml-2 text-xs text-info-token font-normal">
                   (carregado do backend)
                 </span>
               </label>
@@ -326,20 +326,20 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 readOnly
                 className={cn(
                   "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                  "bg-zinc-100 dark:bg-zinc-800",
-                  "text-zinc-600 dark:text-zinc-400",
-                  "border-zinc-200 dark:border-zinc-700",
+                  "bg-surface-2",
+                  "text-fg-muted-token",
+                  "border-border-token",
                   "cursor-not-allowed"
                 )}
               />
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-fg-muted-token">
                 Esta URL é configurada automaticamente pelo backend para garantir compatibilidade com a API Anthropic.
               </p>
             </div>
 
             {/* API Key Notice */}
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
+            <div className="p-4 bg-info-soft rounded-lg border border-info-token/30">
+              <p className="text-sm text-info-token">
                 <strong>Nota:</strong> A API Key é configurada no backend pelo administrador do sistema. 
                 {currentProvider.requiresApiKey 
                   ? 'Entre em contato com o suporte para configurar a API Key.' 
@@ -350,7 +350,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
             {/* Temperature & Max Tokens */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-fg-token mb-2">
                   Temperatura: {formData.temperature}
                 </label>
                 <input
@@ -362,14 +362,14 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   onChange={e => handleChange('temperature', parseFloat(e.target.value))}
                   className="w-full accent-primary-500"
                 />
-                <div className="flex justify-between text-xs text-zinc-400 mt-1">
+                <div className="flex justify-between text-xs text-fg-muted-token mt-1">
                   <span>Preciso</span>
                   <span>Criativo</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-fg-token mb-2">
                   Max Tokens
                 </label>
                 <input
@@ -381,13 +381,13 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   onChange={e => handleChange('max_tokens', parseInt(e.target.value))}
                   className={cn(
                     "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                    "bg-white dark:bg-zinc-800",
-                    "text-zinc-900 dark:text-white",
-                    "border-zinc-200 dark:border-zinc-700"
+                    "bg-surface",
+                    "text-fg-token",
+                    "border-border-token"
                   )}
                 />
                 {formData.model_name === 'kimi-for-coding' && (
-                  <p className="mt-1 text-xs text-zinc-500">Máx: 32768 para kimi-for-coding</p>
+                  <p className="mt-1 text-xs text-fg-muted-token">Máx: 32768 para kimi-for-coding</p>
                 )}
               </div>
             </div>
@@ -395,7 +395,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
             {/* Timeout & Memory */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-fg-token mb-2">
                   Timeout (segundos)
                 </label>
                 <input
@@ -406,15 +406,15 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   onChange={e => handleChange('timeout', parseInt(e.target.value))}
                   className={cn(
                     "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                    "bg-white dark:bg-zinc-800",
-                    "text-zinc-900 dark:text-white",
-                    "border-zinc-200 dark:border-zinc-700"
+                    "bg-surface",
+                    "text-fg-token",
+                    "border-border-token"
                   )}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-fg-token mb-2">
                   TTL da Memória (segundos)
                 </label>
                 <input
@@ -427,9 +427,9 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                   disabled={!formData.use_memory}
                   className={cn(
                     "w-full px-4 py-2.5 rounded-lg border transition-colors",
-                    "bg-white dark:bg-zinc-800",
-                    "text-zinc-900 dark:text-white",
-                    "border-zinc-200 dark:border-zinc-700",
+                    "bg-surface",
+                    "text-fg-token",
+                    "border-border-token",
                     "disabled:opacity-50"
                   )}
                 />
@@ -437,12 +437,12 @@ export const AgentForm: React.FC<AgentFormProps> = ({
             </div>
 
             {/* Use Memory Toggle */}
-            <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
               <div>
-                <div className="font-medium text-zinc-900 dark:text-white">
+                <div className="font-medium text-fg-token">
                   Usar Memória de Contexto
                 </div>
-                <div className="text-sm text-zinc-500 dark:text-zinc-400">
+                <div className="text-sm text-fg-muted-token">
                   Mantém histórico de conversas no Redis
                 </div>
               </div>
@@ -460,10 +460,10 @@ export const AgentForm: React.FC<AgentFormProps> = ({
           <div className="space-y-6">
             {/* System Prompt */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-fg-token mb-2">
                 System Prompt *
               </label>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+              <p className="text-xs text-fg-muted-token mb-2">
                 Define a personalidade e comportamento base do agente
               </p>
               <textarea
@@ -473,22 +473,22 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 rows={8}
                 className={cn(
                   "w-full px-4 py-3 rounded-lg border transition-colors resize-none font-mono text-sm",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white placeholder-zinc-400",
+                  "bg-surface",
+                  "text-fg-token placeholder-fg-muted-token",
                   errors.system_prompt
-                    ? "border-red-300 dark:border-red-600"
-                    : "border-zinc-200 dark:border-zinc-700"
+                    ? "border-danger-token"
+                    : "border-border-token"
                 )}
               />
-              {errors.system_prompt && <p className="mt-1 text-sm text-red-500">{errors.system_prompt}</p>}
+              {errors.system_prompt && <p className="mt-1 text-sm text-danger-token">{errors.system_prompt}</p>}
             </div>
 
             {/* Context Prompt */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-fg-token mb-2">
                 Contexto Adicional
               </label>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+              <p className="text-xs text-fg-muted-token mb-2">
                 Informações adicionais sobre o negócio, produtos, políticas, etc.
               </p>
               <textarea
@@ -498,19 +498,19 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 rows={8}
                 className={cn(
                   "w-full px-4 py-3 rounded-lg border transition-colors resize-none font-mono text-sm",
-                  "bg-white dark:bg-zinc-800",
-                  "text-zinc-900 dark:text-white placeholder-zinc-400",
-                  "border-zinc-200 dark:border-zinc-700"
+                  "bg-surface",
+                  "text-fg-token placeholder-fg-muted-token",
+                  "border-border-token"
                 )}
               />
             </div>
 
             {/* Preview */}
-            <div className="p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-              <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+            <div className="p-4 bg-surface-2 rounded-lg">
+              <div className="text-sm font-medium text-fg-token mb-2">
                 Preview do Prompt Completo
               </div>
-              <pre className="text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap font-mono">
+              <pre className="text-xs text-fg-muted-token whitespace-pre-wrap font-mono">
                 {formData.system_prompt}
                 {formData.context_prompt ? `\n\n${formData.context_prompt}` : ''}
               </pre>
@@ -522,17 +522,17 @@ export const AgentForm: React.FC<AgentFormProps> = ({
         {activeTab === 'accounts' && (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-fg-token mb-2">
                 Contas WhatsApp Associadas
               </label>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+              <p className="text-xs text-fg-muted-token mb-4">
                 Selecione as contas WhatsApp que este agente irá atender
               </p>
 
               {whatsappAccounts.length === 0 ? (
-                <div className="p-8 text-center bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                  <LinkIcon className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-600 mb-3" />
-                  <p className="text-zinc-500 dark:text-zinc-400">
+                <div className="p-8 text-center bg-surface-2 rounded-lg">
+                  <LinkIcon className="w-12 h-12 mx-auto text-fg-muted-token mb-3" />
+                  <p className="text-fg-muted-token">
                     Nenhuma conta WhatsApp cadastrada
                   </p>
                 </div>
@@ -545,7 +545,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                         "flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-colors",
                         formData.accounts?.includes(account.id)
                           ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
-                          : "border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                          : "border-border-token hover:bg-surface-2"
                       )}
                     >
                       <input
@@ -557,13 +557,13 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                             : (formData.accounts || []).filter(id => id !== account.id);
                           handleChange('accounts', newAccounts);
                         }}
-                        className="w-4 h-4 rounded border-zinc-300 text-primary-600 focus:ring-brand"
+                        className="w-4 h-4 rounded border-border-token text-primary-600 focus:ring-brand"
                       />
                       <div className="flex-1">
-                        <div className="font-medium text-zinc-900 dark:text-white">
+                        <div className="font-medium text-fg-token">
                           {account.name}
                         </div>
-                        <div className="text-sm text-zinc-500 dark:text-zinc-400">
+                        <div className="text-sm text-fg-muted-token">
                           {account.phone_number}
                         </div>
                       </div>
@@ -577,15 +577,15 @@ export const AgentForm: React.FC<AgentFormProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-zinc-200 dark:border-zinc-700">
+      <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border-token">
         <button
           type="button"
           onClick={onCancel}
           disabled={isLoading}
           className={cn(
             "px-4 py-2 rounded-lg font-medium transition-colors",
-            "text-zinc-700 dark:text-zinc-300",
-            "hover:bg-zinc-100 dark:hover:bg-zinc-800",
+            "text-fg-token",
+            "hover:bg-surface-2",
             "disabled:opacity-50"
           )}
         >
