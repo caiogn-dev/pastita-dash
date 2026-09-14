@@ -196,7 +196,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const getFileIcon = (file: File) => {
     if (file.type.startsWith('image/')) return <PhotoIcon className="w-8 h-8 text-violet-500" />;
     if (file.type.startsWith('audio/')) return <MusicalNoteIcon className="w-8 h-8 text-green-500" />;
-    if (file.type.startsWith('video/')) return <FilmIcon className="w-8 h-8 text-blue-500" />;
+    if (file.type.startsWith('video/')) return <FilmIcon className="w-8 h-8 text-info-token" />;
     return <DocumentIcon className="w-8 h-8 text-orange-500" />;
   };
 
@@ -204,7 +204,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     if (!selectedFile) return null;
 
     return (
-      <div className="mx-4 mb-2 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700 overflow-hidden">
+      <div className="mx-4 mb-2 bg-surface-2 rounded-lg border border-border-token overflow-hidden">
         {imagePreviewUrl ? (
           <div className="relative">
             <img
@@ -232,15 +232,15 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <div className="flex items-center gap-3 p-3">
             {getFileIcon(selectedFile)}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{selectedFile.name}</p>
-              <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p className="text-sm font-medium text-fg-token truncate">{selectedFile.name}</p>
+              <p className="text-xs text-fg-muted-token">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
             <button
               type="button"
               onClick={onClearFile}
               aria-label="Remover arquivo selecionado"
               title="Remover arquivo"
-              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+              className="p-1 text-fg-muted-token hover:text-danger-token transition-colors"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -251,7 +251,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900">
+    <div className="bg-surface">
       {/* Preview de arquivo */}
       {renderFilePreview()}
 
@@ -264,7 +264,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled}
-              className="p-2.5 text-gray-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-full disabled:opacity-50 transition-colors"
+              className="p-2.5 text-fg-muted-token hover:text-brand-ink hover:bg-brand-soft rounded-full disabled:opacity-50 transition-colors"
               aria-label="Anexar arquivo"
               title="Anexar arquivo"
             >
@@ -291,11 +291,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             disabled={disabled}
             rows={1}
             className="
-              w-full resize-none rounded-full border border-gray-300 dark:border-zinc-600
-              bg-white dark:bg-zinc-800 px-4 py-3 pr-12
-              text-sm text-gray-900 dark:text-white
-              placeholder-gray-400 dark:placeholder-zinc-500
-              focus:ring-2 focus:ring-violet-500 focus:border-transparent
+              w-full resize-none rounded-full border border-border-token
+              bg-surface px-4 py-3 pr-12
+              text-sm text-fg-token
+              placeholder-fg-muted-token
+              focus:ring-2 focus:ring-brand focus:border-transparent
               disabled:opacity-50 disabled:cursor-not-allowed
               transition-all min-h-[44px] max-h-[120px]
             "
@@ -304,7 +304,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           {/* Character count */}
           {text.length > maxLength * 0.8 && (
             <span className={`absolute right-4 bottom-3 text-xs ${
-              text.length >= maxLength ? 'text-red-500' : 'text-gray-400'
+              text.length >= maxLength ? 'text-danger-token' : 'text-fg-muted-token'
             }`}>
               {text.length}/{maxLength}
             </span>
@@ -315,7 +315,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         <button
           type="button"
           disabled={disabled}
-          className="p-2.5 text-gray-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-full disabled:opacity-50 transition-colors block max-sm:hidden"
+          className="p-2.5 text-fg-muted-token hover:text-warning-token hover:bg-warning-soft rounded-full disabled:opacity-50 transition-colors block max-sm:hidden"
           aria-label="Inserir emoji"
           title="Emoji"
         >
@@ -333,8 +333,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           className={`
             p-3 rounded-full transition-all
             ${canSend
-              ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-md hover:shadow-lg transform hover:scale-105'
-              : 'bg-gray-200 dark:bg-zinc-700 text-gray-400 cursor-not-allowed'
+              ? 'bg-brand text-on-brand hover:bg-brand-hover shadow-md hover:shadow-lg transform hover:scale-105'
+              : 'bg-surface-2 text-fg-muted-token cursor-not-allowed'
             }
           `}
         >
@@ -347,7 +347,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       </div>
 
       {/* Hint */}
-      <p className="text-badge text-gray-400 pb-2 px-4 text-center block max-sm:hidden">
+      <p className="text-badge text-fg-muted-token pb-2 px-4 text-center block max-sm:hidden">
         Enter para enviar • Shift+Enter para nova linha
       </p>
     </div>

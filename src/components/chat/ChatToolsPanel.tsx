@@ -290,8 +290,8 @@ function TemplatesTab({
                   </span>
                 </div>
                 {isExpanded
-                  ? <ChevronUpIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
-                  : <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />}
+                  ? <ChevronUpIcon className="w-4 h-4 flex-shrink-0 text-fg-muted-token" />
+                  : <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-fg-muted-token" />}
               </button>
 
               {isExpanded && (
@@ -373,8 +373,8 @@ function TemplatesTab({
                   <span className="template-desc">{template.description}</span>
                 </div>
                 {isExpanded
-                  ? <ChevronUpIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
-                  : <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />}
+                  ? <ChevronUpIcon className="w-4 h-4 flex-shrink-0 text-fg-muted-token" />
+                  : <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-fg-muted-token" />}
               </button>
 
               {isExpanded && (
@@ -1044,8 +1044,8 @@ function ToolsTab({ accountId, conversation, storeId, storeSlug, storeName, onSe
                 <span className="tool-desc">{tool.desc}</span>
               </div>
               {isActive
-                ? <ChevronUpIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
-                : <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />}
+                ? <ChevronUpIcon className="w-4 h-4 flex-shrink-0 text-fg-muted-token" />
+                : <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-fg-muted-token" />}
             </button>
 
             {isActive && tool.id === 'route' && (

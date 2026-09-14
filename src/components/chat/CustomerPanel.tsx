@@ -47,7 +47,7 @@ const ORDER_STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 };
 
 function getStatusBadge(status: string) {
-  return ORDER_STATUS_LABELS[status] ?? { label: status, cls: 'bg-gray-100 text-gray-700' };
+  return ORDER_STATUS_LABELS[status] ?? { label: status, cls: 'bg-surface-2 text-fg-muted-token' };
 }
 
 function AddressIcon({ label }: { label: string }) {
@@ -63,7 +63,7 @@ function AddressIcon({ label }: { label: string }) {
 function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={`rounded animate-pulse bg-gray-200 dark:bg-zinc-700 ${className ?? ''}`}
+      className={`rounded animate-pulse bg-surface-2 ${className ?? ''}`}
     />
   );
 }
@@ -104,17 +104,17 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
     : null;
 
   return (
-    <div className="w-64 flex-shrink-0 flex flex-col border-l border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden">
+    <div className="w-64 flex-shrink-0 flex flex-col border-l border-border-token bg-surface overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
-        <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-zinc-400">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border-token flex-shrink-0">
+        <span className="text-xs font-bold uppercase tracking-widest text-fg-muted-token">
           Cliente CRM
         </span>
         <button
           type="button"
           onClick={onClose}
           aria-label="Fechar painel do cliente"
-          className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+          className="p-1 rounded-lg text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors"
         >
           <XMarkIcon className="h-4 w-4" />
         </button>
@@ -126,7 +126,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
         {!unifiedUserId && (
           <div className="flex flex-col items-center justify-center h-32 gap-2 px-4 text-center">
             <span className="text-3xl">👤</span>
-            <p className="text-xs text-gray-400 dark:text-zinc-500">
+            <p className="text-xs text-fg-muted-token">
               Selecione uma conversa para ver o perfil do cliente.
             </p>
           </div>
@@ -148,8 +148,8 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
         {/* Error state */}
         {unifiedUserId && !loading && error && (
           <div className="p-4">
-            <div className="rounded-xl border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 p-3">
-              <p className="text-xs text-yellow-700 dark:text-yellow-400">{error}</p>
+            <div className="rounded-xl border border-warning-token/30 bg-warning-soft p-3">
+              <p className="text-xs text-warning-token">{error}</p>
             </div>
           </div>
         )}
@@ -165,10 +165,10 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
               >
                 {profile.name.slice(0, 2).toUpperCase()}
               </div>
-              <p className="font-semibold text-gray-900 dark:text-white text-sm">
+              <p className="font-semibold text-fg-token text-sm">
                 {profile.name}
               </p>
-              <p className="text-xs text-gray-500 dark:text-zinc-400">
+              <p className="text-xs text-fg-muted-token">
                 {profile.phone_number}
               </p>
               {profile.total_orders > 0 && (
@@ -176,13 +176,13 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
                     {formatCurrency(profile.total_spent)} gastos
                   </span>
-                  <span className="text-xs text-gray-400 dark:text-zinc-500">
+                  <span className="text-xs text-fg-muted-token">
                     · {profile.total_orders} pedido(s)
                   </span>
                 </div>
               )}
               {profile.last_order_at && (
-                <p className="text-badge text-gray-400 dark:text-zinc-500">
+                <p className="text-badge text-fg-muted-token">
                   Último pedido:{' '}
                   {new Date(profile.last_order_at).toLocaleDateString('pt-BR')}
                 </p>
@@ -199,9 +199,9 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                   {profile.addresses.slice(0, 3).map((addr) => (
                     <div
                       key={addr.id}
-                      className="flex items-start gap-2 px-2.5 py-2 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800"
+                      className="flex items-start gap-2 px-2.5 py-2 rounded-xl bg-surface-2 border border-border-token"
                     >
-                      <span className="mt-0.5 text-gray-400 dark:text-zinc-500 flex-shrink-0">
+                      <span className="mt-0.5 text-fg-muted-token flex-shrink-0">
                         <AddressIcon label={addr.label} />
                       </span>
                       <div className="min-w-0">
@@ -213,10 +213,10 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-gray-700 dark:text-zinc-300 truncate">
+                        <p className="text-xs text-fg-muted-token truncate">
                           {addr.street}, {addr.number}
                         </p>
-                        <p className="text-badge text-gray-400 dark:text-zinc-500 truncate">
+                        <p className="text-badge text-fg-muted-token truncate">
                           {addr.neighborhood}, {addr.city}-{addr.state}
                         </p>
                       </div>
@@ -232,13 +232,13 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                 <p className="overline mb-2">
                   Pedido ativo
                 </p>
-                <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-gray-100 dark:border-zinc-800">
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-border-token">
                   <span
                     className={`text-badge font-semibold px-2 py-0.5 rounded-full ${activeOrderStatus.cls}`}
                   >
                     {activeOrderStatus.label}
                   </span>
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">
+                  <span className="text-sm font-bold text-fg-token">
                     {formatCurrency(profile.active_order.total)}
                   </span>
                 </div>
@@ -266,7 +266,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                   type="button"
                   disabled
                   title="Disponível quando o backend implementar o endpoint"
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-gray-400 dark:text-zinc-500 border border-gray-100 dark:border-zinc-800 cursor-not-allowed opacity-50"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-fg-muted-token border border-border-token cursor-not-allowed opacity-50"
                 >
                   <MapPinIcon className="h-4 w-4 flex-shrink-0" />
                   Enviar localização
@@ -279,7 +279,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                     type="button"
                     disabled
                     title="Confirmar pedido (em breve)"
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 cursor-not-allowed opacity-50"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-success-token border border-success-token/30 cursor-not-allowed opacity-50"
                   >
                     <CheckCircleIcon className="h-4 w-4 flex-shrink-0" />
                     Confirmar pedido
@@ -293,7 +293,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                     type="button"
                     disabled
                     title="Cancelar pedido (em breve)"
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-red-500 dark:text-red-400 border border-red-100 dark:border-red-900/30 cursor-not-allowed opacity-50"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-danger-token border border-danger-token/30 cursor-not-allowed opacity-50"
                   >
                     <XCircleIcon className="h-4 w-4 flex-shrink-0" />
                     Cancelar pedido

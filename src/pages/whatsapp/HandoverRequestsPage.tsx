@@ -87,7 +87,7 @@ export const HandoverRequestsPage: React.FC = () => {
             <div className="flex items-center gap-2 mb-3">
               <h2 className="text-base font-semibold text-fg-primary">Pendentes</h2>
               {pending.length > 0 && (
-                <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs font-bold rounded-full">{pending.length}</span>
+                <span className="px-2 py-0.5 bg-warning-soft text-warning-token text-xs font-bold rounded-full">{pending.length}</span>
               )}
             </div>
 
