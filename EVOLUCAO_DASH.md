@@ -40,6 +40,29 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   painel de outro fuso veria horários trocados. Requer saber onde o fuso da loja
   vive no modelo (`useStore()`); fatia dedicada com validação.
 
+### 2026-09-14 — CI destravado: 6 erros de lint que reprovavam o job `build`
+- **Medido:** o CI da nuvem (`.github/workflows/ci.yml`) roda
+  `npm run lint` com `--max-warnings 400`, e o job `build` chegou **vermelho** —
+  no PR **e na própria `main`**. Não era regressão desta fatia: `npm run lint`
+  acusava **6 erros** (0 antes, na baseline de 08/ago) pré-existentes em código
+  que este PR não toca. Erros (não avisos) reprovam o `eslint`, logo o job
+  inteiro, logo o gate "lint verde" do loop e o CI de todo PR aberto.
+- **Mudado (6 correções mecânicas, zero mudança de comportamento):**
+  - `variaveisDaOferta.ts` e seu teste: o NBSP (`U+00A0`) literal dentro de dois
+    regex — que casa o espaço não-quebrável do `toLocaleString('pt-BR')` — virou
+    ` `. Byte-idêntico no casamento; `no-irregular-whitespace` satisfeito
+    sem trocar o caractere por um espaço comum (o que quebraria o replace).
+  - `enderecoDaEntrega.ts`: `[,;.\-]` → `[,;.-]` (`no-useless-escape`; o `-` no
+    fim da classe já é literal).
+  - `sidebarColuna.test.tsx` e `OrdersHeatMap.tsx` (×2): removidos 3
+    `// eslint-disable-next-line` **sem efeito** — a regra não dispara mais nas
+    linhas seguintes, e o próprio eslint reprova a diretiva morta.
+- **Antes/depois:** `npm run lint` **6 erros → 0 erros** (259 avisos, dentro do
+  gate de 400); `tsc --noEmit` limpo, `npm test` **1688/282** e `vite build` ok.
+- **Nota:** feito junto porque o job `build` do CI é uma etapa só
+  (build+lint+test) e o vermelho do lint bloqueava a validação desta fatia e de
+  qualquer PR. Correções triviais e seguras, em commit separado para revisão.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
