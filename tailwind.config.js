@@ -75,6 +75,11 @@ export default {
         'fg-token': 'var(--fg)',
         'fg-muted-token': 'var(--fg-muted)',
         'border-token': 'var(--border)',
+        // Borda que precisa se notar mais que a padrão (hover de card
+        // selecionável, por exemplo) — `--border-strong` já existia em
+        // tokens.css sem nenhuma classe usando; sem isso, todo hover de
+        // borda "mais forte" virava `zinc-300` cru.
+        'border-strong-token': 'var(--border-strong)',
         'primary-token': 'var(--brand)',
         'bg-token': 'var(--surface-2)',
         'surface-token': 'var(--surface)',

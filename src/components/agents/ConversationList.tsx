@@ -49,13 +49,13 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         {[...Array(5)].map((_, i) => (
           <div 
             key={i}
-            className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-pulse"
+            className="p-4 rounded-lg border border-border-token bg-surface animate-pulse"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+              <div className="w-10 h-10 rounded-full bg-surface-2" />
               <div className="flex-1">
-                <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-700 rounded mb-2" />
-                <div className="h-3 w-24 bg-zinc-100 dark:bg-zinc-800 rounded" />
+                <div className="h-4 w-32 bg-surface-2 rounded mb-2" />
+                <div className="h-3 w-24 bg-surface-2 rounded" />
               </div>
             </div>
           </div>
@@ -67,11 +67,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   if (conversations.length === 0) {
     return (
       <div className="text-center py-12">
-        <ChatBubbleLeftRightIcon className="w-16 h-16 mx-auto text-zinc-200 dark:text-zinc-700 mb-4" />
-        <p className="text-zinc-500 dark:text-zinc-400 mb-2">
+        <ChatBubbleLeftRightIcon className="w-16 h-16 mx-auto text-fg-muted-token mb-4" />
+        <p className="text-fg-muted-token mb-2">
           Nenhuma conversa encontrada
         </p>
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">
+        <p className="text-sm text-fg-muted-token">
           As conversas aparecerão aqui quando o agente for utilizado
         </p>
       </div>
@@ -89,41 +89,41 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             "hover:shadow-md",
             selectedId === conversation.id
               ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
-              : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300"
+              : "border-border-token bg-surface hover:border-border-strong-token"
           )}
         >
           <div className="flex items-center gap-3">
             {/* Avatar */}
             <div className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-              "bg-zinc-100 dark:bg-zinc-800"
+              "bg-surface-2"
             )}>
-              <PhoneIcon className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
+              <PhoneIcon className="w-5 h-5 text-fg-muted-token" />
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-zinc-900 dark:text-white truncate">
+                <span className="font-medium text-fg-token truncate">
                   {conversation.phone_number || 'Teste'}
                 </span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                <span className="text-xs text-fg-muted-token flex-shrink-0">
                   {formatDate(conversation.last_message_at)}
                 </span>
               </div>
               
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                <span className="text-sm text-fg-muted-token">
                   {conversation.message_count} mensagens
                 </span>
-                <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono">
+                <span className="text-xs text-fg-muted-token font-mono">
                   {conversation.session_id.slice(0, 8)}...
                 </span>
               </div>
             </div>
 
             {/* Arrow */}
-            <ChevronRightIcon className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+            <ChevronRightIcon className="w-5 h-5 text-fg-muted-token flex-shrink-0" />
           </div>
         </button>
       ))}

@@ -41,9 +41,9 @@ const providerColors: Record<string, { bg: string; text: string; border: string 
 };
 
 const statusColors: Record<string, { bg: string; text: string; dot: string }> = {
-  active: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300', dot: 'bg-green-500' },
-  inactive: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-700 dark:text-gray-300', dot: 'bg-gray-400' },
-  draft: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-300', dot: 'bg-yellow-500' },
+  active: { bg: 'bg-success-soft', text: 'text-success-token', dot: 'bg-success-token' },
+  inactive: { bg: 'bg-surface-2', text: 'text-fg-muted-token', dot: 'bg-fg-muted-token' },
+  draft: { bg: 'bg-warning-soft', text: 'text-warning-token', dot: 'bg-warning-token' },
 };
 
 const providerNames: Record<string, string> = {
@@ -73,12 +73,12 @@ export const AgentCard: React.FC<AgentCardProps> = ({
 
   return (
     <div className={cn(
-      "bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800",
+      "bg-surface rounded-xl border border-border-token",
       "shadow-sm hover:shadow-md transition-all duration-200",
       "overflow-hidden"
     )}>
       {/* Header */}
-      <div className="p-5 border-b border-zinc-100 dark:border-zinc-800">
+      <div className="p-5 border-b border-border-token">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className={cn(
@@ -88,7 +88,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               <CpuChipIcon className={cn("w-5 h-5", providerStyle.text)} />
             </div>
             <div>
-              <h3 className="font-semibold text-zinc-900 dark:text-white text-lg">
+              <h3 className="font-semibold text-fg-token text-lg">
                 {agent.name}
               </h3>
               <div className="flex items-center gap-2 mt-1">
@@ -98,7 +98,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
                 )}>
                   {providerNames[agent.provider]}
                 </span>
-                <span className="text-zinc-400 dark:text-zinc-500 text-xs">
+                <span className="text-fg-muted-token text-xs">
                   {agent.model_name}
                 </span>
               </div>
@@ -116,27 +116,27 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         </div>
         
         {agent.description && (
-          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
+          <p className="mt-3 text-sm text-fg-muted-token line-clamp-2">
             {agent.description}
           </p>
         )}
       </div>
 
       {/* Stats */}
-      <div className="px-5 py-3 bg-zinc-50 dark:bg-zinc-800/50 grid grid-cols-3 gap-4">
+      <div className="px-5 py-3 bg-surface-2 grid grid-cols-3 gap-4">
         <div className="text-center">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-0.5">Temperatura</div>
-          <div className="font-semibold text-zinc-900 dark:text-white">{agent.temperature}</div>
+          <div className="text-xs text-fg-muted-token mb-0.5">Temperatura</div>
+          <div className="font-semibold text-fg-token">{agent.temperature}</div>
         </div>
         <div className="text-center">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-0.5">Max Tokens</div>
-          <div className="font-semibold text-zinc-900 dark:text-white">{agent.max_tokens}</div>
+          <div className="text-xs text-fg-muted-token mb-0.5">Max Tokens</div>
+          <div className="font-semibold text-fg-token">{agent.max_tokens}</div>
         </div>
         <div className="text-center">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-0.5">Memória</div>
+          <div className="text-xs text-fg-muted-token mb-0.5">Memória</div>
           <div className={cn(
             "font-semibold",
-            agent.use_memory ? "text-green-600 dark:text-green-400" : "text-zinc-400"
+            agent.use_memory ? "text-success-token" : "text-fg-muted-token"
           )}>
             {agent.use_memory ? 'Ativa' : 'Desativada'}
           </div>
@@ -144,15 +144,14 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="p-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+      <div className="p-3 border-t border-border-token flex items-center justify-between">
         <div className="flex items-center gap-1">
           {onTest && (
             <button
               onClick={() => onTest(agent.id)}
               className={cn(
                 "p-2 rounded-lg transition-colors",
-                "text-zinc-500 hover:text-primary-600 hover:bg-primary-50",
-                "dark:text-zinc-400 dark:hover:text-primary-400 dark:hover:bg-primary-900/30"
+                "text-fg-muted-token hover:text-primary-600 hover:bg-primary-50"
               )}
               title="Testar agente"
             >
@@ -165,8 +164,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               onClick={() => onViewConversations(agent.id)}
               className={cn(
                 "p-2 rounded-lg transition-colors",
-                "text-zinc-500 hover:text-blue-600 hover:bg-blue-50",
-                "dark:text-zinc-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/30"
+                "text-fg-muted-token hover:text-info-token hover:bg-info-soft"
               )}
               title="Ver conversas"
             >
@@ -180,8 +178,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               className={cn(
                 "p-2 rounded-lg transition-colors",
                 agent.status === 'active' 
-                  ? "text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30"
-                  : "text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
+                  ? "text-warning-token hover:bg-warning-soft"
+                  : "text-success-token hover:bg-success-soft"
               )}
               title={agent.status === 'active' ? 'Desativar' : 'Ativar'}
             >
@@ -199,8 +197,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               onClick={() => onEdit(agent.id)}
               className={cn(
                 "p-2 rounded-lg transition-colors",
-                "text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100",
-                "dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800"
+                "text-fg-muted-token hover:text-fg-token hover:bg-surface-2"
               )}
               title="Editar"
             >
@@ -213,8 +210,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               onClick={() => onDelete(agent.id)}
               className={cn(
                 "p-2 rounded-lg transition-colors",
-                "text-zinc-500 hover:text-red-600 hover:bg-red-50",
-                "dark:text-zinc-400 dark:hover:text-red-400 dark:hover:bg-red-900/30"
+                "text-fg-muted-token hover:text-danger-token hover:bg-danger-soft"
               )}
               title="Excluir"
             >
@@ -225,8 +221,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       </div>
 
       {/* Footer - Timestamp */}
-      <div className="px-5 py-2 bg-zinc-50 dark:bg-zinc-800/30 border-t border-zinc-100 dark:border-zinc-800">
-        <div className="flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
+      <div className="px-5 py-2 bg-surface-2 border-t border-border-token">
+        <div className="flex items-center gap-1 text-xs text-fg-muted-token">
           <ClockIcon className="w-3.5 h-3.5" />
           <span>Atualizado em {new Date(agent.updated_at).toLocaleDateString('pt-BR')}</span>
         </div>
