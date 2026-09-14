@@ -30,6 +30,7 @@ const InboxPage = lazy(() => import('./pages/inbox/InboxPage'));
 const OrdersPage = lazy(() => import('./pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
 const HistoricoPedidosPage = lazy(() => import('./pages/orders/HistoricoPedidosPage').then(m => ({ default: m.HistoricoPedidosPage })));
+const ExpedicaoPage = lazy(() => import('./pages/expedicao/ExpedicaoPage'));
 const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
 const PaymentLinkPage = lazy(() => import('./pages/payments/PaymentLinkPage').then(m => ({ default: m.PaymentLinkPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
@@ -250,6 +251,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/combos/:comboId/edit" element={<PageBoundary><ComboFormPage /></PageBoundary>} />
         <Route path="stores/:storeId/orders" element={<PageBoundary><OrdersPage /></PageBoundary>} />
         <Route path="stores/:storeId/customers" element={<PageBoundary><CustomersPage /></PageBoundary>} />
+        <Route path="stores/:storeId/expedicao" element={<PageBoundary><ExpedicaoPage /></PageBoundary>} />
         {/* Antes de `:id`: senão "historico" casaria como id de pedido. */}
         <Route path="stores/:storeId/orders/historico" element={<PageBoundary><HistoricoPedidosPage /></PageBoundary>} />
         <Route path="stores/:storeId/orders/:id" element={<PageBoundary><OrderDetailPage /></PageBoundary>} />

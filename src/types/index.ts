@@ -348,6 +348,14 @@ export interface Order {
   /** Acréscimo cobrado do cliente por pagar com vale. Zero fora do vale. */
   voucher_fee?: number;
   total: number;
+  /** Troco do dinheiro: null = ninguém perguntou, 0 = não precisa, > 0 = troco para. */
+  change_for?: number | string | null;
+  /** Quanto o entregador leva (change_for - total). null quando não informado. */
+  change_due?: number | string | null;
+  /** Minutos de preparo fotografados da loja ao entrar em preparo. */
+  prep_minutes?: number | null;
+  /** Previsão de pronto (preparing_at + prep_minutes). null sem previsão. */
+  prep_due_at?: string | null;
   /** Fase 3 — soma das cobranças (StorePayment) já pagas. Read-only do backend. */
   amount_paid?: number;
   /** Fase 3 — saldo faltante = max(0, total - amount_paid). Read-only do backend. */

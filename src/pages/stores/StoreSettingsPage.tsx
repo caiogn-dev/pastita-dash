@@ -29,6 +29,7 @@ import RecebimentoSection from './RecebimentoSection';
 import VoucherSection from './VoucherSection';
 import ValePorLinkSection from './ValePorLinkSection';
 import AcrescimoDoValeSection from './AcrescimoDoValeSection';
+import TempoDePreparoSection from './TempoDePreparoSection';
 import NotaFiscalSection from './NotaFiscalSection';
 
 const DAYS = [
@@ -632,6 +633,14 @@ export const StoreSettingsPage: React.FC = () => {
             {saving ? 'Salvando...' : 'Salvar Horários'}
           </Button>
         </Card>
+        {store?.id && (
+          <div className="mt-6">
+            <TempoDePreparoSection
+              storeId={store.id}
+              minutosAtuais={Number(store.default_prep_minutes) || 0}
+            />
+          </div>
+        )}
               </>
             )}
 

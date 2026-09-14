@@ -60,7 +60,7 @@ import type { Order } from '../../types';
 import { COLUMNS, resolveFocusColumn } from './orderColumns';
 import { pedidosDaColuna, ENTREGUES_DE_HOJE } from './pedidosDoQuadro';
 import type { ColumnId } from './orderColumns';
-import { getStageStart, getAvgPrepMinutes } from './orderSla';
+import { getStageStart, getAvgPrepMinutes, situacaoDoPreparo } from './orderSla';
 import { proximaAcaoDoPedido } from './proximaAcao';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -169,7 +169,12 @@ const OrderCardBase: React.FC<CardProps> = ({
   const hasPendingPayment = needsPayment(order);
   // Elapsed por etapa (SLA): em preparo conta desde preparing_at, não da criação
   const elapsed = getElapsedMinutes(getStageStart(order));
-  const urgency = getElapsedUrgency(elapsed, order.status);
+  // Com previsão de preparo, o atraso é contra a PREVISÃO da loja, não contra
+  // os 20/40min fixos. Sem previsão, fica a régua antiga do tempo decorrido.
+  const preparo = situacaoDoPreparo(order);
+  const urgency: ElapsedUrgency = preparo
+    ? (preparo.atrasadoMin > 0 ? 'critical' : preparo.faltamMin <= 5 ? 'warning' : 'ok')
+    : getElapsedUrgency(elapsed, order.status);
   const isPickup = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
   const canRequestUber =
     storeSlug &&
@@ -225,6 +230,23 @@ const OrderCardBase: React.FC<CardProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Previsão de preparo: atrasado grita, no prazo só informa a hora */}
+      {preparo && !isUpdating && !isSuccess && (
+        <div
+          data-testid="previsao-preparo"
+          className={`mb-1.5 flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-badge font-semibold ${
+            preparo.atrasadoMin > 0
+              ? 'bg-red-600 text-white dark:bg-red-700'
+              : 'bg-surface-2 text-fg-muted-token'
+          }`}
+        >
+          <ClockIcon className="h-2.5 w-2.5" />
+          {preparo.atrasadoMin > 0
+            ? `ATRASADO ${formatElapsed(preparo.atrasadoMin)}`
+            : `Pronto às ${format(new Date(preparo.previstoPara), 'HH:mm', { locale: ptBR })}`}
+        </div>
+      )}
 
       {/* Agendamento — destaque quando o cliente agendou data/hora */}
       {formatScheduledShort(order) && (

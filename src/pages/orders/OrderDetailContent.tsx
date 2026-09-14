@@ -95,6 +95,7 @@ import { proximaAcaoDoPedido } from './proximaAcao';
 import { etapasDoPedido, horariosDasEtapas, type EtapaDoPedido } from './fluxoDoPedido';
 import { enderecoDaEntrega } from './enderecoDaEntrega';
 import { composicaoDaSalada } from './composicaoDaSalada';
+import { textoDoTroco } from './trocoDoPedido';
 // Os rótulos moram num arquivo só, com teste que confere contra a lista de
 // status do backend: era esta duplicação que deixava "cancelled" cru na tela.
 import {
@@ -980,6 +981,11 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               <p className="mt-2 text-sm text-fg-muted-token">
                 {paymentMethodLabel[order.payment_method || ''] || order.payment_method || 'Forma não informada'}
               </p>
+              {textoDoTroco(order.change_for, order.change_due) ? (
+                <p className="mt-1 text-sm font-semibold text-fg-token" data-testid="troco-do-pedido">
+                  {textoDoTroco(order.change_for, order.change_due)}
+                </p>
+              ) : null}
 
               {/* PIX gravado no pedido: era texto de 200 caracteres para
                   selecionar na mão, em 117 dos 172 pedidos da loja. */}
