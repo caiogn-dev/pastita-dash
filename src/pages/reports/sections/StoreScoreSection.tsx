@@ -38,6 +38,8 @@ export const StoreScoreSection: React.FC<{ range: DateRange; enabled: boolean }>
       title="Score da loja"
       subtitle="Complete as conquistas — cada uma é uma alavanca comprovada de venda"
       loading={q.isLoading}
+      error={q.isError}
+      onRetry={() => { void q.refetch(); }}
     >
       <div className="flex flex-wrap items-center gap-8">
         {/* Anel */}
