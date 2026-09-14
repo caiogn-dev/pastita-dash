@@ -34,3 +34,34 @@ export const getAvgPrepMinutes = (orders: OrderTimestamps[]): number | null => {
   if (durations.length === 0) return null;
   return Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length);
 };
+
+export interface SituacaoDoPreparo {
+  /** ISO de quando o pedido deveria ficar pronto. */
+  previstoPara: string;
+  /** Minutos além da previsão; 0 enquanto está no prazo. */
+  atrasadoMin: number;
+  /** Minutos até a previsão; 0 quando já passou. */
+  faltamMin: number;
+}
+
+/**
+ * Previsão de pronto do pedido em preparo.
+ *
+ * `prep_due_at` vem do backend (preparing_at + tempo de preparo FOTOGRAFADO da
+ * loja no momento em que entrou em preparo). Sem ele — loja sem tempo padrão —
+ * não há previsão, e o quadro segue só com o tempo decorrido.
+ */
+export const situacaoDoPreparo = (
+  order: { status: string; prep_due_at?: string | null },
+  agora: number = Date.now(),
+): SituacaoDoPreparo | null => {
+  if ((order.status || '').toLowerCase() !== 'preparing' || !order.prep_due_at) return null;
+  const previsto = new Date(order.prep_due_at).getTime();
+  if (Number.isNaN(previsto)) return null;
+  const diffMin = Math.floor((agora - previsto) / 60000);
+  return {
+    previstoPara: order.prep_due_at,
+    atrasadoMin: Math.max(0, diffMin),
+    faltamMin: Math.max(0, Math.ceil((previsto - agora) / 60000)),
+  };
+};

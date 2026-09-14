@@ -11,7 +11,7 @@ import {
   // ClockIcon em três e TagIcon em dois: com o mesmo desenho repetido o
   // operador para de usar o ícone para se localizar e lê tudo de novo.
   ClipboardDocumentListIcon, PrinterIcon, BanknotesIcon, FireIcon, CubeIcon,
-  TicketIcon, GlobeAltIcon, ChartBarIcon,
+  TicketIcon, GlobeAltIcon, ChartBarIcon, ArchiveBoxArrowDownIcon,
   UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
   ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';
@@ -189,6 +189,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
         { name: 'Caixa',             href: storeHref('cash'), icon: BanknotesIcon },
         { name: 'Link de pagamento', href: '/payments/link',  icon: LinkIcon },
         { name: 'Cozinha (KDS)',     href: storeHref('kds'),  icon: FireIcon },
+        // Bipar o código de barras da comanda avança o pedido para a saída.
+        { name: 'Expedição',         href: storeHref('expedicao'), icon: ArchiveBoxArrowDownIcon },
       ],
     },
 

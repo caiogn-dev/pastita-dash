@@ -50,6 +50,8 @@ describe('agrupamento que o dono pediu', () => {
       '/stores/loja-x/cash',
       '/payments/link',
       '/stores/loja-x/kds',
+      // Expedição: bipar a comanda leva o pedido à saída — é balcão, não venda.
+      '/stores/loja-x/expedicao',
     ]);
   });
 });

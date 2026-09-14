@@ -77,6 +77,8 @@ export interface Store {
   min_order_value: number;
   free_delivery_threshold?: number;
   default_delivery_fee: number;
+  /** Tempo padrão de preparo (min). 0 = loja sem previsão. */
+  default_prep_minutes?: number;
   operating_hours: Record<string, { open: string; close: string; is_open: boolean }>;
   is_open: boolean;
   owner: number;
@@ -107,6 +109,7 @@ export interface StoreInput {
   pickup_enabled?: boolean;
   min_order_value?: number;
   default_delivery_fee?: number;
+  default_prep_minutes?: number;
   metadata?: Record<string, unknown>;
   operating_hours?: Record<string, { open: string; close: string; is_open: boolean }>;
   primary_color?: string;
@@ -414,6 +417,14 @@ export interface StoreOrder {
   payment_preference_id: string;
   pix_code: string;
   pix_qr_code: string;
+  /** Troco do dinheiro: null = ninguém perguntou, 0 = não precisa, > 0 = troco para. */
+  change_for?: number | string | null;
+  /** Quanto o entregador leva (change_for - total). null quando não informado. */
+  change_due?: number | string | null;
+  /** Minutos de preparo fotografados da loja ao entrar em preparo. */
+  prep_minutes?: number | null;
+  /** Previsão de pronto (preparing_at + prep_minutes). null sem previsão. */
+  prep_due_at?: string | null;
   delivery_method: 'delivery' | 'pickup' | 'digital';
   delivery_method_display: string;
   delivery_address: DeliveryAddress;

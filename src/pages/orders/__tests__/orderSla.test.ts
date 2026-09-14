@@ -1,4 +1,4 @@
-import { getStageStart, getAvgPrepMinutes } from '../orderSla';
+import { getStageStart, getAvgPrepMinutes, situacaoDoPreparo } from '../orderSla';
 
 
 describe('orderSla', () => {
@@ -60,5 +60,32 @@ describe('orderSla', () => {
       ];
       expect(getAvgPrepMinutes(orders as never)).toBe(10);
     });
+  });
+});
+
+describe('situacaoDoPreparo', () => {
+  const agora = new Date('2026-09-14T12:00:00Z').getTime();
+
+  it('em preparo com previsão no futuro: no prazo', () => {
+    const r = situacaoDoPreparo({ status: 'preparing', prep_due_at: '2026-09-14T12:10:00Z' }, agora);
+    expect(r).toEqual({ previstoPara: '2026-09-14T12:10:00Z', atrasadoMin: 0, faltamMin: 10 });
+  });
+
+  it('passou da previsão: atrasado em minutos', () => {
+    const r = situacaoDoPreparo({ status: 'preparing', prep_due_at: '2026-09-14T11:45:00Z' }, agora);
+    expect(r?.atrasadoMin).toBe(15);
+    expect(r?.faltamMin).toBe(0);
+  });
+
+  it('sem previsão (loja sem tempo padrão) não inventa nada', () => {
+    expect(situacaoDoPreparo({ status: 'preparing', prep_due_at: null }, agora)).toBeNull();
+  });
+
+  it('fora do preparo a previsão não se aplica', () => {
+    expect(situacaoDoPreparo({ status: 'out_for_delivery', prep_due_at: '2026-09-14T11:45:00Z' }, agora)).toBeNull();
+  });
+
+  it('data inválida não quebra o quadro', () => {
+    expect(situacaoDoPreparo({ status: 'preparing', prep_due_at: 'lixo' }, agora)).toBeNull();
   });
 });

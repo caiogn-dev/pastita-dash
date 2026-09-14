@@ -279,6 +279,15 @@ export const useOrderPrint = () => {
 
     const addressLines = formatAddressLines();
 
+    // Troco do dinheiro. Mesmo texto do print-agent (escpos.js): o entregador
+    // sai da loja sabendo quanto levar. null = ninguém perguntou → nada.
+    const trocoPara = pedido.change_for === null || pedido.change_for === undefined
+      ? null : Number(pedido.change_for);
+    const trocoHtml = trocoPara === null || Number.isNaN(trocoPara) ? '' : trocoPara === 0
+      ? '<div class="band">SEM TROCO</div>'
+      : `<div class="band">TROCO PARA ${formatMoney(trocoPara)}</div>
+         <div class="total-final">LEVAR ${formatMoney(Number(pedido.change_due ?? Math.max(0, trocoPara - total)))}</div>`;
+
     // Pin do mapa x endereço escrito. Vai NA COMANDA, não só na tela: é este
     // papel que o entregador leva, e o aviso só serve se chegar antes da moto
     // sair. Origem: CE-2608140823, pin a 5,15 km do endereço digitado — o Maps
@@ -502,6 +511,7 @@ export const useOrderPrint = () => {
         <div class="band">${pedido.payment_status === 'paid'
           ? `${getPaymentMethod()} - PAGO`
           : `!! ${getPaymentStatus()} - ${getPaymentMethod()} !!`}</div>
+        ${trocoHtml}
         `}
 
         <div class="pe">
