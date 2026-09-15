@@ -285,7 +285,10 @@ export const ordersService = {
   },
 
   markPaid: async (id: string, storeSlug?: string): Promise<Order> => {
-    const response = await api.patch<Order>(`${getBaseUrl(storeSlug)}/${id}/`, { payment_status: 'paid' });
+    // POST /mark_paid/ (não PATCH payment_status): só o endpoint dedicado barra
+    // PIX vencido, trava a linha contra clique duplo, credita a fidelidade e
+    // avisa o painel em tempo real. O PATCH gravava o campo e pulava tudo isso.
+    const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/${id}/mark_paid/`, {});
     return normalizeOrder(response.data);
   },
 
