@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ArrowPathIcon,
   PhoneIcon,
+  MapPinIcon,
   EnvelopeIcon,
   ShoppingBagIcon,
   CheckBadgeIcon,
@@ -134,7 +135,7 @@ export interface CustomerFormDrawerProps {
   storeSlug?: string;
   customer?: StoreCustomer | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (salvo?: StoreCustomer) => void;
 }
 
 export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlug, customer, onClose, onSaved }) => {
@@ -150,27 +151,49 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
   const [erros, setErros] = useState<Record<string, string>>({});
   const isEdit = Boolean(customer);
 
-  // O endereço editável é o PADRÃO (`Meta.ordering = ['-is_default', …]`);
-  // os demais viajam intactos no payload — ver `outrosEnderecos`.
-  const addr0 = customer?.address_list?.[0];
   /**
-   * Os outros endereços do cliente, preservados na íntegra.
+   * TODOS os endereços do cliente, editáveis.
    *
-   * `_sync_address_list` no backend é replace-all: apaga todo endereço que não
-   * vier no payload. O formulário edita um só, então sem carregar os demais
-   * junto uma correção de nome DELETAVA os outros — 22 dos 85 clientes da Cê
-   * Saladas têm 2 ou mais. Não é enfeite: é o que impede perda de dado.
+   * `_sync_address_list` no backend é replace-all por id: o que não vier no
+   * payload é apagado. Antes o formulário só mostrava o padrão e dizia "mais N
+   * endereços salvos" — sem como ver, corrigir, apagar o repetido ou trocar o
+   * padrão. Foi assim que a Flávia ficou com 4 cópias do mesmo lugar sem
+   * ninguém conseguir limpar pela tela (15/09).
    */
-  const outrosEnderecos = (customer?.address_list ?? []).slice(1);
-  const [street, setStreet] = useState(addr0?.street ?? '');
-  const [number, setNumber] = useState(addr0?.number ?? '');
-  const [complement, setComplement] = useState(addr0?.complement ?? '');
-  const [neighborhood, setNeighborhood] = useState(addr0?.neighborhood ?? '');
-  const [city, setCity] = useState(addr0?.city ?? '');
-  const [uf, setUf] = useState(addr0?.state ?? '');
-  const [zip, setZip] = useState(addr0?.zip_code ?? '');
+  const [enderecos, setEnderecos] = useState<StoreCustomerAddress[]>(() => {
+    const lista = (customer?.address_list ?? []).map((a) => ({ ...a }));
+    return lista.length ? lista : [{ ...ENDERECO_VAZIO, is_default: true }];
+  });
+  const [selecionado, setSelecionado] = useState(0);
+  const atual = enderecos[selecionado] ?? ENDERECO_VAZIO;
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [erroDoCep, setErroDoCep] = useState<string | null>(null);
+
+  const mudarCampo = (campo: keyof StoreCustomerAddress, valor: string, soSeVazio = false) => {
+    setEnderecos((lista) => lista.map((a, i) => {
+      if (i !== selecionado) return a;
+      if (soSeVazio && String(a[campo] ?? '').trim()) return a;
+      return { ...a, [campo]: valor };
+    }));
+  };
+
+  const tornarPadrao = (indice: number) => {
+    setEnderecos((lista) => lista.map((a, i) => ({ ...a, is_default: i === indice })));
+  };
+
+  const remover = (indice: number) => {
+    setEnderecos((lista) => {
+      const restantes = lista.filter((_, i) => i !== indice);
+      if (restantes.length && !restantes.some((a) => a.is_default)) restantes[0] = { ...restantes[0], is_default: true };
+      return restantes;
+    });
+    setSelecionado((sel) => (indice < sel ? sel - 1 : indice === sel ? 0 : sel));
+  };
+
+  const novoEndereco = () => {
+    setEnderecos((lista) => [...lista, { ...ENDERECO_VAZIO, is_default: lista.length === 0 }]);
+    setSelecionado(enderecos.length);
+  };
 
   /**
    * CEP completo preenche rua, bairro, cidade e UF.
@@ -179,7 +202,7 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
    * falhando não trava nada: a mensagem aparece e os campos seguem editáveis.
    */
   const aoDigitarCep = async (valor: string) => {
-    setZip(valor);
+    mudarCampo('zip_code', valor);
     setErroDoCep(null);
     const digits = valor.replace(/\D/g, '');
     if (digits.length !== 8) return;
@@ -190,27 +213,26 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
         setErroDoCep('CEP não encontrado — preencha à mão');
         return;
       }
-      // Rua e número já digitados não são sobrescritos: quem digitou sabe
-      // mais que o ViaCEP sobre o complemento daquela entrega.
-      setStreet((atual) => atual || achado.street);
-      setNeighborhood((atual) => atual || achado.neighborhood);
-      setCity(achado.city);
-      setUf(achado.state);
+      // Rua e bairro já digitados não são sobrescritos: quem digitou sabe
+      // mais que o ViaCEP sobre aquela entrega.
+      mudarCampo('street', achado.street, true);
+      mudarCampo('neighborhood', achado.neighborhood, true);
+      mudarCampo('city', achado.city);
+      mudarCampo('state', achado.state);
     } finally {
       setBuscandoCep(false);
     }
   };
 
   const buildAddressList = (): StoreCustomerAddress[] | undefined => {
-    const filled = street || number || neighborhood || city || zip;
-    // Sem nada preenchido e sem outros endereços, `undefined` mantém o
-    // comportamento antigo: o backend não recebe a chave e não mexe em nada.
-    if (!filled) return outrosEnderecos.length ? [...outrosEnderecos] : undefined;
-    const addr: StoreCustomerAddress = {
-      street, number, complement, neighborhood, city, state: uf, zip_code: zip, is_default: true,
-    };
-    if (addr0?.id) addr.id = addr0.id;
-    return [addr, ...outrosEnderecos];
+    const preenchidos = enderecos.filter(enderecoPreenchido);
+    // Cliente que nunca teve endereço e continua sem: `undefined` mantém o
+    // comportamento antigo — o backend não recebe a chave e não mexe em nada.
+    if (!preenchidos.length && !(customer?.address_list ?? []).length) return undefined;
+    if (preenchidos.length && !preenchidos.some((a) => a.is_default)) {
+      preenchidos[0] = { ...preenchidos[0], is_default: true };
+    }
+    return preenchidos;
   };
 
   /**
@@ -226,8 +248,12 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
     const digitos = (t: string) => t.replace(/\D/g, '');
     if (phone.trim() && digitos(phone).length < 10) achados.phone = 'Telefone incompleto';
     if (whatsapp.trim() && digitos(whatsapp).length < 10) achados.whatsapp = 'WhatsApp incompleto';
-    if (uf.trim() && uf.trim().length !== 2) achados.uf = 'UF tem 2 letras';
-    if (zip.trim() && digitos(zip).length !== 8) achados.zip = 'CEP tem 8 dígitos';
+    enderecos.forEach((a, i) => {
+      const uf = (a.state ?? '').trim();
+      const cep = digitos(a.zip_code ?? '');
+      if (uf && uf.length !== 2) { achados.uf = 'UF tem 2 letras'; if (!achados.enderecoIndice) achados.enderecoIndice = String(i); }
+      if (cep && cep.length !== 8) { achados.zip = 'CEP tem 8 dígitos'; if (!achados.enderecoIndice) achados.enderecoIndice = String(i); }
+    });
     return achados;
   };
 
@@ -235,6 +261,7 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
     if (saving) return;
     const achados = validar();
     setErros(achados);
+    if (achados.enderecoIndice) setSelecionado(Number(achados.enderecoIndice));
     if (Object.keys(achados).length) return;
     setSaving(true);
     try {
@@ -249,19 +276,22 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
         accepts_marketing: aceitaMarketing,
         ...(address_list ? { address_list } : {}),
       };
+      let salvo: StoreCustomer | undefined;
       if (isEdit && customer) {
-        await updateCustomer(customer.id, payload);
+        salvo = await updateCustomer(customer.id, payload);
       } else {
-        await createCustomer(storeSlug, payload);
+        salvo = await createCustomer(storeSlug, payload);
       }
       toast.success(isEdit ? 'Cliente atualizado' : 'Cliente criado');
-      onSaved();
+      onSaved(salvo);
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally {
       setSaving(false);
     }
   };
+
+  const outrosVisiveis = enderecos.length > 1 || enderecoPreenchido(enderecos[0] ?? ENDERECO_VAZIO);
 
   return (
     <>
@@ -346,46 +376,87 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
           <div className="space-y-3 border-t border-border-token pt-4">
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-xs font-bold uppercase tracking-widest text-fg-muted-token">
-                {outrosEnderecos.length ? 'Endereço padrão' : 'Endereço'}
+                Endereços{outrosVisiveis ? ` (${enderecos.filter(enderecoPreenchido).length})` : ''}
               </p>
-              {/* Quem vê um formulário com um endereço só assume que o cliente
-                  tem um. Dizer quantos ficaram guardados evita que o dono
-                  redigite aqui um endereço que já existe na conta. */}
-              {outrosEnderecos.length > 0 && (
-                <p className="text-xs text-fg-muted-token">
-                  mais {outrosEnderecos.length} endereço{outrosEnderecos.length > 1 ? 's' : ''} salvo{outrosEnderecos.length > 1 ? 's' : ''}
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={novoEndereco}
+                className="text-xs font-semibold text-brand-ink hover:underline"
+              >
+                + Novo endereço
+              </button>
             </div>
 
-            <Input
-              label="CEP"
-              inputMode="numeric"
-              value={zip}
-              error={erros.zip}
-              hint={buscandoCep ? 'Buscando endereço…' : (erroDoCep ?? 'Preenche rua, bairro e cidade')}
-              onChange={(e) => aoDigitarCep(e.target.value)}
-            />
-            <div className="grid grid-cols-3 gap-2">
-              <div className="col-span-2">
-                <Input label="Rua" value={street} onChange={(e) => setStreet(e.target.value)} />
-              </div>
-              <Input label="Número" value={number} onChange={(e) => setNumber(e.target.value)} />
-            </div>
-            <Input label="Complemento" value={complement} onChange={(e) => setComplement(e.target.value)} />
-            <Input label="Bairro" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} />
-            <div className="grid grid-cols-3 gap-2">
-              <div className="col-span-2">
-                <Input label="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
-              </div>
-              <Input
-                label="UF"
-                maxLength={2}
-                value={uf}
-                error={erros.uf}
-                onChange={(e) => setUf(e.target.value.toUpperCase())}
-              />
-            </div>
+            {/* Um cartão por endereço: o que está sendo editado fica marcado e
+                os campos abaixo mudam só ele. */}
+            {outrosVisiveis && (
+              <ul className="space-y-2" aria-label="Endereços do cliente">
+                {enderecos.map((a, i) => (
+                  <li
+                    key={a.id ?? `novo-${i}`}
+                    className={`rounded-xl border px-3 py-2 text-sm ${i === selecionado ? 'border-brand bg-surface-2' : 'border-border-token'}`}
+                  >
+                    <button type="button" className="block w-full text-left" onClick={() => setSelecionado(i)}>
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium text-fg-token">{linhaDoEndereco(a) || 'Endereço novo'}</span>
+                        {a.is_default && <Badge tone="success">Padrão</Badge>}
+                      </span>
+                      {complementoDoEndereco(a) && (
+                        <span className="block text-xs text-fg-muted-token">{complementoDoEndereco(a)}</span>
+                      )}
+                    </button>
+                    <span className="mt-1.5 flex gap-3 text-xs">
+                      {!a.is_default && (
+                        <button type="button" className="font-semibold text-brand-ink hover:underline" onClick={() => tornarPadrao(i)}>
+                          Tornar padrão
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="font-semibold text-danger hover:underline"
+                        aria-label={`Remover endereço ${linhaDoEndereco(a) || i + 1}`}
+                        onClick={() => remover(i)}
+                      >
+                        Remover
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {enderecos.length > 0 && (
+              <>
+                <Input
+                  label="CEP"
+                  inputMode="numeric"
+                  value={atual.zip_code ?? ''}
+                  error={erros.zip}
+                  hint={buscandoCep ? 'Buscando endereço…' : (erroDoCep ?? 'Preenche rua, bairro e cidade')}
+                  onChange={(e) => aoDigitarCep(e.target.value)}
+                />
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <Input label="Rua" value={atual.street ?? ''} onChange={(e) => mudarCampo('street', e.target.value)} />
+                  </div>
+                  <Input label="Número" value={atual.number ?? ''} onChange={(e) => mudarCampo('number', e.target.value)} />
+                </div>
+                <Input label="Complemento" value={atual.complement ?? ''} onChange={(e) => mudarCampo('complement', e.target.value)} />
+                <Input label="Bairro" value={atual.neighborhood ?? ''} onChange={(e) => mudarCampo('neighborhood', e.target.value)} />
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <Input label="Cidade" value={atual.city ?? ''} onChange={(e) => mudarCampo('city', e.target.value)} />
+                  </div>
+                  <Input
+                    label="UF"
+                    maxLength={2}
+                    value={atual.state ?? ''}
+                    error={erros.uf}
+                    onChange={(e) => mudarCampo('state', e.target.value.toUpperCase())}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -399,6 +470,26 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
     </>
   );
 };
+
+const ENDERECO_VAZIO: StoreCustomerAddress = {
+  street: '', number: '', complement: '', neighborhood: '', city: '', state: '', zip_code: '', is_default: false,
+};
+
+function enderecoPreenchido(a: StoreCustomerAddress): boolean {
+  return Boolean((a.street ?? '').trim() || (a.number ?? '').trim() || (a.neighborhood ?? '').trim()
+    || (a.city ?? '').trim() || (a.zip_code ?? '').trim());
+}
+
+/** "Rua X, nº 9" — como a comanda escreve. */
+export function linhaDoEndereco(a: StoreCustomerAddress): string {
+  return [a.street?.trim(), a.number?.trim() ? `nº ${a.number.trim()}` : ''].filter(Boolean).join(', ');
+}
+
+/** "Recepção · Centro · Palmas-TO" */
+export function complementoDoEndereco(a: StoreCustomerAddress): string {
+  const cidade = [a.city?.trim(), a.state?.trim()].filter(Boolean).join('-');
+  return [a.complement?.trim(), a.neighborhood?.trim(), cidade].filter(Boolean).join(' · ');
+}
 
 // ─── Customer Drawer ──────────────────────────────────────────────────────────
 
@@ -513,6 +604,8 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
 
   if (!customer) return null;
 
+  const enderecosDaFicha = customer.address_list ?? [];
+
   return (
     <>
       {/* Backdrop */}
@@ -624,6 +717,32 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
               )}
             </div>
           </div>
+
+          {/* Endereços — todos, com o padrão marcado. A ficha não mostrava
+              nenhum: para conferir onde entregar era preciso abrir a edição. */}
+          {enderecosDaFicha.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
+                Endereços ({enderecosDaFicha.length})
+              </p>
+              <ul className="rounded border border-border-token divide-y divide-border-token overflow-hidden">
+                {enderecosDaFicha.map((a, i) => (
+                  <li key={a.id ?? i} className="flex items-start gap-3 px-4 py-3">
+                    <MapPinIcon className="h-4 w-4 text-fg-muted-token shrink-0 mt-0.5" />
+                    <span className="text-sm text-fg-token">
+                      <span className="flex items-center gap-2">
+                        {linhaDoEndereco(a) || '—'}
+                        {a.is_default && <Badge tone="success">Padrão</Badge>}
+                      </span>
+                      {complementoDoEndereco(a) && (
+                        <span className="block text-xs text-fg-muted-token">{complementoDoEndereco(a)}</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Cashback — sempre presente enquanto a loja usa o programa.
               Escondê-lo com saldo zero deixava "cliente sem saldo" e "a loja
@@ -806,7 +925,8 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
           {onEdit && (
             <Button
               className="flex-1 justify-center"
-              onClick={() => { onClose(); onEdit(customer); }}
+              // A ficha fica aberta por baixo: salvar volta para ela já atualizada.
+              onClick={() => onEdit(customer)}
             >
               Editar
             </Button>
@@ -1210,8 +1330,13 @@ export const CustomersPage: React.FC = () => {
         storeSlug={storeSlug ?? storeId ?? undefined}
         customer={editingCustomer}
         onClose={() => setFormOpen(false)}
-        onSaved={() => {
+        onSaved={(salvo) => {
           setFormOpen(false);
+          // A ficha que estava aberta mostra o que acabou de ser salvo, sem
+          // fechar e procurar o cliente de novo na lista.
+          if (salvo) {
+            setSelectedCustomer((aberto) => (aberto && aberto.id === salvo.id ? { ...aberto, ...salvo } : aberto));
+          }
           customersQuery.refetch();
           statsQuery.refetch();
         }}

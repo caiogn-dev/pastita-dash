@@ -79,7 +79,7 @@ it('grava a alteração no endereço padrão sem tocar nos outros', async () => 
     <CustomerFormDrawer customer={CLIENTE_COM_3_ENDERECOS} storeSlug="l1"
       onClose={jest.fn()} onSaved={jest.fn()} />,
   );
-  fireEvent.change(screen.getByLabelText(/rua/i), { target: { value: 'Rua Nova' } });
+  fireEvent.change(screen.getByLabelText(/^rua$/i), { target: { value: 'Rua Nova' } });
   fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
   await waitFor(() => expect(storesApi.updateCustomer).toHaveBeenCalled());
@@ -89,10 +89,69 @@ it('grava a alteração no endereço padrão sem tocar nos outros', async () => 
   expect(payload.address_list[2]).toEqual(expect.objectContaining({ id: 'a3', street: 'Casa da Mãe' }));
 });
 
-it('avisa na tela que existem outros endereços guardados', async () => {
+it('mostra todos os endereços, com o padrão marcado', async () => {
   render(
     <CustomerFormDrawer customer={CLIENTE_COM_3_ENDERECOS} storeSlug="l1"
       onClose={jest.fn()} onSaved={jest.fn()} />,
   );
-  expect(screen.getByText(/mais 2 endereços/i)).toBeInTheDocument();
+  const lista = screen.getByRole('list', { name: /endereços do cliente/i });
+  expect(lista.querySelectorAll('li')).toHaveLength(3);
+  expect(screen.getByText('Rua do Trabalho, nº 20')).toBeInTheDocument();
+  expect(screen.getByText('Padrão')).toBeInTheDocument();
+});
+
+it('remover um endereço tira ele do que é salvo', async () => {
+  render(
+    <CustomerFormDrawer customer={CLIENTE_COM_3_ENDERECOS} storeSlug="l1"
+      onClose={jest.fn()} onSaved={jest.fn()} />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: /remover endereço rua do trabalho/i }));
+  fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+  await waitFor(() => expect(storesApi.updateCustomer).toHaveBeenCalled());
+  const [, payload] = (storesApi.updateCustomer as jest.Mock).mock.calls[0];
+  expect(payload.address_list.map((a: { id: string }) => a.id)).toEqual(['a1', 'a3']);
+});
+
+it('tornar padrão deixa um padrão só', async () => {
+  render(
+    <CustomerFormDrawer customer={CLIENTE_COM_3_ENDERECOS} storeSlug="l1"
+      onClose={jest.fn()} onSaved={jest.fn()} />,
+  );
+  fireEvent.click(screen.getAllByRole('button', { name: /tornar padrão/i })[1]);
+  fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+  await waitFor(() => expect(storesApi.updateCustomer).toHaveBeenCalled());
+  const [, payload] = (storesApi.updateCustomer as jest.Mock).mock.calls[0];
+  expect(payload.address_list.map((a: { is_default: boolean }) => a.is_default)).toEqual([false, false, true]);
+});
+
+it('editar outro endereço muda só ele', async () => {
+  render(
+    <CustomerFormDrawer customer={CLIENTE_COM_3_ENDERECOS} storeSlug="l1"
+      onClose={jest.fn()} onSaved={jest.fn()} />,
+  );
+  fireEvent.click(screen.getByText('Casa da Mãe, nº 30'));
+  fireEvent.change(screen.getByLabelText(/^rua$/i), { target: { value: 'Casa da Vó' } });
+  fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+  await waitFor(() => expect(storesApi.updateCustomer).toHaveBeenCalled());
+  const [, payload] = (storesApi.updateCustomer as jest.Mock).mock.calls[0];
+  expect(payload.address_list[0]).toEqual(expect.objectContaining({ id: 'a1', street: 'Rua Padrão' }));
+  expect(payload.address_list[2]).toEqual(expect.objectContaining({ id: 'a3', street: 'Casa da Vó' }));
+});
+
+it('novo endereço entra no que é salvo', async () => {
+  render(
+    <CustomerFormDrawer customer={CLIENTE_COM_3_ENDERECOS} storeSlug="l1"
+      onClose={jest.fn()} onSaved={jest.fn()} />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: /novo endereço/i }));
+  fireEvent.change(screen.getByLabelText(/^rua$/i), { target: { value: 'Rua Quatro' } });
+  fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+  await waitFor(() => expect(storesApi.updateCustomer).toHaveBeenCalled());
+  const [, payload] = (storesApi.updateCustomer as jest.Mock).mock.calls[0];
+  expect(payload.address_list).toHaveLength(4);
+  expect(payload.address_list[3]).toEqual(expect.objectContaining({ street: 'Rua Quatro', is_default: false }));
 });
