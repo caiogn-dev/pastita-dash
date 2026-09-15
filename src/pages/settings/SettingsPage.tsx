@@ -215,7 +215,10 @@ export const SettingsPage: React.FC = () => {
     <PageShell
       titulo="Configurações"
     >
-
+      {/* Conta à esquerda, notificações à direita: três blocos empilhados
+          deixavam a tela larga com uma coluna só. */}
+      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+      <div className="flex flex-col gap-5">
       {/* User Info */}
       <Card title="Informações do Usuário">
         <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
@@ -270,6 +273,7 @@ export const SettingsPage: React.FC = () => {
           </Button>
         </form>
       </Card>
+      </div>
 
       {/* Notification Preferences */}
       <Card
@@ -338,7 +342,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         )}
       </Card>
-
+      </div>
     </PageShell>
   );
 };

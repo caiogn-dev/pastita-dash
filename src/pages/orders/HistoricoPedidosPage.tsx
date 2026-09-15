@@ -306,12 +306,15 @@ export const HistoricoPedidosPage: React.FC = () => {
         </div>
       }
     >
+      {/* Indicadores e "como entrou o dinheiro" lado a lado: eram dois blocos
+          de largura toda empilhados antes da tabela, que é o que se veio ver. */}
+      <div className="mb-5 grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] xl:items-stretch">
       {resumoQuery.isError && resumoQuery.data === undefined ? (
         /* Resumo falhou SEM cache: a lista pode ter vindo, mas os indicadores
            não. Some-los em silêncio faria o operador ler "período sem resumo"
            quando na verdade a requisição falhou — mesmo engano dos "zeros".
            Mostra um aviso curto e acionável no lugar dos KPIs. */
-        <Card className="mb-5 p-4">
+        <Card className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-fg-muted-token">
               Não foi possível carregar os indicadores do período.
@@ -323,7 +326,6 @@ export const HistoricoPedidosPage: React.FC = () => {
         </Card>
       ) : resumo ? (
         <KpiGrid
-          className="mb-5"
           itens={[
             {
               label: 'Pedidos',
@@ -352,7 +354,7 @@ export const HistoricoPedidosPage: React.FC = () => {
       ) : null}
 
       {resumo && resumo.por_pagamento.length > 0 && (
-        <Card className="mb-5 p-4">
+        <Card className="p-4">
           <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-3">
             Como entrou o dinheiro
           </p>
@@ -373,6 +375,7 @@ export const HistoricoPedidosPage: React.FC = () => {
           </div>
         </Card>
       )}
+      </div>
 
       <Card className="overflow-hidden">
         {pedidos.length === 0 ? (

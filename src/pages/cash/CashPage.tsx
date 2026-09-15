@@ -98,8 +98,10 @@ const CashPage: React.FC = () => {
   return (
     <PageShell
       titulo="Caixa"
-      className="max-w-3xl"
     >
+      {/* A largura travada em max-w-3xl deixava metade da tela vazia e cinco
+          blocos um embaixo do outro. Agora: status em cima, ações lado a lado. */}
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
 
       {/* Resultado do último fechamento */}
       {closedResult && (
@@ -124,7 +126,7 @@ const CashPage: React.FC = () => {
         </Card>
       )}
 
-      {!session ? (
+      {!session && (
         /* Caixa fechado → abertura */
         <Card className="p-4">
           <h2 className="text-lg font-semibold text-fg-token mb-4">Abrir caixa</h2>
@@ -147,7 +149,10 @@ const CashPage: React.FC = () => {
             <Button variant="primary" onClick={handleOpen} disabled={busy}>Abrir caixa</Button>
           </div>
         </Card>
-      ) : (
+      )}
+      </div>
+
+      {session && (
         <>
           {/* Status do caixa aberto */}
           <Card className="p-4">
@@ -169,6 +174,7 @@ const CashPage: React.FC = () => {
             </div>
           </Card>
 
+          <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
           {/* Movimentos */}
           <Card className="p-4">
             <h2 className="text-lg font-semibold text-fg-token mb-4">Sangria / Reforço</h2>
@@ -276,6 +282,7 @@ const CashPage: React.FC = () => {
               </Button>
             </div>
           </Card>
+          </div>
         </>
       )}
     </PageShell>
