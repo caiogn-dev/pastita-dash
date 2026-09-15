@@ -340,7 +340,7 @@ export const HistoricoPedidosPage: React.FC = () => {
               label: 'Ticket médio',
               // "R$ 0,00" leria como venda de graça; sem venda, não há ticket.
               value: resumo.ticket_medio === null ? '—' : formatCurrency(resumo.ticket_medio),
-              definicao: resumo.definicoes?.ticket_medio ?? 'faturamento ÷ pedidos que faturaram',
+              definicao: resumo.definicoes?.ticket_medio ?? 'faturamento sem frete ÷ pedidos que faturaram',
             },
             {
               label: 'Cancelados',
