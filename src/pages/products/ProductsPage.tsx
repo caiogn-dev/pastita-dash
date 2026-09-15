@@ -134,6 +134,40 @@ export const ProductsPage: React.FC = () => {
   const [ConfirmDialog, confirmar] = useConfirm();
 
   /**
+   * Excluir produto — a MESMA confirmação no menu da lista e no formulário.
+   *
+   * Não quebra o histórico (o pedido guarda o nome do item), mas tira o
+   * produto de todo combo em silêncio. Por isso mostra onde ele aparece e
+   * lembra que desativar esconde sem apagar. Devolve se excluiu.
+   */
+  const excluirProduto = useCallback(async (alvo: Product): Promise<boolean> => {
+    const id = String(alvo.id);
+    const partes: string[] = [];
+    try {
+      const data = await storesApi.getProductUso(id);
+      if (data.combos) partes.push(`Sai de ${data.combos} combo${data.combos > 1 ? 's' : ''}.`);
+      if (data.pedidos) partes.push(`${data.pedidos} pedido${data.pedidos > 1 ? 's' : ''} antigo${data.pedidos > 1 ? 's' : ''} continua${data.pedidos > 1 ? 'm' : ''} com o nome do item.`);
+    } catch { /* sem o uso, confirma do mesmo jeito */ }
+    partes.push('Para tirar só do cardápio por um tempo, desative em vez de excluir.');
+    const ok = await confirmar({
+      title: `Excluir "${alvo.name}"?`,
+      message: partes.join(' '),
+      confirmText: 'Excluir produto',
+      variant: 'danger',
+    });
+    if (!ok) return false;
+    try {
+      await storesApi.deleteStoreProduct(id);
+      setProducts((ps) => ps.filter((p) => p.id !== alvo.id));
+      toast.success('Produto excluído');
+      return true;
+    } catch {
+      toast.error('Não foi possível excluir o produto');
+      return false;
+    }
+  }, [confirmar]);
+
+  /**
    * Editar, duplicar e excluir — o menu de cada produto.
    *
    * Excluir não quebra o histórico (o pedido guarda o nome do item), mas tira
@@ -154,30 +188,8 @@ export const ProductsPage: React.FC = () => {
       }
       return;
     }
-    if (action === 'delete') {
-      const partes: string[] = [];
-      try {
-        const data = await storesApi.getProductUso(id);
-        if (data.combos) partes.push(`Sai de ${data.combos} combo${data.combos > 1 ? 's' : ''}.`);
-        if (data.pedidos) partes.push(`${data.pedidos} pedido${data.pedidos > 1 ? 's' : ''} antigo${data.pedidos > 1 ? 's' : ''} continua${data.pedidos > 1 ? 'm' : ''} com o nome do item.`);
-      } catch { /* sem o uso, confirma do mesmo jeito */ }
-      partes.push('Para tirar só do cardápio por um tempo, desative em vez de excluir.');
-      const ok = await confirmar({
-        title: `Excluir "${alvo.name}"?`,
-        message: partes.join(' '),
-        confirmText: 'Excluir produto',
-        variant: 'danger',
-      });
-      if (!ok) return;
-      try {
-        await storesApi.deleteStoreProduct(id);
-        setProducts((ps) => ps.filter((p) => p.id !== id));
-        toast.success('Produto excluído');
-      } catch {
-        toast.error('Não foi possível excluir o produto');
-      }
-    }
-  }, [products, confirmar]);
+    if (action === 'delete') await excluirProduto(alvo);
+  }, [products, confirmar, excluirProduto]);
 
   // Objeto memoizado: literal recriado a cada render quebrava o React.memo do
   // ProductRow downstream. Agora a referência só muda quando um handler muda.
@@ -362,6 +374,11 @@ export const ProductsPage: React.FC = () => {
           productTypes={productTypes}
           onClose={() => setModalProduct(undefined)}
           onSaved={load}
+          onExcluir={async () => {
+            if (modalProduct && 'id' in (modalProduct as object) && (await excluirProduto(modalProduct as Product))) {
+              setModalProduct(undefined);
+            }
+          }}
         />
       )}
     </PageShell>

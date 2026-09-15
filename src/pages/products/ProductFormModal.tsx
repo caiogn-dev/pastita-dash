@@ -42,6 +42,8 @@ export interface ProductFormModalProps {
   /** Lista achatada e ordenada de todos os produtos — usada para navegação prev/next */
   flatProducts: Product[];
   onSaved: () => void;
+  /** Excluir o produto em edição (o pai confirma com o uso). Sem ele, não há botão. */
+  onExcluir?: () => void | Promise<void>;
   /** storeId necessário para criar/atualizar produtos */
   storeId?: string;
   /** Tipos de produto disponíveis; se omitido, o componente não renderiza campos de tipo */
@@ -71,6 +73,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   categories,
   flatProducts,
   onSaved,
+  onExcluir,
   storeId = '',
   productTypes = [],
 }) => {
@@ -537,6 +540,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 onClick={() => { manterAbertoRef.current = true; handleSubmit(); }}
               >
                 Salvar e criar outro
+              </Button>
+            ) : onExcluir ? (
+              // Editando, a ação que faltava: excluir sem voltar para a lista.
+              <Button type="button" variant="danger" disabled={saving} onClick={() => void onExcluir()}>
+                Excluir produto
               </Button>
             ) : undefined
           }
