@@ -343,26 +343,55 @@ const FidelidadePage: React.FC = () => {
         </Badge>
       }
     >
-      {/* O dono escolhe UM. Dois programas ligados empilham desconto em cima
-          de desconto e viram duas promessas para explicar ao mesmo cliente. */}
-      <ChoiceCards<'carimbo' | 'cashback'>
-        rotulo="Qual programa roda na sua loja"
-        descricao="Só um fica ligado por vez. Ligar um desliga o outro no mesmo salvar."
-        valor={programa}
-        onChange={setPrograma}
-        opcoes={[
-          {
-            valor: 'carimbo',
-            titulo: 'Cartão de carimbo',
-            descricao: `Junta ${threshold || '10'} itens, ganha 1 grátis. A recompensa é grande e demora — puxa quem já é frequente.`,
-          },
-          {
-            valor: 'cashback',
-            titulo: 'Cashback',
-            descricao: 'Volta uma parte em saldo a cada pedido. Recompensa pequena e imediata — alcança quem comprou uma vez só.',
-          },
-        ]}
-      />
+      {/* Tela larga, blocos lado a lado: a escolha do programa e o cupom de
+          boas-vindas são as duas decisões de "como eu fidelizo" — empilhadas,
+          o cupom ficava três rolagens abaixo, depois de listas longas. */}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] xl:items-start">
+        {/* O dono escolhe UM. Dois programas ligados empilham desconto em cima
+            de desconto e viram duas promessas para explicar ao mesmo cliente. */}
+        <ChoiceCards<'carimbo' | 'cashback'>
+          rotulo="Qual programa roda na sua loja"
+          descricao="Só um fica ligado por vez. Ligar um desliga o outro no mesmo salvar."
+          valor={programa}
+          onChange={setPrograma}
+          opcoes={[
+            {
+              valor: 'carimbo',
+              titulo: 'Cartão de carimbo',
+              descricao: `Junta ${threshold || '10'} itens, ganha 1 grátis. A recompensa é grande e demora — puxa quem já é frequente.`,
+            },
+            {
+              valor: 'cashback',
+              titulo: 'Cashback',
+              descricao: 'Volta uma parte em saldo a cada pedido. Recompensa pequena e imediata — alcança quem comprou uma vez só.',
+            },
+          ]}
+        />
+        <Card title="Cupom de boas-vindas">
+          <div className="space-y-4">
+            <Input
+              id="loyalty-coupon-pct"
+              label="Desconto (%)"
+              type="number"
+              min={1}
+              max={100}
+              placeholder="10"
+              value={pct}
+              onChange={(e) => setPct(e.target.value)}
+            />
+            <Button onClick={handleCreateCoupon} isLoading={creatingCoupon}>
+              Criar cupom de boas-vindas
+            </Button>
+            {createdCoupon && (
+              <Badge tone="success">Cupom criado: {createdCoupon}</Badge>
+            )}
+            {couponError && <p className="text-sm text-fg-muted-token">{couponError}</p>}
+            <p className="text-xs text-fg-muted-token">
+              Banner no cardápio disponível nos planos Pro e Premium.
+            </p>
+          </div>
+        </Card>
+      </div>
 
       {programa === 'cashback' && (
         <CashbackSection
@@ -466,251 +495,226 @@ const FidelidadePage: React.FC = () => {
         />
       )}
 
-      {/* Dois formulários curtos: empilhados eram uma tela de rolagem
-          para oito campos. Lado a lado no desktop, cabem na mesma dobra. */}
-      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-        {programa === 'carimbo' && (
-        <Card title="Programa de fidelidade">
-          <form className="space-y-4" onSubmit={handleSaveConfig}>
-            {/* Era um checkbox nu escrito "Programa ativo". Um quadradinho não
-                diz o que acontece ao marcar, e o cliente é quem sente o efeito —
-                a linha explica antes de você clicar. */}
-            <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
-              <span className="min-w-0">
-                <span className="block text-body font-semibold text-fg-token">
-                  Programa ativo
-                </span>
-                <span className="mt-0.5 block text-caption text-fg-muted-token">
-                  Ligado, o cartão do cliente anda a cada pedido pago e o grátis
-                  aparece sozinho no carrinho dele.
-                </span>
-              </span>
-              <input
-                type="checkbox"
-                className="mt-1 h-5 w-5 shrink-0 accent-[var(--brand)]"
-                checked={enabled}
-                onChange={(e) => setEnabled(e.target.checked)}
-              />
-            </label>
-  
-            <Input
-              id="loyalty-threshold"
-              label="Itens para ganhar 1 grátis"
-              type="number"
-              min={1}
-              value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
-            />
-  
-            <div>
-              <p className="block text-sm font-medium text-fg-token mb-1">Categorias que pontuam</p>
-              {storeCategories.length > 0 ? (
-                <div className="space-y-1.5 rounded-md border border-border-token bg-surface p-3">
-                  {storeCategories.map((cat) => (
-                    <label
-                      key={cat.id}
-                      className="flex items-center gap-2 text-sm text-fg-token"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={qualifyingCategoryIds.includes(cat.id)}
-                        onChange={() => toggleQualifyingCategory(cat.id)}
-                      />
-                      {cat.name}
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-fg-muted-token">Nenhuma categoria cadastrada nesta loja.</p>
-              )}
-              <p className="text-xs text-fg-muted-token mt-1">
-                Nenhuma marcada = todos os itens do cardápio contam
-              </p>
-            </div>
-  
-            <Button type="submit" isLoading={saving}>
-              Salvar
-            </Button>
-          </form>
-        </Card>
-        )}
-        <Card title="Cupom de boas-vindas">
-          <div className="space-y-4">
-            <Input
-              id="loyalty-coupon-pct"
-              label="Desconto (%)"
-              type="number"
-              min={1}
-              max={100}
-              placeholder="10"
-              value={pct}
-              onChange={(e) => setPct(e.target.value)}
-            />
-            <Button onClick={handleCreateCoupon} isLoading={creatingCoupon}>
-              Criar cupom de boas-vindas
-            </Button>
-            {createdCoupon && (
-              <Badge tone="success">Cupom criado: {createdCoupon}</Badge>
-            )}
-            {couponError && <p className="text-sm text-fg-muted-token">{couponError}</p>}
-            <p className="text-xs text-fg-muted-token">
-              Banner no cardápio disponível nos planos Pro e Premium.
-            </p>
-          </div>
-        </Card>
-      </div>
 
+
+      {/* Configurar à esquerda, agir à direita: a regra do cartão e a lista
+          de quem está perto de ganhar cabem na mesma dobra. */}
       {programa === 'carimbo' && (
-      <Card
-        title="Quem está mais perto de ganhar"
-        subtitle="Ordenado do mais perto de fechar o cartão para o mais longe — é essa a lista de quem vale mandar mensagem hoje."
-      >
-        {loadingAccounts && accounts.length === 0 ? (
-          <Loading />
-        ) : accountsError ? (
-          <p className="text-sm text-fg-muted-token">{accountsError}</p>
-        ) : accounts.length === 0 ? (
-          <EmptyState
-            titulo="Ninguém no programa ainda"
-            descricao={
-              enabled
-                ? 'O cliente entra sozinho no primeiro pedido pago. Avise no WhatsApp que agora tem cartão fidelidade.'
-                : 'O programa está desligado — ligue acima para os clientes começarem a acumular.'
-            }
-          />
-        ) : (
-          <div className="flex flex-col gap-3">
-            <Tabela<(typeof accounts)[number]>
-              itens={accounts}
-              chave={(a) => String(a.user_id)}
-              rotuloDaLinha={(a) => a.display_name}
-              colunas={[
-                {
-                  chave: 'cliente',
-                  cabecalho: 'Cliente',
-                  render: (a) => (
-                    <div className="min-w-0">
-                      {/* Nome e e-mail eram duas colunas. O e-mail sozinho não
-                          responde nenhuma pergunta desta tela — vira metadado
-                          sob o nome e devolve uma coluna para o que importa. */}
-                      <p className="truncate font-semibold">{a.display_name}</p>
-                      {/* O e-mail de quem entra por WhatsApp é fabricado pelo
-                          backend (`<fone>@local.invalid`) e aparecia cru em 30
-                          das 84 contas. O telefone é o contato que existe. */}
-                      <p className="truncate text-caption text-fg-muted-token">
-                        {publicEmail(a.email) ?? (a.phone ? formatPhone(a.phone) : '')}
-                      </p>
-                    </div>
-                  ),
-                },
-                {
-                  chave: 'progresso',
-                  cabecalho: 'Progresso',
-                  render: (a) => (
-                    // "7/10" obriga a fazer a conta de cabeça, linha por linha.
-                    // A barra responde "quem está quase lá?" de relance — que é
-                    // a única pergunta que se faz aqui.
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="h-1.5 w-20 overflow-hidden rounded-pill bg-surface-2"
-                        role="progressbar"
-                        aria-valuenow={a.progress}
-                        aria-valuemin={0}
-                        aria-valuemax={Number(threshold) || 10}
-                        aria-label={`${a.progress} de ${threshold} itens`}
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] xl:items-start">
+          <Card title="Programa de fidelidade">
+            <form className="space-y-4" onSubmit={handleSaveConfig}>
+              {/* Era um checkbox nu escrito "Programa ativo". Um quadradinho não
+                  diz o que acontece ao marcar, e o cliente é quem sente o efeito —
+                  a linha explica antes de você clicar. */}
+              <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
+                <span className="min-w-0">
+                  <span className="block text-body font-semibold text-fg-token">
+                    Programa ativo
+                  </span>
+                  <span className="mt-0.5 block text-caption text-fg-muted-token">
+                    Ligado, o cartão do cliente anda a cada pedido pago e o grátis
+                    aparece sozinho no carrinho dele.
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  className="mt-1 h-5 w-5 shrink-0 accent-[var(--brand)]"
+                  checked={enabled}
+                  onChange={(e) => setEnabled(e.target.checked)}
+                />
+              </label>
+  
+              <Input
+                id="loyalty-threshold"
+                label="Itens para ganhar 1 grátis"
+                type="number"
+                min={1}
+                value={threshold}
+                onChange={(e) => setThreshold(e.target.value)}
+              />
+  
+              <div>
+                <p className="block text-sm font-medium text-fg-token mb-1">Categorias que pontuam</p>
+                {storeCategories.length > 0 ? (
+                  <div className="space-y-1.5 rounded-md border border-border-token bg-surface p-3">
+                    {storeCategories.map((cat) => (
+                      <label
+                        key={cat.id}
+                        className="flex items-center gap-2 text-sm text-fg-token"
                       >
-                        <span
-                          className="block h-full rounded-pill bg-brand"
-                          style={{
-                            width: `${Math.min(100, (a.progress / (Number(threshold) || 10)) * 100)}%`,
-                          }}
+                        <input
+                          type="checkbox"
+                          checked={qualifyingCategoryIds.includes(cat.id)}
+                          onChange={() => toggleQualifyingCategory(cat.id)}
                         />
-                      </span>
-                      <span className="text-caption tabular-nums text-fg-muted-token">
-                        {a.progress}/{threshold}
-                      </span>
-                    </div>
-                  ),
-                },
-                {
-                  chave: 'falta',
-                  cabecalho: 'Falta',
-                  alinhamento: 'direita',
-                  render: (a) =>
-                    // Destaque só em quem está a 1: é o corte que vira ação.
-                    // Pintar todas as faixas tiraria o sinal do número que
-                    // realmente pede um empurrão hoje.
-                    a.falta === 1 ? (
-                      <Badge tone="success">falta 1</Badge>
-                    ) : (
-                      <span className="tabular-nums text-fg-muted-token">{a.falta}</span>
-                    ),
-                },
-                {
-                  chave: 'resgates',
-                  cabecalho: 'Resgates',
-                  alinhamento: 'direita',
-                  classe: 'tabular-nums max-lg:hidden',
-                  render: (a) => a.redeemed_count,
-                },
-                {
-                  chave: 'gratis',
-                  cabecalho: 'Grátis disponíveis',
-                  alinhamento: 'direita',
-                  render: (a) =>
-                    a.available_rewards > 0 ? (
-                      <Badge tone="success">{a.available_rewards}</Badge>
-                    ) : (
-                      '—'
-                    ),
-                },
-                {
-                  // A tela era só relatório: mostrava "3 grátis disponíveis" e
-                  // não deixava dizer que dois já saíram pelo WhatsApp. Em
-                  // produção eram 161 créditos e ZERO resgates — e o storefront
-                  // seguia prometendo brinde já entregue.
-                  chave: 'acoes',
-                  cabecalho: 'Resgate',
-                  alinhamento: 'direita',
-                  render: (a) => (
-                    <div className="flex items-center justify-end gap-1">
-                      {a.available_rewards > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          isLoading={resgatando === a.user_id}
-                          onClick={() => registrarResgate(a, 1)}
-                        >
-                          Marcar resgate
-                        </Button>
-                      )}
-                      {a.redeemed_count > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          isLoading={resgatando === a.user_id}
-                          onClick={() => registrarResgate(a, -1)}
-                        >
-                          Desfazer resgate
-                        </Button>
-                      )}
-                    </div>
-                  ),
-                },
-              ]}
-            />
-            {accountsCount > accounts.length && (
-              <Button
-                variant="outline"
-                onClick={() => setAccountsPage((p) => p + 1)}
-                isLoading={loadingAccounts}
-              >
-                Carregar mais
+                        {cat.name}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-fg-muted-token">Nenhuma categoria cadastrada nesta loja.</p>
+                )}
+                <p className="text-xs text-fg-muted-token mt-1">
+                  Nenhuma marcada = todos os itens do cardápio contam
+                </p>
+              </div>
+  
+              <Button type="submit" isLoading={saving}>
+                Salvar
               </Button>
-            )}
-          </div>
-        )}
-      </Card>
+            </form>
+          </Card>
+        <Card
+          title="Quem está mais perto de ganhar"
+          subtitle="Ordenado do mais perto de fechar o cartão para o mais longe — é essa a lista de quem vale mandar mensagem hoje."
+        >
+          {loadingAccounts && accounts.length === 0 ? (
+            <Loading />
+          ) : accountsError ? (
+            <p className="text-sm text-fg-muted-token">{accountsError}</p>
+          ) : accounts.length === 0 ? (
+            <EmptyState
+              titulo="Ninguém no programa ainda"
+              descricao={
+                enabled
+                  ? 'O cliente entra sozinho no primeiro pedido pago. Avise no WhatsApp que agora tem cartão fidelidade.'
+                  : 'O programa está desligado — ligue acima para os clientes começarem a acumular.'
+              }
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              <Tabela<(typeof accounts)[number]>
+                itens={accounts}
+                chave={(a) => String(a.user_id)}
+                rotuloDaLinha={(a) => a.display_name}
+                colunas={[
+                  {
+                    chave: 'cliente',
+                    cabecalho: 'Cliente',
+                    render: (a) => (
+                      <div className="min-w-0">
+                        {/* Nome e e-mail eram duas colunas. O e-mail sozinho não
+                            responde nenhuma pergunta desta tela — vira metadado
+                            sob o nome e devolve uma coluna para o que importa. */}
+                        <p className="truncate font-semibold">{a.display_name}</p>
+                        {/* O e-mail de quem entra por WhatsApp é fabricado pelo
+                            backend (`<fone>@local.invalid`) e aparecia cru em 30
+                            das 84 contas. O telefone é o contato que existe. */}
+                        <p className="truncate text-caption text-fg-muted-token">
+                          {publicEmail(a.email) ?? (a.phone ? formatPhone(a.phone) : '')}
+                        </p>
+                      </div>
+                    ),
+                  },
+                  {
+                    chave: 'progresso',
+                    cabecalho: 'Progresso',
+                    render: (a) => (
+                      // "7/10" obriga a fazer a conta de cabeça, linha por linha.
+                      // A barra responde "quem está quase lá?" de relance — que é
+                      // a única pergunta que se faz aqui.
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-1.5 w-20 overflow-hidden rounded-pill bg-surface-2"
+                          role="progressbar"
+                          aria-valuenow={a.progress}
+                          aria-valuemin={0}
+                          aria-valuemax={Number(threshold) || 10}
+                          aria-label={`${a.progress} de ${threshold} itens`}
+                        >
+                          <span
+                            className="block h-full rounded-pill bg-brand"
+                            style={{
+                              width: `${Math.min(100, (a.progress / (Number(threshold) || 10)) * 100)}%`,
+                            }}
+                          />
+                        </span>
+                        <span className="text-caption tabular-nums text-fg-muted-token">
+                          {a.progress}/{threshold}
+                        </span>
+                      </div>
+                    ),
+                  },
+                  {
+                    chave: 'falta',
+                    cabecalho: 'Falta',
+                    alinhamento: 'direita',
+                    render: (a) =>
+                      // Destaque só em quem está a 1: é o corte que vira ação.
+                      // Pintar todas as faixas tiraria o sinal do número que
+                      // realmente pede um empurrão hoje.
+                      a.falta === 1 ? (
+                        <Badge tone="success">falta 1</Badge>
+                      ) : (
+                        <span className="tabular-nums text-fg-muted-token">{a.falta}</span>
+                      ),
+                  },
+                  {
+                    chave: 'resgates',
+                    cabecalho: 'Resgates',
+                    alinhamento: 'direita',
+                    classe: 'tabular-nums max-lg:hidden',
+                    render: (a) => a.redeemed_count,
+                  },
+                  {
+                    chave: 'gratis',
+                    cabecalho: 'Grátis disponíveis',
+                    alinhamento: 'direita',
+                    render: (a) =>
+                      a.available_rewards > 0 ? (
+                        <Badge tone="success">{a.available_rewards}</Badge>
+                      ) : (
+                        '—'
+                      ),
+                  },
+                  {
+                    // A tela era só relatório: mostrava "3 grátis disponíveis" e
+                    // não deixava dizer que dois já saíram pelo WhatsApp. Em
+                    // produção eram 161 créditos e ZERO resgates — e o storefront
+                    // seguia prometendo brinde já entregue.
+                    chave: 'acoes',
+                    cabecalho: 'Resgate',
+                    alinhamento: 'direita',
+                    render: (a) => (
+                      <div className="flex items-center justify-end gap-1">
+                        {a.available_rewards > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            isLoading={resgatando === a.user_id}
+                            onClick={() => registrarResgate(a, 1)}
+                          >
+                            Marcar resgate
+                          </Button>
+                        )}
+                        {a.redeemed_count > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            isLoading={resgatando === a.user_id}
+                            onClick={() => registrarResgate(a, -1)}
+                          >
+                            Desfazer resgate
+                          </Button>
+                        )}
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+              {accountsCount > accounts.length && (
+                <Button
+                  variant="outline"
+                  onClick={() => setAccountsPage((p) => p + 1)}
+                  isLoading={loadingAccounts}
+                >
+                  Carregar mais
+                </Button>
+              )}
+            </div>
+          )}
+        </Card>
+        </div>
       )}
     </PageShell>
   );

@@ -143,6 +143,9 @@ export const CashbackSection: React.FC<Props> = ({
         />
       )}
 
+      {/* Configurar à esquerda, agir à direita: a regra do cashback e a lista
+          de quem perde saldo primeiro lado a lado, em vez de uma tela de rolagem. */}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] xl:items-start">
       <Card title="Cashback">
         <form className="space-y-4" onSubmit={onSalvar}>
           <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
@@ -163,7 +166,7 @@ export const CashbackSection: React.FC<Props> = ({
             />
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
             <Input
               id="cashback-percent"
               label="Volta em cada compra (%)"
@@ -319,6 +322,7 @@ export const CashbackSection: React.FC<Props> = ({
           )}
         </Card>
       )}
+      </div>
     </div>
   );
 };

@@ -97,7 +97,8 @@ export const IndicacoesCard: React.FC<{ storeSlug: string }> = ({ storeSlug }) =
 
   return (
     <Card title="Indicações">
-      <div className="space-y-6">
+      {/* As duas perguntas lado a lado: quem divulga e o que cada indicação rendeu. */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <div>
           <h3 className="mb-2 text-body font-semibold text-fg-token">Quem mais trouxe gente</h3>
           <RankedList items={divulgadores} />
